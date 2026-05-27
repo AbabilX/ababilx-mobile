@@ -31,22 +31,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Login ──────────────────────────────────────────────────────────
       GoRoute(
         path: '/login',
-        builder: (_, __) => const LoginScreen(),
+        builder: (_, _) => const LoginScreen(),
       ),
 
       // ── Home shell (bottom nav: Rules + Profile) ───────────────────────
       ShellRoute(
-        builder: (_, __, child) => HomeShell(child: child),
+        builder: (_, _, child) => HomeShell(child: child),
         routes: [
           // Rules list
           GoRoute(
             path: '/rules',
-            builder: (_, __) => const RulesScreen(),
+            builder: (_, _) => const RulesScreen(),
             routes: [
               // Create rule
               GoRoute(
                 path: 'new',
-                builder: (_, __) => const RuleFormScreen(),
+                builder: (_, _) => const RuleFormScreen(),
               ),
               // Rule-specific routes
               GoRoute(
@@ -86,7 +86,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Profile
           GoRoute(
             path: '/profile',
-            builder: (_, __) => const ProfileScreen(),
+            builder: (_, _) => const ProfileScreen(),
           ),
         ],
       ),
