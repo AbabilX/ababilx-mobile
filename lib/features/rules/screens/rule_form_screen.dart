@@ -5,6 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/rule_form_provider.dart';
 import '../providers/rules_provider.dart';
 import '../data/rules_repository.dart';
+import '../data/models/rule.dart';
+import '../../profile/providers/profile_provider.dart';
+import '../../../core/localization/app_translations.dart';
 
 /// Create or edit a rule.
 /// [ruleId] = null → create mode; [ruleId] != null → edit mode.
@@ -20,8 +23,13 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
   final _nameCtrl = TextEditingController();
   final _exampleCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
+  final _threadExampleCtrl = TextEditingController();
+  final _threadCountCustomCtrl = TextEditingController();
 
   bool _initialized = false;
+  bool _addingRepo = false;
+  String _pendingRepo = '';
+  String _pendingBranch = '';
 
   static const _days = [
     (0, 'Sun'),
@@ -75,6 +83,8 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
       _nameCtrl.text = existing.name;
       _exampleCtrl.text = existing.exampleMessage;
       _noteCtrl.text = existing.note;
+      _threadExampleCtrl.text = existing.threadExampleMessage ?? '';
+      _threadCountCustomCtrl.text = existing.threadCountCustom ?? '';
     } else {
       notifier.init();
     }
@@ -86,6 +96,8 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
     _nameCtrl.dispose();
     _exampleCtrl.dispose();
     _noteCtrl.dispose();
+    _threadExampleCtrl.dispose();
+    _threadCountCustomCtrl.dispose();
     super.dispose();
   }
 
@@ -120,9 +132,13 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
   Widget build(BuildContext context) {
     final form = ref.watch(ruleFormProvider);
     final channelsAsync = ref.watch(slackChannelsProvider);
+    final profileAsync = ref.watch(profileProvider);
+    final reposAsync = ref.watch(githubReposProvider);
+
     final isEdit = widget.ruleId != null;
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final userPlan = profileAsync.valueOrNull?.plan ?? 'free';
 
     if (!_initialized) {
       return Scaffold(
@@ -142,7 +158,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          isEdit ? 'Edit Rule' : 'New Rule',
+          isEdit ? AppTranslations.translate(context, ref, 'edit_rule') : AppTranslations.translate(context, ref, 'new_rule'),
           style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -161,7 +177,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
             children: [
               // ── Name field ──────────────────────────────────────────
               _Section(
-                title: 'Rule Name',
+                title: AppTranslations.translate(context, ref, 'rule_name'),
                 subtitle: 'Identify this Standup rule (e.g. Mobile Sync)',
                 child: TextField(
                   controller: _nameCtrl,
@@ -176,50 +192,393 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
 
               // ── Slack Channel select ────────────────────────────────
               _Section(
-                title: 'Slack Destination Channel',
+                title: AppTranslations.translate(context, ref, 'slack_channel'),
                 subtitle: 'Pick the Slack channel where reports will go',
                 child: channelsAsync.when(
                   loading: () => const SizedBox(
                     height: 50,
                     child: Center(
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   ),
-                  error: (_, _) => const Text(
+                  error: (_, __) => const Text(
                     'Connect Slack first to select a channel.',
                     style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13),
                   ),
-                  data: (channels) => DropdownButtonFormField<String>(
-                    value: form.channelId.isEmpty ? null : form.channelId,
-                    hint: const Text('Select Slack channel',
-                        style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13)),
-                    dropdownColor: colors.surfaceContainer,
-                    style: TextStyle(color: colors.onSurface, fontSize: 14),
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.tag_rounded, size: 20),
-                    ),
-                    items: channels
-                        .map((c) => DropdownMenuItem(
-                              value: c.id,
-                              child: Text('#${c.name}'),
-                            ))
-                        .toList(),
-                    onChanged: (id) {
-                      if (id == null) return;
-                      final ch =
-                          channels.firstWhere((c) => c.id == id);
-                      ref
-                          .read(ruleFormProvider.notifier)
-                          .setChannel(ch.id, ch.name);
-                    },
+                  data: (channels) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        initialValue: form.channelId.isEmpty ? null : form.channelId,
+                        isExpanded: true,
+                        hint: const Text('Select Slack channel',
+                            style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13)),
+                        dropdownColor: colors.surfaceContainer,
+                        style: TextStyle(color: colors.onSurface, fontSize: 14),
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.tag_rounded, size: 20),
+                        ),
+                        items: channels
+                            .map((c) => DropdownMenuItem(
+                                  value: c.id,
+                                  child: Text('#${c.name}', overflow: TextOverflow.ellipsis),
+                                ))
+                            .toList(),
+                        onChanged: (id) {
+                          if (id == null) return;
+                          final ch = channels.firstWhere((c) => c.id == id);
+                          ref.read(ruleFormProvider.notifier).setChannel(ch.id, ch.name);
+                        },
+                      ),
+                      if (form.channelId.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        TextButton.icon(
+                          onPressed: () async {
+                            try {
+                              await ref.read(rulesRepositoryProvider).testSlackChannel(form.channelId);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('Test message sent! Check your Slack channel.'),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed: $e'),
+                                    backgroundColor: colors.error,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                          label: const Text('Send test message', style: TextStyle(fontSize: 12)),
+                          style: TextButton.styleFrom(
+                            foregroundColor: colors.primary,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
 
+              // ── GitHub Source Selectors (Plan-conditioned) ──────────
+              if (userPlan == 'free') ...[
+                _Section(
+                  title: 'GitHub Source',
+                  subtitle: 'Select the repository and branch to fetch commits from',
+                  child: reposAsync.when(
+                    loading: () => const SizedBox(
+                      height: 50,
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+                    error: (err, _) => const Text(
+                      'Link GitHub to configure repository sources.',
+                      style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13),
+                    ),
+                    data: (repos) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          initialValue: form.repoFullName.isEmpty ? null : form.repoFullName,
+                          isExpanded: true,
+                          hint: const Text('All repositories (default)',
+                              style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13)),
+                          dropdownColor: colors.surfaceContainer,
+                          style: TextStyle(color: colors.onSurface, fontSize: 14),
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.source_rounded, size: 20),
+                          ),
+                          items: [
+                            const DropdownMenuItem(
+                              value: '',
+                              child: Text('All repositories'),
+                            ),
+                            ...repos.map((r) => DropdownMenuItem(
+                                  value: r.fullName,
+                                  child: Text(r.fullName, overflow: TextOverflow.ellipsis),
+                                )),
+                          ],
+                          onChanged: (val) {
+                            ref.read(ruleFormProvider.notifier).setRepoFullName(val ?? '');
+                          },
+                        ),
+                        if (form.repoFullName.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          ref.watch(repoBranchesProvider(form.repoFullName)).when(
+                                loading: () => const SizedBox(
+                                  height: 40,
+                                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                ),
+                                error: (_, __) => const Text('Failed to load branches',
+                                    style: TextStyle(color: Colors.redAccent, fontSize: 13)),
+                                data: (branches) => DropdownButtonFormField<String>(
+                                  initialValue: form.branch.isEmpty ? null : form.branch,
+                                  isExpanded: true,
+                                  hint: const Text('Default branch',
+                                      style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13)),
+                                  dropdownColor: colors.surfaceContainer,
+                                  style: TextStyle(color: colors.onSurface, fontSize: 14),
+                                  decoration: const InputDecoration(
+                                    prefixIcon: Icon(Icons.call_split_rounded, size: 20),
+                                  ),
+                                  items: [
+                                    const DropdownMenuItem(
+                                      value: '',
+                                      child: Text('Default branch'),
+                                    ),
+                                    ...branches.map((b) => DropdownMenuItem(
+                                          value: b,
+                                          child: Text(b, overflow: TextOverflow.ellipsis),
+                                        )),
+                                  ],
+                                  onChanged: (val) {
+                                    ref.read(ruleFormProvider.notifier).setBranch(val ?? '');
+                                  },
+                                ),
+                              ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ] else ...[
+                // Premium Multi-Repo selector
+                _Section(
+                  title: 'GitHub Sources',
+                  subtitle: 'Premium feature: monitor up to 5 specific repositories',
+                  child: reposAsync.when(
+                    loading: () => const SizedBox(
+                      height: 50,
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+                    error: (err, _) => const Text(
+                      'Link GitHub to configure repository sources.',
+                      style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13),
+                    ),
+                    data: (repos) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // List existing targets
+                        ...form.repoTargets.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final t = entry.value;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: colors.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: colors.outline.withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.source_rounded, size: 16, color: Color(0xFFCAC4D0)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      t.repoFullName,
+                                      style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: colors.primary.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(100),
+                                    ),
+                                    child: Text(
+                                      t.branch.isEmpty ? 'default' : t.branch,
+                                      style: TextStyle(color: colors.primary, fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.close_rounded, size: 18, color: Colors.redAccent),
+                                    onPressed: () {
+                                      ref.read(ruleFormProvider.notifier).removeRepoTarget(idx);
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+
+                        if (form.repoTargets.isEmpty && !_addingRepo)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Text('No repositories linked. Commits will be monitored across all repos.',
+                                style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 12, fontStyle: FontStyle.italic)),
+                          ),
+
+                        // Inline add repo picker
+                        if (_addingRepo) ...[
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: colors.surfaceContainerLowest,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: colors.primary.withOpacity(0.3)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                DropdownButtonFormField<String>(
+                                  initialValue: _pendingRepo.isEmpty ? null : _pendingRepo,
+                                  isExpanded: true,
+                                  hint: const Text('Select repository',
+                                      style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13)),
+                                  dropdownColor: colors.surfaceContainer,
+                                  style: TextStyle(color: colors.onSurface, fontSize: 14),
+                                  decoration: const InputDecoration(
+                                    prefixIcon: Icon(Icons.source_rounded, size: 20),
+                                  ),
+                                  items: repos
+                                      .filter((r) => !form.repoTargets.any((t) => t.repoFullName == r.fullName))
+                                      .map((r) => DropdownMenuItem(
+                                            value: r.fullName,
+                                            child: Text(r.fullName, overflow: TextOverflow.ellipsis),
+                                          ))
+                                      .toList(),
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _pendingRepo = val ?? '';
+                                      _pendingBranch = '';
+                                    });
+                                  },
+                                ),
+                                if (_pendingRepo.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  ref.watch(repoBranchesProvider(_pendingRepo)).when(
+                                        loading: () => const SizedBox(
+                                          height: 40,
+                                          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                        ),
+                                        error: (_, __) => const Text('Failed to load branches',
+                                            style: TextStyle(color: Colors.redAccent, fontSize: 13)),
+                                        data: (branches) => DropdownButtonFormField<String>(
+                                          initialValue: _pendingBranch.isEmpty ? null : _pendingBranch,
+                                          isExpanded: true,
+                                          hint: const Text('Default branch',
+                                              style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13)),
+                                          dropdownColor: colors.surfaceContainer,
+                                          style: TextStyle(color: colors.onSurface, fontSize: 14),
+                                          decoration: const InputDecoration(
+                                            prefixIcon: Icon(Icons.call_split_rounded, size: 20),
+                                          ),
+                                          items: [
+                                            const DropdownMenuItem(
+                                              value: '',
+                                              child: Text('Default branch'),
+                                            ),
+                                            ...branches.map((b) => DropdownMenuItem(
+                                                  value: b,
+                                                  child: Text(b, overflow: TextOverflow.ellipsis),
+                                                )),
+                                          ],
+                                          onChanged: (val) {
+                                            setState(() {
+                                              _pendingBranch = val ?? '';
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                ],
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: FilledButton(
+                                        onPressed: _pendingRepo.isEmpty
+                                            ? null
+                                            : () {
+                                                ref.read(ruleFormProvider.notifier).addRepoTarget(
+                                                      RepoTarget(
+                                                        repoFullName: _pendingRepo,
+                                                        branch: _pendingBranch,
+                                                      ),
+                                                    );
+                                                setState(() {
+                                                  _addingRepo = false;
+                                                  _pendingRepo = '';
+                                                  _pendingBranch = '';
+                                                });
+                                              },
+                                        style: FilledButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                        child: const Text('Add repository', style: TextStyle(fontSize: 13)),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    OutlinedButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _addingRepo = false;
+                                          _pendingRepo = '';
+                                          _pendingBranch = '';
+                                        });
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                      child: const Text('Cancel', style: TextStyle(fontSize: 13)),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        if (!_addingRepo && form.repoTargets.length < 5) ...[
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _addingRepo = true;
+                                  _pendingRepo = '';
+                                  _pendingBranch = '';
+                                });
+                              },
+                              icon: const Icon(Icons.add_rounded, size: 16),
+                              label: const Text('Link a repository', style: TextStyle(fontSize: 13)),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: colors.primary.withOpacity(0.4), style: BorderStyle.solid),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+
               // ── Run Mode select ─────────────────────────────────────
               _Section(
-                title: 'Scheduling Mode',
+                title: AppTranslations.translate(context, ref, 'scheduling_mode'),
                 subtitle: 'Choose recurring auto-delivery or a one-time message',
                 child: Row(
                   children: [
@@ -227,18 +586,14 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                       label: 'Recurring',
                       selected: form.runMode == 'loop',
                       icon: Icons.loop_rounded,
-                      onTap: () => ref
-                          .read(ruleFormProvider.notifier)
-                          .setRunMode('loop'),
+                      onTap: () => ref.read(ruleFormProvider.notifier).setRunMode('loop'),
                     ),
                     const SizedBox(width: 10),
                     _ModeChip(
                       label: 'One-time',
                       selected: form.runMode == 'once',
                       icon: Icons.done_rounded,
-                      onTap: () => ref
-                          .read(ruleFormProvider.notifier)
-                          .setRunMode('once'),
+                      onTap: () => ref.read(ruleFormProvider.notifier).setRunMode('once'),
                     ),
                   ],
                 ),
@@ -247,7 +602,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
               // ── Days select (loop mode only) ─────────────────────────
               if (form.runMode == 'loop')
                 _Section(
-                  title: 'Select Active Days',
+                  title: AppTranslations.translate(context, ref, 'active_days'),
                   subtitle: 'Schedule standup messages on specific weekdays',
                   child: Wrap(
                     spacing: 8,
@@ -257,9 +612,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                       return _DayCapsule(
                         label: d.$2,
                         selected: selected,
-                        onTap: () => ref
-                            .read(ruleFormProvider.notifier)
-                            .toggleDay(d.$1),
+                        onTap: () => ref.read(ruleFormProvider.notifier).toggleDay(d.$1),
                       );
                     }).toList(),
                   ),
@@ -268,7 +621,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
               // ── Target date (once mode only) ────────────────────────
               if (form.runMode == 'once')
                 _Section(
-                  title: 'Target Delivery Date',
+                  title: AppTranslations.translate(context, ref, 'target_date'),
                   subtitle: 'Select the exact date to trigger this Standup',
                   child: InkWell(
                     onTap: () async {
@@ -295,8 +648,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
                         color: colors.surfaceContainer,
                         borderRadius: BorderRadius.circular(12),
@@ -304,19 +656,14 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today_rounded,
-                              size: 18, color: Color(0xFFCAC4D0)),
+                          const Icon(Icons.calendar_today_rounded, size: 18, color: Color(0xFFCAC4D0)),
                           const SizedBox(width: 12),
                           Text(
                             form.targetDate ?? 'Pick a date',
                             style: TextStyle(
                               fontSize: 14,
-                              color: form.targetDate != null
-                                  ? colors.onSurface
-                                  : const Color(0xFFCAC4D0),
-                              fontWeight: form.targetDate != null
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
+                              color: form.targetDate != null ? colors.onSurface : const Color(0xFFCAC4D0),
+                              fontWeight: form.targetDate != null ? FontWeight.w600 : FontWeight.normal,
                             ),
                           ),
                         ],
@@ -327,7 +674,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
 
               // ── Send Time select ─────────────────────────────────────
               _Section(
-                title: 'Send Time',
+                title: AppTranslations.translate(context, ref, 'send_time'),
                 subtitle: 'Choose delivery time (based on timezone)',
                 child: InkWell(
                   onTap: () async {
@@ -357,17 +704,15 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: colors.surfaceContainer,
+                      color: colors.outline.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: colors.outline, width: 1.0),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.access_time_rounded,
-                            size: 18, color: Color(0xFFCAC4D0)),
+                        const Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFCAC4D0)),
                         const SizedBox(width: 12),
                         Text(
                           form.sendTime,
@@ -385,20 +730,17 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
 
               // ── Timezone select ──────────────────────────────────────
               _Section(
-                title: 'Scheduler Timezone',
+                title: AppTranslations.translate(context, ref, 'timezone'),
                 subtitle: 'Standup rules follow this timezone clock',
                 child: DropdownButtonFormField<String>(
-                  value: _timezones.contains(form.timezone)
-                      ? form.timezone
-                      : 'UTC',
+                  initialValue: _timezones.contains(form.timezone) ? form.timezone : 'UTC',
+                  isExpanded: true,
                   dropdownColor: colors.surfaceContainer,
                   style: TextStyle(color: colors.onSurface, fontSize: 14),
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.language_rounded, size: 20),
                   ),
-                  items: _timezones
-                      .map((tz) => DropdownMenuItem(value: tz, child: Text(tz)))
-                      .toList(),
+                  items: _timezones.map((tz) => DropdownMenuItem(value: tz, child: Text(tz, overflow: TextOverflow.ellipsis))).toList(),
                   onChanged: (v) {
                     if (v != null) {
                       ref.read(ruleFormProvider.notifier).setTimezone(v);
@@ -409,7 +751,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
 
               // ── Pre-send Notification select ──────────────────────────
               _Section(
-                title: 'Pre-send Review Notification',
+                title: AppTranslations.translate(context, ref, 'notification'),
                 subtitle: 'Get a push notification prior to review/edit message',
                 child: Wrap(
                   spacing: 8,
@@ -419,17 +761,128 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                     return _OptionCapsule(
                       label: opt.$2,
                       selected: selected,
-                      onTap: () => ref
-                          .read(ruleFormProvider.notifier)
-                          .setNotificationMinutes(opt.$1),
+                      onTap: () => ref.read(ruleFormProvider.notifier).setNotificationMinutes(opt.$1),
                     );
                   }).toList(),
                 ),
               ),
 
+              // ── Slack Threading Options Section ───────────────────────
+              _Section(
+                title: 'Slack Threading',
+                subtitle: 'Send standup posts in threaded replies to clean up your Slack channels',
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: colors.outline, width: 1.0),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.forum_outlined, size: 20, color: colors.primary),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Reply in thread', style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
+                                const SizedBox(height: 3),
+                                const Text('First send creates a parent. Next ones reply inside.',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFFCAC4D0))),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: form.threadEnabled,
+                            onChanged: ref.read(ruleFormProvider.notifier).setThreadEnabled,
+                          ),
+                        ],
+                      ),
+                      if (form.threadEnabled) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Divider(color: colors.outline, height: 1),
+                        ),
+                        // Thread Reply Style dropdown
+                        DropdownButtonFormField<String>(
+                          initialValue: form.threadStyle,
+                          isExpanded: true,
+                          dropdownColor: colors.surfaceContainer,
+                          style: TextStyle(color: colors.onSurface, fontSize: 14),
+                          decoration: const InputDecoration(
+                            labelText: 'Thread style',
+                            prefixIcon: Icon(Icons.style_rounded, size: 20),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'count', child: Text('Auto count (Day 1, 2...)', overflow: TextOverflow.ellipsis)),
+                            DropdownMenuItem(value: 'ai', child: Text('AI generated replies', overflow: TextOverflow.ellipsis)),
+                            DropdownMenuItem(value: 'date', child: Text('Date header (May 24)', overflow: TextOverflow.ellipsis)),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) ref.read(ruleFormProvider.notifier).setThreadStyle(val);
+                          },
+                        ),
+                        if (form.threadStyle == 'ai') ...[
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _threadExampleCtrl,
+                            maxLines: 2,
+                            onChanged: ref.read(ruleFormProvider.notifier).setThreadExampleMessage,
+                            decoration: const InputDecoration(
+                              labelText: 'Thread AI reply template',
+                              hintText: 'e.g. Day {count} standup update:\n• ...',
+                              prefixIcon: Icon(Icons.psychology_outlined, size: 20),
+                            ),
+                            style: const TextStyle(fontSize: 13, height: 1.4),
+                          ),
+                        ],
+                        if (form.threadStyle == 'count') ...[
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            initialValue: form.threadCountFormat,
+                            isExpanded: true,
+                            dropdownColor: colors.surfaceContainer,
+                            style: TextStyle(color: colors.onSurface, fontSize: 14),
+                            decoration: const InputDecoration(
+                              labelText: 'Count Format',
+                              prefixIcon: Icon(Icons.onetwothree_rounded, size: 20),
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'number', child: Text('Day N 🔥', overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: 'date', child: Text('Date (e.g. May 24)', overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: 'date_custom', child: Text('Date + custom text', overflow: TextOverflow.ellipsis)),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) ref.read(ruleFormProvider.notifier).setThreadCountFormat(val);
+                            },
+                          ),
+                          if (form.threadCountFormat == 'date_custom') ...[
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _threadCountCustomCtrl,
+                              onChanged: ref.read(ruleFormProvider.notifier).setThreadCountCustom,
+                              decoration: const InputDecoration(
+                                labelText: 'Custom suffix text',
+                                hintText: 'e.g. standup, update, work log…',
+                                prefixIcon: Icon(Icons.text_fields_rounded, size: 20),
+                              ),
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ],
+                        ],
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
               // ── Extra switches (Toggles Box) ─────────────────────────
               _Section(
-                title: 'Standup Options',
+                title: AppTranslations.translate(context, ref, 'options'),
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -450,7 +903,8 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                               children: [
                                 Text('Post When Empty', style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
                                 const SizedBox(height: 3),
-                                const Text('Send message even if no code commits exist.', style: TextStyle(fontSize: 12, color: Color(0xFFCAC4D0))),
+                                const Text('Send message even if no code commits exist.',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFFCAC4D0))),
                               ],
                             ),
                           ),
@@ -475,7 +929,8 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                               children: [
                                 Text('Active Rule', style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
                                 const SizedBox(height: 3),
-                                const Text('Pause standup loop without deleting config.', style: TextStyle(fontSize: 12, color: Color(0xFFCAC4D0))),
+                                const Text('Pause standup loop without deleting config.',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFFCAC4D0))),
                               ],
                             ),
                           ),
@@ -492,7 +947,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
 
               // ── Note for AI ──────────────────────────────────────────
               _Section(
-                title: 'AI Standup Guidelines',
+                title: AppTranslations.translate(context, ref, 'ai_guidelines'),
                 subtitle: 'Instruct the AI on writing tone, blockers, or highlights',
                 child: TextField(
                   controller: _noteCtrl,
@@ -508,13 +963,12 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
 
               // ── Example message ──────────────────────────────────────
               _Section(
-                title: 'Example Output Style',
+                title: AppTranslations.translate(context, ref, 'example_output'),
                 subtitle: 'Show the AI a template of your desired standup layout',
                 child: TextField(
                   controller: _exampleCtrl,
                   maxLines: 4,
-                  onChanged:
-                      ref.read(ruleFormProvider.notifier).setExampleMessage,
+                  onChanged: ref.read(ruleFormProvider.notifier).setExampleMessage,
                   decoration: const InputDecoration(
                     hintText: 'e.g. Yesterday I did X. Today I will focus Z. Blocking: None.',
                     prefixIcon: Icon(Icons.style_outlined, size: 20),
@@ -539,8 +993,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                     ),
                     child: Text(
                       form.error!,
-                      style: TextStyle(
-                          color: colors.error, fontSize: 13, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: colors.error, fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -568,9 +1021,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                   icon: form.isSaving
                       ? const SizedBox.shrink()
                       : Icon(
-                          isEdit
-                              ? Icons.save_rounded
-                              : Icons.rocket_launch_rounded,
+                          isEdit ? Icons.save_rounded : Icons.rocket_launch_rounded,
                           size: 20,
                         ),
                   label: form.isSaving
@@ -583,7 +1034,9 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                           ),
                         )
                       : Text(
-                          isEdit ? 'Save Standup Config' : 'Launch Auto Standup',
+                          isEdit
+                              ? AppTranslations.translate(context, ref, 'save_config')
+                              : AppTranslations.translate(context, ref, 'launch_standup'),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -783,5 +1236,11 @@ class _OptionCapsule extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+extension ListFilter<T> on List<T> {
+  List<T> filter(bool Function(T element) test) {
+    return where(test).toList();
   }
 }
