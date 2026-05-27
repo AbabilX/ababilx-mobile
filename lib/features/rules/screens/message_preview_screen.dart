@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/rules_provider.dart';
+import '../../../core/localization/app_translations.dart';
 
 /// The pre-send review screen.
 /// Opened by:
@@ -124,7 +125,9 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          widget.fromNotification ? 'Review Standup' : 'Message Preview',
+          widget.fromNotification
+              ? AppTranslations.translate(context, ref, 'review_standup')
+              : AppTranslations.translate(context, ref, 'msg_preview'),
           style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -235,9 +238,9 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                               Icon(Icons.auto_awesome_rounded,
                                   size: 18, color: colors.primary),
                               const SizedBox(width: 8),
-                              const Text(
-                                'AI Draft Workspace',
-                                style: TextStyle(
+                              Text(
+                                AppTranslations.translate(context, ref, 'ai_workspace'),
+                                style: const TextStyle(
                                   color: Color(0xFFE8DEF8),
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
@@ -326,9 +329,9 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                               strokeWidth: 2.5,
                             ),
                           )
-                        : const Text(
-                            'Send Standup Now',
-                            style: TextStyle(
+                        : Text(
+                            AppTranslations.translate(context, ref, 'send_now'),
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -353,9 +356,9 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _saveOverride,
                       icon: const Icon(Icons.save_rounded, size: 20),
-                      label: const Text(
-                        'Save & Auto-Send Later',
-                        style: TextStyle(
+                      label: Text(
+                        AppTranslations.translate(context, ref, 'save_auto_send'),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
@@ -387,8 +390,8 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                     ),
                     child: Text(
                       widget.fromNotification
-                          ? 'Ignore — Send Auto-Draft'
-                          : 'Close Workspace',
+                          ? AppTranslations.translate(context, ref, 'ignore_send')
+                          : AppTranslations.translate(context, ref, 'close_workspace'),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
