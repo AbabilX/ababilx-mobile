@@ -149,10 +149,10 @@ class LoginScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: colors.error.withOpacity(0.08),
+                      color: colors.error.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: colors.error.withOpacity(0.2),
+                        color: colors.error.withValues(alpha: 0.2),
                         width: 1.0,
                       ),
                     ),
