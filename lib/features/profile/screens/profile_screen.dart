@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
+import '../../../core/localization/app_translations.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -19,7 +20,7 @@ class ProfileScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Profile',
+          AppTranslations.translate(context, ref, 'profile'),
           style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 22,
             fontWeight: FontWeight.w800,
@@ -181,13 +182,13 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   _InfoRow(
                     icon: Icons.alternate_email_rounded,
-                    label: 'Provider',
+                    label: AppTranslations.translate(context, ref, 'provider'),
                     value: user.provider.toUpperCase(),
                   ),
                   Divider(color: colors.outline, height: 1),
                   _InfoRow(
                     icon: Icons.code_rounded,
-                    label: 'GitHub Connection',
+                    label: AppTranslations.translate(context, ref, 'github_connection'),
                     value: user.githubUsername.isNotEmpty
                         ? '@${user.githubUsername}'
                         : 'Not connected',
@@ -198,17 +199,69 @@ class ProfileScreen extends ConsumerWidget {
                   Divider(color: colors.outline, height: 1),
                   _InfoRow(
                     icon: Icons.chat_bubble_outline_rounded,
-                    label: 'Slack Workspace',
+                    label: AppTranslations.translate(context, ref, 'slack_workspace'),
                     value: user.slackConnected ? 'Connected' : 'Not connected',
                     valueColor: user.slackConnected
                         ? const Color(0xFF22C55E)
                         : const Color(0xFFCAC4D0),
                   ),
                   Divider(color: colors.outline, height: 1),
+                  // Interactive Language Selector Row!
                   _InfoRow(
                     icon: Icons.translate_rounded,
-                    label: 'Application Language',
-                    value: user.appLanguage.toUpperCase(),
+                    label: AppTranslations.translate(context, ref, 'app_language'),
+                    value: user.appLanguage.toUpperCase() == 'BN' ? 'বাংলা (BN)' : 'English (EN)',
+                    onTap: () async {
+                      final selectedLang = await showDialog<String>(
+                        context: context,
+                        builder: (_) => Dialog(
+                          backgroundColor: colors.surfaceContainer,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                            side: BorderSide(color: colors.outline),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  AppTranslations.translate(context, ref, 'app_language'),
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                // English option
+                                ListTile(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  title: const Text('English (EN)', style: TextStyle(fontWeight: FontWeight.w600)),
+                                  trailing: user.appLanguage.toLowerCase() == 'en'
+                                      ? Icon(Icons.check_circle_rounded, color: colors.primary)
+                                      : null,
+                                  onTap: () => Navigator.pop(context, 'en'),
+                                ),
+                                const SizedBox(height: 8),
+                                // Bangla option
+                                ListTile(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  title: const Text('বাংলা (BN)', style: TextStyle(fontWeight: FontWeight.w600)),
+                                  trailing: user.appLanguage.toLowerCase() == 'bn'
+                                      ? Icon(Icons.check_circle_rounded, color: colors.primary)
+                                      : null,
+                                  onTap: () => Navigator.pop(context, 'bn'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                      if (selectedLang != null) {
+                        await ref.read(profileProvider.notifier).updateLanguage(selectedLang);
+                      }
+                    },
                   ),
                 ],
               ),
@@ -247,16 +300,16 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Sign out',
+                              AppTranslations.translate(context, ref, 'sign_out'),
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Are you sure you want to sign out?',
-                              style: TextStyle(
+                            Text(
+                              AppTranslations.translate(context, ref, 'confirm_signout'),
+                              style: const TextStyle(
                                   color: Color(0xFFCAC4D0), fontSize: 14),
                               textAlign: TextAlign.center,
                             ),
@@ -274,7 +327,7 @@ class ProfileScreen extends ConsumerWidget {
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 14),
                                     ),
-                                    child: const Text('Cancel'),
+                                    child: Text(AppTranslations.translate(context, ref, 'cancel')),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -289,9 +342,9 @@ class ProfileScreen extends ConsumerWidget {
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 14),
                                     ),
-                                    child: const Text(
-                                      'Sign out',
-                                      style: TextStyle(
+                                    child: Text(
+                                      AppTranslations.translate(context, ref, 'sign_out'),
+                                      style: const TextStyle(
                                           fontWeight: FontWeight.w700),
                                     ),
                                   ),
@@ -316,14 +369,14 @@ class ProfileScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.logout_rounded, size: 20),
-                    SizedBox(width: 10),
+                    const Icon(Icons.logout_rounded, size: 20),
+                    const SizedBox(width: 10),
                     Text(
-                      'Sign Out',
-                      style: TextStyle(
+                      AppTranslations.translate(context, ref, 'sign_out'),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.1,
@@ -346,12 +399,14 @@ class _InfoRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.valueColor,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final String value;
   final Color? valueColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -359,8 +414,8 @@ class _InfoRow extends StatelessWidget {
     final colors = theme.colorScheme;
     final fallbackColor = colors.onSurface;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+    Widget content = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       child: Row(
         children: [
           Icon(icon, size: 20, color: colors.primary),
@@ -381,8 +436,22 @@ class _InfoRow extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+          if (onTap != null) ...[
+            const SizedBox(width: 6),
+            Icon(Icons.chevron_right_rounded, size: 20, color: colors.primary),
+          ]
         ],
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: content,
+      );
+    }
+
+    return content;
   }
 }
