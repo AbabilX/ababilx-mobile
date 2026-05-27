@@ -201,7 +201,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   ),
-                  error: (_, __) => const Text(
+                  error: (err, stack) => const Text(
                     'Connect Slack first to select a channel.',
                     style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13),
                   ),
@@ -322,7 +322,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                                   height: 40,
                                   child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                                 ),
-                                error: (_, __) => const Text('Failed to load branches',
+                                error: (err, stack) => const Text('Failed to load branches',
                                     style: TextStyle(color: Colors.redAccent, fontSize: 13)),
                                 data: (branches) => DropdownButtonFormField<String>(
                                   initialValue: form.branch.isEmpty ? null : form.branch,
@@ -364,7 +364,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                       height: 50,
                       child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                     ),
-                    error: (err, _) => const Text(
+                    error: (err, stack) => const Text(
                       'Link GitHub to configure repository sources.',
                       style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13),
                     ),
@@ -382,7 +382,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                               decoration: BoxDecoration(
                                 color: colors.surfaceContainerLow,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: colors.outline.withOpacity(0.3)),
+                                border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
                               ),
                               child: Row(
                                 children: [
@@ -399,7 +399,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: colors.primary.withOpacity(0.1),
+                                      color: colors.primary.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(100),
                                     ),
                                     child: Text(
@@ -436,7 +436,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                             decoration: BoxDecoration(
                               color: colors.surfaceContainerLowest,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: colors.primary.withOpacity(0.3)),
+                              border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,7 +472,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                                           height: 40,
                                           child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                                         ),
-                                        error: (_, __) => const Text('Failed to load branches',
+                                        error: (err, stack) => const Text('Failed to load branches',
                                             style: TextStyle(color: Colors.redAccent, fontSize: 13)),
                                         data: (branches) => DropdownButtonFormField<String>(
                                           initialValue: _pendingBranch.isEmpty ? null : _pendingBranch,
@@ -564,7 +564,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                               icon: const Icon(Icons.add_rounded, size: 16),
                               label: const Text('Link a repository', style: TextStyle(fontSize: 13)),
                               style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: colors.primary.withOpacity(0.4), style: BorderStyle.solid),
+                                side: BorderSide(color: colors.primary.withValues(alpha: 0.4), style: BorderStyle.solid),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
@@ -706,7 +706,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: colors.outline.withOpacity(0.1),
+                      color: colors.outline.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: colors.outline, width: 1.0),
                     ),
@@ -984,10 +984,10 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: colors.error.withOpacity(0.08),
+                      color: colors.error.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: colors.error.withOpacity(0.2),
+                        color: colors.error.withValues(alpha: 0.2),
                         width: 1.0,
                       ),
                     ),
