@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/date_utils.dart';
-import '../../../shared/widgets/glass_card.dart';
-import '../../../shared/widgets/loading_overlay.dart';
 import '../providers/rules_provider.dart';
 
 class RuleHistoryScreen extends ConsumerWidget {
@@ -14,26 +11,34 @@ class RuleHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final messagesAsync = ref.watch(ruleMessagesProvider(ruleId));
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.bg,
-        surfaceTintColor: Colors.transparent,
-        title: const Text(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
           'Message History',
-          style: TextStyle(
-            color: AppColors.text,
+          style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 20,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
           ),
         ),
-        leading: const BackButton(),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.go('/rules'),
+        ),
       ),
       body: messagesAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator(color: AppColors.indigo, strokeWidth: 2.5)),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: colors.primary,
+            strokeWidth: 2.5,
+          ),
+        ),
         error: (e, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -42,24 +47,60 @@ class RuleHistoryScreen extends ConsumerWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: AppColors.surface2,
+                  color: colors.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: colors.outline),
                 ),
-                child: const Icon(Icons.error_outline_rounded, color: AppColors.textMuted, size: 32),
+                child: Icon(Icons.error_outline_rounded,
+                    color: colors.error, size: 32),
               ),
               const SizedBox(height: 16),
               Text(
                 e.toString(),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                style: const TextStyle(color: Color(0xFFCAC4D0), fontSize: 14),
               ),
             ],
           ),
         ),
         data: (messages) => messages.isEmpty
-            ? const EmptyState(
-                icon: Icons.history_rounded,
-                title: 'No messages sent yet',
-                subtitle: 'Messages will appear here after the rule fires.',
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: colors.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: colors.outline, width: 1.2),
+                        ),
+                        child: Icon(
+                          Icons.history_rounded,
+                          size: 36,
+                          color: colors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'No messages sent yet',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Messages will appear here after the rule fires.',
+                        style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
               )
             : ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
@@ -68,146 +109,134 @@ class RuleHistoryScreen extends ConsumerWidget {
                   final msg = messages[i];
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.surface2,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(32),
-                        topRight: Radius.circular(16),
-                        bottomLeft: Radius.circular(16),
-                        bottomRight: Radius.circular(32),
-                      ),
+                      color: colors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(28),
                       border: Border.all(
-                        color: AppColors.border,
-                        width: 1.2,
+                        color: colors.outline,
+                        width: 1.0,
                       ),
                     ),
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(30.8),
-                        topRight: Radius.circular(14.8),
-                        bottomLeft: Radius.circular(14.8),
-                        bottomRight: Radius.circular(30.8),
-                      ),
-                      child: Stack(
-                        children: [
-                          // Left dynamic success green accent strip (clipped)
-                          Positioned(
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            child: Container(
-                              width: 6,
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [Color(0xFF22C55E), Color(0xFF4ADE80)],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header: flat solid status pill + datetime + squircle delete button tile
+                        Row(
+                          children: [
+                            // Symmetrical flat solid green success pill capsule
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF142F1C),
+                                borderRadius: BorderRadius.circular(100),
+                                border: Border.all(
+                                    color: const Color(0xFF22C55E),
+                                    width: 0.8),
                               ),
-                            ),
-                          ),
-
-                          // Card content
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(22, 16, 16, 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Header: sent at + delete
-                                Row(
-                                  children: [
-                                    const Icon(Icons.check_circle_rounded,
-                                        size: 16, color: AppColors.green),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      AppDateUtils.formatSentAt(msg.sentAt),
-                                      style: const TextStyle(
-                                        color: AppColors.textMuted,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.check_circle_rounded,
+                                      size: 14, color: Color(0xFF22C55E)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Sent',
+                                    style: TextStyle(
+                                      color: Color(0xFF22C55E),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
                                     ),
-                                    const Spacer(),
-                                    // Mini squircle delete button tile
-                                    Material(
-                                      color: AppColors.red.withOpacity(0.08),
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: InkWell(
-                                        onTap: () => ref
-                                            .read(ruleMessagesProvider(ruleId).notifier)
-                                            .deleteMessage(ruleId, msg.id),
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: Container(
-                                          width: 32,
-                                          height: 32,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(10),
-                                            border: Border.all(
-                                              color: AppColors.red.withOpacity(0.12),
-                                              width: 0.8,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.delete_outline_rounded,
-                                            size: 16,
-                                            color: AppColors.red,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-
-                                // Translucent glassmorphic inner message bubble
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surface.withOpacity(0.3),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.04),
-                                      width: 0.8,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    msg.content,
-                                    style: const TextStyle(
-                                      color: AppColors.text,
-                                      fontSize: 13,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ),
-
-                                if (msg.noteUsed.isNotEmpty) ...[
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.notes_rounded,
-                                          size: 14, color: AppColors.textDim),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          'Note: ${msg.noteUsed}',
-                                          style: const TextStyle(
-                                            color: AppColors.textDim,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
                                   ),
                                 ],
-                              ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                AppDateUtils.formatSentAt(msg.sentAt),
+                                style: const TextStyle(
+                                  color: Color(0xFFCAC4D0),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            // Mini symmetrical red tonal squircle delete button tile
+                            SizedBox(
+                              width: 36,
+                              height: 36,
+                              child: IconButton(
+                                style: IconButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2E1B1B),
+                                  foregroundColor: const Color(0xFFF2B8B5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: const BorderSide(
+                                        color: Color(0xFF601410), width: 0.8),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 18,
+                                ),
+                                onPressed: () => ref
+                                    .read(ruleMessagesProvider(ruleId).notifier)
+                                    .deleteMessage(ruleId, msg.id),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Solid flat inner message card
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: colors.surfaceContainer,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: colors.outline,
+                              width: 1.0,
                             ),
                           ),
+                          child: Text(
+                            msg.content,
+                            style: TextStyle(
+                              color: colors.onSurface,
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+
+                        if (msg.noteUsed.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.psychology_outlined,
+                                  size: 16, color: Color(0xFFCAC4D0)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Note: ${msg.noteUsed}',
+                                  style: const TextStyle(
+                                    color: Color(0xFFCAC4D0),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                   );
                 },
