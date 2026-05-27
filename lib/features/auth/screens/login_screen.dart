@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/localization/app_translations.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerWidget {
@@ -62,9 +63,9 @@ class LoginScreen extends ConsumerWidget {
 
                 const SizedBox(height: 12),
 
-                // Subtitle (Jakarta Sans)
+                // Subtitle (Jakarta Sans) - Bilingual Translation
                 Text(
-                  'Automated standup updates & Slack daily syncs for modern engineering teams.',
+                  AppTranslations.translate(context, ref, 'login_subtitle'),
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: const Color(0xFFCAC4D0),
                     height: 1.5,
@@ -126,9 +127,9 @@ class LoginScreen extends ConsumerWidget {
                                 ),
                               ),
                               const SizedBox(width: 14),
-                              const Text(
-                                'Continue with Google',
-                                style: TextStyle(
+                              Text(
+                                AppTranslations.translate(context, ref, 'continue_google'),
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.1,
