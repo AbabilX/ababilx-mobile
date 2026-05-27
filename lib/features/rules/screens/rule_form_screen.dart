@@ -1,10 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../shared/widgets/gradient_button.dart';
 import '../providers/rule_form_provider.dart';
 import '../providers/rules_provider.dart';
 import '../data/rules_repository.dart';
@@ -69,7 +66,6 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
   void _initForm() {
     final notifier = ref.read(ruleFormProvider.notifier);
     if (widget.ruleId != null) {
-      // Edit mode — find the rule from cache
       final rules = ref.read(rulesProvider).valueOrNull ?? [];
       final existing = rules.firstWhere(
         (r) => r.id == widget.ruleId,
@@ -125,34 +121,43 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
     final form = ref.watch(ruleFormProvider);
     final channelsAsync = ref.watch(slackChannelsProvider);
     final isEdit = widget.ruleId != null;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     if (!_initialized) {
-      return const Scaffold(
-        backgroundColor: AppColors.bg,
-        body: Center(child: CircularProgressIndicator(color: AppColors.indigo, strokeWidth: 2.5)),
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: colors.primary,
+            strokeWidth: 2.5,
+          ),
+        ),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.bg,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text(
           isEdit ? 'Edit Rule' : 'New Rule',
-          style: const TextStyle(
-            color: AppColors.text,
+          style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 20,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
           ),
         ),
-        leading: const BackButton(),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.go('/rules'),
+        ),
       ),
       body: Stack(
         children: [
           ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 130),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
             children: [
               // ── Name field ──────────────────────────────────────────
               _Section(
@@ -163,9 +168,9 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                   onChanged: ref.read(ruleFormProvider.notifier).setName,
                   decoration: const InputDecoration(
                     hintText: 'e.g. Daily Standup',
-                    prefixIcon: Icon(Icons.bookmark_outline_rounded, size: 20, color: AppColors.textMuted),
+                    prefixIcon: Icon(Icons.bookmark_outline_rounded, size: 20),
                   ),
-                  style: const TextStyle(color: AppColors.text, fontSize: 14),
+                  style: const TextStyle(fontSize: 14),
                 ),
               ),
 
@@ -178,21 +183,21 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                     height: 50,
                     child: Center(
                       child: CircularProgressIndicator(
-                          color: AppColors.indigo, strokeWidth: 2),
+                          strokeWidth: 2),
                     ),
                   ),
                   error: (_, _) => const Text(
                     'Connect Slack first to select a channel.',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13),
                   ),
                   data: (channels) => DropdownButtonFormField<String>(
-                    initialValue: form.channelId.isEmpty ? null : form.channelId,
+                    value: form.channelId.isEmpty ? null : form.channelId,
                     hint: const Text('Select Slack channel',
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
-                    dropdownColor: AppColors.surface2,
-                    style: const TextStyle(color: AppColors.text, fontSize: 14),
+                        style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13)),
+                    dropdownColor: colors.surfaceContainer,
+                    style: TextStyle(color: colors.onSurface, fontSize: 14),
                     decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.tag_rounded, size: 20, color: AppColors.textMuted),
+                      prefixIcon: Icon(Icons.tag_rounded, size: 20),
                     ),
                     items: channels
                         .map((c) => DropdownMenuItem(
@@ -274,9 +279,10 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                         lastDate: DateTime.now().add(const Duration(days: 365)),
                         builder: (_, child) => Theme(
                           data: Theme.of(context).copyWith(
-                            colorScheme: const ColorScheme.dark(
-                              primary: AppColors.indigo,
-                              surface: AppColors.surface2,
+                            colorScheme: ColorScheme.dark(
+                              primary: colors.primary,
+                              surface: colors.surfaceContainer,
+                              onSurface: colors.onSurface,
                             ),
                           ),
                           child: child!,
@@ -287,27 +293,27 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                             '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
                       }
                     },
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
-                        color: AppColors.surface2,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border, width: 1.2),
+                        color: colors.surfaceContainer,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: colors.outline, width: 1.0),
                       ),
                       child: Row(
                         children: [
                           const Icon(Icons.calendar_today_rounded,
-                              size: 18, color: AppColors.textMuted),
+                              size: 18, color: Color(0xFFCAC4D0)),
                           const SizedBox(width: 12),
                           Text(
                             form.targetDate ?? 'Pick a date',
                             style: TextStyle(
                               fontSize: 14,
                               color: form.targetDate != null
-                                  ? AppColors.text
-                                  : AppColors.textMuted,
+                                  ? colors.onSurface
+                                  : const Color(0xFFCAC4D0),
                               fontWeight: form.targetDate != null
                                   ? FontWeight.w600
                                   : FontWeight.normal,
@@ -334,9 +340,10 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                       ),
                       builder: (_, child) => Theme(
                         data: Theme.of(context).copyWith(
-                          colorScheme: const ColorScheme.dark(
-                            primary: AppColors.indigo,
-                            surface: AppColors.surface2,
+                          colorScheme: ColorScheme.dark(
+                            primary: colors.primary,
+                            surface: colors.surfaceContainer,
+                            onSurface: colors.onSurface,
                           ),
                         ),
                         child: child!,
@@ -348,24 +355,24 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                           );
                     }
                   },
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.surface2,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border, width: 1.2),
+                      color: colors.surfaceContainer,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colors.outline, width: 1.0),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.access_time_rounded,
-                            size: 18, color: AppColors.textMuted),
+                            size: 18, color: Color(0xFFCAC4D0)),
                         const SizedBox(width: 12),
                         Text(
                           form.sendTime,
-                          style: const TextStyle(
-                            color: AppColors.text,
+                          style: TextStyle(
+                            color: colors.onSurface,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -381,13 +388,13 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                 title: 'Scheduler Timezone',
                 subtitle: 'Standup rules follow this timezone clock',
                 child: DropdownButtonFormField<String>(
-                  initialValue: _timezones.contains(form.timezone)
+                  value: _timezones.contains(form.timezone)
                       ? form.timezone
                       : 'UTC',
-                  dropdownColor: AppColors.surface2,
-                  style: const TextStyle(color: AppColors.text, fontSize: 14),
+                  dropdownColor: colors.surfaceContainer,
+                  style: TextStyle(color: colors.onSurface, fontSize: 14),
                   decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.language_rounded, size: 20, color: AppColors.textMuted),
+                    prefixIcon: Icon(Icons.language_rounded, size: 20),
                   ),
                   items: _timezones
                       .map((tz) => DropdownMenuItem(value: tz, child: Text(tz)))
@@ -424,26 +431,26 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
               _Section(
                 title: 'Standup Options',
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.surface.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border, width: 0.8),
+                    color: colors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: colors.outline, width: 1.0),
                   ),
                   child: Column(
                     children: [
                       // Post when empty
                       Row(
                         children: [
-                          const Icon(Icons.mail_outline_rounded, size: 20, color: AppColors.indigoLight),
-                          const SizedBox(width: 12),
+                          Icon(Icons.mail_outline_rounded, size: 20, color: colors.primary),
+                          const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text('Post When Empty', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                SizedBox(height: 2),
-                                Text('Send message even if no code commits exist.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                              children: [
+                                Text('Post When Empty', style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
+                                const SizedBox(height: 3),
+                                const Text('Send message even if no code commits exist.', style: TextStyle(fontSize: 12, color: Color(0xFFCAC4D0))),
                               ],
                             ),
                           ),
@@ -453,22 +460,22 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                           ),
                         ],
                       ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Divider(color: AppColors.border, height: 1),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Divider(color: colors.outline, height: 1),
                       ),
                       // Active state
                       Row(
                         children: [
-                          const Icon(Icons.toggle_on_outlined, size: 20, color: AppColors.indigoLight),
-                          const SizedBox(width: 12),
+                          Icon(Icons.toggle_on_outlined, size: 20, color: colors.primary),
+                          const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text('Active Rule', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                SizedBox(height: 2),
-                                Text('Pause standup loop without deleting config.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                              children: [
+                                Text('Active Rule', style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
+                                const SizedBox(height: 3),
+                                const Text('Pause standup loop without deleting config.', style: TextStyle(fontSize: 12, color: Color(0xFFCAC4D0))),
                               ],
                             ),
                           ),
@@ -493,9 +500,9 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                   onChanged: ref.read(ruleFormProvider.notifier).setNote,
                   decoration: const InputDecoration(
                     hintText: 'e.g. Mention blockers in bold. Keep bullet points ultra-concise.',
-                    prefixIcon: Icon(Icons.psychology_outlined, size: 20, color: AppColors.textMuted),
+                    prefixIcon: Icon(Icons.psychology_outlined, size: 20),
                   ),
-                  style: const TextStyle(color: AppColors.text, fontSize: 13, height: 1.5),
+                  style: const TextStyle(fontSize: 13, height: 1.5),
                 ),
               ),
 
@@ -510,9 +517,9 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                       ref.read(ruleFormProvider.notifier).setExampleMessage,
                   decoration: const InputDecoration(
                     hintText: 'e.g. Yesterday I did X. Today I will focus Z. Blocking: None.',
-                    prefixIcon: Icon(Icons.style_outlined, size: 20, color: AppColors.textMuted),
+                    prefixIcon: Icon(Icons.style_outlined, size: 20),
                   ),
-                  style: const TextStyle(color: AppColors.text, fontSize: 13, height: 1.5),
+                  style: const TextStyle(fontSize: 13, height: 1.5),
                 ),
               ),
 
@@ -521,48 +528,76 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.red.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(12),
+                      color: colors.error.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.red.withOpacity(0.2),
-                        width: 0.8,
+                        color: colors.error.withOpacity(0.2),
+                        width: 1.0,
                       ),
                     ),
                     child: Text(
                       form.error!,
-                      style: const TextStyle(
-                          color: AppColors.red, fontSize: 13, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                          color: colors.error, fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
             ],
           ),
 
-          // ── Frosted Glassmorphic Bottom Save Panel ─────────────────────
+          // ── Symmetrical Flat Bottom Save Panel (Chunky M3 Style) ───────
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-                  decoration: BoxDecoration(
-                    color: AppColors.bg.withOpacity(0.75),
-                    border: const Border(
-                      top: BorderSide(color: AppColors.border, width: 0.8),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerLow,
+                border: Border(
+                  top: BorderSide(color: colors.outline, width: 1.2),
+                ),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  onPressed: form.isValid ? _submit : null,
+                  icon: form.isSaving
+                      ? const SizedBox.shrink()
+                      : Icon(
+                          isEdit
+                              ? Icons.save_rounded
+                              : Icons.rocket_launch_rounded,
+                          size: 20,
+                        ),
+                  label: form.isSaving
+                      ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: colors.onPrimary,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Text(
+                          isEdit ? 'Save Standup Config' : 'Launch Auto Standup',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.primary,
+                    foregroundColor: colors.onPrimary,
+                    disabledBackgroundColor: colors.surfaceContainer,
+                    disabledForegroundColor: const Color(0xFFCAC4D0),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
                     ),
-                  ),
-                  child: GradientButton(
-                    label: isEdit ? 'Save Standup Config' : 'Launch Auto Standup',
-                    icon: isEdit ? Icons.save_rounded : Icons.rocket_launch_rounded,
-                    isLoading: form.isSaving,
-                    onPressed: form.isValid ? _submit : null,
-                    width: double.infinity,
-                    height: 50,
                   ),
                 ),
               ),
@@ -582,28 +617,29 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title.toUpperCase(),
             style: GoogleFonts.outfit(
-              color: AppColors.text,
+              color: theme.colorScheme.onSurface,
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
+              letterSpacing: 1.0,
             ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
             Text(
               subtitle!,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+              style: const TextStyle(color: Color(0xFFCAC4D0), fontSize: 13, height: 1.4),
             ),
           ],
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           child,
         ],
       ),
@@ -625,19 +661,22 @@ class _ModeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
+          duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: selected ? AppColors.indigo.withOpacity(0.08) : AppColors.surface2,
+            color: selected ? const Color(0xFF381E72) : colors.surfaceContainer,
             borderRadius: BorderRadius.circular(100),
             border: Border.all(
-              color: selected ? AppColors.indigo : AppColors.border,
-              width: selected ? 1.2 : 1,
+              color: selected ? const Color(0xFFD0BCFF) : colors.outline,
+              width: 1.2,
             ),
           ),
           child: Row(
@@ -645,15 +684,15 @@ class _ModeChip extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 16,
-                color: selected ? AppColors.indigoLight : AppColors.textMuted,
+                size: 18,
+                color: selected ? const Color(0xFFE8DEF8) : const Color(0xFFCAC4D0),
               ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
-                  color: selected ? AppColors.indigoLight : AppColors.textMuted,
-                  fontSize: 13,
+                  color: selected ? const Color(0xFFE8DEF8) : const Color(0xFFCAC4D0),
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -677,24 +716,27 @@ class _DayCapsule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? AppColors.indigo.withOpacity(0.08) : AppColors.surface2,
+          color: selected ? const Color(0xFF381E72) : colors.surfaceContainer,
           borderRadius: BorderRadius.circular(100),
           border: Border.all(
-            color: selected ? AppColors.indigo : AppColors.border,
-            width: selected ? 1.2 : 1,
+            color: selected ? const Color(0xFFD0BCFF) : colors.outline,
+            width: 1.2,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? AppColors.indigoLight : AppColors.textMuted,
-            fontSize: 13,
+            color: selected ? const Color(0xFFE8DEF8) : const Color(0xFFCAC4D0),
+            fontSize: 14,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -715,24 +757,27 @@ class _OptionCapsule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? AppColors.indigo.withOpacity(0.08) : AppColors.surface2,
+          color: selected ? const Color(0xFF381E72) : colors.surfaceContainer,
           borderRadius: BorderRadius.circular(100),
           border: Border.all(
-            color: selected ? AppColors.indigo : AppColors.border,
-            width: selected ? 1.2 : 1,
+            color: selected ? const Color(0xFFD0BCFF) : colors.outline,
+            width: 1.2,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? AppColors.indigoLight : AppColors.textMuted,
-            fontSize: 12,
+            color: selected ? const Color(0xFFE8DEF8) : const Color(0xFFCAC4D0),
+            fontSize: 13,
             fontWeight: FontWeight.w700,
           ),
         ),
