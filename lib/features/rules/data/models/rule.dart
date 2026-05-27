@@ -36,8 +36,13 @@ class Rule extends Equatable {
     required this.runMode,
     this.targetDate,
     this.repoTargets = const [],
+    this.repoFullName = '',
+    this.branch = '',
     required this.threadEnabled,
     this.threadStyle,
+    this.threadCountFormat,
+    this.threadCountCustom,
+    this.threadExampleMessage,
     required this.postWhenEmpty,
     this.note = '',
     this.exampleMessage = '',
@@ -60,8 +65,13 @@ class Rule extends Equatable {
   final String runMode; // "loop" | "once"
   final String? targetDate; // "YYYY-MM-DD"
   final List<RepoTarget> repoTargets;
+  final String repoFullName; // legacy single repo (free tier)
+  final String branch;       // legacy single branch (free tier)
   final bool threadEnabled;
-  final String? threadStyle;
+  final String? threadStyle; // "count" | "ai" | "date" | ""
+  final String? threadCountFormat; // "number" | "date" | "date_custom"
+  final String? threadCountCustom; // suffix for date_custom format
+  final String? threadExampleMessage; // template for thread AI replies; supports {count}
   final bool postWhenEmpty;
   final String note;
   final String exampleMessage;
@@ -110,8 +120,13 @@ class Rule extends Equatable {
       runMode: json['run_mode'] as String? ?? 'loop',
       targetDate: json['target_date'] as String?,
       repoTargets: parseRepos(json['repo_targets'] ?? json['repos']),
+      repoFullName: json['repo_full_name'] as String? ?? '',
+      branch: json['branch'] as String? ?? '',
       threadEnabled: json['thread_enabled'] as bool? ?? false,
       threadStyle: json['thread_style'] as String?,
+      threadCountFormat: json['thread_count_format'] as String?,
+      threadCountCustom: json['thread_count_custom'] as String?,
+      threadExampleMessage: json['thread_example_message'] as String?,
       postWhenEmpty: json['post_when_empty'] as bool? ?? false,
       note: json['note'] as String? ?? '',
       exampleMessage: json['example_message'] as String? ?? '',
@@ -139,8 +154,13 @@ class Rule extends Equatable {
         'run_mode': runMode,
         if (targetDate != null) 'target_date': targetDate,
         'repos': repoTargets.map((r) => r.toJson()).toList(),
+        'repo_full_name': repoFullName,
+        'branch': branch,
         'thread_enabled': threadEnabled,
         if (threadStyle != null) 'thread_style': threadStyle,
+        if (threadCountFormat != null) 'thread_count_format': threadCountFormat,
+        if (threadCountCustom != null) 'thread_count_custom': threadCountCustom,
+        if (threadExampleMessage != null) 'thread_example_message': threadExampleMessage,
         'post_when_empty': postWhenEmpty,
         'note': note,
         'example_message': exampleMessage,
@@ -159,8 +179,13 @@ class Rule extends Equatable {
     String? runMode,
     String? targetDate,
     List<RepoTarget>? repoTargets,
+    String? repoFullName,
+    String? branch,
     bool? threadEnabled,
     String? threadStyle,
+    String? threadCountFormat,
+    String? threadCountCustom,
+    String? threadExampleMessage,
     bool? postWhenEmpty,
     String? note,
     String? exampleMessage,
@@ -181,8 +206,13 @@ class Rule extends Equatable {
         runMode: runMode ?? this.runMode,
         targetDate: targetDate ?? this.targetDate,
         repoTargets: repoTargets ?? this.repoTargets,
+        repoFullName: repoFullName ?? this.repoFullName,
+        branch: branch ?? this.branch,
         threadEnabled: threadEnabled ?? this.threadEnabled,
         threadStyle: threadStyle ?? this.threadStyle,
+        threadCountFormat: threadCountFormat ?? this.threadCountFormat,
+        threadCountCustom: threadCountCustom ?? this.threadCountCustom,
+        threadExampleMessage: threadExampleMessage ?? this.threadExampleMessage,
         postWhenEmpty: postWhenEmpty ?? this.postWhenEmpty,
         note: note ?? this.note,
         exampleMessage: exampleMessage ?? this.exampleMessage,
