@@ -1,6 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/gradient_button.dart';
 import '../providers/rule_form_provider.dart';
@@ -36,11 +38,11 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
 
   static const _notificationOptions = [
     (null, 'Off'),
-    (5, '5 min'),
-    (10, '10 min'),
-    (15, '15 min'),
-    (30, '30 min'),
-    (60, '1 hour'),
+    (5, '5m prior'),
+    (10, '10m prior'),
+    (15, '15m prior'),
+    (30, '30m prior'),
+    (60, '1h prior'),
   ];
 
   static const _timezones = [
@@ -127,37 +129,50 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
     if (!_initialized) {
       return const Scaffold(
         backgroundColor: AppColors.bg,
-        body: Center(child: CircularProgressIndicator(color: AppColors.indigo)),
+        body: Center(child: CircularProgressIndicator(color: AppColors.indigo, strokeWidth: 2.5)),
       );
     }
 
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: Text(isEdit ? 'Edit Rule' : 'New Rule'),
+        backgroundColor: AppColors.bg,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          isEdit ? 'Edit Rule' : 'New Rule',
+          style: const TextStyle(
+            color: AppColors.text,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+          ),
+        ),
         leading: const BackButton(),
       ),
       body: Stack(
         children: [
           ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 130),
             children: [
-              // ── Name ────────────────────────────────────────────────
+              // ── Name field ──────────────────────────────────────────
               _Section(
                 title: 'Rule Name',
+                subtitle: 'Identify this Standup rule (e.g. Mobile Sync)',
                 child: TextField(
                   controller: _nameCtrl,
                   onChanged: ref.read(ruleFormProvider.notifier).setName,
                   decoration: const InputDecoration(
                     hintText: 'e.g. Daily Standup',
+                    prefixIcon: Icon(Icons.bookmark_outline_rounded, size: 20, color: AppColors.textMuted),
                   ),
-                  style: const TextStyle(color: AppColors.text),
+                  style: const TextStyle(color: AppColors.text, fontSize: 14),
                 ),
               ),
 
-              // ── Slack Channel ────────────────────────────────────────
+              // ── Slack Channel select ────────────────────────────────
               _Section(
-                title: 'Slack Channel',
+                title: 'Slack Destination Channel',
+                subtitle: 'Pick the Slack channel where reports will go',
                 child: channelsAsync.when(
                   loading: () => const SizedBox(
                     height: 50,
@@ -172,11 +187,13 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                   ),
                   data: (channels) => DropdownButtonFormField<String>(
                     initialValue: form.channelId.isEmpty ? null : form.channelId,
-                    hint: const Text('Select channel',
-                        style: TextStyle(color: AppColors.textMuted)),
+                    hint: const Text('Select Slack channel',
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
                     dropdownColor: AppColors.surface2,
-                    style: const TextStyle(color: AppColors.text),
-                    decoration: const InputDecoration(),
+                    style: const TextStyle(color: AppColors.text, fontSize: 14),
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.tag_rounded, size: 20, color: AppColors.textMuted),
+                    ),
                     items: channels
                         .map((c) => DropdownMenuItem(
                               value: c.id,
@@ -195,22 +212,25 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                 ),
               ),
 
-              // ── Run Mode ────────────────────────────────────────────
+              // ── Run Mode select ─────────────────────────────────────
               _Section(
-                title: 'Run Mode',
+                title: 'Scheduling Mode',
+                subtitle: 'Choose recurring auto-delivery or a one-time message',
                 child: Row(
                   children: [
                     _ModeChip(
                       label: 'Recurring',
                       selected: form.runMode == 'loop',
+                      icon: Icons.loop_rounded,
                       onTap: () => ref
                           .read(ruleFormProvider.notifier)
                           .setRunMode('loop'),
                     ),
                     const SizedBox(width: 10),
                     _ModeChip(
-                      label: 'Once',
+                      label: 'One-time',
                       selected: form.runMode == 'once',
+                      icon: Icons.done_rounded,
                       onTap: () => ref
                           .read(ruleFormProvider.notifier)
                           .setRunMode('once'),
@@ -219,43 +239,32 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                 ),
               ),
 
-              // ── Days (loop mode only) ────────────────────────────────
+              // ── Days select (loop mode only) ─────────────────────────
               if (form.runMode == 'loop')
                 _Section(
-                  title: 'Days of Week',
+                  title: 'Select Active Days',
+                  subtitle: 'Schedule standup messages on specific weekdays',
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: _days.map(((int, String) d) {
                       final selected = form.daysOfWeek.contains(d.$1);
-                      return FilterChip(
-                        label: Text(d.$2),
+                      return _DayCapsule(
+                        label: d.$2,
                         selected: selected,
-                        onSelected: (_) => ref
+                        onTap: () => ref
                             .read(ruleFormProvider.notifier)
                             .toggleDay(d.$1),
-                        selectedColor: AppColors.indigoGlow,
-                        labelStyle: TextStyle(
-                          color: selected
-                              ? AppColors.indigoLight
-                              : AppColors.textMuted,
-                          fontSize: 13,
-                        ),
-                        side: BorderSide(
-                          color: selected
-                              ? AppColors.indigo
-                              : AppColors.border,
-                        ),
-                        checkmarkColor: AppColors.indigoLight,
                       );
                     }).toList(),
                   ),
                 ),
 
-              // ── Target date (once mode) ──────────────────────────────
+              // ── Target date (once mode only) ────────────────────────
               if (form.runMode == 'once')
                 _Section(
-                  title: 'Target Date',
+                  title: 'Target Delivery Date',
+                  subtitle: 'Select the exact date to trigger this Standup',
                   child: InkWell(
                     onTap: () async {
                       final picked = await showDatePicker(
@@ -278,26 +287,30 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                             '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
                       }
                     },
+                    borderRadius: BorderRadius.circular(14),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
                         color: AppColors.surface2,
-                        borderRadius: BorderRadius.circular(12),
-                        border:
-                            const Border.fromBorderSide(BorderSide(color: AppColors.border)),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border, width: 1.2),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today,
+                          const Icon(Icons.calendar_today_rounded,
                               size: 18, color: AppColors.textMuted),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 12),
                           Text(
                             form.targetDate ?? 'Pick a date',
                             style: TextStyle(
+                              fontSize: 14,
                               color: form.targetDate != null
                                   ? AppColors.text
                                   : AppColors.textMuted,
+                              fontWeight: form.targetDate != null
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
                         ],
@@ -306,9 +319,10 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                   ),
                 ),
 
-              // ── Send Time ────────────────────────────────────────────
+              // ── Send Time select ─────────────────────────────────────
               _Section(
                 title: 'Send Time',
+                subtitle: 'Choose delivery time (based on timezone)',
                 child: InkWell(
                   onTap: () async {
                     final parts = form.sendTime.split(':');
@@ -334,23 +348,27 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                           );
                     }
                   },
+                  borderRadius: BorderRadius.circular(14),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
                       color: AppColors.surface2,
-                      borderRadius: BorderRadius.circular(12),
-                      border: const Border.fromBorderSide(
-                          BorderSide(color: AppColors.border)),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border, width: 1.2),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.access_time,
+                        const Icon(Icons.access_time_rounded,
                             size: 18, color: AppColors.textMuted),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Text(
                           form.sendTime,
-                          style: const TextStyle(color: AppColors.text),
+                          style: const TextStyle(
+                            color: AppColors.text,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -358,16 +376,19 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                 ),
               ),
 
-              // ── Timezone ─────────────────────────────────────────────
+              // ── Timezone select ──────────────────────────────────────
               _Section(
-                title: 'Timezone',
+                title: 'Scheduler Timezone',
+                subtitle: 'Standup rules follow this timezone clock',
                 child: DropdownButtonFormField<String>(
                   initialValue: _timezones.contains(form.timezone)
                       ? form.timezone
                       : 'UTC',
                   dropdownColor: AppColors.surface2,
                   style: const TextStyle(color: AppColors.text, fontSize: 14),
-                  decoration: const InputDecoration(),
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.language_rounded, size: 20, color: AppColors.textMuted),
+                  ),
                   items: _timezones
                       .map((tz) => DropdownMenuItem(value: tz, child: Text(tz)))
                       .toList(),
@@ -379,142 +400,171 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                 ),
               ),
 
-              // ── Notification timing ──────────────────────────────────
+              // ── Pre-send Notification select ──────────────────────────
               _Section(
-                title: 'Pre-send Notification',
-                subtitle:
-                    'Get notified before the message sends so you can review it.',
+                title: 'Pre-send Review Notification',
+                subtitle: 'Get a push notification prior to review/edit message',
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: _notificationOptions.map(((int?, String) opt) {
                     final selected = form.notificationMinutes == opt.$1;
-                    return ChoiceChip(
-                      label: Text(opt.$2),
+                    return _OptionCapsule(
+                      label: opt.$2,
                       selected: selected,
-                      onSelected: (_) => ref
+                      onTap: () => ref
                           .read(ruleFormProvider.notifier)
                           .setNotificationMinutes(opt.$1),
-                      selectedColor: AppColors.indigoGlow,
-                      labelStyle: TextStyle(
-                        color: selected
-                            ? AppColors.indigoLight
-                            : AppColors.textMuted,
-                        fontSize: 13,
-                      ),
-                      side: BorderSide(
-                        color: selected
-                            ? AppColors.indigo
-                            : AppColors.border,
-                      ),
                     );
                   }).toList(),
                 ),
               ),
 
-              // ── Post when empty ──────────────────────────────────────
+              // ── Extra switches (Toggles Box) ─────────────────────────
               _Section(
-                title: 'Post When Empty',
-                subtitle:
-                    'Send message even when there are no commits that day.',
-                child: Switch(
-                  value: form.postWhenEmpty,
-                  onChanged: ref.read(ruleFormProvider.notifier).setPostWhenEmpty,
-                  activeThumbColor: AppColors.indigo,
+                title: 'Standup Options',
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border, width: 0.8),
+                  ),
+                  child: Column(
+                    children: [
+                      // Post when empty
+                      Row(
+                        children: [
+                          const Icon(Icons.mail_outline_rounded, size: 20, color: AppColors.indigoLight),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text('Post When Empty', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                SizedBox(height: 2),
+                                Text('Send message even if no code commits exist.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: form.postWhenEmpty,
+                            onChanged: ref.read(ruleFormProvider.notifier).setPostWhenEmpty,
+                          ),
+                        ],
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Divider(color: AppColors.border, height: 1),
+                      ),
+                      // Active state
+                      Row(
+                        children: [
+                          const Icon(Icons.toggle_on_outlined, size: 20, color: AppColors.indigoLight),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text('Active Rule', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                SizedBox(height: 2),
+                                Text('Pause standup loop without deleting config.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: form.isActive,
+                            onChanged: ref.read(ruleFormProvider.notifier).setIsActive,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
-              // ── Active toggle ────────────────────────────────────────
+              // ── Note for AI ──────────────────────────────────────────
               _Section(
-                title: 'Active',
-                subtitle: 'Disable to pause this rule without deleting it.',
-                child: Switch(
-                  value: form.isActive,
-                  onChanged: ref.read(ruleFormProvider.notifier).setIsActive,
-                  activeThumbColor: AppColors.indigo,
-                ),
-              ),
-
-              // ── AI Note ──────────────────────────────────────────────
-              _Section(
-                title: 'Note for AI',
-                subtitle:
-                    'Extra context for the AI when generating your standup message.',
+                title: 'AI Standup Guidelines',
+                subtitle: 'Instruct the AI on writing tone, blockers, or highlights',
                 child: TextField(
                   controller: _noteCtrl,
                   maxLines: 3,
                   onChanged: ref.read(ruleFormProvider.notifier).setNote,
                   decoration: const InputDecoration(
-                    hintText:
-                        'e.g. Always mention blockers. Keep it concise.',
+                    hintText: 'e.g. Mention blockers in bold. Keep bullet points ultra-concise.',
+                    prefixIcon: Icon(Icons.psychology_outlined, size: 20, color: AppColors.textMuted),
                   ),
-                  style:
-                      const TextStyle(color: AppColors.text, fontSize: 14),
+                  style: const TextStyle(color: AppColors.text, fontSize: 13, height: 1.5),
                 ),
               ),
 
               // ── Example message ──────────────────────────────────────
               _Section(
-                title: 'Example Message Style',
-                subtitle:
-                    'Show the AI how you want the message to sound.',
+                title: 'Example Output Style',
+                subtitle: 'Show the AI a template of your desired standup layout',
                 child: TextField(
                   controller: _exampleCtrl,
                   maxLines: 4,
                   onChanged:
                       ref.read(ruleFormProvider.notifier).setExampleMessage,
                   decoration: const InputDecoration(
-                    hintText:
-                        'e.g. Yesterday I worked on X. Today I will do Y. No blockers.',
+                    hintText: 'e.g. Yesterday I did X. Today I will focus Z. Blocking: None.',
+                    prefixIcon: Icon(Icons.style_outlined, size: 20, color: AppColors.textMuted),
                   ),
-                  style:
-                      const TextStyle(color: AppColors.text, fontSize: 14),
+                  style: const TextStyle(color: AppColors.text, fontSize: 13, height: 1.5),
                 ),
               ),
 
-              // Error
+              // Error notification banner
               if (form.error != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.red.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: AppColors.red.withValues(alpha: 0.3)),
+                        color: AppColors.red.withOpacity(0.2),
+                        width: 0.8,
+                      ),
                     ),
                     child: Text(
                       form.error!,
                       style: const TextStyle(
-                          color: AppColors.red, fontSize: 13),
+                          color: AppColors.red, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
             ],
           ),
 
-          // Bottom save button
+          // ── Frosted Glassmorphic Bottom Save Panel ─────────────────────
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, AppColors.bg],
+            child: ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                  decoration: BoxDecoration(
+                    color: AppColors.bg.withOpacity(0.75),
+                    border: const Border(
+                      top: BorderSide(color: AppColors.border, width: 0.8),
+                    ),
+                  ),
+                  child: GradientButton(
+                    label: isEdit ? 'Save Standup Config' : 'Launch Auto Standup',
+                    icon: isEdit ? Icons.save_rounded : Icons.rocket_launch_rounded,
+                    isLoading: form.isSaving,
+                    onPressed: form.isValid ? _submit : null,
+                    width: double.infinity,
+                    height: 50,
+                  ),
                 ),
-              ),
-              child: GradientButton(
-                label: isEdit ? 'Save Changes' : 'Create Rule',
-                icon: isEdit ? Icons.save_outlined : Icons.add,
-                isLoading: form.isSaving,
-                onPressed: form.isValid ? _submit : null,
-                width: double.infinity,
-                height: 52,
               ),
             ),
           ),
@@ -533,26 +583,27 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
-            style: const TextStyle(
+            title.toUpperCase(),
+            style: GoogleFonts.outfit(
               color: AppColors.text,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
             ),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Text(
               subtitle!,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
             ),
           ],
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           child,
         ],
       ),
@@ -562,6 +613,60 @@ class _Section extends StatelessWidget {
 
 class _ModeChip extends StatelessWidget {
   const _ModeChip({
+    required this.label,
+    required this.selected,
+    required this.icon,
+    required this.onTap,
+  });
+  final String label;
+  final bool selected;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.indigo.withOpacity(0.08) : AppColors.surface2,
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(
+              color: selected ? AppColors.indigo : AppColors.border,
+              width: selected ? 1.2 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: selected ? AppColors.indigoLight : AppColors.textMuted,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? AppColors.indigoLight : AppColors.textMuted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DayCapsule extends StatelessWidget {
+  const _DayCapsule({
     required this.label,
     required this.selected,
     required this.onTap,
@@ -576,19 +681,59 @@ class _ModeChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? AppColors.indigoGlow : AppColors.surface2,
-          borderRadius: BorderRadius.circular(10),
+          color: selected ? AppColors.indigo.withOpacity(0.08) : AppColors.surface2,
+          borderRadius: BorderRadius.circular(100),
           border: Border.all(
-              color: selected ? AppColors.indigo : AppColors.border),
+            color: selected ? AppColors.indigo : AppColors.border,
+            width: selected ? 1.2 : 1,
+          ),
         ),
         child: Text(
           label,
           style: TextStyle(
             color: selected ? AppColors.indigoLight : AppColors.textMuted,
             fontSize: 13,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OptionCapsule extends StatelessWidget {
+  const _OptionCapsule({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.indigo.withOpacity(0.08) : AppColors.surface2,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(
+            color: selected ? AppColors.indigo : AppColors.border,
+            width: selected ? 1.2 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? AppColors.indigoLight : AppColors.textMuted,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
