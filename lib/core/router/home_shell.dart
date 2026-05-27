@@ -25,28 +25,23 @@ class HomeShell extends StatelessWidget {
       body: child,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.border)),
+          border: Border(top: BorderSide(color: AppColors.border, width: 0.8)),
         ),
-        child: BottomNavigationBar(
-          currentIndex: idx,
-          backgroundColor: Colors.transparent,
-          selectedItemColor: AppColors.indigo,
-          unselectedItemColor: AppColors.textMuted,
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.schedule_outlined),
-              activeIcon: Icon(Icons.schedule),
-              label: 'Rules',
+        child: NavigationBar(
+          selectedIndex: idx,
+          onDestinationSelected: (i) => context.go(_tabs[i]),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.schedule_send_rounded),
+              selectedIcon: Icon(Icons.schedule_send_rounded),
+              label: 'Auto Messages',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded),
               label: 'Profile',
             ),
           ],
-          onTap: (i) => context.go(_tabs[i]),
         ),
       ),
     );
