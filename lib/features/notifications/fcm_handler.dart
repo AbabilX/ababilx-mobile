@@ -15,7 +15,7 @@ class FcmHandler {
 
     // Foreground message → show local notification (FCM doesn't auto-display)
     FirebaseMessaging.onMessage.listen((message) {
-      if (message.data['type'] == 'pre_send_review') {
+      if (message.data['type'] == 'pre_send_review' || message.notification != null) {
         LocalNotificationService.showFromFcm(message);
       }
     });
