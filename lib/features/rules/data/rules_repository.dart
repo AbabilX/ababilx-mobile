@@ -3,6 +3,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/constants/api_constants.dart';
 import 'models/rule.dart';
 import 'models/rule_message.dart';
+import 'models/github_repo.dart';
 
 class RulesRepository {
   const RulesRepository(this._client);
@@ -96,6 +97,36 @@ class RulesRepository {
           .toList();
     }
     return [];
+  }
+
+  /// GET /api/repos
+  Future<List<GitHubRepo>> getGitHubRepos() async {
+    final res = await _client.get(ApiConstants.githubRepos);
+    final data = _extractData(res.data);
+    if (data is List) {
+      return data
+          .map((e) => GitHubRepo.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
+  }
+
+  /// GET /api/repos/:owner/:repo/branches
+  Future<List<String>> getRepoBranches(String owner, String repo) async {
+    final res = await _client.get(ApiConstants.repoBranches(owner, repo));
+    final data = _extractData(res.data);
+    if (data is List) {
+      return data.map((e) => e.toString()).toList();
+    }
+    return [];
+  }
+
+  /// POST /api/slack/test-message
+  Future<void> testSlackChannel(String channelId) async {
+    await _client.post(
+      '/api/slack/test-message',
+      data: {'channel_id': channelId},
+    );
   }
 
   dynamic _extractData(dynamic responseData) {
