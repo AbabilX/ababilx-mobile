@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/glass_card.dart';
-import '../../../shared/widgets/gradient_button.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 
@@ -57,7 +56,7 @@ class ProfileScreen extends ConsumerWidget {
                               width: 80,
                               height: 80,
                               fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => const Icon(
+                              errorWidget: (_, _, _) => const Icon(
                                 Icons.person,
                                 size: 40,
                                 color: AppColors.indigoLight,
