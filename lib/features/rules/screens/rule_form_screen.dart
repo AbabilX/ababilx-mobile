@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../shared/widgets/glass_card.dart';
 import '../../../shared/widgets/gradient_button.dart';
-import '../../../shared/widgets/loading_overlay.dart';
-import '../data/models/rule.dart';
 import '../providers/rule_form_provider.dart';
 import '../providers/rules_provider.dart';
-import '../../../features/rules/data/models/rule_message.dart';
+import '../data/rules_repository.dart';
 
 /// Create or edit a rule.
 /// [ruleId] = null → create mode; [ruleId] != null → edit mode.
@@ -169,12 +166,12 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                           color: AppColors.indigo, strokeWidth: 2),
                     ),
                   ),
-                  error: (_, __) => const Text(
+                  error: (_, _) => const Text(
                     'Connect Slack first to select a channel.',
                     style: TextStyle(color: AppColors.textMuted, fontSize: 13),
                   ),
                   data: (channels) => DropdownButtonFormField<String>(
-                    value: form.channelId.isEmpty ? null : form.channelId,
+                    initialValue: form.channelId.isEmpty ? null : form.channelId,
                     hint: const Text('Select channel',
                         style: TextStyle(color: AppColors.textMuted)),
                     dropdownColor: AppColors.surface2,
@@ -365,7 +362,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
               _Section(
                 title: 'Timezone',
                 child: DropdownButtonFormField<String>(
-                  value: _timezones.contains(form.timezone)
+                  initialValue: _timezones.contains(form.timezone)
                       ? form.timezone
                       : 'UTC',
                   dropdownColor: AppColors.surface2,
@@ -423,7 +420,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                 child: Switch(
                   value: form.postWhenEmpty,
                   onChanged: ref.read(ruleFormProvider.notifier).setPostWhenEmpty,
-                  activeColor: AppColors.indigo,
+                  activeThumbColor: AppColors.indigo,
                 ),
               ),
 
@@ -434,7 +431,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                 child: Switch(
                   value: form.isActive,
                   onChanged: ref.read(ruleFormProvider.notifier).setIsActive,
-                  activeColor: AppColors.indigo,
+                  activeThumbColor: AppColors.indigo,
                 ),
               ),
 
