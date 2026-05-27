@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 
-/// Primary CTA button with indigo gradient — matches website's default button variant.
+/// Primary CTA button styled after authentic Material 3 Filled/Tonal Button.
 class GradientButton extends StatelessWidget {
   const GradientButton({
     super.key,
@@ -10,7 +9,7 @@ class GradientButton extends StatelessWidget {
     this.icon,
     this.isLoading = false,
     this.width,
-    this.height = 48,
+    this.height = 52,
   });
 
   final String label;
@@ -22,102 +21,103 @@ class GradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return SizedBox(
       width: width,
       height: height,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: onPressed != null
-              ? AppColors.indigoGradient
-              : const LinearGradient(
-                  colors: [Color(0xFF4B4D8F), Color(0xFF5A5CA8)],
-                ),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: onPressed != null
-              ? [
-                  BoxShadow(
-                    color: AppColors.indigoGlow,
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: ElevatedButton(
-          onPressed: isLoading ? null : onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+      child: FilledButton(
+        onPressed: isLoading ? null : onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: colors.primary,
+          foregroundColor: colors.onPrimary,
+          disabledBackgroundColor: colors.surfaceContainer,
+          disabledForegroundColor: const Color(0xFFCAC4D0),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
           ),
-          child: isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 18),
-                      const SizedBox(width: 8),
-                    ],
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
         ),
+        child: isLoading
+            ? SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  color: colors.onPrimary,
+                  strokeWidth: 2,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 18),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
 }
 
-/// Outlined secondary button.
+/// Outlined secondary button styled after authentic Material 3 Outlined Button.
 class OutlineButton extends StatelessWidget {
   const OutlineButton({
     super.key,
     required this.label,
     required this.onPressed,
     this.icon,
-    this.color = AppColors.textMuted,
+    this.color,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final fallbackColor = colors.onSurface;
+
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: color,
-        side: BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        foregroundColor: color ?? fallbackColor,
+        side: BorderSide(color: colors.outline, width: 1.2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 6),
+            Icon(icon, size: 18, color: color ?? fallbackColor),
+            const SizedBox(width: 8),
           ],
-          Text(label, style: TextStyle(color: color, fontSize: 14)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color ?? fallbackColor,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
