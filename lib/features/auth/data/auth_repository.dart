@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,9 +65,10 @@ class AuthRepository {
 
   Future<void> _registerDevice(String fcmToken) async {
     try {
+      final platformStr = Platform.isIOS ? 'ios' : 'android';
       await _client.post(
         ApiConstants.devices,
-        data: {'fcm_token': fcmToken, 'platform': 'android'},
+        data: {'fcm_token': fcmToken, 'platform': platformStr},
       );
     } catch (_) {}
   }
