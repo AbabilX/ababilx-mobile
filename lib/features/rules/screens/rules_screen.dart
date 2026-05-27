@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../shared/widgets/gradient_button.dart';
-import '../../../shared/widgets/loading_overlay.dart';
 import '../../../shared/widgets/rule_status_badge.dart';
+import '../../../core/localization/app_translations.dart';
 import '../data/models/rule.dart';
 import '../providers/rules_provider.dart';
 
@@ -16,50 +15,55 @@ class RulesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rulesAsync = ref.watch(rulesProvider);
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.bg,
-        surfaceTintColor: Colors.transparent,
-        title: const Text(
-          'Auto Messages',
-          style: TextStyle(
-            color: AppColors.text,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          AppTranslations.translate(context, ref, 'rules_title'),
+          style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 22,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
           ),
         ),
         actions: [
           IconButton(
             style: IconButton.styleFrom(
-              backgroundColor: AppColors.surface2,
-              foregroundColor: AppColors.textMuted,
-              shape: const CircleBorder(),
+              backgroundColor: colors.surfaceContainerLow,
+              foregroundColor: colors.onSurfaceVariant,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             icon: const Icon(Icons.refresh_rounded, size: 20),
             onPressed: () => ref.read(rulesProvider.notifier).refresh(),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/rules/new'),
-        backgroundColor: AppColors.indigo,
-        foregroundColor: Colors.white,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
         elevation: 0,
-        shape: const StadiumBorder(),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'New Rule',
-          style: TextStyle(fontWeight: FontWeight.w600),
+        label: Text(
+          AppTranslations.translate(context, ref, 'new_rule'),
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       body: rulesAsync.when(
-        loading: () => const Center(
+        loading: () => Center(
           child: CircularProgressIndicator(
-            color: AppColors.indigo,
+            color: colors.primary,
             strokeWidth: 2.5,
           ),
         ),
@@ -71,16 +75,17 @@ class RulesScreen extends ConsumerWidget {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: AppColors.surface2,
+                  color: colors.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: colors.outline, width: 1.2),
                 ),
-                child: const Icon(Icons.error_outline_rounded,
-                    size: 36, color: AppColors.textMuted),
+                child: Icon(Icons.error_outline_rounded,
+                    size: 36, color: colors.error),
               ),
               const SizedBox(height: 16),
               Text(
                 e.toString(),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                style: const TextStyle(color: Color(0xFFCAC4D0), fontSize: 14),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
@@ -157,10 +162,10 @@ class _RuleCardState extends ConsumerState<_RuleCard> {
       };
 
   String get _statusLabel => switch (_status) {
-        RuleStatus.running => 'Active',
-        RuleStatus.paused => 'Paused',
-        RuleStatus.scheduled => 'Scheduled',
-        RuleStatus.sent => 'Sent',
+        RuleStatus.running => AppTranslations.translate(context, ref, 'rule_active'),
+        RuleStatus.paused => AppTranslations.translate(context, ref, 'rule_paused'),
+        RuleStatus.scheduled => AppTranslations.translate(context, ref, 'rule_active'),
+        RuleStatus.sent => AppTranslations.translate(context, ref, 'sent'),
       };
 
   @override
@@ -557,7 +562,7 @@ class _RuleCardState extends ConsumerState<_RuleCard> {
   void _confirmDelete(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => Dialog(
+      builder: (dialogCtx) => Dialog(
         backgroundColor: const Color(0xFF211F26),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(28),
@@ -599,7 +604,7 @@ class _RuleCardState extends ConsumerState<_RuleCard> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogCtx),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFCAC4D0),
                         side: const BorderSide(color: Color(0xFF35343B)),
@@ -613,7 +618,7 @@ class _RuleCardState extends ConsumerState<_RuleCard> {
                   Expanded(
                     child: FilledButton(
                       onPressed: () {
-                        Navigator.pop(context);
+                        Navigator.pop(dialogCtx);
                         ref
                             .read(rulesProvider.notifier)
                             .deleteRule(widget.rule.id);
@@ -766,12 +771,12 @@ class _TonalIconBtn extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
+class _EmptyState extends ConsumerWidget {
   const _EmptyState({required this.onCreateTap});
   final VoidCallback onCreateTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -792,23 +797,23 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'No rules yet',
-              style: TextStyle(
+            Text(
+              AppTranslations.translate(context, ref, 'rules_title'),
+              style: const TextStyle(
                 color: Color(0xFFE6E1E5),
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Create a rule to automatically send\nstandup messages to Slack.',
-              style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 14),
+            Text(
+              AppTranslations.translate(context, ref, 'no_rules_desc'),
+              style: const TextStyle(color: Color(0xFFCAC4D0), fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
             GradientButton(
-              label: 'Create first rule',
+              label: AppTranslations.translate(context, ref, 'create_first_rule'),
               icon: Icons.add_rounded,
               onPressed: onCreateTap,
             ),
