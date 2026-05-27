@@ -24,7 +24,62 @@ class AppTheme {
         outline: AppColors.border,
       ),
 
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
+      // Typographic hierarchy matching Material 3 Expressive spec
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(base.textTheme).copyWith(
+        displayLarge: GoogleFonts.outfit(
+          fontSize: 57,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -1.2,
+          color: AppColors.text,
+        ),
+        displayMedium: GoogleFonts.outfit(
+          fontSize: 45,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -1.0,
+          color: AppColors.text,
+        ),
+        displaySmall: GoogleFonts.outfit(
+          fontSize: 36,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.8,
+          color: AppColors.text,
+        ),
+        headlineLarge: GoogleFonts.outfit(
+          fontSize: 32,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.6,
+          color: AppColors.text,
+        ),
+        headlineMedium: GoogleFonts.outfit(
+          fontSize: 28,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+          color: AppColors.text,
+        ),
+        headlineSmall: GoogleFonts.outfit(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.4,
+          color: AppColors.text,
+        ),
+        titleLarge: GoogleFonts.outfit(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
+          color: AppColors.text,
+        ),
+        titleMedium: GoogleFonts.outfit(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.2,
+          color: AppColors.text,
+        ),
+        titleSmall: GoogleFonts.outfit(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.text,
+        ),
+      ).apply(
         bodyColor: AppColors.text,
         displayColor: AppColors.text,
       ),
@@ -34,9 +89,10 @@ class AppTheme {
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.light,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
+        titleTextStyle: GoogleFonts.outfit(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.4,
           color: AppColors.text,
         ),
         iconTheme: const IconThemeData(color: AppColors.text),
@@ -46,7 +102,7 @@ class AppTheme {
         color: AppColors.surface2,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           side: const BorderSide(color: AppColors.border),
         ),
       ),
@@ -54,22 +110,22 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface2,
-        labelStyle: const TextStyle(color: AppColors.textMuted),
-        hintStyle: const TextStyle(color: AppColors.textMuted),
+        labelStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.indigo, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.red),
         ),
         contentPadding:
@@ -78,44 +134,65 @@ class AppTheme {
 
       dividerTheme: const DividerThemeData(
         color: AppColors.border,
-        thickness: 1,
+        thickness: 0.8,
       ),
 
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      // Material 3 NavigationBar Theme
+      navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.indigo,
-        unselectedItemColor: AppColors.textMuted,
-        type: BottomNavigationBarType.fixed,
         elevation: 0,
+        height: 72,
+        indicatorColor: AppColors.indigo.withOpacity(0.12),
+        indicatorShape: const StadiumBorder(),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.indigo, size: 24);
+          }
+          return const IconThemeData(color: AppColors.textMuted, size: 24);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return GoogleFonts.plusJakartaSans(
+              color: AppColors.indigo,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            );
+          }
+          return GoogleFonts.plusJakartaSans(
+            color: AppColors.textMuted,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          );
+        }),
       ),
 
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? AppColors.indigo
+              ? Colors.white
               : AppColors.textMuted,
         ),
         trackColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? AppColors.indigoGlow
-              : AppColors.surface2,
+              ? AppColors.indigo
+              : AppColors.surface,
         ),
       ),
 
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surface2,
         selectedColor: AppColors.indigoGlow,
-        labelStyle: const TextStyle(color: AppColors.text, fontSize: 13),
+        labelStyle: const TextStyle(color: AppColors.text, fontSize: 13, fontWeight: FontWeight.w600),
         side: const BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       ),
 
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.surface2,
         contentTextStyle: const TextStyle(color: AppColors.text),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           side: const BorderSide(color: AppColors.border),
         ),
         behavior: SnackBarBehavior.floating,
