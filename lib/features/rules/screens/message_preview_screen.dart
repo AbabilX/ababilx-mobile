@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/glass_card.dart';
 import '../../../shared/widgets/gradient_button.dart';
-import '../../../shared/widgets/loading_overlay.dart';
 import '../providers/rules_provider.dart';
 
 /// The pre-send review screen.
