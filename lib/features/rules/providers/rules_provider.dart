@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/rule.dart';
 import '../data/models/rule_message.dart';
 import '../data/rules_repository.dart';
+import '../data/models/github_repo.dart';
 
 // ---------------------------------------------------------------------------
 // Rules list
@@ -124,4 +125,20 @@ final rulePreviewProvider =
 
 final slackChannelsProvider = FutureProvider(
   (ref) => ref.read(rulesRepositoryProvider).getSlackChannels(),
+);
+
+// ---------------------------------------------------------------------------
+// GitHub repositories & branches
+// ---------------------------------------------------------------------------
+
+final githubReposProvider = FutureProvider<List<GitHubRepo>>(
+  (ref) => ref.read(rulesRepositoryProvider).getGitHubRepos(),
+);
+
+final repoBranchesProvider = FutureProvider.family<List<String>, String>(
+  (ref, repoFullName) {
+    final parts = repoFullName.split('/');
+    if (parts.length != 2) return Future.value([]);
+    return ref.read(rulesRepositoryProvider).getRepoBranches(parts[0], parts[1]);
+  },
 );
