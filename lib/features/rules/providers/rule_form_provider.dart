@@ -17,6 +17,7 @@ class RuleFormState {
     this.branch = '',
     this.exampleMessage = '',
     this.postWhenEmpty = false,
+    this.dateMode = 'today',
     this.threadEnabled = false,
     this.threadStyle = 'count',
     this.threadCountFormat = 'number',
@@ -42,6 +43,7 @@ class RuleFormState {
   final String branch;
   final String exampleMessage;
   final bool postWhenEmpty;
+  final String dateMode; // 'today' | 'specific'
   final bool threadEnabled;
   final String threadStyle;
   final String threadCountFormat;
@@ -67,6 +69,7 @@ class RuleFormState {
     String? branch,
     String? exampleMessage,
     bool? postWhenEmpty,
+    String? dateMode,
     bool? threadEnabled,
     String? threadStyle,
     String? threadCountFormat,
@@ -94,6 +97,7 @@ class RuleFormState {
         branch: branch ?? this.branch,
         exampleMessage: exampleMessage ?? this.exampleMessage,
         postWhenEmpty: postWhenEmpty ?? this.postWhenEmpty,
+        dateMode: dateMode ?? this.dateMode,
         threadEnabled: threadEnabled ?? this.threadEnabled,
         threadStyle: threadStyle ?? this.threadStyle,
         threadCountFormat: threadCountFormat ?? this.threadCountFormat,
@@ -122,6 +126,7 @@ class RuleFormState {
         'branch': branch,
         'example_message': exampleMessage,
         'post_when_empty': postWhenEmpty,
+        'date_mode': dateMode,
         'thread_enabled': threadEnabled,
         'thread_style': threadStyle,
         'thread_count_format': threadCountFormat,
@@ -134,7 +139,10 @@ class RuleFormState {
       };
 
   bool get isValid =>
-      name.isNotEmpty && channelId.isNotEmpty && daysOfWeek.isNotEmpty;
+      name.isNotEmpty &&
+      channelId.isNotEmpty &&
+      exampleMessage.isNotEmpty &&
+      (runMode == 'loop' ? daysOfWeek.isNotEmpty : targetDate != null);
 }
 
 class RuleFormNotifier extends Notifier<RuleFormState> {
@@ -159,6 +167,7 @@ class RuleFormNotifier extends Notifier<RuleFormState> {
         branch: existing.branch,
         exampleMessage: existing.exampleMessage,
         postWhenEmpty: existing.postWhenEmpty,
+        dateMode: existing.dateMode,
         threadEnabled: existing.threadEnabled,
         threadStyle: existing.threadStyle ?? 'count',
         threadCountFormat: existing.threadCountFormat ?? 'number',
@@ -193,6 +202,7 @@ class RuleFormNotifier extends Notifier<RuleFormState> {
   void setExampleMessage(String v) =>
       state = state.copyWith(exampleMessage: v);
   void setPostWhenEmpty(bool v) => state = state.copyWith(postWhenEmpty: v);
+  void setDateMode(String v) => state = state.copyWith(dateMode: v);
   void setThreadEnabled(bool v) => state = state.copyWith(threadEnabled: v);
   
   void setThreadStyle(String v) => state = state.copyWith(threadStyle: v);

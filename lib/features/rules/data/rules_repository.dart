@@ -82,6 +82,16 @@ class RulesRepository {
     return [];
   }
 
+  /// PUT /api/rules/:ruleId/messages/:msgId
+  Future<RuleMessage> updateRuleMessage(
+      String ruleId, String msgId, String content) async {
+    final res = await _client.put(
+      ApiConstants.ruleMessageById(ruleId, msgId),
+      data: {'content': content},
+    );
+    return RuleMessage.fromJson(_extractData(res.data) as Map<String, dynamic>);
+  }
+
   /// DELETE /api/rules/:ruleId/messages/:msgId
   Future<void> deleteRuleMessage(String ruleId, String msgId) async {
     await _client.delete(ApiConstants.ruleMessageById(ruleId, msgId));

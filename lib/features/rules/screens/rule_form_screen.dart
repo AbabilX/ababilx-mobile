@@ -106,7 +106,17 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
     final notifier = ref.read(ruleFormProvider.notifier);
 
     if (!form.isValid) {
-      notifier.setError('Name, channel, and at least one day are required.');
+      if (form.name.isEmpty) {
+        notifier.setError('Rule name is required.');
+      } else if (form.channelId.isEmpty) {
+        notifier.setError('Select a Slack channel.');
+      } else if (form.exampleMessage.isEmpty) {
+        notifier.setError('Add an example message style.');
+      } else if (form.runMode == 'loop' && form.daysOfWeek.isEmpty) {
+        notifier.setError('Select at least one day.');
+      } else {
+        notifier.setError('Pick a date for one-time mode.');
+      }
       return;
     }
 
@@ -615,6 +625,85 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                         onTap: () => ref.read(ruleFormProvider.notifier).toggleDay(d.$1),
                       );
                     }).toList(),
+                  ),
+                ),
+
+              // ── Commit date mode (loop mode only) ────────────────────
+              if (form.runMode == 'loop')
+                _Section(
+                  title: 'Commit Date',
+                  subtitle: 'Which date\'s commits to include in the message',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          _ModeChip(
+                            label: 'Today (auto)',
+                            selected: form.dateMode == 'today',
+                            icon: Icons.today_rounded,
+                            onTap: () => ref.read(ruleFormProvider.notifier).setDateMode('today'),
+                          ),
+                          const SizedBox(width: 10),
+                          _ModeChip(
+                            label: 'Specific date',
+                            selected: form.dateMode == 'specific',
+                            icon: Icons.event_rounded,
+                            onTap: () => ref.read(ruleFormProvider.notifier).setDateMode('specific'),
+                          ),
+                        ],
+                      ),
+                      if (form.dateMode == 'specific') ...[
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                              builder: (_, child) => Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: ColorScheme.dark(
+                                    primary: colors.primary,
+                                    surface: colors.surfaceContainer,
+                                    onSurface: colors.onSurface,
+                                  ),
+                                ),
+                                child: child!,
+                              ),
+                            );
+                            if (picked != null) {
+                              ref.read(ruleFormProvider.notifier).setTargetDate(
+                                  '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: colors.surfaceContainer,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: colors.outline, width: 1.0),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today_rounded, size: 18, color: Color(0xFFCAC4D0)),
+                                const SizedBox(width: 12),
+                                Text(
+                                  form.targetDate ?? 'Pick a date',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: form.targetDate != null ? colors.onSurface : const Color(0xFFCAC4D0),
+                                    fontWeight: form.targetDate != null ? FontWeight.w600 : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
 

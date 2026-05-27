@@ -49,6 +49,16 @@ class RulesNotifier extends AsyncNotifier<List<Rule>> {
     await ref.read(rulesRepositoryProvider).triggerRule(id);
   }
 
+  Future<Rule> updateNote(String id, String note) async {
+    final repo = ref.read(rulesRepositoryProvider);
+    final rules = state.valueOrNull ?? [];
+    final idx = rules.indexWhere((r) => r.id == id);
+    if (idx == -1) throw Exception('Rule not found');
+    final updated = await repo.updateRule(id, rules[idx].copyWith(note: note).toJson());
+    state = AsyncData([...rules]..[idx] = updated);
+    return updated;
+  }
+
   void addRule(Rule rule) {
     final rules = state.valueOrNull ?? [];
     state = AsyncData([rule, ...rules]);
@@ -82,6 +92,14 @@ class RuleMessagesNotifier
     await ref.read(rulesRepositoryProvider).deleteRuleMessage(ruleId, msgId);
     final msgs = state.valueOrNull ?? [];
     state = AsyncData(msgs.where((m) => m.id != msgId).toList());
+  }
+
+  Future<void> updateMessage(String ruleId, String msgId, String content) async {
+    final updated = await ref
+        .read(rulesRepositoryProvider)
+        .updateRuleMessage(ruleId, msgId, content);
+    final msgs = state.valueOrNull ?? [];
+    state = AsyncData(msgs.map((m) => m.id == msgId ? updated : m).toList());
   }
 }
 

@@ -44,6 +44,7 @@ class Rule extends Equatable {
     this.threadCountCustom,
     this.threadExampleMessage,
     required this.postWhenEmpty,
+    this.dateMode = 'today',
     this.note = '',
     this.exampleMessage = '',
     this.notificationMinutes,
@@ -73,6 +74,7 @@ class Rule extends Equatable {
   final String? threadCountCustom; // suffix for date_custom format
   final String? threadExampleMessage; // template for thread AI replies; supports {count}
   final bool postWhenEmpty;
+  final String dateMode; // 'today' | 'specific'
   final String note;
   final String exampleMessage;
   final int? notificationMinutes; // null = no notification
@@ -128,6 +130,7 @@ class Rule extends Equatable {
       threadCountCustom: json['thread_count_custom'] as String?,
       threadExampleMessage: json['thread_example_message'] as String?,
       postWhenEmpty: json['post_when_empty'] as bool? ?? false,
+      dateMode: json['date_mode'] as String? ?? 'today',
       note: json['note'] as String? ?? '',
       exampleMessage: json['example_message'] as String? ?? '',
       notificationMinutes: json['notification_minutes'] as int?,
@@ -162,6 +165,7 @@ class Rule extends Equatable {
         if (threadCountCustom != null) 'thread_count_custom': threadCountCustom,
         if (threadExampleMessage != null) 'thread_example_message': threadExampleMessage,
         'post_when_empty': postWhenEmpty,
+        'date_mode': dateMode,
         'note': note,
         'example_message': exampleMessage,
         if (notificationMinutes != null)
@@ -187,6 +191,7 @@ class Rule extends Equatable {
     String? threadCountCustom,
     String? threadExampleMessage,
     bool? postWhenEmpty,
+    String? dateMode,
     String? note,
     String? exampleMessage,
     int? notificationMinutes,
@@ -214,6 +219,7 @@ class Rule extends Equatable {
         threadCountCustom: threadCountCustom ?? this.threadCountCustom,
         threadExampleMessage: threadExampleMessage ?? this.threadExampleMessage,
         postWhenEmpty: postWhenEmpty ?? this.postWhenEmpty,
+        dateMode: dateMode ?? this.dateMode,
         note: note ?? this.note,
         exampleMessage: exampleMessage ?? this.exampleMessage,
         notificationMinutes: clearNotificationMinutes

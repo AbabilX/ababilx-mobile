@@ -127,7 +127,6 @@ class _RuleCard extends ConsumerStatefulWidget {
 }
 
 class _RuleCardState extends ConsumerState<_RuleCard> {
-  bool _sending = false;
 
   RuleStatus get _status {
     if (!widget.rule.isActive) return RuleStatus.paused;
@@ -173,11 +172,13 @@ class _RuleCardState extends ConsumerState<_RuleCard> {
     final rule = widget.rule;
     final theme = Theme.of(context);
 
-    return Container(
+    return GestureDetector(
+      onTap: () => context.go('/rules/${rule.id}/history'),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(28), // Authentic M3 Symmetrical Squircle Card
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: rule.isActive
               ? theme.colorScheme.primary.withValues(alpha: 0.3)
@@ -304,7 +305,35 @@ class _RuleCardState extends ConsumerState<_RuleCard> {
                 ),
                 const SizedBox(width: 8),
 
-                // Signature Circular Active Toggle Button
+                // Note quick-tap icon
+                GestureDetector(
+                  onTap: () => _showNoteSheet(context),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: rule.note.isNotEmpty
+                          ? const Color(0xFF381E72)
+                          : const Color(0xFF25232A),
+                      border: Border.all(
+                        color: rule.note.isNotEmpty
+                            ? theme.colorScheme.primary.withValues(alpha: 0.5)
+                            : theme.colorScheme.outline,
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.edit_note_rounded,
+                      color: rule.note.isNotEmpty
+                          ? const Color(0xFFE8DEF8)
+                          : const Color(0xFFCAC4D0),
+                      size: 18,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // Power toggle
                 GestureDetector(
                   onTap: () => ref
                       .read(rulesProvider.notifier)
@@ -317,8 +346,8 @@ class _RuleCardState extends ConsumerState<_RuleCard> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: rule.isActive
-                          ? theme.colorScheme.primary // Solid purple active
-                          : const Color(0xFF25232A), // Solid dark-surface inactive
+                          ? theme.colorScheme.primary
+                          : const Color(0xFF25232A),
                       border: Border.all(
                         color: rule.isActive
                             ? Colors.transparent
@@ -329,8 +358,8 @@ class _RuleCardState extends ConsumerState<_RuleCard> {
                     child: Icon(
                       Icons.power_settings_new_rounded,
                       color: rule.isActive
-                          ? theme.colorScheme.onPrimary // Dark purple icon
-                          : const Color(0xFFCAC4D0), // Muted icon
+                          ? theme.colorScheme.onPrimary
+                          : const Color(0xFFCAC4D0),
                       size: 18,
                     ),
                   ),
@@ -482,161 +511,78 @@ class _RuleCardState extends ConsumerState<_RuleCard> {
             ),
           ),
 
-          // ── Action bar (Chunky M3 Quick Settings Tiles) ──────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-            child: Row(
-              children: [
-                // Trigger Now Tile (Primary Solid color-blocked highlight)
-                _TonalIconBtn(
-                  icon: Icons.bolt_rounded,
-                  tooltip: 'Trigger Now',
-                  activeColor: const Color(0xFF21005D), // Dark purple icon
-                  backgroundColor: const Color(0xFFE8DEF8), // High-contrast solid light purple
-                  loading: _sending,
-                  onTap: () async {
-                    setState(() => _sending = true);
-                    try {
-                      await ref
-                          .read(rulesProvider.notifier)
-                          .triggerRule(rule.id);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Row(
-                              children: [
-                                Icon(Icons.check_circle_rounded,
-                                    color: Colors.white, size: 18),
-                                SizedBox(width: 8),
-                                Text('Message sent!'),
-                              ],
-                            ),
-                            backgroundColor: AppColors.green,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            margin: const EdgeInsets.all(16),
-                          ),
-                        );
-                      }
-                    } finally {
-                      if (mounted) setState(() => _sending = false);
-                    }
-                  },
-                ),
-                const SizedBox(width: 8),
-                // View History Tile (Solid surface container style)
-                _TonalIconBtn(
-                  icon: Icons.history_rounded,
-                  tooltip: 'View History',
-                  activeColor: const Color(0xFFCAC4D0),
-                  backgroundColor: const Color(0xFF25232A),
-                  onTap: () => context.go('/rules/${rule.id}/history'),
-                ),
-                const Spacer(),
-                // Configure/Edit Tile
-                _TonalIconBtn(
-                  icon: Icons.tune_rounded,
-                  tooltip: 'Configure Rule',
-                  activeColor: const Color(0xFFCAC4D0),
-                  backgroundColor: const Color(0xFF25232A),
-                  onTap: () => context.go('/rules/${rule.id}/edit'),
-                ),
-                const SizedBox(width: 8),
-                // Delete Tile (Tonal red color block style)
-                _TonalIconBtn(
-                  icon: Icons.delete_outline_rounded,
-                  tooltip: 'Delete Rule',
-                  activeColor: const Color(0xFFF2B8B5),
-                  backgroundColor: const Color(0xFF601410),
-                  onTap: () => _confirmDelete(context, ref),
-                ),
-              ],
-            ),
-          ),
+          const SizedBox(height: 18),
         ],
       ),
-    );
+    ));
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
-    showDialog(
+  void _showNoteSheet(BuildContext context) {
+    final ctrl = TextEditingController(text: widget.rule.note);
+    final colors = Theme.of(context).colorScheme;
+    showModalBottomSheet(
       context: context,
-      builder: (dialogCtx) => Dialog(
-        backgroundColor: const Color(0xFF211F26),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-          side: const BorderSide(color: Color(0xFF35343B)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF211F26),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetCtx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            20, 20, 20, MediaQuery.of(sheetCtx).viewInsets.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF601410),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(Icons.delete_outline_rounded,
-                    color: Color(0xFFF2B8B5), size: 28),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Delete Rule',
-                style: TextStyle(
-                  color: Color(0xFFE6E1E5),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF49454F),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Delete "${widget.rule.name}"?\nThis cannot be undone.',
-                style: const TextStyle(
-                    color: Color(0xFFCAC4D0), fontSize: 14),
-                textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Row(children: [
+              Icon(Icons.psychology_outlined, size: 18, color: colors.primary),
+              const SizedBox(width: 10),
+              const Text('Quick Note for AI',
+                  style: TextStyle(color: Color(0xFFE6E1E5), fontSize: 16, fontWeight: FontWeight.w800)),
+            ]),
+            const SizedBox(height: 6),
+            const Text(
+              'Extra context for the next send — meetings, blockers, decisions.',
+              style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: ctrl,
+              maxLines: 4,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'e.g. Had planning meeting, blocked on auth service…',
+                prefixIcon: Icon(Icons.edit_note_rounded, size: 20),
               ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(dialogCtx),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFCAC4D0),
-                        side: const BorderSide(color: Color(0xFF35343B)),
-                        shape: const StadiumBorder(),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () {
-                        Navigator.pop(dialogCtx);
-                        ref
-                            .read(rulesProvider.notifier)
-                            .deleteRule(widget.rule.id);
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF601410),
-                        foregroundColor: Colors.white,
-                        shape: const StadiumBorder(),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text('Delete',
-                          style: TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                ],
+              style: const TextStyle(fontSize: 14, height: 1.5),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  Navigator.pop(sheetCtx);
+                  await ref.read(rulesProvider.notifier).updateNote(widget.rule.id, ctrl.text);
+                },
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Save Note', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -709,62 +655,6 @@ class _StatusChip extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
-}
-
-class _TonalIconBtn extends StatelessWidget {
-  const _TonalIconBtn({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-    required this.activeColor,
-    required this.backgroundColor,
-    this.loading = false,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-  final Color activeColor;
-  final Color backgroundColor;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: loading ? null : onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline,
-                width: 0.8,
-              ),
-            ),
-            child: loading
-                ? Center(
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: activeColor,
-                      ),
-                    ),
-                  )
-                : Icon(icon, size: 20, color: activeColor),
-          ),
         ),
       ),
     );
