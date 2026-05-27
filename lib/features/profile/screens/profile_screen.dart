@@ -214,7 +214,7 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () async {
                       final selectedLang = await showDialog<String>(
                         context: context,
-                        builder: (_) => Dialog(
+                        builder: (dialogCtx) => Dialog(
                           backgroundColor: colors.surfaceContainer,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(28),
@@ -241,7 +241,7 @@ class ProfileScreen extends ConsumerWidget {
                                   trailing: user.appLanguage.toLowerCase() == 'en'
                                       ? Icon(Icons.check_circle_rounded, color: colors.primary)
                                       : null,
-                                  onTap: () => Navigator.pop(context, 'en'),
+                                  onTap: () => Navigator.pop(dialogCtx, 'en'),
                                 ),
                                 const SizedBox(height: 8),
                                 // Bangla option
@@ -251,7 +251,7 @@ class ProfileScreen extends ConsumerWidget {
                                   trailing: user.appLanguage.toLowerCase() == 'bn'
                                       ? Icon(Icons.check_circle_rounded, color: colors.primary)
                                       : null,
-                                  onTap: () => Navigator.pop(context, 'bn'),
+                                  onTap: () => Navigator.pop(dialogCtx, 'bn'),
                                 ),
                               ],
                             ),
@@ -277,7 +277,7 @@ class ProfileScreen extends ConsumerWidget {
                 onPressed: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
-                    builder: (_) => Dialog(
+                    builder: (dialogCtx) => Dialog(
                       backgroundColor: colors.surfaceContainer,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(28),
@@ -319,7 +319,7 @@ class ProfileScreen extends ConsumerWidget {
                                 Expanded(
                                   child: OutlinedButton(
                                     onPressed: () =>
-                                        Navigator.pop(context, false),
+                                        Navigator.pop(dialogCtx, false),
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: colors.onSurface,
                                       side: BorderSide(color: colors.outline),
@@ -334,7 +334,7 @@ class ProfileScreen extends ConsumerWidget {
                                 Expanded(
                                   child: FilledButton(
                                     onPressed: () =>
-                                        Navigator.pop(context, true),
+                                        Navigator.pop(dialogCtx, true),
                                     style: FilledButton.styleFrom(
                                       backgroundColor: colors.error,
                                       foregroundColor: colors.onError,
