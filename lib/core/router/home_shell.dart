@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/constants/app_colors.dart';
 
 /// Bottom navigation shell wrapping Rules and Profile tabs.
 class HomeShell extends StatelessWidget {
@@ -24,8 +23,8 @@ class HomeShell extends StatelessWidget {
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.border, width: 0.8)),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline, width: 0.8)),
         ),
         child: NavigationBar(
           selectedIndex: idx,
