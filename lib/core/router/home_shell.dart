@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../localization/app_translations.dart';
 
 /// Bottom navigation shell wrapping Rules and Profile tabs.
-class HomeShell extends StatelessWidget {
+class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
 
@@ -17,28 +19,31 @@ class HomeShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final idx = _currentIndex(context);
+    final theme = Theme.of(context);
 
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline, width: 0.8)),
+          border: Border(
+            top: BorderSide(color: theme.colorScheme.outline, width: 0.8),
+          ),
         ),
         child: NavigationBar(
           selectedIndex: idx,
           onDestinationSelected: (i) => context.go(_tabs[i]),
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.schedule_send_rounded),
-              selectedIcon: Icon(Icons.schedule_send_rounded),
-              label: 'Auto Messages',
+              icon: const Icon(Icons.schedule_send_rounded),
+              selectedIcon: const Icon(Icons.schedule_send_rounded),
+              label: AppTranslations.translate(context, ref, 'rules'),
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
-              label: 'Profile',
+              icon: const Icon(Icons.person_outline_rounded),
+              selectedIcon: const Icon(Icons.person_rounded),
+              label: AppTranslations.translate(context, ref, 'profile'),
             ),
           ],
         ),
