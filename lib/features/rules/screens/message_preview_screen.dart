@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../shared/widgets/glass_card.dart';
-import '../../../shared/widgets/gradient_button.dart';
 import '../providers/rules_provider.dart';
 
 /// The pre-send review screen.
@@ -36,7 +33,6 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
   @override
   void initState() {
     super.initState();
-    // Auto-fetch AI preview on open
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(rulePreviewProvider(widget.ruleId).notifier).generate(widget.ruleId);
     });
@@ -49,6 +45,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
   }
 
   Future<void> _sendNow() async {
+    final colors = Theme.of(context).colorScheme;
     setState(() => _sending = true);
     try {
       await ref
@@ -58,19 +55,18 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
         _sending = false;
         _sent = true;
       });
-      // Invalidate history so it refreshes next time
       ref.invalidate(ruleMessagesProvider(widget.ruleId));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
+          SnackBar(
+            content: const Row(
               children: [
                 Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
                 SizedBox(width: 8),
                 Text('Message sent to Slack!'),
               ],
             ),
-            backgroundColor: AppColors.green,
+            backgroundColor: colors.primary,
           ),
         );
         await Future.delayed(const Duration(seconds: 1));
@@ -80,7 +76,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
       setState(() => _sending = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.red),
+          SnackBar(content: Text('Error: $e'), backgroundColor: colors.error),
         );
       }
     }
@@ -93,16 +89,17 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
         .read(rulePreviewProvider(widget.ruleId).notifier)
         .saveOverride(widget.ruleId, content);
     if (mounted) {
+      final colors = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
+        SnackBar(
+          content: const Row(
             children: [
               Icon(Icons.save_rounded, color: Colors.white, size: 18),
               SizedBox(width: 8),
               Text('Saved! Will send your version automatically.'),
             ],
           ),
-          backgroundColor: AppColors.indigo,
+          backgroundColor: colors.primary,
         ),
       );
       context.pop();
@@ -112,8 +109,9 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
   @override
   Widget build(BuildContext context) {
     final previewAsync = ref.watch(rulePreviewProvider(widget.ruleId));
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
-    // Populate controller when preview loads (first time only)
     ref.listen(rulePreviewProvider(widget.ruleId), (_, next) {
       if (next.hasValue && next.value != null && _controller.text.isEmpty) {
         _controller.text = next.value!;
@@ -121,16 +119,15 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.bg,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text(
           widget.fromNotification ? 'Review Standup' : 'Message Preview',
-          style: const TextStyle(
-            color: AppColors.text,
+          style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 20,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
           ),
         ),
@@ -139,12 +136,13 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
           onPressed: () => context.pop(),
         ),
         actions: [
-          // Regenerate button
           IconButton(
             style: IconButton.styleFrom(
-              backgroundColor: AppColors.surface2,
-              foregroundColor: AppColors.textMuted,
-              shape: const CircleBorder(),
+              backgroundColor: colors.surfaceContainerLow,
+              foregroundColor: colors.onSurfaceVariant,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             icon: const Icon(Icons.refresh_rounded, size: 20),
             tooltip: 'Regenerate AI message',
@@ -156,7 +154,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                   .generate(widget.ruleId);
             },
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
         ],
       ),
       body: SafeArea(
@@ -165,71 +163,83 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Info banner for notification context ─────────────────────
               if (widget.fromNotification) ...[
                 _NotificationBanner(ruleId: widget.ruleId),
                 const SizedBox(height: 16),
               ],
 
-              // ── Preview Workspace (Glass Deck) ───────────────────────────
+              // ── Preview Workspace (Symmetrical M3 Container Sheet) ─────────
               Expanded(
                 child: previewAsync.when(
-                  loading: () => GlassCard(
-                    borderRadius: 24,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.surface.withOpacity(0.3),
+                  loading: () => Container(
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: colors.outline, width: 1.0),
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        CircularProgressIndicator(color: AppColors.indigo, strokeWidth: 2.5),
-                        SizedBox(height: 16),
-                        Text(
+                      children: [
+                        CircularProgressIndicator(
+                            color: colors.primary, strokeWidth: 2.5),
+                        const SizedBox(height: 16),
+                        const Text(
                           'Generating AI message…',
-                          style: TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                              color: Color(0xFFCAC4D0),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
                   ),
-                  error: (e, _) => GlassCard(
-                    borderRadius: 24,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.surface.withOpacity(0.3),
+                  error: (e, _) => Container(
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: colors.outline, width: 1.0),
+                    ),
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.error_outline_rounded, color: AppColors.red, size: 36),
+                          Icon(Icons.error_outline_rounded,
+                              color: colors.error, size: 36),
                           const SizedBox(height: 12),
                           Text(
                             'Could not generate preview:\n$e',
-                            style: const TextStyle(color: AppColors.red, fontSize: 13, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                                color: colors.error,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500),
                             textAlign: TextAlign.center,
                           ),
                         ],
                       ),
                     ),
                   ),
-                  data: (_) => GlassCard(
-                    padding: EdgeInsets.zero,
-                    borderRadius: 24,
-                    borderColor: AppColors.border,
-                    backgroundColor: AppColors.surface.withOpacity(0.3),
+                  data: (_) => Container(
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: colors.outline, width: 1.0),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Card header
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                           child: Row(
                             children: [
-                              const Icon(Icons.auto_awesome_rounded,
-                                  size: 16, color: AppColors.indigoLight),
+                              Icon(Icons.auto_awesome_rounded,
+                                  size: 18, color: colors.primary),
                               const SizedBox(width: 8),
                               const Text(
                                 'AI Draft Workspace',
                                 style: TextStyle(
-                                  color: AppColors.indigoLight,
-                                  fontSize: 12,
+                                  color: Color(0xFFE8DEF8),
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.2,
                                 ),
@@ -238,37 +248,37 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                               if (_edited)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 3),
+                                      horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppColors.amber.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.amber.withOpacity(0.2), width: 0.8),
+                                    color: const Color(0xFF381E72),
+                                    borderRadius: BorderRadius.circular(100),
+                                    border: Border.all(
+                                        color: colors.primary, width: 0.8),
                                   ),
                                   child: const Text(
                                     'Edited',
                                     style: TextStyle(
-                                      color: AppColors.amber,
+                                      color: Color(0xFFE8DEF8),
                                       fontSize: 11,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                 ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        const Divider(height: 1, color: AppColors.border),
+                        Divider(height: 1, color: colors.outline),
                         // Editable text area
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(20),
                             child: TextField(
                               controller: _controller,
                               maxLines: null,
                               expands: true,
                               textAlignVertical: TextAlignVertical.top,
-                              style: const TextStyle(
-                                color: AppColors.text,
+                              style: TextStyle(
+                                color: colors.onSurface,
                                 fontSize: 14,
                                 height: 1.6,
                               ),
@@ -278,7 +288,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                                 focusedBorder: InputBorder.none,
                                 hintText: 'Edit draft here…',
                                 hintStyle:
-                                    TextStyle(color: AppColors.textMuted),
+                                    TextStyle(color: Color(0xFFCAC4D0)),
                                 filled: false,
                                 contentPadding: EdgeInsets.zero,
                               ),
@@ -294,92 +304,122 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // ── Action Buttons ───────────────────────────────────────────
               if (!_sent) ...[
-                // Send Now primary button
-                GradientButton(
-                  label: 'Send Standup Now',
-                  icon: Icons.send_rounded,
-                  isLoading: _sending,
-                  onPressed: previewAsync.hasValue ? _sendNow : null,
-                ),
-                const SizedBox(height: 10),
-
-                // Save override (once edited in notification mode)
-                if (widget.fromNotification && _edited) ...[
-                  Material(
-                    color: AppColors.indigo.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(100),
-                    child: InkWell(
-                      onTap: _saveOverride,
-                      borderRadius: BorderRadius.circular(100),
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(100),
-                          border: Border.all(color: AppColors.indigo.withOpacity(0.2), width: 1),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.save_rounded, size: 18, color: AppColors.indigoLight),
-                            SizedBox(width: 8),
-                            Text(
-                              'Save & Auto-Send Later',
-                              style: TextStyle(
-                                color: AppColors.indigoLight,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.2,
-                              ),
+                // Send Now primary button: Authentic M3 Stadium Capsule
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton.icon(
+                    onPressed: previewAsync.hasValue ? _sendNow : null,
+                    icon: _sending
+                        ? const SizedBox.shrink()
+                        : const Icon(Icons.send_rounded, size: 20),
+                    label: _sending
+                        ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: colors.onPrimary,
+                              strokeWidth: 2.5,
                             ),
-                          ],
+                          )
+                        : const Text(
+                            'Send Standup Now',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colors.primary,
+                      foregroundColor: colors.onPrimary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Save override (once edited in notification mode): Flat Tonal Purple Capsule
+                if (widget.fromNotification && _edited) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _saveOverride,
+                      icon: const Icon(Icons.save_rounded, size: 20),
+                      label: const Text(
+                        'Save & Auto-Send Later',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF381E72),
+                        foregroundColor: const Color(0xFFE8DEF8),
+                        elevation: 0,
+                        side: BorderSide(color: colors.outline, width: 1.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                 ],
 
-                // Close/Ignore button
-                OutlinedButton(
-                  onPressed: () => context.pop(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textMuted,
-                    side: const BorderSide(color: AppColors.border),
-                    shape: const StadiumBorder(),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: Text(
-                    widget.fromNotification ? 'Ignore — Send Auto-Draft' : 'Close Workspace',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                // Close/Ignore button: Clean Outline Capsule
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton(
+                    onPressed: () => context.pop(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colors.onSurface,
+                      side: BorderSide(color: colors.outline, width: 1.2),
+                      shape: const StadiumBorder(),
+                    ),
+                    child: Text(
+                      widget.fromNotification
+                          ? 'Ignore — Send Auto-Draft'
+                          : 'Close Workspace',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
               ] else ...[
-                // Sent successfully banner
+                // Sent successfully banner: Flat Solid Tonal Green capsule
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.green.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFF142F1C),
+                    borderRadius: BorderRadius.circular(100),
                     border: Border.all(
-                      color: AppColors.green.withOpacity(0.2),
-                      width: 0.8,
+                      color: const Color(0xFF22C55E),
+                      width: 1.0,
                     ),
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_rounded, color: AppColors.green, size: 20),
-                      SizedBox(width: 8),
+                      Icon(Icons.check_circle_rounded,
+                          color: Color(0xFF22C55E), size: 22),
+                      SizedBox(width: 10),
                       Text(
                         'Sent to Slack successfully!',
                         style: TextStyle(
-                          color: AppColors.green,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
+                          color: Color(0xFF22C55E),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
                         ),
                       ),
                     ],
@@ -405,7 +445,7 @@ class _NotificationBanner extends ConsumerStatefulWidget {
 }
 
 class _NotificationBannerState extends ConsumerState<_NotificationBanner> {
-  int _remainingSeconds = 600; // 10 min default display
+  int _remainingSeconds = 600;
   Timer? _timer;
 
   @override
@@ -435,24 +475,26 @@ class _NotificationBannerState extends ConsumerState<_NotificationBanner> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.indigo.withOpacity(0.08),
+        color: const Color(0xFF381E72),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: AppColors.indigo.withOpacity(0.24), width: 1),
+        border: Border.all(color: const Color(0xFFD0BCFF), width: 1.0),
       ),
       child: Row(
         children: [
           const Icon(Icons.notifications_active_rounded,
-              size: 16, color: AppColors.indigoLight)
+                  size: 18, color: Color(0xFFE8DEF8))
               .animate(onPlay: (c) => c.repeat())
               .shake(duration: 800.ms, hz: 4),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               'Auto-sends in $_countdown unless you edit or send now',
               style: const TextStyle(
-                  color: AppColors.indigoLight, fontSize: 12, fontWeight: FontWeight.w600),
+                  color: Color(0xFFE8DEF8),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700),
             ),
           ),
         ],
