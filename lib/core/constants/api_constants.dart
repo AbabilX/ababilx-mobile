@@ -3,8 +3,7 @@
 class ApiConstants {
   ApiConstants._();
 
-  static const String baseUrl = 'http://10.0.2.2:7896'; // Android emulator → localhost
-  // static const String baseUrl = 'http://YOUR_PROD_URL'; // production
+  static const String baseUrl = 'https://api.ababilx.cloud';
 
   // Auth
   static const String mobileGoogleAuth = '/auth/google/mobile';
