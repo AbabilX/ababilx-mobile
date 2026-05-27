@@ -180,7 +180,7 @@ class _RuleCardState extends ConsumerState<_RuleCard> {
         borderRadius: BorderRadius.circular(28), // Authentic M3 Symmetrical Squircle Card
         border: Border.all(
           color: rule.isActive
-              ? theme.colorScheme.primary.withOpacity(0.3)
+              ? theme.colorScheme.primary.withValues(alpha: 0.3)
               : theme.colorScheme.outline,
           width: 1.0,
         ),
