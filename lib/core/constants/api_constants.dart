@@ -25,6 +25,11 @@ class ApiConstants {
   static const String slackChannels = '/api/slack/channels';
   static const String slackDisconnect = '/api/slack/disconnect';
 
+  // GitHub Repos
+  static const String githubRepos = '/api/repos';
+  static String repoBranches(String owner, String repo) =>
+      '/api/repos/$owner/$repo/branches';
+
   // Devices (FCM)
   static const String devices = '/api/devices';
 }
