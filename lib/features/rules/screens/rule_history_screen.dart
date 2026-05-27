@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/utils/date_utils.dart';
 import '../providers/rules_provider.dart';
+import '../../../core/localization/app_translations.dart';
 
 class RuleHistoryScreen extends ConsumerWidget {
   const RuleHistoryScreen({super.key, required this.ruleId});
@@ -20,7 +21,7 @@ class RuleHistoryScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Message History',
+          AppTranslations.translate(context, ref, 'msg_history'),
           style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -85,7 +86,7 @@ class RuleHistoryScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'No messages sent yet',
+                        AppTranslations.translate(context, ref, 'no_messages'),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -93,9 +94,9 @@ class RuleHistoryScreen extends ConsumerWidget {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Messages will appear here after the rule fires.',
-                        style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 14),
+                      Text(
+                        AppTranslations.translate(context, ref, 'no_messages_desc'),
+                        style: const TextStyle(color: Color(0xFFCAC4D0), fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -135,14 +136,14 @@ class RuleHistoryScreen extends ConsumerWidget {
                                     color: const Color(0xFF22C55E),
                                     width: 0.8),
                               ),
-                              child: const Row(
+                              child: Row(
                                 children: [
-                                  Icon(Icons.check_circle_rounded,
+                                  const Icon(Icons.check_circle_rounded,
                                       size: 14, color: Color(0xFF22C55E)),
-                                  SizedBox(width: 4),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    'Sent',
-                                    style: TextStyle(
+                                    AppTranslations.translate(context, ref, 'sent'),
+                                    style: const TextStyle(
                                       color: Color(0xFF22C55E),
                                       fontSize: 11,
                                       fontWeight: FontWeight.w800,
