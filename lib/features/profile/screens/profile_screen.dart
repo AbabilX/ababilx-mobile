@@ -1,8 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../shared/widgets/glass_card.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 
@@ -12,37 +10,44 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider);
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.bg,
-        surfaceTintColor: Colors.transparent,
-        title: const Text(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
           'Profile',
-          style: TextStyle(
-            color: AppColors.text,
+          style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 22,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
           ),
         ),
         actions: [
           IconButton(
             style: IconButton.styleFrom(
-              backgroundColor: AppColors.surface2,
-              foregroundColor: AppColors.textMuted,
-              shape: const CircleBorder(),
+              backgroundColor: colors.surfaceContainerLow,
+              foregroundColor: colors.onSurfaceVariant,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             icon: const Icon(Icons.refresh_rounded, size: 20),
             onPressed: () => ref.read(profileProvider.notifier).refresh(),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
         ],
       ),
       body: profileAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator(color: AppColors.indigo, strokeWidth: 2.5)),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: colors.primary,
+            strokeWidth: 2.5,
+          ),
+        ),
         error: (e, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -51,15 +56,17 @@ class ProfileScreen extends ConsumerWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: AppColors.surface2,
+                  color: colors.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: colors.outline),
                 ),
-                child: const Icon(Icons.error_outline_rounded, color: AppColors.textMuted, size: 32),
+                child: Icon(Icons.error_outline_rounded,
+                    color: colors.error, size: 32),
               ),
               const SizedBox(height: 16),
               Text(
                 e.toString(),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -68,105 +75,91 @@ class ProfileScreen extends ConsumerWidget {
         data: (user) => ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
-            // ── Avatar + Name Card (Premium Deck) ──────────────────────────
-            GlassCard(
-              borderRadius: 28,
-              borderColor: AppColors.border,
-              backgroundColor: AppColors.surface2.withOpacity(0.8),
+            // ── Avatar + Name Card (Symmetrical M3 Squircle Sheet) ─────────
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: colors.outline, width: 1.0),
+              ),
               child: Column(
                 children: [
-                  // Asymmetric Squircle Avatar Frame (Shape tension!)
+                  // Symmetrical Squircle Avatar Frame
                   Container(
-                    width: 86,
-                    height: 86,
+                    width: 96,
+                    height: 96,
                     decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(26),
-                        topRight: Radius.circular(12),
-                        bottomLeft: Radius.circular(12),
-                        bottomRight: Radius.circular(26),
-                      ),
+                      color: colors.surfaceContainer,
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: AppColors.indigo.withOpacity(0.24),
+                        color: colors.outline,
                         width: 1.5,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.indigoGlow.withOpacity(0.12),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(2.5),
+                      padding: const EdgeInsets.all(4.0),
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(23),
-                          topRight: Radius.circular(9),
-                          bottomLeft: Radius.circular(9),
-                          bottomRight: Radius.circular(23),
-                        ),
+                        borderRadius: BorderRadius.circular(20),
                         child: user.avatarUrl.isNotEmpty
                             ? CachedNetworkImage(
                                 imageUrl: user.avatarUrl,
-                                width: 80,
-                                height: 80,
+                                width: 88,
+                                height: 88,
                                 fit: BoxFit.cover,
-                                errorWidget: (_, _, _) => const Icon(
+                                errorWidget: (_, _, _) => Icon(
                                   Icons.person_rounded,
-                                  size: 36,
-                                  color: AppColors.indigoLight,
+                                  size: 40,
+                                  color: colors.primary,
                                 ),
                               )
-                            : const Icon(
+                            : Icon(
                                 Icons.person_rounded,
-                                size: 36,
-                                color: AppColors.indigoLight,
+                                size: 40,
+                                color: colors.primary,
                               ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Name (Emphasized typography)
+                  // Name (Jakarta Sans)
                   Text(
                     user.name,
-                    style: const TextStyle(
-                      color: AppColors.text,
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
+                      letterSpacing: -0.4,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   // Email
                   Text(
                     user.email,
-                    style: const TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 13,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFFCAC4D0),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  // Plan badge capsule
+                  const SizedBox(height: 16),
+                  // Plan badge capsule: Flat Tonal Solid Purple capsule
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.indigo.withOpacity(0.08),
+                      color: const Color(0xFF381E72),
                       borderRadius: BorderRadius.circular(100),
                       border: Border.all(
-                        color: AppColors.indigo.withOpacity(0.2),
+                        color: colors.outline,
                         width: 0.8,
                       ),
                     ),
                     child: Text(
                       user.plan.toUpperCase(),
                       style: const TextStyle(
-                        color: AppColors.indigoLight,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                        color: Color(0xFFE8DEF8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
                       ),
                     ),
                   ),
@@ -176,11 +169,14 @@ class ProfileScreen extends ConsumerWidget {
 
             const SizedBox(height: 16),
 
-            // ── Info listings (Translucent Glass Panel) ────────────────────
-            GlassCard(
-              borderRadius: 24,
-              borderColor: AppColors.border,
-              backgroundColor: AppColors.surface.withOpacity(0.3),
+            // ── Info listings (Solid Flat Panel with border) ───────────────
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: colors.outline, width: 1.0),
+              ),
               child: Column(
                 children: [
                   _InfoRow(
@@ -188,7 +184,7 @@ class ProfileScreen extends ConsumerWidget {
                     label: 'Provider',
                     value: user.provider.toUpperCase(),
                   ),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: colors.outline, height: 1),
                   _InfoRow(
                     icon: Icons.code_rounded,
                     label: 'GitHub Connection',
@@ -196,19 +192,19 @@ class ProfileScreen extends ConsumerWidget {
                         ? '@${user.githubUsername}'
                         : 'Not connected',
                     valueColor: user.githubUsername.isNotEmpty
-                        ? AppColors.text
-                        : AppColors.textMuted,
+                        ? colors.onSurface
+                        : const Color(0xFFCAC4D0),
                   ),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: colors.outline, height: 1),
                   _InfoRow(
                     icon: Icons.chat_bubble_outline_rounded,
                     label: 'Slack Workspace',
                     value: user.slackConnected ? 'Connected' : 'Not connected',
                     valueColor: user.slackConnected
-                        ? AppColors.green
-                        : AppColors.textMuted,
+                        ? const Color(0xFF22C55E)
+                        : const Color(0xFFCAC4D0),
                   ),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: colors.outline, height: 1),
                   _InfoRow(
                     icon: Icons.translate_rounded,
                     label: 'Application Language',
@@ -220,19 +216,19 @@ class ProfileScreen extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // ── Sign Out Button (Filled Red Tonal Capsule style) ───────────
-            Material(
-              color: AppColors.red.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(100),
-              child: InkWell(
-                onTap: () async {
+            // ── Sign Out Button (Flat Red Tonal Capsule style) ─────────────
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (_) => Dialog(
-                      backgroundColor: AppColors.surface2,
+                      backgroundColor: colors.surfaceContainer,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(28),
-                        side: const BorderSide(color: AppColors.border),
+                        side: BorderSide(color: colors.outline),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(24),
@@ -243,16 +239,16 @@ class ProfileScreen extends ConsumerWidget {
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                color: AppColors.red.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(18),
+                                color: colors.errorContainer,
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              child: const Icon(Icons.logout_rounded, color: AppColors.red, size: 28),
+                              child: Icon(Icons.logout_rounded,
+                                  color: colors.error, size: 28),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
+                            Text(
                               'Sign out',
-                              style: TextStyle(
-                                color: AppColors.text,
+                              style: theme.textTheme.titleMedium?.copyWith(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -260,7 +256,8 @@ class ProfileScreen extends ConsumerWidget {
                             const SizedBox(height: 8),
                             const Text(
                               'Are you sure you want to sign out?',
-                              style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                              style: TextStyle(
+                                  color: Color(0xFFCAC4D0), fontSize: 14),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
@@ -268,12 +265,14 @@ class ProfileScreen extends ConsumerWidget {
                               children: [
                                 Expanded(
                                   child: OutlinedButton(
-                                    onPressed: () => Navigator.pop(context, false),
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
                                     style: OutlinedButton.styleFrom(
-                                      foregroundColor: AppColors.textMuted,
-                                      side: const BorderSide(color: AppColors.border),
+                                      foregroundColor: colors.onSurface,
+                                      side: BorderSide(color: colors.outline),
                                       shape: const StadiumBorder(),
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 14),
                                     ),
                                     child: const Text('Cancel'),
                                   ),
@@ -281,14 +280,20 @@ class ProfileScreen extends ConsumerWidget {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: FilledButton(
-                                    onPressed: () => Navigator.pop(context, true),
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
                                     style: FilledButton.styleFrom(
-                                      backgroundColor: AppColors.red,
-                                      foregroundColor: Colors.white,
+                                      backgroundColor: colors.error,
+                                      foregroundColor: colors.onError,
                                       shape: const StadiumBorder(),
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 14),
                                     ),
-                                    child: const Text('Sign out', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    child: const Text(
+                                      'Sign out',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w700),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -302,32 +307,29 @@ class ProfileScreen extends ConsumerWidget {
                     await ref.read(authProvider.notifier).signOut();
                   }
                 },
-                borderRadius: BorderRadius.circular(100),
-                child: Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(100),
-                    border: Border.all(
-                      color: AppColors.red.withOpacity(0.2),
-                      width: 1,
-                    ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2E1B1B),
+                  foregroundColor: const Color(0xFFF2B8B5),
+                  elevation: 0,
+                  side: const BorderSide(color: Color(0xFF601410), width: 1.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.logout_rounded, size: 18, color: AppColors.red),
-                      SizedBox(width: 8),
-                      Text(
-                        'Sign Out',
-                        style: TextStyle(
-                          color: AppColors.red,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.2,
-                        ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.logout_rounded, size: 20),
+                    SizedBox(width: 10),
+                    Text(
+                      'Sign Out',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.1,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -343,32 +345,39 @@ class _InfoRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
-    this.valueColor = AppColors.text,
+    this.valueColor,
   });
 
   final IconData icon;
   final String label;
   final String value;
-  final Color valueColor;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final fallbackColor = colors.onSurface;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.indigoLight),
-          const SizedBox(width: 12),
+          Icon(icon, size: 20, color: colors.primary),
+          const SizedBox(width: 14),
           Text(
             label,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+                color: Color(0xFFCAC4D0),
+                fontSize: 14,
+                fontWeight: FontWeight.w500),
           ),
           const Spacer(),
           Text(
             value,
             style: TextStyle(
-              color: valueColor,
-              fontSize: 13,
+              color: valueColor ?? fallbackColor,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
           ),
