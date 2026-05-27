@@ -12,6 +12,13 @@ class ProfileNotifier extends AsyncNotifier<AppUser> {
       () => ref.read(profileRepositoryProvider).getMe(),
     );
   }
+
+  Future<void> updateLanguage(String lang) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(profileRepositoryProvider).updateLanguage(lang),
+    );
+  }
 }
 
 final profileProvider =
