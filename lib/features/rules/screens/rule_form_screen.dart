@@ -219,7 +219,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       DropdownButtonFormField<String>(
-                        initialValue: form.channelId.isEmpty ? null : form.channelId,
+                        initialValue: (form.channelId.isEmpty || !channels.any((c) => c.id == form.channelId)) ? null : form.channelId,
                         isExpanded: true,
                         hint: const Text('Select Slack channel',
                             style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13)),
@@ -302,7 +302,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         DropdownButtonFormField<String>(
-                          initialValue: form.repoFullName.isEmpty ? null : form.repoFullName,
+                          initialValue: (form.repoFullName.isEmpty || !repos.any((r) => r.fullName == form.repoFullName)) ? '' : form.repoFullName,
                           isExpanded: true,
                           hint: const Text('All repositories (default)',
                               style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13)),
@@ -335,7 +335,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                                 error: (err, stack) => const Text('Failed to load branches',
                                     style: TextStyle(color: Colors.redAccent, fontSize: 13)),
                                 data: (branches) => DropdownButtonFormField<String>(
-                                  initialValue: form.branch.isEmpty ? null : form.branch,
+                                  initialValue: (form.branch.isEmpty || !branches.contains(form.branch)) ? '' : form.branch,
                                   isExpanded: true,
                                   hint: const Text('Default branch',
                                       style: TextStyle(color: Color(0xFFCAC4D0), fontSize: 13)),
