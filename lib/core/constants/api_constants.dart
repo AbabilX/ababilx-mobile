@@ -30,9 +30,12 @@ class ApiConstants {
   static String repoBranches(String owner, String repo) =>
       '/api/repos/$owner/$repo/branches';
 
+  // Activity
+  static const String weeklyActivity = '/api/activity/weekly';
+
   // Auto-commit jobs
-  static const String jobs = '/api/jobs';
-  static String jobById(String id) => '/api/jobs/$id';
+  static const String jobs = '/api/auto-commits';
+  static String jobById(String id) => '/api/auto-commits/$id';
 
   // Devices (FCM)
   static const String devices = '/api/devices';
