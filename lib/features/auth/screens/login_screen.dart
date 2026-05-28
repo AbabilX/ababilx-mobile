@@ -38,11 +38,11 @@ class LoginScreen extends ConsumerWidget {
                       width: 1.5,
                     ),
                   ),
-                  child: Center(
-                    child: Icon(
-                      Icons.bolt_rounded,
-                      color: colors.primary,
-                      size: 48,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(26),
+                    child: Image.asset(
+                      'assets/icon/icon.png',
+                      fit: BoxFit.cover,
                     ),
                   ),
                 )
