@@ -63,6 +63,8 @@ class AppTranslations {
       'provider': 'Provider',
       'confirm_signout': 'Are you sure you want to sign out?',
       'cancel': 'Cancel',
+      'auto_commit': 'Auto Commit',
+      'auto_commit_title': 'Auto Commit Jobs',
     },
     'bn': {
       'login_subtitle': 'আধুনিক প্রকৌশলীদের জন্য স্বয়ংক্রিয় স্ট্যান্ডআপ আপডেট এবং স্ল্যাক দৈনিক সমলয়করণ।',
@@ -113,6 +115,8 @@ class AppTranslations {
       'provider': 'প্রবেশ মাধ্যম',
       'confirm_signout': 'আপনি কি নিশ্চিত যে আপনি প্রস্থান করতে চান?',
       'cancel': 'বাতিল',
+      'auto_commit': 'অটো কমিট',
+      'auto_commit_title': 'অটো কমিট জব',
     }
   };
 
