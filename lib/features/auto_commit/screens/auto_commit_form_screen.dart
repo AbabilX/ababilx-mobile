@@ -100,10 +100,10 @@ class _AutoCommitFormScreenState extends ConsumerState<AutoCommitFormScreen> {
 
                 if (!_isEdit) ...[
                   _SectionLabel(label: 'Duration', subtitle: 'How many days to run commits'),
-                  _ChipPicker(
+                  _DropdownPicker(
                     options: dayOptions,
                     selected: _selectedDays,
-                    onSelect: (v) => setState(() => _selectedDays = v),
+                    onSelect: (v) => setState(() => _selectedDays = v!),
                     labelBuilder: (v) => '$v day${v > 1 ? 's' : ''}',
                   ),
                   const SizedBox(height: 24),
@@ -339,6 +339,44 @@ class _RepoPicker extends StatelessWidget {
               child: Text(repo.fullName, overflow: TextOverflow.ellipsis),
             )),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DropdownPicker extends StatelessWidget {
+  const _DropdownPicker({
+    required this.options,
+    required this.selected,
+    required this.onSelect,
+    required this.labelBuilder,
+  });
+  final List<int> options;
+  final int selected;
+  final ValueChanged<int?> onSelect;
+  final String Function(int) labelBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: selected,
+          isExpanded: true,
+          dropdownColor: AppColors.surface2,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          borderRadius: BorderRadius.circular(20),
+          style: const TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.w600),
+          onChanged: onSelect,
+          items: options
+              .map((v) => DropdownMenuItem<int>(
+                    value: v,
+                    child: Text(labelBuilder(v)),
+                  ))
+              .toList(),
         ),
       ),
     );
