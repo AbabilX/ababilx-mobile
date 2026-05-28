@@ -15,6 +15,8 @@ class LoginScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
+    const brandTitle = 'AbabilX';
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
@@ -46,20 +48,57 @@ class LoginScreen extends ConsumerWidget {
                     ),
                   ),
                 )
-                    .animate()
+                    .animate(
+                      onPlay: isLoading
+                          ? (controller) => controller.repeat(reverse: true)
+                          : null,
+                    )
                     .fadeIn(duration: 500.ms)
-                    .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
+                    .scale(
+                      begin: isLoading
+                          ? const Offset(1, 1)
+                          : const Offset(0.8, 0.8),
+                      end: isLoading
+                          ? const Offset(1.08, 1.08)
+                          : const Offset(1, 1),
+                      duration: isLoading ? 650.ms : 500.ms,
+                      curve: isLoading ? Curves.easeInOut : Curves.easeOutBack,
+                    ),
 
                 const SizedBox(height: 32),
 
                 // Emphasized Title (Editorial Outfit Typography)
-                Text(
-                  'AbabilX',
-                  style: theme.textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1.0,
-                  ),
-                ).animate().fadeIn(delay: 150.ms),
+                AnimatedSwitcher(
+                  duration: 260.ms,
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: isLoading
+                      ? TweenAnimationBuilder<int>(
+                          key: const ValueKey('loading-title'),
+                          tween: IntTween(begin: 0, end: brandTitle.length),
+                          duration: 1200.ms,
+                          curve: Curves.easeOut,
+                          builder: (context, value, _) {
+                            final safeLength =
+                                value.clamp(0, brandTitle.length);
+                            return Text(
+                              brandTitle.substring(0, safeLength),
+                              style: theme.textTheme.displayMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -1.0,
+                              ),
+                            );
+                          },
+                        )
+                      : Text(
+                          brandTitle,
+                          key: const ValueKey('idle-title'),
+                          style: theme.textTheme.displayMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -1.0,
+                          ),
+                        ).animate().fadeIn(delay: 150.ms),
+                ),
 
                 const SizedBox(height: 12),
 
@@ -75,69 +114,82 @@ class LoginScreen extends ConsumerWidget {
 
                 const SizedBox(height: 48),
 
-                // Google Sign-In Button (Chunky M3 Tonal Stadium style)
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: isLoading
-                        ? null
-                        : () => ref
-                            .read(authProvider.notifier)
-                            .signInWithGoogle(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colors.surfaceContainerLow,
-                      foregroundColor: colors.onSurface,
-                      elevation: 0,
-                      side: BorderSide(color: colors.outline, width: 1.2),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
+                // Google Sign-In Button (Hidden while loading, reappears on failure)
+                AnimatedSwitcher(
+                  duration: 280.ms,
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SizeTransition(
+                        sizeFactor: animation,
+                        axis: Axis.vertical,
+                        child: child,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                    ),
-                    child: isLoading
-                        ? SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: colors.primary,
-                              strokeWidth: 2.5,
+                    );
+                  },
+                  child: isLoading
+                      ? const SizedBox(
+                          key: ValueKey('login-hidden'),
+                          height: 0,
+                        )
+                      : SizedBox(
+                          key: const ValueKey('login-button'),
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: () => ref
+                                .read(authProvider.notifier)
+                                .signInWithGoogle(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colors.surfaceContainerLow,
+                              foregroundColor: colors.onSurface,
+                              elevation: 0,
+                              side:
+                                  BorderSide(color: colors.outline, width: 1.2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 24),
                             ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // Styled Google Icon Squircle with Lavender background and deep purple text
-                              Container(
-                                width: 26,
-                                height: 26,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE8DEF8),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'G',
-                                    style: TextStyle(
-                                      color: Color(0xFF381E72),
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 14,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Styled Google Icon Squircle with Lavender background and deep purple text
+                                Container(
+                                  width: 26,
+                                  height: 26,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE8DEF8),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'G',
+                                      style: TextStyle(
+                                        color: Color(0xFF381E72),
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Text(
-                                AppTranslations.translate(context, ref, 'continue_google'),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.1,
+                                const SizedBox(width: 14),
+                                Text(
+                                  AppTranslations.translate(
+                                      context, ref, 'continue_google'),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.1,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                  ),
+                        ),
                 )
                     .animate()
                     .fadeIn(delay: 350.ms)
