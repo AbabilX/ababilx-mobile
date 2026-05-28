@@ -898,7 +898,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                         ),
                         // Thread Reply Style dropdown
                         DropdownButtonFormField<String>(
-                          initialValue: form.threadStyle,
+                          initialValue: (['count', 'ai', 'date'].contains(form.threadStyle)) ? form.threadStyle : 'count',
                           isExpanded: true,
                           dropdownColor: colors.surfaceContainer,
                           style: TextStyle(color: colors.onSurface, fontSize: 14),
@@ -932,7 +932,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                         if (form.threadStyle == 'count') ...[
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            initialValue: form.threadCountFormat,
+                            initialValue: (['number', 'date', 'date_custom'].contains(form.threadCountFormat)) ? form.threadCountFormat : 'number',
                             isExpanded: true,
                             dropdownColor: colors.surfaceContainer,
                             style: TextStyle(color: colors.onSurface, fontSize: 14),
