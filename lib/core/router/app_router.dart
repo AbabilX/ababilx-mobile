@@ -8,6 +8,8 @@ import '../../features/rules/screens/rule_form_screen.dart';
 import '../../features/rules/screens/rule_history_screen.dart';
 import '../../features/rules/screens/message_preview_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/auto_commit/screens/auto_commit_screen.dart';
+import '../../features/auto_commit/screens/auto_commit_form_screen.dart';
 import 'home_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -79,6 +81,23 @@ final routerProvider = Provider<GoRouter>((ref) {
                 // Redirect /rules/:id → /rules/:id/edit for tap on rule card
                 builder: (_, state) =>
                     RuleFormScreen(ruleId: state.pathParameters['id']),
+              ),
+            ],
+          ),
+
+          // Auto-commit jobs
+          GoRoute(
+            path: '/auto-commit',
+            builder: (_, _) => const AutoCommitScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (_, _) => const AutoCommitFormScreen(),
+              ),
+              GoRoute(
+                path: ':id/edit',
+                builder: (_, state) =>
+                    AutoCommitFormScreen(jobId: state.pathParameters['id']),
               ),
             ],
           ),
