@@ -8,7 +8,7 @@ class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
 
-  static const _tabs = ['/rules', '/profile'];
+  static const _tabs = ['/rules', '/auto-commit', '/profile'];
 
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
@@ -39,6 +39,11 @@ class HomeShell extends ConsumerWidget {
               icon: const Icon(Icons.schedule_send_rounded),
               selectedIcon: const Icon(Icons.schedule_send_rounded),
               label: AppTranslations.translate(context, ref, 'rules'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.commit_rounded),
+              selectedIcon: const Icon(Icons.commit_rounded),
+              label: AppTranslations.translate(context, ref, 'auto_commit'),
             ),
             NavigationDestination(
               icon: const Icon(Icons.person_outline_rounded),
