@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../../../firebase_options.dart';
 
 class AuthRepository {
   AuthRepository(this._client, this._storage);
@@ -13,7 +14,9 @@ class AuthRepository {
   final ApiClient _client;
   final SecureStorage _storage;
 
-  final _googleSignIn = GoogleSignIn();
+  final _googleSignIn = GoogleSignIn(
+    serverClientId: DefaultFirebaseOptions.googleWebClientId,
+  );
   final _firebaseAuth = FirebaseAuth.instance;
 
   /// Sign in with Google via Firebase Auth.

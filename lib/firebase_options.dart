@@ -25,4 +25,8 @@ class DefaultFirebaseOptions {
     storageBucket: 'ababilx.firebasestorage.app',
     androidClientId: '327297150133-ehoak4sd8o7582j14cgg6c7ftvefmvko.apps.googleusercontent.com',
   );
+
+  /// Web OAuth client (client_type 3) — required as serverClientId for idToken on Android.
+  static const String googleWebClientId =
+      '327297150133-7vg5888mjqras0pgoqiupg6but4nk0oj.apps.googleusercontent.com';
 }
