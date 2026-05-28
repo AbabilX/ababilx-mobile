@@ -65,9 +65,7 @@ class ApiClient {
 // ---------------------------------------------------------------------------
 
 final flutterSecureStorageProvider = Provider<FlutterSecureStorage>(
-  (_) => const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  ),
+  (_) => const FlutterSecureStorage(),
 );
 
 final secureStorageProvider = Provider<SecureStorage>(
