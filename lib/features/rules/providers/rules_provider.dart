@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/session/authenticated_fetch.dart';
 import '../data/models/rule.dart';
 import '../data/models/rule_message.dart';
 import '../data/rules_repository.dart';
@@ -10,7 +11,8 @@ import '../data/models/github_repo.dart';
 
 class RulesNotifier extends AsyncNotifier<List<Rule>> {
   @override
-  Future<List<Rule>> build() => _fetch();
+  Future<List<Rule>> build() =>
+      fetchWhenAuthenticated(ref, _fetch);
 
   Future<List<Rule>> _fetch() =>
       ref.read(rulesRepositoryProvider).getRules();

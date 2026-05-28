@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/session/authenticated_fetch.dart';
 import '../data/auto_commit_repository.dart';
 import '../data/models/auto_commit_job.dart';
 
 class AutoCommitNotifier extends AsyncNotifier<AutoCommitMeta> {
   @override
-  Future<AutoCommitMeta> build() => _fetch();
+  Future<AutoCommitMeta> build() =>
+      fetchWhenAuthenticated(ref, _fetch);
 
   Future<AutoCommitMeta> _fetch() =>
       ref.read(autoCommitRepositoryProvider).getJobs();

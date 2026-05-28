@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../features/profile/providers/profile_provider.dart';
 
 final appLanguageProvider = Provider<String>((ref) {
+  final isLoggedIn = ref.watch(isAuthenticatedProvider);
+  if (!isLoggedIn) return 'en';
+
   final profileAsync = ref.watch(profileProvider);
   return profileAsync.maybeWhen(
     data: (user) => user.appLanguage.toLowerCase(),

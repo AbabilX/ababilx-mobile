@@ -11,20 +11,53 @@ import '../../features/rules/screens/message_preview_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/auto_commit/screens/auto_commit_screen.dart';
 import '../../features/auto_commit/screens/auto_commit_form_screen.dart';
+import '../../features/auto_commit/providers/auto_commit_provider.dart';
+import '../../features/home/providers/activity_provider.dart';
+import '../../features/profile/providers/profile_provider.dart';
+import '../../features/rules/providers/rules_provider.dart';
 import 'home_shell.dart';
 
-final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+/// Re-evaluates GoRouter redirects when auth changes without recreating the router.
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void refresh() => notifyListeners();
+}
 
-  return GoRouter(
-    initialLocation: '/home',
+final _routerRefreshNotifierProvider = Provider<_RouterRefreshNotifier>((ref) {
+  final notifier = _RouterRefreshNotifier();
+  ref.listen(authProvider, (previous, next) {
+    notifier.refresh();
+
+    final wasLoggedIn = previous?.valueOrNull ?? false;
+    final isLoggedIn = next.valueOrNull ?? false;
+    if (wasLoggedIn == isLoggedIn) return;
+
+    // Login/logout complete — refetch user data with the new session.
+    ref.invalidate(profileProvider);
+    ref.invalidate(rulesProvider);
+    ref.invalidate(autoCommitProvider);
+    ref.invalidate(activityProvider);
+  });
+  ref.onDispose(notifier.dispose);
+  return notifier;
+});
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final refreshListenable = ref.watch(_routerRefreshNotifierProvider);
+
+  final router = GoRouter(
+    initialLocation: '/login',
+    refreshListenable: refreshListenable,
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
       final isLoggedIn = authState.valueOrNull ?? false;
       final isLoading = authState.isLoading;
-
-      if (isLoading) return null; // Stay on current screen while loading
-
       final isLoginPage = state.matchedLocation == '/login';
+
+      // Auth in progress: keep login screen during sign-in; block home until ready.
+      if (isLoading) {
+        if (isLoginPage) return null;
+        return '/login';
+      }
 
       if (!isLoggedIn && !isLoginPage) return '/login';
       if (isLoggedIn && isLoginPage) return '/home';
@@ -124,4 +157,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ),
   );
+
+  ref.onDispose(router.dispose);
+  return router;
 });

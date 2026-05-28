@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/session/authenticated_fetch.dart';
 import '../data/profile_repository.dart';
 
 class ProfileNotifier extends AsyncNotifier<AppUser> {
   @override
-  Future<AppUser> build() =>
-      ref.read(profileRepositoryProvider).getMe();
+  Future<AppUser> build() => fetchWhenAuthenticated(
+        ref,
+        () => ref.read(profileRepositoryProvider).getMe(),
+      );
 
   Future<void> refresh() async {
     state = const AsyncLoading();

@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/session/authenticated_fetch.dart';
 import '../data/activity_repository.dart';
 
 class ActivityNotifier extends AsyncNotifier<ActivityData> {
   String _period = 'weekly';
 
   @override
-  Future<ActivityData> build() => _fetch();
+  Future<ActivityData> build() =>
+      fetchWhenAuthenticated(ref, _fetch);
 
   Future<ActivityData> _fetch() =>
       ref.read(activityRepositoryProvider).getActivity(period: _period);
