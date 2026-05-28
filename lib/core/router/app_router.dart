@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/home/screens/home_screen.dart';
 import '../../features/rules/screens/rules_screen.dart';
 import '../../features/rules/screens/rule_form_screen.dart';
 import '../../features/rules/screens/rule_history_screen.dart';
@@ -16,7 +17,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
 
   return GoRouter(
-    initialLocation: '/rules',
+    initialLocation: '/home',
     redirect: (context, state) {
       final isLoggedIn = authState.valueOrNull ?? false;
       final isLoading = authState.isLoading;
@@ -26,7 +27,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoginPage = state.matchedLocation == '/login';
 
       if (!isLoggedIn && !isLoginPage) return '/login';
-      if (isLoggedIn && isLoginPage) return '/rules';
+      if (isLoggedIn && isLoginPage) return '/home';
       return null;
     },
     routes: [
@@ -36,10 +37,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const LoginScreen(),
       ),
 
-      // ── Home shell (bottom nav: Rules + Profile) ───────────────────────
+      // ── Home shell (bottom nav: Home + Rules + Auto-Commit + Profile) ───
       ShellRoute(
         builder: (_, _, child) => HomeShell(child: child),
         routes: [
+          // Overview / Home
+          GoRoute(
+            path: '/home',
+            builder: (_, _) => const HomeScreen(),
+          ),
+
           // Rules list
           GoRoute(
             path: '/rules',
