@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../shared/widgets/gradient_button.dart';
 import '../../auto_commit/providers/auto_commit_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../rules/data/models/rule.dart';
-import '../../rules/data/rules_repository.dart';
 import '../../rules/providers/rules_provider.dart';
 import '../data/activity_repository.dart';
 import '../providers/activity_provider.dart';
@@ -38,6 +36,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   static int _todayAppDay() {
     final d = DateTime.now().weekday;
     return d == 7 ? 0 : d;
+  }
+
+  static bool _sentToday(Rule r) {
+    final last = r.lastSentAt;
+    if (last == null) return false;
+    final now = DateTime.now();
+    return last.year == now.year && last.month == now.month && last.day == now.day;
   }
 
   List<Rule> _todayRules(List<Rule> rules) {
@@ -72,7 +77,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final rules = rulesAsync.valueOrNull ?? [];
     final commitMeta = commitAsync.valueOrNull;
     final activity = activityAsync.valueOrNull ?? ActivityData.empty();
-    final todayRules = _todayRules(rules);
+    final allTodayRules = _todayRules(rules);
+    final todayRules = allTodayRules.where((r) => !_sentToday(r)).toList();
+    final hadRulesToday = allTodayRules.isNotEmpty;
+    final allDoneToday = hadRulesToday && todayRules.isEmpty;
     final activeRules = rules.where((r) => r.isActive).toList();
     final activeJobs = commitMeta?.jobs.where((j) => j.isActive).toList() ?? [];
 
@@ -154,7 +162,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
 
             // ── Today's standups pager ────────────────────────────────────
-            if (todayRules.isNotEmpty) ...[
+            if (hadRulesToday) ...[
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
@@ -163,7 +171,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     iconBg: _kIndigoCont,
                     iconFg: _kIndigoOnCont,
                     title: "Today's Standups",
-                    badge: todayRules.length,
+                    badge: todayRules.isNotEmpty ? todayRules.length : null,
                     trailing: todayRules.length > 1
                         ? Text(
                             '${_page + 1} / ${todayRules.length}',
@@ -173,42 +181,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 258,
-                  child: PageView.builder(
-                    controller: _pager,
-                    itemCount: todayRules.length,
-                    onPageChanged: (i) => setState(() => _page = i),
-                    itemBuilder: (_, i) => _StandupCard(
-                      rule: todayRules[i],
-                      onEdit: () => context.go('/rules/${todayRules[i].id}/edit'),
+              if (allDoneToday)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                    child: Text(
+                      "Today's standups are all sent. Enjoy your day!",
+                      style: TextStyle(color: _kMuted, fontSize: 13, height: 1.5),
+                    ),
+                  ),
+                )
+              else ...[
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 380,
+                    child: PageView.builder(
+                      controller: _pager,
+                      itemCount: todayRules.length,
+                      onPageChanged: (i) => setState(() => _page = i),
+                      itemBuilder: (_, i) => _StandupCard(
+                        rule: todayRules[i],
+                        onEdit: () => context.go('/rules/${todayRules[i].id}/edit'),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              if (todayRules.length > 1)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        todayRules.length,
-                        (i) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          width: i == _page ? 20 : 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: i == _page ? _kIndigo : Theme.of(context).colorScheme.outline,
-                            borderRadius: BorderRadius.circular(3),
+                if (todayRules.length > 1)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          todayRules.length,
+                          (i) => AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            width: i == _page ? 20 : 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: i == _page ? _kIndigo : Theme.of(context).colorScheme.outline,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
+              ],
             ],
 
             // ── Active rules list ─────────────────────────────────────────
@@ -793,16 +813,35 @@ class _MonthlyChart extends StatelessWidget {
 
 // ── Standup card (pager item) ─────────────────────────────────────────────────
 
-class _StandupCard extends StatelessWidget {
+class _StandupCard extends ConsumerStatefulWidget {
   const _StandupCard({required this.rule, required this.onEdit});
   final Rule rule;
   final VoidCallback onEdit;
 
-  bool get _sentToday {
-    final last = rule.lastSentAt;
-    if (last == null) return false;
-    final now = DateTime.now();
-    return last.year == now.year && last.month == now.month && last.day == now.day;
+  @override
+  ConsumerState<_StandupCard> createState() => _StandupCardState();
+}
+
+class _StandupCardState extends ConsumerState<_StandupCard> {
+  late final TextEditingController _noteCtrl =
+      TextEditingController(text: widget.rule.note);
+  bool _saving = false;
+
+  Future<void> _saveDraft() async {
+    final text = _noteCtrl.text;
+    if (text == widget.rule.note) return;
+    setState(() => _saving = true);
+    try {
+      await ref.read(rulesProvider.notifier).updateNote(widget.rule.id, text);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _noteCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -838,7 +877,7 @@ class _StandupCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        rule.name,
+                        widget.rule.name,
                         style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.3),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -855,21 +894,21 @@ class _StandupCard extends StatelessWidget {
                                 const Icon(Icons.tag_rounded, size: 10, color: _kIndigoOnCont),
                                 const SizedBox(width: 3),
                                 Text(
-                                  rule.channelName.isNotEmpty ? rule.channelName : rule.channelId,
+                                  widget.rule.channelName.isNotEmpty ? widget.rule.channelName : widget.rule.channelId,
                                   style: const TextStyle(color: _kIndigoOnCont, fontSize: 11, fontWeight: FontWeight.w700),
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Text(rule.sendTime, style: const TextStyle(color: _kMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+                          Text(widget.rule.sendTime, style: const TextStyle(color: _kMuted, fontSize: 11, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ],
                   ),
                 ),
                 GestureDetector(
-                  onTap: onEdit,
+                  onTap: widget.onEdit,
                   child: Container(
                     width: 32,
                     height: 32,
@@ -886,384 +925,56 @@ class _StandupCard extends StatelessWidget {
 
             const SizedBox(height: 14),
 
-            // Already sent warning
-            if (_sentToday)
-              Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            // ── AI Context Note ───────────────────────────────────────────
+            const Text(
+              'AI Context Note',
+              style: TextStyle(color: _kMuted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.1),
+            ),
+            const SizedBox(height: 2),
+            const Text(
+              'Extra context for AI beyond your commits — meetings, blockers, decisions. Cleared automatically after each send.',
+              style: TextStyle(color: _kMuted, fontSize: 11, height: 1.4),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: Container(
                 decoration: BoxDecoration(
-                  color: _kAmberCont,
-                  borderRadius: BorderRadius.circular(12),
+                  color: colors.surfaceContainer,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: colors.outline),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.warning_amber_rounded, size: 14, color: _kAmberOnCont),
-                    const SizedBox(width: 6),
-                    const Expanded(
-                      child: Text(
-                        'Already sent today — sending again will duplicate',
-                        style: TextStyle(color: _kAmberOnCont, fontSize: 11, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            // Repo targets or single repo
-            if (rule.repoTargets.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: rule.repoTargets.take(3).map((t) {
-                    final short = t.repoFullName.contains('/') ? t.repoFullName.split('/').last : t.repoFullName;
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: colors.surfaceContainer,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: colors.outline),
-                      ),
-                      child: Text(short, style: const TextStyle(color: _kMuted, fontSize: 11, fontFamily: 'monospace')),
-                    );
-                  }).toList(),
-                ),
-              )
-            else if (rule.repoFullName.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: colors.surfaceContainer,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: colors.outline),
-                  ),
-                  child: Text(
-                    rule.repoFullName,
-                    style: const TextStyle(color: _kMuted, fontSize: 11, fontFamily: 'monospace'),
+                child: TextField(
+                  controller: _noteCtrl,
+                  expands: true,
+                  maxLines: null,
+                  textAlignVertical: TextAlignVertical.top,
+                  style: TextStyle(color: colors.onSurface, fontSize: 13, height: 1.5),
+                  decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.all(12),
+                    border: InputBorder.none,
+                    hintText: 'e.g. had a planning meeting with backend team, reviewed 3 PRs',
+                    hintStyle: TextStyle(color: _kMuted, fontSize: 12),
                   ),
                 ),
               ),
-
-            const Spacer(),
-
-            // Send Now button
-            GradientButton(
-              label: 'Send Now',
-              icon: Icons.send_rounded,
-              width: double.infinity,
-              height: 44,
-              onPressed: () => _SendNowSheet.show(context, rule),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Send Now bottom sheet ─────────────────────────────────────────────────────
-
-enum _SendStep { warn, previewLoading, preview, sending, done }
-
-class _SendNowSheet extends ConsumerStatefulWidget {
-  const _SendNowSheet({required this.rule});
-  final Rule rule;
-
-  static Future<void> show(BuildContext context, Rule rule) {
-    return showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _SendNowSheet(rule: rule),
-    );
-  }
-
-  @override
-  ConsumerState<_SendNowSheet> createState() => _SendNowSheetState();
-}
-
-class _SendNowSheetState extends ConsumerState<_SendNowSheet> {
-  _SendStep _step = _SendStep.warn;
-  String? _error;
-  int _regenCount = 0;
-  static const _maxRegen = 5;
-  late final TextEditingController _previewCtrl = TextEditingController();
-
-  @override
-  void dispose() {
-    _previewCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _generatePreview() async {
-    setState(() { _step = _SendStep.previewLoading; _error = null; });
-    try {
-      final text = await ref.read(rulesRepositoryProvider).previewRule(widget.rule.id);
-      _previewCtrl.text = text;
-      setState(() => _step = _SendStep.preview);
-    } catch (e) {
-      setState(() { _error = e.toString(); _step = _SendStep.warn; });
-    }
-  }
-
-  Future<void> _regenerate() async {
-    if (_regenCount >= _maxRegen) return;
-    setState(() { _regenCount++; _error = null; });
-    try {
-      final text = await ref.read(rulesRepositoryProvider).previewRule(widget.rule.id);
-      _previewCtrl.text = text;
-      setState(() {});
-    } catch (e) {
-      setState(() => _error = e.toString());
-    }
-  }
-
-  Future<void> _send() async {
-    setState(() { _step = _SendStep.sending; _error = null; });
-    try {
-      await ref.read(rulesRepositoryProvider).triggerRule(widget.rule.id, message: _previewCtrl.text.trim());
-      setState(() => _step = _SendStep.done);
-      await ref.read(rulesProvider.notifier).refresh();
-    } catch (e) {
-      setState(() { _error = e.toString(); _step = _SendStep.preview; });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colors.surfaceContainerLow,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // drag handle
-            Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 4),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(color: colors.outline, borderRadius: BorderRadius.circular(2)),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title row
-                  Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(color: _kGreenCont, borderRadius: BorderRadius.circular(14)),
-                        child: const Icon(Icons.send_rounded, size: 19, color: _kGreenOnCont),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _step == _SendStep.done ? 'Sent!' : (_step == _SendStep.preview || _step == _SendStep.sending) ? 'Review message' : 'Send standup now?',
-                              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3),
-                            ),
-                            Text(
-                              '#${widget.rule.channelName.isNotEmpty ? widget.rule.channelName : widget.rule.channelId}',
-                              style: const TextStyle(color: _kMuted, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_step != _SendStep.sending && _step != _SendStep.previewLoading)
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            width: 32, height: 32,
-                            decoration: BoxDecoration(color: colors.surfaceContainer, borderRadius: BorderRadius.circular(100)),
-                            child: const Icon(Icons.close_rounded, size: 16, color: _kMuted),
-                          ),
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Step: warn
-                  if (_step == _SendStep.warn) ...[
-                    Text(
-                      'Tap Continue to generate an AI preview of the message before sending.',
-                      style: TextStyle(color: _kMuted, fontSize: 13, height: 1.5),
-                    ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(color: theme.colorScheme.errorContainer, borderRadius: BorderRadius.circular(10)),
-                        child: Text(_error!, style: TextStyle(color: theme.colorScheme.onErrorContainer, fontSize: 12)),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: GradientButton(
-                            label: 'Continue',
-                            icon: Icons.arrow_forward_rounded,
-                            onPressed: _generatePreview,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-
-                  // Step: preview loading
-                  if (_step == _SendStep.previewLoading) ...[
-                    Container(
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: colors.surfaceContainer,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 24, height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: _kIndigo),
-                            ),
-                            SizedBox(height: 10),
-                            Text('Generating from your commits…', style: TextStyle(color: _kMuted, fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  // Step: preview
-                  if (_step == _SendStep.preview || _step == _SendStep.sending) ...[
-                    Container(
-                      decoration: BoxDecoration(
-                        color: colors.surfaceContainer,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: colors.outline),
-                      ),
-                      child: TextField(
-                        controller: _previewCtrl,
-                        maxLines: 6,
-                        enabled: _step == _SendStep.preview,
-                        style: TextStyle(color: colors.onSurface, fontSize: 13, height: 1.6),
-                        decoration: const InputDecoration(
-                          contentPadding: EdgeInsets.all(14),
-                          border: InputBorder.none,
-                          hintText: 'AI message will appear here…',
-                        ),
-                      ),
-                    ),
-                    if (_step == _SendStep.preview) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          GestureDetector(
-                            onTap: _regenCount < _maxRegen ? _regenerate : null,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.refresh_rounded, size: 14, color: _regenCount < _maxRegen ? _kIndigo : _kMuted),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Regenerate AI',
-                                  style: TextStyle(color: _regenCount < _maxRegen ? _kIndigo : _kMuted, fontSize: 12, fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            '${_maxRegen - _regenCount} / $_maxRegen left',
-                            style: const TextStyle(color: _kMuted, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (_error != null) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(color: theme.colorScheme.errorContainer, borderRadius: BorderRadius.circular(10)),
-                        child: Text(_error!, style: TextStyle(color: theme.colorScheme.onErrorContainer, fontSize: 12)),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    if (_step == _SendStep.preview)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancel'),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: GradientButton(
-                              label: 'Confirm & Send',
-                              icon: Icons.send_rounded,
-                              onPressed: _previewCtrl.text.trim().isEmpty ? null : _send,
-                            ),
-                          ),
-                        ],
-                      )
-                    else
-                      GradientButton(
-                        label: 'Sending…',
-                        isLoading: true,
-                        width: double.infinity,
-                        onPressed: null,
-                      ),
-                  ],
-
-                  // Step: done
-                  if (_step == _SendStep.done) ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: _kGreenCont, borderRadius: BorderRadius.circular(16)),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.check_circle_rounded, color: _kGreenOnCont, size: 22),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text('Message sent to Slack!', style: TextStyle(color: _kGreenOnCont, fontSize: 14, fontWeight: FontWeight.w700)),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    GradientButton(
-                      label: 'Close',
-                      width: double.infinity,
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ],
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: _saving ? null : _saveDraft,
+                icon: _saving
+                    ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.5, color: _kIndigo))
+                    : const Icon(Icons.save_outlined, size: 14),
+                label: const Text('Save Draft', style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _kMuted,
+                  side: BorderSide(color: colors.outline),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
             ),
           ],
