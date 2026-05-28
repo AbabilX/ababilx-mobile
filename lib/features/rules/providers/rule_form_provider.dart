@@ -121,7 +121,7 @@ class RuleFormState {
         'days_of_week': daysOfWeek,
         'run_mode': runMode,
         if (targetDate != null) 'target_date': targetDate,
-        'repos': repoTargets.map((r) => r.toJson()).toList(),
+        'repo_targets': repoTargets.map((r) => r.toJson()).toList(),
         'repo_full_name': repoFullName,
         'branch': branch,
         'example_message': exampleMessage,
