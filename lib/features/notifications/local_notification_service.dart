@@ -19,7 +19,7 @@ class LocalNotificationService {
         InitializationSettings(android: androidSettings);
 
     await _plugin.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: (details) {
         final payload = details.payload;
         if (payload != null && onNotificationTap != null) {
@@ -50,10 +50,10 @@ class LocalNotificationService {
     final notification = message.notification;
 
     await _plugin.show(
-      ruleId.hashCode,
-      notification?.title ?? 'AbabilX',
-      notification?.body ?? 'Your standup is about to fire.',
-      NotificationDetails(
+      id: ruleId.hashCode,
+      title: notification?.title ?? 'AbabilX',
+      body: notification?.body ?? 'Your standup is about to fire.',
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           NotificationChannels.standupId,
           NotificationChannels.standupName,
