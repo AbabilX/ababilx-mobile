@@ -8,8 +8,11 @@ class ApiConstants {
   // Auth
   static const String mobileGoogleAuth = '/auth/google/mobile';
 
-  // User
+  // User (split me API — merge in ProfileRepository.getMe)
   static const String me = '/api/me';
+  static const String meProfile = '/api/me/profile';
+  static const String mePlan = '/api/me/plan';
+  static const String meConnections = '/api/me/connections';
 
   // Rules
   static const String rules = '/api/rules';

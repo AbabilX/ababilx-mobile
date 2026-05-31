@@ -53,6 +53,20 @@ class AppUser extends Equatable {
         appLanguage: json['app_language'] as String? ?? 'en',
       );
 
+  /// Merges split GET /api/me/* payloads (same order as web `mergeMeUser`).
+  factory AppUser.fromMeParts({
+    required Map<String, dynamic> session,
+    required Map<String, dynamic> profile,
+    required Map<String, dynamic> plan,
+    required Map<String, dynamic> connections,
+  }) =>
+      AppUser.fromJson({
+        ...session,
+        ...profile,
+        ...plan,
+        ...connections,
+      });
+
   @override
   List<Object?> get props => [id, name, plan, slackConnected];
 }
@@ -62,9 +76,30 @@ class ProfileRepository {
   final ApiClient _client;
 
   Future<AppUser> getMe() async {
-    final res = await _client.get(ApiConstants.me);
+    final sessionFuture = _getMePart(ApiConstants.me);
+    final profileFuture = _getMePart(ApiConstants.meProfile);
+    final planFuture = _getMePart(ApiConstants.mePlan);
+    final connectionsFuture = _getMePart(ApiConstants.meConnections);
+
+    final parts = await Future.wait([
+      sessionFuture,
+      profileFuture,
+      planFuture,
+      connectionsFuture,
+    ]);
+
+    return AppUser.fromMeParts(
+      session: parts[0],
+      profile: parts[1],
+      plan: parts[2],
+      connections: parts[3],
+    );
+  }
+
+  Future<Map<String, dynamic>> _getMePart(String path) async {
+    final res = await _client.get(path);
     final data = (res.data as Map<String, dynamic>)['data'];
-    return AppUser.fromJson(data as Map<String, dynamic>);
+    return data as Map<String, dynamic>;
   }
 
   Future<AppUser> updateLanguage(String lang) async {
