@@ -16,6 +16,7 @@ class AuthRepository {
 
   final _googleSignIn = GoogleSignIn(
     serverClientId: DefaultFirebaseOptions.googleWebClientId,
+    scopes: ['email', 'profile'],
   );
   final _firebaseAuth = FirebaseAuth.instance;
 
@@ -26,22 +27,34 @@ class AuthRepository {
   ///   2. Sign into Firebase with those credentials
   ///   3. Get Google ID token → send to our backend → receive app JWT
   Future<Map<String, dynamic>> signInWithGoogle() async {
+    // Disconnect any cached account to force a fresh account picker
+    // and ensure a valid idToken is issued every time.
+    await _googleSignIn.signOut();
+
     // Trigger Google Sign-In picker
     final googleAccount = await _googleSignIn.signIn();
     if (googleAccount == null) throw Exception('Google sign-in cancelled');
 
     final googleAuth = await googleAccount.authentication;
-    final idToken = googleAuth.idToken;
     final accessToken = googleAuth.accessToken;
-
-    if (idToken == null) throw Exception('No ID token from Google');
+    String? idToken = googleAuth.idToken;
 
     // Sign into Firebase (validates credentials + links account)
     final credential = GoogleAuthProvider.credential(
       idToken: idToken,
       accessToken: accessToken,
     );
-    await _firebaseAuth.signInWithCredential(credential);
+    final userCredential = await _firebaseAuth.signInWithCredential(credential);
+
+    // Fallback: get idToken from Firebase if Google didn't return one.
+    // This can happen when the account is already cached.
+    idToken ??= await userCredential.user?.getIdToken();
+
+    if (idToken == null) {
+      throw Exception(
+        'No ID token — check SHA-1 fingerprint in Firebase console',
+      );
+    }
 
     // Exchange Google ID token for our app JWT
     final response = await _client.post(
@@ -85,7 +98,10 @@ class AuthRepository {
     try {
       final fcmToken = await _storage.readFcmToken();
       if (fcmToken != null) {
-        await _client.delete(ApiConstants.devices, data: {'fcm_token': fcmToken});
+        await _client.delete(
+          ApiConstants.devices,
+          data: {'fcm_token': fcmToken},
+        );
       }
     } catch (_) {}
 
