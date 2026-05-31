@@ -417,7 +417,7 @@ class _TopBar extends StatelessWidget {
                           : const Icon(Icons.person_rounded, color: _kMuted, size: 20),
                     ),
                   ),
-                  if (user != null && user!.plan != 'free')
+                  if (user != null && user!.effectivePlan != 'free')
                     Positioned(
                       right: -1,
                       bottom: -1,

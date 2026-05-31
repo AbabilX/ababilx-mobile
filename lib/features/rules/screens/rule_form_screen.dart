@@ -148,7 +148,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
     final isEdit = widget.ruleId != null;
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final userPlan = profileAsync.valueOrNull?.plan ?? 'free';
+    final userPlan = profileAsync.valueOrNull?.effectivePlan ?? 'free';
 
     if (!_initialized) {
       return Scaffold(

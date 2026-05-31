@@ -155,7 +155,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ),
                     child: Text(
-                      user.plan.toUpperCase(),
+                      user.effectivePlan.toUpperCase(),
                       style: const TextStyle(
                         color: Color(0xFFE8DEF8),
                         fontSize: 12,

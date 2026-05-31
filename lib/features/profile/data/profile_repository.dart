@@ -11,6 +11,10 @@ class AppUser extends Equatable {
     required this.provider,
     this.avatarUrl = '',
     this.plan = 'free',
+    this.premiumUntil,
+    this.effectivePlan = 'free',
+    this.planExpired = false,
+    this.showPlanExpiredDialog = false,
     this.slackConnected = false,
     this.githubUsername = '',
     this.appLanguage = 'en',
@@ -22,6 +26,10 @@ class AppUser extends Equatable {
   final String provider;
   final String avatarUrl;
   final String plan;
+  final String? premiumUntil;
+  final String effectivePlan;
+  final bool planExpired;
+  final bool showPlanExpiredDialog;
   final bool slackConnected;
   final String githubUsername;
   final String appLanguage;
@@ -33,6 +41,13 @@ class AppUser extends Equatable {
         provider: json['provider'] as String? ?? '',
         avatarUrl: json['avatar_url'] as String? ?? '',
         plan: json['plan'] as String? ?? 'free',
+        premiumUntil: json['premium_until'] as String?,
+        effectivePlan: json['effective_plan'] as String? ??
+            json['plan'] as String? ??
+            'free',
+        planExpired: json['plan_expired'] as bool? ?? false,
+        showPlanExpiredDialog:
+            json['show_plan_expired_dialog'] as bool? ?? false,
         slackConnected: json['slack_connected'] as bool? ?? false,
         githubUsername: json['github_username'] as String? ?? '',
         appLanguage: json['app_language'] as String? ?? 'en',
