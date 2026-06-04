@@ -13,6 +13,13 @@ class SecureStorage {
       _storage.write(key: StorageKeys.jwt, value: token);
   Future<void> deleteJwt() => _storage.delete(key: StorageKeys.jwt);
 
+  Future<String?> readRefreshToken() =>
+      _storage.read(key: StorageKeys.refreshToken);
+  Future<void> writeRefreshToken(String token) =>
+      _storage.write(key: StorageKeys.refreshToken, value: token);
+  Future<void> deleteRefreshToken() =>
+      _storage.delete(key: StorageKeys.refreshToken);
+
   // FCM token (cached locally for re-registration on token refresh)
   Future<String?> readFcmToken() => _storage.read(key: StorageKeys.fcmToken);
   Future<void> writeFcmToken(String token) =>

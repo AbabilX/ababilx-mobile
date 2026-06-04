@@ -7,6 +7,7 @@ class ApiConstants {
 
   // Auth
   static const String mobileGoogleAuth = '/auth/google/mobile';
+  static const String authRefresh = '/auth/refresh';
 
   // User (split me API — merge in ProfileRepository.getMe)
   static const String me = '/api/me';
@@ -49,6 +50,7 @@ class StorageKeys {
   StorageKeys._();
 
   static const String jwt = 'ababilx_jwt';
+  static const String refreshToken = 'ababilx_refresh_token';
   static const String fcmToken = 'ababilx_fcm_token';
 }
 

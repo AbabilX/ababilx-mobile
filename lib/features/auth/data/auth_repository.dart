@@ -63,10 +63,20 @@ class AuthRepository {
     );
 
     final body = response.data as Map<String, dynamic>;
-    final jwt = body['token'] as String? ?? body['data']?['token'] as String?;
+    if (body['success'] != true) {
+      throw Exception(body['error']?.toString() ?? 'Login failed');
+    }
+
+    final jwt = body['access_token'] as String? ??
+        body['token'] as String? ??
+        body['data']?['token'] as String?;
     if (jwt == null) throw Exception('No token in server response');
 
+    final refreshToken = body['refresh_token'] as String?;
     await _storage.writeJwt(jwt);
+    if (refreshToken != null) {
+      await _storage.writeRefreshToken(refreshToken);
+    }
 
     // Register FCM token
     final fcmToken = await FirebaseMessaging.instance.getToken();
