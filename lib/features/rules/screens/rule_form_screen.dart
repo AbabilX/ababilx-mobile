@@ -285,7 +285,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
               ),
 
               // ── GitHub Source Selectors (Plan-conditioned) ──────────
-              if (userPlan == 'free') ...[
+              if (form.githubEnabled && userPlan == 'free') ...[
                 _Section(
                   title: 'GitHub Source',
                   subtitle: 'Select the repository and branch to fetch commits from',
@@ -364,7 +364,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                     ),
                   ),
                 ),
-              ] else ...[
+              ] else if (form.githubEnabled) ...[
                 // Premium Multi-Repo selector
                 _Section(
                   title: 'GitHub Sources',
@@ -629,7 +629,7 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                 ),
 
               // ── Commit date mode (loop mode only) ────────────────────
-              if (form.runMode == 'loop')
+              if (form.runMode == 'loop' && form.githubEnabled)
                 _Section(
                   title: 'Commit Date',
                   subtitle: 'Which date\'s commits to include in the message',
@@ -981,25 +981,25 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
                   ),
                   child: Column(
                     children: [
-                      // Post when empty
+                      // GitHub commits toggle
                       Row(
                         children: [
-                          Icon(Icons.mail_outline_rounded, size: 20, color: colors.primary),
+                          Icon(Icons.code_rounded, size: 20, color: colors.primary),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Post When Empty', style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
+                                Text('Include GitHub commits', style: theme.textTheme.titleSmall?.copyWith(fontSize: 14)),
                                 const SizedBox(height: 3),
-                                const Text('Send message even if no code commits exist.',
+                                const Text('Turn off to send from your quick note only.',
                                     style: TextStyle(fontSize: 12, color: Color(0xFFCAC4D0))),
                               ],
                             ),
                           ),
                           Switch(
-                            value: form.postWhenEmpty,
-                            onChanged: ref.read(ruleFormProvider.notifier).setPostWhenEmpty,
+                            value: form.githubEnabled,
+                            onChanged: ref.read(ruleFormProvider.notifier).setGithubEnabled,
                           ),
                         ],
                       ),
@@ -1036,14 +1036,14 @@ class _RuleFormScreenState extends ConsumerState<RuleFormScreen> {
 
               // ── Note for AI ──────────────────────────────────────────
               _Section(
-                title: AppTranslations.translate(context, ref, 'ai_guidelines'),
-                subtitle: 'Instruct the AI on writing tone, blockers, or highlights',
+                title: 'Quick note',
+                subtitle: 'Required when GitHub is off or there are no commits. Cleared after each send.',
                 child: TextField(
                   controller: _noteCtrl,
                   maxLines: 3,
                   onChanged: ref.read(ruleFormProvider.notifier).setNote,
                   decoration: const InputDecoration(
-                    hintText: 'e.g. Mention blockers in bold. Keep bullet points ultra-concise.',
+                    hintText: 'e.g. Planning meeting, PR reviews, blockers on API access.',
                     prefixIcon: Icon(Icons.psychology_outlined, size: 20),
                   ),
                   style: const TextStyle(fontSize: 13, height: 1.5),

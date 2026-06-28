@@ -16,7 +16,7 @@ class RuleFormState {
     this.repoFullName = '',
     this.branch = '',
     this.exampleMessage = '',
-    this.postWhenEmpty = false,
+    this.githubEnabled = true,
     this.dateMode = 'today',
     this.threadEnabled = false,
     this.threadStyle = 'count',
@@ -42,7 +42,7 @@ class RuleFormState {
   final String repoFullName;
   final String branch;
   final String exampleMessage;
-  final bool postWhenEmpty;
+  final bool githubEnabled;
   final String dateMode; // 'today' | 'specific'
   final bool threadEnabled;
   final String threadStyle;
@@ -68,7 +68,7 @@ class RuleFormState {
     String? repoFullName,
     String? branch,
     String? exampleMessage,
-    bool? postWhenEmpty,
+    bool? githubEnabled,
     String? dateMode,
     bool? threadEnabled,
     String? threadStyle,
@@ -96,7 +96,7 @@ class RuleFormState {
         repoFullName: repoFullName ?? this.repoFullName,
         branch: branch ?? this.branch,
         exampleMessage: exampleMessage ?? this.exampleMessage,
-        postWhenEmpty: postWhenEmpty ?? this.postWhenEmpty,
+        githubEnabled: githubEnabled ?? this.githubEnabled,
         dateMode: dateMode ?? this.dateMode,
         threadEnabled: threadEnabled ?? this.threadEnabled,
         threadStyle: threadStyle ?? this.threadStyle,
@@ -121,11 +121,17 @@ class RuleFormState {
         'days_of_week': daysOfWeek,
         'run_mode': runMode,
         if (targetDate != null) 'target_date': targetDate,
-        'repo_targets': repoTargets.map((r) => r.toJson()).toList(),
-        'repo_full_name': repoFullName,
-        'branch': branch,
+        if (githubEnabled) ...{
+          'repo_targets': repoTargets.map((r) => r.toJson()).toList(),
+          'repo_full_name': repoFullName,
+          'branch': branch,
+        } else ...{
+          'repo_targets': <Map<String, dynamic>>[],
+          'repo_full_name': '',
+          'branch': '',
+        },
+        'github_enabled': githubEnabled,
         'example_message': exampleMessage,
-        'post_when_empty': postWhenEmpty,
         'date_mode': dateMode,
         'thread_enabled': threadEnabled,
         'thread_style': threadStyle,
@@ -166,7 +172,7 @@ class RuleFormNotifier extends Notifier<RuleFormState> {
         repoFullName: existing.repoFullName,
         branch: existing.branch,
         exampleMessage: existing.exampleMessage,
-        postWhenEmpty: existing.postWhenEmpty,
+        githubEnabled: existing.githubEnabled,
         dateMode: existing.dateMode,
         threadEnabled: existing.threadEnabled,
         threadStyle: (existing.threadStyle?.isNotEmpty == true) ? existing.threadStyle! : 'count',
@@ -201,7 +207,12 @@ class RuleFormNotifier extends Notifier<RuleFormState> {
   void setTargetDate(String? v) => state = state.copyWith(targetDate: v);
   void setExampleMessage(String v) =>
       state = state.copyWith(exampleMessage: v);
-  void setPostWhenEmpty(bool v) => state = state.copyWith(postWhenEmpty: v);
+  void setGithubEnabled(bool v) => state = state.copyWith(
+        githubEnabled: v,
+        repoTargets: v ? state.repoTargets : const [],
+        repoFullName: v ? state.repoFullName : '',
+        branch: v ? state.branch : '',
+      );
   void setDateMode(String v) => state = state.copyWith(dateMode: v);
   void setThreadEnabled(bool v) => state = state.copyWith(threadEnabled: v);
   
