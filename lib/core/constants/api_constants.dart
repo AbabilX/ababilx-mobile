@@ -19,6 +19,7 @@ class ApiConstants {
 
   // CRM
   static const String crmDashboard = '/api/teams/crm/dashboard';
+  static const String crmSearch = '/api/teams/crm/search';
   static const String crmConfig = '/api/teams/crm/config';
   static const String crmContacts = '/api/teams/crm/contacts';
   static String crmContact(String id) => '/api/teams/crm/contacts/$id';
@@ -91,6 +92,9 @@ class ApiConstants {
 
   // Devices (FCM)
   static const String devices = '/api/devices';
+
+  // Workspace Cmd+K search (solo premium)
+  static const String aiSearchMessages = '/api/ai/search-messages';
 
   // WebSocket
   static const String notificationsStream = '/api/notifications/stream';

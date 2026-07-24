@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/crm/crm-contacts/contact_search.dart';
-import '../../features/crm/crm-followups/followup_search.dart';
-import '../../features/crm/crm-leads/lead_search.dart';
 import '../../features/crm/providers/crm_contacts_ui_provider.dart';
 import '../../features/crm/providers/crm_followups_ui_provider.dart';
 import '../../features/crm/providers/crm_leads_ui_provider.dart';
-import '../../features/messages/chat-list/chat_search.dart';
 import '../../features/messages/providers/chat_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
+import '../../features/search/crm_deep_search.dart';
+import '../../features/search/workspace_search.dart';
 import '../../features/wall/providers/wall_ui_provider.dart';
-import '../../features/wall/wall-search/wall_search.dart';
 import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/index.dart';
 
@@ -143,15 +140,7 @@ class HomeShell extends ConsumerWidget {
                         .setScope(ContactScope.all);
                   }
                 },
-                onContactsSearch: () {
-                  if (isFollowups) {
-                    openFollowupSearch(context, ref);
-                  } else if (isLeads) {
-                    openLeadSearch(context, ref);
-                  } else {
-                    openContactSearch(context, ref);
-                  }
-                },
+                onContactsSearch: () => openCrmDeepSearch(context, ref),
               )
             : ShellBottomBar(
                 mode: ShellBottomBarMode.home,
@@ -166,10 +155,12 @@ class HomeShell extends ConsumerWidget {
                     AppTranslations.translate(context, ref, 'profile'),
                 onSelect: (i) => context.go(tabs[i]),
                 onSearch: () {
-                  if (idx == 1) {
-                    openWallSearch(context, ref);
-                  } else if (idx == 0) {
-                    openChatSearch(context, ref);
+                  // CRM hub (and any /crm* on home bar) → CRM deep search.
+                  // Messages / Wall / Profile → web Cmd+K workspace search.
+                  if (location.startsWith('/crm')) {
+                    openCrmDeepSearch(context, ref);
+                  } else {
+                    openWorkspaceSearch(context, ref);
                   }
                 },
               );

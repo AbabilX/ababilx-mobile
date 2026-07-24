@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../messages/chat-empty-state/index.dart';
-import '../providers/wall_provider.dart';
 import '../providers/wall_state.dart';
 import '../wall-post/post_card.dart';
 
@@ -62,16 +61,14 @@ List<Widget> wallFeedSlivers(
         delegate: SliverChildBuilderDelegate(
           (context, i) {
             if (i >= state.posts.length) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
                 child: Center(
-                  child: state.loadingMore
-                      ? const CircularProgressIndicator(strokeWidth: 2.5)
-                      : TextButton(
-                          onPressed: () =>
-                              ref.read(wallProvider.notifier).loadMore(),
-                          child: const Text('Load more'),
-                        ),
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  ),
                 ),
               );
             }

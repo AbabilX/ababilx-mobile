@@ -12,6 +12,16 @@ class WallFeed extends ConsumerWidget {
 
   final bool isPremium;
 
+  bool _onScroll(ScrollNotification n, WidgetRef ref) {
+    if (n.metrics.axis != Axis.vertical) return false;
+    // Trigger ~320px before the end so the next page feels continuous.
+    final remaining = n.metrics.maxScrollExtent - n.metrics.pixels;
+    if (remaining < 320) {
+      ref.read(wallProvider.notifier).loadMore();
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(wallProvider);
@@ -22,38 +32,41 @@ class WallFeed extends ConsumerWidget {
         onRefresh: () => ref.read(wallProvider.notifier).loadInitial(),
         // Edge offset so pull-to-refresh clears the floating app bar area.
         edgeOffset: MediaQuery.paddingOf(context).top + kToolbarHeight + 48,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverAppBar(
-              floating: true,
-              snap: true,
-              pinned: false,
-              title: const Text(
-                'Wall',
-                style: TextStyle(fontWeight: FontWeight.w800),
-              ),
-              actions: [
-                WallCreatePostButton(
-                  onPressed: () => showWallComposerSheet(
-                    context,
-                    ref,
-                    isPremium: isPremium,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (n) => _onScroll(n, ref),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                floating: true,
+                snap: true,
+                pinned: false,
+                title: const Text(
+                  'Wall',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                actions: [
+                  WallCreatePostButton(
+                    onPressed: () => showWallComposerSheet(
+                      context,
+                      ref,
+                      isPremium: isPremium,
+                    ),
+                  ),
+                ],
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(48),
+                  child: WallFeedFilters(
+                    filter: state.filter,
+                    categories: state.categories,
+                    onSelect: (f) =>
+                        ref.read(wallProvider.notifier).setFilter(f),
                   ),
                 ),
-              ],
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48),
-                child: WallFeedFilters(
-                  filter: state.filter,
-                  categories: state.categories,
-                  onSelect: (f) =>
-                      ref.read(wallProvider.notifier).setFilter(f),
-                ),
               ),
-            ),
-            ...wallFeedSlivers(context, ref, state),
-          ],
+              ...wallFeedSlivers(context, ref, state),
+            ],
+          ),
         ),
       ),
     );
