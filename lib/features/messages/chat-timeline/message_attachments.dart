@@ -7,34 +7,69 @@ import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import 'chat_file_preview.dart';
 
-/// Renders chat image + file attachments; tap opens preview / external file.
+/// Web parity: solo max-h-72 (288), multi max-h-40 (160) + contain.
 class MessageAttachments extends StatelessWidget {
   const MessageAttachments({super.key, required this.attachments});
 
   final List<ChatMessageAttachment> attachments;
+
+  static const double _soloMaxH = 288;
+  static const double _multiMaxH = 160;
+  static const double _multiMaxW = 200;
 
   @override
   Widget build(BuildContext context) {
     final images = attachments.where((a) => a.isImage).toList();
     final files = attachments.where((a) => !a.isImage).toList();
     final colors = Theme.of(context).colorScheme;
+    final solo = images.length == 1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var i = 0; i < images.length; i++)
-          _ImageAttachment(
-            attachment: images[i],
-            placeholderColor: colors.surfaceContainerHighest,
-            onTap: () => showImagePreview(
-              context,
-              images: [
-                for (final a in images)
-                  PreviewImage(fileUrl: a.fileUrl, fileName: a.fileName),
-              ],
-              initialIndex: i,
-            ),
-          ),
+        if (images.isNotEmpty)
+          solo
+              ? _ImageAttachment(
+                  attachment: images.first,
+                  maxHeight: _soloMaxH,
+                  maxWidth: double.infinity,
+                  placeholderColor: colors.surfaceContainerHighest,
+                  onTap: () => showImagePreview(
+                    context,
+                    images: [
+                      for (final a in images)
+                        PreviewImage(
+                          fileUrl: a.fileUrl,
+                          fileName: a.fileName,
+                        ),
+                    ],
+                    initialIndex: 0,
+                  ),
+                )
+              : Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (var i = 0; i < images.length; i++)
+                      _ImageAttachment(
+                        attachment: images[i],
+                        maxHeight: _multiMaxH,
+                        maxWidth: _multiMaxW,
+                        placeholderColor: colors.surfaceContainerHighest,
+                        onTap: () => showImagePreview(
+                          context,
+                          images: [
+                            for (final a in images)
+                              PreviewImage(
+                                fileUrl: a.fileUrl,
+                                fileName: a.fileName,
+                              ),
+                          ],
+                          initialIndex: i,
+                        ),
+                      ),
+                  ],
+                ),
         for (final a in files)
           _FileAttachment(
             attachment: a,
@@ -50,16 +85,22 @@ class _ImageAttachment extends StatelessWidget {
     required this.attachment,
     required this.onTap,
     required this.placeholderColor,
+    required this.maxHeight,
+    required this.maxWidth,
   });
 
   final ChatMessageAttachment attachment;
   final VoidCallback onTap;
   final Color placeholderColor;
+  final double maxHeight;
+  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
+    final isSolo = maxWidth == double.infinity;
+
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: EdgeInsets.only(top: isSolo ? 8 : 0),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -67,20 +108,29 @@ class _ImageAttachment extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(
-              imageUrl: attachment.fileUrl,
-              width: double.infinity,
-              height: 180,
-              fit: BoxFit.cover,
-              placeholder: (_, _) => Container(
-                height: 180,
-                color: placeholderColor,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: maxHeight,
+                maxWidth: maxWidth,
+                minHeight: 80,
               ),
-              errorWidget: (_, _, _) => Container(
-                height: 180,
-                color: placeholderColor,
-                alignment: Alignment.center,
-                child: const Icon(Icons.broken_image_outlined),
+              child: CachedNetworkImage(
+                imageUrl: attachment.fileUrl,
+                width: isSolo ? double.infinity : null,
+                fit: BoxFit.contain,
+                alignment: Alignment.centerLeft,
+                placeholder: (_, _) => Container(
+                  height: maxHeight * 0.55,
+                  width: isSolo ? double.infinity : maxWidth,
+                  color: placeholderColor,
+                ),
+                errorWidget: (_, _, _) => Container(
+                  height: 120,
+                  width: isSolo ? double.infinity : maxWidth,
+                  color: placeholderColor,
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.broken_image_outlined),
+                ),
               ),
             ),
           ),
