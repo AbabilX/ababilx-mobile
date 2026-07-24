@@ -39,29 +39,31 @@ Future<void> pickAndUploadImage(
   WidgetRef ref, {
   required String conversationId,
   required ValueChanged<ChatAttachmentInput> onAdded,
+  ImageSource? source,
 }) async {
-  final source = await showModalBottomSheet<ImageSource>(
-    context: context,
-    builder: (ctx) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const ChatIcon(HugeIcons.strokeRoundedImage01),
-            title: const Text('Gallery'),
-            onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+  final pickedSource = source ??
+      await showModalBottomSheet<ImageSource>(
+        context: context,
+        builder: (ctx) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const ChatIcon(HugeIcons.strokeRoundedImage01),
+                title: const Text('Gallery'),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const ChatIcon(HugeIcons.strokeRoundedCamera01),
+                title: const Text('Camera'),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+            ],
           ),
-          ListTile(
-            leading: const ChatIcon(HugeIcons.strokeRoundedCamera01),
-            title: const Text('Camera'),
-            onTap: () => Navigator.pop(ctx, ImageSource.camera),
-          ),
-        ],
-      ),
-    ),
-  );
-  if (source == null) return;
-  final file = await ImagePicker().pickImage(source: source);
+        ),
+      );
+  if (pickedSource == null) return;
+  final file = await ImagePicker().pickImage(source: pickedSource);
   if (file == null) return;
   final bytes = await file.readAsBytes();
   final contentType = file.mimeType ?? 'image/jpeg';

@@ -37,6 +37,16 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
           fetchedAt: DateTime.now().millisecondsSinceEpoch,
         ),
       );
+      if (threadRootId != null) {
+        final replies =
+            sorted.where((m) => m.id != threadRootId).toList(growable: false);
+        state = state.copyWith(
+          threadRepliesByRoot: {
+            ...state.threadRepliesByRoot,
+            threadRootId: replies,
+          },
+        );
+      }
     } catch (_) {
       setFeed(key, (state.feeds[key] ?? const ChatFeed()).copyWith(loading: false));
     }

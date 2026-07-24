@@ -86,6 +86,10 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
         MessageComposer(
           conversationId: widget.conversationId,
           parentId: widget.threadRootId,
+          hintName: chat
+                  .conversationById(widget.conversationId)
+                  ?.displayTitle(chat.currentUserId) ??
+              'someone',
         ),
       ],
     );

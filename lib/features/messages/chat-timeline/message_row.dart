@@ -87,6 +87,11 @@ class MessageRow extends ConsumerWidget {
                     ),
                   if (onOpenThread != null)
                     ThreadSummary(
+                      root: message,
+                      replies: ref
+                              .watch(chatProvider)
+                              .threadRepliesByRoot[message.id] ??
+                          const [],
                       count: message.threadCount,
                       onTap: onOpenThread!,
                     ),
