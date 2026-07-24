@@ -52,7 +52,7 @@ class HomeShell extends ConsumerWidget {
     }
 
     final hideBar = (isContacts && contactsUi.formSheetOpen) ||
-        wallUi.composerSheetOpen;
+        wallUi.hideBottomBar;
     final Widget? bar = hideBar
         ? null
         : isContacts

@@ -7,6 +7,7 @@ import '../../messages/chat_icon.dart';
 import '../../messages/chat-timeline/quick_react_sheet.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
+import '../providers/wall_ui_provider.dart';
 import '../wall-forward/forward_sheet.dart';
 
 class WallPostActions extends ConsumerWidget {
@@ -34,8 +35,14 @@ class WallPostActions extends ConsumerWidget {
           icon: HugeIcons.strokeRoundedSmile,
           label: 'React',
           onTap: () async {
-            final emoji = await showQuickReactSheet(context);
-            if (emoji != null) await n.react(post.id, emoji);
+            final ui = ref.read(wallUiProvider.notifier);
+            ui.setReactionSheetOpen(true);
+            try {
+              final emoji = await showQuickReactSheet(context);
+              if (emoji != null) await n.react(post.id, emoji);
+            } finally {
+              ui.setReactionSheetOpen(false);
+            }
           },
         ),
         if (showComment)
