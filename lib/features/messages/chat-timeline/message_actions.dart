@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import '../chat-forward/forward-dialog.dart';
+import '../chat-forward/forward_sheet.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -65,7 +65,7 @@ Future<void> showMessageActions(
     case 'react':
       await n.toggleReaction(msg.id, '👍');
     case 'forward':
-      await showForwardDialog(context, ref, msg);
+      await showForwardSheet(context, ref, msg);
     case 'thread':
       openThreadSheet(context, conversationId, msg);
     case 'edit':
