@@ -30,7 +30,9 @@ class _FcmBootstrapState extends ConsumerState<FcmBootstrap> {
     final isLoggedIn = auth.valueOrNull ?? false;
     final isLoading = auth.isLoading;
 
-    ref.read(fcmServiceProvider).router = widget.router;
+    final fcm = ref.read(fcmServiceProvider);
+    fcm.router = widget.router;
+    fcm.flushPendingNav();
 
     ref.listen(authProvider, (prev, next) {
       final wasIn = prev?.valueOrNull ?? false;
@@ -42,6 +44,9 @@ class _FcmBootstrapState extends ConsumerState<FcmBootstrap> {
       if (wasIn && !nowIn) {
         fcmLog('bootstrap.auth.logout');
         _startedForSession = false;
+      }
+      if (nowIn && !next.isLoading) {
+        ref.read(fcmServiceProvider).flushPendingNav();
       }
     });
 

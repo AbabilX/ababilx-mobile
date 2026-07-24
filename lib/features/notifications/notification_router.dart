@@ -5,6 +5,7 @@ class NotificationRouter {
   static String pathForData(Map<String, dynamic> data) {
     final type = data['type']?.toString();
     final conversationId = data['conversation_id']?.toString();
+    final messageId = data['message_id']?.toString();
     switch (type) {
       case 'pre_send_review':
         return '/profile';
@@ -16,10 +17,17 @@ class NotificationRouter {
       case 'chat_mention':
       case 'chat_message':
         if (conversationId != null && conversationId.isNotEmpty) {
+          // Open that exact chat; message_id kept for future scroll-to-message.
+          if (messageId != null && messageId.isNotEmpty) {
+            return '/messages/$conversationId?m=$messageId';
+          }
           return '/messages/$conversationId';
         }
         return '/messages';
       default:
+        if (conversationId != null && conversationId.isNotEmpty) {
+          return '/messages/$conversationId';
+        }
         return '/messages';
     }
   }

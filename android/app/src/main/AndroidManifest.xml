@@ -29,6 +29,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- FCM server sends click_action=FLUTTER_NOTIFICATION_CLICK -->
+            <intent-filter>
+                <action android:name="FLUTTER_NOTIFICATION_CLICK"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
@@ -36,19 +41,16 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- FCM default channel (must match LocalNotifications 'general') -->
+        <!-- FCM defaults: channel + white status-bar icon + brand tint -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="general" />
-
-        <!-- FCM: high-priority messaging service -->
-        <service
-            android:name="com.google.firebase.messaging.FirebaseMessagingService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
-            </intent-filter>
-        </service>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_ababilx" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
 
         <!-- flutter_local_notifications: scheduled notification receivers -->
         <receiver

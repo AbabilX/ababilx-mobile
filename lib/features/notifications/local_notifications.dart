@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' show Color;
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -49,7 +50,8 @@ class LocalNotifications {
     this.onTap = onTap;
     if (_ready) return;
 
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // White silhouette status-bar icon (Android requires alpha-only small icon).
+    const androidInit = AndroidInitializationSettings('ic_stat_ababilx');
     await _plugin.initialize(
       settings: const InitializationSettings(android: androidInit),
       onDidReceiveNotificationResponse: (response) {
@@ -59,6 +61,17 @@ class LocalNotifications {
         }
       },
     );
+
+    // App was terminated and opened via a local notification tap.
+    try {
+      final launch = await _plugin.getNotificationAppLaunchDetails();
+      final payload = launch?.notificationResponse?.payload;
+      if (launch?.didNotificationLaunchApp == true &&
+          payload != null &&
+          payload.isNotEmpty) {
+        this.onTap?.call(payload);
+      }
+    } catch (_) {}
 
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
@@ -93,7 +106,10 @@ class LocalNotifications {
         channelDescription: 'AbabilX',
         importance: Importance.high,
         priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
+        icon: 'ic_stat_ababilx',
+        color: const Color(0xFF6366F1),
+        // Full-color app logo on the right side of the notification.
+        largeIcon: const DrawableResourceAndroidBitmap('ic_launcher'),
       ),
     );
 

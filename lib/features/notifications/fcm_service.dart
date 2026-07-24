@@ -31,6 +31,9 @@ class FcmService {
   StreamSubscription<RemoteMessage>? _openedSub;
   bool _started = false;
 
+  /// Deep-link path from a notification tap; survives auth / router races.
+  String? _pendingPath;
+
   /// Permission currently granted (Android POST_NOTIFICATIONS / FCM).
   bool permissionGranted = false;
 
@@ -38,7 +41,24 @@ class FcmService {
     fcmLog('start.begin', 'api=${ApiConstants.baseUrl} alreadyStarted=$_started granted=$permissionGranted');
     if (_started && permissionGranted) {
       fcmLog('start.skip', 'already running with permission');
+      flushPendingNav();
       return true;
+    }
+
+    // Capture cold-start tap ASAP (before permission / token work).
+    try {
+      final initial = await _messaging.getInitialMessage();
+      if (initial != null) {
+        fcmLog(
+          'initial_message',
+          'type=${initial.data['type']} conversation=${initial.data['conversation_id']}',
+        );
+        _onOpened(initial);
+      } else {
+        fcmLog('initial_message', 'none');
+      }
+    } catch (e) {
+      fcmLog('initial_message.fail', e);
     }
 
     try {
@@ -72,6 +92,7 @@ class FcmService {
 
     if (!permissionGranted) {
       fcmLog('start.abort', 'permission denied — token will not register');
+      flushPendingNav();
       return false;
     }
 
@@ -105,21 +126,42 @@ class FcmService {
     _openedSub?.cancel();
     _openedSub = FirebaseMessaging.onMessageOpenedApp.listen(_onOpened);
 
-    try {
-      final initial = await _messaging.getInitialMessage();
-      if (initial != null) {
-        fcmLog('initial_message', 'type=${initial.data['type']}');
-        _onOpened(initial);
-      } else {
-        fcmLog('initial_message', 'none');
-      }
-    } catch (e) {
-      fcmLog('initial_message.fail', e);
-    }
-
     _started = true;
     fcmLog('start.done', 'listeners attached');
+    flushPendingNav();
     return true;
+  }
+
+  /// Called when [router] is attached or auth becomes ready.
+  void flushPendingNav() {
+    final path = _pendingPath;
+    final r = router;
+    if (path == null || path.isEmpty) return;
+    if (r == null) {
+      fcmLog('navigate.defer', 'router not ready path=$path');
+      return;
+    }
+    Future<void>.delayed(const Duration(milliseconds: 350), () {
+      final pending = _pendingPath;
+      if (pending == null || pending.isEmpty) return;
+      try {
+        r.go(pending);
+        _pendingPath = null;
+        fcmLog('navigate.ok', pending);
+      } catch (e) {
+        fcmLog('navigate.fail', e);
+      }
+    });
+  }
+
+  /// Peek without clearing — used by GoRouter login redirect.
+  String? get pendingPath => _pendingPath;
+
+  /// Take and clear a pending deep link (e.g. cold-start after login).
+  String? consumePendingPath() {
+    final path = _pendingPath;
+    _pendingPath = null;
+    return path;
   }
 
   /// Re-request permission from profile and register if granted.
@@ -207,7 +249,11 @@ class FcmService {
   void _onOpened(RemoteMessage message) {
     final data = Map<String, dynamic>.from(message.data);
     final path = NotificationRouter.pathForData(data);
-    fcmLog('push.opened', 'type=${data['type']} path=$path');
+    fcmLog(
+      'push.opened',
+      'type=${data['type']} conversation=${data['conversation_id']} '
+      'message=${data['message_id']} path=$path',
+    );
     _go(path);
   }
 
@@ -218,19 +264,9 @@ class FcmService {
   }
 
   void _go(String path) {
-    final r = router;
-    if (r == null) {
-      fcmLog('navigate.skip', 'router not attached yet path=$path');
-      return;
-    }
-    Future<void>.delayed(Duration.zero, () {
-      try {
-        r.go(path);
-        fcmLog('navigate.ok', path);
-      } catch (e) {
-        fcmLog('navigate.fail', e);
-      }
-    });
+    _pendingPath = path;
+    fcmLog('navigate.queue', path);
+    flushPendingNav();
   }
 
   String _channelFor(String? type) {

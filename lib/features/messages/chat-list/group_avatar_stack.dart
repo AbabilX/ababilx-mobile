@@ -33,11 +33,10 @@ class GroupAvatarStack extends StatelessWidget {
       );
     }
 
-    if (pics.length == 1) {
-      return AppAvatar(size: size, url: pics.first, name: name);
-    }
-
-    // Two (or more): back top-left, front bottom-right — overlapping.
+    // Always stack for groups — if only one photo, second slot uses initials
+    // so it never collapses to a single avatar.
+    final first = pics[0];
+    final second = pics.length > 1 ? pics[1] : null;
     final tile = size * 0.62;
     final ring = colors.surface;
 
@@ -52,7 +51,7 @@ class GroupAvatarStack extends StatelessWidget {
             top: 0,
             child: _RingAvatar(
               size: tile,
-              url: pics[0],
+              url: first,
               name: name,
               ringColor: ring,
             ),
@@ -62,7 +61,7 @@ class GroupAvatarStack extends StatelessWidget {
             bottom: 0,
             child: _RingAvatar(
               size: tile,
-              url: pics[1],
+              url: second,
               name: name,
               ringColor: ring,
             ),
@@ -82,7 +81,7 @@ class _RingAvatar extends StatelessWidget {
   });
 
   final double size;
-  final String url;
+  final String? url;
   final Color ringColor;
   final String? name;
 

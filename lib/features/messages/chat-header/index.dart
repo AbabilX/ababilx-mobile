@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import '../../../shared/widgets/app_avatar.dart';
 import '../chat_icon.dart';
-import '../chat-list/group_avatar_stack.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'dm-actions-sheet.dart';
@@ -19,53 +17,42 @@ class ChatHeader extends ConsumerWidget {
     final title =
         conversation.displayTitle(ref.watch(chatProvider).currentUserId);
     final colors = Theme.of(context).colorScheme;
-    final avatar = conversation.peerUserAvatar;
 
     return AppBar(
-      titleSpacing: 0,
-      title: Row(
+      centerTitle: true,
+      title: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: conversation.isChannel
-                ? GroupAvatarStack(
-                    avatars: conversation.memberAvatars,
-                    name: title,
-                    size: 32,
-                  )
-                : AppAvatar(size: 32, url: avatar, name: title),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (conversation.isChannel && conversation.memberCount != null)
-                  Text(
-                    '${conversation.memberCount} members',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ),
-              ],
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
+          if (conversation.isChannel && conversation.memberCount != null)
+            Text(
+              '${conversation.memberCount} members',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: colors.onSurfaceVariant,
+              ),
+            ),
         ],
       ),
       actions: [
         if (conversation.muted)
-          ChatIcon(
-            HugeIcons.strokeRoundedNotificationOff01,
-            size: 18,
-            color: colors.onSurfaceVariant,
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: ChatIcon(
+              HugeIcons.strokeRoundedNotificationOff01,
+              size: 18,
+              color: colors.onSurfaceVariant,
+            ),
           ),
         IconButton(
           icon: const ChatIcon(HugeIcons.strokeRoundedMoreVertical),
