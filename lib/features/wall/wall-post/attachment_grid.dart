@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../data/models/wall_models.dart';
@@ -15,6 +16,7 @@ class WallAttachmentGrid extends StatelessWidget {
     final pdfs = attachments.where((a) => !a.isImage && a.isPdf).toList();
     final others =
         attachments.where((a) => !a.isImage && !a.isPdf).toList();
+    final scheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,16 +38,18 @@ class WallAttachmentGrid extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      a.fileUrl,
+                    child: CachedNetworkImage(
+                      imageUrl: a.fileUrl,
                       width: 160,
                       height: 140,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(
+                      placeholder: (_, _) => Container(
                         width: 160,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
+                        color: scheme.surfaceContainerHighest,
+                      ),
+                      errorWidget: (_, _, _) => Container(
+                        width: 160,
+                        color: scheme.surfaceContainerHighest,
                         alignment: Alignment.center,
                         child: const Icon(Icons.broken_image_outlined),
                       ),
