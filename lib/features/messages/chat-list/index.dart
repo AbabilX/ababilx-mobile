@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../chat-sidebar/new-dm-dialog.dart';
 import '../chat_list_filters.dart';
 import '../providers/chat_provider.dart';
-import 'chat_search.dart';
 import 'compose_sheet.dart';
 import 'conversation_rows.dart';
 import 'create_channel_dialog.dart';
@@ -39,10 +38,7 @@ class _ChatListState extends ConsumerState<ChatList> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ChatListHeader(
-              onSearch: () => openChatSearch(context, ref),
-              onCompose: () => _compose(context),
-            ),
+            const ChatListHeader(),
             if (recent.isNotEmpty)
               RecentContactsStrip(
                 conversations: recent,

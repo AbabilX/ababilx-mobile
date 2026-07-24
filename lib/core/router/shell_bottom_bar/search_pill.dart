@@ -16,7 +16,9 @@ class SearchPill extends StatelessWidget {
       color: scheme.surfaceContainerHigh,
       shape: const StadiumBorder(),
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.4),
+      shadowColor: Colors.black.withValues(
+        alpha: scheme.brightness == Brightness.dark ? 0.4 : 0.14,
+      ),
       child: InkWell(
         onTap: onTap,
         customBorder: const StadiumBorder(),

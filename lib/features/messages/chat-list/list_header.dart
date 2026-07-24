@@ -1,42 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../chat_icon.dart';
+import '../../profile/providers/profile_provider.dart';
+import '../providers/team_gate_provider.dart';
+import 'header_profile_pill.dart';
+import 'workspace_title.dart';
+import 'you-sheet/index.dart';
 
-class ChatListHeader extends StatelessWidget {
-  const ChatListHeader({
-    super.key,
-    required this.onSearch,
-    required this.onCompose,
-  });
-
-  final VoidCallback onSearch;
-  final VoidCallback onCompose;
+/// Slack-style list app bar: workspace left, history+profile pill right.
+class ChatListHeader extends ConsumerWidget {
+  const ChatListHeader({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final team = ref.watch(teamGateProvider).valueOrNull?.team;
+    final user = ref.watch(profileProvider).valueOrNull;
+    final workspaceName = team?.name.isNotEmpty == true
+        ? team!.name
+        : 'Workspace';
+    final userName = user?.name.isNotEmpty == true ? user!.name : 'You';
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
+      padding: const EdgeInsets.fromLTRB(16, 10, 12, 8),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              'Direct messages',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+            child: WorkspaceTitle(
+              name: workspaceName,
+              avatarUrl: team?.avatarUrl,
             ),
           ),
-          IconButton(
-            tooltip: 'Search',
-            onPressed: onSearch,
-            icon: const ChatIcon(HugeIcons.strokeRoundedSearch01),
-          ),
-          IconButton(
-            tooltip: 'Compose',
-            onPressed: onCompose,
-            icon: const ChatIcon(HugeIcons.strokeRoundedPencilEdit01),
+          HeaderProfilePill(
+            name: userName,
+            avatarUrl: user?.avatarUrl,
+            onProfileTap: () => showYouSheet(context),
           ),
         ],
       ),

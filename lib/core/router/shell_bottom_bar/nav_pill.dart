@@ -31,7 +31,9 @@ class NavPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
+            color: Colors.black.withValues(
+              alpha: scheme.brightness == Brightness.dark ? 0.35 : 0.12,
+            ),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
