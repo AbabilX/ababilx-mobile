@@ -12,6 +12,9 @@ import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/index.dart';
 
 /// Bottom nav: home pills, or contacts [My|Add|All] + search.
+///
+/// Pills float as an overlay so page content (e.g. wall posts) scrolls
+/// underneath for a translucent look.
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
@@ -46,68 +49,79 @@ class HomeShell extends ConsumerWidget {
       });
     }
 
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: (isContacts && contactsUi.formSheetOpen)
-          ? null
-          : isContacts
-              ? ShellBottomBar(
-                  mode: ShellBottomBarMode.contacts,
-                  contactsMineSelected:
-                      contactsUi.scope == ContactScope.mine,
-                  addLabel: AppTranslations.translate(
-                    context,
-                    ref,
-                    'crm_add_short',
-                  ),
-                  mineLabel: AppTranslations.translate(
-                    context,
-                    ref,
-                    'crm_my_short',
-                  ),
-                  allLabel: AppTranslations.translate(
-                    context,
-                    ref,
-                    'crm_all_short',
-                  ),
-                  canAdd: contactsUi.canCreate,
-                  onAdd: () {
-                    // Hide bar immediately, then open sheet.
-                    ref
-                        .read(crmContactsUiProvider.notifier)
-                        .setFormSheetOpen(true);
-                    ref.read(crmContactsUiProvider.notifier).requestAdd();
-                  },
-                  onSelectMine: () => ref
-                      .read(crmContactsUiProvider.notifier)
-                      .setScope(ContactScope.mine),
-                  onSelectAll: () => ref
-                      .read(crmContactsUiProvider.notifier)
-                      .setScope(ContactScope.all),
-                  onContactsSearch: () {
-                    openContactSearch(context, ref);
-                  },
-                )
-              : ShellBottomBar(
-                  mode: ShellBottomBarMode.home,
-                  selectedIndex: idx,
-                  unread: unread,
-                  showCrm: showCrm,
-                  messagesLabel:
-                      AppTranslations.translate(context, ref, 'messages'),
-                  wallLabel: AppTranslations.translate(context, ref, 'wall'),
-                  crmLabel: AppTranslations.translate(context, ref, 'crm'),
-                  profileLabel:
-                      AppTranslations.translate(context, ref, 'profile'),
-                  onSelect: (i) => context.go(tabs[i]),
-                  onSearch: () {
-                    if (idx == 1) {
-                      openWallSearch(context, ref);
-                    } else if (idx == 0) {
-                      openChatSearch(context, ref);
-                    }
-                  },
+    final hideBar = isContacts && contactsUi.formSheetOpen;
+    final Widget? bar = hideBar
+        ? null
+        : isContacts
+            ? ShellBottomBar(
+                mode: ShellBottomBarMode.contacts,
+                contactsMineSelected: contactsUi.scope == ContactScope.mine,
+                addLabel: AppTranslations.translate(
+                  context,
+                  ref,
+                  'crm_add_short',
                 ),
+                mineLabel: AppTranslations.translate(
+                  context,
+                  ref,
+                  'crm_my_short',
+                ),
+                allLabel: AppTranslations.translate(
+                  context,
+                  ref,
+                  'crm_all_short',
+                ),
+                canAdd: contactsUi.canCreate,
+                onAdd: () {
+                  ref
+                      .read(crmContactsUiProvider.notifier)
+                      .setFormSheetOpen(true);
+                  ref.read(crmContactsUiProvider.notifier).requestAdd();
+                },
+                onSelectMine: () => ref
+                    .read(crmContactsUiProvider.notifier)
+                    .setScope(ContactScope.mine),
+                onSelectAll: () => ref
+                    .read(crmContactsUiProvider.notifier)
+                    .setScope(ContactScope.all),
+                onContactsSearch: () {
+                  openContactSearch(context, ref);
+                },
+              )
+            : ShellBottomBar(
+                mode: ShellBottomBarMode.home,
+                selectedIndex: idx,
+                unread: unread,
+                showCrm: showCrm,
+                messagesLabel:
+                    AppTranslations.translate(context, ref, 'messages'),
+                wallLabel: AppTranslations.translate(context, ref, 'wall'),
+                crmLabel: AppTranslations.translate(context, ref, 'crm'),
+                profileLabel:
+                    AppTranslations.translate(context, ref, 'profile'),
+                onSelect: (i) => context.go(tabs[i]),
+                onSearch: () {
+                  if (idx == 1) {
+                    openWallSearch(context, ref);
+                  } else if (idx == 0) {
+                    openChatSearch(context, ref);
+                  }
+                },
+              );
+
+    return Scaffold(
+      // Overlay (not bottomNavigationBar) so feed paints under translucent pills.
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          child,
+          if (bar != null)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: bar,
+            ),
+        ],
+      ),
     );
   }
 }

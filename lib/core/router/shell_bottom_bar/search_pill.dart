@@ -2,17 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../features/messages/chat_icon.dart';
+import 'shell_pill_chrome.dart';
 import 'shell_pill_metrics.dart';
-
-List<BoxShadow> shellPillShadow(ColorScheme scheme) => [
-      BoxShadow(
-        color: Colors.black.withValues(
-          alpha: scheme.brightness == Brightness.dark ? 0.35 : 0.12,
-        ),
-        blurRadius: 16,
-        offset: const Offset(0, 6),
-      ),
-    ];
 
 /// Right circular action — **same height** as left [NavPill] / contacts pill.
 class ActionPill extends StatelessWidget {
@@ -36,21 +27,19 @@ class ActionPill extends StatelessWidget {
         ? scheme.onSurfaceVariant
         : scheme.onSurfaceVariant.withValues(alpha: 0.35);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        customBorder: const CircleBorder(),
-        child: Ink(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHigh,
-            shape: BoxShape.circle,
-            boxShadow: shellPillShadow(scheme),
-          ),
-          child: Center(
-            child: ChatIcon(icon, size: 24, color: color),
+    return ShellPillChrome(
+      shape: BoxShape.circle,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Center(
+              child: ChatIcon(icon, size: 24, color: color),
+            ),
           ),
         ),
       ),
