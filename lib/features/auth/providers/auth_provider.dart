@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../messages/data/local/chat_sidebar_cache.dart';
+import '../../messages/providers/chat_provider.dart';
 import '../data/auth_repository.dart';
 
 /// Auth state — null = logged out / unknown, String = user id or JWT marker.
@@ -19,6 +21,11 @@ class AuthNotifier extends AsyncNotifier<bool> {
   }
 
   Future<void> signOut() async {
+    // Clear chat disk cache so next account never sees prior sidebar.
+    try {
+      await ref.read(chatSidebarCacheProvider).clearAll();
+    } catch (_) {}
+    ref.read(chatProvider.notifier).resetTeamChatState();
     await ref.read(authRepositoryProvider).signOut();
     state = const AsyncData(false);
   }

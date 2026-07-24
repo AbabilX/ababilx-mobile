@@ -7,6 +7,7 @@ import '../../../core/network/ws_client.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat_utils.dart';
 import '../data/chat_repository.dart';
+import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
 import 'chat_state.dart';
 
@@ -17,6 +18,7 @@ part 'chat_provider_feed.dart';
 part 'chat_provider_actions.dart';
 part 'chat_provider_mutate.dart';
 part 'chat_provider_ws.dart';
+part 'chat_provider_cache.dart';
 
 class ChatNotifier extends Notifier<ChatState>
     with
@@ -24,7 +26,8 @@ class ChatNotifier extends Notifier<ChatState>
         _ChatFeedMixin,
         _ChatActionsMixin,
         _ChatMutateMixin,
-        _ChatWsMixin {
+        _ChatWsMixin,
+        _ChatCacheMixin {
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
   WsClient get _ws => ref.read(wsClientProvider);
   bool _realtimeStarted = false;
@@ -34,6 +37,9 @@ class ChatNotifier extends Notifier<ChatState>
 
   @override
   WsClient get ws => _ws;
+
+  @override
+  ChatSidebarCache get sidebarCache => ref.read(chatSidebarCacheProvider);
 
   @override
   bool get realtimeStarted => _realtimeStarted;
@@ -63,7 +69,10 @@ class ChatNotifier extends Notifier<ChatState>
     }
     final userId = ref.read(profileProvider).valueOrNull?.id;
     if (userId != null) state = state.copyWith(currentUserId: userId);
-    await fetchSidebar();
+
+    // WhatsApp-style: paint cached sidebar first, then refresh network.
+    final hadCache = await hydrateSidebarFromCache();
+    await fetchSidebar(silent: hadCache);
     initRealtime();
   }
 
@@ -88,8 +97,12 @@ class ChatNotifier extends Notifier<ChatState>
         clearThreadRoot: !known,
         sidebarLoading: false,
       );
+      await persistSidebar(ChatSidebar(channels: channels, dms: dms));
     } catch (_) {
-      resetTeamChatState();
+      // Keep cached rows on network failure — only clear if nothing to show.
+      if (state.dms.isEmpty && state.channels.isEmpty) {
+        resetTeamChatState();
+      }
       state = state.copyWith(sidebarLoading: false);
     }
   }
