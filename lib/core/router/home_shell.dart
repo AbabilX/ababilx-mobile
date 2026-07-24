@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
 
-import '../../features/messages/chat_icon.dart';
+import '../../features/messages/chat-list/chat_search.dart';
 import '../../features/messages/providers/chat_provider.dart';
 import '../../core/localization/app_translations.dart';
+import 'shell_bottom_bar/index.dart';
 
-/// Bottom nav: Messages + Profile.
+/// Bottom nav: Messages + Profile (floating pills) + search.
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
@@ -27,25 +27,13 @@ class HomeShell extends ConsumerWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: ShellBottomBar(
         selectedIndex: idx,
-        onDestinationSelected: (i) => context.go(_tabs[i]),
-        destinations: [
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: unread > 0,
-              label: Text(unread > 99 ? '99+' : '$unread'),
-              child: const ChatIcon(HugeIcons.strokeRoundedBubbleChat),
-            ),
-            selectedIcon: const ChatIcon(HugeIcons.strokeRoundedMessage01),
-            label: AppTranslations.translate(context, ref, 'messages'),
-          ),
-          NavigationDestination(
-            icon: const ChatIcon(HugeIcons.strokeRoundedUser02),
-            selectedIcon: const ChatIcon(HugeIcons.strokeRoundedUser03),
-            label: AppTranslations.translate(context, ref, 'profile'),
-          ),
-        ],
+        unread: unread,
+        messagesLabel: AppTranslations.translate(context, ref, 'messages'),
+        profileLabel: AppTranslations.translate(context, ref, 'profile'),
+        onSelect: (i) => context.go(_tabs[i]),
+        onSearch: () => openChatSearch(context, ref),
       ),
     );
   }

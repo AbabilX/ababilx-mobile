@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../chat-date-divider/index.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
-import 'message_actions.dart';
 import 'message_row.dart';
 import 'thread_sheet.dart';
 
@@ -36,7 +35,7 @@ class MessageList extends ConsumerWidget {
     return ListView.builder(
       controller: scrollController,
       reverse: true,
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       itemCount: messages.length + (loadingMore ? 1 : 0),
       itemBuilder: (_, i) {
         if (loadingMore && i == messages.length) {
@@ -56,13 +55,8 @@ class MessageList extends ConsumerWidget {
               ChatDateDivider(label: formatDateDivider(msg.createdAt)),
             MessageRow(
               message: msg,
-              onLongPress: () => showMessageActions(
-                context,
-                ref,
-                msg,
-                conversationId: conversationId,
-                threadRootId: threadRootId,
-              ),
+              conversationId: conversationId,
+              threadRootId: threadRootId,
               onOpenThread: threadRootId == null && msg.threadCount > 0
                   ? () => openThreadSheet(context, conversationId, msg)
                   : null,
