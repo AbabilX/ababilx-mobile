@@ -86,44 +86,37 @@ class _ActivitiesTabState extends ConsumerState<ActivitiesTab> {
             ),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        key: ValueKey(_typeId),
-                        initialValue: _typeId,
-                        decoration: const InputDecoration(
-                          labelText: 'Type',
-                          isDense: true,
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: _none,
-                            child: Text('None'),
-                          ),
-                          for (final t in widget.activityTypes)
-                            DropdownMenuItem(
-                              value: t.id,
-                              child: Text(t.name),
-                            ),
-                        ],
-                        onChanged: (v) =>
-                            setState(() => _typeId = v ?? _none),
-                      ),
+                DropdownButtonFormField<String>(
+                  key: ValueKey(_typeId),
+                  initialValue: _typeId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Type',
+                    isDense: true,
+                  ),
+                  items: [
+                    const DropdownMenuItem(
+                      value: _none,
+                      child: Text('None'),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      flex: 3,
-                      child: TextField(
-                        controller: _subject,
-                        decoration: const InputDecoration(
-                          labelText: 'Subject',
-                          isDense: true,
+                    for (final t in widget.activityTypes)
+                      DropdownMenuItem(
+                        value: t.id,
+                        child: Text(
+                          t.name,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
                   ],
+                  onChanged: (v) => setState(() => _typeId = v ?? _none),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _subject,
+                  decoration: const InputDecoration(
+                    labelText: 'Subject',
+                    isDense: true,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
