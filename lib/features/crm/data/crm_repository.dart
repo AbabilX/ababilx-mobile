@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import 'crm_config_api.dart';
 import 'crm_contacts_api.dart';
+import 'crm_dashboard_api.dart';
 import 'crm_documents_api.dart';
 import 'crm_followups_api.dart';
 import 'crm_leads_api.dart';
+import 'models/crm_dashboard.dart';
 import 'models/crm_models.dart';
 
 class CrmRepository {
@@ -14,12 +16,14 @@ class CrmRepository {
         leads = CrmLeadsApi(client),
         followups = CrmFollowupsApi(client),
         documents = CrmDocumentsApi(client),
+        dashboard = CrmDashboardApi(client),
         config = CrmConfigApi(client);
 
   final CrmContactsApi contacts;
   final CrmLeadsApi leads;
   final CrmFollowupsApi followups;
   final CrmDocumentsApi documents;
+  final CrmDashboardApi dashboard;
   final CrmConfigApi config;
 
   Future<List<CrmContact>> listContacts({String? q}) => contacts.list(q: q);
@@ -115,6 +119,8 @@ class CrmRepository {
   Future<void> deleteDocument(String docId) => documents.delete(docId);
 
   Future<CrmConfig> getConfig() => config.get();
+
+  Future<CrmDashboard> getDashboard() => dashboard.get();
 }
 
 final crmRepositoryProvider = Provider<CrmRepository>(

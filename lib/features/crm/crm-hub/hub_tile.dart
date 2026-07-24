@@ -25,7 +25,7 @@ class CrmHubTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -43,7 +43,7 @@ class CrmHubTile extends StatelessWidget {
                 color: colors.onPrimaryContainer,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               label,
               maxLines: 2,

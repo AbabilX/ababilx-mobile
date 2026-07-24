@@ -4,11 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
+import 'hub_dashboard.dart';
 import 'hub_header.dart';
 import 'hub_items.dart';
 import 'hub_section.dart';
 
-/// WeCom-style CRM workspace hub (sections + icon tiles).
+/// WeCom-style CRM workspace hub (dashboard strip + sections).
 class CrmHub extends ConsumerWidget {
   const CrmHub({super.key});
 
@@ -34,6 +35,9 @@ class CrmHub extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final title = AppTranslations.translate(context, ref, 'crm');
+    final screenH = MediaQuery.sizeOf(context).height;
+    // ~45% of screen for industry charts; clamp so tiles still fit.
+    final dashH = (screenH * 0.42).clamp(220.0, 340.0);
 
     return Scaffold(
       appBar: CrmHubHeader(title: title),
@@ -45,6 +49,8 @@ class CrmHub extends ConsumerWidget {
           ShellPillMetrics.contentBottomInset,
         ),
         children: [
+          CrmHubDashboard(height: dashH),
+          const SizedBox(height: 10),
           for (final section in kCrmHubSections) ...[
             CrmHubSection(
               title: AppTranslations.translate(context, ref, section.titleKey),
@@ -53,7 +59,7 @@ class CrmHub extends ConsumerWidget {
                   AppTranslations.translate(context, ref, item.labelKey),
               onTileTap: (item) => _onTileTap(context, ref, item),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
           ],
         ],
       ),

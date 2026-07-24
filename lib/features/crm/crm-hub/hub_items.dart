@@ -24,7 +24,7 @@ class CrmHubSectionData {
   final List<CrmHubItem> items;
 }
 
-/// Static AbabilX CRM hub catalog.
+/// Static AbabilX CRM hub catalog — customer shortcuts only.
 const List<CrmHubSectionData> kCrmHubSections = [
   CrmHubSectionData(
     titleKey: 'crm_section_customer',
@@ -43,41 +43,6 @@ const List<CrmHubSectionData> kCrmHubSections = [
         id: 'followups',
         labelKey: 'crm_followups',
         icon: HugeIcons.strokeRoundedTask01,
-      ),
-    ],
-  ),
-  CrmHubSectionData(
-    titleKey: 'crm_section_overview',
-    items: [
-      CrmHubItem(
-        id: 'dashboard',
-        labelKey: 'crm_dashboard',
-        icon: HugeIcons.strokeRoundedDashboardSquare01,
-      ),
-      CrmHubItem(
-        id: 'calendar',
-        labelKey: 'crm_calendar',
-        icon: HugeIcons.strokeRoundedCalendar01,
-      ),
-      CrmHubItem(
-        id: 'timeline',
-        labelKey: 'crm_timeline',
-        icon: HugeIcons.strokeRoundedClock01,
-      ),
-      CrmHubItem(
-        id: 'reports',
-        labelKey: 'crm_reports',
-        icon: HugeIcons.strokeRoundedAnalytics01,
-      ),
-    ],
-  ),
-  CrmHubSectionData(
-    titleKey: 'crm_section_setup',
-    items: [
-      CrmHubItem(
-        id: 'settings',
-        labelKey: 'crm_settings',
-        icon: HugeIcons.strokeRoundedSettings01,
       ),
     ],
   ),

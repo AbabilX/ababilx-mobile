@@ -26,7 +26,7 @@ class CrmHubSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
+          padding: const EdgeInsets.fromLTRB(4, 2, 4, 6),
           child: Text(
             title,
             style: TextStyle(
@@ -42,9 +42,9 @@ class CrmHubSection extends StatelessWidget {
           itemCount: items.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 4,
-            mainAxisSpacing: 4,
+            mainAxisSpacing: 2,
             crossAxisSpacing: 4,
-            childAspectRatio: 0.78,
+            childAspectRatio: 0.82,
           ),
           itemBuilder: (_, i) {
             final item = items[i];
