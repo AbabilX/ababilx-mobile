@@ -6,6 +6,7 @@ import '../chat_icon.dart';
 import '../chat_list_filters.dart';
 import '../chat-unread-badge.dart';
 import '../data/models/chat_models.dart';
+import 'group_avatar_stack.dart';
 
 class ConversationRow extends StatelessWidget {
   const ConversationRow({
@@ -35,7 +36,7 @@ class ConversationRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SquareAvatar(conversation: conversation, title: title),
+            _ConversationAvatar(conversation: conversation, title: title),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -100,27 +101,31 @@ class ConversationRow extends StatelessWidget {
   }
 }
 
-class _SquareAvatar extends StatelessWidget {
-  const _SquareAvatar({required this.conversation, required this.title});
+class _ConversationAvatar extends StatelessWidget {
+  const _ConversationAvatar({
+    required this.conversation,
+    required this.title,
+  });
+
   final ChatConversation conversation;
   final String title;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final url = conversation.isDm
-        ? conversation.peerUserAvatar
-        : (conversation.memberAvatars.isNotEmpty
-            ? conversation.memberAvatars.first
-            : null);
+    if (conversation.isChannel) {
+      return GroupAvatarStack(
+        avatars: conversation.memberAvatars,
+        name: title,
+        size: 48,
+      );
+    }
     return AppAvatar(
       size: 48,
-      url: url,
+      url: conversation.peerUserAvatar,
       name: title,
       fallback: ChatIcon(
-        conversation.isChannel
-            ? HugeIcons.strokeRoundedTag01
-            : HugeIcons.strokeRoundedUser02,
+        HugeIcons.strokeRoundedUser02,
         color: colors.onSurfaceVariant,
       ),
     );

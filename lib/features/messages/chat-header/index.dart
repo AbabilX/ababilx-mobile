@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
 import '../chat_icon.dart';
+import '../chat-list/group_avatar_stack.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'dm-actions-sheet.dart';
@@ -24,11 +25,16 @@ class ChatHeader extends ConsumerWidget {
       titleSpacing: 0,
       title: Row(
         children: [
-          if (conversation.isDm)
-            Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: AppAvatar(size: 32, url: avatar, name: title),
-            ),
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: conversation.isChannel
+                ? GroupAvatarStack(
+                    avatars: conversation.memberAvatars,
+                    name: title,
+                    size: 32,
+                  )
+                : AppAvatar(size: 32, url: avatar, name: title),
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
