@@ -11,6 +11,7 @@ class ShellBottomBar extends StatelessWidget {
     required this.onSelect,
     required this.onSearch,
     required this.messagesLabel,
+    required this.wallLabel,
     required this.profileLabel,
     this.unread = 0,
   });
@@ -19,6 +20,7 @@ class ShellBottomBar extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final VoidCallback onSearch;
   final String messagesLabel;
+  final String wallLabel;
   final String profileLabel;
   final int unread;
 
@@ -35,6 +37,7 @@ class ShellBottomBar extends StatelessWidget {
                 selectedIndex: selectedIndex,
                 onSelect: onSelect,
                 messagesLabel: messagesLabel,
+                wallLabel: wallLabel,
                 profileLabel: profileLabel,
                 unread: unread,
               ),

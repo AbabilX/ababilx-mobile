@@ -23,7 +23,9 @@ class AppTranslations {
           'Automated standup updates & Slack daily syncs for modern engineering teams.',
       'continue_google': 'Continue with Google',
       'messages': 'Messages',
+      'wall': 'Wall',
       'profile': 'Profile',
+
       'app_language': 'Application Language',
       'sign_out': 'Sign Out',
       'github_connection': 'GitHub Connection',
@@ -37,7 +39,9 @@ class AppTranslations {
           'আধুনিক প্রকৌশলীদের জন্য স্বয়ংক্রিয় স্ট্যান্ডআপ আপডেট এবং স্ল্যাক দৈনিক সমলয়করণ।',
       'continue_google': 'গুগল অ্যাকাউন্ট দিয়ে এগিয়ে যান',
       'messages': 'বার্তা',
+      'wall': 'ওয়াল',
       'profile': 'ব্যবহারকারী পরিচিতি',
+
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',
       'sign_out': 'প্রস্থান করুন',
       'github_connection': 'গিটহাব সংযোগ',

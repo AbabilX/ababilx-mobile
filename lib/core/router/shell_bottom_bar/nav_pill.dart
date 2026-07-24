@@ -3,13 +3,14 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'nav_tab_item.dart';
 
-/// Left floating nav — Slack stadium pill (fully rounded ends).
+/// Left floating nav — Messages | Wall | Profile.
 class NavPill extends StatelessWidget {
   const NavPill({
     super.key,
     required this.selectedIndex,
     required this.onSelect,
     required this.messagesLabel,
+    required this.wallLabel,
     required this.profileLabel,
     this.unread = 0,
   });
@@ -17,6 +18,7 @@ class NavPill extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelect;
   final String messagesLabel;
+  final String wallLabel;
   final String profileLabel;
   final int unread;
 
@@ -53,11 +55,18 @@ class NavPill extends StatelessWidget {
             onTap: () => onSelect(0),
           ),
           NavTabItem(
+            icon: HugeIcons.strokeRoundedNews,
+            selectedIcon: HugeIcons.strokeRoundedNews,
+            label: wallLabel,
+            selected: selectedIndex == 1,
+            onTap: () => onSelect(1),
+          ),
+          NavTabItem(
             icon: HugeIcons.strokeRoundedUser02,
             selectedIcon: HugeIcons.strokeRoundedUser03,
             label: profileLabel,
-            selected: selectedIndex == 1,
-            onTap: () => onSelect(1),
+            selected: selectedIndex == 2,
+            onTap: () => onSelect(2),
           ),
         ],
       ),

@@ -43,6 +43,26 @@ class ApiConstants {
       '/api/teams/chat/conversations/$conversationId/attachments/discard';
   static const String chatSearch = '/api/teams/chat/search';
 
+  // Wall
+  static const String wallPosts = '/api/teams/wall/posts';
+  static String wallPost(String id) => '/api/teams/wall/posts/$id';
+  static String wallPostComments(String id) =>
+      '/api/teams/wall/posts/$id/comments';
+  static String wallPostComment(String postId, String commentId) =>
+      '/api/teams/wall/posts/$postId/comments/$commentId';
+  static String wallPostReactions(String id) =>
+      '/api/teams/wall/posts/$id/reactions';
+  static String wallPostSave(String id) => '/api/teams/wall/posts/$id/save';
+  static const String wallAttachmentsPresign =
+      '/api/teams/wall/posts/attachments/presign';
+  static const String wallAttachmentsDiscard =
+      '/api/teams/wall/posts/attachments/discard';
+  static const String wallCategories = '/api/teams/wall/categories';
+  static const String wallStats = '/api/teams/wall/stats';
+  static const String wallSearch = '/api/teams/wall/search';
+  static const String wallForward = '/api/teams/wall/forward';
+  static const String meWallSaves = '/api/me/wall/saves';
+
   // WebSocket
   static const String notificationsStream = '/api/notifications/stream';
   static const String wsAuthSubprotocol = 'ababilx-ws';

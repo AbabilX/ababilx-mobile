@@ -8,6 +8,8 @@ import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
 import '../../features/messages/screens/messages_screen.dart';
 import '../../features/messages/screens/conversation_screen.dart';
+import '../../features/wall/screens/wall_screen.dart';
+import '../../features/wall/screens/wall_post_screen.dart';
 import 'home_shell.dart';
 
 class _RouterRefreshNotifier extends ChangeNotifier {
@@ -62,17 +64,26 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, _) => const MessagesScreen(),
           ),
           GoRoute(
+            path: '/wall',
+            builder: (_, _) => const WallScreen(),
+          ),
+          GoRoute(
             path: '/profile',
             builder: (_, _) => const ProfileScreen(),
           ),
         ],
       ),
-      // Full-screen chat — outside shell so bottom nav is hidden.
       GoRoute(
         path: '/messages/:id',
         builder: (_, state) => ConversationScreen(
           conversationId: state.pathParameters['id']!,
           threadRootId: state.uri.queryParameters['thread'],
+        ),
+      ),
+      GoRoute(
+        path: '/wall/post/:postId',
+        builder: (_, state) => WallPostScreen(
+          postId: state.pathParameters['postId']!,
         ),
       ),
     ],
