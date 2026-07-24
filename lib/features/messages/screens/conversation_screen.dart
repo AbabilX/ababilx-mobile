@@ -24,7 +24,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(chatProvider.notifier).setActiveConversation(widget.conversationId);
+      ref
+          .read(chatProvider.notifier)
+          .setActiveConversation(widget.conversationId);
       if (widget.threadRootId != null) {
         ref.read(chatProvider.notifier).setThreadRootId(widget.threadRootId);
       }
@@ -44,15 +46,40 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final conversation = chat.conversationById(widget.conversationId);
 
     return Scaffold(
-      appBar: conversation != null
-          ? PreferredSize(
-              preferredSize: const Size.fromHeight(kToolbarHeight),
-              child: ChatHeader(conversation: conversation),
-            )
-          : AppBar(title: const Text('Conversation')),
       body: ChatTimeline(
         conversationId: widget.conversationId,
         threadRootId: widget.threadRootId,
+        header: conversation != null
+            ? ChatHeader(conversation: conversation)
+            : const _FallbackHeader(),
+      ),
+    );
+  }
+}
+
+class _FallbackHeader extends StatelessWidget {
+  const _FallbackHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: kToolbarHeight,
+          child: NavigationToolbar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).maybePop(),
+            ),
+            middle: const Text(
+              'Conversation',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
+            centerMiddle: true,
+          ),
+        ),
       ),
     );
   }

@@ -10,10 +10,14 @@ class ChatTimeline extends ConsumerStatefulWidget {
     super.key,
     required this.conversationId,
     this.threadRootId,
+    this.header,
   });
 
   final String conversationId;
   final String? threadRootId;
+
+  /// Top bar that auto-hides while scrolling message history (Wall-style).
+  final Widget? header;
 
   @override
   ConsumerState<ChatTimeline> createState() => _ChatTimelineState();
@@ -21,6 +25,8 @@ class ChatTimeline extends ConsumerStatefulWidget {
 
 class _ChatTimelineState extends ConsumerState<ChatTimeline> {
   final _scrollCtrl = ScrollController();
+  bool _headerVisible = true;
+  double _lastPixels = 0;
 
   @override
   void initState() {
@@ -35,6 +41,8 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
     if (oldWidget.conversationId != widget.conversationId ||
         oldWidget.threadRootId != widget.threadRootId) {
       _load();
+      if (!_headerVisible) setState(() => _headerVisible = true);
+      _lastPixels = 0;
     }
   }
 
@@ -48,12 +56,34 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
 
   void _onScroll() {
     if (!_scrollCtrl.hasClients) return;
-    if (_scrollCtrl.position.pixels >=
-        _scrollCtrl.position.maxScrollExtent - 120) {
+    final pos = _scrollCtrl.position;
+    final pixels = pos.pixels;
+
+    if (pixels >= pos.maxScrollExtent - 120) {
       ref.read(chatProvider.notifier).loadMoreFeed(
             widget.conversationId,
             threadRootId: widget.threadRootId,
           );
+    }
+
+    if (widget.header == null) {
+      _lastPixels = pixels;
+      return;
+    }
+
+    // reverse:true list — scrolling into older history increases [pixels].
+    final delta = pixels - _lastPixels;
+    _lastPixels = pixels;
+
+    if (pixels < 24) {
+      if (!_headerVisible) setState(() => _headerVisible = true);
+      return;
+    }
+    if (delta.abs() < 8) return;
+    if (delta > 0 && _headerVisible) {
+      setState(() => _headerVisible = false);
+    } else if (delta < 0 && !_headerVisible) {
+      setState(() => _headerVisible = true);
     }
   }
 
@@ -72,6 +102,16 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
     );
     return Column(
       children: [
+        if (widget.header != null)
+          ClipRect(
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              heightFactor: _headerVisible ? 1 : 0,
+              child: widget.header,
+            ),
+          ),
         Expanded(
           child: MessageList(
             messages: feed.messages,
