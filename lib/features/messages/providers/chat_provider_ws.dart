@@ -23,13 +23,19 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       if (msgJson == null) return;
       final msg = ChatMessage.fromJson(msgJson);
       updateFeedMessage(convId, msg);
-      updateFeedMessage(convId, msg, threadRootId: state.threadRootId);
+      final thread = msg.parentId ?? state.threadRootId;
+      if (thread != null) {
+        updateFeedMessage(convId, msg, threadRootId: thread);
+      }
       if (msg.parentId != null) patchThreadReply(msg.parentId!, msg);
     }
     if (type == 'chat.message.deleted') {
       final id = ev['id'] as String? ?? '';
       removeFeedMessage(convId, id);
-      removeFeedMessage(convId, id, threadRootId: state.threadRootId);
+      final thread = state.threadRootId;
+      if (thread != null) {
+        removeFeedMessage(convId, id, threadRootId: thread);
+      }
       for (final rootId in state.threadRepliesByRoot.keys) {
         markThreadReplyDeleted(rootId, id);
       }
@@ -40,12 +46,10 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
           .map((e) => ChatReactionGroup.fromJson(e as Map<String, dynamic>))
           .toList();
       updateFeedReactions(convId, id, reactions);
-      updateFeedReactions(
-        convId,
-        id,
-        reactions,
-        threadRootId: state.threadRootId,
-      );
+      final thread = state.threadRootId;
+      if (thread != null) {
+        updateFeedReactions(convId, id, reactions, threadRootId: thread);
+      }
     }
   }
 
@@ -68,13 +72,11 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     }
     applyIncomingMessage(convId, msg, bumpUnread: false);
     if (msg.parentId != null) {
-      final threadRootId = state.threadRootId;
-      if (threadRootId != null && msg.parentId == threadRootId) {
-        appendFeedMessage(convId, msg, threadRootId: threadRootId);
-        appendThreadReply(threadRootId, msg);
-      } else {
-        incrementThreadCount(convId, msg.parentId!);
-        appendThreadReply(msg.parentId!, msg);
+      final parentId = msg.parentId!;
+      // Always update the thread feed so an open thread sheet refreshes live.
+      appendFeedMessage(convId, msg, threadRootId: parentId);
+      if (appendThreadReply(parentId, msg)) {
+        incrementThreadCount(convId, parentId);
       }
     } else {
       appendFeedMessage(convId, msg);

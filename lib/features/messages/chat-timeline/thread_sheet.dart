@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/chat_models.dart';
+import '../providers/chat_provider.dart';
 import 'chat_timeline.dart';
 
 void openThreadSheet(
@@ -8,6 +10,9 @@ void openThreadSheet(
   String conversationId,
   ChatMessage root,
 ) {
+  final container = ProviderScope.containerOf(context);
+  container.read(chatProvider.notifier).setThreadRootId(root.id);
+
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -44,5 +49,7 @@ void openThreadSheet(
         ],
       ),
     ),
-  );
+  ).whenComplete(() {
+    container.read(chatProvider.notifier).setThreadRootId(null);
+  });
 }

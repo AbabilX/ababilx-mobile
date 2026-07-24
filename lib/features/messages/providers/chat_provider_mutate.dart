@@ -8,12 +8,10 @@ mixin _ChatMutateMixin on Notifier<ChatState>, _ChatActionsMixin {
     final convId = state.activeConversationId;
     if (convId == null) return;
     updateFeedReactions(convId, messageId, reactions);
-    updateFeedReactions(
-      convId,
-      messageId,
-      reactions,
-      threadRootId: state.threadRootId,
-    );
+    final thread = state.threadRootId;
+    if (thread != null) {
+      updateFeedReactions(convId, messageId, reactions, threadRootId: thread);
+    }
   }
 
   Future<void> editMessage(String messageId, String body) async {
@@ -21,7 +19,10 @@ mixin _ChatMutateMixin on Notifier<ChatState>, _ChatActionsMixin {
     final convId = state.activeConversationId;
     if (convId == null) return;
     updateFeedMessage(convId, msg);
-    updateFeedMessage(convId, msg, threadRootId: state.threadRootId);
+    final thread = msg.parentId ?? state.threadRootId;
+    if (thread != null) {
+      updateFeedMessage(convId, msg, threadRootId: thread);
+    }
     if (msg.parentId != null) patchThreadReply(msg.parentId!, msg);
   }
 
@@ -30,7 +31,10 @@ mixin _ChatMutateMixin on Notifier<ChatState>, _ChatActionsMixin {
     final convId = state.activeConversationId;
     if (convId == null) return;
     removeFeedMessage(convId, messageId);
-    removeFeedMessage(convId, messageId, threadRootId: state.threadRootId);
+    final thread = state.threadRootId;
+    if (thread != null) {
+      removeFeedMessage(convId, messageId, threadRootId: thread);
+    }
     for (final rootId in state.threadRepliesByRoot.keys) {
       markThreadReplyDeleted(rootId, messageId);
     }

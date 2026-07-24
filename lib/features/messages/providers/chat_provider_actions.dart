@@ -19,15 +19,17 @@ mixin _ChatActionsMixin on Notifier<ChatState>, _ChatPatchMixin, _ChatFeedMixin 
     );
   }
 
-  void appendThreadReply(String rootId, ChatMessage msg) {
+  /// Returns false if [msg] was already in the thread (idempotent for send+WS).
+  bool appendThreadReply(String rootId, ChatMessage msg) {
     final list = state.threadRepliesByRoot[rootId] ?? [];
-    if (list.any((m) => m.id == msg.id)) return;
+    if (list.any((m) => m.id == msg.id)) return false;
     state = state.copyWith(
       threadRepliesByRoot: {
         ...state.threadRepliesByRoot,
         rootId: [...list, msg],
       },
     );
+    return true;
   }
 
   void patchThreadReply(String rootId, ChatMessage msg) {
@@ -76,13 +78,14 @@ mixin _ChatActionsMixin on Notifier<ChatState>, _ChatPatchMixin, _ChatFeedMixin 
         attachments: attachments,
         mentionedUserIds: mentionedUserIds,
       );
-      final threadRootId = state.threadRootId;
-      if (parentId != null &&
-          threadRootId != null &&
-          parentId == threadRootId) {
-        appendFeedMessage(convId, msg, threadRootId: threadRootId);
-        appendThreadReply(threadRootId, msg);
-      } else if (parentId == null) {
+      // Use parentId (composer), not state.threadRootId — thread sheet may
+      // not have set the global thread root yet / at all.
+      if (parentId != null) {
+        appendFeedMessage(convId, msg, threadRootId: parentId);
+        if (appendThreadReply(parentId, msg)) {
+          incrementThreadCount(convId, parentId);
+        }
+      } else {
         appendFeedMessage(convId, msg);
       }
       applyIncomingMessage(convId, msg, bumpUnread: false);
