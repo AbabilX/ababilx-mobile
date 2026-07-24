@@ -31,7 +31,9 @@ class MessageRow extends ConsumerWidget {
     final name = message.userName ?? 'Unknown';
     final n = ref.read(chatProvider.notifier);
 
-    return InkWell(
+    // GestureDetector (long-press only) so attachment taps are not stolen.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onLongPress: () => showMessageActions(
         context,
         ref,
