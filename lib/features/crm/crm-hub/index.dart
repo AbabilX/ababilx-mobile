@@ -13,7 +13,7 @@ class CrmHub extends ConsumerWidget {
 
   void _onTileTap(BuildContext context, WidgetRef ref, CrmHubItem item) {
     if (item.id == 'contacts') {
-      context.push('/crm/contacts');
+      context.go('/crm/contacts');
       return;
     }
     final msg = AppTranslations.translate(context, ref, 'crm_coming_soon');

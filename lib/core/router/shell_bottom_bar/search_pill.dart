@@ -3,17 +3,27 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../features/messages/chat_icon.dart';
 
-/// Right search control — full circle, same height as [NavPill].
-class SearchPill extends StatelessWidget {
-  const SearchPill({super.key, required this.onTap});
+/// Right circular action — same size as home search pill.
+class ActionPill extends StatelessWidget {
+  const ActionPill({
+    super.key,
+    required this.icon,
+    required this.onTap,
+    this.enabled = true,
+  });
 
-  final VoidCallback onTap;
+  final List<List<dynamic>> icon;
+  final VoidCallback? onTap;
+  final bool enabled;
 
   static const double size = 64;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final color = enabled
+        ? scheme.onSurfaceVariant
+        : scheme.onSurfaceVariant.withValues(alpha: 0.35);
 
     return Material(
       color: scheme.surfaceContainerHigh,
@@ -24,20 +34,33 @@ class SearchPill extends StatelessWidget {
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         customBorder: const CircleBorder(),
         child: SizedBox(
           width: size,
           height: size,
           child: Center(
-            child: ChatIcon(
-              HugeIcons.strokeRoundedSearch01,
-              size: 24,
-              color: scheme.onSurfaceVariant,
-            ),
+            child: ChatIcon(icon, size: 24, color: color),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Home search — thin wrapper over [ActionPill].
+class SearchPill extends StatelessWidget {
+  const SearchPill({super.key, required this.onTap});
+
+  final VoidCallback onTap;
+
+  static const double size = ActionPill.size;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionPill(
+      icon: HugeIcons.strokeRoundedSearch01,
+      onTap: onTap,
     );
   }
 }

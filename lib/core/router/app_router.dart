@@ -70,6 +70,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, _) => const WallScreen(),
           ),
           GoRoute(
+            path: '/crm/contacts',
+            builder: (_, _) => const CrmContactsScreen(),
+          ),
+          GoRoute(
             path: '/crm',
             builder: (_, _) => const CrmHubScreen(),
           ),
@@ -91,10 +95,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => WallPostScreen(
           postId: state.pathParameters['postId']!,
         ),
-      ),
-      GoRoute(
-        path: '/crm/contacts',
-        builder: (_, _) => const CrmContactsScreen(),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

@@ -8,14 +8,14 @@ import '../../profile/providers/profile_provider.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_contacts_provider.dart';
+import '../providers/crm_contacts_ui_provider.dart';
 import '../shared/crm_money.dart';
 import '../shared/crm_ui.dart';
 import 'contact_form_sheet.dart';
 import 'contact_row.dart';
-import 'contact_scope_tabs.dart';
 import 'contact_search.dart';
 
-/// Contacts list — web parity logic, app-native simple layout.
+/// Contacts list — scope/add live in [ContactsShellBar] (home-style pills).
 class CrmContactsPage extends ConsumerStatefulWidget {
   const CrmContactsPage({super.key});
 
@@ -24,10 +24,10 @@ class CrmContactsPage extends ConsumerStatefulWidget {
 }
 
 class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
-  ContactScope _scope = ContactScope.mine;
   final _searchCtrl = TextEditingController();
   String _q = '';
   var _busy = false;
+  var _lastAddTick = 0;
 
   @override
   void dispose() {
@@ -125,22 +125,23 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
     }
   }
 
-  Widget _scopeTabs(List<CrmContact> all, String myId) {
-    final mine = all.where((c) => isMineContact(c, myId)).toList();
-    return ContactScopeTabs(
-      scope: _scope,
-      onScope: (s) => setState(() => _scope = s),
-      mineCount: mine.length,
-      allCount: all.length,
-      mineLabel: AppTranslations.translate(context, ref, 'crm_my_contacts'),
-      allLabel: AppTranslations.translate(context, ref, 'crm_all_contacts'),
-    );
+  void _syncShellMeta(List<CrmContact> all, String myId, bool canCreate) {
+    final mine = all.where((c) => isMineContact(c, myId)).length;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(crmContactsUiProvider.notifier).syncMeta(
+            mineCount: mine,
+            allCount: all.length,
+            canCreate: canCreate,
+          );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final perms = ref.watch(crmPermsProvider);
+    final ui = ref.watch(crmContactsUiProvider);
     final configAsync = ref.watch(crmConfigProvider);
     final contactsAsync = ref.watch(crmContactsProvider(_q));
     final myId = ref.watch(profileProvider).valueOrNull?.id ?? '';
@@ -150,21 +151,21 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
     final labelSingular = settings.contactLabelSingular;
     final currency = settings.currency;
 
+    // Bottom-bar Add pill → open create sheet.
+    ref.listen(crmContactsUiProvider, (prev, next) {
+      if (next.addTick == _lastAddTick) return;
+      if (prev != null && next.addTick <= prev.addTick) return;
+      _lastAddTick = next.addTick;
+      if (next.canCreate && !_busy) _openForm();
+    });
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
+          onPressed: () => context.go('/crm'),
         ),
         title: Text(labelPlural),
-        actions: [
-          if (perms.create)
-            IconButton(
-              tooltip: 'New $labelSingular',
-              onPressed: _busy ? null : () => _openForm(),
-              icon: const Icon(Icons.add_rounded),
-            ),
-        ],
       ),
       body: Stack(
         children: [
@@ -172,26 +173,15 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    contactsAsync.when(
-                      data: (all) => _scopeTabs(all, myId),
-                      loading: () => _scopeTabs(const [], myId),
-                      error: (_, _) => const SizedBox.shrink(),
-                    ),
-                    const SizedBox(height: 8),
-                    ContactSearchField(
-                      controller: _searchCtrl,
-                      placeholder: AppTranslations.translate(
-                        context,
-                        ref,
-                        'crm_search_contacts',
-                      ),
-                      onChanged: (v) => setState(() => _q = v.trim()),
-                    ),
-                  ],
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: ContactSearchField(
+                  controller: _searchCtrl,
+                  placeholder: AppTranslations.translate(
+                    context,
+                    ref,
+                    'crm_search_contacts',
+                  ),
+                  onChanged: (v) => setState(() => _q = v.trim()),
                 ),
               ),
               Expanded(
@@ -199,12 +189,13 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
                   loading: () => const CrmLoading(),
                   error: (e, _) => CrmErrorBox(message: e.toString()),
                   data: (all) {
+                    _syncShellMeta(all, myId, perms.create);
                     final mine =
                         all.where((c) => isMineContact(c, myId)).toList();
                     final visible =
-                        _scope == ContactScope.mine ? mine : all;
+                        ui.scope == ContactScope.mine ? mine : all;
                     if (visible.isEmpty) {
-                      final msg = _scope == ContactScope.mine
+                      final msg = ui.scope == ContactScope.mine
                           ? 'No ${labelPlural.toLowerCase()} assigned to you yet.'
                           : 'No ${labelPlural.toLowerCase()} yet.';
                       return CrmEmpty(message: msg);

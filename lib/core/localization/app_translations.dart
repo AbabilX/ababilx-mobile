@@ -44,6 +44,8 @@ class AppTranslations {
           'Team premium and CRM permission are required. Ask a leader to grant access.',
       'crm_my_contacts': 'My contacts',
       'crm_all_contacts': 'All contacts',
+      'crm_my_short': 'My',
+      'crm_all_short': 'All',
       'crm_search_contacts': 'Search name, email, company…',
       'crm_delete_confirm': 'This cannot be undone.',
 
@@ -85,6 +87,8 @@ class AppTranslations {
           'টিম প্রিমিয়াম ও CRM পারমিশন লাগবে। লিডারকে অ্যাক্সেস দিতে বলো।',
       'crm_my_contacts': 'আমার কন্টাক্টস',
       'crm_all_contacts': 'সব কন্টাক্টস',
+      'crm_my_short': 'আমার',
+      'crm_all_short': 'সব',
       'crm_search_contacts': 'নাম, ইমেইল, কোম্পানি খুঁজুন…',
       'crm_delete_confirm': 'এটি আর ফেরানো যাবে না।',
 

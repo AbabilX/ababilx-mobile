@@ -1,32 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
+import 'contacts_scope_pill.dart';
 import 'nav_pill.dart';
 import 'search_pill.dart';
 
-/// Slack-style floating pills: left nav + right search.
+enum ShellBottomBarMode { home, contacts }
+
+/// Floating pills bar — home nav+search, or contacts My/All + add.
 class ShellBottomBar extends StatelessWidget {
   const ShellBottomBar({
     super.key,
-    required this.selectedIndex,
-    required this.onSelect,
-    required this.onSearch,
-    required this.messagesLabel,
-    required this.wallLabel,
-    required this.crmLabel,
-    required this.profileLabel,
+    this.mode = ShellBottomBarMode.home,
+    // Home
+    this.selectedIndex = 0,
+    this.onSelect,
+    this.onSearch,
+    this.messagesLabel = '',
+    this.wallLabel = '',
+    this.crmLabel = '',
+    this.profileLabel = '',
     this.showCrm = false,
     this.unread = 0,
+    // Contacts
+    this.contactsMineSelected = true,
+    this.mineLabel = '',
+    this.allLabel = '',
+    this.onSelectMine,
+    this.onSelectAll,
+    this.onAdd,
+    this.canAdd = false,
   });
 
+  final ShellBottomBarMode mode;
+
   final int selectedIndex;
-  final ValueChanged<int> onSelect;
-  final VoidCallback onSearch;
+  final ValueChanged<int>? onSelect;
+  final VoidCallback? onSearch;
   final String messagesLabel;
   final String wallLabel;
   final String crmLabel;
   final String profileLabel;
   final bool showCrm;
   final int unread;
+
+  final bool contactsMineSelected;
+  final String mineLabel;
+  final String allLabel;
+  final VoidCallback? onSelectMine;
+  final VoidCallback? onSelectAll;
+  final VoidCallback? onAdd;
+  final bool canAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -37,19 +61,34 @@ class ShellBottomBar extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: NavPill(
-                selectedIndex: selectedIndex,
-                onSelect: onSelect,
-                messagesLabel: messagesLabel,
-                wallLabel: wallLabel,
-                crmLabel: crmLabel,
-                profileLabel: profileLabel,
-                showCrm: showCrm,
-                unread: unread,
-              ),
+              child: mode == ShellBottomBarMode.contacts
+                  ? ContactsScopePill(
+                      selectedIsMine: contactsMineSelected,
+                      mineLabel: mineLabel,
+                      allLabel: allLabel,
+                      onSelectMine: onSelectMine ?? () {},
+                      onSelectAll: onSelectAll ?? () {},
+                    )
+                  : NavPill(
+                      selectedIndex: selectedIndex,
+                      onSelect: onSelect ?? (_) {},
+                      messagesLabel: messagesLabel,
+                      wallLabel: wallLabel,
+                      crmLabel: crmLabel,
+                      profileLabel: profileLabel,
+                      showCrm: showCrm,
+                      unread: unread,
+                    ),
             ),
             const SizedBox(width: 10),
-            SearchPill(onTap: onSearch),
+            if (mode == ShellBottomBarMode.contacts)
+              ActionPill(
+                icon: HugeIcons.strokeRoundedAdd01,
+                enabled: canAdd,
+                onTap: onAdd,
+              )
+            else
+              SearchPill(onTap: onSearch ?? () {}),
           ],
         ),
       ),
