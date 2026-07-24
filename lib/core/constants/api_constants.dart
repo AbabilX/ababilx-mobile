@@ -63,6 +63,9 @@ class ApiConstants {
   static const String wallForward = '/api/teams/wall/forward';
   static const String meWallSaves = '/api/me/wall/saves';
 
+  // Devices (FCM)
+  static const String devices = '/api/devices';
+
   // WebSocket
   static const String notificationsStream = '/api/notifications/stream';
   static const String wsAuthSubprotocol = 'ababilx-ws';
@@ -78,4 +81,5 @@ class StorageKeys {
 
   static const String jwt = 'ababilx_jwt';
   static const String refreshToken = 'ababilx_refresh_token';
+  static const String fcmToken = 'ababilx_fcm_token';
 }

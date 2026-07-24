@@ -3,7 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'nav_tab_item.dart';
 
-/// Left floating nav — Messages | Wall | Profile.
+/// Left floating nav — Messages | Wall | CRM | Profile.
 class NavPill extends StatelessWidget {
   const NavPill({
     super.key,
@@ -11,6 +11,7 @@ class NavPill extends StatelessWidget {
     required this.onSelect,
     required this.messagesLabel,
     required this.wallLabel,
+    required this.crmLabel,
     required this.profileLabel,
     this.unread = 0,
   });
@@ -19,6 +20,7 @@ class NavPill extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final String messagesLabel;
   final String wallLabel;
+  final String crmLabel;
   final String profileLabel;
   final int unread;
 
@@ -62,11 +64,18 @@ class NavPill extends StatelessWidget {
             onTap: () => onSelect(1),
           ),
           NavTabItem(
+            icon: HugeIcons.strokeRoundedBriefcase01,
+            selectedIcon: HugeIcons.strokeRoundedBriefcase02,
+            label: crmLabel,
+            selected: selectedIndex == 2,
+            onTap: () => onSelect(2),
+          ),
+          NavTabItem(
             icon: HugeIcons.strokeRoundedUser02,
             selectedIcon: HugeIcons.strokeRoundedUser03,
             label: profileLabel,
-            selected: selectedIndex == 2,
-            onTap: () => onSelect(2),
+            selected: selectedIndex == 3,
+            onTap: () => onSelect(3),
           ),
         ],
       ),

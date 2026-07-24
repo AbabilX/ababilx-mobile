@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../notifications/widgets/notification_permission_tile.dart';
 import '../providers/profile_provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_avatar.dart';
@@ -76,6 +77,7 @@ class ProfileScreen extends ConsumerWidget {
         data: (user) => ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
+            const NotificationPermissionTile(),
             // ── Avatar + Name Card (Symmetrical M3 Squircle Sheet) ─────────
             Container(
               padding: const EdgeInsets.all(24),

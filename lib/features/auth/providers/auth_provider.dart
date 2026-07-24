@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../messages/data/local/chat_sidebar_cache.dart';
 import '../../messages/providers/chat_provider.dart';
+import '../../notifications/providers/fcm_provider.dart';
 import '../data/auth_repository.dart';
 
 /// Auth state — null = logged out / unknown, String = user id or JWT marker.
@@ -21,6 +22,12 @@ class AuthNotifier extends AsyncNotifier<bool> {
   }
 
   Future<void> signOut() async {
+    // Deregister FCM while JWT is still valid.
+    try {
+      await ref.read(fcmServiceProvider).stopAndDeregister();
+    } catch (_) {}
+    ref.read(notificationPermissionProvider.notifier).setGranted(false);
+
     // Clear chat disk cache so next account never sees prior sidebar.
     try {
       await ref.read(chatSidebarCacheProvider).clearAll();

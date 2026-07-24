@@ -12,6 +12,7 @@ class ShellBottomBar extends StatelessWidget {
     required this.onSearch,
     required this.messagesLabel,
     required this.wallLabel,
+    required this.crmLabel,
     required this.profileLabel,
     this.unread = 0,
   });
@@ -21,6 +22,7 @@ class ShellBottomBar extends StatelessWidget {
   final VoidCallback onSearch;
   final String messagesLabel;
   final String wallLabel;
+  final String crmLabel;
   final String profileLabel;
   final int unread;
 
@@ -38,6 +40,7 @@ class ShellBottomBar extends StatelessWidget {
                 onSelect: onSelect,
                 messagesLabel: messagesLabel,
                 wallLabel: wallLabel,
+                crmLabel: crmLabel,
                 profileLabel: profileLabel,
                 unread: unread,
               ),

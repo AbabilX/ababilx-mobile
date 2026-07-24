@@ -24,7 +24,21 @@ class AppTranslations {
       'continue_google': 'Continue with Google',
       'messages': 'Messages',
       'wall': 'Wall',
+      'crm': 'CRM',
       'profile': 'Profile',
+
+      'crm_section_customer': 'Customer',
+      'crm_section_overview': 'Overview',
+      'crm_section_setup': 'Setup',
+      'crm_contacts': 'Contacts',
+      'crm_leads': 'Leads',
+      'crm_followups': 'Follow-ups',
+      'crm_dashboard': 'Dashboard',
+      'crm_calendar': 'Calendar',
+      'crm_timeline': 'Timeline',
+      'crm_reports': 'Reports',
+      'crm_settings': 'Settings',
+      'crm_coming_soon': 'Coming soon',
 
       'app_language': 'Application Language',
       'sign_out': 'Sign Out',
@@ -33,6 +47,10 @@ class AppTranslations {
       'provider': 'Provider',
       'confirm_signout': 'Are you sure you want to sign out?',
       'cancel': 'Cancel',
+      'notif_enable_title': 'Enable notifications',
+      'notif_enable_body': 'Tap to allow push alerts for standups and team updates.',
+      'notif_enabled': 'Notifications enabled',
+      'notif_still_denied': 'Permission still denied — check system settings',
     },
     'bn': {
       'login_subtitle':
@@ -40,7 +58,21 @@ class AppTranslations {
       'continue_google': 'গুগল অ্যাকাউন্ট দিয়ে এগিয়ে যান',
       'messages': 'বার্তা',
       'wall': 'ওয়াল',
+      'crm': 'CRM',
       'profile': 'ব্যবহারকারী পরিচিতি',
+
+      'crm_section_customer': 'কাস্টমার',
+      'crm_section_overview': 'ওভারভিউ',
+      'crm_section_setup': 'সেটআপ',
+      'crm_contacts': 'কন্টাক্টস',
+      'crm_leads': 'লিডস',
+      'crm_followups': 'ফলো-আপ',
+      'crm_dashboard': 'ড্যাশবোর্ড',
+      'crm_calendar': 'ক্যালেন্ডার',
+      'crm_timeline': 'টাইমলাইন',
+      'crm_reports': 'রিপোর্টস',
+      'crm_settings': 'সেটিংস',
+      'crm_coming_soon': 'শীঘ্রই আসছে',
 
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',
       'sign_out': 'প্রস্থান করুন',
@@ -49,6 +81,12 @@ class AppTranslations {
       'provider': 'প্রবেশ মাধ্যম',
       'confirm_signout': 'আপনি কি নিশ্চিত যে আপনি প্রস্থান করতে চান?',
       'cancel': 'বাতিল',
+      'notif_enable_title': 'নোটিফিকেশন চালু করুন',
+      'notif_enable_body':
+          'স্ট্যান্ডআপ ও টিম আপডেটের জন্য পুশ অ্যালার্ট অনুমতি দিন।',
+      'notif_enabled': 'নোটিফিকেশন চালু হয়েছে',
+      'notif_still_denied':
+          'অনুমতি এখনো বন্ধ — সিস্টেম সেটিংস চেক করুন',
     }
   };
 

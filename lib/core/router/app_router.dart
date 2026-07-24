@@ -10,6 +10,7 @@ import '../../features/messages/screens/messages_screen.dart';
 import '../../features/messages/screens/conversation_screen.dart';
 import '../../features/wall/screens/wall_screen.dart';
 import '../../features/wall/screens/wall_post_screen.dart';
+import '../../features/crm/screens/crm_hub_screen.dart';
 import 'home_shell.dart';
 
 class _RouterRefreshNotifier extends ChangeNotifier {
@@ -66,6 +67,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/wall',
             builder: (_, _) => const WallScreen(),
+          ),
+          GoRoute(
+            path: '/crm',
+            builder: (_, _) => const CrmHubScreen(),
           ),
           GoRoute(
             path: '/profile',

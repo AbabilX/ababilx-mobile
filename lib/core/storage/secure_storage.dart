@@ -20,5 +20,10 @@ class SecureStorage {
   Future<void> deleteRefreshToken() =>
       _storage.delete(key: StorageKeys.refreshToken);
 
+  Future<String?> readFcmToken() => _storage.read(key: StorageKeys.fcmToken);
+  Future<void> writeFcmToken(String token) =>
+      _storage.write(key: StorageKeys.fcmToken, value: token);
+  Future<void> deleteFcmToken() => _storage.delete(key: StorageKeys.fcmToken);
+
   Future<void> clearAll() => _storage.deleteAll();
 }
