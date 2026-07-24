@@ -39,6 +39,9 @@ class AppTranslations {
       'crm_reports': 'Reports',
       'crm_settings': 'Settings',
       'crm_coming_soon': 'Coming soon',
+      'crm_no_access': 'CRM locked',
+      'crm_no_access_body':
+          'Team premium and CRM permission are required. Ask a leader to grant access.',
 
       'app_language': 'Application Language',
       'sign_out': 'Sign Out',
@@ -73,6 +76,9 @@ class AppTranslations {
       'crm_reports': 'রিপোর্টস',
       'crm_settings': 'সেটিংস',
       'crm_coming_soon': 'শীঘ্রই আসছে',
+      'crm_no_access': 'CRM লক করা',
+      'crm_no_access_body':
+          'টিম প্রিমিয়াম ও CRM পারমিশন লাগবে। লিডারকে অ্যাক্সেস দিতে বলো।',
 
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',
       'sign_out': 'প্রস্থান করুন',

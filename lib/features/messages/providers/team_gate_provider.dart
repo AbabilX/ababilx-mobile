@@ -19,3 +19,12 @@ final teamMembersProvider = Provider<List<TeamMember>>((ref) {
     orElse: () => [],
   );
 });
+
+/// Web-parity CRM entry gate: `team_is_premium && crm_access`.
+final canViewCrmProvider = Provider<bool>((ref) {
+  final team = ref.watch(teamGateProvider);
+  return team.maybeWhen(
+    data: (d) => d?.canViewCrm ?? false,
+    orElse: () => false,
+  );
+});

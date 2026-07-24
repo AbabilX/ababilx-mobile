@@ -14,6 +14,7 @@ class ShellBottomBar extends StatelessWidget {
     required this.wallLabel,
     required this.crmLabel,
     required this.profileLabel,
+    this.showCrm = false,
     this.unread = 0,
   });
 
@@ -24,6 +25,7 @@ class ShellBottomBar extends StatelessWidget {
   final String wallLabel;
   final String crmLabel;
   final String profileLabel;
+  final bool showCrm;
   final int unread;
 
   @override
@@ -42,6 +44,7 @@ class ShellBottomBar extends StatelessWidget {
                 wallLabel: wallLabel,
                 crmLabel: crmLabel,
                 profileLabel: profileLabel,
+                showCrm: showCrm,
                 unread: unread,
               ),
             ),

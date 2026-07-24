@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../messages/chat-empty-state/index.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../crm-hub/index.dart';
 
-/// CRM tab root — team gate then WeCom-style hub shell.
+/// CRM tab root — team + premium/crm_access gate, then WeCom-style hub.
 class CrmHubScreen extends ConsumerWidget {
   const CrmHubScreen({super.key});
 
@@ -29,9 +30,22 @@ class CrmHubScreen extends ConsumerWidget {
           return const Scaffold(
             body: ChatEmptyState(
               title: 'No team yet',
-              subtitle:
-                  'Join or create a team on the web to use CRM.',
+              subtitle: 'Join or create a team on the web to use CRM.',
               icon: Icons.groups_outlined,
+            ),
+          );
+        }
+        // Mirror web TeamNavGate(navKey: "crm"): premium + crm_access.
+        if (!detail.canViewCrm) {
+          return Scaffold(
+            body: ChatEmptyState(
+              title: AppTranslations.translate(context, ref, 'crm_no_access'),
+              subtitle: AppTranslations.translate(
+                context,
+                ref,
+                'crm_no_access_body',
+              ),
+              icon: Icons.lock_outline,
             ),
           );
         }

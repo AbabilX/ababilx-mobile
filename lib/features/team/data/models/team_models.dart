@@ -77,6 +77,7 @@ class TeamDetail extends Equatable {
     this.members = const [],
     this.myRole = '',
     this.teamIsPremium = false,
+    this.crmAccess = false,
   });
 
   final Team? team;
@@ -84,7 +85,13 @@ class TeamDetail extends Equatable {
   final String myRole;
   final bool teamIsPremium;
 
+  /// Per-member CRM allowlist (leader/manager implicit; member needs grant).
+  final bool crmAccess;
+
   bool get hasTeam => team != null;
+
+  /// Same as web: team premium + member CRM access unlocks CRM nav/view.
+  bool get canViewCrm => hasTeam && teamIsPremium && crmAccess;
 
   factory TeamDetail.fromJson(Map<String, dynamic> json) {
     final teamJson = json['team'];
@@ -97,9 +104,11 @@ class TeamDetail extends Equatable {
           .toList(),
       myRole: json['my_role'] as String? ?? '',
       teamIsPremium: json['team_is_premium'] as bool? ?? false,
+      crmAccess: json['crm_access'] as bool? ?? false,
     );
   }
 
   @override
-  List<Object?> get props => [team, members.length, myRole];
+  List<Object?> get props =>
+      [team, members.length, myRole, teamIsPremium, crmAccess];
 }

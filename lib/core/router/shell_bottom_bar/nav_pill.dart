@@ -3,7 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'nav_tab_item.dart';
 
-/// Left floating nav — Messages | Wall | CRM | Profile.
+/// Left floating nav — Messages | Wall | (CRM?) | Profile.
 class NavPill extends StatelessWidget {
   const NavPill({
     super.key,
@@ -13,6 +13,7 @@ class NavPill extends StatelessWidget {
     required this.wallLabel,
     required this.crmLabel,
     required this.profileLabel,
+    this.showCrm = false,
     this.unread = 0,
   });
 
@@ -22,6 +23,7 @@ class NavPill extends StatelessWidget {
   final String wallLabel;
   final String crmLabel;
   final String profileLabel;
+  final bool showCrm;
   final int unread;
 
   static const double height = 64;
@@ -29,6 +31,8 @@ class NavPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // Tab indices shift when CRM is hidden: Profile is 2 instead of 3.
+    final profileIndex = showCrm ? 3 : 2;
 
     return Container(
       height: height,
@@ -63,19 +67,20 @@ class NavPill extends StatelessWidget {
             selected: selectedIndex == 1,
             onTap: () => onSelect(1),
           ),
-          NavTabItem(
-            icon: HugeIcons.strokeRoundedBriefcase01,
-            selectedIcon: HugeIcons.strokeRoundedBriefcase02,
-            label: crmLabel,
-            selected: selectedIndex == 2,
-            onTap: () => onSelect(2),
-          ),
+          if (showCrm)
+            NavTabItem(
+              icon: HugeIcons.strokeRoundedBriefcase01,
+              selectedIcon: HugeIcons.strokeRoundedBriefcase02,
+              label: crmLabel,
+              selected: selectedIndex == 2,
+              onTap: () => onSelect(2),
+            ),
           NavTabItem(
             icon: HugeIcons.strokeRoundedUser02,
             selectedIcon: HugeIcons.strokeRoundedUser03,
             label: profileLabel,
-            selected: selectedIndex == 3,
-            onTap: () => onSelect(3),
+            selected: selectedIndex == profileIndex,
+            onTap: () => onSelect(profileIndex),
           ),
         ],
       ),
