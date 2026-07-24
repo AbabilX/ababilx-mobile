@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/app_avatar.dart';
 import '../../team/data/models/team_models.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -79,13 +79,10 @@ class _MemberTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: CircleAvatar(
-        backgroundImage: member.avatarUrl != null
-            ? CachedNetworkImageProvider(member.avatarUrl!)
-            : null,
-        child: member.avatarUrl == null
-            ? Text(member.displayName.substring(0, 1).toUpperCase())
-            : null,
+      leading: AppAvatar(
+        size: 40,
+        url: member.avatarUrl,
+        name: member.displayName,
       ),
       title: Text(member.displayName),
       subtitle: member.email != null ? Text(member.email!) : null,

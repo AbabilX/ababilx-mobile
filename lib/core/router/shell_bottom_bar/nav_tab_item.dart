@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../features/messages/chat_icon.dart';
 
+/// One tab inside [NavPill] — Slack-style tall rounded selected chip.
 class NavTabItem extends StatelessWidget {
   const NavTabItem({
     super.key,
@@ -25,7 +26,7 @@ class NavTabItem extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final color = selected ? scheme.primary : scheme.onSurfaceVariant;
     final bg = selected
-        ? scheme.primary.withValues(alpha: 0.14)
+        ? scheme.surfaceContainerHighest.withValues(alpha: 0.95)
         : Colors.transparent;
 
     return Expanded(
@@ -34,14 +35,15 @@ class NavTabItem extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          margin: const EdgeInsets.fromLTRB(2, 6, 2, 6),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(14),
+            // Tall soft capsule like Slack "Home" chip — not a circle.
+            borderRadius: BorderRadius.circular(22),
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Badge(
                 isLabelVisible: badgeCount > 0,

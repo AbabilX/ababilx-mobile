@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../shared/widgets/app_avatar.dart';
 import '../chat_icon.dart';
 import '../chat_list_filters.dart';
 import '../chat-unread-badge.dart';
@@ -113,24 +113,15 @@ class _SquareAvatar extends StatelessWidget {
         : (conversation.memberAvatars.isNotEmpty
             ? conversation.memberAvatars.first
             : null);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: SizedBox(
-        width: 48,
-        height: 48,
-        child: url != null
-            ? CachedNetworkImage(imageUrl: url, fit: BoxFit.cover)
-            : ColoredBox(
-                color: colors.surfaceContainerHighest,
-                child: Center(
-                  child: ChatIcon(
-                    conversation.isChannel
-                        ? HugeIcons.strokeRoundedTag01
-                        : HugeIcons.strokeRoundedUser02,
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-              ),
+    return AppAvatar(
+      size: 48,
+      url: url,
+      name: title,
+      fallback: ChatIcon(
+        conversation.isChannel
+            ? HugeIcons.strokeRoundedTag01
+            : HugeIcons.strokeRoundedUser02,
+        color: colors.onSurfaceVariant,
       ),
     );
   }

@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../shared/widgets/app_avatar.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -27,15 +27,7 @@ class ChatHeader extends ConsumerWidget {
           if (conversation.isDm)
             Padding(
               padding: const EdgeInsets.only(right: 10),
-              child: CircleAvatar(
-                radius: 16,
-                backgroundImage: avatar != null
-                    ? CachedNetworkImageProvider(avatar)
-                    : null,
-                child: avatar == null
-                    ? Text(title.isNotEmpty ? title[0].toUpperCase() : '?')
-                    : null,
-              ),
+              child: AppAvatar(size: 32, url: avatar, name: title),
             ),
           Expanded(
             child: Column(

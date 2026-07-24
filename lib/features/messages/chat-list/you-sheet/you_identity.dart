@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../shared/widgets/app_avatar.dart';
 
 class YouIdentity extends StatelessWidget {
   const YouIdentity({
@@ -23,30 +23,7 @@ class YouIdentity extends StatelessWidget {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  width: 56,
-                  height: 56,
-                  child: avatarUrl != null && avatarUrl!.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: avatarUrl!,
-                          fit: BoxFit.cover,
-                        )
-                      : ColoredBox(
-                          color: colors.surfaceContainerHighest,
-                          child: Center(
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : '?',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                ),
-              ),
+              AppAvatar(size: 56, url: avatarUrl, name: name),
               Positioned(
                 right: -2,
                 bottom: -2,

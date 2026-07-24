@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/app_avatar.dart';
 import '../data/models/chat_models.dart';
 
 class RecentContactsStrip extends StatelessWidget {
@@ -52,34 +52,15 @@ class RecentContactTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = conversation.displayTitle(currentUserId);
-    final colors = Theme.of(context).colorScheme;
     final avatar = conversation.peerUserAvatar;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppAvatar.radius),
       child: SizedBox(
         width: 64,
         child: Column(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                width: 56,
-                height: 56,
-                child: avatar != null
-                    ? CachedNetworkImage(imageUrl: avatar, fit: BoxFit.cover)
-                    : ColoredBox(
-                        color: colors.surfaceContainerHighest,
-                        child: Center(
-                          child: Text(
-                            title.isNotEmpty ? title[0].toUpperCase() : '?',
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 6),
+            AppAvatar(size: 56, url: avatar, name: title),            const SizedBox(height: 6),
             Text(
               title,
               maxLines: 1,

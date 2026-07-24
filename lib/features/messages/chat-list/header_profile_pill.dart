@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../shared/widgets/app_avatar.dart';
 import '../chat_icon.dart';
 
 /// Right app-bar pill: history (visual only) + profile avatar.
@@ -60,26 +60,7 @@ class _PillAvatar extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        ClipOval(
-          child: SizedBox(
-            width: 30,
-            height: 30,
-            child: url != null && url!.isNotEmpty
-                ? CachedNetworkImage(imageUrl: url!, fit: BoxFit.cover)
-                : ColoredBox(
-                    color: colors.surfaceContainerHighest,
-                    child: Center(
-                      child: Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-          ),
-        ),
+        AppAvatar(size: 30, url: url, name: name),
         Positioned(
           right: -1,
           bottom: -1,

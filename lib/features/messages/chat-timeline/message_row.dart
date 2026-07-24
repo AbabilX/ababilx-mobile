@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/app_avatar.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -44,7 +44,7 @@ class MessageRow extends ConsumerWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SquareAvatar(name: name, url: message.userAvatarUrl),
+            AppAvatar(size: 36, url: message.userAvatarUrl, name: name),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -100,38 +100,6 @@ class MessageRow extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SquareAvatar extends StatelessWidget {
-  const _SquareAvatar({required this.name, this.url});
-  final String name;
-  final String? url;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: SizedBox(
-        width: 36,
-        height: 36,
-        child: url != null
-            ? CachedNetworkImage(imageUrl: url!, fit: BoxFit.cover)
-            : ColoredBox(
-                color: colors.surfaceContainerHighest,
-                child: Center(
-                  child: Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : '?',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: colors.onSurface,
-                    ),
-                  ),
-                ),
-              ),
       ),
     );
   }

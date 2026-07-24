@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/app_avatar.dart';
 import '../data/models/chat_models.dart';
 import 'thread_people.dart';
 
@@ -81,45 +81,20 @@ class _AvatarStack extends StatelessWidget {
           for (var i = 0; i < people.length; i++)
             Positioned(
               left: i * 14.0,
-              child: _MiniAvatar(person: people[i], border: colors.surface),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniAvatar extends StatelessWidget {
-  const _MiniAvatar({required this.person, required this.border});
-  final ThreadPerson person;
-  final Color border;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final letter =
-        (person.name != null && person.name!.isNotEmpty) ? person.name![0] : '?';
-    return Container(
-      width: 18,
-      height: 18,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: border, width: 1.5),
-        color: colors.surfaceContainerHighest,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: person.avatarUrl != null
-          ? CachedNetworkImage(imageUrl: person.avatarUrl!, fit: BoxFit.cover)
-          : Center(
-              child: Text(
-                letter.toUpperCase(),
-                style: TextStyle(
+              child: AppAvatar(
+                size: 18,
+                url: people[i].avatarUrl,
+                name: people[i].name,
+                border: Border.all(color: colors.surface, width: 1.5),
+                letterStyle: TextStyle(
                   fontSize: 8,
                   fontWeight: FontWeight.w700,
                   color: colors.onSurface,
                 ),
               ),
             ),
+        ],
+      ),
     );
   }
 }

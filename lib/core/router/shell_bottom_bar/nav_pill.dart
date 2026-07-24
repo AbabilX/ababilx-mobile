@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'nav_tab_item.dart';
 
+/// Left floating nav — Slack stadium pill (fully rounded ends).
 class NavPill extends StatelessWidget {
   const NavPill({
     super.key,
@@ -19,16 +20,18 @@ class NavPill extends StatelessWidget {
   final String profileLabel;
   final int unread;
 
+  static const double height = 64;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(height / 2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(

@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../shared/widgets/app_avatar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -86,40 +86,17 @@ class ProfileScreen extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  // Symmetrical Squircle Avatar Frame
-                  Container(
-                    width: 96,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      color: colors.surfaceContainer,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: colors.outline,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: user.avatarUrl.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: user.avatarUrl,
-                                width: 88,
-                                height: 88,
-                                fit: BoxFit.cover,
-                                errorWidget: (_, _, _) => Icon(
-                                  Icons.person_rounded,
-                                  size: 40,
-                                  color: colors.primary,
-                                ),
-                              )
-                            : Icon(
-                                Icons.person_rounded,
-                                size: 40,
-                                color: colors.primary,
-                              ),
-                      ),
+                  // Homepage-style rounded-square avatar (radius 8)
+                  AppAvatar(
+                    size: 96,
+                    url: user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
+                    name: user.name,
+                    backgroundColor: colors.surfaceContainer,
+                    border: Border.all(color: colors.outline, width: 1.5),
+                    fallback: Icon(
+                      Icons.person_rounded,
+                      size: 40,
+                      color: colors.primary,
                     ),
                   ),
                   const SizedBox(height: 16),
