@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../crm/data/models/crm_models.dart';
 import '../../team/data/models/team_models.dart';
 import '../../team/data/team_repository.dart';
 
@@ -26,5 +27,14 @@ final canViewCrmProvider = Provider<bool>((ref) {
   return team.maybeWhen(
     data: (d) => d?.canViewCrm ?? false,
     orElse: () => false,
+  );
+});
+
+/// Fine-grained CRM actions (create/update/delete/configure).
+final crmPermsProvider = Provider<CrmPerms>((ref) {
+  final team = ref.watch(teamGateProvider);
+  return team.maybeWhen(
+    data: (d) => d?.crmPerms ?? CrmPerms.none,
+    orElse: () => CrmPerms.none,
   );
 });

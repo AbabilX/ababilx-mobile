@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
 import 'hub_header.dart';
@@ -11,6 +12,10 @@ class CrmHub extends ConsumerWidget {
   const CrmHub({super.key});
 
   void _onTileTap(BuildContext context, WidgetRef ref, CrmHubItem item) {
+    if (item.id == 'contacts') {
+      context.push('/crm/contacts');
+      return;
+    }
     final msg = AppTranslations.translate(context, ref, 'crm_coming_soon');
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()

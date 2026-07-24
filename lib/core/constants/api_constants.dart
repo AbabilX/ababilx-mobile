@@ -17,6 +17,11 @@ class ApiConstants {
   // Team
   static const String teamsMe = '/api/teams/me';
 
+  // CRM
+  static const String crmConfig = '/api/teams/crm/config';
+  static const String crmContacts = '/api/teams/crm/contacts';
+  static String crmContact(String id) => '/api/teams/crm/contacts/$id';
+
   // Chat
   static const String chatConversations = '/api/teams/chat/conversations';
   static const String chatChannels = '/api/teams/chat/channels';

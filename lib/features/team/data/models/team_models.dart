@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../crm/data/models/crm_models.dart';
+
 class Team extends Equatable {
   const Team({
     required this.id,
@@ -78,6 +80,7 @@ class TeamDetail extends Equatable {
     this.myRole = '',
     this.teamIsPremium = false,
     this.crmAccess = false,
+    this.modulePermissions = const {},
   });
 
   final Team? team;
@@ -88,13 +91,36 @@ class TeamDetail extends Equatable {
   /// Per-member CRM allowlist (leader/manager implicit; member needs grant).
   final bool crmAccess;
 
+  /// Role-resolved module grants from `/api/teams/me`.
+  final Map<String, ModuleActions> modulePermissions;
+
   bool get hasTeam => team != null;
 
   /// Same as web: team premium + member CRM access unlocks CRM nav/view.
   bool get canViewCrm => hasTeam && teamIsPremium && crmAccess;
 
+  CrmPerms get crmPerms => CrmPerms.resolve(
+        canViewCrm: canViewCrm,
+        grants: modulePermissions['crm'],
+      );
+
+  bool get isLeader => myRole == 'leader';
+  bool get isManager => myRole == 'manager';
+  bool get canAssignCrmOwner => isLeader || isManager;
+
   factory TeamDetail.fromJson(Map<String, dynamic> json) {
     final teamJson = json['team'];
+    final rawPerms = json['module_permissions'];
+    final perms = <String, ModuleActions>{};
+    if (rawPerms is Map) {
+      for (final e in rawPerms.entries) {
+        final v = e.value;
+        if (v is Map) {
+          perms[e.key.toString()] =
+              ModuleActions.fromJson(Map<String, dynamic>.from(v));
+        }
+      }
+    }
     return TeamDetail(
       team: teamJson != null
           ? Team.fromJson(teamJson as Map<String, dynamic>)
@@ -105,6 +131,7 @@ class TeamDetail extends Equatable {
       myRole: json['my_role'] as String? ?? '',
       teamIsPremium: json['team_is_premium'] as bool? ?? false,
       crmAccess: json['crm_access'] as bool? ?? false,
+      modulePermissions: perms,
     );
   }
 

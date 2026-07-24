@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../messages/chat_icon.dart';
 import 'hub_items.dart';
 
-/// Colored rounded square + label under it (WeCom-style tile).
+/// Icon tile using theme containers — no hardcoded colors.
 class CrmHubTile extends StatelessWidget {
   const CrmHubTile({
     super.key,
@@ -18,7 +18,8 @@ class CrmHubTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return InkWell(
       onTap: onTap,
@@ -32,11 +33,15 @@ class CrmHubTile extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: item.color,
+                color: colors.primaryContainer,
                 borderRadius: BorderRadius.circular(14),
               ),
               alignment: Alignment.center,
-              child: ChatIcon(item.icon, size: 26, color: Colors.white),
+              child: ChatIcon(
+                item.icon,
+                size: 26,
+                color: colors.onPrimaryContainer,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -44,11 +49,8 @@ class CrmHubTile extends StatelessWidget {
               maxLines: 2,
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
+              style: theme.textTheme.labelMedium?.copyWith(
                 height: 1.2,
-                fontWeight: FontWeight.w500,
-                color: colors.onSurface,
               ),
             ),
           ],

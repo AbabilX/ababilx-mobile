@@ -11,6 +11,7 @@ import '../../features/messages/screens/conversation_screen.dart';
 import '../../features/wall/screens/wall_screen.dart';
 import '../../features/wall/screens/wall_post_screen.dart';
 import '../../features/crm/screens/crm_hub_screen.dart';
+import '../../features/crm/screens/crm_contacts_screen.dart';
 import 'home_shell.dart';
 
 class _RouterRefreshNotifier extends ChangeNotifier {
@@ -90,6 +91,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => WallPostScreen(
           postId: state.pathParameters['postId']!,
         ),
+      ),
+      GoRoute(
+        path: '/crm/contacts',
+        builder: (_, _) => const CrmContactsScreen(),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(
