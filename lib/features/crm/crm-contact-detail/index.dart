@@ -179,13 +179,6 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () => context.push(
-                            '/crm/leads?contact=${contact.id}',
-                          ),
-                          child: const Text('All leads'),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
