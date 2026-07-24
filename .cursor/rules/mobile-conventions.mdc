@@ -1,0 +1,21 @@
+---
+description: AbabilX Flutter mobile conventions (local copy when editing under ababilx-mobile/)
+globs: "**/*.dart"
+alwaysApply: false
+---
+
+# Mobile Flutter (package-local)
+
+When working inside `ababilx-mobile/`, also follow monorepo rules:
+
+- `.cursor/rules/ababilx-mobile-flutter.mdc` — folders, API, Riverpod, GoRouter
+- `.cursor/rules/ababilx-mobile-ui.mdc` — theme-only colors, shell bar UX
+- `.cursor/rules/ababilx-mobile-crm.mdc` — CRM permissions + contacts patterns
+
+Quick musts:
+
+1. Modular `features/<x>/` (screens / data / providers / small UI folders).
+2. No hardcoded UI colors — `Theme.of(context).colorScheme`.
+3. Shell floating bar: left pill + right circle; feature modes swap buttons (contacts = My/All + add).
+4. CRM: `team_is_premium && crm_access`; actions from `module_permissions.crm`.
+5. Port web API shapes from `Ababil-X-frontend` / `ababilx-server` — don't invent contracts.
