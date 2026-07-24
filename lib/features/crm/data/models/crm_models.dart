@@ -372,6 +372,7 @@ class CrmLead extends Equatable {
     this.contactCompany,
     this.contactPhone,
     this.contactEmail,
+    this.pipelineName,
     this.stageName,
     this.stageColor,
     this.ownerName,
@@ -396,6 +397,7 @@ class CrmLead extends Equatable {
   final String? contactCompany;
   final String? contactPhone;
   final String? contactEmail;
+  final String? pipelineName;
   final String? stageName;
   final String? stageColor;
   final String? ownerName;
@@ -424,6 +426,7 @@ class CrmLead extends Equatable {
       contactCompany: json['contact_company'] as String?,
       contactPhone: json['contact_phone'] as String?,
       contactEmail: json['contact_email'] as String?,
+      pipelineName: json['pipeline_name'] as String?,
       stageName: json['stage_name'] as String?,
       stageColor: json['stage_color'] as String?,
       ownerName: json['owner_name'] as String?,

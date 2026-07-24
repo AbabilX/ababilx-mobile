@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../data/models/crm_models.dart';
+import '../shared/crm_hex_color.dart';
 
 enum StageStepState { done, current, upcoming }
 
-/// One circle in the pipeline stepper.
+/// Web stage-step-item: green ✓ done, stage-color/current (red+X if lost), dot upcoming.
 class StageStepItem extends StatelessWidget {
   const StageStepItem({
     super.key,
@@ -23,28 +24,53 @@ class StageStepItem extends StatelessWidget {
   final bool disabled;
   final VoidCallback? onTap;
 
+  static const _green = Color(0xFF22C55E);
+  static const _lost = Color(0xFFEF4444);
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
     final isCurrent = state == StageStepState.current;
     final isDone = state == StageStepState.done;
+    final isUpcoming = state == StageStepState.upcoming;
 
-    final ring = isCurrent
-        ? colors.primary
-        : isDone
-            ? colors.tertiary
-            : colors.outlineVariant;
-    final fill = isCurrent
-        ? colors.primary
-        : isDone
-            ? colors.tertiaryContainer
-            : colors.surfaceContainerHighest;
-    final fg = isCurrent
-        ? colors.onPrimary
-        : isDone
-            ? colors.onTertiaryContainer
-            : colors.onSurfaceVariant;
+    late final Color fill;
+    late final Color ring;
+    late final Color fg;
+
+    if (isDone) {
+      fill = _green;
+      ring = _green;
+      fg = Colors.white;
+    } else if (isCurrent) {
+      final c = stage.isLost
+          ? _lost
+          : (parseCrmHex(stage.color) ?? colors.primary);
+      fill = c;
+      ring = c;
+      fg = Colors.white;
+    } else {
+      fill = Colors.transparent;
+      ring = colors.outlineVariant;
+      fg = colors.onSurfaceVariant;
+    }
+
+    final Widget icon;
+    if (isUpcoming) {
+      icon = Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: colors.outlineVariant,
+          shape: BoxShape.circle,
+        ),
+      );
+    } else if (stage.isLost && isCurrent) {
+      icon = Icon(Icons.close_rounded, size: 18, color: fg);
+    } else {
+      icon = Icon(Icons.check_rounded, size: 18, color: fg);
+    }
 
     final child = Column(
       mainAxisSize: MainAxisSize.min,
@@ -55,18 +81,10 @@ class StageStepItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: fill,
             shape: BoxShape.circle,
-            border: Border.all(color: ring, width: isCurrent ? 2.5 : 1.5),
+            border: Border.all(color: ring, width: 2),
           ),
           alignment: Alignment.center,
-          child: isDone
-              ? Icon(Icons.check_rounded, size: 18, color: fg)
-              : Text(
-                  '${stage.position + 1}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: fg,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+          child: icon,
         ),
         const SizedBox(height: 6),
         SizedBox(
@@ -78,7 +96,7 @@ class StageStepItem extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-              color: isCurrent ? colors.onSurface : colors.onSurfaceVariant,
+              color: isUpcoming ? colors.onSurfaceVariant : colors.onSurface,
             ),
           ),
         ),

@@ -210,6 +210,7 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
                               LeadRow(
                                 lead: lead,
                                 currency: currency,
+                                config: configAsync.valueOrNull,
                                 canUpdate: false,
                                 canDelete: false,
                                 onTap: () =>

@@ -109,6 +109,7 @@ class LeadSearchDelegate extends SearchDelegate<void> {
             return LeadRow(
               lead: l,
               currency: currency,
+              config: ref.watch(crmConfigProvider).valueOrNull,
               canUpdate: false,
               canDelete: false,
               onTap: () {

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../crm-contacts/contact_badge.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_lead_detail_provider.dart';
+import '../shared/crm_hex_color.dart';
+import '../shared/stage_chip.dart';
 
 /// Compact stage chip → pick another stage (web StageSelect).
 class LeadStageSelect extends ConsumerWidget {
@@ -41,9 +42,24 @@ class LeadStageSelect extends ConsumerWidget {
               ),
               for (final s in stages)
                 ListTile(
+                  leading: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: s.isLost
+                          ? const Color(0xFFEF4444)
+                          : (parseCrmHex(s.color) ?? colors.primary),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                   title: Text(s.name),
                   trailing: s.id == lead.stageId
-                      ? Icon(Icons.check_rounded, color: colors.primary)
+                      ? Icon(
+                          Icons.check_rounded,
+                          color: s.isLost
+                              ? const Color(0xFFEF4444)
+                              : (parseCrmHex(s.color) ?? colors.primary),
+                        )
                       : null,
                   onTap: () => Navigator.pop(ctx, s),
                 ),
@@ -74,18 +90,19 @@ class LeadStageSelect extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final label = (lead.stageName ?? '').isEmpty ? 'No stage' : lead.stageName!;
+    final label = (lead.stageName ?? '').isEmpty ? 'Set stage' : lead.stageName!;
+    final chip = StageChip(
+      name: label,
+      colorHex: lead.isLost ? '#EF4444' : lead.stageColor,
+      showChevron: canEdit && stages.isNotEmpty,
+    );
+
+    if (!canEdit || stages.isEmpty) return chip;
+
     return InkWell(
-      onTap: canEdit ? () => _pick(context, ref) : null,
+      onTap: () => _pick(context, ref),
       borderRadius: BorderRadius.circular(999),
-      child: ContactBadge(
-        label: canEdit ? '$label ▾' : label,
-        tone: lead.isWon
-            ? ContactBadgeTone.tertiary
-            : lead.isLost
-                ? ContactBadgeTone.error
-                : ContactBadgeTone.primary,
-      ),
+      child: chip,
     );
   }
 }

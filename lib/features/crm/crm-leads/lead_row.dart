@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../crm-contacts/contact_badge.dart';
 import '../data/models/crm_models.dart';
 import '../shared/crm_money.dart';
+import '../shared/stage_chip.dart';
 
-/// Lead card — title, contact, stage, value, owner (web table columns).
+/// Lead card — title, contact, pipeline, stage, value, owner (web table columns).
 class LeadRow extends StatelessWidget {
   const LeadRow({
     super.key,
@@ -15,6 +16,7 @@ class LeadRow extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    this.config,
   });
 
   final CrmLead lead;
@@ -24,6 +26,17 @@ class LeadRow extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final CrmConfig? config;
+
+  String? get _pipelineName {
+    if ((lead.pipelineName ?? '').isNotEmpty) return lead.pipelineName;
+    final pid = lead.pipelineId;
+    if (pid == null || config == null) return null;
+    for (final p in config!.pipelines) {
+      if (p.id == pid) return p.name;
+    }
+    return null;
+  }
 
   String get _initial {
     final n = lead.title.trim();
@@ -107,14 +120,17 @@ class LeadRow extends StatelessWidget {
                         spacing: 6,
                         runSpacing: 6,
                         children: [
-                          if ((lead.stageName ?? '').isNotEmpty)
+                          if ((_pipelineName ?? '').isNotEmpty)
                             ContactBadge(
-                              label: lead.stageName!,
-                              tone: lead.isWon
-                                  ? ContactBadgeTone.tertiary
-                                  : lead.isLost
-                                      ? ContactBadgeTone.error
-                                      : ContactBadgeTone.primary,
+                              label: _pipelineName!,
+                              tone: ContactBadgeTone.neutral,
+                            ),
+                          if ((lead.stageName ?? '').isNotEmpty)
+                            StageChip(
+                              name: lead.stageName!,
+                              colorHex: lead.isLost
+                                  ? '#EF4444'
+                                  : lead.stageColor,
                             ),
                           if (lead.dealValue > 0)
                             ContactBadge(

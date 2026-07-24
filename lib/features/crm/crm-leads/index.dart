@@ -276,6 +276,7 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
                     return LeadRow(
                       lead: lead,
                       currency: currency,
+                      config: configAsync.valueOrNull,
                       canUpdate: perms.update,
                       canDelete: perms.delete,
                       onTap: () => context.push('/crm/leads/${lead.id}'),

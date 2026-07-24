@@ -8,6 +8,7 @@ import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_contacts_provider.dart';
 import '../providers/crm_lead_detail_provider.dart';
+import '../crm-contacts/contact_badge.dart';
 import '../shared/crm_money.dart';
 import '../shared/crm_ui.dart';
 import 'activities_tab.dart';
@@ -45,17 +46,20 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
     super.dispose();
   }
 
-  List<CrmStage> _stagesFor(CrmLead lead, CrmConfig? config) {
+  CrmPipeline? _pipelineFor(CrmLead lead, CrmConfig? config) {
     final pipelines = config?.pipelines ?? const <CrmPipeline>[];
-    CrmPipeline? pipeline;
     for (final p in pipelines) {
-      if (p.id == lead.pipelineId) {
-        pipeline = p;
-        break;
-      }
+      if (p.id == lead.pipelineId) return p;
     }
-    pipeline ??= config?.defaultPipeline;
-    return pipeline?.stages ?? const [];
+    return config?.defaultPipeline;
+  }
+
+  List<CrmStage> _stagesFor(CrmLead lead, CrmConfig? config) =>
+      _pipelineFor(lead, config)?.stages ?? const [];
+
+  String? _pipelineName(CrmLead lead, CrmConfig? config) {
+    if ((lead.pipelineName ?? '').isNotEmpty) return lead.pipelineName;
+    return _pipelineFor(lead, config)?.name;
   }
 
   Future<void> _edit(CrmLead lead) async {
@@ -122,6 +126,7 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
       data: (lead) {
         final config = configAsync.valueOrNull;
         final stages = _stagesFor(lead, config);
+        final pipelineName = _pipelineName(lead, config);
         final currency = config?.settings.currency ?? 'BDT';
         final timeline =
             ref.watch(crmLeadTimelineProvider(widget.leadId)).valueOrNull ??
@@ -219,14 +224,21 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
                         ),
                       ],
                       const SizedBox(height: 10),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
+                          if ((pipelineName ?? '').isNotEmpty)
+                            ContactBadge(
+                              label: pipelineName!,
+                              tone: ContactBadgeTone.neutral,
+                            ),
                           LeadStageSelect(
                             lead: lead,
                             stages: stages,
                             canEdit: perms.update,
                           ),
-                          const Spacer(),
                           if (lead.dealValue > 0)
                             Text(
                               formatCrmMoney(lead.dealValue, currency),
