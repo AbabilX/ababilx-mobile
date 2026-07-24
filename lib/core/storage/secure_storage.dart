@@ -1,7 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/api_constants.dart';
 
-/// Wrapper around flutter_secure_storage for JWT + FCM token management.
+/// Wrapper around flutter_secure_storage for JWT + refresh token.
 class SecureStorage {
   const SecureStorage(this._storage);
 
@@ -19,12 +19,6 @@ class SecureStorage {
       _storage.write(key: StorageKeys.refreshToken, value: token);
   Future<void> deleteRefreshToken() =>
       _storage.delete(key: StorageKeys.refreshToken);
-
-  // FCM token (cached locally for re-registration on token refresh)
-  Future<String?> readFcmToken() => _storage.read(key: StorageKeys.fcmToken);
-  Future<void> writeFcmToken(String token) =>
-      _storage.write(key: StorageKeys.fcmToken, value: token);
-  Future<void> deleteFcmToken() => _storage.delete(key: StorageKeys.fcmToken);
 
   Future<void> clearAll() => _storage.deleteAll();
 }

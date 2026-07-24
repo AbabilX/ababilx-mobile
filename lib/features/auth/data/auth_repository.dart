@@ -1,6 +1,4 @@
-import 'dart:io' show Platform;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../../core/network/api_client.dart';
@@ -78,43 +76,11 @@ class AuthRepository {
       await _storage.writeRefreshToken(refreshToken);
     }
 
-    // Register FCM token
-    final fcmToken = await FirebaseMessaging.instance.getToken();
-    if (fcmToken != null) {
-      await _storage.writeFcmToken(fcmToken);
-      await _registerDevice(fcmToken);
-    }
-
     final user = body['user'] as Map<String, dynamic>?;
     return user ?? {};
   }
 
-  Future<void> _registerDevice(String fcmToken) async {
-    try {
-      final platformStr = Platform.isIOS ? 'ios' : 'android';
-      await _client.post(
-        ApiConstants.devices,
-        data: {'fcm_token': fcmToken, 'platform': platformStr},
-      );
-    } catch (_) {}
-  }
-
-  Future<void> refreshDeviceToken(String newToken) async {
-    await _storage.writeFcmToken(newToken);
-    await _registerDevice(newToken);
-  }
-
   Future<void> signOut() async {
-    try {
-      final fcmToken = await _storage.readFcmToken();
-      if (fcmToken != null) {
-        await _client.delete(
-          ApiConstants.devices,
-          data: {'fcm_token': fcmToken},
-        );
-      }
-    } catch (_) {}
-
     await _firebaseAuth.signOut();
     await _googleSignIn.signOut();
     await _storage.clearAll();

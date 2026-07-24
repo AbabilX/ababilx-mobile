@@ -14,35 +14,6 @@ class ApiConstants {
   static const String meProfile = '/api/me/profile';
   static const String mePlan = '/api/me/plan';
   static const String meConnections = '/api/me/connections';
-
-  // Rules
-  static const String rules = '/api/rules';
-  static String ruleById(String id) => '/api/rules/$id';
-  static String rulePreview(String id) => '/api/rules/$id/preview';
-  static String ruleTrigger(String id) => '/api/rules/$id/trigger';
-  static String ruleMessages(String id) => '/api/rules/$id/messages';
-  static String ruleMessageById(String ruleId, String msgId) =>
-      '/api/rules/$ruleId/messages/$msgId';
-  static String ruleOverride(String id) => '/api/rules/$id/override-message';
-
-  // Slack
-  static const String slackChannels = '/api/slack/channels';
-  static const String slackDisconnect = '/api/slack/disconnect';
-
-  // GitHub Repos
-  static const String githubRepos = '/api/repos';
-  static String repoBranches(String owner, String repo) =>
-      '/api/repos/$owner/$repo/branches';
-
-  // Activity
-  static const String weeklyActivity = '/api/activity/weekly';
-
-  // Auto-commit jobs
-  static const String jobs = '/api/auto-commits';
-  static String jobById(String id) => '/api/auto-commits/$id';
-
-  // Devices (FCM)
-  static const String devices = '/api/devices';
 }
 
 /// Secure storage keys.
@@ -51,15 +22,4 @@ class StorageKeys {
 
   static const String jwt = 'ababilx_jwt';
   static const String refreshToken = 'ababilx_refresh_token';
-  static const String fcmToken = 'ababilx_fcm_token';
-}
-
-/// Notification channel config.
-class NotificationChannels {
-  NotificationChannels._();
-
-  static const String standupId = 'standup_alerts';
-  static const String standupName = 'Standup Alerts';
-  static const String standupDesc =
-      'Pre-send notifications before your standup fires';
 }
