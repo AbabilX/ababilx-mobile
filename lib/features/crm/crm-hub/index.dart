@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import 'hub_header.dart';
 import 'hub_items.dart';
 import 'hub_section.dart';
@@ -29,7 +30,12 @@ class CrmHub extends ConsumerWidget {
     return Scaffold(
       appBar: CrmHubHeader(title: title),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          8,
+          16,
+          ShellPillMetrics.contentBottomInset,
+        ),
         children: [
           for (final section in kCrmHubSections) ...[
             CrmHubSection(

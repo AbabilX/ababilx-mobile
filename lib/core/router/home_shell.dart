@@ -13,8 +13,8 @@ import 'shell_bottom_bar/index.dart';
 
 /// Bottom nav: home pills, or contacts [My|Add|All] + search.
 ///
-/// Pills float as an overlay so page content (e.g. wall posts) scrolls
-/// underneath for a translucent look.
+/// Pills are **absolutely** stacked over [child] (not Scaffold.bottomNavigationBar)
+/// so lists/wall posts scroll behind the frosted chrome.
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
@@ -110,15 +110,20 @@ class HomeShell extends ConsumerWidget {
               );
 
     return Scaffold(
-      // Overlay (not bottomNavigationBar) so feed paints under translucent pills.
+      // Full-bleed body — no bottomNavigationBar inset.
       body: Stack(
         fit: StackFit.expand,
         children: [
-          child,
+          Positioned.fill(child: child),
           if (bar != null)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: bar,
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Material(
+                type: MaterialType.transparency,
+                child: bar,
+              ),
             ),
         ],
       ),

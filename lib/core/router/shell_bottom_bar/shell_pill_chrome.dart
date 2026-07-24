@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'shell_pill_metrics.dart';
 
-/// Frosted floating pill chrome — content scrolls under for depth.
+/// Frosted floating pill chrome — sibling content scrolls under in the shell Stack.
 class ShellPillChrome extends StatelessWidget {
   const ShellPillChrome({
     super.key,
@@ -24,8 +24,9 @@ class ShellPillChrome extends StatelessWidget {
         (shape == BoxShape.circle
             ? null
             : BorderRadius.circular(ShellPillMetrics.height / 2));
-    final fill = scheme.surfaceContainerHigh.withValues(
-      alpha: scheme.brightness == Brightness.dark ? 0.72 : 0.78,
+    // Light enough that wall posts / lists read through while scrolling under.
+    final fill = scheme.surface.withValues(
+      alpha: scheme.brightness == Brightness.dark ? 0.55 : 0.62,
     );
 
     return Container(
@@ -39,14 +40,14 @@ class ShellPillChrome extends StatelessWidget {
             ? BorderRadius.circular(ShellPillMetrics.height / 2)
             : (radius ?? BorderRadius.zero),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: fill,
               shape: shape,
               borderRadius: shape == BoxShape.circle ? null : radius,
               border: Border.all(
-                color: scheme.outlineVariant.withValues(alpha: 0.35),
+                color: scheme.outlineVariant.withValues(alpha: 0.4),
               ),
             ),
             child: child,
@@ -60,9 +61,9 @@ class ShellPillChrome extends StatelessWidget {
 List<BoxShadow> shellPillShadow(ColorScheme scheme) => [
       BoxShadow(
         color: Colors.black.withValues(
-          alpha: scheme.brightness == Brightness.dark ? 0.35 : 0.12,
+          alpha: scheme.brightness == Brightness.dark ? 0.4 : 0.14,
         ),
-        blurRadius: 16,
-        offset: const Offset(0, 6),
+        blurRadius: 20,
+        offset: const Offset(0, 8),
       ),
     ];

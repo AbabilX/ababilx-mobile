@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../data/models/chat_models.dart';
 import 'conversation_row.dart';
 
@@ -33,7 +34,9 @@ class ConversationRows extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.builder(
-        padding: const EdgeInsets.only(bottom: 88),
+        padding: const EdgeInsets.only(
+          bottom: ShellPillMetrics.contentBottomInset,
+        ),
         itemCount: conversations.length,
         itemBuilder: (_, i) {
           final c = conversations[i];

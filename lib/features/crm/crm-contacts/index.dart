@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../data/crm_repository.dart';
@@ -201,7 +202,12 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
               return RefreshIndicator(
                 onRefresh: () async => _invalidate(q),
                 child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    ShellPillMetrics.contentBottomInset,
+                  ),
                   itemCount: visible.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (_, i) {

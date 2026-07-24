@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../messages/chat-empty-state/index.dart';
 import '../providers/wall_provider.dart';
 import '../providers/wall_state.dart';
@@ -51,7 +52,12 @@ List<Widget> wallFeedSlivers(
   final count = state.posts.length + (state.hasMore ? 1 : 0);
   return [
     SliverPadding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        ShellPillMetrics.contentBottomInset,
+      ),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, i) {
