@@ -14,6 +14,8 @@ Future<CrmLeadFormResult?> showLeadFormSheet(
   required bool canAssignOwner,
   required bool canCreateContact,
   CrmLead? initial,
+  /// Lock create to one contact (contact-detail "New lead").
+  String? fixedContactId,
 }) {
   final colors = Theme.of(context).colorScheme;
   return showModalBottomSheet<CrmLeadFormResult>(
@@ -37,6 +39,7 @@ Future<CrmLeadFormResult?> showLeadFormSheet(
             canAssignOwner: canAssignOwner,
             canCreateContact: canCreateContact,
             initial: initial,
+            fixedContactId: fixedContactId,
           ),
         ),
       );
@@ -52,6 +55,7 @@ class _LeadFormBody extends StatefulWidget {
     required this.canAssignOwner,
     required this.canCreateContact,
     this.initial,
+    this.fixedContactId,
   });
 
   final CrmConfig config;
@@ -60,6 +64,7 @@ class _LeadFormBody extends StatefulWidget {
   final bool canAssignOwner;
   final bool canCreateContact;
   final CrmLead? initial;
+  final String? fixedContactId;
 
   @override
   State<_LeadFormBody> createState() => _LeadFormBodyState();
@@ -92,7 +97,7 @@ class _LeadFormBodyState extends State<_LeadFormBody> {
     _source = TextEditingController(text: i?.source ?? '');
     _newName = TextEditingController();
     _newPhone = TextEditingController();
-    _contactId = i?.contactId ?? '';
+    _contactId = i?.contactId ?? widget.fixedContactId ?? '';
     _pipelineId = i?.pipelineId ?? def?.id ?? _none;
     final stages = _stagesFor(_pipelineId);
     _stageId = i?.stageId ??
@@ -213,7 +218,20 @@ class _LeadFormBodyState extends State<_LeadFormBody> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
             children: [
-              if (!_editing) ...[
+              if (!_editing && widget.fixedContactId != null) ...[
+                Text(
+                  () {
+                    for (final c in widget.contacts) {
+                      if (c.id == widget.fixedContactId) return c.name;
+                    }
+                    return 'Contact';
+                  }(),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ] else if (!_editing) ...[
                 Row(
                   children: [
                     Expanded(

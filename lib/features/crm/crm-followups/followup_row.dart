@@ -10,10 +10,18 @@ class FollowupRow extends StatelessWidget {
     super.key,
     required this.followup,
     required this.onTap,
+    this.onLongPress,
+    this.selected = false,
+    this.selecting = false,
+    this.onToggleSelect,
   });
 
   final CrmFollowup followup;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final bool selected;
+  final bool selecting;
+  final ValueChanged<bool>? onToggleSelect;
 
   ContactBadgeTone _statusTone(String label) => switch (label) {
         'Overdue' => ContactBadgeTone.error,
@@ -39,75 +47,96 @@ class FollowupRow extends StatelessWidget {
     ].join(' · ');
 
     return Material(
-      color: colors.surface,
+      color: selected
+          ? colors.primaryContainer.withValues(alpha: 0.35)
+          : colors.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: onTap,
+        onTap: selecting
+            ? () => onToggleSelect?.call(!selected)
+            : onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(14),
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: colors.outlineVariant.withValues(alpha: 0.65),
+              color: selected
+                  ? colors.primary.withValues(alpha: 0.55)
+                  : colors.outlineVariant.withValues(alpha: 0.65),
               width: 0.9,
             ),
           ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        followup.contactName ?? 'Contact',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    ContactBadge(
-                      label: status,
-                      tone: _statusTone(status),
-                    ),
-                  ],
-                ),
-                if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: status == 'Overdue'
-                          ? colors.error
-                          : colors.onSurfaceVariant,
-                    ),
+                if (selecting) ...[
+                  Checkbox(
+                    value: selected,
+                    onChanged: (v) => onToggleSelect?.call(v ?? false),
                   ),
+                  const SizedBox(width: 4),
                 ],
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    ContactBadge(
-                      label: followup.priority,
-                      tone: _priorityTone(followup.priority),
-                    ),
-                    if ((followup.activityTypeName ?? '').isNotEmpty)
-                      ContactBadge(
-                        label: followup.activityTypeName!,
-                        tone: ContactBadgeTone.secondary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              followup.contactName ?? 'Contact',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          ContactBadge(
+                            label: status,
+                            tone: _statusTone(status),
+                          ),
+                        ],
                       ),
-                    if ((followup.assigneeName ?? '').isNotEmpty)
-                      ContactBadge(
-                        label: followup.assigneeName!,
-                        tone: ContactBadgeTone.tertiary,
+                      if (subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: status == 'Overdue'
+                                ? colors.error
+                                : colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          ContactBadge(
+                            label: followup.priority,
+                            tone: _priorityTone(followup.priority),
+                          ),
+                          if ((followup.activityTypeName ?? '').isNotEmpty)
+                            ContactBadge(
+                              label: followup.activityTypeName!,
+                              tone: ContactBadgeTone.secondary,
+                            ),
+                          if ((followup.assigneeName ?? '').isNotEmpty)
+                            ContactBadge(
+                              label: followup.assigneeName!,
+                              tone: ContactBadgeTone.tertiary,
+                            ),
+                        ],
                       ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),

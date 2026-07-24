@@ -15,6 +15,8 @@ import '../../features/crm/screens/crm_contacts_screen.dart';
 import '../../features/crm/screens/crm_leads_screen.dart';
 import '../../features/crm/screens/crm_lead_detail_screen.dart';
 import '../../features/crm/screens/crm_followups_screen.dart';
+import '../../features/crm/screens/crm_followup_detail_screen.dart';
+import '../../features/crm/screens/crm_contact_detail_screen.dart';
 import '../../features/notifications/providers/fcm_provider.dart';
 import 'home_shell.dart';
 
@@ -84,7 +86,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/crm/leads',
-            builder: (_, _) => const CrmLeadsScreen(),
+            builder: (_, state) => CrmLeadsScreen(
+              contactId: state.uri.queryParameters['contact'],
+            ),
           ),
           GoRoute(
             path: '/crm/followups',
@@ -117,6 +121,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/crm/leads/:id',
         builder: (_, state) => CrmLeadDetailScreen(
           leadId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/crm/contacts/:id',
+        builder: (_, state) => CrmContactDetailScreen(
+          contactId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/crm/followups/:id',
+        builder: (_, state) => CrmFollowupDetailScreen(
+          followupId: state.pathParameters['id']!,
         ),
       ),
     ],

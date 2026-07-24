@@ -40,4 +40,22 @@ class CrmFollowupsApi {
   Future<void> delete(String id) async {
     await _client.delete(ApiConstants.crmFollowup(id));
   }
+
+  /// Bulk: `complete` | `delete` | `reassign` (max 200).
+  Future<int> bulk({
+    required List<String> ids,
+    required String action,
+    String? assignedUserId,
+  }) async {
+    final res = await _client.post(
+      ApiConstants.crmFollowupsBulk,
+      data: {
+        'ids': ids,
+        'action': action,
+        'assigned_user_id': ?assignedUserId,
+      },
+    );
+    final data = unwrapApiData<Map<String, dynamic>>(res);
+    return (data['affected'] as num?)?.toInt() ?? 0;
+  }
 }

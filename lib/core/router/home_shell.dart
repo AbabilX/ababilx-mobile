@@ -32,14 +32,11 @@ class HomeShell extends ConsumerWidget {
     return 0;
   }
 
-  bool _isContacts(String location) =>
-      location == '/crm/contacts' || location.startsWith('/crm/contacts/');
+  bool _isContacts(String location) => location == '/crm/contacts';
 
   bool _isLeads(String location) => location == '/crm/leads';
 
-  bool _isFollowups(String location) =>
-      location == '/crm/followups' || location.startsWith('/crm/followups/');
-
+  bool _isFollowups(String location) => location == '/crm/followups';
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showCrm = ref.watch(canViewCrmProvider);

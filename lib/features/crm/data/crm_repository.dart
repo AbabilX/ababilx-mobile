@@ -24,6 +24,11 @@ class CrmRepository {
 
   Future<List<CrmContact>> listContacts({String? q}) => contacts.list(q: q);
 
+  Future<CrmContact> getContact(String id) => contacts.get(id);
+
+  Future<List<CrmLead>> listContactLeads(String contactId) =>
+      leads.list(contactId: contactId);
+
   Future<CrmContact> createContact(CrmContactInput body) =>
       contacts.create(body);
 
@@ -32,7 +37,8 @@ class CrmRepository {
 
   Future<void> deleteContact(String id) => contacts.delete(id);
 
-  Future<List<CrmLead>> listLeads({String? q}) => leads.list(q: q);
+  Future<List<CrmLead>> listLeads({String? q, String? contactId}) =>
+      leads.list(q: q, contactId: contactId);
 
   Future<CrmLead> getLead(String id) => leads.get(id);
 
@@ -76,6 +82,17 @@ class CrmRepository {
       followups.patch(id, body);
 
   Future<void> deleteFollowup(String id) => followups.delete(id);
+
+  Future<int> bulkFollowups({
+    required List<String> ids,
+    required String action,
+    String? assignedUserId,
+  }) =>
+      followups.bulk(
+        ids: ids,
+        action: action,
+        assignedUserId: assignedUserId,
+      );
 
   Future<List<CrmDocument>> listDocuments(String leadId) =>
       documents.list(leadId);

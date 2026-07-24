@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
@@ -126,6 +127,7 @@ class FollowupSearchDelegate extends SearchDelegate<void> {
                     .read(crmFollowupsUiProvider.notifier)
                     .setSearchQuery(query.trim());
                 close(context, null);
+                context.push('/crm/followups/${f.id}');
               },
             );
           },

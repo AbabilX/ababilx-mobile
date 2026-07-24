@@ -9,7 +9,9 @@ import '../crm-leads/index.dart';
 
 /// Leads route — CRM access gate then list page.
 class CrmLeadsScreen extends ConsumerWidget {
-  const CrmLeadsScreen({super.key});
+  const CrmLeadsScreen({super.key, this.contactId});
+
+  final String? contactId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -52,7 +54,7 @@ class CrmLeadsScreen extends ConsumerWidget {
             ),
           );
         }
-        return const CrmLeadsPage();
+        return CrmLeadsPage(contactId: contactId);
       },
     );
   }

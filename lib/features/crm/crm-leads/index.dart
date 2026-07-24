@@ -8,6 +8,7 @@ import '../../messages/providers/team_gate_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
+import '../providers/crm_contact_detail_provider.dart';
 import '../providers/crm_contacts_provider.dart';
 import '../providers/crm_leads_provider.dart';
 import '../providers/crm_leads_ui_provider.dart';
@@ -18,7 +19,10 @@ import 'lead_row.dart';
 
 /// Leads list — bar: [My|Add|All] + lead-only search pill.
 class CrmLeadsPage extends ConsumerStatefulWidget {
-  const CrmLeadsPage({super.key});
+  const CrmLeadsPage({super.key, this.contactId});
+
+  /// When set (deep-link from contact), only that contact's leads.
+  final String? contactId;
 
   @override
   ConsumerState<CrmLeadsPage> createState() => _CrmLeadsPageState();
@@ -30,6 +34,10 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
 
   void _invalidate(String q) {
     ref.invalidate(crmLeadsProvider(q));
+    final cid = widget.contactId;
+    if (cid != null && cid.isNotEmpty) {
+      ref.invalidate(crmContactLeadsProvider(cid));
+    }
     ref.invalidate(crmConfigProvider);
     ref.invalidate(crmContactsProvider(''));
   }
@@ -168,7 +176,11 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
     final ui = ref.watch(crmLeadsUiProvider);
     final configAsync = ref.watch(crmConfigProvider);
     final q = ui.searchQuery;
-    final leadsAsync = ref.watch(crmLeadsProvider(q));
+    final contactId = widget.contactId;
+    final filterContact = contactId != null && contactId.isNotEmpty;
+    final leadsAsync = filterContact
+        ? ref.watch(crmContactLeadsProvider(contactId))
+        : ref.watch(crmLeadsProvider(q));
     final myId = ref.watch(profileProvider).valueOrNull?.id ?? '';
     final currency =
         configAsync.valueOrNull?.settings.currency ?? 'BDT';
@@ -185,10 +197,22 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.go('/crm'),
+          onPressed: () {
+            if (filterContact) {
+              context.go('/crm/contacts/$contactId');
+            } else {
+              context.go('/crm');
+            }
+          },
         ),
         title: Text(AppTranslations.translate(context, ref, 'crm_leads')),
         actions: [
+          if (filterContact)
+            IconButton(
+              tooltip: 'Clear contact filter',
+              onPressed: () => context.go('/crm/leads'),
+              icon: const Icon(Icons.filter_alt_off_rounded),
+            ),
           if (q.isNotEmpty)
             IconButton(
               tooltip: 'Clear search',
@@ -206,7 +230,20 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
             data: (all) {
               _syncShellMeta(all, myId, perms.create);
               final mine = all.where((l) => isMineLead(l, myId)).toList();
-              final visible = ui.scope == LeadScope.mine ? mine : all;
+              var visible = ui.scope == LeadScope.mine ? mine : all;
+              if (filterContact && q.isNotEmpty) {
+                final lower = q.toLowerCase();
+                visible = visible
+                    .where(
+                      (l) =>
+                          l.title.toLowerCase().contains(lower) ||
+                          (l.contactName ?? '')
+                              .toLowerCase()
+                              .contains(lower) ||
+                          (l.ownerName ?? '').toLowerCase().contains(lower),
+                    )
+                    .toList();
+              }
               if (visible.isEmpty) {
                 final msg = q.isNotEmpty
                     ? 'No matches.'

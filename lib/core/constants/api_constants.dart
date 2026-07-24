@@ -38,6 +38,7 @@ class ApiConstants {
   static String crmDocument(String docId) => '/api/teams/crm/documents/$docId';
   static const String crmFollowups = '/api/teams/crm/followups';
   static String crmFollowup(String id) => '/api/teams/crm/followups/$id';
+  static const String crmFollowupsBulk = '/api/teams/crm/followups/bulk';
   static String crmContactLeads(String contactId) =>
       '/api/teams/crm/contacts/$contactId/leads';
 

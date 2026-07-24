@@ -194,10 +194,19 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if ((lead.contactName ?? '').isNotEmpty)
-                        Text(
-                          lead.contactName!,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+                        InkWell(
+                          onTap: lead.contactId.isNotEmpty
+                              ? () => context
+                                  .push('/crm/contacts/${lead.contactId}')
+                              : null,
+                          child: Text(
+                            lead.contactName!,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: lead.contactId.isNotEmpty
+                                  ? colors.primary
+                                  : null,
+                            ),
                           ),
                         ),
                       if (meta.isNotEmpty) ...[

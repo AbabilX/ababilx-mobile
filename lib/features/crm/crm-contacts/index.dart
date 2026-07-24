@@ -217,16 +217,7 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
                       currency: currency,
                       canUpdate: perms.update,
                       canDelete: perms.delete,
-                      onTap: () {
-                        final msg = AppTranslations.translate(
-                          context,
-                          ref,
-                          'crm_coming_soon',
-                        );
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(SnackBar(content: Text(msg)));
-                      },
+                      onTap: () => context.push('/crm/contacts/${c.id}'),
                       onEdit: () => _openForm(editing: c),
                       onDelete: () => _delete(c, labelSingular),
                     );

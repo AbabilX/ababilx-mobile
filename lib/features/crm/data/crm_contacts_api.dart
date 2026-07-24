@@ -22,6 +22,11 @@ class CrmContactsApi {
     ];
   }
 
+  Future<CrmContact> get(String id) async {
+    final res = await _client.get(ApiConstants.crmContact(id));
+    return CrmContact.fromJson(unwrapApiData<Map<String, dynamic>>(res));
+  }
+
   Future<CrmContact> create(CrmContactInput body) async {
     final res = await _client.post(
       ApiConstants.crmContacts,
