@@ -10,9 +10,15 @@ import '../providers/wall_provider.dart';
 import '../wall-forward/forward_sheet.dart';
 
 class WallPostActions extends ConsumerWidget {
-  const WallPostActions({super.key, required this.post});
+  const WallPostActions({
+    super.key,
+    required this.post,
+    this.onComment,
+  });
 
   final WallPost post;
+  /// When set (e.g. already on post detail), Comment won't push another page.
+  final VoidCallback? onComment;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,7 +38,12 @@ class WallPostActions extends ConsumerWidget {
         _Action(
           icon: HugeIcons.strokeRoundedComment01,
           label: '${post.commentCount}',
-          onTap: () => context.push('/wall/post/${post.id}'),
+          onTap: onComment ??
+              () {
+                final loc = GoRouterState.of(context).matchedLocation;
+                if (loc == '/wall/post/${post.id}') return;
+                context.push('/wall/post/${post.id}');
+              },
         ),
         _Action(
           icon: post.savedByMe

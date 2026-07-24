@@ -23,7 +23,18 @@ class WallAttachment extends Equatable {
   final String uploadedBy;
   final String createdAt;
 
-  bool get isImage => contentType.startsWith('image/');
+  bool get isImage {
+    if (contentType.startsWith('image/')) return true;
+    return RegExp(r'\.(jpe?g|png|gif|webp|bmp|heic|heif|avif|svg)$',
+            caseSensitive: false)
+        .hasMatch(fileName);
+  }
+
+  bool get isPdf {
+    final ct = contentType.toLowerCase();
+    if (ct == 'application/pdf' || ct == 'application/x-pdf') return true;
+    return fileName.toLowerCase().endsWith('.pdf');
+  }
 
   factory WallAttachment.fromJson(Map<String, dynamic> json) => WallAttachment(
         id: json['id'] as String? ?? '',

@@ -9,10 +9,18 @@ class WallCommentComposer extends ConsumerStatefulWidget {
     super.key,
     required this.postId,
     this.parentId,
+    this.replyLabel,
+    this.onClearReply,
+    this.onSent,
+    this.autofocus = false,
   });
 
   final String postId;
   final String? parentId;
+  final String? replyLabel;
+  final VoidCallback? onClearReply;
+  final VoidCallback? onSent;
+  final bool autofocus;
 
   @override
   ConsumerState<WallCommentComposer> createState() =>
@@ -21,11 +29,21 @@ class WallCommentComposer extends ConsumerStatefulWidget {
 
 class _WallCommentComposerState extends ConsumerState<WallCommentComposer> {
   final _ctrl = TextEditingController();
+  final _focus = FocusNode();
   var _busy = false;
+
+  @override
+  void didUpdateWidget(covariant WallCommentComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.parentId != oldWidget.parentId && widget.parentId != null) {
+      _focus.requestFocus();
+    }
+  }
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -40,6 +58,8 @@ class _WallCommentComposerState extends ConsumerState<WallCommentComposer> {
             parentId: widget.parentId,
           );
       _ctrl.clear();
+      widget.onClearReply?.call();
+      widget.onSent?.call();
       ref.invalidate(wallPostProvider(widget.postId));
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -48,51 +68,63 @@ class _WallCommentComposerState extends ConsumerState<WallCommentComposer> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: TextField(
-            controller: _ctrl,
-            minLines: 1,
-            maxLines: 4,
-            decoration: const InputDecoration(
-              hintText: 'Write a comment…',
-              isDense: true,
+        if (widget.replyLabel != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Replying to ${widget.replyLabel}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: scheme.primary,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: widget.onClearReply,
+                  icon: const Icon(Icons.close, size: 18),
+                ),
+              ],
             ),
           ),
-        ),
-        IconButton(
-          onPressed: _busy ? null : _send,
-          icon: _busy
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.send),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _ctrl,
+                focusNode: _focus,
+                autofocus: widget.autofocus,
+                minLines: 1,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: widget.parentId != null
+                      ? 'Write a reply…'
+                      : 'Write a comment…',
+                  isDense: true,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: _busy ? null : _send,
+              icon: _busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send),
+            ),
+          ],
         ),
       ],
     );
   }
-}
-
-Future<void> showWallCommentComposer(
-  BuildContext context,
-  WidgetRef ref, {
-  required String postId,
-  String? parentId,
-}) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (ctx) => Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.viewInsetsOf(ctx).bottom + 16,
-      ),
-      child: WallCommentComposer(postId: postId, parentId: parentId),
-    ),
-  );
 }
