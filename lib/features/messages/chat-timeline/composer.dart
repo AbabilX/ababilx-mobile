@@ -120,6 +120,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     return ComposerExpandedShell(
       pending: _pending,
       onRemove: (i) => setState(() => _pending.removeAt(i)),
+      onAddPhoto: () => _attach(),
       field: ComposerExpandedField(
         controller: _ctrl,
         focusNode: _focus,

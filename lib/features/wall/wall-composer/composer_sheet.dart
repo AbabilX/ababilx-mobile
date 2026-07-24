@@ -5,6 +5,7 @@ import '../../messages/providers/team_gate_provider.dart';
 import '../../team/data/models/team_models.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
+import '../providers/wall_ui_provider.dart';
 import 'composer_form.dart';
 import 'composer_picks.dart';
 import 'composer_submit.dart';
@@ -14,12 +15,19 @@ Future<void> showWallComposerSheet(
   BuildContext context,
   WidgetRef ref, {
   required bool isPremium,
-}) =>
-    showModalBottomSheet<void>(
+}) async {
+  final ui = ref.read(wallUiProvider.notifier);
+  ui.setComposerSheetOpen(true);
+  try {
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (_) => WallComposerSheet(isPremium: isPremium),
     );
+  } finally {
+    ui.setComposerSheetOpen(false);
+  }
+}
 
 class WallComposerSheet extends ConsumerStatefulWidget {
   const WallComposerSheet({super.key, required this.isPremium});

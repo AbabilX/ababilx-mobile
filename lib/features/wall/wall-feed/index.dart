@@ -5,7 +5,7 @@ import '../providers/wall_provider.dart';
 import '../wall-composer/composer_sheet.dart';
 import 'feed_filters.dart';
 import 'feed_sliver_body.dart';
-import 'wall_fab.dart';
+import 'wall_create_post_button.dart';
 
 class WallFeed extends ConsumerWidget {
   const WallFeed({super.key, required this.isPremium});
@@ -17,14 +17,7 @@ class WallFeed extends ConsumerWidget {
     final state = ref.watch(wallProvider);
 
     return Scaffold(
-      floatingActionButton: WallFab(
-        onPressed: () => showWallComposerSheet(
-          context,
-          ref,
-          isPremium: isPremium,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      extendBody: true,
       body: RefreshIndicator(
         onRefresh: () => ref.read(wallProvider.notifier).loadInitial(),
         // Edge offset so pull-to-refresh clears the floating app bar area.
@@ -40,6 +33,15 @@ class WallFeed extends ConsumerWidget {
                 'Wall',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
+              actions: [
+                WallCreatePostButton(
+                  onPressed: () => showWallComposerSheet(
+                    context,
+                    ref,
+                    isPremium: isPremium,
+                  ),
+                ),
+              ],
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(48),
                 child: WallFeedFilters(

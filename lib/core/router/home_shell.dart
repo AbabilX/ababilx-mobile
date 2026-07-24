@@ -7,6 +7,7 @@ import '../../features/crm/providers/crm_contacts_ui_provider.dart';
 import '../../features/messages/chat-list/chat_search.dart';
 import '../../features/messages/providers/chat_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
+import '../../features/wall/providers/wall_ui_provider.dart';
 import '../../features/wall/wall-search/wall_search.dart';
 import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/index.dart';
@@ -42,6 +43,7 @@ class HomeShell extends ConsumerWidget {
     final location = GoRouterState.of(context).matchedLocation;
     final isContacts = _isContacts(location);
     final contactsUi = ref.watch(crmContactsUiProvider);
+    final wallUi = ref.watch(wallUiProvider);
 
     if (!showCrm && location.startsWith('/crm')) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -49,7 +51,8 @@ class HomeShell extends ConsumerWidget {
       });
     }
 
-    final hideBar = isContacts && contactsUi.formSheetOpen;
+    final hideBar = (isContacts && contactsUi.formSheetOpen) ||
+        wallUi.composerSheetOpen;
     final Widget? bar = hideBar
         ? null
         : isContacts

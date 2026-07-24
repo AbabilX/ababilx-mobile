@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
-import '../data/models/wall_models.dart';
-import 'composer_toolbar.dart';
-import 'suggestion_panel.dart';
 import '../../team/data/models/team_models.dart';
+import '../data/models/wall_models.dart';
+import 'attach_image.dart';
+import 'composer_toolbar.dart';
+import 'pending_previews.dart';
+import 'suggestion_panel.dart';
 
-class WallComposerForm extends StatelessWidget {
+class WallComposerForm extends ConsumerWidget {
   const WallComposerForm({
     super.key,
     required this.controller,
@@ -45,8 +49,17 @@ class WallComposerForm extends StatelessWidget {
   final VoidCallback onSubmit;
   final VoidCallback onFieldTap;
 
+  Future<void> _addPhoto(BuildContext context, WidgetRef ref) async {
+    final a = await pickWallImageAttachment(
+      context,
+      ref,
+      isPremium: isPremium,
+    );
+    if (a != null) onAttached(a);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -83,19 +96,34 @@ class WallComposerForm extends StatelessWidget {
             border: OutlineInputBorder(),
           ),
         ),
-        if (pending.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            children: [
-              for (var i = 0; i < pending.length; i++)
-                Chip(
-                  label: Text(pending[i].fileName),
-                  onDeleted: () => onRemovePending(i),
-                ),
-            ],
+        const SizedBox(height: 8),
+        if (pending.isNotEmpty)
+          WallPendingPreviews(
+            items: pending,
+            onRemove: onRemovePending,
+            onAddPhoto: () => _addPhoto(context, ref),
+          )
+        else
+          _EmptyPhotoRow(
+            onCamera: () async {
+              final a = await pickWallImageAttachment(
+                context,
+                ref,
+                isPremium: isPremium,
+                source: ImageSource.camera,
+              );
+              if (a != null) onAttached(a);
+            },
+            onGallery: () async {
+              final a = await pickWallImageAttachment(
+                context,
+                ref,
+                isPremium: isPremium,
+                source: ImageSource.gallery,
+              );
+              if (a != null) onAttached(a);
+            },
           ),
-        ],
         WallComposerActions(
           busy: busy,
           isPremium: isPremium,
@@ -105,6 +133,40 @@ class WallComposerForm extends StatelessWidget {
           onSubmit: onSubmit,
         ),
       ],
+    );
+  }
+}
+
+/// Shown before any attachment — quick Camera / Gallery entry.
+class _EmptyPhotoRow extends StatelessWidget {
+  const _EmptyPhotoRow({
+    required this.onCamera,
+    required this.onGallery,
+  });
+
+  final VoidCallback onCamera;
+  final VoidCallback onGallery;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          OutlinedButton.icon(
+            onPressed: onCamera,
+            icon: Icon(Icons.photo_camera_outlined, color: colors.primary),
+            label: const Text('Camera'),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton.icon(
+            onPressed: onGallery,
+            icon: Icon(Icons.photo_library_outlined, color: colors.primary),
+            label: const Text('Gallery'),
+          ),
+        ],
+      ),
     );
   }
 }

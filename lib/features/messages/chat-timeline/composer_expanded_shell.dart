@@ -8,12 +8,14 @@ class ComposerExpandedShell extends StatelessWidget {
     super.key,
     required this.pending,
     required this.onRemove,
+    required this.onAddPhoto,
     required this.field,
     required this.toolbar,
   });
 
   final List<ChatAttachmentInput> pending;
   final ValueChanged<int> onRemove;
+  final VoidCallback onAddPhoto;
   final Widget field;
   final Widget toolbar;
 
@@ -31,7 +33,11 @@ class ComposerExpandedShell extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (pending.isNotEmpty)
-                ComposerPendingChips(items: pending, onRemove: onRemove),
+                ComposerPendingPreviews(
+                  items: pending,
+                  onRemove: onRemove,
+                  onAddPhoto: onAddPhoto,
+                ),
               field,
               toolbar,
             ],

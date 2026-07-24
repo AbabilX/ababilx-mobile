@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../messages/chat_icon.dart';
 import '../data/models/wall_models.dart';
@@ -24,6 +25,20 @@ class WallComposerActions extends ConsumerWidget {
   final ValueChanged<WallAttachmentInput> onAttached;
   final VoidCallback onSubmit;
 
+  Future<void> _pick(
+    BuildContext context,
+    WidgetRef ref, {
+    ImageSource? source,
+  }) async {
+    final a = await pickWallImageAttachment(
+      context,
+      ref,
+      isPremium: isPremium,
+      source: source,
+    );
+    if (a != null) onAttached(a);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Row(
@@ -42,14 +57,13 @@ class WallComposerActions extends ConsumerWidget {
           ),
         ),
         IconButton(
-          onPressed: () async {
-            final a = await pickWallImageAttachment(
-              context,
-              ref,
-              isPremium: isPremium,
-            );
-            if (a != null) onAttached(a);
-          },
+          tooltip: 'Camera',
+          onPressed: () => _pick(context, ref, source: ImageSource.camera),
+          icon: const ChatIcon(HugeIcons.strokeRoundedCamera01),
+        ),
+        IconButton(
+          tooltip: 'Gallery',
+          onPressed: () => _pick(context, ref, source: ImageSource.gallery),
           icon: const ChatIcon(HugeIcons.strokeRoundedImage01),
         ),
         const Spacer(),
