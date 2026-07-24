@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/crm/crm-contacts/contact_search.dart';
+import '../../features/crm/crm-leads/lead_search.dart';
 import '../../features/crm/providers/crm_contacts_ui_provider.dart';
+import '../../features/crm/providers/crm_leads_ui_provider.dart';
 import '../../features/messages/chat-list/chat_search.dart';
 import '../../features/messages/providers/chat_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
@@ -12,7 +14,7 @@ import '../../features/wall/wall-search/wall_search.dart';
 import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/index.dart';
 
-/// Bottom nav: home pills, or contacts [My|Add|All] + search.
+/// Bottom nav: home pills, or CRM list [My|Add|All] + search.
 ///
 /// Pills are **absolutely** stacked over [child] (not Scaffold.bottomNavigationBar)
 /// so lists/wall posts scroll behind the frosted chrome.
@@ -34,6 +36,9 @@ class HomeShell extends ConsumerWidget {
   bool _isContacts(String location) =>
       location == '/crm/contacts' || location.startsWith('/crm/contacts');
 
+  bool _isLeads(String location) =>
+      location == '/crm/leads' || location.startsWith('/crm/leads');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showCrm = ref.watch(canViewCrmProvider);
@@ -42,7 +47,10 @@ class HomeShell extends ConsumerWidget {
     final unread = ref.watch(totalUnreadProvider);
     final location = GoRouterState.of(context).matchedLocation;
     final isContacts = _isContacts(location);
+    final isLeads = _isLeads(location);
+    final isCrmList = isContacts || isLeads;
     final contactsUi = ref.watch(crmContactsUiProvider);
+    final leadsUi = ref.watch(crmLeadsUiProvider);
     final wallUi = ref.watch(wallUiProvider);
 
     if (!showCrm && location.startsWith('/crm')) {
@@ -52,13 +60,17 @@ class HomeShell extends ConsumerWidget {
     }
 
     final hideBar = (isContacts && contactsUi.formSheetOpen) ||
+        (isLeads && leadsUi.formSheetOpen) ||
         wallUi.hideBottomBar;
+
     final Widget? bar = hideBar
         ? null
-        : isContacts
+        : isCrmList
             ? ShellBottomBar(
                 mode: ShellBottomBarMode.contacts,
-                contactsMineSelected: contactsUi.scope == ContactScope.mine,
+                contactsMineSelected: isLeads
+                    ? leadsUi.scope == LeadScope.mine
+                    : contactsUi.scope == ContactScope.mine,
                 addLabel: AppTranslations.translate(
                   context,
                   ref,
@@ -74,21 +86,46 @@ class HomeShell extends ConsumerWidget {
                   ref,
                   'crm_all_short',
                 ),
-                canAdd: contactsUi.canCreate,
+                canAdd: isLeads ? leadsUi.canCreate : contactsUi.canCreate,
                 onAdd: () {
-                  ref
-                      .read(crmContactsUiProvider.notifier)
-                      .setFormSheetOpen(true);
-                  ref.read(crmContactsUiProvider.notifier).requestAdd();
+                  if (isLeads) {
+                    ref.read(crmLeadsUiProvider.notifier).setFormSheetOpen(true);
+                    ref.read(crmLeadsUiProvider.notifier).requestAdd();
+                  } else {
+                    ref
+                        .read(crmContactsUiProvider.notifier)
+                        .setFormSheetOpen(true);
+                    ref.read(crmContactsUiProvider.notifier).requestAdd();
+                  }
                 },
-                onSelectMine: () => ref
-                    .read(crmContactsUiProvider.notifier)
-                    .setScope(ContactScope.mine),
-                onSelectAll: () => ref
-                    .read(crmContactsUiProvider.notifier)
-                    .setScope(ContactScope.all),
+                onSelectMine: () {
+                  if (isLeads) {
+                    ref
+                        .read(crmLeadsUiProvider.notifier)
+                        .setScope(LeadScope.mine);
+                  } else {
+                    ref
+                        .read(crmContactsUiProvider.notifier)
+                        .setScope(ContactScope.mine);
+                  }
+                },
+                onSelectAll: () {
+                  if (isLeads) {
+                    ref
+                        .read(crmLeadsUiProvider.notifier)
+                        .setScope(LeadScope.all);
+                  } else {
+                    ref
+                        .read(crmContactsUiProvider.notifier)
+                        .setScope(ContactScope.all);
+                  }
+                },
                 onContactsSearch: () {
-                  openContactSearch(context, ref);
+                  if (isLeads) {
+                    openLeadSearch(context, ref);
+                  } else {
+                    openContactSearch(context, ref);
+                  }
                 },
               )
             : ShellBottomBar(

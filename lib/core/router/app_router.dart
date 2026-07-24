@@ -12,6 +12,7 @@ import '../../features/wall/screens/wall_screen.dart';
 import '../../features/wall/screens/wall_post_screen.dart';
 import '../../features/crm/screens/crm_hub_screen.dart';
 import '../../features/crm/screens/crm_contacts_screen.dart';
+import '../../features/crm/screens/crm_leads_screen.dart';
 import '../../features/notifications/providers/fcm_provider.dart';
 import 'home_shell.dart';
 
@@ -78,6 +79,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/crm/contacts',
             builder: (_, _) => const CrmContactsScreen(),
+          ),
+          GoRoute(
+            path: '/crm/leads',
+            builder: (_, _) => const CrmLeadsScreen(),
           ),
           GoRoute(
             path: '/crm',

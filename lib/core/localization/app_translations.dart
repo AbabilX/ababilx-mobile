@@ -49,6 +49,10 @@ class AppTranslations {
       'crm_add_short': 'Add',
       'crm_search_contacts': 'Search name, email, company…',
       'crm_search_empty': 'No contacts found',
+      'crm_search_leads': 'Search title, contact, owner…',
+      'crm_search_leads_empty': 'No leads found',
+      'crm_leads_empty_mine': 'No leads assigned to you yet.',
+      'crm_leads_empty_all': 'No leads yet.',
       'crm_delete_confirm': 'This cannot be undone.',
 
       'app_language': 'Application Language',
@@ -94,6 +98,10 @@ class AppTranslations {
       'crm_add_short': 'যোগ',
       'crm_search_contacts': 'নাম, ইমেইল, কোম্পানি খুঁজুন…',
       'crm_search_empty': 'কোনো কন্টাক্ট পাওয়া যায়নি',
+      'crm_search_leads': 'টাইটেল, কন্টাক্ট, ওনার খুঁজুন…',
+      'crm_search_leads_empty': 'কোনো লিড পাওয়া যায়নি',
+      'crm_leads_empty_mine': 'তোমার কোনো লিড এখনো নেই।',
+      'crm_leads_empty_all': 'এখনো কোনো লিড নেই।',
       'crm_delete_confirm': 'এটি আর ফেরানো যাবে না।',
 
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',

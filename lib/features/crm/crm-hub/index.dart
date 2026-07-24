@@ -17,6 +17,10 @@ class CrmHub extends ConsumerWidget {
       context.go('/crm/contacts');
       return;
     }
+    if (item.id == 'leads') {
+      context.go('/crm/leads');
+      return;
+    }
     final msg = AppTranslations.translate(context, ref, 'crm_coming_soon');
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()

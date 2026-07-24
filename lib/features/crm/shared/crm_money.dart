@@ -21,3 +21,8 @@ bool isMineContact(CrmContact c, String myId) {
   if (myId.isEmpty) return false;
   return c.ownerUserId == myId || c.createdBy == myId;
 }
+
+bool isMineLead(CrmLead l, String myId) {
+  if (myId.isEmpty) return false;
+  return l.ownerUserId == myId || l.createdBy == myId;
+}
