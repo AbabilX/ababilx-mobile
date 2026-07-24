@@ -116,6 +116,19 @@ class ApiClient {
       _dio.delete<T>(path, data: data);
 }
 
+/// Unwraps AbabilX `{ success, data, error }` envelope (same as web `apiFetch`).
+T unwrapApiData<T>(Response response) {
+  final body = response.data;
+  if (body is! Map) {
+    throw Exception('Invalid API response');
+  }
+  final map = Map<String, dynamic>.from(body);
+  if (map['success'] != true) {
+    throw Exception(map['error']?.toString() ?? 'API error');
+  }
+  return map['data'] as T;
+}
+
 // ---------------------------------------------------------------------------
 // Providers
 // ---------------------------------------------------------------------------
