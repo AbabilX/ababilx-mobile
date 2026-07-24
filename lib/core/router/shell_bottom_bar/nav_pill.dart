@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'nav_tab_item.dart';
+import 'search_pill.dart';
+import 'shell_pill_metrics.dart';
 
 /// Left floating nav — Messages | Wall | (CRM?) | Profile.
 class NavPill extends StatelessWidget {
@@ -26,12 +28,11 @@ class NavPill extends StatelessWidget {
   final bool showCrm;
   final int unread;
 
-  static const double height = 64;
+  static const double height = ShellPillMetrics.height;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    // Tab indices shift when CRM is hidden: Profile is 2 instead of 3.
     final profileIndex = showCrm ? 3 : 2;
 
     return Container(
@@ -40,15 +41,7 @@ class NavPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(height / 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: scheme.brightness == Brightness.dark ? 0.35 : 0.12,
-            ),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        boxShadow: shellPillShadow(scheme),
       ),
       child: Row(
         children: [

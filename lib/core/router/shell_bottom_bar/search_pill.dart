@@ -2,8 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../features/messages/chat_icon.dart';
+import 'shell_pill_metrics.dart';
 
-/// Right circular action — same size as home search pill.
+List<BoxShadow> shellPillShadow(ColorScheme scheme) => [
+      BoxShadow(
+        color: Colors.black.withValues(
+          alpha: scheme.brightness == Brightness.dark ? 0.35 : 0.12,
+        ),
+        blurRadius: 16,
+        offset: const Offset(0, 6),
+      ),
+    ];
+
+/// Right circular action — **same height** as left [NavPill] / contacts pill.
 class ActionPill extends StatelessWidget {
   const ActionPill({
     super.key,
@@ -16,7 +27,7 @@ class ActionPill extends StatelessWidget {
   final VoidCallback? onTap;
   final bool enabled;
 
-  static const double size = 64;
+  static const double size = ShellPillMetrics.height;
 
   @override
   Widget build(BuildContext context) {
@@ -26,19 +37,18 @@ class ActionPill extends StatelessWidget {
         : scheme.onSurfaceVariant.withValues(alpha: 0.35);
 
     return Material(
-      color: scheme.surfaceContainerHigh,
-      elevation: 8,
-      shadowColor: Colors.black.withValues(
-        alpha: scheme.brightness == Brightness.dark ? 0.4 : 0.14,
-      ),
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
+      color: Colors.transparent,
       child: InkWell(
         onTap: enabled ? onTap : null,
         customBorder: const CircleBorder(),
-        child: SizedBox(
+        child: Ink(
           width: size,
           height: size,
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHigh,
+            shape: BoxShape.circle,
+            boxShadow: shellPillShadow(scheme),
+          ),
           child: Center(
             child: ChatIcon(icon, size: 24, color: color),
           ),
@@ -48,7 +58,7 @@ class ActionPill extends StatelessWidget {
   }
 }
 
-/// Home search — thin wrapper over [ActionPill].
+/// Home / contacts search — thin wrapper over [ActionPill].
 class SearchPill extends StatelessWidget {
   const SearchPill({super.key, required this.onTap});
 

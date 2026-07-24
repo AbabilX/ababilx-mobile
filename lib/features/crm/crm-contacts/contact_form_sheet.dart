@@ -5,7 +5,7 @@ import '../data/models/crm_models.dart';
 
 const _noneOwner = '__none__';
 
-/// Create/edit contact bottom sheet — theme colors only.
+/// Create/edit contact sheet — close (top-left) + save (top-right).
 Future<CrmContactInput?> showContactFormSheet(
   BuildContext context, {
   required CrmConfig config,
@@ -18,20 +18,27 @@ Future<CrmContactInput?> showContactFormSheet(
   return showModalBottomSheet<CrmContactInput>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: colors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
-    builder: (ctx) => Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
-      child: _ContactFormBody(
-        config: config,
-        members: members.where((m) => m.status == 'active').toList(),
-        contactLabel: contactLabel,
-        canAssignOwner: canAssignOwner,
-        initial: initial,
-      ),
-    ),
+    builder: (ctx) {
+      final h = MediaQuery.sizeOf(ctx).height;
+      return SizedBox(
+        height: h * 0.92,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+          child: _ContactFormBody(
+            config: config,
+            members: members.where((m) => m.status == 'active').toList(),
+            contactLabel: contactLabel,
+            canAssignOwner: canAssignOwner,
+            initial: initial,
+          ),
+        ),
+      );
+    },
   );
 }
 
@@ -118,137 +125,138 @@ class _ContactFormBodyState extends State<_ContactFormBody> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final editing = widget.initial != null;
+    final canSave = _name.text.trim().isNotEmpty;
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: colors.outlineVariant,
-                  borderRadius: BorderRadius.circular(99),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: 'Close',
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close_rounded),
+              ),
+              Expanded(
+                child: Text(
+                  editing
+                      ? 'Edit ${widget.contactLabel}'
+                      : 'New ${widget.contactLabel}',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
-            Text(
-              editing
-                  ? 'Edit ${widget.contactLabel}'
-                  : 'New ${widget.contactLabel}',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+              TextButton(
+                onPressed: canSave ? _submit : null,
+                child: Text(
+                  'Save',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: canSave ? colors.primary : colors.onSurfaceVariant,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _name,
-              autofocus: !editing,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Phone',
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _company,
-              decoration: const InputDecoration(
-                labelText: 'Company',
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _source,
-              decoration: const InputDecoration(
-                labelText: 'Source',
-                isDense: true,
-              ),
-            ),
-            if (widget.canAssignOwner) ...[
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                key: ValueKey(_ownerId),
-                initialValue: _ownerId,
+            ],
+          ),
+        ),
+        Divider(height: 1, color: colors.outlineVariant.withValues(alpha: 0.5)),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            children: [
+              TextField(
+                controller: _name,
+                autofocus: !editing,
+                textCapitalization: TextCapitalization.words,
+                onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(
-                  labelText: 'Owner',
+                  labelText: 'Name',
                   isDense: true,
                 ),
-                items: [
-                  const DropdownMenuItem(
-                    value: _noneOwner,
-                    child: Text('Unassigned'),
-                  ),
-                  for (final m in widget.members)
-                    DropdownMenuItem(
-                      value: m.userId,
-                      child: Text(m.displayName),
-                    ),
-                ],
-                onChanged: (v) => setState(() => _ownerId = v ?? _noneOwner),
               ),
-            ],
-            const SizedBox(height: 12),
-            TextField(
-              controller: _tags,
-              decoration: const InputDecoration(
-                labelText: 'Tags',
-                hintText: 'comma, separated',
-                isDense: true,
-              ),
-            ),
-            for (final f in widget.config.fields) ...[
               const SizedBox(height: 12),
-              _CustomField(
-                def: f,
-                value: _custom[f.key],
-                onChanged: (v) => setState(() => _custom[f.key] = v),
-              ),
-            ],
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  isDense: true,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _submit,
-                    child: Text(editing ? 'Save' : 'Create'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Phone',
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _company,
+                decoration: const InputDecoration(
+                  labelText: 'Company',
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _source,
+                decoration: const InputDecoration(
+                  labelText: 'Source',
+                  isDense: true,
+                ),
+              ),
+              if (widget.canAssignOwner) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  key: ValueKey(_ownerId),
+                  initialValue: _ownerId,
+                  decoration: const InputDecoration(
+                    labelText: 'Owner',
+                    isDense: true,
                   ),
+                  items: [
+                    const DropdownMenuItem(
+                      value: _noneOwner,
+                      child: Text('Unassigned'),
+                    ),
+                    for (final m in widget.members)
+                      DropdownMenuItem(
+                        value: m.userId,
+                        child: Text(m.displayName),
+                      ),
+                  ],
+                  onChanged: (v) =>
+                      setState(() => _ownerId = v ?? _noneOwner),
                 ),
               ],
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: _tags,
+                decoration: const InputDecoration(
+                  labelText: 'Tags',
+                  hintText: 'comma, separated',
+                  isDense: true,
+                ),
+              ),
+              for (final f in widget.config.fields) ...[
+                const SizedBox(height: 12),
+                _CustomField(
+                  def: f,
+                  value: _custom[f.key],
+                  onChanged: (v) => setState(() => _custom[f.key] = v),
+                ),
+              ],
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

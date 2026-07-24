@@ -46,7 +46,9 @@ class AppTranslations {
       'crm_all_contacts': 'All contacts',
       'crm_my_short': 'My',
       'crm_all_short': 'All',
+      'crm_add_short': 'Add',
       'crm_search_contacts': 'Search name, email, company…',
+      'crm_search_empty': 'No contacts found',
       'crm_delete_confirm': 'This cannot be undone.',
 
       'app_language': 'Application Language',
@@ -89,7 +91,9 @@ class AppTranslations {
       'crm_all_contacts': 'সব কন্টাক্টস',
       'crm_my_short': 'আমার',
       'crm_all_short': 'সব',
+      'crm_add_short': 'যোগ',
       'crm_search_contacts': 'নাম, ইমেইল, কোম্পানি খুঁজুন…',
+      'crm_search_empty': 'কোনো কন্টাক্ট পাওয়া যায়নি',
       'crm_delete_confirm': 'এটি আর ফেরানো যাবে না।',
 
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',

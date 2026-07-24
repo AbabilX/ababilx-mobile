@@ -1,45 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import 'nav_pill.dart';
 import 'nav_tab_item.dart';
+import 'search_pill.dart';
+import 'shell_pill_metrics.dart';
 
-/// Left pill for contacts: My contacts | All contacts (same chrome as [NavPill]).
+/// Left pill for contacts: My | Add | All — height matches [ActionPill].
 class ContactsScopePill extends StatelessWidget {
   const ContactsScopePill({
     super.key,
     required this.selectedIsMine,
+    required this.addLabel,
     required this.mineLabel,
     required this.allLabel,
+    required this.canAdd,
+    required this.onAdd,
     required this.onSelectMine,
     required this.onSelectAll,
   });
 
   final bool selectedIsMine;
+  final String addLabel;
   final String mineLabel;
   final String allLabel;
+  final bool canAdd;
+  final VoidCallback onAdd;
   final VoidCallback onSelectMine;
   final VoidCallback onSelectAll;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    const h = ShellPillMetrics.height;
 
     return Container(
-      height: NavPill.height,
+      height: h,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(NavPill.height / 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: scheme.brightness == Brightness.dark ? 0.35 : 0.12,
-            ),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(h / 2),
+        boxShadow: shellPillShadow(scheme),
       ),
       child: Row(
         children: [
@@ -49,6 +49,13 @@ class ContactsScopePill extends StatelessWidget {
             label: mineLabel,
             selected: selectedIsMine,
             onTap: onSelectMine,
+          ),
+          NavTabItem(
+            icon: HugeIcons.strokeRoundedAdd01,
+            selectedIcon: HugeIcons.strokeRoundedAdd01,
+            label: addLabel,
+            selected: false,
+            onTap: canAdd ? onAdd : () {},
           ),
           NavTabItem(
             icon: HugeIcons.strokeRoundedUserGroup,
