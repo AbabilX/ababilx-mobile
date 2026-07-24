@@ -241,16 +241,7 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
                       currency: currency,
                       canUpdate: perms.update,
                       canDelete: perms.delete,
-                      onTap: () {
-                        final msg = AppTranslations.translate(
-                          context,
-                          ref,
-                          'crm_coming_soon',
-                        );
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(SnackBar(content: Text(msg)));
-                      },
+                      onTap: () => context.push('/crm/leads/${lead.id}'),
                       onEdit: () => _openForm(editing: lead),
                       onDelete: () => _delete(lead),
                     );

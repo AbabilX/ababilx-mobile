@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import 'crm_config_api.dart';
 import 'crm_contacts_api.dart';
+import 'crm_documents_api.dart';
+import 'crm_followups_api.dart';
 import 'crm_leads_api.dart';
 import 'models/crm_models.dart';
 
@@ -10,14 +12,17 @@ class CrmRepository {
   CrmRepository(ApiClient client)
       : contacts = CrmContactsApi(client),
         leads = CrmLeadsApi(client),
+        followups = CrmFollowupsApi(client),
+        documents = CrmDocumentsApi(client),
         config = CrmConfigApi(client);
 
   final CrmContactsApi contacts;
   final CrmLeadsApi leads;
+  final CrmFollowupsApi followups;
+  final CrmDocumentsApi documents;
   final CrmConfigApi config;
 
-  Future<List<CrmContact>> listContacts({String? q}) =>
-      contacts.list(q: q);
+  Future<List<CrmContact>> listContacts({String? q}) => contacts.list(q: q);
 
   Future<CrmContact> createContact(CrmContactInput body) =>
       contacts.create(body);
@@ -29,13 +34,68 @@ class CrmRepository {
 
   Future<List<CrmLead>> listLeads({String? q}) => leads.list(q: q);
 
+  Future<CrmLead> getLead(String id) => leads.get(id);
+
   Future<CrmLead> createLead(String contactId, CrmLeadInput body) =>
       leads.create(contactId, body);
 
   Future<CrmLead> updateLead(String id, CrmLeadInput body) =>
       leads.update(id, body);
 
+  Future<CrmLead> updateLeadStage(
+    String id, {
+    required String stageId,
+    String? pipelineId,
+  }) =>
+      leads.updateStage(id, stageId: stageId, pipelineId: pipelineId);
+
   Future<void> deleteLead(String id) => leads.delete(id);
+
+  Future<List<CrmTimelineEvent>> leadTimeline(String id) => leads.timeline(id);
+
+  Future<List<CrmNote>> listNotes(String leadId) => leads.listNotes(leadId);
+
+  Future<CrmNote> createNote(String leadId, String body) =>
+      leads.createNote(leadId, body);
+
+  Future<void> deleteNote(String noteId) => leads.deleteNote(noteId);
+
+  Future<List<CrmActivity>> listActivities(String leadId) =>
+      leads.listActivities(leadId);
+
+  Future<CrmActivity> createActivity(String leadId, CrmActivityInput body) =>
+      leads.createActivity(leadId, body);
+
+  Future<List<CrmFollowup>> listFollowups({String? leadId}) =>
+      followups.list(leadId: leadId);
+
+  Future<CrmFollowup> createFollowup(CrmFollowupInput body) =>
+      followups.create(body);
+
+  Future<CrmFollowup> patchFollowup(String id, CrmFollowupPatch body) =>
+      followups.patch(id, body);
+
+  Future<void> deleteFollowup(String id) => followups.delete(id);
+
+  Future<List<CrmDocument>> listDocuments(String leadId) =>
+      documents.list(leadId);
+
+  Future<CrmDocument> uploadDocument(
+    String leadId, {
+    required List<int> bytes,
+    required String fileName,
+    required String mimeType,
+    String? label,
+  }) =>
+      documents.upload(
+        leadId,
+        bytes: bytes,
+        fileName: fileName,
+        mimeType: mimeType,
+        label: label,
+      );
+
+  Future<void> deleteDocument(String docId) => documents.delete(docId);
 
   Future<CrmConfig> getConfig() => config.get();
 }

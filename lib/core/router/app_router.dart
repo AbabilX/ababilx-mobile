@@ -13,6 +13,7 @@ import '../../features/wall/screens/wall_post_screen.dart';
 import '../../features/crm/screens/crm_hub_screen.dart';
 import '../../features/crm/screens/crm_contacts_screen.dart';
 import '../../features/crm/screens/crm_leads_screen.dart';
+import '../../features/crm/screens/crm_lead_detail_screen.dart';
 import '../../features/notifications/providers/fcm_provider.dart';
 import 'home_shell.dart';
 
@@ -105,6 +106,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/wall/post/:postId',
         builder: (_, state) => WallPostScreen(
           postId: state.pathParameters['postId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/crm/leads/:id',
+        builder: (_, state) => CrmLeadDetailScreen(
+          leadId: state.pathParameters['id']!,
         ),
       ),
     ],

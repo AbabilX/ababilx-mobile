@@ -23,6 +23,21 @@ class ApiConstants {
   static String crmContact(String id) => '/api/teams/crm/contacts/$id';
   static const String crmLeads = '/api/teams/crm/leads';
   static String crmLead(String id) => '/api/teams/crm/leads/$id';
+  static String crmLeadStage(String id) => '/api/teams/crm/leads/$id/stage';
+  static String crmLeadTimeline(String id) =>
+      '/api/teams/crm/leads/$id/timeline';
+  static String crmLeadNotes(String id) => '/api/teams/crm/leads/$id/notes';
+  static String crmNote(String noteId) => '/api/teams/crm/notes/$noteId';
+  static String crmLeadActivities(String id) =>
+      '/api/teams/crm/leads/$id/activities';
+  static String crmLeadDocuments(String id) =>
+      '/api/teams/crm/leads/$id/documents';
+  static String crmLeadDocumentsPresign(String id) =>
+      '/api/teams/crm/leads/$id/documents/presign';
+  static const String crmDocumentsDiscard = '/api/teams/crm/documents/discard';
+  static String crmDocument(String docId) => '/api/teams/crm/documents/$docId';
+  static const String crmFollowups = '/api/teams/crm/followups';
+  static String crmFollowup(String id) => '/api/teams/crm/followups/$id';
   static String crmContactLeads(String contactId) =>
       '/api/teams/crm/contacts/$contactId/leads';
 

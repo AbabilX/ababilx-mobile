@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
 
+import 'crm_detail_models.dart';
+export 'crm_detail_models.dart';
+
 /// Per-module grant set (matches backend `ModuleActions` JSON).
 class ModuleActions extends Equatable {
   const ModuleActions({
@@ -205,11 +208,13 @@ class CrmConfig extends Equatable {
   const CrmConfig({
     this.settings = const CrmSettings(),
     this.pipelines = const [],
+    this.activityTypes = const [],
     this.fields = const [],
   });
 
   final CrmSettings settings;
   final List<CrmPipeline> pipelines;
+  final List<CrmActivityType> activityTypes;
   final List<CrmFieldDef> fields;
 
   CrmPipeline? get defaultPipeline {
@@ -226,13 +231,19 @@ class CrmConfig extends Equatable {
         pipelines: (json['pipelines'] as List<dynamic>? ?? [])
             .map((e) => CrmPipeline.fromJson(e as Map<String, dynamic>))
             .toList(),
+        activityTypes: (json['activity_types'] as List<dynamic>? ?? [])
+            .map((e) => CrmActivityType.fromJson(e as Map<String, dynamic>))
+            .where((a) => a.isActive)
+            .toList()
+          ..sort((a, b) => a.position.compareTo(b.position)),
         fields: (json['fields'] as List<dynamic>? ?? [])
             .map((e) => CrmFieldDef.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
 
   @override
-  List<Object?> get props => [settings, pipelines.length, fields.length];
+  List<Object?> get props =>
+      [settings, pipelines.length, activityTypes.length, fields.length];
 }
 
 class CrmContact extends Equatable {
