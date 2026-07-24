@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 import 'data/models/chat_models.dart';
+import 'tiptap_plain_text.dart';
 
 String formatChatTime(String? iso) {
   if (iso == null || iso.isEmpty) return '';
@@ -57,8 +58,8 @@ String conversationPreview(ChatConversation conv) {
     }
     return name != null ? 'File: $name' : 'Attachment';
   }
-  final body = conv.lastMessageBody?.trim();
-  if (body != null && body.isNotEmpty) return body;
+  final body = tiptapToPlainText(conv.lastMessageBody).trim();
+  if (body.isNotEmpty) return body;
   return 'No messages yet';
 }
 

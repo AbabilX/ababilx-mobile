@@ -60,21 +60,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/messages',
             builder: (_, _) => const MessagesScreen(),
-            routes: [
-              GoRoute(
-                path: ':id',
-                builder: (_, state) => ConversationScreen(
-                  conversationId: state.pathParameters['id']!,
-                  threadRootId: state.uri.queryParameters['thread'],
-                ),
-              ),
-            ],
           ),
           GoRoute(
             path: '/profile',
             builder: (_, _) => const ProfileScreen(),
           ),
         ],
+      ),
+      // Full-screen chat — outside shell so bottom nav is hidden.
+      GoRoute(
+        path: '/messages/:id',
+        builder: (_, state) => ConversationScreen(
+          conversationId: state.pathParameters['id']!,
+          threadRootId: state.uri.queryParameters['thread'],
+        ),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

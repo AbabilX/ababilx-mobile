@@ -3,8 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../team/data/models/team_models.dart';
+import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../providers/team_gate_provider.dart';
+
+Future<ChatConversation?> showNewDmDialog(
+  BuildContext context,
+  WidgetRef ref,
+) {
+  return showModalBottomSheet<ChatConversation>(
+    context: context,
+    isScrollControlled: true,
+    builder: (ctx) => const NewDmSheet(),
+  );
+}
 
 class NewDmSheet extends ConsumerWidget {
   const NewDmSheet({super.key});

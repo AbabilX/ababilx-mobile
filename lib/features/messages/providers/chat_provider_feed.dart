@@ -1,0 +1,147 @@
+part of 'chat_provider.dart';
+
+mixin _ChatFeedMixin on Notifier<ChatState> {
+  ChatRepository get repo;
+
+  void setFeed(String key, ChatFeed feed) {
+    state = state.copyWith(feeds: {...state.feeds, key: feed});
+  }
+
+  Future<void> loadFeed(
+    String conversationId, {
+    String? threadRootId,
+    bool force = false,
+  }) async {
+    final key = feedKey(conversationId, threadRootId: threadRootId);
+    final existing = state.feeds[key] ?? const ChatFeed();
+    final hasMessages = existing.messages.isNotEmpty;
+    final stale = existing.fetchedAt == 0 ||
+        DateTime.now().millisecondsSinceEpoch - existing.fetchedAt >
+            feedStaleMs;
+    if (!force && hasMessages && !stale) return;
+    if (!hasMessages) setFeed(key, existing.copyWith(loading: true));
+    try {
+      final page = await repo.listMessages(
+        conversationId,
+        limit: threadRootId != null ? 100 : 50,
+        thread: threadRootId,
+      );
+      final sorted =
+          threadRootId != null ? page.messages : page.messages.reversed.toList();
+      setFeed(
+        key,
+        ChatFeed(
+          messages: sorted,
+          nextCursor: page.nextCursor,
+          hasMore: page.hasMore,
+          fetchedAt: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+    } catch (_) {
+      setFeed(key, (state.feeds[key] ?? const ChatFeed()).copyWith(loading: false));
+    }
+  }
+
+  Future<void> loadMoreFeed(
+    String conversationId, {
+    String? threadRootId,
+  }) async {
+    final key = feedKey(conversationId, threadRootId: threadRootId);
+    final feed = state.feeds[key] ?? const ChatFeed();
+    if (!feed.hasMore || feed.nextCursor.isEmpty || feed.loadingMore) return;
+    setFeed(key, feed.copyWith(loadingMore: true));
+    try {
+      final page = await repo.listMessages(
+        conversationId,
+        cursor: feed.nextCursor,
+        limit: threadRootId != null ? 100 : 50,
+        thread: threadRootId,
+      );
+      final sorted =
+          threadRootId != null ? page.messages : page.messages.reversed.toList();
+      setFeed(
+        key,
+        feed.copyWith(
+          messages: [...sorted, ...feed.messages],
+          loadingMore: false,
+          nextCursor: page.nextCursor,
+          hasMore: page.hasMore,
+          fetchedAt: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+    } catch (_) {
+      setFeed(key, feed.copyWith(loadingMore: false));
+    }
+  }
+
+  void appendFeedMessage(
+    String conversationId,
+    ChatMessage msg, {
+    String? threadRootId,
+  }) {
+    final key = feedKey(conversationId, threadRootId: threadRootId);
+    final feed = state.feeds[key] ?? const ChatFeed();
+    if (feed.messages.any((m) => m.id == msg.id)) return;
+    setFeed(
+      key,
+      feed.copyWith(
+        messages: [...feed.messages, msg],
+        fetchedAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+
+  void updateFeedMessage(
+    String conversationId,
+    ChatMessage msg, {
+    String? threadRootId,
+  }) {
+    final key = feedKey(conversationId, threadRootId: threadRootId);
+    final feed = state.feeds[key];
+    if (feed == null) return;
+    setFeed(
+      key,
+      feed.copyWith(
+        messages: feed.messages.map((m) => m.id == msg.id ? msg : m).toList(),
+        fetchedAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+
+  void removeFeedMessage(
+    String conversationId,
+    String messageId, {
+    String? threadRootId,
+  }) {
+    final key = feedKey(conversationId, threadRootId: threadRootId);
+    final feed = state.feeds[key];
+    if (feed == null) return;
+    setFeed(
+      key,
+      feed.copyWith(
+        messages: feed.messages.where((m) => m.id != messageId).toList(),
+      ),
+    );
+  }
+
+  void updateFeedReactions(
+    String conversationId,
+    String messageId,
+    List<ChatReactionGroup> reactions, {
+    String? threadRootId,
+  }) {
+    final key = feedKey(conversationId, threadRootId: threadRootId);
+    final feed = state.feeds[key];
+    if (feed == null) return;
+    setFeed(
+      key,
+      feed.copyWith(
+        messages: feed.messages
+            .map((m) =>
+                m.id == messageId ? m.copyWith(reactions: reactions) : m)
+            .toList(),
+        fetchedAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+}

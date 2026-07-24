@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+import '../../features/messages/chat_icon.dart';
 import '../../features/messages/providers/chat_provider.dart';
 import '../../core/localization/app_translations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Bottom nav: Messages + Profile.
 class HomeShell extends ConsumerWidget {
@@ -32,14 +35,14 @@ class HomeShell extends ConsumerWidget {
             icon: Badge(
               isLabelVisible: unread > 0,
               label: Text(unread > 99 ? '99+' : '$unread'),
-              child: const Icon(Icons.chat_bubble_outline_rounded),
+              child: const ChatIcon(HugeIcons.strokeRoundedBubbleChat),
             ),
-            selectedIcon: const Icon(Icons.chat_bubble_rounded),
+            selectedIcon: const ChatIcon(HugeIcons.strokeRoundedMessage01),
             label: AppTranslations.translate(context, ref, 'messages'),
           ),
           NavigationDestination(
-            icon: const Icon(Icons.person_outline_rounded),
-            selectedIcon: const Icon(Icons.person_rounded),
+            icon: const ChatIcon(HugeIcons.strokeRoundedUser02),
+            selectedIcon: const ChatIcon(HugeIcons.strokeRoundedUser03),
             label: AppTranslations.translate(context, ref, 'profile'),
           ),
         ],
