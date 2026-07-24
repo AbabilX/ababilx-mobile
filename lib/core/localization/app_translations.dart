@@ -53,6 +53,9 @@ class AppTranslations {
       'crm_search_leads_empty': 'No leads found',
       'crm_leads_empty_mine': 'No leads assigned to you yet.',
       'crm_leads_empty_all': 'No leads yet.',
+      'crm_search_followups': 'Search contact, company, assignee…',
+      'crm_search_followups_empty': 'No follow-ups found',
+      'crm_followups_empty': 'No follow-ups match this view.',
       'crm_delete_confirm': 'This cannot be undone.',
 
       'app_language': 'Application Language',
@@ -102,6 +105,9 @@ class AppTranslations {
       'crm_search_leads_empty': 'কোনো লিড পাওয়া যায়নি',
       'crm_leads_empty_mine': 'তোমার কোনো লিড এখনো নেই।',
       'crm_leads_empty_all': 'এখনো কোনো লিড নেই।',
+      'crm_search_followups': 'কন্টাক্ট, কোম্পানি, অ্যাসাইনি খুঁজুন…',
+      'crm_search_followups_empty': 'কোনো ফলো-আপ পাওয়া যায়নি',
+      'crm_followups_empty': 'এই ভিউতে কোনো ফলো-আপ নেই।',
       'crm_delete_confirm': 'এটি আর ফেরানো যাবে না।',
 
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',

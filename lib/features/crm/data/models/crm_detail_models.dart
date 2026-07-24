@@ -186,9 +186,13 @@ class CrmFollowup extends Equatable {
     this.status = 'pending',
     this.outcome = '',
     this.notes = '',
+    this.createdBy = '',
+    this.completedAt,
     this.assigneeName,
     this.activityTypeName,
     this.contactName,
+    this.contactCompany,
+    this.contactPhone,
   });
 
   final String id;
@@ -201,9 +205,13 @@ class CrmFollowup extends Equatable {
   final String status;
   final String outcome;
   final String notes;
+  final String createdBy;
+  final String? completedAt;
   final String? assigneeName;
   final String? activityTypeName;
   final String? contactName;
+  final String? contactCompany;
+  final String? contactPhone;
 
   bool get isPending => status == 'pending';
 
@@ -218,9 +226,13 @@ class CrmFollowup extends Equatable {
         status: json['status'] as String? ?? 'pending',
         outcome: json['outcome'] as String? ?? '',
         notes: json['notes'] as String? ?? '',
+        createdBy: json['created_by'] as String? ?? '',
+        completedAt: json['completed_at'] as String?,
         assigneeName: json['assignee_name'] as String?,
         activityTypeName: json['activity_type_name'] as String?,
         contactName: json['contact_name'] as String?,
+        contactCompany: json['contact_company'] as String?,
+        contactPhone: json['contact_phone'] as String?,
       );
 
   @override

@@ -4,13 +4,19 @@ import '../data/models/crm_models.dart';
 
 const _none = '__none__';
 
-/// Create/edit follow-up (lead locked; assignee inherited from lead owner).
+/// Create/edit follow-up.
+/// Pass [lead] to lock; or [leads] for picker (list page Add).
 Future<CrmFollowupInput?> showFollowupFormSheet(
   BuildContext context, {
-  required CrmLead lead,
+  CrmLead? lead,
+  List<CrmLead>? leads,
   required List<CrmActivityType> activityTypes,
   CrmFollowup? initial,
 }) {
+  assert(
+    lead != null || (leads != null && leads.isNotEmpty) || initial != null,
+    'Need lead, leads, or initial',
+  );
   final colors = Theme.of(context).colorScheme;
   return showModalBottomSheet<CrmFollowupInput>(
     context: context,
@@ -23,11 +29,12 @@ Future<CrmFollowupInput?> showFollowupFormSheet(
     builder: (ctx) {
       final h = MediaQuery.sizeOf(ctx).height;
       return SizedBox(
-        height: h * 0.75,
+        height: h * 0.8,
         child: Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
           child: _FollowupFormBody(
             lead: lead,
+            leads: leads ?? const [],
             activityTypes: activityTypes,
             initial: initial,
           ),
@@ -39,12 +46,14 @@ Future<CrmFollowupInput?> showFollowupFormSheet(
 
 class _FollowupFormBody extends StatefulWidget {
   const _FollowupFormBody({
-    required this.lead,
+    this.lead,
+    required this.leads,
     required this.activityTypes,
     this.initial,
   });
 
-  final CrmLead lead;
+  final CrmLead? lead;
+  final List<CrmLead> leads;
   final List<CrmActivityType> activityTypes;
   final CrmFollowup? initial;
 
@@ -57,6 +66,18 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
   late DateTime _when;
   late String _typeId;
   late String _priority;
+  late String _leadId;
+
+  bool get _editing => widget.initial != null;
+  bool get _leadLocked => widget.lead != null || _editing;
+
+  CrmLead? get _selectedLead {
+    if (widget.lead != null) return widget.lead;
+    for (final l in widget.leads) {
+      if (l.id == _leadId) return l;
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -69,6 +90,7 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
         : DateTime.now().add(const Duration(hours: 24));
     _typeId = i?.activityTypeId ?? _none;
     _priority = i?.priority ?? 'medium';
+    _leadId = i?.leadId ?? widget.lead?.id ?? '';
   }
 
   @override
@@ -95,11 +117,14 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
     });
   }
 
+  bool get _canSave => _leadId.isNotEmpty;
+
   void _submit() {
+    if (!_canSave) return;
     Navigator.pop(
       context,
       CrmFollowupInput(
-        leadId: widget.lead.id,
+        leadId: _leadId,
         scheduledAt: _when.toUtc().toIso8601String(),
         activityTypeId: _typeId == _none ? null : _typeId,
         priority: _priority,
@@ -113,7 +138,7 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final editing = widget.initial != null;
+    final selected = _selectedLead;
 
     return Column(
       children: [
@@ -127,7 +152,7 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
               ),
               Expanded(
                 child: Text(
-                  editing ? 'Edit follow-up' : 'New follow-up',
+                  _editing ? 'Edit follow-up' : 'New follow-up',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
@@ -135,12 +160,12 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
                 ),
               ),
               TextButton(
-                onPressed: _submit,
+                onPressed: _canSave ? _submit : null,
                 child: Text(
                   'Save',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: colors.primary,
+                    color: _canSave ? colors.primary : colors.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -152,24 +177,68 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
             children: [
-              Text(
-                widget.lead.title.isEmpty
-                    ? (widget.lead.contactName ?? 'Lead')
-                    : widget.lead.title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
+              if (_leadLocked) ...[
+                Text(
+                  selected?.title.isNotEmpty == true
+                      ? selected!.title
+                      : (selected?.contactName ??
+                          widget.initial?.contactName ??
+                          'Lead'),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              if ((widget.lead.ownerName ?? '').isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    'Assigned to ${widget.lead.ownerName}',
+                if ((selected?.ownerName ?? widget.initial?.assigneeName ?? '')
+                    .isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Assigned to ${selected?.ownerName ?? widget.initial?.assigneeName}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+              ] else ...[
+                DropdownButtonFormField<String>(
+                  key: ValueKey(_leadId.isEmpty ? _none : _leadId),
+                  initialValue: _leadId.isEmpty ? _none : _leadId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Lead *',
+                    isDense: true,
+                  ),
+                  items: [
+                    const DropdownMenuItem(
+                      value: _none,
+                      child: Text('Select lead'),
+                    ),
+                    for (final l in widget.leads)
+                      DropdownMenuItem(
+                        value: l.id,
+                        child: Text(
+                          l.title.isNotEmpty
+                              ? l.title
+                              : (l.contactName ?? l.id),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() {
+                    _leadId = (v == null || v == _none) ? '' : v;
+                  }),
+                ),
+                if (selected != null &&
+                    (selected.ownerName ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Assigned to ${selected.ownerName}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
                   ),
-                ),
+                ],
+              ],
               const SizedBox(height: 16),
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -182,6 +251,7 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
               DropdownButtonFormField<String>(
                 key: ValueKey(_typeId),
                 initialValue: _typeId,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Activity type',
                   isDense: true,
@@ -189,7 +259,10 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
                 items: [
                   const DropdownMenuItem(value: _none, child: Text('None')),
                   for (final t in widget.activityTypes)
-                    DropdownMenuItem(value: t.id, child: Text(t.name)),
+                    DropdownMenuItem(
+                      value: t.id,
+                      child: Text(t.name, overflow: TextOverflow.ellipsis),
+                    ),
                 ],
                 onChanged: (v) => setState(() => _typeId = v ?? _none),
               ),
@@ -197,6 +270,7 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
               DropdownButtonFormField<String>(
                 key: ValueKey(_priority),
                 initialValue: _priority,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Priority',
                   isDense: true,

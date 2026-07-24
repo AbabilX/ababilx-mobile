@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/crm/crm-contacts/contact_search.dart';
+import '../../features/crm/crm-followups/followup_search.dart';
 import '../../features/crm/crm-leads/lead_search.dart';
 import '../../features/crm/providers/crm_contacts_ui_provider.dart';
+import '../../features/crm/providers/crm_followups_ui_provider.dart';
 import '../../features/crm/providers/crm_leads_ui_provider.dart';
 import '../../features/messages/chat-list/chat_search.dart';
 import '../../features/messages/providers/chat_provider.dart';
@@ -15,9 +17,6 @@ import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/index.dart';
 
 /// Bottom nav: home pills, or CRM list [My|Add|All] + search.
-///
-/// Pills are **absolutely** stacked over [child] (not Scaffold.bottomNavigationBar)
-/// so lists/wall posts scroll behind the frosted chrome.
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
@@ -34,10 +33,12 @@ class HomeShell extends ConsumerWidget {
   }
 
   bool _isContacts(String location) =>
-      location == '/crm/contacts' || location.startsWith('/crm/contacts');
+      location == '/crm/contacts' || location.startsWith('/crm/contacts/');
 
-  bool _isLeads(String location) =>
-      location == '/crm/leads' || location.startsWith('/crm/leads');
+  bool _isLeads(String location) => location == '/crm/leads';
+
+  bool _isFollowups(String location) =>
+      location == '/crm/followups' || location.startsWith('/crm/followups/');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,9 +49,11 @@ class HomeShell extends ConsumerWidget {
     final location = GoRouterState.of(context).matchedLocation;
     final isContacts = _isContacts(location);
     final isLeads = _isLeads(location);
-    final isCrmList = isContacts || isLeads;
+    final isFollowups = _isFollowups(location);
+    final isCrmList = isContacts || isLeads || isFollowups;
     final contactsUi = ref.watch(crmContactsUiProvider);
     final leadsUi = ref.watch(crmLeadsUiProvider);
+    final followupsUi = ref.watch(crmFollowupsUiProvider);
     final wallUi = ref.watch(wallUiProvider);
 
     if (!showCrm && location.startsWith('/crm')) {
@@ -61,16 +64,26 @@ class HomeShell extends ConsumerWidget {
 
     final hideBar = (isContacts && contactsUi.formSheetOpen) ||
         (isLeads && leadsUi.formSheetOpen) ||
+        (isFollowups && followupsUi.formSheetOpen) ||
         wallUi.hideBottomBar;
+
+    final mineSelected = isFollowups
+        ? followupsUi.scope == FollowupScope.mine
+        : isLeads
+            ? leadsUi.scope == LeadScope.mine
+            : contactsUi.scope == ContactScope.mine;
+    final canAdd = isFollowups
+        ? followupsUi.canCreate
+        : isLeads
+            ? leadsUi.canCreate
+            : contactsUi.canCreate;
 
     final Widget? bar = hideBar
         ? null
         : isCrmList
             ? ShellBottomBar(
                 mode: ShellBottomBarMode.contacts,
-                contactsMineSelected: isLeads
-                    ? leadsUi.scope == LeadScope.mine
-                    : contactsUi.scope == ContactScope.mine,
+                contactsMineSelected: mineSelected,
                 addLabel: AppTranslations.translate(
                   context,
                   ref,
@@ -86,9 +99,14 @@ class HomeShell extends ConsumerWidget {
                   ref,
                   'crm_all_short',
                 ),
-                canAdd: isLeads ? leadsUi.canCreate : contactsUi.canCreate,
+                canAdd: canAdd,
                 onAdd: () {
-                  if (isLeads) {
+                  if (isFollowups) {
+                    ref
+                        .read(crmFollowupsUiProvider.notifier)
+                        .setFormSheetOpen(true);
+                    ref.read(crmFollowupsUiProvider.notifier).requestAdd();
+                  } else if (isLeads) {
                     ref.read(crmLeadsUiProvider.notifier).setFormSheetOpen(true);
                     ref.read(crmLeadsUiProvider.notifier).requestAdd();
                   } else {
@@ -99,7 +117,11 @@ class HomeShell extends ConsumerWidget {
                   }
                 },
                 onSelectMine: () {
-                  if (isLeads) {
+                  if (isFollowups) {
+                    ref
+                        .read(crmFollowupsUiProvider.notifier)
+                        .setScope(FollowupScope.mine);
+                  } else if (isLeads) {
                     ref
                         .read(crmLeadsUiProvider.notifier)
                         .setScope(LeadScope.mine);
@@ -110,7 +132,11 @@ class HomeShell extends ConsumerWidget {
                   }
                 },
                 onSelectAll: () {
-                  if (isLeads) {
+                  if (isFollowups) {
+                    ref
+                        .read(crmFollowupsUiProvider.notifier)
+                        .setScope(FollowupScope.all);
+                  } else if (isLeads) {
                     ref
                         .read(crmLeadsUiProvider.notifier)
                         .setScope(LeadScope.all);
@@ -121,7 +147,9 @@ class HomeShell extends ConsumerWidget {
                   }
                 },
                 onContactsSearch: () {
-                  if (isLeads) {
+                  if (isFollowups) {
+                    openFollowupSearch(context, ref);
+                  } else if (isLeads) {
                     openLeadSearch(context, ref);
                   } else {
                     openContactSearch(context, ref);
@@ -150,7 +178,6 @@ class HomeShell extends ConsumerWidget {
               );
 
     return Scaffold(
-      // Full-bleed body — no bottomNavigationBar inset.
       body: Stack(
         fit: StackFit.expand,
         children: [
