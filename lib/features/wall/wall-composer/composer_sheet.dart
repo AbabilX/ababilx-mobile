@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../messages/providers/team_gate_provider.dart';
+import '../../team/data/models/team_models.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
-import '../wall_utils.dart';
-import 'composer_toolbar.dart';
+import 'composer_form.dart';
+import 'composer_picks.dart';
+import 'composer_submit.dart';
+import 'composer_trigger.dart';
 
 Future<void> showWallComposerSheet(
   BuildContext context,
   WidgetRef ref, {
   required bool isPremium,
-}) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (ctx) => WallComposerSheet(isPremium: isPremium),
-  );
-}
+}) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => WallComposerSheet(isPremium: isPremium),
+    );
 
 class WallComposerSheet extends ConsumerStatefulWidget {
   const WallComposerSheet({super.key, required this.isPremium});
@@ -28,15 +31,37 @@ class WallComposerSheet extends ConsumerStatefulWidget {
 
 class _WallComposerSheetState extends ConsumerState<WallComposerSheet> {
   final _ctrl = TextEditingController();
-  final _mentions = <String>{};
+  final _focus = FocusNode();
+  final _mentions = <String, String>{};
   final _pending = <WallAttachmentInput>[];
-  String? _category;
+  WallCategory? _category;
+  ComposerTrigger? _trigger;
   var _busy = false;
 
   @override
+  void initState() {
+    super.initState();
+    _ctrl.addListener(_syncTrigger);
+  }
+
+  @override
   void dispose() {
+    _ctrl.removeListener(_syncTrigger);
     _ctrl.dispose();
+    _focus.dispose();
     super.dispose();
+  }
+
+  void _syncTrigger() {
+    final t = detectComposerTrigger(
+      _ctrl.text,
+      _ctrl.selection.baseOffset.clamp(0, _ctrl.text.length),
+    );
+    if (t?.start != _trigger?.start ||
+        t?.query != _trigger?.query ||
+        t?.isMention != _trigger?.isMention) {
+      setState(() => _trigger = t);
+    }
   }
 
   Future<void> _submit() async {
@@ -44,13 +69,14 @@ class _WallComposerSheetState extends ConsumerState<WallComposerSheet> {
     if ((plain.isEmpty && _pending.isEmpty) || _busy) return;
     setState(() => _busy = true);
     try {
-      await ref.read(wallProvider.notifier).createPost(
-            body: wallBodyForApi(plain.isEmpty ? ' ' : plain),
-            category: _category,
-            attachments: _pending.isEmpty ? null : _pending,
-            mentionedUserIds: _mentions.isEmpty ? null : _mentions.toList(),
-          );
-      if (mounted) Navigator.pop(context);
+      await submitWallComposer(
+        ref: ref,
+        context: context,
+        plain: plain,
+        mentions: _mentions,
+        category: _category,
+        pending: _pending,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -62,72 +88,61 @@ class _WallComposerSheetState extends ConsumerState<WallComposerSheet> {
     }
   }
 
+  void _pickMember(TeamMember m) {
+    final t = _trigger;
+    if (t == null || !t.isMention) return;
+    applyComposerTrigger(_ctrl, t, m.displayName);
+    setState(() {
+      _mentions[m.displayName] = m.userId;
+      _trigger = null;
+    });
+  }
+
+  void _insert(String ch) {
+    insertComposerChar(_ctrl, ch);
+    _focus.requestFocus();
+    _syncTrigger();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cats = ref.watch(wallProvider).categories;
     final inset = MediaQuery.viewInsetsOf(context).bottom;
-
+    final trigger = _trigger;
+    final isAt = trigger?.isMention == true;
+    final isHash = trigger?.isMention == false;
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + inset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Create post',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _ctrl,
-            minLines: 4,
-            maxLines: 8,
-            decoration: const InputDecoration(
-              hintText: 'Share an update…',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (cats.isNotEmpty)
-            DropdownButtonFormField<String?>(
-              initialValue: _category,
-              decoration: const InputDecoration(labelText: 'Category'),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('None')),
-                for (final c in cats)
-                  DropdownMenuItem(value: c.slug, child: Text(c.label)),
-              ],
-              onChanged: (v) => setState(() => _category = v),
-            ),
-          if (_pending.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              children: [
-                for (var i = 0; i < _pending.length; i++)
-                  Chip(
-                    label: Text(_pending[i].fileName),
-                    onDeleted: () => setState(() => _pending.removeAt(i)),
-                  ),
-              ],
-            ),
-          ],
-          WallComposerActions(
-            busy: _busy,
-            isPremium: widget.isPremium,
-            onMentioned: (id, name) {
-              setState(() {
-                _mentions.add(id);
-                _ctrl.text = '${_ctrl.text}@$name '.trimLeft();
-                _ctrl.selection = TextSelection.collapsed(
-                  offset: _ctrl.text.length,
-                );
-              });
-            },
-            onAttached: (a) => setState(() => _pending.add(a)),
-            onSubmit: _submit,
-          ),
-        ],
+      child: WallComposerForm(
+        controller: _ctrl,
+        focusNode: _focus,
+        triggerIsMention: trigger?.isMention,
+        showSuggestions: trigger != null,
+        members: isAt
+            ? filterMentionMembers(ref.read(teamMembersProvider), trigger!.query)
+            : const [],
+        categories: isHash
+            ? filterWallCategories(
+                ref.read(wallProvider).categories,
+                trigger!.query,
+              )
+            : const [],
+        pending: _pending,
+        busy: _busy,
+        isPremium: widget.isPremium,
+        onPickMember: _pickMember,
+        onPickCategory: (c) {
+          applyCategoryPick(_ctrl, next: c, previous: _category);
+          setState(() {
+            _category = c;
+            _trigger = null;
+          });
+        },
+        onRemovePending: (i) => setState(() => _pending.removeAt(i)),
+        onInsertAt: () => _insert('@'),
+        onInsertHash: () => _insert('#'),
+        onAttached: (a) => setState(() => _pending.add(a)),
+        onSubmit: _submit,
+        onFieldTap: _syncTrigger,
       ),
     );
   }

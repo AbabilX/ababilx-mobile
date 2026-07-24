@@ -81,6 +81,14 @@ String _nodeToPlainText(dynamic node) {
     }
     return '@';
   }
+  if (type == 'wallCategory') {
+    final attrs = map['attrs'];
+    if (attrs is Map) {
+      final label = attrs['label'] ?? attrs['id'] ?? '';
+      return '#$label';
+    }
+    return '#';
+  }
   final text = map['text'];
   if (text is String) return text;
   final content = map['content'];

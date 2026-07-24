@@ -5,21 +5,22 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../messages/chat_icon.dart';
 import '../data/models/wall_models.dart';
 import 'attach_image.dart';
-import 'mention_picker.dart';
 
 class WallComposerActions extends ConsumerWidget {
   const WallComposerActions({
     super.key,
     required this.busy,
     required this.isPremium,
-    required this.onMentioned,
+    required this.onInsertAt,
+    required this.onInsertHash,
     required this.onAttached,
     required this.onSubmit,
   });
 
   final bool busy;
   final bool isPremium;
-  final void Function(String userId, String name) onMentioned;
+  final VoidCallback onInsertAt;
+  final VoidCallback onInsertHash;
   final ValueChanged<WallAttachmentInput> onAttached;
   final VoidCallback onSubmit;
 
@@ -28,11 +29,17 @@ class WallComposerActions extends ConsumerWidget {
     return Row(
       children: [
         IconButton(
-          onPressed: () async {
-            final m = await showWallMentionPicker(context, ref);
-            if (m != null) onMentioned(m.userId, m.displayName);
-          },
+          tooltip: 'Mention',
+          onPressed: onInsertAt,
           icon: const ChatIcon(HugeIcons.strokeRoundedAt),
+        ),
+        IconButton(
+          tooltip: 'Category',
+          onPressed: onInsertHash,
+          icon: const Text(
+            '#',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
         ),
         IconButton(
           onPressed: () async {
