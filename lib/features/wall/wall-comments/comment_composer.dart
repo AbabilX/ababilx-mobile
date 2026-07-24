@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../messages/chat-timeline/composer_collapsed.dart';
+import '../../messages/chat-timeline/composer_soon.dart';
 import '../providers/wall_provider.dart';
 import '../wall_utils.dart';
+import 'comment_expanded.dart';
 
 class WallCommentComposer extends ConsumerStatefulWidget {
   const WallCommentComposer({
@@ -12,7 +15,6 @@ class WallCommentComposer extends ConsumerStatefulWidget {
     this.replyLabel,
     this.onClearReply,
     this.onSent,
-    this.autofocus = false,
   });
 
   final String postId;
@@ -20,7 +22,6 @@ class WallCommentComposer extends ConsumerStatefulWidget {
   final String? replyLabel;
   final VoidCallback? onClearReply;
   final VoidCallback? onSent;
-  final bool autofocus;
 
   @override
   ConsumerState<WallCommentComposer> createState() =>
@@ -31,12 +32,39 @@ class _WallCommentComposerState extends ConsumerState<WallCommentComposer> {
   final _ctrl = TextEditingController();
   final _focus = FocusNode();
   var _busy = false;
+  var _tall = false;
+  var _focused = false;
+  var _forceExpanded = false;
+
+  bool get _hasDraft => _ctrl.text.trim().isNotEmpty;
+  bool get _expanded =>
+      _forceExpanded || _focused || _hasDraft || widget.parentId != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl.addListener(() => setState(() {}));
+    _focus.addListener(_onFocus);
+  }
+
+  void _onFocus() {
+    setState(() {
+      _focused = _focus.hasFocus;
+      if (!_focus.hasFocus && !_hasDraft && widget.parentId == null) {
+        _forceExpanded = false;
+        _tall = false;
+      }
+    });
+  }
 
   @override
   void didUpdateWidget(covariant WallCommentComposer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.parentId != oldWidget.parentId && widget.parentId != null) {
-      _focus.requestFocus();
+      setState(() => _forceExpanded = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focus.requestFocus();
+      });
     }
   }
 
@@ -60,71 +88,45 @@ class _WallCommentComposerState extends ConsumerState<WallCommentComposer> {
       _ctrl.clear();
       widget.onClearReply?.call();
       widget.onSent?.call();
+      setState(() {
+        _forceExpanded = false;
+        _tall = false;
+      });
+      _focus.unfocus();
       ref.invalidate(wallPostProvider(widget.postId));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
+  void _openExpanded() {
+    setState(() => _forceExpanded = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (widget.replyLabel != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Replying to ${widget.replyLabel}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: scheme.primary,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  onPressed: widget.onClearReply,
-                  icon: const Icon(Icons.close, size: 18),
-                ),
-              ],
-            ),
-          ),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _ctrl,
-                focusNode: _focus,
-                autofocus: widget.autofocus,
-                minLines: 1,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: widget.parentId != null
-                      ? 'Write a reply…'
-                      : 'Write a comment…',
-                  isDense: true,
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: _busy ? null : _send,
-              icon: _busy
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.send),
-            ),
-          ],
-        ),
-      ],
+    if (!_expanded) {
+      return ComposerCollapsed(
+        hint: 'Write a comment…',
+        onFocusTap: _openExpanded,
+        onPlus: () => showComposerSoon(context, 'Attachments'),
+        onMic: () => showComposerSoon(context, 'Voice comments'),
+      );
+    }
+    return WallCommentExpanded(
+      controller: _ctrl,
+      focusNode: _focus,
+      hint: widget.parentId != null ? 'Write a reply…' : 'Jot something down',
+      tall: _tall,
+      busy: _busy,
+      canSend: _hasDraft,
+      replyLabel: widget.replyLabel,
+      onClearReply: widget.onClearReply,
+      onToggleTall: () => setState(() => _tall = !_tall),
+      onSend: _send,
     );
   }
 }

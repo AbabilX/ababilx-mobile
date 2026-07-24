@@ -5,23 +5,19 @@ import '../../../shared/widgets/app_avatar.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
 import '../wall_utils.dart';
-import 'comment_composer.dart';
 
-class WallCommentThread extends ConsumerStatefulWidget {
-  const WallCommentThread({super.key, required this.post});
+class WallCommentThread extends ConsumerWidget {
+  const WallCommentThread({
+    super.key,
+    required this.post,
+    required this.onReply,
+  });
 
   final WallPost post;
+  final ValueChanged<WallComment> onReply;
 
   @override
-  ConsumerState<WallCommentThread> createState() => _WallCommentThreadState();
-}
-
-class _WallCommentThreadState extends ConsumerState<WallCommentThread> {
-  WallComment? _replyTo;
-
-  @override
-  Widget build(BuildContext context) {
-    final post = widget.post;
+  Widget build(BuildContext context, WidgetRef ref) {
     final roots = post.comments.where((c) => c.parentId == null).toList();
     final replies = <String, List<WallComment>>{};
     for (final c in post.comments) {
@@ -30,10 +26,18 @@ class _WallCommentThreadState extends ConsumerState<WallCommentThread> {
       replies.putIfAbsent(p, () => []).add(c);
     }
 
-    // Reply-to-reply stays depth-2: always attach under the root parent.
-    final parentId = _replyTo == null
-        ? null
-        : (_replyTo!.parentId ?? _replyTo!.id);
+    if (roots.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Text(
+          'No comments yet',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
 
     return Column(
       children: [
@@ -41,7 +45,7 @@ class _WallCommentThreadState extends ConsumerState<WallCommentThread> {
           _CommentTile(
             comment: root,
             postId: post.id,
-            onReply: () => setState(() => _replyTo = root),
+            onReply: () => onReply(root),
           ),
           for (final r in replies[root.id] ?? const <WallComment>[])
             Padding(
@@ -49,17 +53,10 @@ class _WallCommentThreadState extends ConsumerState<WallCommentThread> {
               child: _CommentTile(
                 comment: r,
                 postId: post.id,
-                onReply: () => setState(() => _replyTo = r),
+                onReply: () => onReply(r),
               ),
             ),
         ],
-        const SizedBox(height: 12),
-        WallCommentComposer(
-          postId: post.id,
-          parentId: parentId,
-          replyLabel: _replyTo?.userName,
-          onClearReply: () => setState(() => _replyTo = null),
-        ),
       ],
     );
   }

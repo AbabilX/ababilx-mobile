@@ -14,11 +14,14 @@ class WallPostActions extends ConsumerWidget {
     super.key,
     required this.post,
     this.onComment,
+    this.showComment = true,
   });
 
   final WallPost post;
   /// When set (e.g. already on post detail), Comment won't push another page.
   final VoidCallback? onComment;
+  /// Hide on post detail — composer is already fixed at the bottom.
+  final bool showComment;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,16 +38,17 @@ class WallPostActions extends ConsumerWidget {
             if (emoji != null) await n.react(post.id, emoji);
           },
         ),
-        _Action(
-          icon: HugeIcons.strokeRoundedComment01,
-          label: '${post.commentCount}',
-          onTap: onComment ??
-              () {
-                final loc = GoRouterState.of(context).matchedLocation;
-                if (loc == '/wall/post/${post.id}') return;
-                context.push('/wall/post/${post.id}');
-              },
-        ),
+        if (showComment)
+          _Action(
+            icon: HugeIcons.strokeRoundedComment01,
+            label: '${post.commentCount}',
+            onTap: onComment ??
+                () {
+                  final loc = GoRouterState.of(context).matchedLocation;
+                  if (loc == '/wall/post/${post.id}') return;
+                  context.push('/wall/post/${post.id}');
+                },
+          ),
         _Action(
           icon: post.savedByMe
               ? HugeIcons.strokeRoundedBookmark02

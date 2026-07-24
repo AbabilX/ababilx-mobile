@@ -6,13 +6,21 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../messages/chat_icon.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
+import '../wall-comments/comment_composer.dart';
 import '../wall-comments/comment_thread.dart';
 import '../wall-post/post_card.dart';
 
-class WallPostScreen extends ConsumerWidget {
+class WallPostScreen extends ConsumerStatefulWidget {
   const WallPostScreen({super.key, required this.postId});
 
   final String postId;
+
+  @override
+  ConsumerState<WallPostScreen> createState() => _WallPostScreenState();
+}
+
+class _WallPostScreenState extends ConsumerState<WallPostScreen> {
+  WallComment? _replyTo;
 
   WallPost _resolve(WallPost fetched, List<WallPost> feed) {
     for (final p in feed) {
@@ -22,10 +30,12 @@ class WallPostScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(wallPostProvider(postId));
+  Widget build(BuildContext context) {
+    final async = ref.watch(wallPostProvider(widget.postId));
     final feed = ref.watch(wallProvider).posts;
     final scheme = Theme.of(context).colorScheme;
+    final parentId =
+        _replyTo == null ? null : (_replyTo!.parentId ?? _replyTo!.id);
 
     return Scaffold(
       appBar: AppBar(
@@ -42,20 +52,36 @@ class WallPostScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Failed to load\n$e')),
         data: (post) {
           final shown = _resolve(post, feed);
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          return Column(
             children: [
-              WallPostCard(post: shown, expanded: true),
-              const SizedBox(height: 16),
-              Text(
-                'Comments',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: scheme.onSurface,
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  children: [
+                    WallPostCard(post: shown, expanded: true),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Comments',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    WallCommentThread(
+                      post: shown,
+                      onReply: (c) => setState(() => _replyTo = c),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              WallCommentThread(post: shown),
+              WallCommentComposer(
+                postId: shown.id,
+                parentId: parentId,
+                replyLabel: _replyTo?.userName,
+                onClearReply: () => setState(() => _replyTo = null),
+                onSent: () => setState(() => _replyTo = null),
+              ),
             ],
           );
         },

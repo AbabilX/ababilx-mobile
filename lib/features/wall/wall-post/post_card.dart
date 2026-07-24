@@ -74,7 +74,8 @@ class WallPostCard extends ConsumerWidget {
             const SizedBox(height: 8),
             WallPostActions(
               post: post,
-              onComment: onComment ?? (expanded ? () {} : null),
+              showComment: !expanded,
+              onComment: onComment,
             ),
           ],
         ),
