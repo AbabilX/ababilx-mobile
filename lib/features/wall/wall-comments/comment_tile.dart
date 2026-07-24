@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
+import '../wall_delete_confirm.dart';
 import '../wall_utils.dart';
 
 class WallCommentTile extends ConsumerWidget {
@@ -74,9 +75,7 @@ class WallCommentTile extends ConsumerWidget {
                     ),
                     if (comment.userId == me)
                       TextButton(
-                        onPressed: () => ref
-                            .read(wallProvider.notifier)
-                            .deleteComment(postId, comment.id),
+                        onPressed: () => _confirmDelete(context, ref),
                         child: const Text('Delete'),
                       ),
                     if (onReply != null)
@@ -92,5 +91,15 @@ class WallCommentTile extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final ok = await confirmWallDelete(
+      context,
+      title: 'Delete comment?',
+      message: 'This comment will be removed. This cannot be undone.',
+    );
+    if (!ok || !context.mounted) return;
+    await ref.read(wallProvider.notifier).deleteComment(postId, comment.id);
   }
 }

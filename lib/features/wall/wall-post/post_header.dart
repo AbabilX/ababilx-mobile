@@ -6,6 +6,7 @@ import '../../../shared/widgets/app_avatar.dart';
 import '../../messages/chat_icon.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
+import '../wall_delete_confirm.dart';
 import '../wall_utils.dart';
 
 class WallPostHeader extends ConsumerWidget {
@@ -97,7 +98,13 @@ class WallPostHeader extends ConsumerWidget {
         ),
       ),
     );
-    if (action == 'delete' && context.mounted) {
+    if (action != 'delete' || !context.mounted) return;
+    final ok = await confirmWallDelete(
+      context,
+      title: 'Delete post?',
+      message: 'This post and its comments will be removed. This cannot be undone.',
+    );
+    if (ok && context.mounted) {
       await ref.read(wallProvider.notifier).deletePost(post.id);
     }
   }
