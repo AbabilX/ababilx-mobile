@@ -93,7 +93,7 @@ class ApiConstants {
   // Devices (FCM)
   static const String devices = '/api/devices';
 
-  // Workspace Cmd+K search (solo premium)
+  // Workspace Cmd+K search (team premium — all members)
   static const String aiSearchMessages = '/api/ai/search-messages';
 
   // WebSocket

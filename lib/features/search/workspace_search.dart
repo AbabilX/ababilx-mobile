@@ -180,7 +180,7 @@ class _WorkspaceSearchBodyState extends State<_WorkspaceSearchBody> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'Workspace search needs Solo Premium (same as web ⌘K).',
+            'Workspace search needs a premium team plan.',
             textAlign: TextAlign.center,
             style: TextStyle(color: colors.onSurfaceVariant),
           ),
