@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../chat-header/index.dart';
 import '../chat-timeline/index.dart';
+import '../nav_back.dart';
 import '../providers/chat_provider.dart';
 
 class ConversationScreen extends ConsumerStatefulWidget {
@@ -45,13 +47,20 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final chat = ref.watch(chatProvider);
     final conversation = chat.conversationById(widget.conversationId);
 
-    return Scaffold(
-      body: ChatTimeline(
-        conversationId: widget.conversationId,
-        threadRootId: widget.threadRootId,
-        header: conversation != null
-            ? ChatHeader(conversation: conversation)
-            : const _FallbackHeader(),
+    final canPop = context.canPop();
+    return PopScope(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/messages');
+      },
+      child: Scaffold(
+        body: ChatTimeline(
+          conversationId: widget.conversationId,
+          threadRootId: widget.threadRootId,
+          header: conversation != null
+              ? ChatHeader(conversation: conversation)
+              : const _FallbackHeader(),
+        ),
       ),
     );
   }
@@ -71,7 +80,7 @@ class _FallbackHeader extends StatelessWidget {
           child: NavigationToolbar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).maybePop(),
+              onPressed: () => popOrGoMessages(context),
             ),
             middle: const Text(
               'Conversation',

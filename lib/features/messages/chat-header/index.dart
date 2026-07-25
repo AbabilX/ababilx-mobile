@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
+import '../nav_back.dart';
 import '../providers/chat_provider.dart';
 import 'dm-actions-sheet.dart';
 import 'group-details-dialog.dart';
@@ -31,7 +32,7 @@ class ChatHeader extends ConsumerWidget {
           child: NavigationToolbar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).maybePop(),
+              onPressed: () => popOrGoMessages(context),
             ),
             middle: Column(
               mainAxisAlignment: MainAxisAlignment.center,
