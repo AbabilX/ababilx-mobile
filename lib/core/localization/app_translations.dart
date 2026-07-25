@@ -69,6 +69,18 @@ class AppTranslations {
       'notif_enable_body': 'Tap to allow push alerts for standups and team updates.',
       'notif_enabled': 'Notifications enabled',
       'notif_still_denied': 'Permission still denied — check system settings',
+      'battery_opt_title': 'Battery optimization',
+      'battery_opt_need_body':
+          'Turn off optimization so push notifications keep working in the background.',
+      'battery_opt_ok_body':
+          'Unrestricted — AbabilX can deliver notifications reliably.',
+      'battery_opt_prompt_body':
+          'Android may pause AbabilX to save battery, which stops notifications after a while. Allow “Ignore battery optimizations” so alerts keep working like WhatsApp.',
+      'battery_opt_allow': 'Allow',
+      'battery_opt_later': 'Later',
+      'battery_opt_enabled': 'Battery optimization disabled for AbabilX',
+      'battery_opt_still_denied':
+          'Still restricted — enable Unrestricted in battery settings',
     },
     'bn': {
       'login_subtitle':
@@ -123,6 +135,18 @@ class AppTranslations {
       'notif_enabled': 'নোটিফিকেশন চালু হয়েছে',
       'notif_still_denied':
           'অনুমতি এখনো বন্ধ — সিস্টেম সেটিংস চেক করুন',
+      'battery_opt_title': 'ব্যাটারি অপটিমাইজেশন',
+      'battery_opt_need_body':
+          'ব্যাকগ্রাউন্ডে নোটিফিকেশন চালু রাখতে অপটিমাইজেশন বন্ধ করুন।',
+      'battery_opt_ok_body':
+          'আনরেস্ট্রিক্টেড — AbabilX নির্ভরযোগ্যভাবে নোটিফিকেশন দিতে পারবে।',
+      'battery_opt_prompt_body':
+          'অ্যান্ড্রয়েড ব্যাটারি বাঁচাতে AbabilX পজ করতে পারে, এতে কিছুক্ষণ পর নোটিফিকেশন বন্ধ হয়ে যায়। WhatsApp-এর মতো অ্যালার্ট চালু রাখতে “Ignore battery optimizations” অনুমতি দিন।',
+      'battery_opt_allow': 'অনুমতি দিন',
+      'battery_opt_later': 'পরে',
+      'battery_opt_enabled': 'AbabilX-এর জন্য ব্যাটারি অপটিমাইজেশন বন্ধ',
+      'battery_opt_still_denied':
+          'এখনো সীমিত — ব্যাটারি সেটিংসে Unrestricted চালু করুন',
     }
   };
 

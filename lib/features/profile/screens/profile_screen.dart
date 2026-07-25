@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../notifications/widgets/battery_optimization_tile.dart';
 import '../../notifications/widgets/notification_permission_tile.dart';
 import '../providers/profile_provider.dart';
 import '../../../core/localization/app_translations.dart';
@@ -84,6 +85,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
           children: [
             const NotificationPermissionTile(),
+            const BatteryOptimizationTile(),
             // ── Avatar + Name Card (Symmetrical M3 Squircle Sheet) ─────────
             Container(
               padding: const EdgeInsets.all(24),

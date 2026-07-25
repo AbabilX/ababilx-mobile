@@ -7,6 +7,7 @@ import '../../features/crm/providers/crm_followups_ui_provider.dart';
 import '../../features/crm/providers/crm_leads_ui_provider.dart';
 import '../../features/messages/providers/chat_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
+import '../../features/notifications/widgets/battery_optimization_bootstrap.dart';
 import '../../features/search/crm_deep_search.dart';
 import '../../features/search/workspace_search.dart';
 import '../../features/wall/providers/wall_ui_provider.dart';
@@ -170,6 +171,7 @@ class HomeShell extends ConsumerWidget {
         fit: StackFit.expand,
         children: [
           Positioned.fill(child: child),
+          const BatteryOptimizationBootstrap(),
           if (bar != null)
             Positioned(
               left: 0,
