@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../data/models/crm_models.dart';
 import '../shared/crm_money.dart';
+import 'contact_avatar.dart';
 import 'contact_badge.dart';
+import 'contact_type_label.dart';
 
-/// Bordered contact card with colorful meta badges.
+/// Bordered contact card — avatar, type, designation (web contacts-table).
 class ContactRow extends StatelessWidget {
   const ContactRow({
     super.key,
@@ -25,20 +27,16 @@ class ContactRow extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  String get _initial {
-    final n = contact.name.trim();
-    if (n.isEmpty) return '?';
-    return n.substring(0, 1).toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final subtitle = [
-      if (contact.company.isNotEmpty) contact.company,
-      if (contact.email.isNotEmpty) contact.email,
-    ].join(' · ');
+    final subtitle = contact.designation.isNotEmpty
+        ? contact.designation
+        : [
+            if (contact.company.isNotEmpty) contact.company,
+            if (contact.email.isNotEmpty) contact.email,
+          ].join(' · ');
 
     return Material(
       color: colors.surface,
@@ -60,17 +58,10 @@ class ContactRow extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
+                ContactAvatar(
+                  name: contact.name,
+                  imageUrl: contact.imageUrl,
                   radius: 20,
-                  backgroundColor: colors.primaryContainer,
-                  foregroundColor: colors.onPrimaryContainer,
-                  child: Text(
-                    _initial,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colors.onPrimaryContainer,
-                    ),
-                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -102,6 +93,10 @@ class ContactRow extends StatelessWidget {
                         runSpacing: 6,
                         children: [
                           ContactBadge(
+                            label: contactTypeLabel(contact.contactType),
+                            tone: ContactBadgeTone.secondary,
+                          ),
+                          ContactBadge(
                             label:
                                 '${contact.leadCount} lead${contact.leadCount == 1 ? '' : 's'}',
                             tone: ContactBadgeTone.primary,
@@ -118,9 +113,9 @@ class ContactRow extends StatelessWidget {
                               contact.ownerName!.isNotEmpty)
                             ContactBadge(
                               label: contact.ownerName!,
-                              tone: ContactBadgeTone.secondary,
+                              tone: ContactBadgeTone.neutral,
                             ),
-                          for (final tag in contact.tags.take(3))
+                          for (final tag in contact.tags.take(2))
                             ContactBadge(
                               label: tag,
                               tone: ContactBadgeTone.neutral,

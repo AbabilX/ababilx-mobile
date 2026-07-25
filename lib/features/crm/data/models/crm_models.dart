@@ -246,6 +246,9 @@ class CrmConfig extends Equatable {
       [settings, pipelines.length, activityTypes.length, fields.length];
 }
 
+/// Web `CRMContactType`: contact | organization | prospect.
+typedef CrmContactType = String;
+
 class CrmContact extends Equatable {
   const CrmContact({
     required this.id,
@@ -255,6 +258,9 @@ class CrmContact extends Equatable {
     this.email = '',
     this.phone = '',
     this.company = '',
+    this.contactType = 'contact',
+    this.designation = '',
+    this.imageUrl = '',
     this.source = '',
     this.tags = const [],
     this.customFields = const {},
@@ -273,6 +279,9 @@ class CrmContact extends Equatable {
   final String email;
   final String phone;
   final String company;
+  final CrmContactType contactType;
+  final String designation;
+  final String imageUrl;
   final String source;
   final List<String> tags;
   final Map<String, dynamic> customFields;
@@ -285,6 +294,7 @@ class CrmContact extends Equatable {
 
   factory CrmContact.fromJson(Map<String, dynamic> json) {
     final custom = json['custom_fields'];
+    final type = (json['contact_type'] as String? ?? 'contact').toLowerCase();
     return CrmContact(
       id: json['id'] as String? ?? '',
       teamId: json['team_id'] as String? ?? '',
@@ -293,6 +303,9 @@ class CrmContact extends Equatable {
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
       company: json['company'] as String? ?? '',
+      contactType: type == 'organization' || type == 'prospect' ? type : 'contact',
+      designation: json['designation'] as String? ?? '',
+      imageUrl: json['image_url'] as String? ?? '',
       source: json['source'] as String? ?? '',
       tags: (json['tags'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
@@ -310,7 +323,7 @@ class CrmContact extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, updatedAt];
+  List<Object?> get props => [id, name, updatedAt, imageUrl, contactType];
 }
 
 class CrmContactInput {
@@ -319,6 +332,9 @@ class CrmContactInput {
     this.email = '',
     this.phone = '',
     this.company = '',
+    this.contactType = 'contact',
+    this.designation = '',
+    this.imageUrl = '',
     this.source = '',
     this.tags = const [],
     this.ownerUserId,
@@ -330,6 +346,9 @@ class CrmContactInput {
   final String email;
   final String phone;
   final String company;
+  final CrmContactType contactType;
+  final String designation;
+  final String imageUrl;
   final String source;
   final List<String> tags;
   final String? ownerUserId;
@@ -342,6 +361,9 @@ class CrmContactInput {
         'email': email,
         'phone': phone,
         'company': company,
+        'contact_type': contactType,
+        'designation': designation,
+        'image_url': imageUrl,
         'source': source,
         'tags': tags,
         'custom_fields': customFields,

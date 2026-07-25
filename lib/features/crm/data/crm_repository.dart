@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
 import 'crm_config_api.dart';
+import 'crm_contact_media_api.dart';
 import 'crm_contacts_api.dart';
 import 'crm_dashboard_api.dart';
 import 'crm_documents_api.dart';
@@ -13,6 +14,7 @@ import 'models/crm_models.dart';
 class CrmRepository {
   CrmRepository(ApiClient client)
       : contacts = CrmContactsApi(client),
+        contactMedia = CrmContactMediaApi(client),
         leads = CrmLeadsApi(client),
         followups = CrmFollowupsApi(client),
         documents = CrmDocumentsApi(client),
@@ -20,6 +22,7 @@ class CrmRepository {
         config = CrmConfigApi(client);
 
   final CrmContactsApi contacts;
+  final CrmContactMediaApi contactMedia;
   final CrmLeadsApi leads;
   final CrmFollowupsApi followups;
   final CrmDocumentsApi documents;
@@ -41,6 +44,15 @@ class CrmRepository {
 
   Future<void> deleteContact(String id) => contacts.delete(id);
 
+  Future<String> uploadContactImage({
+    required List<int> bytes,
+    required String contentType,
+  }) =>
+      contactMedia.upload(bytes: bytes, contentType: contentType);
+
+  Future<void> discardContactImage(String imageUrl) =>
+      contactMedia.discard(imageUrl);
+
   Future<List<CrmLead>> listLeads({String? q, String? contactId}) =>
       leads.list(q: q, contactId: contactId);
 
@@ -51,6 +63,43 @@ class CrmRepository {
 
   Future<CrmLead> updateLead(String id, CrmLeadInput body) =>
       leads.update(id, body);
+
+  Future<CrmLead> commitLeadStageTransition(
+    String id, {
+    required String stageId,
+    required String pipelineId,
+    required String occurredAt,
+    String? description,
+    String? note,
+    List<String> uploadIds = const [],
+  }) =>
+      leads.commitStageTransition(
+        id,
+        stageId: stageId,
+        pipelineId: pipelineId,
+        occurredAt: occurredAt,
+        description: description,
+        note: note,
+        uploadIds: uploadIds,
+      );
+
+  Future<({String uploadId, String uploadUrl})> presignStageUpload(
+    String leadId, {
+    required String targetStageId,
+    required String contentType,
+    required String fileName,
+    required int sizeBytes,
+  }) =>
+      leads.presignStageUpload(
+        leadId,
+        targetStageId: targetStageId,
+        contentType: contentType,
+        fileName: fileName,
+        sizeBytes: sizeBytes,
+      );
+
+  Future<void> discardStageUpload(String uploadId) =>
+      leads.discardStageUpload(uploadId);
 
   Future<CrmLead> updateLeadStage(
     String id, {

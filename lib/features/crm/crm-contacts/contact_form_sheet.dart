@@ -1,11 +1,18 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../team/data/models/team_models.dart';
+import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
+import 'contact_avatar.dart';
+import 'contact_type_label.dart';
 
 const _noneOwner = '__none__';
 
-/// Create/edit contact sheet — close (top-left) + save (top-right).
+/// Create/edit contact sheet — type, designation, image (web parity).
 Future<CrmContactInput?> showContactFormSheet(
   BuildContext context, {
   required CrmConfig config,
@@ -42,7 +49,7 @@ Future<CrmContactInput?> showContactFormSheet(
   );
 }
 
-class _ContactFormBody extends StatefulWidget {
+class _ContactFormBody extends ConsumerStatefulWidget {
   const _ContactFormBody({
     required this.config,
     required this.members,
@@ -58,18 +65,22 @@ class _ContactFormBody extends StatefulWidget {
   final CrmContact? initial;
 
   @override
-  State<_ContactFormBody> createState() => _ContactFormBodyState();
+  ConsumerState<_ContactFormBody> createState() => _ContactFormBodyState();
 }
 
-class _ContactFormBodyState extends State<_ContactFormBody> {
+class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
   late final TextEditingController _name;
   late final TextEditingController _email;
   late final TextEditingController _phone;
   late final TextEditingController _company;
+  late final TextEditingController _designation;
   late final TextEditingController _source;
   late final TextEditingController _tags;
   late String _ownerId;
+  late String _contactType;
+  late String _imageUrl;
   late Map<String, dynamic> _custom;
+  var _uploading = false;
 
   @override
   void initState() {
@@ -79,9 +90,12 @@ class _ContactFormBodyState extends State<_ContactFormBody> {
     _email = TextEditingController(text: i?.email ?? '');
     _phone = TextEditingController(text: i?.phone ?? '');
     _company = TextEditingController(text: i?.company ?? '');
+    _designation = TextEditingController(text: i?.designation ?? '');
     _source = TextEditingController(text: i?.source ?? '');
     _tags = TextEditingController(text: (i?.tags ?? []).join(', '));
     _ownerId = i?.ownerUserId ?? _noneOwner;
+    _contactType = i?.contactType ?? 'contact';
+    _imageUrl = i?.imageUrl ?? '';
     _custom = Map<String, dynamic>.from(i?.customFields ?? {});
   }
 
@@ -91,14 +105,73 @@ class _ContactFormBodyState extends State<_ContactFormBody> {
     _email.dispose();
     _phone.dispose();
     _company.dispose();
+    _designation.dispose();
     _source.dispose();
     _tags.dispose();
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      imageQuality: 85,
+    );
+    if (file == null || !mounted) return;
+
+    final bytes = await file.readAsBytes();
+    if (bytes.length > 5 * 1024 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image exceeds 5 MB')),
+      );
+      return;
+    }
+
+    final mime = file.mimeType ??
+        (file.path.toLowerCase().endsWith('.png')
+            ? 'image/png'
+            : file.path.toLowerCase().endsWith('.webp')
+                ? 'image/webp'
+                : 'image/jpeg');
+
+    setState(() => _uploading = true);
+    try {
+      final prev = _imageUrl;
+      final url = await ref.read(crmRepositoryProvider).uploadContactImage(
+            bytes: Uint8List.fromList(bytes),
+            contentType: mime,
+          );
+      if (prev.isNotEmpty && prev != url) {
+        try {
+          await ref.read(crmRepositoryProvider).discardContactImage(prev);
+        } catch (_) {}
+      }
+      if (!mounted) return;
+      setState(() => _imageUrl = url);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  Future<void> _clearImage() async {
+    final prev = _imageUrl;
+    setState(() => _imageUrl = '');
+    if (prev.isEmpty) return;
+    try {
+      await ref.read(crmRepositoryProvider).discardContactImage(prev);
+    } catch (_) {}
+  }
+
   void _submit() {
     final name = _name.text.trim();
-    if (name.isEmpty) return;
+    if (name.isEmpty || _uploading) return;
     final tags = _tags.text
         .split(',')
         .map((t) => t.trim())
@@ -111,6 +184,9 @@ class _ContactFormBodyState extends State<_ContactFormBody> {
         email: _email.text.trim(),
         phone: _phone.text.trim(),
         company: _company.text.trim(),
+        contactType: _contactType,
+        designation: _designation.text.trim(),
+        imageUrl: _imageUrl,
         source: _source.text.trim(),
         tags: tags,
         ownerUserId: _ownerId == _noneOwner ? null : _ownerId,
@@ -125,7 +201,7 @@ class _ContactFormBodyState extends State<_ContactFormBody> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final editing = widget.initial != null;
-    final canSave = _name.text.trim().isNotEmpty;
+    final canSave = _name.text.trim().isNotEmpty && !_uploading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -168,6 +244,75 @@ class _ContactFormBodyState extends State<_ContactFormBody> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
             children: [
+              Center(
+                child: Column(
+                  children: [
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ContactAvatar(
+                          name: _name.text.isEmpty ? '?' : _name.text,
+                          imageUrl: _imageUrl,
+                          radius: 40,
+                        ),
+                        if (_uploading)
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: colors.scrim.withValues(alpha: 0.35),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _uploading ? null : _pickImage,
+                          icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                          label: Text(_imageUrl.isEmpty ? 'Add photo' : 'Change'),
+                        ),
+                        if (_imageUrl.isNotEmpty)
+                          TextButton(
+                            onPressed: _uploading ? null : _clearImage,
+                            child: const Text('Remove'),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                key: ValueKey(_contactType),
+                initialValue: _contactType,
+                decoration: const InputDecoration(
+                  labelText: 'Type',
+                  isDense: true,
+                ),
+                items: [
+                  for (final t in kCrmContactTypes)
+                    DropdownMenuItem(
+                      value: t,
+                      child: Text(contactTypeLabel(t)),
+                    ),
+                ],
+                onChanged: (v) =>
+                    setState(() => _contactType = v ?? 'contact'),
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: _name,
                 autofocus: !editing,
@@ -175,6 +320,14 @@ class _ContactFormBodyState extends State<_ContactFormBody> {
                 onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(
                   labelText: 'Name',
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _designation,
+                decoration: const InputDecoration(
+                  labelText: 'Designation',
                   isDense: true,
                 ),
               ),

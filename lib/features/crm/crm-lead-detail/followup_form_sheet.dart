@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
 
 import '../data/models/crm_models.dart';
+import '../shared/stage_chip.dart';
 
 const _none = '__none__';
 
-/// Create/edit follow-up.
-/// Pass [lead] to lock; or [leads] for picker (list page Add).
+List<CrmStage> stagesForLead(CrmLead? lead, CrmConfig? config) {
+  if (lead == null || config == null) return const [];
+  for (final p in config.pipelines) {
+    if (p.id == lead.pipelineId) return p.stages;
+  }
+  return config.defaultPipeline?.stages ?? const [];
+}
+
+/// Create/edit follow-up — stage required; locked on edit (web parity).
 Future<CrmFollowupInput?> showFollowupFormSheet(
   BuildContext context, {
   CrmLead? lead,
   List<CrmLead>? leads,
+  CrmConfig? config,
+  List<CrmStage> stages = const [],
+  String? fixedStageId,
   required List<CrmActivityType> activityTypes,
   CrmFollowup? initial,
 }) {
@@ -29,12 +40,15 @@ Future<CrmFollowupInput?> showFollowupFormSheet(
     builder: (ctx) {
       final h = MediaQuery.sizeOf(ctx).height;
       return SizedBox(
-        height: h * 0.8,
+        height: h * 0.85,
         child: Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
           child: _FollowupFormBody(
             lead: lead,
             leads: leads ?? const [],
+            config: config,
+            stages: stages,
+            fixedStageId: fixedStageId,
             activityTypes: activityTypes,
             initial: initial,
           ),
@@ -48,12 +62,18 @@ class _FollowupFormBody extends StatefulWidget {
   const _FollowupFormBody({
     this.lead,
     required this.leads,
+    this.config,
+    required this.stages,
+    this.fixedStageId,
     required this.activityTypes,
     this.initial,
   });
 
   final CrmLead? lead;
   final List<CrmLead> leads;
+  final CrmConfig? config;
+  final List<CrmStage> stages;
+  final String? fixedStageId;
   final List<CrmActivityType> activityTypes;
   final CrmFollowup? initial;
 
@@ -67,9 +87,14 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
   late String _typeId;
   late String _priority;
   late String _leadId;
+  late String _stageId;
 
   bool get _editing => widget.initial != null;
   bool get _leadLocked => widget.lead != null || _editing;
+
+  /// Web: `locked={fixedStageId || isEdit}`.
+  bool get _stageLocked =>
+      (widget.fixedStageId ?? '').isNotEmpty || _editing;
 
   CrmLead? get _selectedLead {
     if (widget.lead != null) return widget.lead;
@@ -77,6 +102,17 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
       if (l.id == _leadId) return l;
     }
     return null;
+  }
+
+  List<CrmStage> get _resolvedStages {
+    if (widget.stages.isNotEmpty &&
+        (widget.config == null || widget.lead != null)) {
+      // Prefer explicit stages when lead is fixed.
+      if (widget.lead != null || _editing) return widget.stages;
+    }
+    final fromConfig = stagesForLead(_selectedLead, widget.config);
+    if (fromConfig.isNotEmpty) return fromConfig;
+    return widget.stages;
   }
 
   @override
@@ -91,6 +127,11 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
     _typeId = i?.activityTypeId ?? _none;
     _priority = i?.priority ?? 'medium';
     _leadId = i?.leadId ?? widget.lead?.id ?? '';
+    final stages = _resolvedStages;
+    _stageId = widget.fixedStageId ??
+        i?.stageId ??
+        widget.lead?.stageId ??
+        (stages.isNotEmpty ? stages.first.id : '');
   }
 
   @override
@@ -117,7 +158,24 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
     });
   }
 
-  bool get _canSave => _leadId.isNotEmpty;
+  bool get _canSave => _leadId.isNotEmpty && _stageId.isNotEmpty;
+
+  void _onLeadChanged(String? v) {
+    final id = (v == null || v == _none) ? '' : v;
+    setState(() {
+      _leadId = id;
+      final lead = _selectedLead;
+      final stages = stagesForLead(lead, widget.config);
+      if (lead?.stageId != null &&
+          (stages.isEmpty || stages.any((s) => s.id == lead!.stageId))) {
+        _stageId = lead!.stageId!;
+      } else if (stages.isNotEmpty) {
+        _stageId = stages.first.id;
+      } else {
+        _stageId = lead?.stageId ?? '';
+      }
+    });
+  }
 
   void _submit() {
     if (!_canSave) return;
@@ -126,10 +184,10 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
       CrmFollowupInput(
         leadId: _leadId,
         scheduledAt: _when.toUtc().toIso8601String(),
+        stageId: _stageId,
         activityTypeId: _typeId == _none ? null : _typeId,
         priority: _priority,
         notes: _notes.text.trim(),
-        assignedUserId: widget.initial?.assignedUserId,
       ),
     );
   }
@@ -139,6 +197,14 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final selected = _selectedLead;
+    final stages = _resolvedStages;
+    CrmStage? lockedStage;
+    for (final s in stages) {
+      if (s.id == _stageId) {
+        lockedStage = s;
+        break;
+      }
+    }
 
     return Column(
       children: [
@@ -224,9 +290,7 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
                         ),
                       ),
                   ],
-                  onChanged: (v) => setState(() {
-                    _leadId = (v == null || v == _none) ? '' : v;
-                  }),
+                  onChanged: _onLeadChanged,
                 ),
                 if (selected != null &&
                     (selected.ownerName ?? '').isNotEmpty) ...[
@@ -239,6 +303,48 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
                   ),
                 ],
               ],
+              const SizedBox(height: 16),
+              if (_stageLocked && lockedStage != null)
+                Row(
+                  children: [
+                    Text(
+                      'Stage',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    StageChip(
+                      name: lockedStage.name,
+                      colorHex: lockedStage.color,
+                    ),
+                  ],
+                )
+              else if (stages.isNotEmpty)
+                DropdownButtonFormField<String>(
+                  key: ValueKey('stage-$_stageId-$_leadId'),
+                  initialValue: _stageId.isEmpty ? null : _stageId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Stage *',
+                    isDense: true,
+                  ),
+                  items: [
+                    for (final s in stages)
+                      DropdownMenuItem(
+                        value: s.id,
+                        child: Text(s.name, overflow: TextOverflow.ellipsis),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() => _stageId = v ?? ''),
+                )
+              else
+                Text(
+                  'Select a lead to choose stage',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colors.error,
+                  ),
+                ),
               const SizedBox(height: 16),
               ListTile(
                 contentPadding: EdgeInsets.zero,

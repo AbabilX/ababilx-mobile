@@ -8,6 +8,7 @@ import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../team/data/models/team_models.dart';
+import '../crm-lead-detail/complete_followup_sheet.dart';
 import '../crm-lead-detail/followup_form_sheet.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
@@ -15,9 +16,11 @@ import '../providers/crm_contacts_provider.dart';
 import '../providers/crm_followups_provider.dart';
 import '../providers/crm_followups_ui_provider.dart';
 import '../providers/crm_leads_provider.dart';
+import '../shared/crm_dates.dart';
 import '../shared/crm_ui.dart';
 import '../shared/followup_buckets.dart';
 import 'export_followups.dart';
+import 'followup_action_sheet.dart';
 import 'followup_row.dart';
 
 /// Follow-ups list — bar: [My|Add|All] + search; in-page schedule chips.
@@ -72,6 +75,7 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
       body = await showFollowupFormSheet(
         context,
         leads: leads,
+        config: config,
         activityTypes: config.activityTypes,
       );
     } finally {
@@ -167,6 +171,132 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
     );
     if (userId == null) return;
     await _bulk('reassign', assignedUserId: userId);
+  }
+
+  List<CrmStage> _stagesForLead(CrmLead lead, CrmConfig config) {
+    for (final p in config.pipelines) {
+      if (p.id == lead.pipelineId) return p.stages;
+    }
+    return config.defaultPipeline?.stages ?? const [];
+  }
+
+  Future<void> _editFollowup(CrmFollowup f) async {
+    final config = await ref.read(crmConfigProvider.future);
+    CrmLead? lead;
+    try {
+      lead = await ref.read(crmRepositoryProvider).getLead(f.leadId);
+    } catch (_) {}
+    if (!mounted) return;
+    final stages = lead == null
+        ? const <CrmStage>[]
+        : _stagesForLead(lead, config);
+    final body = await showFollowupFormSheet(
+      context,
+      lead: lead ?? leadStubFromFollowup(f),
+      config: config,
+      stages: stages,
+      activityTypes: config.activityTypes,
+      initial: f,
+    );
+    if (body == null || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(crmRepositoryProvider).patchFollowup(
+            f.id,
+            CrmFollowupPatch(
+              scheduledAt: body.scheduledAt,
+              stageId: body.stageId,
+              activityTypeId: body.activityTypeId,
+              priority: body.priority,
+              notes: body.notes,
+            ),
+          );
+      _invalidate();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _completeFollowup(CrmFollowup f) async {
+    final result = await showCompleteFollowupSheet(
+      context,
+      title: formatCrmDateTime(f.scheduledAt),
+    );
+    if (result == null) return;
+    final repo = ref.read(crmRepositoryProvider);
+    setState(() => _busy = true);
+    try {
+      await repo.patchFollowup(
+        f.id,
+        CrmFollowupPatch(status: 'done', outcome: result.outcome),
+      );
+      if (result.nextAt != null) {
+        await repo.createFollowup(
+          CrmFollowupInput(
+            leadId: f.leadId,
+            stageId: f.stageId,
+            activityTypeId: f.activityTypeId,
+            scheduledAt: result.nextAt!.toUtc().toIso8601String(),
+            priority: f.priority,
+          ),
+        );
+      }
+      _invalidate();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.nextAt != null
+                ? 'Completed — next follow-up scheduled'
+                : 'Follow-up completed',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _deleteFollowup(CrmFollowup f) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete follow-up?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(crmRepositoryProvider).deleteFollowup(f.id);
+      _invalidate();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   void _syncShellMeta(List<CrmFollowup> all, String myId, bool canCreate) {
@@ -377,8 +507,15 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
                                 _selected.add(f.id);
                               });
                             },
-                            onTap: () =>
-                                context.push('/crm/followups/${f.id}'),
+                            onTap: () => showFollowupActionSheet(
+                              context,
+                              followup: f,
+                              canUpdate: perms.update,
+                              canDelete: perms.delete,
+                              onComplete: () => _completeFollowup(f),
+                              onEdit: () => _editFollowup(f),
+                              onDelete: () => _deleteFollowup(f),
+                            ),
                           );
                         },
                       ),

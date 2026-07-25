@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
-import '../providers/crm_lead_detail_provider.dart';
 import '../shared/crm_dates.dart';
 import 'stage_step_item.dart';
+import 'stage_transition_rules.dart';
+import 'stage_transition_sheet.dart';
 
-/// Horizontal pipeline stepper — tap moves stage (web StageStepper).
+/// Horizontal pipeline stepper — adjacent/lost only + transition sheet.
 class LeadStageStepper extends ConsumerStatefulWidget {
   const LeadStageStepper({
     super.key,
@@ -32,22 +32,15 @@ class _LeadStageStepperState extends ConsumerState<LeadStageStepper> {
   Future<void> _move(CrmStage stage) async {
     if (!widget.canEdit || _busy) return;
     if (stage.id == widget.lead.stageId) return;
+    if (stageMoveKind(widget.lead, widget.stages, stage) == null) return;
     setState(() => _busy = true);
     try {
-      await ref.read(crmRepositoryProvider).updateLeadStage(
-            widget.lead.id,
-            stageId: stage.id,
-            pipelineId: widget.lead.pipelineId,
-          );
-      invalidateLeadDetail(ref, widget.lead.id);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Moved to ${stage.name}')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+      await showStageTransitionSheet(
+        context,
+        ref: ref,
+        lead: widget.lead,
+        stages: widget.stages,
+        target: stage,
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -62,9 +55,12 @@ class _LeadStageStepperState extends ConsumerState<LeadStageStepper> {
     final colors = Theme.of(context).colorScheme;
     final currentIdx = stages.indexWhere((s) => s.id == widget.lead.stageId);
     final dates = deriveStageDates(widget.lead, stages, widget.events);
+    final lost = widget.lead.isLost;
 
     StageStepState stateOf(int i) {
       if (i == currentIdx) return StageStepState.current;
+      // Lost jump: don't paint skipped stages as done (web honesty).
+      if (lost) return StageStepState.upcoming;
       if (currentIdx >= 0 && i < currentIdx) return StageStepState.done;
       return StageStepState.upcoming;
     }
@@ -84,7 +80,7 @@ class _LeadStageStepperState extends ConsumerState<LeadStageStepper> {
                   child: Container(
                     width: 28,
                     height: 2,
-                    color: currentIdx >= 0 && i <= currentIdx
+                    color: !lost && currentIdx >= 0 && i <= currentIdx
                         ? colors.tertiary
                         : colors.outlineVariant,
                   ),
@@ -95,7 +91,8 @@ class _LeadStageStepperState extends ConsumerState<LeadStageStepper> {
                 date: stateOf(i) != StageStepState.upcoming
                     ? formatCrmDate(dates[stages[i].id] ?? '')
                     : null,
-                clickable: widget.canEdit,
+                clickable: widget.canEdit &&
+                    stageMoveKind(widget.lead, stages, stages[i]) != null,
                 disabled: _busy,
                 onTap: () => _move(stages[i]),
               ),

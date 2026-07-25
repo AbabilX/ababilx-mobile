@@ -18,12 +18,14 @@ class DocumentsTab extends ConsumerStatefulWidget {
     required this.documents,
     required this.canCreate,
     required this.canDelete,
+    this.shrinkWrap = false,
   });
 
   final String leadId;
   final List<CrmDocument> documents;
   final bool canCreate;
   final bool canDelete;
+  final bool shrinkWrap;
 
   @override
   ConsumerState<DocumentsTab> createState() => _DocumentsTabState();
@@ -137,7 +139,13 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
     final theme = Theme.of(context);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      shrinkWrap: widget.shrinkWrap,
+      physics: widget.shrinkWrap
+          ? const NeverScrollableScrollPhysics()
+          : null,
+      padding: widget.shrinkWrap
+          ? EdgeInsets.zero
+          : const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
         if (widget.canCreate) ...[
           TextField(

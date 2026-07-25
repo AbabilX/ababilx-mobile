@@ -43,19 +43,75 @@ class CrmLeadsApi {
     return CrmLead.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
 
-  Future<CrmLead> updateStage(
+  /// Web `commitCRMLeadStageTransition` — requires `occurred_at`.
+  Future<CrmLead> commitStageTransition(
     String id, {
     required String stageId,
-    String? pipelineId,
+    required String pipelineId,
+    required String occurredAt,
+    String? description,
+    String? note,
+    List<String> uploadIds = const [],
   }) async {
     final res = await _client.patch(
       ApiConstants.crmLeadStage(id),
       data: {
         'stage_id': stageId,
         'pipeline_id': pipelineId,
+        'occurred_at': occurredAt,
+        if (description != null && description.isNotEmpty)
+          'description': description,
+        if (note != null && note.isNotEmpty) 'note': note,
+        if (uploadIds.isNotEmpty) 'upload_ids': uploadIds,
       },
     );
-    return CrmLead.fromJson(unwrapApiData<Map<String, dynamic>>(res));
+    final data = unwrapApiData<Map<String, dynamic>>(res);
+    // API returns `{ lead, event }` or sometimes the lead itself.
+    if (data['lead'] is Map) {
+      return CrmLead.fromJson(Map<String, dynamic>.from(data['lead'] as Map));
+    }
+    return CrmLead.fromJson(data);
+  }
+
+  Future<({String uploadId, String uploadUrl})> presignStageUpload(
+    String leadId, {
+    required String targetStageId,
+    required String contentType,
+    required String fileName,
+    required int sizeBytes,
+  }) async {
+    final res = await _client.post(
+      ApiConstants.crmLeadStageUploadsPresign(leadId),
+      data: {
+        'target_stage_id': targetStageId,
+        'content_type': contentType,
+        'file_name': fileName,
+        'size_bytes': sizeBytes,
+      },
+    );
+    final data = unwrapApiData<Map<String, dynamic>>(res);
+    return (
+      uploadId: data['upload_id'] as String? ?? '',
+      uploadUrl: data['upload_url'] as String? ?? '',
+    );
+  }
+
+  Future<void> discardStageUpload(String uploadId) async {
+    await _client.delete(ApiConstants.crmStageUpload(uploadId));
+  }
+
+  @Deprecated('Use commitStageTransition')
+  Future<CrmLead> updateStage(
+    String id, {
+    required String stageId,
+    String? pipelineId,
+  }) async {
+    return commitStageTransition(
+      id,
+      stageId: stageId,
+      pipelineId: pipelineId ?? '',
+      occurredAt: DateTime.now().toUtc().toIso8601String(),
+    );
   }
 
   Future<void> delete(String id) async {

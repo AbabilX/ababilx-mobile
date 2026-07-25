@@ -7,13 +7,16 @@ import '../data/models/crm_models.dart';
 import '../providers/crm_lead_detail_provider.dart';
 import '../shared/crm_dates.dart';
 import '../shared/crm_ui.dart';
+import '../shared/stage_chip.dart';
 import 'complete_followup_sheet.dart';
 import 'followup_form_sheet.dart';
 
-class FollowupsTab extends ConsumerWidget {
+/// Lead follow-ups tab — stage chips + scoped create (web followups-tab).
+class FollowupsTab extends ConsumerStatefulWidget {
   const FollowupsTab({
     super.key,
     required this.lead,
+    required this.stages,
     required this.followups,
     required this.activityTypes,
     required this.canCreate,
@@ -22,30 +25,72 @@ class FollowupsTab extends ConsumerWidget {
   });
 
   final CrmLead lead;
+  final List<CrmStage> stages;
   final List<CrmFollowup> followups;
   final List<CrmActivityType> activityTypes;
   final bool canCreate;
   final bool canUpdate;
   final bool canDelete;
 
-  bool get _hasOpen => followups.any((f) => f.isPending);
+  @override
+  ConsumerState<FollowupsTab> createState() => _FollowupsTabState();
+}
 
-  Future<void> _create(BuildContext context, WidgetRef ref) async {
+class _FollowupsTabState extends ConsumerState<FollowupsTab> {
+  late String _filterStageId;
+
+  @override
+  void initState() {
+    super.initState();
+    _filterStageId = widget.lead.stageId ?? '';
+  }
+
+  @override
+  void didUpdateWidget(covariant FollowupsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.lead.stageId != widget.lead.stageId &&
+        (widget.lead.stageId ?? '').isNotEmpty) {
+      _filterStageId = widget.lead.stageId!;
+    }
+  }
+
+  List<CrmFollowup> get _filtered {
+    if (_filterStageId.isEmpty) return widget.followups;
+    return [
+      for (final f in widget.followups)
+        if (f.stageId == _filterStageId) f,
+    ];
+  }
+
+  bool get _hasOpen => _filtered.any((f) => f.isPending);
+
+  int _countFor(String stageId) {
+    var n = 0;
+    for (final f in widget.followups) {
+      if (f.stageId == stageId) n++;
+    }
+    return n;
+  }
+
+  Future<void> _create() async {
     final body = await showFollowupFormSheet(
       context,
-      lead: lead,
-      activityTypes: activityTypes,
+      lead: widget.lead,
+      stages: widget.stages,
+      fixedStageId:
+          _filterStageId.isEmpty ? widget.lead.stageId : _filterStageId,
+      activityTypes: widget.activityTypes,
     );
     if (body == null) return;
     try {
       await ref.read(crmRepositoryProvider).createFollowup(body);
-      invalidateLeadDetail(ref, lead.id);
-      if (!context.mounted) return;
+      invalidateLeadDetail(ref, widget.lead.id);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Follow-up scheduled')),
       );
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       final msg = e.toString();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -59,16 +104,13 @@ class FollowupsTab extends ConsumerWidget {
     }
   }
 
-  Future<void> _edit(
-    BuildContext context,
-    WidgetRef ref,
-    CrmFollowup f,
-  ) async {
+  Future<void> _edit(CrmFollowup f) async {
     final body = await showFollowupFormSheet(
       context,
-      lead: lead,
-      activityTypes: activityTypes,
+      lead: widget.lead,
+      stages: widget.stages,
       initial: f,
+      activityTypes: widget.activityTypes,
     );
     if (body == null) return;
     try {
@@ -76,29 +118,26 @@ class FollowupsTab extends ConsumerWidget {
             f.id,
             CrmFollowupPatch(
               scheduledAt: body.scheduledAt,
+              stageId: body.stageId,
               activityTypeId: body.activityTypeId,
               priority: body.priority,
               notes: body.notes,
             ),
           );
-      invalidateLeadDetail(ref, lead.id);
-      if (!context.mounted) return;
+      invalidateLeadDetail(ref, widget.lead.id);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Follow-up updated')),
       );
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
     }
   }
 
-  Future<void> _complete(
-    BuildContext context,
-    WidgetRef ref,
-    CrmFollowup f,
-  ) async {
+  Future<void> _complete(CrmFollowup f) async {
     final result = await showCompleteFollowupSheet(
       context,
       title: formatCrmDateTime(f.scheduledAt),
@@ -114,14 +153,15 @@ class FollowupsTab extends ConsumerWidget {
         await repo.createFollowup(
           CrmFollowupInput(
             leadId: f.leadId,
+            stageId: f.stageId ?? widget.lead.stageId,
             activityTypeId: f.activityTypeId,
             scheduledAt: result.nextAt!.toUtc().toIso8601String(),
             priority: f.priority,
           ),
         );
       }
-      invalidateLeadDetail(ref, lead.id);
-      if (!context.mounted) return;
+      invalidateLeadDetail(ref, widget.lead.id);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -132,18 +172,14 @@ class FollowupsTab extends ConsumerWidget {
         ),
       );
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
     }
   }
 
-  Future<void> _delete(
-    BuildContext context,
-    WidgetRef ref,
-    CrmFollowup f,
-  ) async {
+  Future<void> _delete(CrmFollowup f) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -163,20 +199,16 @@ class FollowupsTab extends ConsumerWidget {
     if (ok != true) return;
     try {
       await ref.read(crmRepositoryProvider).deleteFollowup(f.id);
-      invalidateLeadDetail(ref, lead.id);
+      invalidateLeadDetail(ref, widget.lead.id);
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
     }
   }
 
-  Future<void> _actions(
-    BuildContext context,
-    WidgetRef ref,
-    CrmFollowup f,
-  ) async {
+  Future<void> _actions(CrmFollowup f) async {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -184,25 +216,25 @@ class FollowupsTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (f.isPending && canUpdate)
+            if (f.isPending && widget.canUpdate)
               ListTile(
                 leading: const Icon(Icons.check_circle_outline),
                 title: const Text('Complete'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _complete(context, ref, f);
+                  _complete(f);
                 },
               ),
-            if (canUpdate)
+            if (widget.canUpdate)
               ListTile(
                 leading: const Icon(Icons.edit_outlined),
-                title: const Text('Edit'),
+                title: const Text('Edit / reschedule'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _edit(context, ref, f);
+                  _edit(f);
                 },
               ),
-            if (canDelete)
+            if (widget.canDelete && f.isPending)
               ListTile(
                 leading: Icon(
                   Icons.delete_outline,
@@ -214,7 +246,7 @@ class FollowupsTab extends ConsumerWidget {
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _delete(context, ref, f);
+                  _delete(f);
                 },
               ),
           ],
@@ -230,14 +262,46 @@ class FollowupsTab extends ConsumerWidget {
       };
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final list = _filtered;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        if (canCreate)
+        if (widget.stages.isNotEmpty) ...[
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                for (final s in widget.stages)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      selected: _filterStageId == s.id,
+                      label: Text(
+                        '${s.name} (${_countFor(s.id)})'
+                        '${s.id == widget.lead.stageId ? ' · Current' : ''}',
+                      ),
+                      onSelected: (_) => setState(() => _filterStageId = s.id),
+                      avatar: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (widget.canCreate)
           Row(
             children: [
               if (_hasOpen)
@@ -252,23 +316,23 @@ class FollowupsTab extends ConsumerWidget {
               else
                 const Spacer(),
               OutlinedButton(
-                onPressed: _hasOpen ? null : () => _create(context, ref),
+                onPressed: _hasOpen ? null : _create,
                 child: const Text('New follow-up'),
               ),
             ],
           ),
-        if (canCreate) const SizedBox(height: 12),
-        if (followups.isEmpty)
-          const CrmEmpty(message: 'No follow-ups scheduled.')
+        if (widget.canCreate) const SizedBox(height: 12),
+        if (list.isEmpty)
+          const CrmEmpty(message: 'No follow-ups for this stage.')
         else
-          for (final f in followups)
+          for (final f in list)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Material(
                 color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
-                  onTap: () => _actions(context, ref, f),
+                  onTap: () => _actions(f),
                   borderRadius: BorderRadius.circular(12),
                   child: Ink(
                     decoration: BoxDecoration(
@@ -305,6 +369,11 @@ class FollowupsTab extends ConsumerWidget {
                             spacing: 6,
                             runSpacing: 6,
                             children: [
+                              if ((f.stageName ?? '').isNotEmpty)
+                                StageChip(
+                                  name: f.stageName!,
+                                  colorHex: f.stageColor,
+                                ),
                               ContactBadge(
                                 label: f.priority,
                                 tone: _priorityTone(f.priority),

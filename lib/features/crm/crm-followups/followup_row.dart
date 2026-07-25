@@ -4,6 +4,7 @@ import '../crm-contacts/contact_badge.dart';
 import '../data/models/crm_models.dart';
 import '../shared/crm_dates.dart';
 import '../shared/followup_buckets.dart';
+import '../shared/stage_chip.dart';
 
 class FollowupRow extends StatelessWidget {
   const FollowupRow({
@@ -119,6 +120,11 @@ class FollowupRow extends StatelessWidget {
                         spacing: 6,
                         runSpacing: 6,
                         children: [
+                          if ((followup.stageName ?? '').isNotEmpty)
+                            StageChip(
+                              name: followup.stageName!,
+                              colorHex: followup.stageColor,
+                            ),
                           ContactBadge(
                             label: followup.priority,
                             tone: _priorityTone(followup.priority),

@@ -43,6 +43,14 @@ class ApiConstants {
   static const String crmFollowupsBulk = '/api/teams/crm/followups/bulk';
   static String crmContactLeads(String contactId) =>
       '/api/teams/crm/contacts/$contactId/leads';
+  static const String crmContactImagesPresign =
+      '/api/teams/crm/contact-images/presign';
+  static const String crmContactImagesDiscard =
+      '/api/teams/crm/contact-images/discard';
+  static String crmLeadStageUploadsPresign(String leadId) =>
+      '/api/teams/crm/leads/$leadId/stage-uploads/presign';
+  static String crmStageUpload(String uploadId) =>
+      '/api/teams/crm/stage-uploads/$uploadId';
 
   // Chat
   static const String chatConversations = '/api/teams/chat/conversations';

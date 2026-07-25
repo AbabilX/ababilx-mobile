@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
-import '../providers/crm_lead_detail_provider.dart';
 import '../shared/crm_hex_color.dart';
 import '../shared/stage_chip.dart';
+import 'stage_transition_rules.dart';
+import 'stage_transition_sheet.dart';
 
-/// Compact stage chip → pick another stage (web StageSelect).
+/// Compact stage chip → pick adjacent/lost stage then transition sheet.
 class LeadStageSelect extends ConsumerWidget {
   const LeadStageSelect({
     super.key,
@@ -41,51 +41,60 @@ class LeadStageSelect extends ConsumerWidget {
                 ),
               ),
               for (final s in stages)
-                ListTile(
-                  leading: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: s.isLost
-                          ? const Color(0xFFEF4444)
-                          : (parseCrmHex(s.color) ?? colors.primary),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  title: Text(s.name),
-                  trailing: s.id == lead.stageId
-                      ? Icon(
-                          Icons.check_rounded,
+                Builder(
+                  builder: (context) {
+                    final reason = stageDisabledReason(lead, stages, s);
+                    final locked = reason != null && s.id != lead.stageId;
+                    final isCurrent = s.id == lead.stageId;
+                    return ListTile(
+                      enabled: !locked || isCurrent,
+                      leading: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
                           color: s.isLost
                               ? const Color(0xFFEF4444)
                               : (parseCrmHex(s.color) ?? colors.primary),
-                        )
-                      : null,
-                  onTap: () => Navigator.pop(ctx, s),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      title: Text(s.name),
+                      subtitle: locked
+                          ? Text(reason)
+                          : (isCurrent ? const Text('Current stage') : null),
+                      trailing: isCurrent
+                          ? Icon(
+                              Icons.check_rounded,
+                              color: s.isLost
+                                  ? const Color(0xFFEF4444)
+                                  : (parseCrmHex(s.color) ?? colors.primary),
+                            )
+                          : (locked
+                              ? Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 18,
+                                  color: colors.onSurfaceVariant,
+                                )
+                              : null),
+                      onTap: locked || isCurrent
+                          ? null
+                          : () => Navigator.pop(ctx, s),
+                    );
+                  },
                 ),
             ],
           ),
         );
       },
     );
-    if (chosen == null || chosen.id == lead.stageId) return;
-    try {
-      await ref.read(crmRepositoryProvider).updateLeadStage(
-            lead.id,
-            stageId: chosen.id,
-            pipelineId: lead.pipelineId,
-          );
-      invalidateLeadDetail(ref, lead.id);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Moved to ${chosen.name}')),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-    }
+    if (chosen == null || chosen.id == lead.stageId || !context.mounted) return;
+    await showStageTransitionSheet(
+      context,
+      ref: ref,
+      lead: lead,
+      stages: stages,
+      target: chosen,
+    );
   }
 
   @override

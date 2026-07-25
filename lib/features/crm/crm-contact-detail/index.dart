@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../messages/providers/team_gate_provider.dart';
-import '../crm-contacts/contact_badge.dart';
+import '../crm-contacts/contact_form_sheet.dart';
 import '../crm-leads/lead_form_sheet.dart';
-import '../crm-leads/lead_row.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_contact_detail_provider.dart';
 import '../providers/crm_contacts_provider.dart';
 import '../providers/crm_leads_provider.dart';
 import '../shared/crm_ui.dart';
+import 'contact_header.dart';
+import 'lead_card.dart';
 
-/// Contact detail — header + leads list (web contact-detail).
+/// Contact detail — header + leads (full web parity).
 class CrmContactDetailPage extends ConsumerStatefulWidget {
   const CrmContactDetailPage({super.key, required this.contactId});
 
@@ -26,6 +28,95 @@ class CrmContactDetailPage extends ConsumerStatefulWidget {
 
 class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
   var _busy = false;
+  String? _removingLeadId;
+
+  Set<String> _initialStageIds(CrmConfig? config) {
+    final ids = <String>{};
+    for (final p in config?.pipelines ?? const <CrmPipeline>[]) {
+      if (p.stages.isEmpty) continue;
+      final sorted = [...p.stages]..sort((a, b) => a.position.compareTo(b.position));
+      ids.add(sorted.first.id);
+    }
+    return ids;
+  }
+
+  Future<void> _editContact(CrmContact contact) async {
+    final config = await ref.read(crmConfigProvider.future);
+    final detail = ref.read(teamGateProvider).valueOrNull;
+    if (!mounted || detail == null) return;
+
+    final body = await showContactFormSheet(
+      context,
+      config: config,
+      members: detail.members,
+      contactLabel: config.settings.contactLabelSingular,
+      canAssignOwner: detail.canAssignCrmOwner,
+      initial: contact,
+    );
+    if (body == null || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ref.read(crmRepositoryProvider).updateContact(contact.id, body);
+      invalidateContactDetail(ref, contact.id);
+      ref.invalidate(crmContactsProvider(''));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Contact updated')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _deleteContact(CrmContact contact) async {
+    final colors = Theme.of(context).colorScheme;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Delete ${contact.name}?'),
+        content: Text(
+          AppTranslations.translate(context, ref, 'crm_delete_confirm'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppTranslations.translate(context, ref, 'cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: colors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ref.read(crmRepositoryProvider).deleteContact(contact.id);
+      ref.invalidate(crmContactsProvider(''));
+      if (!mounted) return;
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/crm/contacts');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   Future<void> _newLead(CrmContact contact) async {
     final config = await ref.read(crmConfigProvider.future);
@@ -65,6 +156,47 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
     }
   }
 
+  Future<void> _removeLead(CrmLead lead) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Remove lead "${lead.title}"?'),
+        content: const Text(
+          'Only leads still on the initial pipeline stage can be removed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _removingLeadId = lead.id);
+    try {
+      await ref.read(crmRepositoryProvider).deleteLead(lead.id);
+      invalidateContactDetail(ref, widget.contactId);
+      ref.invalidate(crmLeadsProvider(''));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lead removed')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _removingLeadId = null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final contactAsync = ref.watch(crmContactProvider(widget.contactId));
@@ -74,6 +206,7 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
     final colors = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
     final currency = configAsync.valueOrNull?.settings.currency ?? 'BDT';
+    final initialStages = _initialStageIds(configAsync.valueOrNull);
 
     return contactAsync.when(
       loading: () => Scaffold(
@@ -95,11 +228,7 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
         body: CrmErrorBox(message: e.toString()),
       ),
       data: (contact) {
-        final meta = [
-          if (contact.company.isNotEmpty) contact.company,
-          if (contact.email.isNotEmpty) contact.email,
-          if (contact.phone.isNotEmpty) contact.phone,
-        ].join(' · ');
+        final leads = leadsAsync.valueOrNull ?? const <CrmLead>[];
 
         return Scaffold(
           appBar: AppBar(
@@ -115,11 +244,21 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
             ),
             title: Text(contact.name),
             actions: [
-              if (perms.create)
-                IconButton(
-                  tooltip: 'New lead',
-                  onPressed: _busy ? null : () => _newLead(contact),
-                  icon: const Icon(Icons.add_rounded),
+              if (perms.update || perms.delete)
+                PopupMenuButton<String>(
+                  onSelected: (v) {
+                    if (v == 'edit') _editContact(contact);
+                    if (v == 'delete') _deleteContact(contact);
+                  },
+                  itemBuilder: (_) => [
+                    if (perms.update)
+                      const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                    if (perms.delete)
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Text('Delete'),
+                      ),
+                  ],
                 ),
             ],
           ),
@@ -132,44 +271,7 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                   children: [
-                    Text(
-                      contact.name,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (meta.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        meta,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                    if ((contact.ownerName ?? '').isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        'Owner: ${contact.ownerName}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                    if (contact.tags.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          for (final t in contact.tags)
-                            ContactBadge(
-                              label: t,
-                              tone: ContactBadgeTone.neutral,
-                            ),
-                        ],
-                      ),
-                    ],
+                    ContactDetailHeader(contact: contact, leads: leads),
                     const SizedBox(height: 20),
                     Row(
                       children: [
@@ -179,9 +281,16 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
+                        const Spacer(),
+                        if (perms.create)
+                          FilledButton.tonalIcon(
+                            onPressed: _busy ? null : () => _newLead(contact),
+                            icon: const Icon(Icons.add_rounded, size: 18),
+                            label: const Text('New Lead'),
+                          ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     leadsAsync.when(
                       loading: () => const Padding(
                         padding: EdgeInsets.all(24),
@@ -190,8 +299,8 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
                         ),
                       ),
                       error: (e, _) => CrmErrorBox(message: e.toString()),
-                      data: (leads) {
-                        if (leads.isEmpty) {
+                      data: (list) {
+                        if (list.isEmpty) {
                           return const CrmEmpty(
                             message:
                                 'No leads yet. Create one to start tracking a deal.',
@@ -199,17 +308,15 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
                         }
                         return Column(
                           children: [
-                            for (final lead in leads) ...[
-                              LeadRow(
+                            for (final lead in list) ...[
+                              ContactLeadCard(
                                 lead: lead,
                                 currency: currency,
-                                config: configAsync.valueOrNull,
-                                canUpdate: false,
-                                canDelete: false,
-                                onTap: () =>
-                                    context.push('/crm/leads/${lead.id}'),
-                                onEdit: () {},
-                                onDelete: () {},
+                                canRemove: perms.delete &&
+                                    lead.stageId != null &&
+                                    initialStages.contains(lead.stageId),
+                                removing: _removingLeadId == lead.id,
+                                onRemove: () => _removeLead(lead),
                               ),
                               const SizedBox(height: 10),
                             ],

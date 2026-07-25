@@ -180,6 +180,7 @@ class CrmFollowup extends Equatable {
     required this.leadId,
     required this.contactId,
     required this.scheduledAt,
+    this.stageId,
     this.assignedUserId,
     this.activityTypeId,
     this.priority = 'medium',
@@ -193,12 +194,15 @@ class CrmFollowup extends Equatable {
     this.contactName,
     this.contactCompany,
     this.contactPhone,
+    this.stageName,
+    this.stageColor,
   });
 
   final String id;
   final String leadId;
   final String contactId;
   final String scheduledAt;
+  final String? stageId;
   final String? assignedUserId;
   final String? activityTypeId;
   final String priority;
@@ -212,6 +216,8 @@ class CrmFollowup extends Equatable {
   final String? contactName;
   final String? contactCompany;
   final String? contactPhone;
+  final String? stageName;
+  final String? stageColor;
 
   bool get isPending => status == 'pending';
 
@@ -220,6 +226,7 @@ class CrmFollowup extends Equatable {
         leadId: json['lead_id'] as String? ?? '',
         contactId: json['contact_id'] as String? ?? '',
         scheduledAt: json['scheduled_at'] as String? ?? '',
+        stageId: json['stage_id'] as String?,
         assignedUserId: json['assigned_user_id'] as String?,
         activityTypeId: json['activity_type_id'] as String?,
         priority: json['priority'] as String? ?? 'medium',
@@ -233,42 +240,46 @@ class CrmFollowup extends Equatable {
         contactName: json['contact_name'] as String?,
         contactCompany: json['contact_company'] as String?,
         contactPhone: json['contact_phone'] as String?,
+        stageName: json['stage_name'] as String?,
+        stageColor: json['stage_color'] as String?,
       );
 
   @override
-  List<Object?> get props => [id, status, scheduledAt];
+  List<Object?> get props => [id, status, scheduledAt, stageId];
 }
 
 class CrmFollowupInput {
   const CrmFollowupInput({
     required this.leadId,
     required this.scheduledAt,
+    this.stageId,
     this.activityTypeId,
     this.priority = 'medium',
     this.notes = '',
-    this.assignedUserId,
   });
 
   final String leadId;
   final String scheduledAt;
+  final String? stageId;
   final String? activityTypeId;
   final String priority;
   final String notes;
-  final String? assignedUserId;
 
   Map<String, dynamic> toJson() => {
         'lead_id': leadId,
         'scheduled_at': scheduledAt,
-        'activity_type_id': activityTypeId,
         'priority': priority,
         'notes': notes,
-        'assigned_user_id': assignedUserId,
+        if (stageId != null && stageId!.isNotEmpty) 'stage_id': stageId,
+        if (activityTypeId != null) 'activity_type_id': activityTypeId,
+        // Assignee omitted — server inherits lead owner (web parity).
       };
 }
 
 class CrmFollowupPatch {
   const CrmFollowupPatch({
     this.scheduledAt,
+    this.stageId,
     this.activityTypeId,
     this.priority,
     this.notes,
@@ -278,6 +289,7 @@ class CrmFollowupPatch {
   });
 
   final String? scheduledAt;
+  final String? stageId;
   final String? activityTypeId;
   final String? priority;
   final String? notes;
@@ -287,6 +299,7 @@ class CrmFollowupPatch {
 
   Map<String, dynamic> toJson() => {
         if (scheduledAt != null) 'scheduled_at': scheduledAt,
+        if (stageId != null) 'stage_id': stageId,
         if (activityTypeId != null) 'activity_type_id': activityTypeId,
         if (priority != null) 'priority': priority,
         if (notes != null) 'notes': notes,

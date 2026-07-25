@@ -8,18 +8,18 @@ import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_contacts_provider.dart';
 import '../providers/crm_lead_detail_provider.dart';
-import '../crm-contacts/contact_badge.dart';
 import '../shared/crm_money.dart';
 import '../shared/crm_ui.dart';
 import 'activities_tab.dart';
 import 'documents_tab.dart';
 import 'followups_tab.dart';
+import 'meta_copy_badges.dart';
 import 'notes_tab.dart';
 import 'stage_select.dart';
 import 'stage_stepper.dart';
 import 'timeline_tab.dart';
 
-/// Lead detail — header, stage stepper, 5 tabs (web parity).
+/// Lead detail — header + stage stepper + 5 tabs (web parity).
 class CrmLeadDetailPage extends ConsumerStatefulWidget {
   const CrmLeadDetailPage({super.key, required this.leadId});
 
@@ -56,11 +56,6 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
 
   List<CrmStage> _stagesFor(CrmLead lead, CrmConfig? config) =>
       _pipelineFor(lead, config)?.stages ?? const [];
-
-  String? _pipelineName(CrmLead lead, CrmConfig? config) {
-    if ((lead.pipelineName ?? '').isNotEmpty) return lead.pipelineName;
-    return _pipelineFor(lead, config)?.name;
-  }
 
   Future<void> _edit(CrmLead lead) async {
     final config = await ref.read(crmConfigProvider.future);
@@ -126,7 +121,6 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
       data: (lead) {
         final config = configAsync.valueOrNull;
         final stages = _stagesFor(lead, config);
-        final pipelineName = _pipelineName(lead, config);
         final currency = config?.settings.currency ?? 'BDT';
         final timeline =
             ref.watch(crmLeadTimelineProvider(widget.leadId)).valueOrNull ??
@@ -144,13 +138,6 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
             ref.watch(crmLeadDocumentsProvider(widget.leadId)).valueOrNull ??
                 const [];
 
-        final meta = [
-          if ((lead.contactCompany ?? '').isNotEmpty) lead.contactCompany!,
-          if ((lead.contactEmail ?? '').isNotEmpty) lead.contactEmail!,
-          if ((lead.contactPhone ?? '').isNotEmpty) lead.contactPhone!,
-          if (lead.source.isNotEmpty) 'Source: ${lead.source}',
-        ].join(' · ');
-
         return Scaffold(
           appBar: AppBar(
             leading: IconButton(
@@ -158,24 +145,20 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
               onPressed: () {
                 if (context.canPop()) {
                   context.pop();
+                } else if (lead.contactId.isNotEmpty) {
+                  context.go('/crm/contacts/${lead.contactId}');
                 } else {
                   context.go('/crm/leads');
                 }
               },
             ),
             title: Text(
-              lead.title.isEmpty ? (lead.contactName ?? 'Lead') : lead.title,
+              (lead.contactName ?? '').isNotEmpty
+                  ? '← ${lead.contactName}'
+                  : 'Lead',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            actions: [
-              if (perms.update)
-                IconButton(
-                  tooltip: 'Edit',
-                  onPressed: _busy ? null : () => _edit(lead),
-                  icon: const Icon(Icons.edit_outlined),
-                ),
-            ],
             bottom: TabBar(
               controller: _tabs,
               isScrollable: true,
@@ -192,72 +175,82 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
           body: Column(
             children: [
               Material(
-                color: colors.surface,
+                color: colors.surfaceContainerLow,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if ((lead.contactName ?? '').isNotEmpty)
-                        InkWell(
-                          onTap: lead.contactId.isNotEmpty
-                              ? () => context
-                                  .push('/crm/contacts/${lead.contactId}')
-                              : null,
-                          child: Text(
-                            lead.contactName!,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: lead.contactId.isNotEmpty
-                                  ? colors.primary
-                                  : null,
-                            ),
-                          ),
-                        ),
-                      if (meta.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          meta,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        crossAxisAlignment: WrapCrossAlignment.center,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if ((pipelineName ?? '').isNotEmpty)
-                            ContactBadge(
-                              label: pipelineName!,
-                              tone: ContactBadgeTone.neutral,
+                          Expanded(
+                            child: Text(
+                              lead.title.isEmpty
+                                  ? (lead.contactName ?? 'Lead')
+                                  : lead.title,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
+                          ),
+                          const SizedBox(width: 8),
                           LeadStageSelect(
                             lead: lead,
                             stages: stages,
-                            canEdit: perms.update,
+                            canEdit: perms.update && !_busy,
                           ),
-                          if (lead.dealValue > 0)
-                            Text(
-                              formatCrmMoney(lead.dealValue, currency),
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: colors.tertiary,
+                          if (perms.update)
+                            IconButton(
+                              tooltip: 'Edit',
+                              onPressed: _busy ? null : () => _edit(lead),
+                              icon: const Icon(Icons.edit_outlined),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: MetaCopyBadges(
+                              company: lead.contactCompany,
+                              email: lead.contactEmail,
+                              phone: lead.contactPhone,
+                              source: lead.source,
+                            ),
+                          ),
+                          if (lead.dealValue > 0 ||
+                              (lead.ownerName ?? '').isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  if (lead.dealValue > 0)
+                                    Text(
+                                      formatCrmMoney(lead.dealValue, currency),
+                                      style:
+                                          theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        color: colors.tertiary,
+                                      ),
+                                    ),
+                                  if ((lead.ownerName ?? '').isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Owner: ${lead.ownerName}',
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                        color: colors.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
                         ],
                       ),
-                      if ((lead.ownerName ?? '').isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          'Owner: ${lead.ownerName}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -283,6 +276,7 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
                     TimelineTab(events: timeline),
                     FollowupsTab(
                       lead: lead,
+                      stages: stages,
                       followups: followups,
                       activityTypes: config?.activityTypes ?? const [],
                       canCreate: perms.create,

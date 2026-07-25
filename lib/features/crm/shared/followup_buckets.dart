@@ -64,6 +64,9 @@ CrmLead leadStubFromFollowup(CrmFollowup f) => CrmLead(
       id: f.leadId,
       teamId: '',
       contactId: f.contactId,
+      stageId: f.stageId,
       title: (f.contactName ?? '').isNotEmpty ? f.contactName! : 'Lead',
       ownerName: f.assigneeName,
+      stageName: f.stageName,
+      stageColor: f.stageColor,
     );
