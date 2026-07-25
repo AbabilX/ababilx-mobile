@@ -25,10 +25,9 @@ class FollowupSideCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nextPending = leadFollowups
-        .where((f) => f.isPending && f.id != followup.id)
-        .toList()
-      ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+    final nextPending =
+        leadFollowups.where((f) => f.isPending && f.id != followup.id).toList()
+          ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
     final next = nextPending.isEmpty ? null : nextPending.first;
 
     return Column(
@@ -110,7 +109,9 @@ class _NextBody extends StatelessWidget {
       children: [
         Text(
           formatCrmDateTime(followup.scheduledAt),
-          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
         ),
         const SizedBox(height: 8),
         Wrap(

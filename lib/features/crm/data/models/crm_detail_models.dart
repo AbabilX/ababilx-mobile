@@ -104,14 +104,14 @@ class CrmNote extends Equatable {
   final String? authorName;
 
   factory CrmNote.fromJson(Map<String, dynamic> json) => CrmNote(
-        id: json['id'] as String? ?? '',
-        leadId: json['lead_id'] as String? ?? '',
-        contactId: json['contact_id'] as String? ?? '',
-        body: json['body'] as String? ?? '',
-        createdAt: json['created_at'] as String? ?? '',
-        authorUserId: json['author_user_id'] as String? ?? '',
-        authorName: json['author_name'] as String?,
-      );
+    id: json['id'] as String? ?? '',
+    leadId: json['lead_id'] as String? ?? '',
+    contactId: json['contact_id'] as String? ?? '',
+    body: json['body'] as String? ?? '',
+    createdAt: json['created_at'] as String? ?? '',
+    authorUserId: json['author_user_id'] as String? ?? '',
+    authorName: json['author_name'] as String?,
+  );
 
   @override
   List<Object?> get props => [id, body];
@@ -141,16 +141,16 @@ class CrmActivity extends Equatable {
   final String? activityTypeName;
 
   factory CrmActivity.fromJson(Map<String, dynamic> json) => CrmActivity(
-        id: json['id'] as String? ?? '',
-        leadId: json['lead_id'] as String? ?? '',
-        contactId: json['contact_id'] as String? ?? '',
-        activityTypeId: json['activity_type_id'] as String?,
-        subject: json['subject'] as String? ?? '',
-        body: json['body'] as String? ?? '',
-        occurredAt: json['occurred_at'] as String? ?? '',
-        actorName: json['actor_name'] as String?,
-        activityTypeName: json['activity_type_name'] as String?,
-      );
+    id: json['id'] as String? ?? '',
+    leadId: json['lead_id'] as String? ?? '',
+    contactId: json['contact_id'] as String? ?? '',
+    activityTypeId: json['activity_type_id'] as String?,
+    subject: json['subject'] as String? ?? '',
+    body: json['body'] as String? ?? '',
+    occurredAt: json['occurred_at'] as String? ?? '',
+    actorName: json['actor_name'] as String?,
+    activityTypeName: json['activity_type_name'] as String?,
+  );
 
   @override
   List<Object?> get props => [id, subject];
@@ -168,10 +168,10 @@ class CrmActivityInput {
   final String body;
 
   Map<String, dynamic> toJson() => {
-        'activity_type_id': activityTypeId,
-        'subject': subject,
-        'body': body,
-      };
+    'activity_type_id': activityTypeId,
+    'subject': subject,
+    'body': body,
+  };
 }
 
 class CrmFollowup extends Equatable {
@@ -222,27 +222,27 @@ class CrmFollowup extends Equatable {
   bool get isPending => status == 'pending';
 
   factory CrmFollowup.fromJson(Map<String, dynamic> json) => CrmFollowup(
-        id: json['id'] as String? ?? '',
-        leadId: json['lead_id'] as String? ?? '',
-        contactId: json['contact_id'] as String? ?? '',
-        scheduledAt: json['scheduled_at'] as String? ?? '',
-        stageId: json['stage_id'] as String?,
-        assignedUserId: json['assigned_user_id'] as String?,
-        activityTypeId: json['activity_type_id'] as String?,
-        priority: json['priority'] as String? ?? 'medium',
-        status: json['status'] as String? ?? 'pending',
-        outcome: json['outcome'] as String? ?? '',
-        notes: json['notes'] as String? ?? '',
-        createdBy: json['created_by'] as String? ?? '',
-        completedAt: json['completed_at'] as String?,
-        assigneeName: json['assignee_name'] as String?,
-        activityTypeName: json['activity_type_name'] as String?,
-        contactName: json['contact_name'] as String?,
-        contactCompany: json['contact_company'] as String?,
-        contactPhone: json['contact_phone'] as String?,
-        stageName: json['stage_name'] as String?,
-        stageColor: json['stage_color'] as String?,
-      );
+    id: json['id'] as String? ?? '',
+    leadId: json['lead_id'] as String? ?? '',
+    contactId: json['contact_id'] as String? ?? '',
+    scheduledAt: json['scheduled_at'] as String? ?? '',
+    stageId: json['stage_id'] as String?,
+    assignedUserId: json['assigned_user_id'] as String?,
+    activityTypeId: json['activity_type_id'] as String?,
+    priority: json['priority'] as String? ?? 'medium',
+    status: json['status'] as String? ?? 'pending',
+    outcome: json['outcome'] as String? ?? '',
+    notes: json['notes'] as String? ?? '',
+    createdBy: json['created_by'] as String? ?? '',
+    completedAt: json['completed_at'] as String?,
+    assigneeName: json['assignee_name'] as String?,
+    activityTypeName: json['activity_type_name'] as String?,
+    contactName: json['contact_name'] as String?,
+    contactCompany: json['contact_company'] as String?,
+    contactPhone: json['contact_phone'] as String?,
+    stageName: json['stage_name'] as String?,
+    stageColor: json['stage_color'] as String?,
+  );
 
   @override
   List<Object?> get props => [id, status, scheduledAt, stageId];
@@ -266,14 +266,14 @@ class CrmFollowupInput {
   final String notes;
 
   Map<String, dynamic> toJson() => {
-        'lead_id': leadId,
-        'scheduled_at': scheduledAt,
-        'priority': priority,
-        'notes': notes,
-        if (stageId != null && stageId!.isNotEmpty) 'stage_id': stageId,
-        if (activityTypeId != null) 'activity_type_id': activityTypeId,
-        // Assignee omitted — server inherits lead owner (web parity).
-      };
+    'lead_id': leadId,
+    'scheduled_at': scheduledAt,
+    'priority': priority,
+    'notes': notes,
+    if (stageId != null && stageId!.isNotEmpty) 'stage_id': stageId,
+    if (activityTypeId != null) 'activity_type_id': activityTypeId,
+    // Assignee omitted — server inherits lead owner (web parity).
+  };
 }
 
 class CrmFollowupPatch {
@@ -298,15 +298,15 @@ class CrmFollowupPatch {
   final String? assignedUserId;
 
   Map<String, dynamic> toJson() => {
-        if (scheduledAt != null) 'scheduled_at': scheduledAt,
-        if (stageId != null) 'stage_id': stageId,
-        if (activityTypeId != null) 'activity_type_id': activityTypeId,
-        if (priority != null) 'priority': priority,
-        if (notes != null) 'notes': notes,
-        if (status != null) 'status': status,
-        if (outcome != null) 'outcome': outcome,
-        if (assignedUserId != null) 'assigned_user_id': assignedUserId,
-      };
+    if (scheduledAt != null) 'scheduled_at': scheduledAt,
+    if (stageId != null) 'stage_id': stageId,
+    if (activityTypeId != null) 'activity_type_id': activityTypeId,
+    if (priority != null) 'priority': priority,
+    if (notes != null) 'notes': notes,
+    if (status != null) 'status': status,
+    if (outcome != null) 'outcome': outcome,
+    if (assignedUserId != null) 'assigned_user_id': assignedUserId,
+  };
 }
 
 class CrmDocument extends Equatable {
@@ -335,17 +335,17 @@ class CrmDocument extends Equatable {
   final String? uploaderName;
 
   factory CrmDocument.fromJson(Map<String, dynamic> json) => CrmDocument(
-        id: json['id'] as String? ?? '',
-        leadId: json['lead_id'] as String? ?? '',
-        contactId: json['contact_id'] as String? ?? '',
-        fileUrl: json['file_url'] as String? ?? '',
-        fileName: json['file_name'] as String? ?? '',
-        label: json['label'] as String? ?? '',
-        mimeType: json['mime_type'] as String? ?? '',
-        sizeBytes: (json['size_bytes'] as num?)?.toInt() ?? 0,
-        createdAt: json['created_at'] as String? ?? '',
-        uploaderName: json['uploader_name'] as String?,
-      );
+    id: json['id'] as String? ?? '',
+    leadId: json['lead_id'] as String? ?? '',
+    contactId: json['contact_id'] as String? ?? '',
+    fileUrl: json['file_url'] as String? ?? '',
+    fileName: json['file_name'] as String? ?? '',
+    label: json['label'] as String? ?? '',
+    mimeType: json['mime_type'] as String? ?? '',
+    sizeBytes: (json['size_bytes'] as num?)?.toInt() ?? 0,
+    createdAt: json['created_at'] as String? ?? '',
+    uploaderName: json['uploader_name'] as String?,
+  );
 
   @override
   List<Object?> get props => [id, fileName];

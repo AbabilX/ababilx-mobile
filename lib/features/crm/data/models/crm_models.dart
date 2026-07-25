@@ -62,10 +62,7 @@ class CrmPerms extends Equatable {
     configure: false,
   );
 
-  factory CrmPerms.resolve({
-    required bool canViewCrm,
-    ModuleActions? grants,
-  }) {
+  factory CrmPerms.resolve({required bool canViewCrm, ModuleActions? grants}) {
     final g = grants ?? ModuleActions.none;
     return CrmPerms(
       access: canViewCrm,
@@ -102,8 +99,11 @@ class CrmSettings extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [contactLabelSingular, contactLabelPlural, currency];
+  List<Object?> get props => [
+    contactLabelSingular,
+    contactLabelPlural,
+    currency,
+  ];
 }
 
 class CrmFieldDef extends Equatable {
@@ -124,15 +124,15 @@ class CrmFieldDef extends Equatable {
   final bool required;
 
   factory CrmFieldDef.fromJson(Map<String, dynamic> json) => CrmFieldDef(
-        id: json['id'] as String? ?? '',
-        key: json['key'] as String? ?? '',
-        label: json['label'] as String? ?? '',
-        type: json['type'] as String? ?? 'text',
-        options: (json['options'] as List<dynamic>? ?? [])
-            .map((e) => e.toString())
-            .toList(),
-        required: json['required'] as bool? ?? false,
-      );
+    id: json['id'] as String? ?? '',
+    key: json['key'] as String? ?? '',
+    label: json['label'] as String? ?? '',
+    type: json['type'] as String? ?? 'text',
+    options: (json['options'] as List<dynamic>? ?? [])
+        .map((e) => e.toString())
+        .toList(),
+    required: json['required'] as bool? ?? false,
+  );
 
   @override
   List<Object?> get props => [id, key];
@@ -147,6 +147,7 @@ class CrmStage extends Equatable {
     this.position = 0,
     this.isWon = false,
     this.isLost = false,
+    this.isPayment = false,
   });
 
   final String id;
@@ -156,16 +157,18 @@ class CrmStage extends Equatable {
   final int position;
   final bool isWon;
   final bool isLost;
+  final bool isPayment;
 
   factory CrmStage.fromJson(Map<String, dynamic> json) => CrmStage(
-        id: json['id'] as String? ?? '',
-        pipelineId: json['pipeline_id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        color: json['color'] as String? ?? '',
-        position: (json['position'] as num?)?.toInt() ?? 0,
-        isWon: json['is_won'] as bool? ?? false,
-        isLost: json['is_lost'] as bool? ?? false,
-      );
+    id: json['id'] as String? ?? '',
+    pipelineId: json['pipeline_id'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    color: json['color'] as String? ?? '',
+    position: (json['position'] as num?)?.toInt() ?? 0,
+    isWon: json['is_won'] as bool? ?? false,
+    isLost: json['is_lost'] as bool? ?? false,
+    isPayment: json['is_payment'] as bool? ?? false,
+  );
 
   @override
   List<Object?> get props => [id, name, position];
@@ -187,10 +190,11 @@ class CrmPipeline extends Equatable {
   final List<CrmStage> stages;
 
   factory CrmPipeline.fromJson(Map<String, dynamic> json) {
-    final stages = (json['stages'] as List<dynamic>? ?? [])
-        .map((e) => CrmStage.fromJson(e as Map<String, dynamic>))
-        .toList()
-      ..sort((a, b) => a.position.compareTo(b.position));
+    final stages =
+        (json['stages'] as List<dynamic>? ?? [])
+            .map((e) => CrmStage.fromJson(e as Map<String, dynamic>))
+            .toList()
+          ..sort((a, b) => a.position.compareTo(b.position));
     return CrmPipeline(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
@@ -225,41 +229,172 @@ class CrmConfig extends Equatable {
   }
 
   factory CrmConfig.fromJson(Map<String, dynamic> json) => CrmConfig(
-        settings: CrmSettings.fromJson(
-          json['settings'] as Map<String, dynamic>?,
-        ),
-        pipelines: (json['pipelines'] as List<dynamic>? ?? [])
-            .map((e) => CrmPipeline.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        activityTypes: (json['activity_types'] as List<dynamic>? ?? [])
+    settings: CrmSettings.fromJson(json['settings'] as Map<String, dynamic>?),
+    pipelines: (json['pipelines'] as List<dynamic>? ?? [])
+        .map((e) => CrmPipeline.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    activityTypes:
+        (json['activity_types'] as List<dynamic>? ?? [])
             .map((e) => CrmActivityType.fromJson(e as Map<String, dynamic>))
             .where((a) => a.isActive)
             .toList()
           ..sort((a, b) => a.position.compareTo(b.position)),
-        fields: (json['fields'] as List<dynamic>? ?? [])
-            .map((e) => CrmFieldDef.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    fields: (json['fields'] as List<dynamic>? ?? [])
+        .map((e) => CrmFieldDef.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 
   @override
-  List<Object?> get props =>
-      [settings, pipelines.length, activityTypes.length, fields.length];
+  List<Object?> get props => [
+    settings,
+    pipelines.length,
+    activityTypes.length,
+    fields.length,
+  ];
 }
 
 /// Web `CRMContactType`: contact | organization | prospect.
 typedef CrmContactType = String;
+
+class CrmOrganization extends Equatable {
+  const CrmOrganization({
+    required this.id,
+    required this.teamId,
+    required this.name,
+    this.ownerUserId,
+    this.logoUrl = '',
+    this.website = '',
+    this.industry = '',
+    this.phone = '',
+    this.email = '',
+    this.address = '',
+    this.source = '',
+    this.description = '',
+    this.tags = const [],
+    this.customFields = const {},
+    this.ownerName,
+    this.status = 'prospect',
+    this.contactCount = 0,
+    this.leadCount = 0,
+    this.pipelineValue = 0,
+    this.wonValue = 0,
+    this.paidValue = 0,
+  });
+
+  final String id;
+  final String teamId;
+  final String? ownerUserId;
+  final String name;
+  final String logoUrl;
+  final String website;
+  final String industry;
+  final String phone;
+  final String email;
+  final String address;
+  final String source;
+  final String description;
+  final List<String> tags;
+  final Map<String, dynamic> customFields;
+  final String? ownerName;
+  final String status;
+  final int contactCount;
+  final int leadCount;
+  final double pipelineValue;
+  final double wonValue;
+  final double paidValue;
+
+  factory CrmOrganization.fromJson(Map<String, dynamic> json) {
+    final custom = json['custom_fields'];
+    return CrmOrganization(
+      id: json['id'] as String? ?? '',
+      teamId: json['team_id'] as String? ?? '',
+      ownerUserId: json['owner_user_id'] as String?,
+      name: json['name'] as String? ?? '',
+      logoUrl: json['logo_url'] as String? ?? '',
+      website: json['website'] as String? ?? '',
+      industry: json['industry'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      source: json['source'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      tags: (json['tags'] as List<dynamic>? ?? []).map((e) => '$e').toList(),
+      customFields: custom is Map
+          ? Map<String, dynamic>.from(custom)
+          : const {},
+      ownerName: json['owner_name'] as String?,
+      status: json['status'] as String? ?? 'prospect',
+      contactCount: (json['contact_count'] as num?)?.toInt() ?? 0,
+      leadCount: (json['lead_count'] as num?)?.toInt() ?? 0,
+      pipelineValue: (json['pipeline_value'] as num?)?.toDouble() ?? 0,
+      wonValue: (json['won_value'] as num?)?.toDouble() ?? 0,
+      paidValue: (json['paid_value'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, name, status, contactCount, leadCount];
+}
+
+class CrmOrganizationInput {
+  const CrmOrganizationInput({
+    required this.name,
+    this.ownerUserId,
+    this.logoUrl = '',
+    this.website = '',
+    this.industry = '',
+    this.phone = '',
+    this.email = '',
+    this.address = '',
+    this.source = '',
+    this.description = '',
+    this.tags = const [],
+    this.customFields = const {},
+  });
+
+  final String name;
+  final String? ownerUserId;
+  final String logoUrl;
+  final String website;
+  final String industry;
+  final String phone;
+  final String email;
+  final String address;
+  final String source;
+  final String description;
+  final List<String> tags;
+  final Map<String, dynamic> customFields;
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'owner_user_id': ownerUserId,
+    'logo_url': logoUrl,
+    'website': website,
+    'industry': industry,
+    'phone': phone,
+    'email': email,
+    'address': address,
+    'source': source,
+    'description': description,
+    'tags': tags,
+    'custom_fields': customFields,
+  };
+}
 
 class CrmContact extends Equatable {
   const CrmContact({
     required this.id,
     required this.teamId,
     this.ownerUserId,
+    this.organizationId,
     required this.name,
     this.email = '',
     this.phone = '',
     this.company = '',
     this.contactType = 'contact',
     this.designation = '',
+    this.organizationRole = '',
+    this.isPrimaryContact = false,
     this.imageUrl = '',
     this.source = '',
     this.tags = const [],
@@ -268,6 +403,7 @@ class CrmContact extends Equatable {
     this.createdAt = '',
     this.updatedAt = '',
     this.ownerName,
+    this.organizationName,
     this.leadCount = 0,
     this.totalValue = 0,
   });
@@ -275,12 +411,15 @@ class CrmContact extends Equatable {
   final String id;
   final String teamId;
   final String? ownerUserId;
+  final String? organizationId;
   final String name;
   final String email;
   final String phone;
   final String company;
   final CrmContactType contactType;
   final String designation;
+  final String organizationRole;
+  final bool isPrimaryContact;
   final String imageUrl;
   final String source;
   final List<String> tags;
@@ -289,6 +428,7 @@ class CrmContact extends Equatable {
   final String createdAt;
   final String updatedAt;
   final String? ownerName;
+  final String? organizationName;
   final int leadCount;
   final double totalValue;
 
@@ -299,12 +439,17 @@ class CrmContact extends Equatable {
       id: json['id'] as String? ?? '',
       teamId: json['team_id'] as String? ?? '',
       ownerUserId: json['owner_user_id'] as String?,
+      organizationId: json['organization_id'] as String?,
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
       company: json['company'] as String? ?? '',
-      contactType: type == 'organization' || type == 'prospect' ? type : 'contact',
+      contactType: type == 'organization' || type == 'prospect'
+          ? type
+          : 'contact',
       designation: json['designation'] as String? ?? '',
+      organizationRole: json['organization_role'] as String? ?? '',
+      isPrimaryContact: json['is_primary_contact'] as bool? ?? false,
       imageUrl: json['image_url'] as String? ?? '',
       source: json['source'] as String? ?? '',
       tags: (json['tags'] as List<dynamic>? ?? [])
@@ -317,6 +462,7 @@ class CrmContact extends Equatable {
       createdAt: json['created_at'] as String? ?? '',
       updatedAt: json['updated_at'] as String? ?? '',
       ownerName: json['owner_name'] as String?,
+      organizationName: json['organization_name'] as String?,
       leadCount: (json['lead_count'] as num?)?.toInt() ?? 0,
       totalValue: (json['total_value'] as num?)?.toDouble() ?? 0,
     );
@@ -338,6 +484,9 @@ class CrmContactInput {
     this.source = '',
     this.tags = const [],
     this.ownerUserId,
+    this.organizationId,
+    this.organizationRole = '',
+    this.isPrimaryContact = false,
     this.unassignedOwner = false,
     this.customFields = const {},
   });
@@ -352,26 +501,33 @@ class CrmContactInput {
   final String source;
   final List<String> tags;
   final String? ownerUserId;
+  final String? organizationId;
+  final String organizationRole;
+  final bool isPrimaryContact;
+
   /// When true, sends `owner_user_id: null` (Unassigned).
   final bool unassignedOwner;
   final Map<String, dynamic> customFields;
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'email': email,
-        'phone': phone,
-        'company': company,
-        'contact_type': contactType,
-        'designation': designation,
-        'image_url': imageUrl,
-        'source': source,
-        'tags': tags,
-        'custom_fields': customFields,
-        if (unassignedOwner)
-          'owner_user_id': null
-        else if (ownerUserId != null)
-          'owner_user_id': ownerUserId,
-      };
+    'name': name,
+    'email': email,
+    'phone': phone,
+    'company': company,
+    'contact_type': contactType,
+    'designation': designation,
+    'image_url': imageUrl,
+    'source': source,
+    'tags': tags,
+    'custom_fields': customFields,
+    if (organizationId != null) 'organization_id': organizationId,
+    'organization_role': organizationRole,
+    'is_primary_contact': isPrimaryContact,
+    if (unassignedOwner)
+      'owner_user_id': null
+    else if (ownerUserId != null)
+      'owner_user_id': ownerUserId,
+  };
 }
 
 /// Deal/opportunity under a contact (web `CRMLead`).
@@ -383,8 +539,10 @@ class CrmLead extends Equatable {
     this.pipelineId,
     this.stageId,
     this.ownerUserId,
+    this.organizationId,
     required this.title,
     this.dealValue = 0,
+    this.paymentDueDate,
     this.source = '',
     this.customFields = const {},
     this.createdBy = '',
@@ -398,8 +556,11 @@ class CrmLead extends Equatable {
     this.stageName,
     this.stageColor,
     this.ownerName,
+    this.organizationName,
     this.isWon = false,
     this.isLost = false,
+    this.paidValue = 0,
+    this.paymentStatus = 'unpaid',
   });
 
   final String id;
@@ -408,8 +569,10 @@ class CrmLead extends Equatable {
   final String? pipelineId;
   final String? stageId;
   final String? ownerUserId;
+  final String? organizationId;
   final String title;
   final double dealValue;
+  final String? paymentDueDate;
   final String source;
   final Map<String, dynamic> customFields;
   final String createdBy;
@@ -423,8 +586,14 @@ class CrmLead extends Equatable {
   final String? stageName;
   final String? stageColor;
   final String? ownerName;
+  final String? organizationName;
   final bool isWon;
   final bool isLost;
+  final double paidValue;
+  final String paymentStatus;
+
+  double get outstandingValue =>
+      (dealValue - paidValue).clamp(0, double.infinity);
 
   factory CrmLead.fromJson(Map<String, dynamic> json) {
     final custom = json['custom_fields'];
@@ -435,8 +604,10 @@ class CrmLead extends Equatable {
       pipelineId: json['pipeline_id'] as String?,
       stageId: json['stage_id'] as String?,
       ownerUserId: json['owner_user_id'] as String?,
+      organizationId: json['organization_id'] as String?,
       title: json['title'] as String? ?? '',
       dealValue: (json['deal_value'] as num?)?.toDouble() ?? 0,
+      paymentDueDate: json['payment_due_date'] as String?,
       source: json['source'] as String? ?? '',
       customFields: custom is Map
           ? Map<String, dynamic>.from(custom)
@@ -452,8 +623,11 @@ class CrmLead extends Equatable {
       stageName: json['stage_name'] as String?,
       stageColor: json['stage_color'] as String?,
       ownerName: json['owner_name'] as String?,
+      organizationName: json['organization_name'] as String?,
       isWon: json['is_won'] as bool? ?? false,
       isLost: json['is_lost'] as bool? ?? false,
+      paidValue: (json['paid_value'] as num?)?.toDouble() ?? 0,
+      paymentStatus: json['payment_status'] as String? ?? 'unpaid',
     );
   }
 
@@ -483,17 +657,89 @@ class CrmLeadInput {
   final Map<String, dynamic> customFields;
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'deal_value': dealValue,
-        'source': source,
-        'custom_fields': customFields,
-        'pipeline_id': pipelineId,
-        'stage_id': stageId,
-        if (unassignedOwner)
-          'owner_user_id': null
-        else if (ownerUserId != null)
-          'owner_user_id': ownerUserId,
-      };
+    'title': title,
+    'deal_value': dealValue,
+    'source': source,
+    'custom_fields': customFields,
+    'pipeline_id': pipelineId,
+    'stage_id': stageId,
+    if (unassignedOwner)
+      'owner_user_id': null
+    else if (ownerUserId != null)
+      'owner_user_id': ownerUserId,
+  };
+}
+
+/// One immutable entry in a lead's payment ledger.
+class CrmLeadPayment extends Equatable {
+  const CrmLeadPayment({
+    required this.id,
+    required this.leadId,
+    required this.contactId,
+    required this.kind,
+    required this.amount,
+    required this.paidAt,
+    this.method = '',
+    this.reference = '',
+    this.note = '',
+    this.creatorName,
+  });
+
+  final String id;
+  final String leadId;
+  final String contactId;
+  final String kind;
+  final double amount;
+  final String paidAt;
+  final String method;
+  final String reference;
+  final String note;
+  final String? creatorName;
+
+  bool get isRefund => kind == 'refund';
+
+  factory CrmLeadPayment.fromJson(Map<String, dynamic> json) => CrmLeadPayment(
+    id: json['id'] as String? ?? '',
+    leadId: json['lead_id'] as String? ?? '',
+    contactId: json['contact_id'] as String? ?? '',
+    kind: json['kind'] as String? ?? 'payment',
+    amount: (json['amount'] as num?)?.toDouble() ?? 0,
+    paidAt: json['paid_at'] as String? ?? '',
+    method: json['method'] as String? ?? '',
+    reference: json['reference'] as String? ?? '',
+    note: json['note'] as String? ?? '',
+    creatorName: json['creator_name'] as String?,
+  );
+
+  @override
+  List<Object?> get props => [id, kind, amount, paidAt];
+}
+
+class CrmLeadPaymentInput {
+  const CrmLeadPaymentInput({
+    required this.amount,
+    required this.paidAt,
+    this.kind = 'payment',
+    this.method = '',
+    this.reference = '',
+    this.note = '',
+  });
+
+  final String kind;
+  final double amount;
+  final String paidAt;
+  final String method;
+  final String reference;
+  final String note;
+
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'amount': amount,
+    'paid_at': paidAt,
+    'method': method,
+    'reference': reference,
+    'note': note,
+  };
 }
 
 /// Result from lead create/edit sheet.

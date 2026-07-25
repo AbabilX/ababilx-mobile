@@ -45,9 +45,9 @@ class _NotesTabState extends ConsumerState<NotesTab> {
       invalidateLeadDetail(ref, widget.leadId);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -59,9 +59,9 @@ class _NotesTabState extends ConsumerState<NotesTab> {
       invalidateLeadDetail(ref, widget.leadId);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 

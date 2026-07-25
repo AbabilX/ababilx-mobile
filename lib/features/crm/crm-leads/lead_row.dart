@@ -160,10 +160,7 @@ class LeadRow extends StatelessWidget {
                     },
                     itemBuilder: (_) => [
                       if (canUpdate)
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Edit'),
-                        ),
+                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
                       if (canDelete)
                         const PopupMenuItem(
                           value: 'delete',

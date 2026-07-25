@@ -6,11 +6,17 @@ class CrmContactsApi {
   const CrmContactsApi(this._client);
   final ApiClient _client;
 
-  Future<List<CrmContact>> list({String? ownerId, String? q}) async {
+  Future<List<CrmContact>> list({
+    String? ownerId,
+    String? organizationId,
+    String? q,
+  }) async {
     final res = await _client.get(
       ApiConstants.crmContacts,
       queryParameters: {
         if (ownerId != null && ownerId.isNotEmpty) 'owner_id': ownerId,
+        if (organizationId != null && organizationId.isNotEmpty)
+          'organization_id': organizationId,
         if (q != null && q.isNotEmpty) 'q': q,
       },
     );

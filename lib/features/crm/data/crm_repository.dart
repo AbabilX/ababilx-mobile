@@ -8,28 +8,59 @@ import 'crm_dashboard_api.dart';
 import 'crm_documents_api.dart';
 import 'crm_followups_api.dart';
 import 'crm_leads_api.dart';
+import 'crm_payments_api.dart';
+import 'crm_organizations_api.dart';
 import 'models/crm_dashboard.dart';
 import 'models/crm_models.dart';
 
 class CrmRepository {
   CrmRepository(ApiClient client)
-      : contacts = CrmContactsApi(client),
-        contactMedia = CrmContactMediaApi(client),
-        leads = CrmLeadsApi(client),
-        followups = CrmFollowupsApi(client),
-        documents = CrmDocumentsApi(client),
-        dashboard = CrmDashboardApi(client),
-        config = CrmConfigApi(client);
+    : contacts = CrmContactsApi(client),
+      contactMedia = CrmContactMediaApi(client),
+      leads = CrmLeadsApi(client),
+      payments = CrmPaymentsApi(client),
+      organizations = CrmOrganizationsApi(client),
+      followups = CrmFollowupsApi(client),
+      documents = CrmDocumentsApi(client),
+      dashboard = CrmDashboardApi(client),
+      config = CrmConfigApi(client);
 
   final CrmContactsApi contacts;
   final CrmContactMediaApi contactMedia;
   final CrmLeadsApi leads;
+  final CrmPaymentsApi payments;
+  final CrmOrganizationsApi organizations;
   final CrmFollowupsApi followups;
   final CrmDocumentsApi documents;
   final CrmDashboardApi dashboard;
   final CrmConfigApi config;
 
-  Future<List<CrmContact>> listContacts({String? q}) => contacts.list(q: q);
+  Future<List<CrmContact>> listContacts({String? q, String? organizationId}) =>
+      contacts.list(q: q, organizationId: organizationId);
+
+  Future<List<CrmOrganization>> listOrganizations({String? q}) =>
+      organizations.list(q: q);
+
+  Future<List<CrmOrganization>> listOrganizationsOptional() async {
+    try {
+      return await organizations.list();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<CrmOrganization> getOrganization(String id) => organizations.get(id);
+
+  Future<CrmOrganization> createOrganization(CrmOrganizationInput body) =>
+      organizations.create(body);
+
+  Future<CrmOrganization> updateOrganization(
+    String id,
+    CrmOrganizationInput body,
+  ) => organizations.update(id, body);
+
+  Future<CrmOrganization> removeOrganization(String id, String mode) =>
+      organizations.remove(id, mode);
 
   Future<CrmContact> getContact(String id) => contacts.get(id);
 
@@ -47,14 +78,16 @@ class CrmRepository {
   Future<String> uploadContactImage({
     required List<int> bytes,
     required String contentType,
-  }) =>
-      contactMedia.upload(bytes: bytes, contentType: contentType);
+  }) => contactMedia.upload(bytes: bytes, contentType: contentType);
 
   Future<void> discardContactImage(String imageUrl) =>
       contactMedia.discard(imageUrl);
 
-  Future<List<CrmLead>> listLeads({String? q, String? contactId}) =>
-      leads.list(q: q, contactId: contactId);
+  Future<List<CrmLead>> listLeads({
+    String? q,
+    String? contactId,
+    String? organizationId,
+  }) => leads.list(q: q, contactId: contactId, organizationId: organizationId);
 
   Future<CrmLead> getLead(String id) => leads.get(id);
 
@@ -72,16 +105,15 @@ class CrmRepository {
     String? description,
     String? note,
     List<String> uploadIds = const [],
-  }) =>
-      leads.commitStageTransition(
-        id,
-        stageId: stageId,
-        pipelineId: pipelineId,
-        occurredAt: occurredAt,
-        description: description,
-        note: note,
-        uploadIds: uploadIds,
-      );
+  }) => leads.commitStageTransition(
+    id,
+    stageId: stageId,
+    pipelineId: pipelineId,
+    occurredAt: occurredAt,
+    description: description,
+    note: note,
+    uploadIds: uploadIds,
+  );
 
   Future<({String uploadId, String uploadUrl})> presignStageUpload(
     String leadId, {
@@ -89,14 +121,13 @@ class CrmRepository {
     required String contentType,
     required String fileName,
     required int sizeBytes,
-  }) =>
-      leads.presignStageUpload(
-        leadId,
-        targetStageId: targetStageId,
-        contentType: contentType,
-        fileName: fileName,
-        sizeBytes: sizeBytes,
-      );
+  }) => leads.presignStageUpload(
+    leadId,
+    targetStageId: targetStageId,
+    contentType: contentType,
+    fileName: fileName,
+    sizeBytes: sizeBytes,
+  );
 
   Future<void> discardStageUpload(String uploadId) =>
       leads.discardStageUpload(uploadId);
@@ -105,10 +136,20 @@ class CrmRepository {
     String id, {
     required String stageId,
     String? pipelineId,
-  }) =>
-      leads.updateStage(id, stageId: stageId, pipelineId: pipelineId);
+  }) => leads.updateStage(id, stageId: stageId, pipelineId: pipelineId);
 
   Future<void> deleteLead(String id) => leads.delete(id);
+
+  Future<List<CrmLeadPayment>> listLeadPayments(String leadId) =>
+      payments.list(leadId);
+
+  Future<CrmLeadPayment> createLeadPayment(
+    String leadId,
+    CrmLeadPaymentInput body,
+  ) => payments.create(leadId, body);
+
+  Future<void> deleteLeadPayment(String paymentId) =>
+      payments.delete(paymentId);
 
   Future<List<CrmTimelineEvent>> leadTimeline(String id) => leads.timeline(id);
 
@@ -141,11 +182,7 @@ class CrmRepository {
     required String action,
     String? assignedUserId,
   }) =>
-      followups.bulk(
-        ids: ids,
-        action: action,
-        assignedUserId: assignedUserId,
-      );
+      followups.bulk(ids: ids, action: action, assignedUserId: assignedUserId);
 
   Future<List<CrmDocument>> listDocuments(String leadId) =>
       documents.list(leadId);
@@ -156,14 +193,13 @@ class CrmRepository {
     required String fileName,
     required String mimeType,
     String? label,
-  }) =>
-      documents.upload(
-        leadId,
-        bytes: bytes,
-        fileName: fileName,
-        mimeType: mimeType,
-        label: label,
-      );
+  }) => documents.upload(
+    leadId,
+    bytes: bytes,
+    fileName: fileName,
+    mimeType: mimeType,
+    label: label,
+  );
 
   Future<void> deleteDocument(String docId) => documents.delete(docId);
 

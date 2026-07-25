@@ -13,9 +13,9 @@ class CrmEmpty extends StatelessWidget {
         child: Text(
           message,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colors.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
         ),
       ),
     );
@@ -27,9 +27,7 @@ class CrmLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(strokeWidth: 2.5),
-    );
+    return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
   }
 }
 
@@ -46,9 +44,9 @@ class CrmErrorBox extends StatelessWidget {
         child: Text(
           message,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colors.error,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: colors.error),
         ),
       ),
     );

@@ -19,7 +19,10 @@ class LeadsSummary extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Divider(height: 24, color: colors.outlineVariant.withValues(alpha: 0.5)),
+        Divider(
+          height: 24,
+          color: colors.outlineVariant.withValues(alpha: 0.5),
+        ),
         Text(
           'Leads (${leads.length})',
           style: theme.textTheme.labelSmall?.copyWith(
@@ -39,8 +42,10 @@ class LeadsSummary extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 180),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(

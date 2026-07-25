@@ -88,5 +88,5 @@ class CrmLeadsUiNotifier extends Notifier<CrmLeadsUiState> {
 
 final crmLeadsUiProvider =
     NotifierProvider<CrmLeadsUiNotifier, CrmLeadsUiState>(
-  CrmLeadsUiNotifier.new,
-);
+      CrmLeadsUiNotifier.new,
+    );

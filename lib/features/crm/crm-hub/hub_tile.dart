@@ -49,9 +49,7 @@ class CrmHubTile extends StatelessWidget {
               maxLines: 2,
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelMedium?.copyWith(
-                height: 1.2,
-              ),
+              style: theme.textTheme.labelMedium?.copyWith(height: 1.2),
             ),
           ],
         ),

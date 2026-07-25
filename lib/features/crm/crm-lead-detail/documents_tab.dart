@@ -52,15 +52,17 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
     final bytes = f.bytes;
     if (bytes == null || bytes.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not read file')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not read file')));
       return;
     }
 
     setState(() => _busy = true);
     try {
-      await ref.read(crmRepositoryProvider).uploadDocument(
+      await ref
+          .read(crmRepositoryProvider)
+          .uploadDocument(
             widget.leadId,
             bytes: Uint8List.fromList(bytes),
             fileName: f.name,
@@ -72,14 +74,14 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
       _label.clear();
       invalidateLeadDetail(ref, widget.leadId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Document uploaded')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Document uploaded')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -90,14 +92,14 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
       await ref.read(crmRepositoryProvider).deleteDocument(d.id);
       invalidateLeadDetail(ref, widget.leadId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Document deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Document deleted')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -140,9 +142,7 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
 
     return ListView(
       shrinkWrap: widget.shrinkWrap,
-      physics: widget.shrinkWrap
-          ? const NeverScrollableScrollPhysics()
-          : null,
+      physics: widget.shrinkWrap ? const NeverScrollableScrollPhysics() : null,
       padding: widget.shrinkWrap
           ? EdgeInsets.zero
           : const EdgeInsets.fromLTRB(16, 8, 16, 24),

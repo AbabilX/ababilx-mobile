@@ -19,6 +19,7 @@ Future<CrmContactInput?> showContactFormSheet(
   required List<TeamMember> members,
   required String contactLabel,
   required bool canAssignOwner,
+  List<CrmOrganization> organizations = const [],
   CrmContact? initial,
 }) {
   final colors = Theme.of(context).colorScheme;
@@ -41,6 +42,7 @@ Future<CrmContactInput?> showContactFormSheet(
             members: members.where((m) => m.status == 'active').toList(),
             contactLabel: contactLabel,
             canAssignOwner: canAssignOwner,
+            organizations: organizations,
             initial: initial,
           ),
         ),
@@ -55,6 +57,7 @@ class _ContactFormBody extends ConsumerStatefulWidget {
     required this.members,
     required this.contactLabel,
     required this.canAssignOwner,
+    required this.organizations,
     this.initial,
   });
 
@@ -62,6 +65,7 @@ class _ContactFormBody extends ConsumerStatefulWidget {
   final List<TeamMember> members;
   final String contactLabel;
   final bool canAssignOwner;
+  final List<CrmOrganization> organizations;
   final CrmContact? initial;
 
   @override
@@ -79,6 +83,9 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
   late String _ownerId;
   late String _contactType;
   late String _imageUrl;
+  String? _organizationId;
+  late final TextEditingController _organizationRole;
+  var _isPrimary = false;
   late Map<String, dynamic> _custom;
   var _uploading = false;
 
@@ -96,6 +103,9 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
     _ownerId = i?.ownerUserId ?? _noneOwner;
     _contactType = i?.contactType ?? 'contact';
     _imageUrl = i?.imageUrl ?? '';
+    _organizationId = i?.organizationId;
+    _organizationRole = TextEditingController(text: i?.organizationRole ?? '');
+    _isPrimary = i?.isPrimaryContact ?? false;
     _custom = Map<String, dynamic>.from(i?.customFields ?? {});
   }
 
@@ -108,6 +118,7 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
     _designation.dispose();
     _source.dispose();
     _tags.dispose();
+    _organizationRole.dispose();
     super.dispose();
   }
 
@@ -123,23 +134,26 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
     final bytes = await file.readAsBytes();
     if (bytes.length > 5 * 1024 * 1024) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image exceeds 5 MB')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Image exceeds 5 MB')));
       return;
     }
 
-    final mime = file.mimeType ??
+    final mime =
+        file.mimeType ??
         (file.path.toLowerCase().endsWith('.png')
             ? 'image/png'
             : file.path.toLowerCase().endsWith('.webp')
-                ? 'image/webp'
-                : 'image/jpeg');
+            ? 'image/webp'
+            : 'image/jpeg');
 
     setState(() => _uploading = true);
     try {
       final prev = _imageUrl;
-      final url = await ref.read(crmRepositoryProvider).uploadContactImage(
+      final url = await ref
+          .read(crmRepositoryProvider)
+          .uploadContactImage(
             bytes: Uint8List.fromList(bytes),
             contentType: mime,
           );
@@ -152,9 +166,9 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
       setState(() => _imageUrl = url);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -190,6 +204,9 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
         source: _source.text.trim(),
         tags: tags,
         ownerUserId: _ownerId == _noneOwner ? null : _ownerId,
+        organizationId: _organizationId,
+        organizationRole: _organizationRole.text.trim(),
+        isPrimaryContact: _isPrimary,
         unassignedOwner: widget.canAssignOwner && _ownerId == _noneOwner,
         customFields: _custom,
       ),
@@ -281,8 +298,13 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
                       children: [
                         TextButton.icon(
                           onPressed: _uploading ? null : _pickImage,
-                          icon: const Icon(Icons.photo_camera_outlined, size: 18),
-                          label: Text(_imageUrl.isEmpty ? 'Add photo' : 'Change'),
+                          icon: const Icon(
+                            Icons.photo_camera_outlined,
+                            size: 18,
+                          ),
+                          label: Text(
+                            _imageUrl.isEmpty ? 'Add photo' : 'Change',
+                          ),
                         ),
                         if (_imageUrl.isNotEmpty)
                           TextButton(
@@ -309,9 +331,47 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
                       child: Text(contactTypeLabel(t)),
                     ),
                 ],
-                onChanged: (v) =>
-                    setState(() => _contactType = v ?? 'contact'),
+                onChanged: (v) => setState(() => _contactType = v ?? 'contact'),
               ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _organizationId ?? _noneOwner,
+                decoration: const InputDecoration(
+                  labelText: 'Organization (optional)',
+                  isDense: true,
+                ),
+                items: [
+                  const DropdownMenuItem(
+                    value: _noneOwner,
+                    child: Text('No organization'),
+                  ),
+                  for (final organization in widget.organizations)
+                    DropdownMenuItem(
+                      value: organization.id,
+                      child: Text(organization.name),
+                    ),
+                ],
+                onChanged: (value) => setState(
+                  () => _organizationId = value == _noneOwner ? null : value,
+                ),
+              ),
+              if (_organizationId != null) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _organizationRole,
+                  decoration: const InputDecoration(
+                    labelText: 'Role in organization',
+                    isDense: true,
+                  ),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _isPrimary,
+                  title: const Text('Primary contact'),
+                  onChanged: (value) =>
+                      setState(() => _isPrimary = value ?? false),
+                ),
+              ],
               const SizedBox(height: 12),
               TextField(
                 controller: _name,
@@ -385,8 +445,7 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
                         child: Text(m.displayName),
                       ),
                   ],
-                  onChanged: (v) =>
-                      setState(() => _ownerId = v ?? _noneOwner),
+                  onChanged: (v) => setState(() => _ownerId = v ?? _noneOwner),
                 ),
               ],
               const SizedBox(height: 12),
@@ -460,8 +519,8 @@ class _CustomField extends StatelessWidget {
       keyboardType: def.type == 'number'
           ? TextInputType.number
           : def.type == 'email'
-              ? TextInputType.emailAddress
-              : TextInputType.text,
+          ? TextInputType.emailAddress
+          : TextInputType.text,
       decoration: InputDecoration(labelText: label, isDense: true),
     );
   }

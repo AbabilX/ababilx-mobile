@@ -1,0 +1,184 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
+import '../../messages/providers/team_gate_provider.dart';
+import '../crm-organizations/organization_form_sheet.dart';
+import '../data/crm_repository.dart';
+import '../data/models/crm_models.dart';
+import '../providers/crm_contacts_provider.dart';
+import '../providers/crm_organizations_provider.dart';
+import '../shared/crm_money.dart';
+import '../shared/crm_ui.dart';
+
+class CrmOrganizationsScreen extends ConsumerStatefulWidget {
+  const CrmOrganizationsScreen({super.key});
+
+  @override
+  ConsumerState<CrmOrganizationsScreen> createState() =>
+      _CrmOrganizationsScreenState();
+}
+
+class _CrmOrganizationsScreenState
+    extends ConsumerState<CrmOrganizationsScreen> {
+  final _search = TextEditingController();
+  var _query = '';
+  var _showSearch = false;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  Future<void> _form([CrmOrganization? initial]) async {
+    final team = ref.read(teamGateProvider).valueOrNull;
+    if (team == null) return;
+    final input = await showOrganizationFormSheet(
+      context,
+      members: team.members,
+      canAssignOwner: team.canAssignCrmOwner,
+      initial: initial,
+    );
+    if (input == null) return;
+    final repo = ref.read(crmRepositoryProvider);
+    if (initial == null) {
+      await repo.createOrganization(input);
+    } else {
+      await repo.updateOrganization(initial.id, input);
+    }
+    ref.invalidate(crmOrganizationsProvider(_query));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final perms = ref.watch(crmPermsProvider);
+    final organizations = ref.watch(crmOrganizationsProvider(_query));
+    final currency =
+        ref.watch(crmConfigProvider).valueOrNull?.settings.currency ?? 'BDT';
+    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () => context.go('/crm'),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+        title: _showSearch
+            ? TextField(
+                controller: _search,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search organizations',
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) => setState(() => _query = value.trim()),
+              )
+            : const Text('Organizations'),
+        actions: [
+          IconButton(
+            onPressed: () => setState(() {
+              _showSearch = !_showSearch;
+              if (!_showSearch) {
+                _search.clear();
+                _query = '';
+              }
+            }),
+            icon: Icon(
+              _showSearch ? Icons.close_rounded : Icons.search_rounded,
+            ),
+          ),
+          if (perms.create)
+            IconButton(
+              onPressed: _form,
+              icon: const Icon(Icons.add_rounded),
+              tooltip: 'New organization',
+            ),
+        ],
+      ),
+      body: organizations.when(
+        loading: () => const CrmLoading(),
+        error: (error, _) => CrmErrorBox(message: error.toString()),
+        data: (items) => items.isEmpty
+            ? const CrmEmpty(message: 'No organizations yet.')
+            : RefreshIndicator(
+                onRefresh: () async =>
+                    ref.invalidate(crmOrganizationsProvider(_query)),
+                child: ListView.separated(
+                  padding: const EdgeInsets.only(
+                    bottom: ShellPillMetrics.contentBottomInset,
+                  ),
+                  itemCount: items.length,
+                  separatorBuilder: (_, _) => Divider(
+                    height: 1,
+                    indent: 72,
+                    color: colors.outlineVariant,
+                  ),
+                  itemBuilder: (_, index) {
+                    final item = items[index];
+                    final subtitle = item.website.isNotEmpty
+                        ? item.website
+                        : item.industry;
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      onTap: () =>
+                          context.push('/crm/organizations/${item.id}'),
+                      leading: CircleAvatar(
+                        backgroundColor: colors.primaryContainer,
+                        foregroundColor: colors.onPrimaryContainer,
+                        child: item.logoUrl.isNotEmpty
+                            ? ClipOval(
+                                child: Image.network(
+                                  item.logoUrl,
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : const Icon(Icons.business_rounded),
+                      ),
+                      title: Text(
+                        item.name,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(
+                        [
+                          if (subtitle.isNotEmpty) subtitle,
+                          '${item.contactCount} contacts',
+                          '${item.leadCount} leads',
+                        ].join(' · '),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            item.status,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colors.primary,
+                            ),
+                          ),
+                          if (item.pipelineValue > 0)
+                            Text(
+                              formatCrmMoney(item.pipelineValue, currency),
+                              style: theme.textTheme.labelMedium,
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+      ),
+    );
+  }
+}

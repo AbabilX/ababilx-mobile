@@ -39,9 +39,10 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 5, vsync: this)..addListener(() {
-      if (!_tabs.indexIsChanging) setState(() {});
-    });
+    _tabs = TabController(length: 5, vsync: this)
+      ..addListener(() {
+        if (!_tabs.indexIsChanging) setState(() {});
+      });
   }
 
   @override
@@ -70,7 +71,9 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
     if (body == null || !mounted) return;
     setState(() => _busy = true);
     try {
-      await ref.read(crmRepositoryProvider).patchFollowup(
+      await ref
+          .read(crmRepositoryProvider)
+          .patchFollowup(
             f.id,
             CrmFollowupPatch(
               scheduledAt: body.scheduledAt,
@@ -83,14 +86,14 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
       ref.invalidate(crmFollowupsProvider(''));
       invalidateLeadDetail(ref, f.leadId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Follow-up updated')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Follow-up updated')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -134,9 +137,9 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -172,9 +175,9 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -263,9 +266,9 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
               const SizedBox(height: 12),
               Text(
                 'Logged activities',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               for (final a in activities)
                 ListTile(
@@ -276,9 +279,7 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
                         : a.subject,
                   ),
                   subtitle: Text(
-                    a.body.isEmpty
-                        ? formatCrmDateTime(a.occurredAt)
-                        : a.body,
+                    a.body.isEmpty ? formatCrmDateTime(a.occurredAt) : a.body,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -364,21 +365,20 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
             final currency = config?.settings.currency ?? 'BDT';
             final timeline =
                 ref.watch(crmLeadTimelineProvider(lead.id)).valueOrNull ??
-                    const [];
+                const [];
             final notes =
                 ref.watch(crmLeadNotesProvider(lead.id)).valueOrNull ??
-                    const [];
+                const [];
             final activities =
                 ref.watch(crmLeadActivitiesProvider(lead.id)).valueOrNull ??
-                    const [];
+                const [];
             final leadFollowups =
                 ref.watch(crmLeadFollowupsProvider(lead.id)).valueOrNull ??
-                    const [];
+                const [];
             final documents =
                 ref.watch(crmLeadDocumentsProvider(lead.id)).valueOrNull ??
-                    const [];
-            final pendingTasks =
-                leadFollowups.where((x) => x.isPending).length;
+                const [];
+            final pendingTasks = leadFollowups.where((x) => x.isPending).length;
 
             return Scaffold(
               appBar: AppBar(
@@ -423,14 +423,12 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
                         borderRadius: BorderRadius.circular(16),
                         child: Column(
                           children: [
-                            FollowupContactSummary(
-                              lead: lead,
-                              followup: f,
-                            ),
+                            FollowupContactSummary(lead: lead, followup: f),
                             Divider(
                               height: 1,
-                              color: colors.outlineVariant
-                                  .withValues(alpha: 0.5),
+                              color: colors.outlineVariant.withValues(
+                                alpha: 0.5,
+                              ),
                             ),
                             LeadStageStepper(
                               lead: lead,
@@ -466,9 +464,7 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
                                 const Tab(text: 'Details'),
                                 Tab(text: 'Notes (${notes.length})'),
                                 Tab(text: 'Tasks ($pendingTasks)'),
-                                Tab(
-                                  text: 'Documents (${documents.length})',
-                                ),
+                                Tab(text: 'Documents (${documents.length})'),
                               ],
                             ),
                             Padding(

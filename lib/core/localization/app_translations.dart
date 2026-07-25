@@ -33,6 +33,19 @@ class AppTranslations {
       'crm_contacts': 'Contacts',
       'crm_leads': 'Leads',
       'crm_followups': 'Follow-ups',
+      'crm_organizations': 'Organizations',
+      'crm_payments': 'Payments',
+      'crm_add_payment': 'Add payment',
+      'crm_remaining': 'Remaining',
+      'crm_paid': 'Paid',
+      'crm_payment_complete': 'Payment complete',
+      'crm_payment_locked': 'Payments are locked after a lead is closed.',
+      'crm_refund': 'Refund',
+      'crm_record_payment': 'Record payment',
+      'crm_payment_amount': 'Amount',
+      'crm_payment_method': 'Method',
+      'crm_payment_reference': 'Reference',
+      'crm_save_payment': 'Save payment',
       'crm_dashboard': 'Dashboard',
       'crm_calendar': 'Calendar',
       'crm_timeline': 'Timeline',
@@ -66,7 +79,8 @@ class AppTranslations {
       'confirm_signout': 'Are you sure you want to sign out?',
       'cancel': 'Cancel',
       'notif_enable_title': 'Enable notifications',
-      'notif_enable_body': 'Tap to allow push alerts for standups and team updates.',
+      'notif_enable_body':
+          'Tap to allow push alerts for standups and team updates.',
       'notif_enabled': 'Notifications enabled',
       'notif_still_denied': 'Permission still denied — check system settings',
       'battery_opt_title': 'Battery optimization',
@@ -97,6 +111,19 @@ class AppTranslations {
       'crm_contacts': 'কন্টাক্টস',
       'crm_leads': 'লিডস',
       'crm_followups': 'ফলো-আপ',
+      'crm_organizations': 'প্রতিষ্ঠান',
+      'crm_payments': 'পেমেন্ট',
+      'crm_add_payment': 'পেমেন্ট যোগ করুন',
+      'crm_remaining': 'বাকি',
+      'crm_paid': 'পরিশোধিত',
+      'crm_payment_complete': 'পেমেন্ট সম্পূর্ণ',
+      'crm_payment_locked': 'লিড বন্ধ হওয়ার পরে পেমেন্ট পরিবর্তন করা যাবে না।',
+      'crm_refund': 'ফেরত',
+      'crm_record_payment': 'পেমেন্ট রেকর্ড করুন',
+      'crm_payment_amount': 'পরিমাণ',
+      'crm_payment_method': 'মাধ্যম',
+      'crm_payment_reference': 'রেফারেন্স',
+      'crm_save_payment': 'পেমেন্ট সংরক্ষণ করুন',
       'crm_dashboard': 'ড্যাশবোর্ড',
       'crm_calendar': 'ক্যালেন্ডার',
       'crm_timeline': 'টাইমলাইন',
@@ -133,8 +160,7 @@ class AppTranslations {
       'notif_enable_body':
           'স্ট্যান্ডআপ ও টিম আপডেটের জন্য পুশ অ্যালার্ট অনুমতি দিন।',
       'notif_enabled': 'নোটিফিকেশন চালু হয়েছে',
-      'notif_still_denied':
-          'অনুমতি এখনো বন্ধ — সিস্টেম সেটিংস চেক করুন',
+      'notif_still_denied': 'অনুমতি এখনো বন্ধ — সিস্টেম সেটিংস চেক করুন',
       'battery_opt_title': 'ব্যাটারি অপটিমাইজেশন',
       'battery_opt_need_body':
           'ব্যাকগ্রাউন্ডে নোটিফিকেশন চালু রাখতে অপটিমাইজেশন বন্ধ করুন।',
@@ -147,7 +173,7 @@ class AppTranslations {
       'battery_opt_enabled': 'AbabilX-এর জন্য ব্যাটারি অপটিমাইজেশন বন্ধ',
       'battery_opt_still_denied':
           'এখনো সীমিত — ব্যাটারি সেটিংসে Unrestricted চালু করুন',
-    }
+    },
   };
 
   static String translate(BuildContext context, WidgetRef ref, String key) {

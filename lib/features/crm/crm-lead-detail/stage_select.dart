@@ -35,9 +35,9 @@ class LeadStageSelect extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                 child: Text(
                   'Move to stage',
-                  style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(
+                    ctx,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               for (final s in stages)
@@ -70,12 +70,12 @@ class LeadStageSelect extends ConsumerWidget {
                                   : (parseCrmHex(s.color) ?? colors.primary),
                             )
                           : (locked
-                              ? Icon(
-                                  Icons.lock_outline_rounded,
-                                  size: 18,
-                                  color: colors.onSurfaceVariant,
-                                )
-                              : null),
+                                ? Icon(
+                                    Icons.lock_outline_rounded,
+                                    size: 18,
+                                    color: colors.onSurfaceVariant,
+                                  )
+                                : null),
                       onTap: locked || isCurrent
                           ? null
                           : () => Navigator.pop(ctx, s),
@@ -99,7 +99,9 @@ class LeadStageSelect extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final label = (lead.stageName ?? '').isEmpty ? 'Set stage' : lead.stageName!;
+    final label = (lead.stageName ?? '').isEmpty
+        ? 'Set stage'
+        : lead.stageName!;
     final chip = StageChip(
       name: label,
       colorHex: lead.isLost ? '#EF4444' : lead.stageColor,

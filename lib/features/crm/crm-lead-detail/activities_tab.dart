@@ -45,7 +45,9 @@ class _ActivitiesTabState extends ConsumerState<ActivitiesTab> {
     if (_subject.text.trim().isEmpty && _body.text.trim().isEmpty) return;
     setState(() => _busy = true);
     try {
-      await ref.read(crmRepositoryProvider).createActivity(
+      await ref
+          .read(crmRepositoryProvider)
+          .createActivity(
             widget.leadId,
             CrmActivityInput(
               activityTypeId: _typeId == _none ? null : _typeId,
@@ -59,9 +61,9 @@ class _ActivitiesTabState extends ConsumerState<ActivitiesTab> {
       invalidateLeadDetail(ref, widget.leadId);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -95,17 +97,11 @@ class _ActivitiesTabState extends ConsumerState<ActivitiesTab> {
                     isDense: true,
                   ),
                   items: [
-                    const DropdownMenuItem(
-                      value: _none,
-                      child: Text('None'),
-                    ),
+                    const DropdownMenuItem(value: _none, child: Text('None')),
                     for (final t in widget.activityTypes)
                       DropdownMenuItem(
                         value: t.id,
-                        child: Text(
-                          t.name,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: Text(t.name, overflow: TextOverflow.ellipsis),
                       ),
                   ],
                   onChanged: (v) => setState(() => _typeId = v ?? _none),

@@ -9,10 +9,7 @@ import '../providers/crm_lead_detail_provider.dart';
 import 'stage_transition_rules.dart';
 
 class _DraftUpload {
-  const _DraftUpload({
-    required this.uploadId,
-    required this.fileName,
-  });
+  const _DraftUpload({required this.uploadId, required this.fileName});
   final String uploadId;
   final String fileName;
 }
@@ -136,7 +133,9 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
     final mime = file.mimeType ?? 'image/jpeg';
     setState(() => _uploading = true);
     try {
-      final draft = await ref.read(crmRepositoryProvider).presignStageUpload(
+      final draft = await ref
+          .read(crmRepositoryProvider)
+          .presignStageUpload(
             widget.lead.id,
             targetStageId: widget.target.id,
             contentType: mime,
@@ -152,7 +151,9 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
       if (put.statusCode == null ||
           put.statusCode! < 200 ||
           put.statusCode! >= 300) {
-        await ref.read(crmRepositoryProvider).discardStageUpload(draft.uploadId);
+        await ref
+            .read(crmRepositoryProvider)
+            .discardStageUpload(draft.uploadId);
         throw Exception('Upload failed');
       }
       if (!mounted) return;
@@ -163,9 +164,9 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -191,7 +192,9 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
     if (_lossMissing || _busy || _uploading) return;
     setState(() => _busy = true);
     try {
-      await ref.read(crmRepositoryProvider).commitLeadStageTransition(
+      await ref
+          .read(crmRepositoryProvider)
+          .commitLeadStageTransition(
             widget.lead.id,
             stageId: widget.target.id,
             pipelineId: widget.lead.pipelineId ?? widget.target.pipelineId,
@@ -205,14 +208,14 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
       invalidateLeadDetail(ref, widget.lead.id);
       if (!mounted) return;
       Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Moved to ${widget.target.name}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Moved to ${widget.target.name}')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -353,7 +356,11 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
                   contentPadding: EdgeInsets.zero,
                   dense: true,
                   leading: const Icon(Icons.insert_drive_file_outlined),
-                  title: Text(u.fileName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  title: Text(
+                    u.fileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.close_rounded),
                     onPressed: _busy

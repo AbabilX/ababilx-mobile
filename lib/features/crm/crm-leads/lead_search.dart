@@ -24,34 +24,32 @@ void openLeadSearch(BuildContext context, WidgetRef ref) {
 }
 
 class LeadSearchDelegate extends SearchDelegate<void> {
-  LeadSearchDelegate(
-    this.ref, {
-    required String searchFieldLabel,
-  }) : super(searchFieldLabel: searchFieldLabel);
+  LeadSearchDelegate(this.ref, {required String searchFieldLabel})
+    : super(searchFieldLabel: searchFieldLabel);
 
   final WidgetRef ref;
 
   @override
   List<Widget>? buildActions(BuildContext context) => [
-        if (query.isNotEmpty)
-          IconButton(
-            icon: const ChatIcon(HugeIcons.strokeRoundedCancel01),
-            onPressed: () {
-              query = '';
-              ref.read(crmLeadsUiProvider.notifier).setSearchQuery('');
-              showSuggestions(context);
-            },
-          ),
-      ];
+    if (query.isNotEmpty)
+      IconButton(
+        icon: const ChatIcon(HugeIcons.strokeRoundedCancel01),
+        onPressed: () {
+          query = '';
+          ref.read(crmLeadsUiProvider.notifier).setSearchQuery('');
+          showSuggestions(context);
+        },
+      ),
+  ];
 
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-        icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
-        onPressed: () {
-          ref.read(crmLeadsUiProvider.notifier).setSearchQuery(query.trim());
-          close(context, null);
-        },
-      );
+    icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+    onPressed: () {
+      ref.read(crmLeadsUiProvider.notifier).setSearchQuery(query.trim());
+      close(context, null);
+    },
+  );
 
   @override
   void showResults(BuildContext context) {
@@ -76,13 +74,15 @@ class LeadSearchDelegate extends SearchDelegate<void> {
     final currency =
         ref.watch(crmConfigProvider).valueOrNull?.settings.currency ?? 'BDT';
     final hint = AppTranslations.translate(context, ref, 'crm_search_leads');
-    final emptyMsg =
-        AppTranslations.translate(context, ref, 'crm_search_leads_empty');
+    final emptyMsg = AppTranslations.translate(
+      context,
+      ref,
+      'crm_search_leads_empty',
+    );
 
     return async.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(strokeWidth: 2.5),
-      ),
+      loading: () =>
+          const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
       error: (e, _) => Center(child: Text('$e')),
       data: (all) {
         final mine = all.where((l) => isMineLead(l, myId)).toList();
@@ -93,8 +93,8 @@ class LeadSearchDelegate extends SearchDelegate<void> {
               hint,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           );
         }

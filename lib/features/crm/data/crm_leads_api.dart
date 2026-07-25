@@ -6,12 +6,18 @@ class CrmLeadsApi {
   const CrmLeadsApi(this._client);
   final ApiClient _client;
 
-  Future<List<CrmLead>> list({String? q, String? contactId}) async {
+  Future<List<CrmLead>> list({
+    String? q,
+    String? contactId,
+    String? organizationId,
+  }) async {
     final res = await _client.get(
       ApiConstants.crmLeads,
       queryParameters: {
         if (q != null && q.isNotEmpty) 'q': q,
         if (contactId != null && contactId.isNotEmpty) 'contact_id': contactId,
+        if (organizationId != null && organizationId.isNotEmpty)
+          'organization_id': organizationId,
       },
     );
     final raw = unwrapApiData<dynamic>(res);

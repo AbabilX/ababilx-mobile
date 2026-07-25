@@ -49,11 +49,7 @@ class CrmFollowupsApi {
   }) async {
     final res = await _client.post(
       ApiConstants.crmFollowupsBulk,
-      data: {
-        'ids': ids,
-        'action': action,
-        'assigned_user_id': ?assignedUserId,
-      },
+      data: {'ids': ids, 'action': action, 'assigned_user_id': ?assignedUserId},
     );
     final data = unwrapApiData<Map<String, dynamic>>(res);
     return (data['affected'] as num?)?.toInt() ?? 0;

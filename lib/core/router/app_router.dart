@@ -17,6 +17,8 @@ import '../../features/crm/screens/crm_lead_detail_screen.dart';
 import '../../features/crm/screens/crm_followups_screen.dart';
 import '../../features/crm/screens/crm_followup_detail_screen.dart';
 import '../../features/crm/screens/crm_contact_detail_screen.dart';
+import '../../features/crm/screens/crm_organizations_screen.dart';
+import '../../features/crm/screens/crm_organization_detail_screen.dart';
 import '../../features/notifications/providers/fcm_provider.dart';
 import 'home_shell.dart';
 
@@ -65,20 +67,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (_, _) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       ShellRoute(
         builder: (_, _, child) => HomeShell(child: child),
         routes: [
+          GoRoute(path: '/messages', builder: (_, _) => const MessagesScreen()),
+          GoRoute(path: '/wall', builder: (_, _) => const WallScreen()),
           GoRoute(
-            path: '/messages',
-            builder: (_, _) => const MessagesScreen(),
-          ),
-          GoRoute(
-            path: '/wall',
-            builder: (_, _) => const WallScreen(),
+            path: '/crm/organizations',
+            builder: (_, _) => const CrmOrganizationsScreen(),
           ),
           GoRoute(
             path: '/crm/contacts',
@@ -86,22 +83,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/crm/leads',
-            builder: (_, state) => CrmLeadsScreen(
-              contactId: state.uri.queryParameters['contact'],
-            ),
+            builder: (_, state) =>
+                CrmLeadsScreen(contactId: state.uri.queryParameters['contact']),
           ),
           GoRoute(
             path: '/crm/followups',
             builder: (_, _) => const CrmFollowupsScreen(),
           ),
-          GoRoute(
-            path: '/crm',
-            builder: (_, _) => const CrmHubScreen(),
-          ),
-          GoRoute(
-            path: '/profile',
-            builder: (_, _) => const ProfileScreen(),
-          ),
+          GoRoute(path: '/crm', builder: (_, _) => const CrmHubScreen()),
+          GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
         ],
       ),
       GoRoute(
@@ -113,27 +103,29 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/wall/post/:postId',
-        builder: (_, state) => WallPostScreen(
-          postId: state.pathParameters['postId']!,
+        builder: (_, state) =>
+            WallPostScreen(postId: state.pathParameters['postId']!),
+      ),
+      GoRoute(
+        path: '/crm/organizations/:id',
+        builder: (_, state) => CrmOrganizationDetailScreen(
+          organizationId: state.pathParameters['id']!,
         ),
       ),
       GoRoute(
         path: '/crm/leads/:id',
-        builder: (_, state) => CrmLeadDetailScreen(
-          leadId: state.pathParameters['id']!,
-        ),
+        builder: (_, state) =>
+            CrmLeadDetailScreen(leadId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/crm/contacts/:id',
-        builder: (_, state) => CrmContactDetailScreen(
-          contactId: state.pathParameters['id']!,
-        ),
+        builder: (_, state) =>
+            CrmContactDetailScreen(contactId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/crm/followups/:id',
-        builder: (_, state) => CrmFollowupDetailScreen(
-          followupId: state.pathParameters['id']!,
-        ),
+        builder: (_, state) =>
+            CrmFollowupDetailScreen(followupId: state.pathParameters['id']!),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

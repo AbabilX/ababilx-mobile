@@ -9,11 +9,15 @@ import 'hub_header.dart';
 import 'hub_items.dart';
 import 'hub_section.dart';
 
-/// WeCom-style CRM workspace hub (dashboard strip + sections).
+/// Minimal CRM launchpad: people, deals and the next follow-up are one tap away.
 class CrmHub extends ConsumerWidget {
   const CrmHub({super.key});
 
   void _onTileTap(BuildContext context, WidgetRef ref, CrmHubItem item) {
+    if (item.id == 'organizations') {
+      context.go('/crm/organizations');
+      return;
+    }
     if (item.id == 'contacts') {
       context.go('/crm/contacts');
       return;
@@ -35,10 +39,6 @@ class CrmHub extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final title = AppTranslations.translate(context, ref, 'crm');
-    final screenH = MediaQuery.sizeOf(context).height;
-    // ~45% of screen for industry charts; clamp so tiles still fit.
-    final dashH = (screenH * 0.42).clamp(220.0, 340.0);
-
     return Scaffold(
       appBar: CrmHubHeader(title: title),
       body: ListView(
@@ -49,8 +49,8 @@ class CrmHub extends ConsumerWidget {
           ShellPillMetrics.contentBottomInset,
         ),
         children: [
-          CrmHubDashboard(height: dashH),
-          const SizedBox(height: 10),
+          const CrmHubDashboard(height: 260),
+          const SizedBox(height: 14),
           for (final section in kCrmHubSections) ...[
             CrmHubSection(
               title: AppTranslations.translate(context, ref, section.titleKey),

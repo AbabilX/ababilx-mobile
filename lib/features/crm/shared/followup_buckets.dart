@@ -1,13 +1,6 @@
 import '../data/models/crm_models.dart';
 
-enum FollowupSchedule {
-  all,
-  today,
-  overdue,
-  tomorrow,
-  week,
-  completed,
-}
+enum FollowupSchedule { all, today, overdue, tomorrow, week, completed }
 
 bool isFollowupOverdue(CrmFollowup f) {
   if (f.status != 'pending') return false;
@@ -39,9 +32,7 @@ bool matchesFollowupSchedule(CrmFollowup f, FollowupSchedule tab) {
     case FollowupSchedule.tomorrow:
       return f.status == 'pending' && _isSameDay(d, tomorrow);
     case FollowupSchedule.week:
-      return f.status == 'pending' &&
-          !d.isBefore(today) &&
-          d.isBefore(weekEnd);
+      return f.status == 'pending' && !d.isBefore(today) && d.isBefore(weekEnd);
     case FollowupSchedule.completed:
       return f.status == 'done';
   }
@@ -61,12 +52,12 @@ String followupStatusLabel(CrmFollowup f) {
 
 /// Stub lead for edit/create sheets when full lead isn't loaded.
 CrmLead leadStubFromFollowup(CrmFollowup f) => CrmLead(
-      id: f.leadId,
-      teamId: '',
-      contactId: f.contactId,
-      stageId: f.stageId,
-      title: (f.contactName ?? '').isNotEmpty ? f.contactName! : 'Lead',
-      ownerName: f.assigneeName,
-      stageName: f.stageName,
-      stageColor: f.stageColor,
-    );
+  id: f.leadId,
+  teamId: '',
+  contactId: f.contactId,
+  stageId: f.stageId,
+  title: (f.contactName ?? '').isNotEmpty ? f.contactName! : 'Lead',
+  ownerName: f.assigneeName,
+  stageName: f.stageName,
+  stageColor: f.stageColor,
+);

@@ -15,11 +15,12 @@ import 'documents_tab.dart';
 import 'followups_tab.dart';
 import 'meta_copy_badges.dart';
 import 'notes_tab.dart';
+import 'payments_tab.dart';
 import 'stage_select.dart';
 import 'stage_stepper.dart';
 import 'timeline_tab.dart';
 
-/// Lead detail — header + stage stepper + 5 tabs (web parity).
+/// Lead detail — the next action, current stage, and compact deal record.
 class CrmLeadDetailPage extends ConsumerStatefulWidget {
   const CrmLeadDetailPage({super.key, required this.leadId});
 
@@ -37,7 +38,7 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 5, vsync: this);
+    _tabs = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -78,14 +79,14 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
       await ref.read(crmRepositoryProvider).updateLead(lead.id, result.lead);
       invalidateLeadDetail(ref, lead.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lead updated')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lead updated')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -124,19 +125,22 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
         final currency = config?.settings.currency ?? 'BDT';
         final timeline =
             ref.watch(crmLeadTimelineProvider(widget.leadId)).valueOrNull ??
-                const [];
+            const [];
         final notes =
             ref.watch(crmLeadNotesProvider(widget.leadId)).valueOrNull ??
-                const [];
+            const [];
         final activities =
             ref.watch(crmLeadActivitiesProvider(widget.leadId)).valueOrNull ??
-                const [];
+            const [];
         final followups =
             ref.watch(crmLeadFollowupsProvider(widget.leadId)).valueOrNull ??
-                const [];
+            const [];
         final documents =
             ref.watch(crmLeadDocumentsProvider(widget.leadId)).valueOrNull ??
-                const [];
+            const [];
+        final payments =
+            ref.watch(crmLeadPaymentsProvider(widget.leadId)).valueOrNull ??
+            const <CrmLeadPayment>[];
 
         return Scaffold(
           appBar: AppBar(
@@ -168,6 +172,7 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
                 Tab(text: 'Follow-ups'),
                 Tab(text: 'Notes'),
                 Tab(text: 'Activities'),
+                Tab(text: 'Payments'),
                 Tab(text: 'Documents'),
               ],
             ),
@@ -230,11 +235,11 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
                                   if (lead.dealValue > 0)
                                     Text(
                                       formatCrmMoney(lead.dealValue, currency),
-                                      style:
-                                          theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        color: colors.tertiary,
-                                      ),
+                                      style: theme.textTheme.titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            color: colors.tertiary,
+                                          ),
                                     ),
                                   if ((lead.ownerName ?? '').isNotEmpty) ...[
                                     const SizedBox(height: 4),
@@ -242,8 +247,8 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
                                       'Owner: ${lead.ownerName}',
                                       style: theme.textTheme.labelSmall
                                           ?.copyWith(
-                                        color: colors.onSurfaceVariant,
-                                      ),
+                                            color: colors.onSurfaceVariant,
+                                          ),
                                     ),
                                   ],
                                 ],
@@ -294,6 +299,13 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
                       activities: activities,
                       activityTypes: config?.activityTypes ?? const [],
                       canCreate: perms.create,
+                    ),
+                    PaymentsTab(
+                      lead: lead,
+                      payments: payments,
+                      currency: currency,
+                      canCreate: perms.create,
+                      canDelete: perms.delete,
                     ),
                     DocumentsTab(
                       leadId: lead.id,

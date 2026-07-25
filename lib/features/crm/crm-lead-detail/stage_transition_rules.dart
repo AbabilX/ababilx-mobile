@@ -25,6 +25,12 @@ String? stageDisabledReason(
   CrmStage target,
 ) {
   if (target.id == lead.stageId) return 'Current stage';
+  if (target.isWon && lead.outstandingValue > 0.005) {
+    return 'Collect the remaining payment first';
+  }
+  if (target.isLost && lead.paidValue > 0.005) {
+    return 'Refund collected payment first';
+  }
   if (stageMoveKind(lead, stages, target) != null) return null;
   return 'Move one stage at a time';
 }

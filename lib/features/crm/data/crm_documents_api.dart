@@ -77,8 +77,9 @@ class CrmDocumentsApi {
     required String mimeType,
     String? label,
   }) async {
-    final contentType =
-        mimeType.isEmpty ? 'application/octet-stream' : mimeType;
+    final contentType = mimeType.isEmpty
+        ? 'application/octet-stream'
+        : mimeType;
     final presign = await this.presign(
       leadId,
       contentType: contentType,

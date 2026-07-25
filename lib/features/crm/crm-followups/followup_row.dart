@@ -25,17 +25,17 @@ class FollowupRow extends StatelessWidget {
   final ValueChanged<bool>? onToggleSelect;
 
   ContactBadgeTone _statusTone(String label) => switch (label) {
-        'Overdue' => ContactBadgeTone.error,
-        'Completed' => ContactBadgeTone.tertiary,
-        'Cancelled' => ContactBadgeTone.neutral,
-        _ => ContactBadgeTone.primary,
-      };
+    'Overdue' => ContactBadgeTone.error,
+    'Completed' => ContactBadgeTone.tertiary,
+    'Cancelled' => ContactBadgeTone.neutral,
+    _ => ContactBadgeTone.primary,
+  };
 
   ContactBadgeTone _priorityTone(String p) => switch (p) {
-        'high' => ContactBadgeTone.error,
-        'low' => ContactBadgeTone.neutral,
-        _ => ContactBadgeTone.secondary,
-      };
+    'high' => ContactBadgeTone.error,
+    'low' => ContactBadgeTone.neutral,
+    _ => ContactBadgeTone.secondary,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +53,7 @@ class FollowupRow extends StatelessWidget {
           : colors.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: selecting
-            ? () => onToggleSelect?.call(!selected)
-            : onTap,
+        onTap: selecting ? () => onToggleSelect?.call(!selected) : onTap,
         onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(14),
         child: Ink(

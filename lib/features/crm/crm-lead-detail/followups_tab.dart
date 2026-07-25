@@ -77,8 +77,9 @@ class _FollowupsTabState extends ConsumerState<FollowupsTab> {
       context,
       lead: widget.lead,
       stages: widget.stages,
-      fixedStageId:
-          _filterStageId.isEmpty ? widget.lead.stageId : _filterStageId,
+      fixedStageId: _filterStageId.isEmpty
+          ? widget.lead.stageId
+          : _filterStageId,
       activityTypes: widget.activityTypes,
     );
     if (body == null) return;
@@ -86,9 +87,9 @@ class _FollowupsTabState extends ConsumerState<FollowupsTab> {
       await ref.read(crmRepositoryProvider).createFollowup(body);
       invalidateLeadDetail(ref, widget.lead.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Follow-up scheduled')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Follow-up scheduled')));
     } catch (e) {
       if (!mounted) return;
       final msg = e.toString();
@@ -114,7 +115,9 @@ class _FollowupsTabState extends ConsumerState<FollowupsTab> {
     );
     if (body == null) return;
     try {
-      await ref.read(crmRepositoryProvider).patchFollowup(
+      await ref
+          .read(crmRepositoryProvider)
+          .patchFollowup(
             f.id,
             CrmFollowupPatch(
               scheduledAt: body.scheduledAt,
@@ -126,14 +129,14 @@ class _FollowupsTabState extends ConsumerState<FollowupsTab> {
           );
       invalidateLeadDetail(ref, widget.lead.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Follow-up updated')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Follow-up updated')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -173,9 +176,9 @@ class _FollowupsTabState extends ConsumerState<FollowupsTab> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -202,9 +205,9 @@ class _FollowupsTabState extends ConsumerState<FollowupsTab> {
       invalidateLeadDetail(ref, widget.lead.id);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -256,10 +259,10 @@ class _FollowupsTabState extends ConsumerState<FollowupsTab> {
   }
 
   ContactBadgeTone _priorityTone(String p) => switch (p) {
-        'high' => ContactBadgeTone.error,
-        'low' => ContactBadgeTone.neutral,
-        _ => ContactBadgeTone.secondary,
-      };
+    'high' => ContactBadgeTone.error,
+    'low' => ContactBadgeTone.neutral,
+    _ => ContactBadgeTone.secondary,
+  };
 
   @override
   Widget build(BuildContext context) {

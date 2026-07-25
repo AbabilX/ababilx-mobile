@@ -64,9 +64,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
     }
     if (leads.isEmpty) {
       ui.setFormSheetOpen(false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Create a lead first')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Create a lead first')));
       return;
     }
 
@@ -88,9 +88,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
       await ref.read(crmRepositoryProvider).createFollowup(body);
       _invalidate();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Follow-up scheduled')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Follow-up scheduled')));
     } catch (e) {
       if (!mounted) return;
       final msg = e.toString();
@@ -120,7 +120,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
     if (_selected.isEmpty) return;
     setState(() => _busy = true);
     try {
-      final n = await ref.read(crmRepositoryProvider).bulkFollowups(
+      final n = await ref
+          .read(crmRepositoryProvider)
+          .bulkFollowups(
             ids: _selected.toList(),
             action: action,
             assignedUserId: assignedUserId,
@@ -128,14 +130,14 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
       _invalidate();
       _clearSelection();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$n updated')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$n updated')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -155,9 +157,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: Text(
                 'Reassign to',
-                style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: Theme.of(
+                  ctx,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
             for (final m in active)
@@ -201,7 +203,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
     if (body == null || !mounted) return;
     setState(() => _busy = true);
     try {
-      await ref.read(crmRepositoryProvider).patchFollowup(
+      await ref
+          .read(crmRepositoryProvider)
+          .patchFollowup(
             f.id,
             CrmFollowupPatch(
               scheduledAt: body.scheduledAt,
@@ -214,9 +218,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
       _invalidate();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -259,9 +263,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -291,9 +295,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
       _invalidate();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -303,7 +307,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
     final mine = all.where((f) => isMineFollowup(f, myId)).length;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(crmFollowupsUiProvider.notifier).syncMeta(
+      ref
+          .read(crmFollowupsUiProvider.notifier)
+          .syncMeta(
             mineCount: mine,
             allCount: all.length,
             canCreate: canCreate,
@@ -318,8 +324,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
   ) {
     final mine = all.where((f) => isMineFollowup(f, myId));
     final scoped = ui.scope == FollowupScope.mine ? mine : all;
-    final bySchedule =
-        scoped.where((f) => matchesFollowupSchedule(f, ui.schedule));
+    final bySchedule = scoped.where(
+      (f) => matchesFollowupSchedule(f, ui.schedule),
+    );
     final q = ui.searchQuery.toLowerCase();
     if (q.isEmpty) {
       return bySchedule.toList()
@@ -330,8 +337,7 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
           (f.contactCompany ?? '').toLowerCase().contains(q) ||
           (f.contactPhone ?? '').toLowerCase().contains(q) ||
           (f.assigneeName ?? '').toLowerCase().contains(q);
-    }).toList()
-      ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+    }).toList()..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
   }
 
   @override
@@ -342,8 +348,7 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
     final ui = ref.watch(crmFollowupsUiProvider);
     final async = ref.watch(crmFollowupsProvider(''));
     final myId = ref.watch(profileProvider).valueOrNull?.id ?? '';
-    final canReassign =
-        (detail?.canAssignCrmOwner ?? false) && perms.update;
+    final canReassign = (detail?.canAssignCrmOwner ?? false) && perms.update;
 
     ref.listen(crmFollowupsUiProvider, (prev, next) {
       if (next.addTick != _lastAddTick &&
@@ -531,20 +536,18 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
               color: colors.scrim.withValues(alpha: 0.35),
             ),
           if (_busy)
-            const Center(
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
+            const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
         ],
       ),
     );
   }
 
   String _scheduleLabel(FollowupSchedule s) => switch (s) {
-        FollowupSchedule.all => 'All',
-        FollowupSchedule.today => 'Today',
-        FollowupSchedule.overdue => 'Overdue',
-        FollowupSchedule.tomorrow => 'Tomorrow',
-        FollowupSchedule.week => 'This week',
-        FollowupSchedule.completed => 'Completed',
-      };
+    FollowupSchedule.all => 'All',
+    FollowupSchedule.today => 'Today',
+    FollowupSchedule.overdue => 'Overdue',
+    FollowupSchedule.tomorrow => 'Tomorrow',
+    FollowupSchedule.week => 'This week',
+    FollowupSchedule.completed => 'Completed',
+  };
 }

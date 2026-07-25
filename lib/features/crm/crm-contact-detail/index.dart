@@ -34,7 +34,8 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
     final ids = <String>{};
     for (final p in config?.pipelines ?? const <CrmPipeline>[]) {
       if (p.stages.isEmpty) continue;
-      final sorted = [...p.stages]..sort((a, b) => a.position.compareTo(b.position));
+      final sorted = [...p.stages]
+        ..sort((a, b) => a.position.compareTo(b.position));
       ids.add(sorted.first.id);
     }
     return ids;
@@ -42,6 +43,8 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
 
   Future<void> _editContact(CrmContact contact) async {
     final config = await ref.read(crmConfigProvider.future);
+    final organizations =
+        await ref.read(crmRepositoryProvider).listOrganizationsOptional();
     final detail = ref.read(teamGateProvider).valueOrNull;
     if (!mounted || detail == null) return;
 
@@ -51,6 +54,7 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
       members: detail.members,
       contactLabel: config.settings.contactLabelSingular,
       canAssignOwner: detail.canAssignCrmOwner,
+      organizations: organizations,
       initial: contact,
     );
     if (body == null || !mounted) return;
@@ -61,14 +65,14 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
       invalidateContactDetail(ref, contact.id);
       ref.invalidate(crmContactsProvider(''));
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Contact updated')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Contact updated')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -110,9 +114,9 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -136,21 +140,18 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
 
     setState(() => _busy = true);
     try {
-      await ref.read(crmRepositoryProvider).createLead(
-            contact.id,
-            result.lead,
-          );
+      await ref.read(crmRepositoryProvider).createLead(contact.id, result.lead);
       invalidateContactDetail(ref, contact.id);
       ref.invalidate(crmLeadsProvider(''));
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lead created')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lead created')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -184,14 +185,14 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
       invalidateContactDetail(ref, widget.contactId);
       ref.invalidate(crmLeadsProvider(''));
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lead removed')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lead removed')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _removingLeadId = null);
     }
@@ -312,7 +313,8 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
                               ContactLeadCard(
                                 lead: lead,
                                 currency: currency,
-                                canRemove: perms.delete &&
+                                canRemove:
+                                    perms.delete &&
                                     lead.stageId != null &&
                                     initialStages.contains(lead.stageId),
                                 removing: _removingLeadId == lead.id,

@@ -91,7 +91,8 @@ class _LeadStageStepperState extends ConsumerState<LeadStageStepper> {
                 date: stateOf(i) != StageStepState.upcoming
                     ? formatCrmDate(dates[stages[i].id] ?? '')
                     : null,
-                clickable: widget.canEdit &&
+                clickable:
+                    widget.canEdit &&
                     stageMoveKind(widget.lead, stages, stages[i]) != null,
                 disabled: _busy,
                 onTap: () => _move(stages[i]),

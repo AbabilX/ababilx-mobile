@@ -34,6 +34,8 @@ class ContactRow extends StatelessWidget {
     final subtitle = contact.designation.isNotEmpty
         ? contact.designation
         : [
+            if ((contact.organizationName ?? '').isNotEmpty)
+              contact.organizationName!,
             if (contact.company.isNotEmpty) contact.company,
             if (contact.email.isNotEmpty) contact.email,
           ].join(' · ');
@@ -138,10 +140,7 @@ class ContactRow extends StatelessWidget {
                     },
                     itemBuilder: (_) => [
                       if (canUpdate)
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Edit'),
-                        ),
+                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
                       if (canDelete)
                         const PopupMenuItem(
                           value: 'delete',

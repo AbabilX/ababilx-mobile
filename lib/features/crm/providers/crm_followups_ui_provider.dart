@@ -97,5 +97,5 @@ class CrmFollowupsUiNotifier extends Notifier<CrmFollowupsUiState> {
 
 final crmFollowupsUiProvider =
     NotifierProvider<CrmFollowupsUiNotifier, CrmFollowupsUiState>(
-  CrmFollowupsUiNotifier.new,
-);
+      CrmFollowupsUiNotifier.new,
+    );

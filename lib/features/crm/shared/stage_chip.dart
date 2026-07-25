@@ -52,7 +52,11 @@ class StageChip extends StatelessWidget {
           ),
           if (showChevron) ...[
             const SizedBox(width: 2),
-            Icon(Icons.expand_more_rounded, size: 14, color: colors.onSurfaceVariant),
+            Icon(
+              Icons.expand_more_rounded,
+              size: 14,
+              color: colors.onSurfaceVariant,
+            ),
           ],
         ],
       ),

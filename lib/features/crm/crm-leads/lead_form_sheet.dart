@@ -14,6 +14,7 @@ Future<CrmLeadFormResult?> showLeadFormSheet(
   required bool canAssignOwner,
   required bool canCreateContact,
   CrmLead? initial,
+
   /// Lock create to one contact (contact-detail "New lead").
   String? fixedContactId,
 }) {
@@ -100,8 +101,7 @@ class _LeadFormBodyState extends State<_LeadFormBody> {
     _contactId = i?.contactId ?? widget.fixedContactId ?? '';
     _pipelineId = i?.pipelineId ?? def?.id ?? _none;
     final stages = _stagesFor(_pipelineId);
-    _stageId = i?.stageId ??
-        (stages.isNotEmpty ? stages.first.id : _none);
+    _stageId = i?.stageId ?? (stages.isNotEmpty ? stages.first.id : _none);
     _ownerId = i?.ownerUserId ?? _none;
   }
 
@@ -144,10 +144,7 @@ class _LeadFormBodyState extends State<_LeadFormBody> {
     if (_editing) {
       Navigator.pop(
         context,
-        CrmLeadFormResult(
-          contactId: widget.initial!.contactId,
-          lead: lead,
-        ),
+        CrmLeadFormResult(contactId: widget.initial!.contactId, lead: lead),
       );
       return;
     }
@@ -285,10 +282,7 @@ class _LeadFormBodyState extends State<_LeadFormBody> {
                         child: Text('Select contact'),
                       ),
                       for (final c in widget.contacts)
-                        DropdownMenuItem(
-                          value: c.id,
-                          child: Text(c.name),
-                        ),
+                        DropdownMenuItem(value: c.id, child: Text(c.name)),
                     ],
                     onChanged: (v) => setState(() {
                       _contactId = (v == null || v == _none) ? '' : v;
@@ -327,8 +321,9 @@ class _LeadFormBodyState extends State<_LeadFormBody> {
                   final nextStages = _stagesFor(v);
                   setState(() {
                     _pipelineId = v;
-                    _stageId =
-                        nextStages.isNotEmpty ? nextStages.first.id : _none;
+                    _stageId = nextStages.isNotEmpty
+                        ? nextStages.first.id
+                        : _none;
                   });
                 },
               ),
@@ -365,8 +360,9 @@ class _LeadFormBodyState extends State<_LeadFormBody> {
                   labelText: 'Deal value',
                   hintText: '0',
                   isDense: true,
-                  prefixText:
-                      widget.config.settings.currency == 'BDT' ? '৳ ' : null,
+                  prefixText: widget.config.settings.currency == 'BDT'
+                      ? '৳ '
+                      : null,
                 ),
               ),
               const SizedBox(height: 12),

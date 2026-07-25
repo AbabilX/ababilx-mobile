@@ -93,8 +93,7 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
   bool get _leadLocked => widget.lead != null || _editing;
 
   /// Web: `locked={fixedStageId || isEdit}`.
-  bool get _stageLocked =>
-      (widget.fixedStageId ?? '').isNotEmpty || _editing;
+  bool get _stageLocked => (widget.fixedStageId ?? '').isNotEmpty || _editing;
 
   CrmLead? get _selectedLead {
     if (widget.lead != null) return widget.lead;
@@ -122,13 +121,14 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
     _notes = TextEditingController(text: i?.notes ?? '');
     _when = i != null
         ? (DateTime.tryParse(i.scheduledAt)?.toLocal() ??
-            DateTime.now().add(const Duration(days: 1)))
+              DateTime.now().add(const Duration(days: 1)))
         : DateTime.now().add(const Duration(hours: 24));
     _typeId = i?.activityTypeId ?? _none;
     _priority = i?.priority ?? 'medium';
     _leadId = i?.leadId ?? widget.lead?.id ?? '';
     final stages = _resolvedStages;
-    _stageId = widget.fixedStageId ??
+    _stageId =
+        widget.fixedStageId ??
         i?.stageId ??
         widget.lead?.stageId ??
         (stages.isNotEmpty ? stages.first.id : '');
@@ -248,8 +248,8 @@ class _FollowupFormBodyState extends State<_FollowupFormBody> {
                   selected?.title.isNotEmpty == true
                       ? selected!.title
                       : (selected?.contactName ??
-                          widget.initial?.contactName ??
-                          'Lead'),
+                            widget.initial?.contactName ??
+                            'Lead'),
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

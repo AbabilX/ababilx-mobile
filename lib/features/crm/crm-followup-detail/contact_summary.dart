@@ -23,8 +23,8 @@ class FollowupContactSummary extends StatelessWidget {
     final title = (lead.contactCompany ?? '').isNotEmpty
         ? lead.contactCompany!
         : ((lead.contactName ?? '').isNotEmpty
-            ? lead.contactName!
-            : lead.title);
+              ? lead.contactName!
+              : lead.title);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),

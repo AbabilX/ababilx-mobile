@@ -99,7 +99,10 @@ Future<void> showFollowupActionSheet(
             if (pending && canUpdate)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.check_circle_outline, color: colors.tertiary),
+                leading: Icon(
+                  Icons.check_circle_outline,
+                  color: colors.tertiary,
+                ),
                 title: const Text('Complete'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -109,7 +112,10 @@ Future<void> showFollowupActionSheet(
             if (pending && canUpdate)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.edit_calendar_outlined, color: colors.primary),
+                leading: Icon(
+                  Icons.edit_calendar_outlined,
+                  color: colors.primary,
+                ),
                 title: const Text('Edit / reschedule'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -120,10 +126,7 @@ Future<void> showFollowupActionSheet(
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.delete_outline, color: colors.error),
-                title: Text(
-                  'Delete',
-                  style: TextStyle(color: colors.error),
-                ),
+                title: Text('Delete', style: TextStyle(color: colors.error)),
                 onTap: () {
                   Navigator.pop(ctx);
                   onDelete();

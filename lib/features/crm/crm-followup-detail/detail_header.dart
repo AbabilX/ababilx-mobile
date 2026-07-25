@@ -48,8 +48,8 @@ class FollowupDetailHeader extends StatelessWidget {
               tone: status == 'Overdue'
                   ? ContactBadgeTone.error
                   : status == 'Completed'
-                      ? ContactBadgeTone.tertiary
-                      : ContactBadgeTone.primary,
+                  ? ContactBadgeTone.tertiary
+                  : ContactBadgeTone.primary,
             ),
             Text(
               formatCrmDateTime(followup.scheduledAt),

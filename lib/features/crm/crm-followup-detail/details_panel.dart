@@ -45,21 +45,35 @@ class FollowupDetailsPanel extends StatelessWidget {
     }
 
     Text text(String v) => Text(
-          v,
-          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-        );
+      v,
+      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+    );
 
     return Column(
       children: [
         row('Lead', text(lead.title.isEmpty ? '—' : lead.title)),
         Divider(height: 1, color: colors.outlineVariant.withValues(alpha: 0.4)),
-        row('Contact', text((lead.contactName ?? '').isEmpty ? '—' : lead.contactName!)),
+        row(
+          'Contact',
+          text((lead.contactName ?? '').isEmpty ? '—' : lead.contactName!),
+        ),
         Divider(height: 1, color: colors.outlineVariant.withValues(alpha: 0.4)),
-        row('Company', text((lead.contactCompany ?? '').isEmpty ? '—' : lead.contactCompany!)),
+        row(
+          'Company',
+          text(
+            (lead.contactCompany ?? '').isEmpty ? '—' : lead.contactCompany!,
+          ),
+        ),
         Divider(height: 1, color: colors.outlineVariant.withValues(alpha: 0.4)),
-        row('Phone', text((lead.contactPhone ?? '').isEmpty ? '—' : lead.contactPhone!)),
+        row(
+          'Phone',
+          text((lead.contactPhone ?? '').isEmpty ? '—' : lead.contactPhone!),
+        ),
         Divider(height: 1, color: colors.outlineVariant.withValues(alpha: 0.4)),
-        row('Email', text((lead.contactEmail ?? '').isEmpty ? '—' : lead.contactEmail!)),
+        row(
+          'Email',
+          text((lead.contactEmail ?? '').isEmpty ? '—' : lead.contactEmail!),
+        ),
         Divider(height: 1, color: colors.outlineVariant.withValues(alpha: 0.4)),
         row('Source', text(lead.source.isEmpty ? '—' : lead.source)),
         Divider(height: 1, color: colors.outlineVariant.withValues(alpha: 0.4)),
@@ -79,9 +93,7 @@ class FollowupDetailsPanel extends StatelessWidget {
         row(
           'Deal value',
           text(
-            lead.dealValue > 0
-                ? formatCrmMoney(lead.dealValue, currency)
-                : '—',
+            lead.dealValue > 0 ? formatCrmMoney(lead.dealValue, currency) : '—',
           ),
         ),
         Divider(height: 1, color: colors.outlineVariant.withValues(alpha: 0.4)),

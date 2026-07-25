@@ -37,6 +37,8 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
     ui.setFormSheetOpen(true);
 
     final config = await ref.read(crmConfigProvider.future);
+    final organizations =
+        await ref.read(crmRepositoryProvider).listOrganizationsOptional();
     final detail = ref.read(teamGateProvider).valueOrNull;
     if (!mounted || detail == null) {
       ui.setFormSheetOpen(false);
@@ -52,6 +54,7 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
         members: detail.members,
         contactLabel: label,
         canAssignOwner: detail.canAssignCrmOwner,
+        organizations: organizations,
         initial: editing,
       );
     } finally {
@@ -72,16 +75,14 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            editing != null ? '$label updated' : '$label created',
-          ),
+          content: Text(editing != null ? '$label updated' : '$label created'),
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -117,14 +118,14 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
       final q = ref.read(crmContactsUiProvider).searchQuery;
       _invalidate(q);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$labelSingular deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$labelSingular deleted')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -134,7 +135,9 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
     final mine = all.where((c) => isMineContact(c, myId)).length;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(crmContactsUiProvider.notifier).syncMeta(
+      ref
+          .read(crmContactsUiProvider.notifier)
+          .syncMeta(
             mineCount: mine,
             allCount: all.length,
             canCreate: canCreate,
@@ -195,8 +198,8 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
                 final msg = q.isNotEmpty
                     ? 'No matches.'
                     : ui.scope == ContactScope.mine
-                        ? 'No ${labelPlural.toLowerCase()} assigned to you yet.'
-                        : 'No ${labelPlural.toLowerCase()} yet.';
+                    ? 'No ${labelPlural.toLowerCase()} assigned to you yet.'
+                    : 'No ${labelPlural.toLowerCase()} yet.';
                 return CrmEmpty(message: msg);
               }
               return RefreshIndicator(
@@ -232,9 +235,7 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
               color: colors.scrim.withValues(alpha: 0.35),
             ),
           if (_busy)
-            const Center(
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
+            const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
         ],
       ),
     );

@@ -5,11 +5,7 @@ import '../shared/crm_dates.dart';
 import '../shared/crm_ui.dart';
 
 class TimelineTab extends StatelessWidget {
-  const TimelineTab({
-    super.key,
-    required this.events,
-    this.shrinkWrap = false,
-  });
+  const TimelineTab({super.key, required this.events, this.shrinkWrap = false});
 
   final List<CrmTimelineEvent> events;
   final bool shrinkWrap;
@@ -36,9 +32,7 @@ class TimelineTab extends StatelessWidget {
 
     return ListView.builder(
       shrinkWrap: shrinkWrap,
-      physics: shrinkWrap
-          ? const NeverScrollableScrollPhysics()
-          : null,
+      physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
       padding: shrinkWrap
           ? EdgeInsets.zero
           : const EdgeInsets.fromLTRB(16, 8, 16, 24),

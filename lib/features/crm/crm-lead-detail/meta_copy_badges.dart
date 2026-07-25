@@ -34,9 +34,9 @@ class MetaCopyBadges extends StatelessWidget {
   Future<void> _copy(BuildContext context, String value) async {
     await Clipboard.setData(ClipboardData(text: value));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Copied “$value”')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Copied “$value”')));
   }
 
   @override
@@ -59,8 +59,10 @@ class MetaCopyBadges extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 220),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(

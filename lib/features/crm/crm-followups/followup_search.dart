@@ -23,36 +23,32 @@ void openFollowupSearch(BuildContext context, WidgetRef ref) {
 }
 
 class FollowupSearchDelegate extends SearchDelegate<void> {
-  FollowupSearchDelegate(
-    this.ref, {
-    required String searchFieldLabel,
-  }) : super(searchFieldLabel: searchFieldLabel);
+  FollowupSearchDelegate(this.ref, {required String searchFieldLabel})
+    : super(searchFieldLabel: searchFieldLabel);
 
   final WidgetRef ref;
 
   @override
   List<Widget>? buildActions(BuildContext context) => [
-        if (query.isNotEmpty)
-          IconButton(
-            icon: const ChatIcon(HugeIcons.strokeRoundedCancel01),
-            onPressed: () {
-              query = '';
-              ref.read(crmFollowupsUiProvider.notifier).setSearchQuery('');
-              showSuggestions(context);
-            },
-          ),
-      ];
+    if (query.isNotEmpty)
+      IconButton(
+        icon: const ChatIcon(HugeIcons.strokeRoundedCancel01),
+        onPressed: () {
+          query = '';
+          ref.read(crmFollowupsUiProvider.notifier).setSearchQuery('');
+          showSuggestions(context);
+        },
+      ),
+  ];
 
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-        icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
-        onPressed: () {
-          ref
-              .read(crmFollowupsUiProvider.notifier)
-              .setSearchQuery(query.trim());
-          close(context, null);
-        },
-      );
+    icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+    onPressed: () {
+      ref.read(crmFollowupsUiProvider.notifier).setSearchQuery(query.trim());
+      close(context, null);
+    },
+  );
 
   @override
   void showResults(BuildContext context) {
@@ -73,8 +69,9 @@ class FollowupSearchDelegate extends SearchDelegate<void> {
     final ui = ref.watch(crmFollowupsUiProvider);
     final mine = all.where((f) => isMineFollowup(f, myId)).toList();
     final scoped = ui.scope == FollowupScope.mine ? mine : all;
-    final bySchedule =
-        scoped.where((f) => matchesFollowupSchedule(f, ui.schedule));
+    final bySchedule = scoped.where(
+      (f) => matchesFollowupSchedule(f, ui.schedule),
+    );
     if (q.isEmpty) return bySchedule.toList();
     final lower = q.toLowerCase();
     return bySchedule.where((f) {
@@ -89,15 +86,20 @@ class FollowupSearchDelegate extends SearchDelegate<void> {
     final q = query.trim();
     final async = ref.watch(crmFollowupsProvider(''));
     final myId = ref.watch(profileProvider).valueOrNull?.id ?? '';
-    final hint =
-        AppTranslations.translate(context, ref, 'crm_search_followups');
-    final emptyMsg =
-        AppTranslations.translate(context, ref, 'crm_search_followups_empty');
+    final hint = AppTranslations.translate(
+      context,
+      ref,
+      'crm_search_followups',
+    );
+    final emptyMsg = AppTranslations.translate(
+      context,
+      ref,
+      'crm_search_followups_empty',
+    );
 
     return async.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(strokeWidth: 2.5),
-      ),
+      loading: () =>
+          const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
       error: (e, _) => Center(child: Text('$e')),
       data: (all) {
         final visible = _filter(all, q, myId);
@@ -107,8 +109,8 @@ class FollowupSearchDelegate extends SearchDelegate<void> {
               hint,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           );
         }

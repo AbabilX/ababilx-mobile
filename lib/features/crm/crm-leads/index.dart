@@ -106,9 +106,9 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -144,14 +144,14 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
       final q = ref.read(crmLeadsUiProvider).searchQuery;
       _invalidate(q);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lead deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lead deleted')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -161,7 +161,9 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
     final mine = all.where((l) => isMineLead(l, myId)).length;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(crmLeadsUiProvider.notifier).syncMeta(
+      ref
+          .read(crmLeadsUiProvider.notifier)
+          .syncMeta(
             mineCount: mine,
             allCount: all.length,
             canCreate: canCreate,
@@ -182,8 +184,7 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
         ? ref.watch(crmContactLeadsProvider(contactId))
         : ref.watch(crmLeadsProvider(q));
     final myId = ref.watch(profileProvider).valueOrNull?.id ?? '';
-    final currency =
-        configAsync.valueOrNull?.settings.currency ?? 'BDT';
+    final currency = configAsync.valueOrNull?.settings.currency ?? 'BDT';
 
     ref.listen(crmLeadsUiProvider, (prev, next) {
       if (next.addTick != _lastAddTick &&
@@ -237,9 +238,7 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
                     .where(
                       (l) =>
                           l.title.toLowerCase().contains(lower) ||
-                          (l.contactName ?? '')
-                              .toLowerCase()
-                              .contains(lower) ||
+                          (l.contactName ?? '').toLowerCase().contains(lower) ||
                           (l.ownerName ?? '').toLowerCase().contains(lower),
                     )
                     .toList();
@@ -248,16 +247,16 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
                 final msg = q.isNotEmpty
                     ? 'No matches.'
                     : ui.scope == LeadScope.mine
-                        ? AppTranslations.translate(
-                            context,
-                            ref,
-                            'crm_leads_empty_mine',
-                          )
-                        : AppTranslations.translate(
-                            context,
-                            ref,
-                            'crm_leads_empty_all',
-                          );
+                    ? AppTranslations.translate(
+                        context,
+                        ref,
+                        'crm_leads_empty_mine',
+                      )
+                    : AppTranslations.translate(
+                        context,
+                        ref,
+                        'crm_leads_empty_all',
+                      );
                 return CrmEmpty(message: msg);
               }
               return RefreshIndicator(
@@ -294,9 +293,7 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
               color: colors.scrim.withValues(alpha: 0.35),
             ),
           if (_busy)
-            const Center(
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
+            const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
         ],
       ),
     );

@@ -22,9 +22,8 @@ class CrmHubDashboard extends ConsumerWidget {
     return SizedBox(
       height: height,
       child: dashAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(strokeWidth: 2.5),
-        ),
+        loading: () =>
+            const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
         error: (e, _) => Container(
           alignment: Alignment.center,
           padding: const EdgeInsets.all(16),
@@ -35,9 +34,9 @@ class CrmHubDashboard extends ConsumerWidget {
           child: Text(
             e.toString(),
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colors.onErrorContainer,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: colors.onErrorContainer),
           ),
         ),
         data: (d) => Column(
@@ -49,9 +48,7 @@ class CrmHubDashboard extends ConsumerWidget {
               currency: currency,
             ),
             const SizedBox(height: 10),
-            Expanded(
-              child: HubDashboardPipelineChart(stages: d.stageCounts),
-            ),
+            Expanded(child: HubDashboardPipelineChart(stages: d.stageCounts)),
           ],
         ),
       ),

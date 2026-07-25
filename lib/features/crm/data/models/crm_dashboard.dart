@@ -16,12 +16,12 @@ class CrmStageCount extends Equatable {
   final double value;
 
   factory CrmStageCount.fromJson(Map<String, dynamic> json) => CrmStageCount(
-        stageId: json['stage_id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        color: json['color'] as String? ?? '',
-        count: (json['count'] as num?)?.toInt() ?? 0,
-        value: (json['value'] as num?)?.toDouble() ?? 0,
-      );
+    stageId: json['stage_id'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    color: json['color'] as String? ?? '',
+    count: (json['count'] as num?)?.toInt() ?? 0,
+    value: (json['value'] as num?)?.toDouble() ?? 0,
+  );
 
   @override
   List<Object?> get props => [stageId, count, value];
@@ -46,16 +46,21 @@ class CrmDashboard extends Equatable {
   final int followupsOverdue;
 
   factory CrmDashboard.fromJson(Map<String, dynamic> json) => CrmDashboard(
-        totalContacts: (json['total_contacts'] as num?)?.toInt() ?? 0,
-        pipelineValue: (json['pipeline_value'] as num?)?.toDouble() ?? 0,
-        wonValue: (json['won_value'] as num?)?.toDouble() ?? 0,
-        stageCounts: (json['stage_counts'] as List<dynamic>? ?? [])
-            .map((e) => CrmStageCount.fromJson(Map<String, dynamic>.from(e as Map)))
-            .toList(),
-        followupsDue: (json['followups_due'] as num?)?.toInt() ?? 0,
-        followupsOverdue: (json['followups_overdue'] as num?)?.toInt() ?? 0,
-      );
+    totalContacts: (json['total_contacts'] as num?)?.toInt() ?? 0,
+    pipelineValue: (json['pipeline_value'] as num?)?.toDouble() ?? 0,
+    wonValue: (json['won_value'] as num?)?.toDouble() ?? 0,
+    stageCounts: (json['stage_counts'] as List<dynamic>? ?? [])
+        .map((e) => CrmStageCount.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
+    followupsDue: (json['followups_due'] as num?)?.toInt() ?? 0,
+    followupsOverdue: (json['followups_overdue'] as num?)?.toInt() ?? 0,
+  );
 
   @override
-  List<Object?> get props => [totalContacts, pipelineValue, wonValue, stageCounts];
+  List<Object?> get props => [
+    totalContacts,
+    pipelineValue,
+    wonValue,
+    stageCounts,
+  ];
 }

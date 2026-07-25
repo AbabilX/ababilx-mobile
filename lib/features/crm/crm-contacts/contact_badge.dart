@@ -16,25 +16,25 @@ class ContactBadge extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final (bg, fg) = switch (tone) {
       ContactBadgeTone.primary => (
-          scheme.primaryContainer,
-          scheme.onPrimaryContainer,
-        ),
+        scheme.primaryContainer,
+        scheme.onPrimaryContainer,
+      ),
       ContactBadgeTone.secondary => (
-          scheme.secondaryContainer,
-          scheme.onSecondaryContainer,
-        ),
+        scheme.secondaryContainer,
+        scheme.onSecondaryContainer,
+      ),
       ContactBadgeTone.tertiary => (
-          scheme.tertiaryContainer,
-          scheme.onTertiaryContainer,
-        ),
+        scheme.tertiaryContainer,
+        scheme.onTertiaryContainer,
+      ),
       ContactBadgeTone.neutral => (
-          scheme.surfaceContainerHighest,
-          scheme.onSurfaceVariant,
-        ),
+        scheme.surfaceContainerHighest,
+        scheme.onSurfaceVariant,
+      ),
       ContactBadgeTone.error => (
-          scheme.errorContainer,
-          scheme.onErrorContainer,
-        ),
+        scheme.errorContainer,
+        scheme.onErrorContainer,
+      ),
     };
 
     return Container(
@@ -42,27 +42,18 @@ class ContactBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: fg.withValues(alpha: 0.18),
-          width: 0.8,
-        ),
+        border: Border.all(color: fg.withValues(alpha: 0.18), width: 0.8),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w600,
-              height: 1.1,
-            ),
+          color: fg,
+          fontWeight: FontWeight.w600,
+          height: 1.1,
+        ),
       ),
     );
   }
 }
 
-enum ContactBadgeTone {
-  primary,
-  secondary,
-  tertiary,
-  neutral,
-  error,
-}
+enum ContactBadgeTone { primary, secondary, tertiary, neutral, error }

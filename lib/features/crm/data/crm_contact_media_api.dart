@@ -14,10 +14,7 @@ class CrmContactMediaApi {
   }) async {
     final res = await _client.post(
       ApiConstants.crmContactImagesPresign,
-      data: {
-        'content_type': contentType,
-        'size_bytes': sizeBytes,
-      },
+      data: {'content_type': contentType, 'size_bytes': sizeBytes},
     );
     final data = unwrapApiData<Map<String, dynamic>>(res);
     return (

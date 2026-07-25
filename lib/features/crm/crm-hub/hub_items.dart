@@ -15,10 +15,7 @@ class CrmHubItem {
 
 /// Section of hub tiles.
 class CrmHubSectionData {
-  const CrmHubSectionData({
-    required this.titleKey,
-    required this.items,
-  });
+  const CrmHubSectionData({required this.titleKey, required this.items});
 
   final String titleKey;
   final List<CrmHubItem> items;
@@ -29,6 +26,11 @@ const List<CrmHubSectionData> kCrmHubSections = [
   CrmHubSectionData(
     titleKey: 'crm_section_customer',
     items: [
+      CrmHubItem(
+        id: 'organizations',
+        labelKey: 'crm_organizations',
+        icon: HugeIcons.strokeRoundedBuilding03,
+      ),
       CrmHubItem(
         id: 'contacts',
         labelKey: 'crm_contacts',

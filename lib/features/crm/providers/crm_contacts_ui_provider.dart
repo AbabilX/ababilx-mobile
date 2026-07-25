@@ -96,5 +96,5 @@ class CrmContactsUiNotifier extends Notifier<CrmContactsUiState> {
 
 final crmContactsUiProvider =
     NotifierProvider<CrmContactsUiNotifier, CrmContactsUiState>(
-  CrmContactsUiNotifier.new,
-);
+      CrmContactsUiNotifier.new,
+    );
