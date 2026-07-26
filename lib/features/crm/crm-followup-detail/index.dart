@@ -6,6 +6,7 @@ import '../../messages/providers/team_gate_provider.dart';
 import '../crm-lead-detail/complete_followup_sheet.dart';
 import '../crm-lead-detail/documents_tab.dart';
 import '../crm-lead-detail/followup_form_sheet.dart';
+import '../crm-lead-detail/notes_tab.dart';
 import '../crm-lead-detail/stage_stepper.dart';
 import '../crm-lead-detail/timeline_tab.dart';
 import '../data/crm_repository.dart';
@@ -196,7 +197,6 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
     required bool canCreate,
     required bool canDelete,
   }) {
-    final colors = Theme.of(context).colorScheme;
     switch (index) {
       case 0:
         return TimelineTab(events: timeline, shrinkWrap: true);
@@ -207,35 +207,12 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
           currency: currency,
         );
       case 2:
-        if (notes.isEmpty) return const CrmEmpty(message: 'No notes yet');
-        return Column(
-          children: [
-            for (final n in notes)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Material(
-                  color: colors.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(n.body),
-                        if ((n.authorName ?? '').isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              n.authorName!,
-                              style: Theme.of(context).textTheme.labelSmall,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-          ],
+        return NotesTab(
+          leadId: lead.id,
+          notes: notes,
+          canCreate: canCreate,
+          canDelete: canDelete,
+          shrinkWrap: true,
         );
       case 3:
         return Column(

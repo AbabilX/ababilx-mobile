@@ -27,6 +27,12 @@ class ApiConstants {
       '/api/teams/crm/organizations/$id';
   static String crmOrganizationRemove(String id) =>
       '/api/teams/crm/organizations/$id/remove';
+  static String crmOrganizationDocuments(String id) =>
+      '/api/teams/crm/organizations/$id/documents';
+  static String crmOrganizationDocumentsPresign(String id) =>
+      '/api/teams/crm/organizations/$id/documents/presign';
+  static String crmOrganizationDocument(String documentId) =>
+      '/api/teams/crm/organization-documents/$documentId';
   static String crmContact(String id) => '/api/teams/crm/contacts/$id';
   static const String crmLeads = '/api/teams/crm/leads';
   static String crmLead(String id) => '/api/teams/crm/leads/$id';

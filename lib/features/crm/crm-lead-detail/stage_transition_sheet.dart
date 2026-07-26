@@ -1,11 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
+import '../../../shared/media/picked_media_file.dart';
+import '../../messages/chat-timeline/voice_message_recorder.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_lead_detail_provider.dart';
+import '../shared/crm_media_actions.dart';
 import 'stage_transition_rules.dart';
 
 class _DraftUpload {
@@ -121,16 +123,8 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
     });
   }
 
-  Future<void> _addFile() async {
+  Future<void> _addFile(PickedMediaFile file) async {
     if (_uploads.length >= 10 || _uploading) return;
-    final picker = ImagePicker();
-    final file = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-    );
-    if (file == null || !mounted) return;
-    final bytes = await file.readAsBytes();
-    final mime = file.mimeType ?? 'image/jpeg';
     setState(() => _uploading = true);
     try {
       final draft = await ref
@@ -138,15 +132,15 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
           .presignStageUpload(
             widget.lead.id,
             targetStageId: widget.target.id,
-            contentType: mime,
-            fileName: file.name,
-            sizeBytes: bytes.length,
+            contentType: file.contentType,
+            fileName: file.fileName,
+            sizeBytes: file.sizeBytes,
           );
       final dio = Dio();
       final put = await dio.put(
         draft.uploadUrl,
-        data: bytes,
-        options: Options(headers: {'Content-Type': mime}),
+        data: file.bytes,
+        options: Options(headers: {'Content-Type': file.contentType}),
       );
       if (put.statusCode == null ||
           put.statusCode! < 200 ||
@@ -159,7 +153,7 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
       if (!mounted) return;
       setState(() {
         _uploads.add(
-          _DraftUpload(uploadId: draft.uploadId, fileName: file.name),
+          _DraftUpload(uploadId: draft.uploadId, fileName: file.fileName),
         );
       });
     } catch (e) {
@@ -170,6 +164,10 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
+  }
+
+  Future<void> _addVoice(RecordedVoiceMessage recording) async {
+    await _addFile(await pickedVoiceRecording(recording));
   }
 
   Future<void> _discardAll() async {
@@ -336,20 +334,20 @@ class _StageTransitionBodyState extends ConsumerState<_StageTransitionBody> {
                     ),
                   ),
                   const Spacer(),
-                  TextButton.icon(
-                    onPressed: _uploads.length >= 10 || _busy || _uploading
-                        ? null
-                        : _addFile,
-                    icon: _uploading
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.attach_file_rounded, size: 18),
-                    label: const Text('Add'),
+                  CrmMediaActions(
+                    busy: _uploads.length >= 10 || _busy || _uploading,
+                    onMedia: _addFile,
+                    onVoice: _addVoice,
                   ),
                 ],
+              ),
+              Text(
+                _uploading
+                    ? 'Uploading…'
+                    : 'Hold mic, take a live photo, or choose a file',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
               ),
               for (final u in _uploads)
                 ListTile(

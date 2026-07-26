@@ -32,12 +32,12 @@ class ConversationRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _ConversationAvatar(conversation: conversation, title: title),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,8 +50,10 @@ class ConversationRow extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight:
-                                unread ? FontWeight.w800 : FontWeight.w600,
+                            fontSize: 16,
+                            fontWeight: unread
+                                ? FontWeight.w800
+                                : FontWeight.w600,
                           ),
                         ),
                       ),
@@ -67,24 +69,28 @@ class ConversationRow extends StatelessWidget {
                           time,
                           style: TextStyle(
                             fontSize: 12,
+                            fontWeight: FontWeight.w500,
                             color: colors.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       Expanded(
                         child: Text(
                           preview,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
+                            fontSize: 15,
+                            height: 1.28,
                             color: colors.onSurfaceVariant,
-                            fontWeight:
-                                unread ? FontWeight.w600 : FontWeight.w400,
+                            fontWeight: unread
+                                ? FontWeight.w600
+                                : FontWeight.w400,
                           ),
                         ),
                       ),
@@ -102,10 +108,7 @@ class ConversationRow extends StatelessWidget {
 }
 
 class _ConversationAvatar extends StatelessWidget {
-  const _ConversationAvatar({
-    required this.conversation,
-    required this.title,
-  });
+  const _ConversationAvatar({required this.conversation, required this.title});
 
   final ChatConversation conversation;
   final String title;
@@ -117,11 +120,11 @@ class _ConversationAvatar extends StatelessWidget {
       return GroupAvatarStack(
         avatars: conversation.memberAvatars,
         name: title,
-        size: 48,
+        size: 52,
       );
     }
     return AppAvatar(
-      size: 48,
+      size: 52,
       url: conversation.peerUserAvatar,
       name: title,
       fallback: ChatIcon(

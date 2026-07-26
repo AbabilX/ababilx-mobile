@@ -25,9 +25,10 @@ class WallAttachment extends Equatable {
 
   bool get isImage {
     if (contentType.startsWith('image/')) return true;
-    return RegExp(r'\.(jpe?g|png|gif|webp|bmp|heic|heif|avif|svg)$',
-            caseSensitive: false)
-        .hasMatch(fileName);
+    return RegExp(
+      r'\.(jpe?g|png|gif|webp|bmp|heic|heif|avif|svg)$',
+      caseSensitive: false,
+    ).hasMatch(fileName);
   }
 
   bool get isPdf {
@@ -36,17 +37,25 @@ class WallAttachment extends Equatable {
     return fileName.toLowerCase().endsWith('.pdf');
   }
 
+  bool get isAudio {
+    if (contentType.toLowerCase().startsWith('audio/')) return true;
+    return RegExp(
+      r'\.(m4a|aac|mp3|ogg|opus|wav|webm)$',
+      caseSensitive: false,
+    ).hasMatch(fileName);
+  }
+
   factory WallAttachment.fromJson(Map<String, dynamic> json) => WallAttachment(
-        id: json['id'] as String? ?? '',
-        postId: json['post_id'] as String? ?? '',
-        commentId: json['comment_id'] as String?,
-        fileName: json['file_name'] as String? ?? '',
-        fileUrl: json['file_url'] as String? ?? '',
-        contentType: json['content_type'] as String? ?? '',
-        sizeBytes: json['size_bytes'] as int? ?? 0,
-        uploadedBy: json['uploaded_by'] as String? ?? '',
-        createdAt: json['created_at'] as String? ?? '',
-      );
+    id: json['id'] as String? ?? '',
+    postId: json['post_id'] as String? ?? '',
+    commentId: json['comment_id'] as String?,
+    fileName: json['file_name'] as String? ?? '',
+    fileUrl: json['file_url'] as String? ?? '',
+    contentType: json['content_type'] as String? ?? '',
+    sizeBytes: json['size_bytes'] as int? ?? 0,
+    uploadedBy: json['uploaded_by'] as String? ?? '',
+    createdAt: json['created_at'] as String? ?? '',
+  );
 
   @override
   List<Object?> get props => [id, fileUrl];
@@ -66,11 +75,11 @@ class WallAttachmentInput extends Equatable {
   final int sizeBytes;
 
   Map<String, dynamic> toJson() => {
-        'file_url': fileUrl,
-        'file_name': fileName,
-        'content_type': contentType,
-        'size_bytes': sizeBytes,
-      };
+    'file_url': fileUrl,
+    'file_name': fileName,
+    'content_type': contentType,
+    'size_bytes': sizeBytes,
+  };
 
   @override
   List<Object?> get props => [fileUrl, fileName];

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/media/picked_media_file.dart';
+import '../../messages/chat-timeline/voice_message_recorder.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_lead_detail_provider.dart';
 import '../shared/crm_dates.dart';
+import '../shared/crm_media_actions.dart';
 import '../shared/crm_ui.dart';
 
 const _none = '__none__';
@@ -32,6 +35,7 @@ class _ActivitiesTabState extends ConsumerState<ActivitiesTab> {
   final _body = TextEditingController();
   var _typeId = _none;
   var _busy = false;
+  var _mediaBusy = false;
 
   @override
   void dispose() {
@@ -41,7 +45,7 @@ class _ActivitiesTabState extends ConsumerState<ActivitiesTab> {
   }
 
   Future<void> _add() async {
-    if (_busy) return;
+    if (_busy || _mediaBusy) return;
     if (_subject.text.trim().isEmpty && _body.text.trim().isEmpty) return;
     setState(() => _busy = true);
     try {
@@ -67,6 +71,28 @@ class _ActivitiesTabState extends ConsumerState<ActivitiesTab> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _uploadMedia(PickedMediaFile file) async {
+    if (_mediaBusy || _busy) return;
+    setState(() => _mediaBusy = true);
+    try {
+      await ref
+          .read(crmRepositoryProvider)
+          .uploadDocument(
+            widget.leadId,
+            bytes: file.bytes,
+            fileName: file.fileName,
+            mimeType: file.contentType,
+          );
+      invalidateLeadDetail(ref, widget.leadId);
+    } finally {
+      if (mounted) setState(() => _mediaBusy = false);
+    }
+  }
+
+  Future<void> _uploadVoice(RecordedVoiceMessage recording) async {
+    await _uploadMedia(await pickedVoiceRecording(recording));
   }
 
   @override
@@ -125,10 +151,27 @@ class _ActivitiesTabState extends ConsumerState<ActivitiesTab> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                Row(
+                  children: [
+                    CrmMediaActions(
+                      busy: _busy || _mediaBusy,
+                      onMedia: _uploadMedia,
+                      onVoice: _uploadVoice,
+                    ),
+                    const Spacer(),
+                    Text(
+                      _mediaBusy ? 'Uploading…' : 'Add evidence',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
                 Align(
                   alignment: Alignment.centerRight,
                   child: FilledButton(
-                    onPressed: _busy ? null : _add,
+                    onPressed: _busy || _mediaBusy ? null : _add,
                     child: Text(_busy ? 'Saving…' : 'Log activity'),
                   ),
                 ),

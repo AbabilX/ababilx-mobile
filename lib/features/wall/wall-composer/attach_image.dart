@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../shared/media/picked_media_file.dart';
 import '../../messages/chat_icon.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
@@ -20,7 +21,8 @@ Future<WallAttachmentInput?> pickWallImageAttachment(
     return null;
   }
 
-  final pickedSource = source ??
+  final pickedSource =
+      source ??
       await showModalBottomSheet<ImageSource>(
         context: context,
         builder: (ctx) => SafeArea(
@@ -43,21 +45,47 @@ Future<WallAttachmentInput?> pickWallImageAttachment(
       );
   if (pickedSource == null) return null;
 
-  final file = await ImagePicker().pickImage(source: pickedSource);
+  final file = pickedSource == ImageSource.camera
+      ? await pickLiveCameraFile()
+      : await pickGalleryImageFile();
   if (file == null) return null;
-  final bytes = await file.readAsBytes();
-  final contentType = file.mimeType ?? 'image/jpeg';
+  return uploadWallAttachment(ref, file);
+}
+
+Future<WallAttachmentInput?> pickWallFileAttachment(
+  BuildContext context,
+  WidgetRef ref, {
+  required bool isPremium,
+}) async {
+  if (!_wallAttachmentsAllowed(context, isPremium)) return null;
+  final file = await pickDeviceFile();
+  if (file == null) return null;
+  return uploadWallAttachment(ref, file);
+}
+
+Future<WallAttachmentInput> uploadWallAttachment(
+  WidgetRef ref,
+  PickedMediaFile file,
+) async {
   final n = ref.read(wallProvider.notifier);
   final presign = await n.presignAttachment(
-    contentType: contentType,
-    fileName: file.name,
-    sizeBytes: bytes.length,
+    contentType: file.contentType,
+    fileName: file.fileName,
+    sizeBytes: file.sizeBytes,
   );
-  await n.uploadBytes(presign, bytes, contentType);
+  await n.uploadBytes(presign, file.bytes, file.contentType);
   return WallAttachmentInput(
     fileUrl: presign.publicUrl,
-    fileName: file.name,
-    contentType: contentType,
-    sizeBytes: bytes.length,
+    fileName: file.fileName,
+    contentType: file.contentType,
+    sizeBytes: file.sizeBytes,
   );
+}
+
+bool _wallAttachmentsAllowed(BuildContext context, bool isPremium) {
+  if (isPremium) return true;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Attachments require team premium')),
+  );
+  return false;
 }

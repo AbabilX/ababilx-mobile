@@ -681,7 +681,9 @@ class CrmLeadPayment extends Equatable {
     required this.paidAt,
     this.method = '',
     this.reference = '',
+    this.invoiceReference = '',
     this.note = '',
+    this.receiptDocumentId,
     this.creatorName,
   });
 
@@ -693,7 +695,9 @@ class CrmLeadPayment extends Equatable {
   final String paidAt;
   final String method;
   final String reference;
+  final String invoiceReference;
   final String note;
+  final String? receiptDocumentId;
   final String? creatorName;
 
   bool get isRefund => kind == 'refund';
@@ -707,7 +711,9 @@ class CrmLeadPayment extends Equatable {
     paidAt: json['paid_at'] as String? ?? '',
     method: json['method'] as String? ?? '',
     reference: json['reference'] as String? ?? '',
+    invoiceReference: json['invoice_reference'] as String? ?? '',
     note: json['note'] as String? ?? '',
+    receiptDocumentId: json['receipt_document_id'] as String?,
     creatorName: json['creator_name'] as String?,
   );
 
@@ -722,7 +728,9 @@ class CrmLeadPaymentInput {
     this.kind = 'payment',
     this.method = '',
     this.reference = '',
+    this.invoiceReference = '',
     this.note = '',
+    this.receiptDocumentId,
   });
 
   final String kind;
@@ -730,7 +738,9 @@ class CrmLeadPaymentInput {
   final String paidAt;
   final String method;
   final String reference;
+  final String invoiceReference;
   final String note;
+  final String? receiptDocumentId;
 
   Map<String, dynamic> toJson() => {
     'kind': kind,
@@ -738,7 +748,9 @@ class CrmLeadPaymentInput {
     'paid_at': paidAt,
     'method': method,
     'reference': reference,
+    'invoice_reference': invoiceReference,
     'note': note,
+    if (receiptDocumentId != null) 'receipt_document_id': receiptDocumentId,
   };
 }
 

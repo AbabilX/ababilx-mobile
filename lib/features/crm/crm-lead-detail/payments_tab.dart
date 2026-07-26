@@ -2,12 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../shared/media/picked_media_file.dart';
+import '../../messages/chat-timeline/voice_message_recorder.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_lead_detail_provider.dart';
 import '../shared/crm_dates.dart';
+import '../shared/crm_media_actions.dart';
 import '../shared/crm_money.dart';
 import '../shared/crm_ui.dart';
+
+class _PaymentDraft {
+  const _PaymentDraft({required this.input, this.receipt});
+
+  final CrmLeadPaymentInput input;
+  final PickedMediaFile? receipt;
+}
 
 /// A small, ledger-first payment view: record an amount, then see what remains.
 class PaymentsTab extends ConsumerWidget {
@@ -29,7 +39,7 @@ class PaymentsTab extends ConsumerWidget {
   bool get _closed => lead.isWon || lead.isLost;
 
   Future<void> _record(BuildContext context, WidgetRef ref, String kind) async {
-    final input = await showModalBottomSheet<CrmLeadPaymentInput>(
+    final draft = await showModalBottomSheet<_PaymentDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -38,9 +48,35 @@ class PaymentsTab extends ConsumerWidget {
         kind: kind,
       ),
     );
-    if (input == null) return;
+    if (draft == null) return;
     try {
-      await ref.read(crmRepositoryProvider).createLeadPayment(lead.id, input);
+      final repo = ref.read(crmRepositoryProvider);
+      String? receiptDocumentId;
+      if (draft.receipt != null) {
+        final receipt = draft.receipt!;
+        final document = await repo.uploadDocument(
+          lead.id,
+          bytes: receipt.bytes,
+          fileName: receipt.fileName,
+          mimeType: receipt.contentType,
+          label: 'Payment receipt',
+        );
+        receiptDocumentId = document.id;
+      }
+      final input = draft.input;
+      await repo.createLeadPayment(
+        lead.id,
+        CrmLeadPaymentInput(
+          kind: input.kind,
+          amount: input.amount,
+          paidAt: input.paidAt,
+          method: input.method,
+          reference: input.reference,
+          invoiceReference: input.invoiceReference,
+          note: input.note,
+          receiptDocumentId: receiptDocumentId,
+        ),
+      );
       invalidateLeadDetail(ref, lead.id);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -219,6 +255,9 @@ class _PaymentRow extends StatelessWidget {
           formatCrmDateTime(payment.paidAt),
           if (payment.method.isNotEmpty) payment.method,
           if (payment.reference.isNotEmpty) payment.reference,
+          if (payment.invoiceReference.isNotEmpty)
+            'Invoice ${payment.invoiceReference}',
+          if (payment.receiptDocumentId != null) 'Receipt attached',
         ].join(' · '),
       ),
       trailing: canDelete
@@ -244,12 +283,17 @@ class _PaymentFormState extends ConsumerState<_PaymentForm> {
   final _amount = TextEditingController();
   final _method = TextEditingController();
   final _reference = TextEditingController();
+  final _invoiceReference = TextEditingController();
+  final _note = TextEditingController();
+  PickedMediaFile? _receipt;
 
   @override
   void dispose() {
     _amount.dispose();
     _method.dispose();
     _reference.dispose();
+    _invoiceReference.dispose();
+    _note.dispose();
     super.dispose();
   }
 
@@ -258,14 +302,27 @@ class _PaymentFormState extends ConsumerState<_PaymentForm> {
     if (amount <= 0 || amount > widget.maxAmount + 0.005) return;
     Navigator.pop(
       context,
-      CrmLeadPaymentInput(
-        kind: widget.kind,
-        amount: amount,
-        paidAt: DateTime.now().toUtc().toIso8601String(),
-        method: _method.text.trim(),
-        reference: _reference.text.trim(),
+      _PaymentDraft(
+        input: CrmLeadPaymentInput(
+          kind: widget.kind,
+          amount: amount,
+          paidAt: DateTime.now().toUtc().toIso8601String(),
+          method: _method.text.trim(),
+          reference: _reference.text.trim(),
+          invoiceReference: _invoiceReference.text.trim(),
+          note: _note.text.trim(),
+        ),
+        receipt: _receipt,
       ),
     );
+  }
+
+  Future<void> _setReceipt(PickedMediaFile file) async {
+    if (mounted) setState(() => _receipt = file);
+  }
+
+  Future<void> _setVoiceReceipt(RecordedVoiceMessage recording) async {
+    await _setReceipt(await pickedVoiceRecording(recording));
   }
 
   @override
@@ -281,64 +338,116 @@ class _PaymentFormState extends ConsumerState<_PaymentForm> {
         20,
         MediaQuery.viewInsetsOf(context).bottom + 20,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            AppTranslations.translate(
-              context,
-              ref,
-              widget.kind == 'refund' ? 'crm_refund' : 'crm_record_payment',
-            ),
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _amount,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: AppTranslations.translate(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              AppTranslations.translate(
                 context,
                 ref,
-                'crm_payment_amount',
+                widget.kind == 'refund' ? 'crm_refund' : 'crm_record_payment',
               ),
-              helperText: '≤ $max',
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _method,
-            decoration: InputDecoration(
-              labelText: AppTranslations.translate(
+              style: Theme.of(
                 context,
-                ref,
-                'crm_payment_method',
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _amount,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: AppTranslations.translate(
+                  context,
+                  ref,
+                  'crm_payment_amount',
+                ),
+                helperText: '≤ $max',
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _reference,
-            decoration: InputDecoration(
-              labelText: AppTranslations.translate(
-                context,
-                ref,
-                'crm_payment_reference',
+            const SizedBox(height: 12),
+            TextField(
+              controller: _method,
+              decoration: InputDecoration(
+                labelText: AppTranslations.translate(
+                  context,
+                  ref,
+                  'crm_payment_method',
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 18),
-          FilledButton(
-            onPressed: _save,
-            style: FilledButton.styleFrom(backgroundColor: colors.primary),
-            child: Text(
-              AppTranslations.translate(context, ref, 'crm_save_payment'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _reference,
+              decoration: InputDecoration(
+                labelText: AppTranslations.translate(
+                  context,
+                  ref,
+                  'crm_payment_reference',
+                ),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            TextField(
+              controller: _invoiceReference,
+              decoration: const InputDecoration(labelText: 'Invoice reference'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _note,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Payment note (optional)',
+              ),
+            ),
+            const SizedBox(height: 10),
+            Material(
+              color: colors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+                child: Row(
+                  children: [
+                    CrmMediaActions(
+                      busy: false,
+                      onMedia: _setReceipt,
+                      onVoice: _setVoiceReceipt,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _receipt?.fileName ??
+                            'Receipt: hold mic, camera, or files',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(color: colors.onSurfaceVariant),
+                      ),
+                    ),
+                    if (_receipt != null)
+                      IconButton(
+                        tooltip: 'Remove receipt',
+                        onPressed: () => setState(() => _receipt = null),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: _save,
+              style: FilledButton.styleFrom(backgroundColor: colors.primary),
+              child: Text(
+                AppTranslations.translate(context, ref, 'crm_save_payment'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

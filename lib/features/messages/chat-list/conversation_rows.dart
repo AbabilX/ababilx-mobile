@@ -33,11 +33,16 @@ class ConversationRows extends StatelessWidget {
     }
     return RefreshIndicator(
       onRefresh: onRefresh,
-      child: ListView.builder(
+      child: ListView.separated(
         padding: const EdgeInsets.only(
           bottom: ShellPillMetrics.contentBottomInset,
         ),
         itemCount: conversations.length,
+        separatorBuilder: (_, _) => Divider(
+          height: 1,
+          indent: 82,
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
         itemBuilder: (_, i) {
           final c = conversations[i];
           return ConversationRow(

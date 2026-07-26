@@ -122,10 +122,10 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final file = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       maxWidth: 1200,
       imageQuality: 85,
     );
@@ -185,7 +185,7 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
 
   void _submit() {
     final name = _name.text.trim();
-    if (name.isEmpty || _uploading) return;
+    if (name.isEmpty || _phone.text.trim().isEmpty || _uploading) return;
     final tags = _tags.text
         .split(',')
         .map((t) => t.trim())
@@ -218,7 +218,10 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final editing = widget.initial != null;
-    final canSave = _name.text.trim().isNotEmpty && !_uploading;
+    final canSave =
+        _name.text.trim().isNotEmpty &&
+        _phone.text.trim().isNotEmpty &&
+        !_uploading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -297,14 +300,24 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         TextButton.icon(
-                          onPressed: _uploading ? null : _pickImage,
+                          onPressed: _uploading
+                              ? null
+                              : () => _pickImage(ImageSource.camera),
                           icon: const Icon(
                             Icons.photo_camera_outlined,
                             size: 18,
                           ),
-                          label: Text(
-                            _imageUrl.isEmpty ? 'Add photo' : 'Change',
+                          label: const Text('Camera'),
+                        ),
+                        TextButton.icon(
+                          onPressed: _uploading
+                              ? null
+                              : () => _pickImage(ImageSource.gallery),
+                          icon: const Icon(
+                            Icons.photo_library_outlined,
+                            size: 18,
                           ),
+                          label: Text(_imageUrl.isEmpty ? 'Gallery' : 'Change'),
                         ),
                         if (_imageUrl.isNotEmpty)
                           TextButton(
@@ -404,8 +417,9 @@ class _ContactFormBodyState extends ConsumerState<_ContactFormBody> {
               TextField(
                 controller: _phone,
                 keyboardType: TextInputType.phone,
+                onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(
-                  labelText: 'Phone',
+                  labelText: 'Phone *',
                   isDense: true,
                 ),
               ),

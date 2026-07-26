@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 import 'data/models/chat_models.dart';
 import 'tiptap_plain_text.dart';
 
@@ -41,25 +43,29 @@ String relativeChatTime(String? iso) {
   if (iso == null || iso.isEmpty) return '';
   final dt = DateTime.tryParse(iso)?.toLocal();
   if (dt == null) return '';
-  final diff = DateTime.now().difference(dt);
-  if (diff.inMinutes < 1) return 'now';
-  if (diff.inHours < 1) return '${diff.inMinutes}m';
-  if (diff.inHours < 24) return '${diff.inHours}h';
-  if (diff.inDays < 7) return '${diff.inDays}d';
-  return '${(diff.inDays / 7).floor()}w';
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final messageDay = DateTime(dt.year, dt.month, dt.day);
+  final days = today.difference(messageDay).inDays;
+  if (days == 0) return DateFormat.jm().format(dt);
+  if (days == 1) return 'Yesterday';
+  if (days < 7) return DateFormat.EEEE().format(dt);
+  if (dt.year == now.year) return DateFormat('d MMM').format(dt);
+  return DateFormat('d MMM yy').format(dt);
 }
 
-String previewWithYou(
-  ChatConversation conv,
-  String? currentUserId,
-) {
+String previewWithYou(ChatConversation conv, String? currentUserId) {
   final body = tiptapToPlainText(conv.lastMessageBody).trim();
   final base = () {
-    if (conv.lastMessageAttachmentType != null) {
-      if (conv.lastMessageAttachmentType!.startsWith('image/')) return 'Photo';
-      return 'Attachment';
-    }
     if (body.isNotEmpty) return body;
+    final type = conv.lastMessageAttachmentType?.toLowerCase() ?? '';
+    if (type.startsWith('image/')) return 'Photo';
+    if (type.startsWith('audio/')) return 'Voice message';
+    if (type.isNotEmpty) {
+      return conv.lastMessageAttachmentName?.trim().isNotEmpty == true
+          ? conv.lastMessageAttachmentName!.trim()
+          : 'Attachment';
+    }
     return 'No messages yet';
   }();
   if (conv.lastMessageUserId != null &&

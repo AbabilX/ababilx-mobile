@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../team/data/models/team_models.dart';
+import '../../messages/chat-timeline/voice_message_recorder.dart';
 import '../data/models/wall_models.dart';
 import 'attach_image.dart';
 import 'composer_toolbar.dart';
@@ -27,6 +28,7 @@ class WallComposerForm extends ConsumerWidget {
     required this.onInsertAt,
     required this.onInsertHash,
     required this.onAttached,
+    required this.onVoiceRecorded,
     required this.onSubmit,
     required this.onFieldTap,
   });
@@ -46,15 +48,12 @@ class WallComposerForm extends ConsumerWidget {
   final VoidCallback onInsertAt;
   final VoidCallback onInsertHash;
   final ValueChanged<WallAttachmentInput> onAttached;
+  final Future<void> Function(RecordedVoiceMessage recording) onVoiceRecorded;
   final VoidCallback onSubmit;
   final VoidCallback onFieldTap;
 
   Future<void> _addPhoto(BuildContext context, WidgetRef ref) async {
-    final a = await pickWallImageAttachment(
-      context,
-      ref,
-      isPremium: isPremium,
-    );
+    final a = await pickWallImageAttachment(context, ref, isPremium: isPremium);
     if (a != null) onAttached(a);
   }
 
@@ -85,15 +84,22 @@ class WallComposerForm extends ConsumerWidget {
           ),
         ],
         const SizedBox(height: 12),
-        TextField(
-          controller: controller,
-          focusNode: focusNode,
-          minLines: 4,
-          maxLines: 8,
-          onTap: onFieldTap,
-          decoration: const InputDecoration(
-            hintText: 'Share an update…',
-            border: OutlineInputBorder(),
+        Material(
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            minLines: 4,
+            maxLines: 8,
+            onTap: onFieldTap,
+            decoration: const InputDecoration(
+              hintText: 'Share an update…',
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -130,6 +136,7 @@ class WallComposerForm extends ConsumerWidget {
           onInsertAt: onInsertAt,
           onInsertHash: onInsertHash,
           onAttached: onAttached,
+          onVoiceRecorded: onVoiceRecorded,
           onSubmit: onSubmit,
         ),
       ],
@@ -139,10 +146,7 @@ class WallComposerForm extends ConsumerWidget {
 
 /// Shown before any attachment — quick Camera / Gallery entry.
 class _EmptyPhotoRow extends StatelessWidget {
-  const _EmptyPhotoRow({
-    required this.onCamera,
-    required this.onGallery,
-  });
+  const _EmptyPhotoRow({required this.onCamera, required this.onGallery});
 
   final VoidCallback onCamera;
   final VoidCallback onGallery;

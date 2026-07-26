@@ -79,15 +79,37 @@ class VoiceMessageRecorder {
     await _releaseStream();
 
     final file = File(path);
-    if (!await file.exists()) return null;
+    final sizeBytes = await _waitForFinalizedFile(file);
+    if (sizeBytes == 0) return null;
     final duration = DateTime.now().difference(startedAt);
     final seconds = duration.inSeconds.clamp(1, 3599);
     return RecordedVoiceMessage(
       path: path,
       fileName: 'voice-message-${seconds}s.m4a',
-      sizeBytes: await file.length(),
+      sizeBytes: sizeBytes,
       duration: duration,
     );
+  }
+
+  /// flutter_webrtc completes `stop()` before Android's MediaMuxer has always
+  /// flushed the AAC/MP4 file. Wait for a non-empty, stable file instead of
+  /// incorrectly treating a valid recording as a short/empty press.
+  Future<int> _waitForFinalizedFile(File file) async {
+    var previousSize = 0;
+    var stableReads = 0;
+    for (var attempt = 0; attempt < 30; attempt++) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      if (!await file.exists()) continue;
+      final size = await file.length();
+      if (size > 0 && size == previousSize) {
+        stableReads++;
+        if (stableReads >= 2) return size;
+      } else {
+        stableReads = 0;
+      }
+      previousSize = size;
+    }
+    return await file.exists() ? await file.length() : 0;
   }
 
   Future<void> cancel() async {

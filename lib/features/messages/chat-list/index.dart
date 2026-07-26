@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
+import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../chat-sidebar/new-dm-dialog.dart';
 import '../chat_list_filters.dart';
 import '../providers/chat_provider.dart';
@@ -65,19 +67,30 @@ class _ChatListState extends ConsumerState<ChatList> {
           ],
         ),
       ),
-      floatingActionButton: ChatListFab(onPressed: () => _compose(context)),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(
+          bottom: ShellPillMetrics.contentBottomInset - 24,
+        ),
+        child: ChatListFab(onPressed: () => _compose(context)),
+      ),
     );
   }
 
   Future<void> _compose(BuildContext context) async {
-    final action = await showComposeSheet(context);
-    if (!context.mounted || action == null) return;
-    if (action == 'dm') {
-      final dm = await showNewDmDialog(context, ref);
-      if (dm != null && context.mounted) context.push('/messages/${dm.id}');
-    } else if (action == 'channel') {
-      final ch = await showCreateChannelDialog(context, ref);
-      if (ch != null && context.mounted) context.push('/messages/${ch.id}');
+    final shellChrome = ref.read(shellBottomBarHiddenProvider.notifier);
+    shellChrome.state = true;
+    try {
+      final action = await showComposeSheet(context);
+      if (!context.mounted || action == null) return;
+      if (action == 'dm') {
+        final dm = await showNewDmDialog(context, ref);
+        if (dm != null && context.mounted) context.push('/messages/${dm.id}');
+      } else if (action == 'channel') {
+        final ch = await showCreateChannelDialog(context, ref);
+        if (ch != null && context.mounted) context.push('/messages/${ch.id}');
+      }
+    } finally {
+      shellChrome.state = false;
     }
   }
 }

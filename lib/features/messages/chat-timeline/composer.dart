@@ -40,6 +40,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   late final TextEditingController _ctrl;
   late final FocusNode _focus;
   final _voiceRecorder = VoiceMessageRecorder();
+  final _recordStopwatch = Stopwatch();
   final _pending = <ChatAttachmentInput>[];
   Timer? _recordClock;
   Duration _recordElapsed = Duration.zero;
@@ -142,12 +143,13 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         return;
       }
       setState(() => _recordPreparing = false);
+      _recordStopwatch
+        ..reset()
+        ..start();
       _recordClock?.cancel();
       _recordClock = Timer.periodic(const Duration(milliseconds: 200), (_) {
         if (mounted) {
-          setState(() {
-            _recordElapsed += const Duration(milliseconds: 200);
-          });
+          setState(() => _recordElapsed = _recordStopwatch.elapsed);
           if (_recordElapsed >= const Duration(seconds: 60)) {
             unawaited(_finishVoiceRecording());
           }
@@ -181,6 +183,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     if (_recordFinishing) return;
     final notifier = ref.read(chatProvider.notifier);
     _recordFinishing = true;
+    _recordStopwatch.stop();
     _recordClock?.cancel();
     RecordedVoiceMessage? recording;
     try {
@@ -258,6 +261,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           _recordElapsed = Duration.zero;
         });
       }
+      _recordStopwatch.reset();
     }
   }
 
@@ -324,7 +328,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           expandTooltip: tr('chat_expand'),
           sendTooltip: tr('chat_send'),
         ),
-        toolbar: const SizedBox.shrink(),
       );
     }
     return Listener(

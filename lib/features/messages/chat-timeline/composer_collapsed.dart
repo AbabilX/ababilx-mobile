@@ -12,6 +12,7 @@ class ComposerCollapsed extends StatelessWidget {
     required this.onPlus,
     this.onMicDown,
     this.onMic,
+    this.voiceAction,
     this.voiceTooltip = 'Voice',
   });
 
@@ -20,6 +21,7 @@ class ComposerCollapsed extends StatelessWidget {
   final VoidCallback onPlus;
   final VoidCallback? onMicDown;
   final VoidCallback? onMic;
+  final Widget? voiceAction;
   final String voiceTooltip;
 
   @override
@@ -49,24 +51,25 @@ class ComposerCollapsed extends StatelessWidget {
                   ),
                 ),
               ),
-              Semantics(
-                button: true,
-                label: voiceTooltip,
-                hint: voiceTooltip,
-                child: Listener(
-                  onPointerDown: (_) => (onMicDown ?? onMic)?.call(),
-                  child: Tooltip(
-                    message: voiceTooltip,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: ChatIcon(
-                        HugeIcons.strokeRoundedMic01,
-                        color: colors.onSurfaceVariant,
+              voiceAction ??
+                  Semantics(
+                    button: true,
+                    label: voiceTooltip,
+                    hint: voiceTooltip,
+                    child: Listener(
+                      onPointerDown: (_) => (onMicDown ?? onMic)?.call(),
+                      child: Tooltip(
+                        message: voiceTooltip,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: ChatIcon(
+                            HugeIcons.strokeRoundedMic01,
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
             ],
           ),
         ),

@@ -74,6 +74,81 @@ class CrmOrganizationsApi {
     }
     return CrmOrganization.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
+
+  Future<List<CrmOrganizationDocument>> listDocuments(String id) async {
+    final res = await _client.get(ApiConstants.crmOrganizationDocuments(id));
+    final raw = unwrapApiData<dynamic>(res);
+    if (raw is! List) return const [];
+    return [
+      for (final item in raw)
+        CrmOrganizationDocument.fromJson(
+          Map<String, dynamic>.from(item as Map),
+        ),
+    ];
+  }
+
+  Future<CrmOrganizationDocument> uploadDocument(
+    String id, {
+    required List<int> bytes,
+    required String fileName,
+    required String mimeType,
+    String? title,
+    String? description,
+  }) async {
+    final contentType = mimeType.isEmpty
+        ? 'application/octet-stream'
+        : mimeType;
+    final presignResponse = await _client.post(
+      ApiConstants.crmOrganizationDocumentsPresign(id),
+      data: {
+        'content_type': contentType,
+        'file_name': fileName,
+        'size_bytes': bytes.length,
+      },
+    );
+    final presign = CrmDocumentPresign.fromJson(
+      unwrapApiData<Map<String, dynamic>>(presignResponse),
+    );
+    try {
+      await Dio().put(
+        presign.uploadUrl,
+        data: bytes,
+        options: Options(
+          headers: {
+            'Content-Type': contentType,
+            'Content-Length': bytes.length,
+          },
+        ),
+      );
+      final save = await _client.post(
+        ApiConstants.crmOrganizationDocuments(id),
+        data: {
+          'title': (title ?? '').trim().isEmpty ? fileName : title!.trim(),
+          if ((description ?? '').trim().isNotEmpty)
+            'description': description!.trim(),
+          'file_url': presign.publicUrl,
+          'file_name': fileName,
+          'mime_type': contentType,
+          'size_bytes': bytes.length,
+        },
+      );
+      return CrmOrganizationDocument.fromJson(
+        unwrapApiData<Map<String, dynamic>>(save),
+      );
+    } catch (_) {
+      try {
+        await _client.post(
+          ApiConstants.crmDocumentsDiscard,
+          data: {'file_url': presign.publicUrl},
+        );
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
+  Future<void> deleteDocument(String documentId) async {
+    await _client.delete(ApiConstants.crmOrganizationDocument(documentId));
+  }
 }
 
 Never _throwFriendly(DioException error) {

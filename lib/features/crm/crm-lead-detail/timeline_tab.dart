@@ -5,10 +5,18 @@ import '../shared/crm_dates.dart';
 import '../shared/crm_ui.dart';
 
 class TimelineTab extends StatelessWidget {
-  const TimelineTab({super.key, required this.events, this.shrinkWrap = false});
+  const TimelineTab({
+    super.key,
+    required this.events,
+    this.shrinkWrap = false,
+    this.canAddFollowup = false,
+    this.onAddFollowup,
+  });
 
   final List<CrmTimelineEvent> events;
   final bool shrinkWrap;
+  final bool canAddFollowup;
+  final VoidCallback? onAddFollowup;
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +87,45 @@ class TimelineTab extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                          if (e.description.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              e.description,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                          if (e.note.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              e.note,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                          if (e.kind == 'stage_changed' &&
+                              canAddFollowup &&
+                              onAddFollowup != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: TextButton.icon(
+                                onPressed: onAddFollowup,
+                                icon: const Icon(
+                                  Icons.add_task_outlined,
+                                  size: 17,
+                                ),
+                                label: const Text('Add follow-up'),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                              ),
+                            ),
                           const SizedBox(height: 2),
                           Text(
                             [

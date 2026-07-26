@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/voice_url_player.dart';
 import '../data/models/wall_models.dart';
 import 'file_preview.dart';
 import 'image_preview.dart';
@@ -18,9 +19,13 @@ class WallAttachmentGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final images = attachments.where((a) => a.isImage).toList();
-    final pdfs = attachments.where((a) => !a.isImage && a.isPdf).toList();
-    final others =
-        attachments.where((a) => !a.isImage && !a.isPdf).toList();
+    final audio = attachments.where((a) => a.isAudio).toList();
+    final pdfs = attachments
+        .where((a) => !a.isImage && !a.isAudio && a.isPdf)
+        .toList();
+    final others = attachments
+        .where((a) => !a.isImage && !a.isAudio && !a.isPdf)
+        .toList();
     final scheme = Theme.of(context).colorScheme;
     final screenW = MediaQuery.sizeOf(context).width;
     final soloH = (_soloMaxH).clamp(0.0, screenW * 0.55);
@@ -30,18 +35,12 @@ class WallAttachmentGrid extends StatelessWidget {
       children: [
         if (images.length == 1)
           GestureDetector(
-            onTap: () => showWallImagePreview(
-              context,
-              images: images,
-              initialIndex: 0,
-            ),
+            onTap: () =>
+                showWallImagePreview(context, images: images, initialIndex: 0),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: soloH,
-                  minHeight: 120,
-                ),
+                constraints: BoxConstraints(maxHeight: soloH, minHeight: 120),
                 child: CachedNetworkImage(
                   imageUrl: images.first.fileUrl,
                   width: double.infinity,
@@ -87,10 +86,8 @@ class WallAttachmentGrid extends StatelessWidget {
                         height: _multiH,
                         fit: BoxFit.contain,
                         alignment: Alignment.topLeft,
-                        placeholder: (_, _) => SizedBox(
-                          width: _multiW,
-                          height: _multiH,
-                        ),
+                        placeholder: (_, _) =>
+                            SizedBox(width: _multiW, height: _multiH),
                         errorWidget: (_, _, _) => SizedBox(
                           width: _multiW,
                           height: _multiH,
@@ -103,6 +100,15 @@ class WallAttachmentGrid extends StatelessWidget {
                   ),
                 );
               },
+            ),
+          ),
+        for (final recording in audio)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 2),
+            child: VoiceUrlPlayer(
+              url: recording.fileUrl,
+              fileName: recording.fileName,
+              compact: true,
             ),
           ),
         for (final pdf in pdfs)

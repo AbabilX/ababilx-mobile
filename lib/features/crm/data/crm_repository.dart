@@ -62,6 +62,28 @@ class CrmRepository {
   Future<CrmOrganization> removeOrganization(String id, String mode) =>
       organizations.remove(id, mode);
 
+  Future<List<CrmOrganizationDocument>> listOrganizationDocuments(String id) =>
+      organizations.listDocuments(id);
+
+  Future<CrmOrganizationDocument> uploadOrganizationDocument(
+    String id, {
+    required List<int> bytes,
+    required String fileName,
+    required String mimeType,
+    String? title,
+    String? description,
+  }) => organizations.uploadDocument(
+    id,
+    bytes: bytes,
+    fileName: fileName,
+    mimeType: mimeType,
+    title: title,
+    description: description,
+  );
+
+  Future<void> deleteOrganizationDocument(String documentId) =>
+      organizations.deleteDocument(documentId);
+
   Future<CrmContact> getContact(String id) => contacts.get(id);
 
   Future<List<CrmLead>> listContactLeads(String contactId) =>

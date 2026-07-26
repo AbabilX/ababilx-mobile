@@ -24,3 +24,8 @@ final crmOrganizationLeadsProvider =
     FutureProvider.family<List<CrmLead>, String>((ref, id) {
       return ref.watch(crmRepositoryProvider).listLeads(organizationId: id);
     });
+
+final crmOrganizationDocumentsProvider =
+    FutureProvider.family<List<CrmOrganizationDocument>, String>((ref, id) {
+      return ref.watch(crmRepositoryProvider).listOrganizationDocuments(id);
+    });

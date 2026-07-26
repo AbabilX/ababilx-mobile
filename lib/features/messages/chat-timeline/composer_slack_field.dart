@@ -51,12 +51,8 @@ class ComposerSlackField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final muted = colors.onSurfaceVariant;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border.all(color: colors.outlineVariant),
-        borderRadius: BorderRadius.circular(18),
-      ),
+    return ColoredBox(
+      color: colors.surface,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -74,24 +70,30 @@ class ComposerSlackField extends StatelessWidget {
           TextField(
             controller: controller,
             focusNode: focusNode,
-            minLines: expanded ? 5 : 2,
+            minLines: expanded ? 5 : 1,
             maxLines: expanded ? 10 : 6,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.bodyLarge,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(
                 color: muted,
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.w400,
               ),
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
+              filled: false,
               isDense: true,
-              contentPadding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+              contentPadding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             ),
             textInputAction: TextInputAction.newline,
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 2, 8, 8),
+            padding: const EdgeInsets.fromLTRB(10, 0, 8, 8),
             child: Row(
               children: [
                 _CircleAction(
@@ -99,7 +101,7 @@ class ComposerSlackField extends StatelessWidget {
                   onPressed: sending ? null : onAttach,
                   child: ChatIcon(
                     HugeIcons.strokeRoundedAdd01,
-                    size: 25,
+                    size: 22,
                     color: muted,
                   ),
                 ),
@@ -111,7 +113,7 @@ class ComposerSlackField extends StatelessWidget {
                     'Aa',
                     style: TextStyle(
                       color: muted,
-                      fontSize: 23,
+                      fontSize: 20,
                       height: 1,
                       fontWeight: FontWeight.w500,
                     ),
@@ -123,7 +125,7 @@ class ComposerSlackField extends StatelessWidget {
                   child: Icon(
                     Icons.sentiment_satisfied_alt_outlined,
                     color: muted,
-                    size: 26,
+                    size: 23,
                   ),
                 ),
                 _ToolbarAction(
@@ -133,7 +135,7 @@ class ComposerSlackField extends StatelessWidget {
                     '@',
                     style: TextStyle(
                       color: muted,
-                      fontSize: 29,
+                      fontSize: 25,
                       height: 1,
                       fontWeight: FontWeight.w500,
                     ),
@@ -147,7 +149,7 @@ class ComposerSlackField extends StatelessWidget {
                         ? Icons.close_fullscreen_rounded
                         : Icons.edit_outlined,
                     color: muted,
-                    size: 25,
+                    size: 22,
                   ),
                 ),
                 const Spacer(),
@@ -166,7 +168,7 @@ class ComposerSlackField extends StatelessWidget {
                     onPressed: canSend ? onSend : null,
                     icon: Icon(
                       Icons.send_rounded,
-                      size: 31,
+                      size: 27,
                       color: canSend
                           ? colors.primary
                           : muted.withValues(alpha: 0.45),
@@ -203,7 +205,7 @@ class _CircleAction extends StatelessWidget {
         child: InkWell(
           onTap: onPressed,
           customBorder: const CircleBorder(),
-          child: SizedBox(width: 46, height: 46, child: Center(child: child)),
+          child: SizedBox(width: 40, height: 40, child: Center(child: child)),
         ),
       ),
     );
@@ -226,6 +228,8 @@ class _ToolbarAction extends StatelessWidget {
     tooltip: tooltip,
     onPressed: onPressed,
     visualDensity: VisualDensity.compact,
+    constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+    padding: EdgeInsets.zero,
     icon: child,
   );
 }

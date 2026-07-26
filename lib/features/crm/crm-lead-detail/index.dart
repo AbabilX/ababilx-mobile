@@ -13,6 +13,7 @@ import '../shared/crm_ui.dart';
 import 'activities_tab.dart';
 import 'documents_tab.dart';
 import 'followups_tab.dart';
+import 'followup_form_sheet.dart';
 import 'meta_copy_badges.dart';
 import 'notes_tab.dart';
 import 'payments_tab.dart';
@@ -89,6 +90,42 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
       ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _addFollowup(
+    CrmLead lead,
+    List<CrmStage> stages,
+    List<CrmActivityType> activityTypes,
+  ) async {
+    final body = await showFollowupFormSheet(
+      context,
+      lead: lead,
+      stages: stages,
+      fixedStageId: lead.stageId,
+      activityTypes: activityTypes,
+    );
+    if (body == null || !mounted) return;
+    try {
+      await ref.read(crmRepositoryProvider).createFollowup(body);
+      invalidateLeadDetail(ref, lead.id);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Follow-up scheduled')));
+      }
+    } catch (error) {
+      if (!mounted) return;
+      final message = error.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            message.contains('open_followup')
+                ? 'This lead already has an open follow-up'
+                : message,
+          ),
+        ),
+      );
     }
   }
 
@@ -204,6 +241,7 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
                             lead: lead,
                             stages: stages,
                             canEdit: perms.update && !_busy,
+                            onTransitionCompleted: () => _tabs.animateTo(0),
                           ),
                           if (perms.update)
                             IconButton(
@@ -278,7 +316,17 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
                 child: TabBarView(
                   controller: _tabs,
                   children: [
-                    TimelineTab(events: timeline),
+                    TimelineTab(
+                      events: timeline,
+                      canAddFollowup: perms.create,
+                      onAddFollowup: perms.create
+                          ? () => _addFollowup(
+                              lead,
+                              stages,
+                              config?.activityTypes ?? const [],
+                            )
+                          : null,
+                    ),
                     FollowupsTab(
                       lead: lead,
                       stages: stages,

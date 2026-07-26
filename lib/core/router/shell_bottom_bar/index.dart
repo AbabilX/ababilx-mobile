@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'contacts_scope_pill.dart';
 import 'nav_pill.dart';
+import 'organizations_action_pill.dart';
 import 'search_pill.dart';
 import 'shell_pill_metrics.dart';
 
-enum ShellBottomBarMode { home, contacts }
+enum ShellBottomBarMode { home, contacts, organizations }
 
 /// Floating pills — home: nav+search; contacts: [My|Add|All] + **contact** search.
 class ShellBottomBar extends StatelessWidget {
@@ -31,14 +32,17 @@ class ShellBottomBar extends StatelessWidget {
     this.onSelectAll,
     this.onAdd,
     this.canAdd = false,
+
     /// Contacts route only — must open contact search, never chat/wall.
     this.onContactsSearch,
+    this.organizationsLabel = '',
   });
 
   final ShellBottomBarMode mode;
 
   final int selectedIndex;
   final ValueChanged<int>? onSelect;
+
   /// Home-only: messages/wall search.
   final VoidCallback? onSearch;
   final String messagesLabel;
@@ -57,10 +61,12 @@ class ShellBottomBar extends StatelessWidget {
   final VoidCallback? onAdd;
   final bool canAdd;
   final VoidCallback? onContactsSearch;
+  final String organizationsLabel;
 
   @override
   Widget build(BuildContext context) {
     final isContacts = mode == ShellBottomBarMode.contacts;
+    final isOrganizations = mode == ShellBottomBarMode.organizations;
 
     return SafeArea(
       top: false,
@@ -72,7 +78,14 @@ class ShellBottomBar extends StatelessWidget {
             Expanded(
               child: SizedBox(
                 height: ShellPillMetrics.height,
-                child: isContacts
+                child: isOrganizations
+                    ? OrganizationsActionPill(
+                        organizationsLabel: organizationsLabel,
+                        addLabel: addLabel,
+                        canAdd: canAdd,
+                        onAdd: onAdd ?? () {},
+                      )
+                    : isContacts
                     ? ContactsScopePill(
                         selectedIsMine: contactsMineSelected,
                         addLabel: addLabel,
@@ -100,7 +113,7 @@ class ShellBottomBar extends StatelessWidget {
             SizedBox(
               width: ShellPillMetrics.height,
               height: ShellPillMetrics.height,
-              child: isContacts
+              child: isContacts || isOrganizations
                   ? SearchPill(onTap: onContactsSearch ?? () {})
                   : SearchPill(onTap: onSearch ?? () {}),
             ),

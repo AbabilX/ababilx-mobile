@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../messages/chat-timeline/composer_expanded_field.dart';
-import '../../messages/chat-timeline/composer_soon.dart';
-import '../../messages/chat-timeline/composer_text_actions.dart';
-import '../../messages/chat-timeline/composer_toolbar.dart';
+import '../../../shared/widgets/action_composer.dart';
+import '../data/models/wall_models.dart';
+import '../wall-composer/pending_previews.dart';
 import 'reply_banner.dart';
 
 class WallCommentExpanded extends StatelessWidget {
@@ -17,7 +16,10 @@ class WallCommentExpanded extends StatelessWidget {
     required this.canSend,
     required this.replyLabel,
     required this.onClearReply,
-    required this.onToggleTall,
+    required this.pending,
+    required this.onRemovePending,
+    required this.onAddPhoto,
+    required this.actions,
     required this.onSend,
   });
 
@@ -29,50 +31,38 @@ class WallCommentExpanded extends StatelessWidget {
   final bool canSend;
   final String? replyLabel;
   final VoidCallback? onClearReply;
-  final VoidCallback onToggleTall;
+  final List<WallAttachmentInput> pending;
+  final ValueChanged<int> onRemovePending;
+  final VoidCallback onAddPhoto;
+  final List<Widget> actions;
   final VoidCallback onSend;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerLow,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (replyLabel != null)
-                WallReplyBanner(label: replyLabel!, onClear: onClearReply),
-              ComposerExpandedField(
-                controller: controller,
-                focusNode: focusNode,
-                hint: hint,
-                tall: tall,
-                onToggleTall: onToggleTall,
-                onSubmitted: onSend,
+    return ActionComposer(
+      controller: controller,
+      focusNode: focusNode,
+      hint: hint,
+      busy: busy,
+      canSend: canSend,
+      showHandle: true,
+      minLines: tall ? 5 : 1,
+      maxLines: tall ? 10 : 6,
+      header: replyLabel == null
+          ? null
+          : WallReplyBanner(label: replyLabel!, onClear: onClearReply),
+      pending: pending.isEmpty
+          ? null
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+              child: WallPendingPreviews(
+                items: pending,
+                onRemove: onRemovePending,
+                onAddPhoto: onAddPhoto,
               ),
-              ComposerToolbar(
-                sending: busy,
-                canSend: canSend,
-                onShortcuts: () => showComposerSoon(context, 'Shortcuts'),
-                onEmoji: () => showEmojiPicker(
-                  context,
-                  (e) => insertComposerEmoji(controller, e),
-                ),
-                onMention: () => insertComposerAt(controller),
-                onFormat: () => wrapComposerBold(controller),
-                onAttachFile: () => showComposerSoon(context, 'Attachments'),
-                onAttachImage: () => showComposerSoon(context, 'Attachments'),
-                onSend: onSend,
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
+      actions: actions,
+      onSend: onSend,
     );
   }
 }

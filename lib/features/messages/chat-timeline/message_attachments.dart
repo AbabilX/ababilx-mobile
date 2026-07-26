@@ -6,6 +6,7 @@ import '../../../shared/widgets/image_preview.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import 'chat_file_preview.dart';
+import 'voice_attachment_player.dart';
 
 /// Web parity: solo max-h-72 (288), multi max-h-40 (160) + contain.
 class MessageAttachments extends StatelessWidget {
@@ -68,91 +69,13 @@ class MessageAttachments extends StatelessWidget {
                       ),
                   ],
                 ),
-        for (final a in audio)
-          _VoiceAttachment(
-            attachment: a,
-            onTap: () => openChatAttachment(context, a),
-          ),
+        for (final a in audio) VoiceAttachmentPlayer(attachment: a),
         for (final a in files)
           _FileAttachment(
             attachment: a,
             onTap: () => openChatAttachment(context, a),
           ),
       ],
-    );
-  }
-}
-
-class _VoiceAttachment extends StatelessWidget {
-  const _VoiceAttachment({required this.attachment, required this.onTap});
-
-  final ChatMessageAttachment attachment;
-  final VoidCallback onTap;
-
-  String get _duration {
-    final match = RegExp(
-      r'voice-message-(\d+)s',
-    ).firstMatch(attachment.fileName);
-    final seconds = int.tryParse(match?.group(1) ?? '') ?? 0;
-    if (seconds == 0) return 'Voice message';
-    final minutes = seconds ~/ 60;
-    final rest = (seconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$rest';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(top: 7),
-      child: Material(
-        color: colors.primaryContainer,
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.play_arrow_rounded,
-                  color: colors.onPrimaryContainer,
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 90,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(
-                      10,
-                      (index) => Container(
-                        width: 2.5,
-                        height: 6.0 + ((index * 5) % 15),
-                        decoration: BoxDecoration(
-                          color: colors.onPrimaryContainer.withValues(
-                            alpha: index.isEven ? 0.9 : 0.5,
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  _duration,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: colors.onPrimaryContainer,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

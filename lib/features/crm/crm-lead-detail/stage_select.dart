@@ -14,11 +14,13 @@ class LeadStageSelect extends ConsumerWidget {
     required this.lead,
     required this.stages,
     required this.canEdit,
+    this.onTransitionCompleted,
   });
 
   final CrmLead lead;
   final List<CrmStage> stages;
   final bool canEdit;
+  final VoidCallback? onTransitionCompleted;
 
   Future<void> _pick(BuildContext context, WidgetRef ref) async {
     if (!canEdit || stages.isEmpty) return;
@@ -88,13 +90,14 @@ class LeadStageSelect extends ConsumerWidget {
       },
     );
     if (chosen == null || chosen.id == lead.stageId || !context.mounted) return;
-    await showStageTransitionSheet(
+    final moved = await showStageTransitionSheet(
       context,
       ref: ref,
       lead: lead,
       stages: stages,
       target: chosen,
     );
+    if (moved && context.mounted) onTransitionCompleted?.call();
   }
 
   @override

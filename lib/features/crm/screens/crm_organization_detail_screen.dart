@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../messages/providers/team_gate_provider.dart';
 import '../crm-organizations/organization_form_sheet.dart';
+import '../crm-organizations/organization_documents.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_contacts_provider.dart';
@@ -24,16 +25,17 @@ class CrmOrganizationDetailScreen extends ConsumerWidget {
   ) async {
     final team = ref.read(teamGateProvider).valueOrNull;
     if (team == null) return;
-    final input = await showOrganizationFormSheet(
+    final result = await showOrganizationFormSheet(
       context,
       members: team.members,
       canAssignOwner: team.canAssignCrmOwner,
+      canCreateContact: false,
       initial: organization,
     );
-    if (input == null) return;
+    if (result == null) return;
     await ref
         .read(crmRepositoryProvider)
-        .updateOrganization(organization.id, input);
+        .updateOrganization(organization.id, result.organization);
     ref.invalidate(crmOrganizationProvider(organization.id));
     ref.invalidate(crmOrganizationsProvider(''));
   }
@@ -116,7 +118,7 @@ class CrmOrganizationDetailScreen extends ConsumerWidget {
         body: CrmErrorBox(message: error.toString()),
       ),
       data: (record) => DefaultTabController(
-        length: 3,
+        length: 4,
         child: Scaffold(
           appBar: AppBar(
             leading: IconButton(
@@ -148,6 +150,7 @@ class CrmOrganizationDetailScreen extends ConsumerWidget {
                 Tab(text: 'Overview'),
                 Tab(text: 'Contacts'),
                 Tab(text: 'Leads'),
+                Tab(text: 'Documents'),
               ],
             ),
           ),
@@ -264,6 +267,11 @@ class CrmOrganizationDetailScreen extends ConsumerWidget {
                                 ),
                               ),
                             ),
+                    ),
+                    OrganizationDocuments(
+                      organizationId: record.id,
+                      canCreate: perms.create,
+                      canDelete: perms.delete,
                     ),
                   ],
                 ),

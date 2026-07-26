@@ -9,6 +9,7 @@ import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_contacts_provider.dart';
 import '../providers/crm_organizations_provider.dart';
+import '../providers/crm_organizations_ui_provider.dart';
 import '../shared/crm_money.dart';
 import '../shared/crm_ui.dart';
 
@@ -25,6 +26,8 @@ class _CrmOrganizationsScreenState
   final _search = TextEditingController();
   var _query = '';
   var _showSearch = false;
+  var _lastAddTick = 0;
+  var _lastSearchTick = 0;
 
   @override
   void dispose() {
@@ -33,20 +36,45 @@ class _CrmOrganizationsScreenState
   }
 
   Future<void> _form([CrmOrganization? initial]) async {
+    final ui = ref.read(crmOrganizationsUiProvider.notifier);
+    ui.setFormSheetOpen(true);
     final team = ref.read(teamGateProvider).valueOrNull;
-    if (team == null) return;
-    final input = await showOrganizationFormSheet(
-      context,
-      members: team.members,
-      canAssignOwner: team.canAssignCrmOwner,
-      initial: initial,
-    );
-    if (input == null) return;
+    if (team == null) {
+      ui.setFormSheetOpen(false);
+      return;
+    }
+    OrganizationFormResult? result;
+    try {
+      result = await showOrganizationFormSheet(
+        context,
+        members: team.members,
+        canAssignOwner: team.canAssignCrmOwner,
+        canCreateContact: initial == null && ref.read(crmPermsProvider).create,
+        initial: initial,
+      );
+    } finally {
+      ui.setFormSheetOpen(false);
+    }
+    if (result == null) return;
     final repo = ref.read(crmRepositoryProvider);
     if (initial == null) {
-      await repo.createOrganization(input);
+      final organization = await repo.createOrganization(result.organization);
+      for (final contact in result.contacts) {
+        await repo.createContact(
+          CrmContactInput(
+            name: contact.name,
+            designation: contact.designation,
+            email: contact.email,
+            phone: contact.phone,
+            organizationId: organization.id,
+            company: organization.name,
+            isPrimaryContact: contact.isPrimaryContact,
+          ),
+        );
+      }
+      if (result.contacts.isNotEmpty) ref.invalidate(crmContactsProvider(''));
     } else {
-      await repo.updateOrganization(initial.id, input);
+      await repo.updateOrganization(initial.id, result.organization);
     }
     ref.invalidate(crmOrganizationsProvider(_query));
   }
@@ -59,6 +87,29 @@ class _CrmOrganizationsScreenState
         ref.watch(crmConfigProvider).valueOrNull?.settings.currency ?? 'BDT';
     final colors = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final ui = ref.watch(crmOrganizationsUiProvider);
+
+    ref.listen(crmOrganizationsUiProvider, (previous, next) {
+      if (next.addTick != _lastAddTick &&
+          (previous == null || next.addTick > previous.addTick)) {
+        _lastAddTick = next.addTick;
+        if (next.canCreate) _form();
+      }
+      if (next.searchTick != _lastSearchTick &&
+          (previous == null || next.searchTick > previous.searchTick)) {
+        _lastSearchTick = next.searchTick;
+        setState(() => _showSearch = true);
+      }
+    });
+    if (ui.canCreate != perms.create) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref
+              .read(crmOrganizationsUiProvider.notifier)
+              .setCanCreate(perms.create);
+        }
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -78,23 +129,14 @@ class _CrmOrganizationsScreenState
               )
             : const Text('Organizations'),
         actions: [
-          IconButton(
-            onPressed: () => setState(() {
-              _showSearch = !_showSearch;
-              if (!_showSearch) {
+          if (_showSearch)
+            IconButton(
+              onPressed: () => setState(() {
+                _showSearch = false;
                 _search.clear();
                 _query = '';
-              }
-            }),
-            icon: Icon(
-              _showSearch ? Icons.close_rounded : Icons.search_rounded,
-            ),
-          ),
-          if (perms.create)
-            IconButton(
-              onPressed: _form,
-              icon: const Icon(Icons.add_rounded),
-              tooltip: 'New organization',
+              }),
+              icon: const Icon(Icons.close_rounded),
             ),
         ],
       ),

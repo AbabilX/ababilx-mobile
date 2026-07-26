@@ -1,11 +1,17 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/media/picked_media_file.dart';
+import '../../messages/chat-timeline/voice_message_recorder.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../../team/data/models/team_models.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
 import '../providers/wall_ui_provider.dart';
+import 'attach_image.dart';
 import 'composer_form.dart';
 import 'composer_picks.dart';
 import 'composer_submit.dart';
@@ -87,9 +93,9 @@ class _WallComposerSheetState extends ConsumerState<WallComposerSheet> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -112,6 +118,22 @@ class _WallComposerSheetState extends ConsumerState<WallComposerSheet> {
     _syncTrigger();
   }
 
+  Future<void> _attachVoice(RecordedVoiceMessage recording) async {
+    if (!widget.isPremium) {
+      throw StateError('Attachments require team premium');
+    }
+    final bytes = await File(recording.path).readAsBytes();
+    final attachment = await uploadWallAttachment(
+      ref,
+      PickedMediaFile(
+        bytes: Uint8List.fromList(bytes),
+        fileName: recording.fileName,
+        contentType: RecordedVoiceMessage.contentType,
+      ),
+    );
+    if (mounted) setState(() => _pending.add(attachment));
+  }
+
   @override
   Widget build(BuildContext context) {
     final inset = MediaQuery.viewInsetsOf(context).bottom;
@@ -126,7 +148,10 @@ class _WallComposerSheetState extends ConsumerState<WallComposerSheet> {
         triggerIsMention: trigger?.isMention,
         showSuggestions: trigger != null,
         members: isAt
-            ? filterMentionMembers(ref.read(teamMembersProvider), trigger!.query)
+            ? filterMentionMembers(
+                ref.read(teamMembersProvider),
+                trigger!.query,
+              )
             : const [],
         categories: isHash
             ? filterWallCategories(
@@ -149,6 +174,7 @@ class _WallComposerSheetState extends ConsumerState<WallComposerSheet> {
         onInsertAt: () => _insert('@'),
         onInsertHash: () => _insert('#'),
         onAttached: (a) => setState(() => _pending.add(a)),
+        onVoiceRecorded: _attachVoice,
         onSubmit: _submit,
         onFieldTap: _syncTrigger,
       ),

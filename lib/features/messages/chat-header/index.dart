@@ -6,7 +6,7 @@ import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../nav_back.dart';
 import '../providers/chat_provider.dart';
-import '../../calls/providers/voice_call_provider.dart';
+// import '../../calls/providers/voice_call_provider.dart';
 import 'dm-actions-sheet.dart';
 import 'group-details-dialog.dart';
 
@@ -23,9 +23,10 @@ class ChatHeader extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     final surface =
         Theme.of(context).appBarTheme.backgroundColor ?? colors.surface;
-    final callActive = ref.watch(
-      voiceCallProvider.select((state) => state.active),
-    );
+    // Calling is temporarily hidden from the chat UI.
+    // final callActive = ref.watch(
+    //   voiceCallProvider.select((state) => state.active),
+    // );
 
     return Material(
       color: surface,
@@ -75,16 +76,18 @@ class ChatHeader extends ConsumerWidget {
                       color: colors.onSurfaceVariant,
                     ),
                   ),
-                if (conversation.isDm && !conversation.peerLeft)
-                  IconButton(
-                    tooltip: 'Voice call',
-                    icon: const Icon(Icons.call_rounded),
-                    onPressed: callActive
-                        ? null
-                        : () => ref
-                              .read(voiceCallProvider.notifier)
-                              .startOutgoing(conversation),
-                  ),
+                // Temporarily disabled. Keep the call implementation intact so
+                // this button can be restored after the call flow is revisited.
+                // if (conversation.isDm && !conversation.peerLeft)
+                //   IconButton(
+                //     tooltip: 'Voice call',
+                //     icon: const Icon(Icons.call_rounded),
+                //     onPressed: callActive
+                //         ? null
+                //         : () => ref
+                //               .read(voiceCallProvider.notifier)
+                //               .startOutgoing(conversation),
+                //   ),
                 IconButton(
                   icon: const ChatIcon(HugeIcons.strokeRoundedMoreVertical),
                   onPressed: () async {

@@ -45,6 +45,8 @@ class CrmTimelineEvent extends Equatable {
     this.actorName,
     this.contactName,
     this.toStageId,
+    this.description = '',
+    this.note = '',
   });
 
   final String id;
@@ -58,6 +60,8 @@ class CrmTimelineEvent extends Equatable {
   final String? actorName;
   final String? contactName;
   final String? toStageId;
+  final String description;
+  final String note;
 
   factory CrmTimelineEvent.fromJson(Map<String, dynamic> json) {
     final meta = json['meta'];
@@ -77,11 +81,13 @@ class CrmTimelineEvent extends Equatable {
       actorName: json['actor_name'] as String?,
       contactName: json['contact_name'] as String?,
       toStageId: toStage,
+      description: json['description'] as String? ?? '',
+      note: json['note'] as String? ?? '',
     );
   }
 
   @override
-  List<Object?> get props => [id, kind, createdAt];
+  List<Object?> get props => [id, kind, createdAt, description, note];
 }
 
 class CrmNote extends Equatable {
@@ -334,6 +340,14 @@ class CrmDocument extends Equatable {
   final String createdAt;
   final String? uploaderName;
 
+  bool get isAudio {
+    if (mimeType.toLowerCase().startsWith('audio/')) return true;
+    return RegExp(
+      r'\.(m4a|aac|mp3|ogg|opus|wav|webm)$',
+      caseSensitive: false,
+    ).hasMatch(fileName);
+  }
+
   factory CrmDocument.fromJson(Map<String, dynamic> json) => CrmDocument(
     id: json['id'] as String? ?? '',
     leadId: json['lead_id'] as String? ?? '',
@@ -368,4 +382,60 @@ class CrmDocumentPresign {
         publicUrl: json['public_url'] as String? ?? '',
         objectKey: json['object_key'] as String? ?? '',
       );
+}
+
+class CrmOrganizationDocument extends Equatable {
+  const CrmOrganizationDocument({
+    required this.id,
+    required this.organizationId,
+    this.title = '',
+    this.description = '',
+    this.fileUrl = '',
+    this.externalUrl = '',
+    this.fileName = '',
+    this.mimeType = '',
+    this.sizeBytes = 0,
+    this.createdAt = '',
+    this.uploaderName,
+  });
+
+  final String id;
+  final String organizationId;
+  final String title;
+  final String description;
+  final String fileUrl;
+  final String externalUrl;
+  final String fileName;
+  final String mimeType;
+  final int sizeBytes;
+  final String createdAt;
+  final String? uploaderName;
+
+  String get url => fileUrl.isNotEmpty ? fileUrl : externalUrl;
+
+  bool get isAudio {
+    if (mimeType.toLowerCase().startsWith('audio/')) return true;
+    return RegExp(
+      r'\.(m4a|aac|mp3|ogg|opus|wav|webm)$',
+      caseSensitive: false,
+    ).hasMatch(fileName);
+  }
+
+  factory CrmOrganizationDocument.fromJson(Map<String, dynamic> json) =>
+      CrmOrganizationDocument(
+        id: json['id'] as String? ?? '',
+        organizationId: json['organization_id'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        description: json['description'] as String? ?? '',
+        fileUrl: json['file_url'] as String? ?? '',
+        externalUrl: json['external_url'] as String? ?? '',
+        fileName: json['file_name'] as String? ?? '',
+        mimeType: json['mime_type'] as String? ?? '',
+        sizeBytes: (json['size_bytes'] as num?)?.toInt() ?? 0,
+        createdAt: json['created_at'] as String? ?? '',
+        uploaderName: json['uploader_name'] as String?,
+      );
+
+  @override
+  List<Object?> get props => [id, fileUrl, externalUrl];
 }

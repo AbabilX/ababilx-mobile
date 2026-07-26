@@ -57,35 +57,34 @@ class ChatConversation extends Equatable {
     return peerUserName ?? 'Direct message';
   }
 
-  factory ChatConversation.fromJson(Map<String, dynamic> json) =>
-      ChatConversation(
-        id: json['id'] as String? ?? '',
-        teamId: json['team_id'] as String? ?? '',
-        type: json['type'] as String? ?? 'channel',
-        name: json['name'] as String?,
-        slug: json['slug'] as String?,
-        isPrivate: json['is_private'] as bool? ?? false,
-        createdBy: json['created_by'] as String?,
-        createdAt: json['created_at'] as String? ?? '',
-        archivedAt: json['archived_at'] as String?,
-        unreadCount: json['unread_count'] as int? ?? 0,
-        lastMessageAt: json['last_message_at'] as String?,
-        lastMessageBody: json['last_message_body'] as String?,
-        lastMessageUserId: json['last_message_user_id'] as String?,
-        lastMessageAttachmentType:
-            json['last_message_attachment_type'] as String?,
-        lastMessageAttachmentName:
-            json['last_message_attachment_name'] as String?,
-        peerUserId: json['peer_user_id'] as String?,
-        peerUserName: json['peer_user_name'] as String?,
-        peerUserAvatar: json['peer_user_avatar'] as String?,
-        peerLeft: json['peer_left'] as bool? ?? false,
-        muted: json['muted'] as bool? ?? false,
-        memberAvatars: (json['member_avatars'] as List<dynamic>? ?? [])
-            .map((e) => e.toString())
-            .toList(),
-        memberCount: json['member_count'] as int?,
-      );
+  factory ChatConversation.fromJson(
+    Map<String, dynamic> json,
+  ) => ChatConversation(
+    id: json['id'] as String? ?? '',
+    teamId: json['team_id'] as String? ?? '',
+    type: json['type'] as String? ?? 'channel',
+    name: json['name'] as String?,
+    slug: json['slug'] as String?,
+    isPrivate: json['is_private'] as bool? ?? false,
+    createdBy: json['created_by'] as String?,
+    createdAt: json['created_at'] as String? ?? '',
+    archivedAt: json['archived_at'] as String?,
+    unreadCount: json['unread_count'] as int? ?? 0,
+    lastMessageAt: json['last_message_at'] as String?,
+    lastMessageBody: json['last_message_body'] as String?,
+    lastMessageUserId: json['last_message_user_id'] as String?,
+    lastMessageAttachmentType: json['last_message_attachment_type'] as String?,
+    lastMessageAttachmentName: json['last_message_attachment_name'] as String?,
+    peerUserId: json['peer_user_id'] as String?,
+    peerUserName: json['peer_user_name'] as String?,
+    peerUserAvatar: json['peer_user_avatar'] as String?,
+    peerLeft: json['peer_left'] as bool? ?? false,
+    muted: json['muted'] as bool? ?? false,
+    memberAvatars: (json['member_avatars'] as List<dynamic>? ?? [])
+        .map((e) => e.toString())
+        .toList(),
+    memberCount: json['member_count'] as int?,
+  );
 
   ChatConversation copyWith({
     int? unreadCount,
@@ -94,36 +93,47 @@ class ChatConversation extends Equatable {
     String? lastMessageUserId,
     String? lastMessageAttachmentType,
     String? lastMessageAttachmentName,
+    bool clearLastMessageAttachment = false,
     bool? muted,
     String? name,
-  }) =>
-      ChatConversation(
-        id: id,
-        teamId: teamId,
-        type: type,
-        name: name ?? this.name,
-        slug: slug,
-        isPrivate: isPrivate,
-        createdBy: createdBy,
-        createdAt: createdAt,
-        archivedAt: archivedAt,
-        unreadCount: unreadCount ?? this.unreadCount,
-        lastMessageAt: lastMessageAt ?? this.lastMessageAt,
-        lastMessageBody: lastMessageBody ?? this.lastMessageBody,
-        lastMessageUserId: lastMessageUserId ?? this.lastMessageUserId,
-        lastMessageAttachmentType:
-            lastMessageAttachmentType ?? this.lastMessageAttachmentType,
-        lastMessageAttachmentName:
-            lastMessageAttachmentName ?? this.lastMessageAttachmentName,
-        peerUserId: peerUserId,
-        peerUserName: peerUserName,
-        peerUserAvatar: peerUserAvatar,
-        peerLeft: peerLeft,
-        muted: muted ?? this.muted,
-        memberAvatars: memberAvatars,
-        memberCount: memberCount,
-      );
+  }) => ChatConversation(
+    id: id,
+    teamId: teamId,
+    type: type,
+    name: name ?? this.name,
+    slug: slug,
+    isPrivate: isPrivate,
+    createdBy: createdBy,
+    createdAt: createdAt,
+    archivedAt: archivedAt,
+    unreadCount: unreadCount ?? this.unreadCount,
+    lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+    lastMessageBody: lastMessageBody ?? this.lastMessageBody,
+    lastMessageUserId: lastMessageUserId ?? this.lastMessageUserId,
+    lastMessageAttachmentType: clearLastMessageAttachment
+        ? null
+        : (lastMessageAttachmentType ?? this.lastMessageAttachmentType),
+    lastMessageAttachmentName: clearLastMessageAttachment
+        ? null
+        : (lastMessageAttachmentName ?? this.lastMessageAttachmentName),
+    peerUserId: peerUserId,
+    peerUserName: peerUserName,
+    peerUserAvatar: peerUserAvatar,
+    peerLeft: peerLeft,
+    muted: muted ?? this.muted,
+    memberAvatars: memberAvatars,
+    memberCount: memberCount,
+  );
 
   @override
-  List<Object?> get props => [id, unreadCount, lastMessageAt, muted, name];
+  List<Object?> get props => [
+    id,
+    unreadCount,
+    lastMessageAt,
+    lastMessageBody,
+    lastMessageAttachmentType,
+    lastMessageAttachmentName,
+    muted,
+    name,
+  ];
 }

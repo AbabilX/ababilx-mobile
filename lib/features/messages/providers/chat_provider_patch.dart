@@ -11,6 +11,7 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
     String? lastMessageUserId,
     String? lastMessageAttachmentType,
     String? lastMessageAttachmentName,
+    bool clearLastMessageAttachment = false,
     bool? muted,
     String? name,
   }) {
@@ -21,13 +22,12 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
       if (bumpUnread) unread = c.unreadCount + 1;
       return c.copyWith(
         unreadCount: unread,
-        lastMessageAt: lastMessageAt ?? c.lastMessageAt,
-        lastMessageBody: lastMessageBody ?? c.lastMessageBody,
-        lastMessageUserId: lastMessageUserId ?? c.lastMessageUserId,
-        lastMessageAttachmentType:
-            lastMessageAttachmentType ?? c.lastMessageAttachmentType,
-        lastMessageAttachmentName:
-            lastMessageAttachmentName ?? c.lastMessageAttachmentName,
+        lastMessageAt: lastMessageAt,
+        lastMessageBody: lastMessageBody,
+        lastMessageUserId: lastMessageUserId,
+        lastMessageAttachmentType: lastMessageAttachmentType,
+        lastMessageAttachmentName: lastMessageAttachmentName,
+        clearLastMessageAttachment: clearLastMessageAttachment,
         muted: muted ?? c.muted,
         name: name,
       );
@@ -50,6 +50,7 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
         lastMessageUserId: msg.userId,
         lastMessageAttachmentType: att?.contentType,
         lastMessageAttachmentName: att?.fileName,
+        clearLastMessageAttachment: att == null,
         bumpUnread: bumpUnread,
       ),
       channels: patchList(
@@ -60,6 +61,7 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
         lastMessageUserId: msg.userId,
         lastMessageAttachmentType: att?.contentType,
         lastMessageAttachmentName: att?.fileName,
+        clearLastMessageAttachment: att == null,
         bumpUnread: bumpUnread,
       ),
     );
@@ -69,15 +71,18 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
     final exists = state.dms.any((d) => d.id == dm.id);
     final merged = exists
         ? state.dms
-            .map((d) => d.id == dm.id
-                ? d.copyWith(
-                    unreadCount: dm.unreadCount,
-                    lastMessageAt: dm.lastMessageAt ?? d.lastMessageAt,
-                    lastMessageBody: dm.lastMessageBody ?? d.lastMessageBody,
-                    name: dm.name,
-                  )
-                : d)
-            .toList()
+              .map(
+                (d) => d.id == dm.id
+                    ? d.copyWith(
+                        unreadCount: dm.unreadCount,
+                        lastMessageAt: dm.lastMessageAt ?? d.lastMessageAt,
+                        lastMessageBody:
+                            dm.lastMessageBody ?? d.lastMessageBody,
+                        name: dm.name,
+                      )
+                    : d,
+              )
+              .toList()
         : [dm, ...state.dms];
     state = state.copyWith(dms: sortDms(merged));
   }
@@ -86,13 +91,15 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
     final exists = state.channels.any((c) => c.id == channel.id);
     final merged = exists
         ? state.channels
-            .map((c) => c.id == channel.id
-                ? c.copyWith(
-                    name: channel.name,
-                    unreadCount: channel.unreadCount,
-                  )
-                : c)
-            .toList()
+              .map(
+                (c) => c.id == channel.id
+                    ? c.copyWith(
+                        name: channel.name,
+                        unreadCount: channel.unreadCount,
+                      )
+                    : c,
+              )
+              .toList()
         : [channel, ...state.channels];
     state = state.copyWith(channels: sortChannels(merged));
   }

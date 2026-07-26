@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/media/picked_media_file.dart';
+import '../../../shared/widgets/action_composer.dart';
+import '../../messages/chat-timeline/voice_message_recorder.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
 import '../providers/crm_lead_detail_provider.dart';
 import '../shared/crm_dates.dart';
+import '../shared/crm_media_actions.dart';
 import '../shared/crm_ui.dart';
 
 class NotesTab extends ConsumerStatefulWidget {
@@ -14,12 +18,14 @@ class NotesTab extends ConsumerStatefulWidget {
     required this.notes,
     required this.canCreate,
     required this.canDelete,
+    this.shrinkWrap = false,
   });
 
   final String leadId;
   final List<CrmNote> notes;
   final bool canCreate;
   final bool canDelete;
+  final bool shrinkWrap;
 
   @override
   ConsumerState<NotesTab> createState() => _NotesTabState();
@@ -27,20 +33,47 @@ class NotesTab extends ConsumerStatefulWidget {
 
 class _NotesTabState extends ConsumerState<NotesTab> {
   final _ctrl = TextEditingController();
+  final _focus = FocusNode();
+  final _pending = <PickedMediaFile>[];
   var _busy = false;
 
   @override
+  void initState() {
+    super.initState();
+    _ctrl.addListener(_onDraftChanged);
+  }
+
+  void _onDraftChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    _ctrl.removeListener(_onDraftChanged);
     _ctrl.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
   Future<void> _add() async {
     final body = _ctrl.text.trim();
-    if (body.isEmpty || _busy) return;
+    if ((body.isEmpty && _pending.isEmpty) || _busy) return;
     setState(() => _busy = true);
     try {
-      await ref.read(crmRepositoryProvider).createNote(widget.leadId, body);
+      final repo = ref.read(crmRepositoryProvider);
+      while (_pending.isNotEmpty) {
+        final file = _pending.first;
+        await repo.uploadDocument(
+          widget.leadId,
+          bytes: file.bytes,
+          fileName: file.fileName,
+          mimeType: file.contentType,
+        );
+        _pending.removeAt(0);
+      }
+      if (body.isNotEmpty) {
+        await repo.createNote(widget.leadId, body);
+      }
       _ctrl.clear();
       invalidateLeadDetail(ref, widget.leadId);
     } catch (e) {
@@ -48,6 +81,31 @@ class _NotesTabState extends ConsumerState<NotesTab> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _queueMedia(PickedMediaFile file) async {
+    if (!mounted) return;
+    setState(() => _pending.add(file));
+  }
+
+  Future<void> _sendVoice(RecordedVoiceMessage recording) async {
+    final file = await pickedVoiceRecording(recording);
+    if (!mounted) return;
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(crmRepositoryProvider)
+          .uploadDocument(
+            widget.leadId,
+            bytes: file.bytes,
+            fileName: file.fileName,
+            mimeType: file.contentType,
+            label: 'Voice note',
+          );
+      invalidateLeadDetail(ref, widget.leadId);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -71,25 +129,66 @@ class _NotesTabState extends ConsumerState<NotesTab> {
     final theme = Theme.of(context);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      shrinkWrap: widget.shrinkWrap,
+      physics: widget.shrinkWrap ? const NeverScrollableScrollPhysics() : null,
+      padding: widget.shrinkWrap
+          ? EdgeInsets.zero
+          : const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
         if (widget.canCreate) ...[
-          TextField(
+          ActionComposer(
             controller: _ctrl,
+            focusNode: _focus,
+            hint: 'Add a note…',
+            busy: _busy,
+            canSend: _ctrl.text.trim().isNotEmpty || _pending.isNotEmpty,
+            embedded: true,
             minLines: 2,
             maxLines: 5,
-            onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              hintText: 'Add a note…',
-              isDense: true,
-            ),
+            pending: _pending.isEmpty
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (var i = 0; i < _pending.length; i++)
+                            InputChip(
+                              avatar: Icon(
+                                _pending[i].contentType.startsWith('image/')
+                                    ? Icons.image_outlined
+                                    : Icons.insert_drive_file_outlined,
+                                size: 17,
+                              ),
+                              label: Text(
+                                _pending[i].fileName,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              onDeleted: _busy
+                                  ? null
+                                  : () => setState(() => _pending.removeAt(i)),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+            actions: [
+              CrmMediaActions(
+                busy: _busy,
+                onMedia: _queueMedia,
+                onVoice: _sendVoice,
+              ),
+            ],
+            onSend: _add,
           ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton(
-              onPressed: _busy || _ctrl.text.trim().isEmpty ? null : _add,
-              child: Text(_busy ? 'Saving…' : 'Add note'),
+          const SizedBox(height: 6),
+          Text(
+            'Hold mic to send a voice note · camera and files attach to this lead',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colors.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 16),
