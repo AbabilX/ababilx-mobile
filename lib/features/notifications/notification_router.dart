@@ -24,6 +24,8 @@ class NotificationRouter {
           return '/messages/$conversationId';
         }
         return '/messages';
+      case 'voice_call':
+        return '/call';
       default:
         if (conversationId != null && conversationId.isNotEmpty) {
           return '/messages/$conversationId';

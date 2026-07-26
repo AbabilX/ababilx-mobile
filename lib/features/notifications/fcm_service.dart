@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../calls/native/android_call_ui.dart';
 import 'data/device_repository.dart';
 import 'fcm_log.dart';
 import 'local_notifications.dart';
@@ -16,9 +18,9 @@ class FcmService {
     required DeviceRepository devices,
     required SecureStorage storage,
     required LocalNotifications localNotifications,
-  })  : _devices = devices,
-        _storage = storage,
-        _local = localNotifications;
+  }) : _devices = devices,
+       _storage = storage,
+       _local = localNotifications;
 
   final DeviceRepository _devices;
   final SecureStorage _storage;
@@ -38,7 +40,10 @@ class FcmService {
   bool permissionGranted = false;
 
   Future<bool> start() async {
-    fcmLog('start.begin', 'api=${ApiConstants.baseUrl} alreadyStarted=$_started granted=$permissionGranted');
+    fcmLog(
+      'start.begin',
+      'api=${ApiConstants.baseUrl} alreadyStarted=$_started granted=$permissionGranted',
+    );
     if (_started && permissionGranted) {
       fcmLog('start.skip', 'already running with permission');
       flushPendingNav();
@@ -85,6 +90,9 @@ class FcmService {
       permissionGranted =
           localGranted &&
           settings.authorizationStatus != AuthorizationStatus.denied;
+      if (permissionGranted) {
+        await FlutterCallkitIncoming.requestFullIntentPermission();
+      }
     } catch (e) {
       fcmLog('permission.fail', e);
       permissionGranted = false;
@@ -206,7 +214,10 @@ class FcmService {
     }
 
     if (token == null) {
-      fcmLog('token.get.null', 'Firebase returned null — check google-services / Play Services');
+      fcmLog(
+        'token.get.null',
+        'Firebase returned null — check google-services / Play Services',
+      );
       return;
     }
 
@@ -217,7 +228,10 @@ class FcmService {
       await _devices.register(token);
       fcmLog('token.sync.done', 'registered with API');
     } catch (e) {
-      fcmLog('token.sync.fail', 'API register failed — push will not arrive until this succeeds | $e');
+      fcmLog(
+        'token.sync.fail',
+        'API register failed — push will not arrive until this succeeds | $e',
+      );
     }
   }
 
@@ -227,6 +241,11 @@ class FcmService {
     final data = Map<String, dynamic>.from(message.data);
     final path = NotificationRouter.pathForData(data);
     final channel = _channelFor(data['type']?.toString());
+
+    if (data['type'] == 'voice_call') {
+      await AndroidCallUi.showIncomingFromPush(data);
+      return;
+    }
 
     fcmLog(
       'push.foreground',
@@ -252,7 +271,7 @@ class FcmService {
     fcmLog(
       'push.opened',
       'type=${data['type']} conversation=${data['conversation_id']} '
-      'message=${data['message_id']} path=$path',
+          'message=${data['message_id']} path=$path',
     );
     _go(path);
   }
@@ -275,6 +294,8 @@ class FcmService {
       case 'chat_mention':
       case 'chat_message':
         return 'chat';
+      case 'voice_call':
+        return 'voice_calls';
       case 'pre_send_review':
         return 'standup_alerts';
       case 'ai_assistant':

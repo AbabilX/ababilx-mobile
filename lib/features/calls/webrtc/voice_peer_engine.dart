@@ -1,0 +1,215 @@
+import 'dart:async';
+
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+
+import '../data/models/ice_server.dart';
+
+typedef VoiceSignalSender = Future<bool> Function(Map<String, dynamic> signal);
+
+class VoicePeerEngine {
+  VoicePeerEngine({
+    required this.sendSignal,
+    required this.onConnected,
+    required this.onFailed,
+  });
+
+  final VoiceSignalSender sendSignal;
+  final void Function() onConnected;
+  final void Function(String reason) onFailed;
+
+  RTCPeerConnection? _peer;
+  MediaStream? _localStream;
+  final List<MediaStream> _remoteStreams = [];
+  final List<RTCIceCandidate> _pendingCandidates = [];
+  bool _remoteDescriptionSet = false;
+  bool _disposed = false;
+  bool _connected = false;
+  Timer? _disconnectTimer;
+
+  bool get ready => _peer != null && _localStream != null;
+
+  Future<void> prepare({required List<IceServer> iceServers}) async {
+    if (_disposed) throw StateError('Voice peer engine is disposed');
+    if (ready) return;
+
+    await Helper.setAndroidAudioConfiguration(
+      AndroidAudioConfiguration(
+        manageAudioFocus: true,
+        androidAudioMode: AndroidAudioMode.inCommunication,
+        androidAudioFocusMode: AndroidAudioFocusMode.gain,
+        androidAudioStreamType: AndroidAudioStreamType.voiceCall,
+        androidAudioAttributesUsageType:
+            AndroidAudioAttributesUsageType.voiceCommunication,
+        androidAudioAttributesContentType:
+            AndroidAudioAttributesContentType.speech,
+        // Some Android devices otherwise leave a WebRTC call on a stale route.
+        forceHandleAudioRouting: true,
+      ),
+    );
+    await Helper.ensureAudioSession();
+    final stream = await navigator.mediaDevices.getUserMedia({
+      'audio': {
+        'echoCancellation': true,
+        'noiseSuppression': true,
+        'autoGainControl': true,
+      },
+      'video': false,
+    });
+    _localStream = stream;
+
+    final peer = await createPeerConnection({
+      'iceServers': iceServers.map((server) => server.toWebRtcJson()).toList(),
+      'sdpSemantics': 'unified-plan',
+      'bundlePolicy': 'max-bundle',
+      'rtcpMuxPolicy': 'require',
+    });
+    _peer = peer;
+    peer.onIceCandidate = (candidate) {
+      final value = candidate.candidate;
+      if (value == null || value.isEmpty || _disposed) return;
+      unawaited(
+        sendSignal({
+          'kind': 'ice',
+          'candidate': value,
+          'sdp_mid': candidate.sdpMid ?? '',
+          'sdp_mline_index': candidate.sdpMLineIndex,
+        }),
+      );
+    };
+    peer.onConnectionState = _handleConnectionState;
+    peer.onTrack = (event) {
+      if (_disposed || event.track.kind != 'audio') return;
+      event.track.enabled = true;
+      for (final stream in event.streams) {
+        if (!_remoteStreams.contains(stream)) _remoteStreams.add(stream);
+      }
+      // Native WebRTC plays remote audio itself. This explicitly restores the
+      // track volume in case Android had previously muted its audio route.
+      unawaited(Helper.setVolume(1.0, event.track));
+    };
+
+    for (final track in stream.getAudioTracks()) {
+      await peer.addTrack(track, stream);
+    }
+    // Start on speaker so a newly connected call is audible immediately.
+    // The in-call Speaker button can still switch to the earpiece.
+    await Helper.setSpeakerphoneOn(true);
+  }
+
+  Future<void> createAndSendOffer() async {
+    final peer = _requirePeer();
+    final offer = await peer.createOffer({
+      'mandatory': {'OfferToReceiveAudio': true, 'OfferToReceiveVideo': false},
+    });
+    await peer.setLocalDescription(offer);
+    final sent = await sendSignal({'kind': 'offer', 'sdp': offer.sdp});
+    if (!sent) onFailed('signaling_unavailable');
+  }
+
+  Future<void> handleSignal(Map<String, dynamic> signal) async {
+    if (_disposed) return;
+    final kind = signal['kind'] as String? ?? '';
+    switch (kind) {
+      case 'offer':
+        final sdp = signal['sdp'] as String? ?? '';
+        if (sdp.isEmpty) return;
+        final peer = _requirePeer();
+        await peer.setRemoteDescription(RTCSessionDescription(sdp, 'offer'));
+        _remoteDescriptionSet = true;
+        await _flushCandidates();
+        final answer = await peer.createAnswer({
+          'mandatory': {
+            'OfferToReceiveAudio': true,
+            'OfferToReceiveVideo': false,
+          },
+        });
+        await peer.setLocalDescription(answer);
+        final sent = await sendSignal({'kind': 'answer', 'sdp': answer.sdp});
+        if (!sent) onFailed('signaling_unavailable');
+      case 'answer':
+        final sdp = signal['sdp'] as String? ?? '';
+        if (sdp.isEmpty) return;
+        await _requirePeer().setRemoteDescription(
+          RTCSessionDescription(sdp, 'answer'),
+        );
+        _remoteDescriptionSet = true;
+        await _flushCandidates();
+      case 'ice':
+        final candidate = signal['candidate'] as String? ?? '';
+        if (candidate.isEmpty) return;
+        final parsed = RTCIceCandidate(
+          candidate,
+          signal['sdp_mid'] as String?,
+          signal['sdp_mline_index'] as int?,
+        );
+        if (!_remoteDescriptionSet) {
+          _pendingCandidates.add(parsed);
+        } else {
+          await _requirePeer().addCandidate(parsed);
+        }
+    }
+  }
+
+  void _handleConnectionState(RTCPeerConnectionState state) {
+    if (_disposed) return;
+    switch (state) {
+      case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
+        _disconnectTimer?.cancel();
+        unawaited(Helper.ensureAudioSession());
+        if (!_connected) {
+          _connected = true;
+          onConnected();
+        }
+      case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
+        onFailed('peer_connection_failed');
+      case RTCPeerConnectionState.RTCPeerConnectionStateDisconnected:
+        _disconnectTimer?.cancel();
+        _disconnectTimer = Timer(const Duration(seconds: 12), () {
+          if (!_disposed) onFailed('peer_connection_disconnected');
+        });
+      case RTCPeerConnectionState.RTCPeerConnectionStateClosed:
+      case RTCPeerConnectionState.RTCPeerConnectionStateNew:
+      case RTCPeerConnectionState.RTCPeerConnectionStateConnecting:
+        break;
+    }
+  }
+
+  Future<void> _flushCandidates() async {
+    final peer = _requirePeer();
+    for (final candidate in _pendingCandidates) {
+      await peer.addCandidate(candidate);
+    }
+    _pendingCandidates.clear();
+  }
+
+  Future<void> setMuted(bool muted) async {
+    for (final track in _localStream?.getAudioTracks() ?? const []) {
+      track.enabled = !muted;
+      await Helper.setMicrophoneMute(muted, track);
+    }
+  }
+
+  Future<void> setSpeaker(bool enabled) => Helper.setSpeakerphoneOn(enabled);
+
+  RTCPeerConnection _requirePeer() {
+    final peer = _peer;
+    if (peer == null) throw StateError('Voice peer is not prepared');
+    return peer;
+  }
+
+  Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
+    _disconnectTimer?.cancel();
+    for (final track in _localStream?.getTracks() ?? const []) {
+      await track.stop();
+    }
+    await _localStream?.dispose();
+    _localStream = null;
+    _remoteStreams.clear();
+    await _peer?.close();
+    await _peer?.dispose();
+    _peer = null;
+    await Helper.clearAndroidCommunicationDevice();
+  }
+}

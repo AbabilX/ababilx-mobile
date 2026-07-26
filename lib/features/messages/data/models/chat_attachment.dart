@@ -35,6 +35,14 @@ class ChatMessageAttachment extends Equatable {
     return fileName.toLowerCase().endsWith('.pdf');
   }
 
+  bool get isAudio {
+    if (contentType.toLowerCase().startsWith('audio/')) return true;
+    return RegExp(
+      r'\.(m4a|aac|mp3|ogg|opus|wav|webm)$',
+      caseSensitive: false,
+    ).hasMatch(fileName);
+  }
+
   factory ChatMessageAttachment.fromJson(Map<String, dynamic> json) =>
       ChatMessageAttachment(
         id: json['id'] as String? ?? '',
@@ -65,11 +73,11 @@ class ChatAttachmentInput extends Equatable {
   final int sizeBytes;
 
   Map<String, dynamic> toJson() => {
-        'file_url': fileUrl,
-        'file_name': fileName,
-        'content_type': contentType,
-        'size_bytes': sizeBytes,
-      };
+    'file_url': fileUrl,
+    'file_name': fileName,
+    'content_type': contentType,
+    'size_bytes': sizeBytes,
+  };
 
   @override
   List<Object?> get props => [fileUrl];

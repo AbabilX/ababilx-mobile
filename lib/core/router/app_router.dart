@@ -20,6 +20,7 @@ import '../../features/crm/screens/crm_contact_detail_screen.dart';
 import '../../features/crm/screens/crm_organizations_screen.dart';
 import '../../features/crm/screens/crm_organization_detail_screen.dart';
 import '../../features/notifications/providers/fcm_provider.dart';
+import '../../features/calls/screens/voice_call_screen.dart';
 import 'home_shell.dart';
 
 class _RouterRefreshNotifier extends ChangeNotifier {
@@ -94,6 +95,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
         ],
       ),
+      GoRoute(path: '/call', builder: (_, _) => const VoiceCallScreen()),
       GoRoute(
         path: '/messages/:id',
         builder: (_, state) => ConversationScreen(

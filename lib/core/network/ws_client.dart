@@ -20,16 +20,24 @@ class WsClient {
   StreamSubscription? _subscription;
   Timer? _reconnectTimer;
   bool _closed = false;
+  bool _connecting = false;
+  bool _connected = false;
   int _backoffMs = 1000;
+  final _events = StreamController<Map<String, dynamic>>.broadcast();
+  final _reconnects = StreamController<void>.broadcast();
+  final _disconnects = StreamController<void>.broadcast();
 
   static const _minBackoffMs = 1000;
   static const _maxBackoffMs = 30000;
 
-  WsEventHandler? onEvent;
-  WsReconnectHandler? onReconnect;
+  Stream<Map<String, dynamic>> get events => _events.stream;
+  Stream<void> get reconnects => _reconnects.stream;
+  Stream<void> get disconnects => _disconnects.stream;
+  bool get connected => _connected;
 
   Future<void> connect() async {
     _closed = false;
+    if (_connected || _connecting) return;
     await _connectOnce();
   }
 
@@ -39,11 +47,12 @@ class WsClient {
     _subscription?.cancel();
     _channel?.sink.close();
     _channel = null;
+    _connected = false;
   }
 
   bool send(Map<String, dynamic> payload) {
     final ch = _channel;
-    if (ch == null) return false;
+    if (ch == null || !_connected) return false;
     try {
       ch.sink.add(jsonEncode(payload));
       return true;
@@ -52,11 +61,31 @@ class WsClient {
     }
   }
 
+  Future<bool> sendWhenConnected(
+    Map<String, dynamic> payload, {
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    if (send(payload)) return true;
+    final ready = reconnects.first;
+    await connect();
+    if (send(payload)) return true;
+    try {
+      await ready.timeout(timeout);
+    } catch (_) {
+      return false;
+    }
+    return send(payload);
+  }
+
   Future<void> _connectOnce() async {
-    if (_closed) return;
+    if (_closed || _connecting || _connected) return;
+    _connecting = true;
 
     final token = await _storage.readJwt();
-    if (token == null || token.isEmpty) return;
+    if (token == null || token.isEmpty) {
+      _connecting = false;
+      return;
+    }
 
     await _subscription?.cancel();
     _channel?.sink.close();
@@ -67,26 +96,40 @@ class WsClient {
         protocols: [ApiConstants.wsAuthSubprotocol, token],
       );
       _channel = channel;
+      await channel.ready;
+      _connected = true;
+      _connecting = false;
 
       _subscription = channel.stream.listen(
         (raw) {
           try {
             final decoded = jsonDecode(raw as String);
             if (decoded is Map<String, dynamic>) {
-              onEvent?.call(decoded);
+              _events.add(decoded);
             }
           } catch (_) {}
         },
-        onDone: _scheduleReconnect,
-        onError: (_) => _scheduleReconnect(),
+        onDone: _handleDisconnected,
+        onError: (_) => _handleDisconnected(),
         cancelOnError: true,
       );
 
       _backoffMs = _minBackoffMs;
-      onReconnect?.call();
+      _reconnects.add(null);
     } catch (_) {
+      _connecting = false;
+      _connected = false;
       _scheduleReconnect();
     }
+  }
+
+  void _handleDisconnected() {
+    final wasConnected = _connected;
+    _connected = false;
+    _connecting = false;
+    _channel = null;
+    if (wasConnected) _disconnects.add(null);
+    _scheduleReconnect();
   }
 
   void _scheduleReconnect() {
@@ -97,10 +140,17 @@ class WsClient {
       _connectOnce();
     });
   }
+
+  Future<void> dispose() async {
+    disconnect();
+    await _events.close();
+    await _reconnects.close();
+    await _disconnects.close();
+  }
 }
 
 final wsClientProvider = Provider<WsClient>((ref) {
   final client = WsClient(ref.watch(secureStorageProvider));
-  ref.onDispose(client.disconnect);
+  ref.onDispose(client.dispose);
   return client;
 });

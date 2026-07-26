@@ -69,6 +69,11 @@ class ApiConstants {
   static String chatChannelLeave(String id) =>
       '/api/teams/chat/channels/$id/leave';
   static const String chatDm = '/api/teams/chat/dm';
+  static String chatVoiceCalls(String conversationId) =>
+      '/api/teams/chat/conversations/$conversationId/calls';
+  static String chatVoiceCall(String callId) => '/api/teams/chat/calls/$callId';
+  static String chatVoiceCallActions(String callId) =>
+      '/api/teams/chat/calls/$callId/actions';
   static const String chatForward = '/api/teams/chat/forward';
   static String chatMessages(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/messages';

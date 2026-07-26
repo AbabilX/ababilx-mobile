@@ -4,6 +4,12 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
   WsClient get ws;
   bool get realtimeStarted;
   set realtimeStarted(bool v);
+  StreamSubscription<Map<String, dynamic>>? get wsEventSub;
+  set wsEventSub(StreamSubscription<Map<String, dynamic>>? v);
+  StreamSubscription<void>? get wsReconnectSub;
+  set wsReconnectSub(StreamSubscription<void>? v);
+  StreamSubscription<void>? get wsDisconnectSub;
+  set wsDisconnectSub(StreamSubscription<void>? v);
   Future<void> fetchSidebarSilent();
 
   void handleWsEvent(Map<String, dynamic> ev) {
@@ -59,7 +65,8 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     if (msgJson == null) return;
     final msg = ChatMessage.fromJson(msgJson);
     final isActive = convId == state.activeConversationId;
-    final known = state.dms.any((d) => d.id == convId) ||
+    final known =
+        state.dms.any((d) => d.id == convId) ||
         state.channels.any((c) => c.id == convId);
     if (!known) unawaited(fetchSidebarSilent());
     if (!isActive) {
@@ -86,11 +93,11 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
   void initRealtime() {
     if (realtimeStarted) return;
     realtimeStarted = true;
-    ws.onEvent = (ev) {
+    wsEventSub = ws.events.listen((ev) {
       final type = ev['type'] as String? ?? '';
       if (type.startsWith('chat.')) handleWsEvent(ev);
-    };
-    ws.onReconnect = () {
+    });
+    wsReconnectSub = ws.reconnects.listen((_) {
       state = state.copyWith(wsConnected: true);
       unawaited(fetchSidebarSilent());
       final active = state.activeConversationId;
@@ -101,12 +108,20 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
           unawaited(loadFeed(active, threadRootId: thread, force: true));
         }
       }
-    };
+    });
+    wsDisconnectSub = ws.disconnects.listen((_) {
+      state = state.copyWith(wsConnected: false);
+    });
     unawaited(ws.connect());
   }
 
   void disposeRealtime() {
     realtimeStarted = false;
-    ws.disconnect();
+    unawaited(wsEventSub?.cancel());
+    unawaited(wsReconnectSub?.cancel());
+    unawaited(wsDisconnectSub?.cancel());
+    wsEventSub = null;
+    wsReconnectSub = null;
+    wsDisconnectSub = null;
   }
 }

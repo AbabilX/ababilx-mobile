@@ -1,6 +1,7 @@
 part of 'chat_provider.dart';
 
-mixin _ChatActionsMixin on Notifier<ChatState>, _ChatPatchMixin, _ChatFeedMixin {
+mixin _ChatActionsMixin
+    on Notifier<ChatState>, _ChatPatchMixin, _ChatFeedMixin {
   ChatRepository get repo;
 
   void incrementThreadCount(String conversationId, String rootId) {
@@ -11,9 +12,11 @@ mixin _ChatActionsMixin on Notifier<ChatState>, _ChatPatchMixin, _ChatFeedMixin 
       key,
       feed.copyWith(
         messages: feed.messages
-            .map((m) => m.id == rootId
-                ? m.copyWith(threadCount: m.threadCount + 1)
-                : m)
+            .map(
+              (m) => m.id == rootId
+                  ? m.copyWith(threadCount: m.threadCount + 1)
+                  : m,
+            )
             .toList(),
       ),
     );
@@ -50,24 +53,27 @@ mixin _ChatActionsMixin on Notifier<ChatState>, _ChatPatchMixin, _ChatFeedMixin 
       threadRepliesByRoot: {
         ...state.threadRepliesByRoot,
         rootId: list
-            .map((m) => m.id == messageId
-                ? m.copyWith(
-                    deletedAt: DateTime.now().toUtc().toIso8601String(),
-                    body: '',
-                  )
-                : m)
+            .map(
+              (m) => m.id == messageId
+                  ? m.copyWith(
+                      deletedAt: DateTime.now().toUtc().toIso8601String(),
+                      body: '',
+                    )
+                  : m,
+            )
             .toList(),
       },
     );
   }
 
   Future<ChatMessage?> sendMessage({
+    String? conversationId,
     required String body,
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
     String? parentId,
   }) async {
-    final convId = state.activeConversationId;
+    final convId = conversationId ?? state.activeConversationId;
     if (convId == null) return null;
     state = state.copyWith(sending: true);
     try {

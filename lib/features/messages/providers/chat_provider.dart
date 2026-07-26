@@ -31,6 +31,9 @@ class ChatNotifier extends Notifier<ChatState>
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
   WsClient get _ws => ref.read(wsClientProvider);
   bool _realtimeStarted = false;
+  StreamSubscription<Map<String, dynamic>>? _wsEventSub;
+  StreamSubscription<void>? _wsReconnectSub;
+  StreamSubscription<void>? _wsDisconnectSub;
 
   @override
   ChatRepository get repo => _repo;
@@ -48,10 +51,32 @@ class ChatNotifier extends Notifier<ChatState>
   set realtimeStarted(bool v) => _realtimeStarted = v;
 
   @override
+  StreamSubscription<Map<String, dynamic>>? get wsEventSub => _wsEventSub;
+
+  @override
+  set wsEventSub(StreamSubscription<Map<String, dynamic>>? value) =>
+      _wsEventSub = value;
+
+  @override
+  StreamSubscription<void>? get wsReconnectSub => _wsReconnectSub;
+
+  @override
+  set wsReconnectSub(StreamSubscription<void>? value) =>
+      _wsReconnectSub = value;
+
+  @override
+  StreamSubscription<void>? get wsDisconnectSub => _wsDisconnectSub;
+
+  @override
+  set wsDisconnectSub(StreamSubscription<void>? value) =>
+      _wsDisconnectSub = value;
+
+  @override
   Future<void> fetchSidebarSilent() => fetchSidebar(silent: true);
 
   @override
   ChatState build() {
+    ref.onDispose(disposeRealtime);
     ref.listen(profileProvider, (prev, next) {
       final id = next.valueOrNull?.id;
       if (id != null && id.isNotEmpty) {
@@ -87,7 +112,8 @@ class ChatNotifier extends Notifier<ChatState>
       final dms = sortDms(data.dms);
       final channels = sortChannels(data.channels);
       final active = state.activeConversationId;
-      final known = active != null &&
+      final known =
+          active != null &&
           (dms.any((d) => d.id == active) ||
               channels.any((c) => c.id == active));
       state = state.copyWith(
@@ -124,7 +150,9 @@ class ChatNotifier extends Notifier<ChatState>
   }
 }
 
-final chatProvider = NotifierProvider<ChatNotifier, ChatState>(ChatNotifier.new);
+final chatProvider = NotifierProvider<ChatNotifier, ChatState>(
+  ChatNotifier.new,
+);
 
 final totalUnreadProvider = Provider<int>((ref) {
   final chat = ref.watch(chatProvider);
