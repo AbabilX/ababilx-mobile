@@ -1,9 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../chat_icon.dart';
 
-class ComposerRecordingBar extends StatelessWidget {
+class ComposerRecordingBar extends StatefulWidget {
   const ComposerRecordingBar({
     super.key,
     required this.elapsed,
@@ -22,16 +24,59 @@ class ComposerRecordingBar extends StatelessWidget {
   final String sendingLabel;
 
   @override
+  State<ComposerRecordingBar> createState() => _ComposerRecordingBarState();
+}
+
+class _ComposerRecordingBarState extends State<ComposerRecordingBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _wave;
+
+  @override
+  void initState() {
+    super.initState();
+    _wave = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _syncWave();
+  }
+
+  @override
+  void didUpdateWidget(covariant ComposerRecordingBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.preparing != widget.preparing ||
+        oldWidget.uploading != widget.uploading) {
+      _syncWave();
+    }
+  }
+
+  void _syncWave() {
+    final active = !widget.preparing && !widget.uploading;
+    if (active) {
+      if (!_wave.isAnimating) _wave.repeat();
+    } else {
+      _wave.stop();
+      _wave.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _wave.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final seconds = elapsed.inSeconds;
+    final seconds = widget.elapsed.inSeconds;
     final duration =
         '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
-    final label = uploading
-        ? sendingLabel
-        : preparing
-        ? preparingLabel
-        : releaseLabel;
+    final label = widget.uploading
+        ? widget.sendingLabel
+        : widget.preparing
+        ? widget.preparingLabel
+        : widget.releaseLabel;
 
     return Material(
       color: colors.surfaceContainerLow,
@@ -50,7 +95,7 @@ class ComposerRecordingBar extends StatelessWidget {
                   color: colors.errorContainer,
                 ),
                 alignment: Alignment.center,
-                child: uploading
+                child: widget.uploading
                     ? SizedBox(
                         width: 18,
                         height: 18,
@@ -74,23 +119,34 @@ class ComposerRecordingBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 14),
-              if (!uploading)
+              if (!widget.uploading)
                 Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(
-                      12,
-                      (index) => Container(
-                        width: 3,
-                        height: 8.0 + ((index * 7) % 18),
-                        decoration: BoxDecoration(
-                          color: colors.primary.withValues(
-                            alpha: index.isEven ? 0.9 : 0.45,
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
+                  child: AnimatedBuilder(
+                    animation: _wave,
+                    builder: (context, _) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: List.generate(12, (index) {
+                          final phase = index * 0.55;
+                          final t = _wave.value * math.pi * 2;
+                          final pulse = widget.preparing
+                              ? 0.22
+                              : (math.sin(t + phase) + 1) / 2;
+                          final height = 6.0 + pulse * 18.0;
+                          return Container(
+                            width: 3,
+                            height: height,
+                            decoration: BoxDecoration(
+                              color: colors.primary.withValues(
+                                alpha: 0.35 + pulse * 0.55,
+                              ),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          );
+                        }),
+                      );
+                    },
                   ),
                 )
               else
@@ -99,7 +155,9 @@ class ComposerRecordingBar extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: uploading ? colors.onSurfaceVariant : colors.primary,
+                  color: widget.uploading
+                      ? colors.onSurfaceVariant
+                      : colors.primary,
                 ),
               ),
             ],

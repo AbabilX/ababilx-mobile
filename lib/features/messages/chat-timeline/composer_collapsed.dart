@@ -14,15 +14,17 @@ class ComposerCollapsed extends StatelessWidget {
     this.onMic,
     this.voiceAction,
     this.voiceTooltip = 'Voice',
+    this.preparingVoice = false,
   });
 
   final String hint;
   final VoidCallback onFocusTap;
   final VoidCallback onPlus;
-  final VoidCallback? onMicDown;
+  final ValueChanged<PointerDownEvent>? onMicDown;
   final VoidCallback? onMic;
   final Widget? voiceAction;
   final String voiceTooltip;
+  final bool preparingVoice;
 
   @override
   Widget build(BuildContext context) {
@@ -57,15 +59,32 @@ class ComposerCollapsed extends StatelessWidget {
                     label: voiceTooltip,
                     hint: voiceTooltip,
                     child: Listener(
-                      onPointerDown: (_) => (onMicDown ?? onMic)?.call(),
+                      onPointerDown: preparingVoice
+                          ? null
+                          : (event) {
+                              if (onMicDown != null) {
+                                onMicDown!(event);
+                              } else {
+                                onMic?.call();
+                              }
+                            },
                       child: Tooltip(
                         message: voiceTooltip,
                         child: Padding(
                           padding: const EdgeInsets.all(12),
-                          child: ChatIcon(
-                            HugeIcons.strokeRoundedMic01,
-                            color: colors.onSurfaceVariant,
-                          ),
+                          child: preparingVoice
+                              ? SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: colors.primary,
+                                  ),
+                                )
+                              : ChatIcon(
+                                  HugeIcons.strokeRoundedMic01,
+                                  color: colors.onSurfaceVariant,
+                                ),
                         ),
                       ),
                     ),

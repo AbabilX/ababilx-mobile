@@ -25,3 +25,15 @@ plugins {
 }
 
 include(":app")
+
+// jni 1.0.1 calls kotlin {} on AGP 9 without applying KGP when
+// android.builtInKotlin=false (Flutter's temporary opt-out). Re-apply our patch
+// before :jni evaluates so builds keep working after pub cache refreshes.
+val jniProject = findProject(":jni")
+if (jniProject != null) {
+    val patched = file("patches/jni.build.gradle")
+    val target = jniProject.projectDir.resolve("build.gradle")
+    if (patched.exists() && target.exists()) {
+        patched.copyTo(target, overwrite = true)
+    }
+}

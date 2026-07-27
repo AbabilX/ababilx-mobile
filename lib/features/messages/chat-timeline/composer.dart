@@ -53,6 +53,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   bool _releaseRequested = false;
   bool _uploadingVoice = false;
   bool _holdingMic = false;
+  int? _micPointer;
 
   String get _hint => 'Message ${widget.hintName}';
   bool get _hasDraft => _ctrl.text.trim().isNotEmpty || _pending.isNotEmpty;
@@ -128,10 +129,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   );
 
   Future<void> _startVoiceRecording() async {
-    if (_recording || _uploadingVoice || ref.read(chatProvider).sending) return;
+    if (_recording ||
+        _recordPreparing ||
+        _uploadingVoice ||
+        ref.read(chatProvider).sending) {
+      return;
+    }
     _focus.unfocus();
     setState(() {
-      _recording = true;
       _recordPreparing = true;
       _releaseRequested = false;
       _recordElapsed = Duration.zero;
@@ -142,7 +147,21 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         await _voiceRecorder.cancel();
         return;
       }
-      setState(() => _recordPreparing = false);
+      // Finger already lifted while mic/session was starting.
+      if (_releaseRequested || !_holdingMic) {
+        await _voiceRecorder.cancel();
+        if (!mounted) return;
+        setState(() => _recordPreparing = false);
+        _showMessage(
+          'Hold a little longer to record.',
+          'রেকর্ড করতে একটু বেশি সময় ধরে রাখুন।',
+        );
+        return;
+      }
+      setState(() {
+        _recording = true;
+        _recordPreparing = false;
+      });
       _recordStopwatch
         ..reset()
         ..start();
@@ -162,6 +181,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         _recording = false;
         _recordPreparing = false;
       });
+      _holdingMic = false;
+      _micPointer = null;
       _showMessage(
         'Microphone permission is required to record.',
         'রেকর্ড করতে মাইক্রোফোনের অনুমতি প্রয়োজন।',
@@ -169,13 +190,18 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
   }
 
-  void _releaseVoiceRecording() {
+  void _releaseVoiceRecording([int? pointer]) {
+    if (pointer != null && _micPointer != null && pointer != _micPointer) {
+      return;
+    }
     _holdingMic = false;
-    if (!_recording || _recordFinishing) return;
+    _micPointer = null;
+    if (_recordFinishing) return;
     if (_recordPreparing) {
       _releaseRequested = true;
       return;
     }
+    if (!_recording) return;
     unawaited(_finishVoiceRecording());
   }
 
@@ -253,6 +279,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     } finally {
       if (recording != null) await _voiceRecorder.delete(recording);
       _recordFinishing = false;
+      _holdingMic = false;
+      _micPointer = null;
       if (mounted) {
         setState(() {
           _recording = false;
@@ -273,8 +301,15 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     );
   }
 
-  void _pressMic() {
+  void _pressMic(PointerDownEvent event) {
+    if (_recording ||
+        _recordPreparing ||
+        _uploadingVoice ||
+        ref.read(chatProvider).sending) {
+      return;
+    }
     _holdingMic = true;
+    _micPointer = event.pointer;
     unawaited(_startVoiceRecording());
   }
 
@@ -299,6 +334,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         onPlus: () => _attach(),
         onMicDown: _pressMic,
         voiceTooltip: tr('chat_hold_to_record'),
+        preparingVoice: _recordPreparing,
       );
     } else {
       composer = ComposerExpandedShell(
@@ -332,8 +368,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
     return Listener(
       behavior: HitTestBehavior.translucent,
-      onPointerUp: (_) => _releaseVoiceRecording(),
-      onPointerCancel: (_) => _releaseVoiceRecording(),
+      onPointerUp: (e) => _releaseVoiceRecording(e.pointer),
+      onPointerCancel: (e) => _releaseVoiceRecording(e.pointer),
       child: composer,
     );
   }
