@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
+import '../../../shared/widgets/link_preview.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
 import '../wall_delete_confirm.dart';
@@ -62,6 +63,7 @@ class WallCommentTile extends ConsumerWidget {
                 ),
                 if (plain.trim().isNotEmpty)
                   Text(plain, style: TextStyle(color: scheme.onSurface)),
+                if (plain.trim().isNotEmpty) MessageLinkPreviews(text: plain),
                 if (comment.attachments.isNotEmpty) ...[
                   const SizedBox(height: 5),
                   WallAttachmentGrid(attachments: comment.attachments),

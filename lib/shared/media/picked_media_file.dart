@@ -36,15 +36,13 @@ Future<PickedMediaFile?> pickLiveCameraFile() async {
   );
 }
 
-Future<PickedMediaFile?> pickGalleryImageFile() async {
+/// Gallery: images **and** videos (web parity).
+Future<PickedMediaFile?> pickGalleryMediaFile() async {
   if (Platform.isAndroid) {
-    return _pickImageViaFilePicker();
+    return _pickMediaViaFilePicker();
   }
 
-  final file = await ImagePicker().pickImage(
-    source: ImageSource.gallery,
-    imageQuality: 90,
-  );
+  final file = await ImagePicker().pickMedia();
   if (file == null) return null;
   final bytes = await file.readAsBytes();
   _checkSize(bytes.length);
@@ -55,9 +53,12 @@ Future<PickedMediaFile?> pickGalleryImageFile() async {
   );
 }
 
-Future<PickedMediaFile?> _pickImageViaFilePicker() async {
+/// Backwards-compatible alias — now also allows video.
+Future<PickedMediaFile?> pickGalleryImageFile() => pickGalleryMediaFile();
+
+Future<PickedMediaFile?> _pickMediaViaFilePicker() async {
   final result = await FilePicker.platform.pickFiles(
-    type: FileType.image,
+    type: FileType.media,
     allowMultiple: false,
     withData: false,
   );
@@ -71,7 +72,7 @@ Future<PickedMediaFile?> _pickImageViaFilePicker() async {
     bytes = await File(path).readAsBytes();
   }
   if (bytes == null || bytes.isEmpty) {
-    throw const FileSystemException('Could not read the selected image');
+    throw const FileSystemException('Could not read the selected media');
   }
   _checkSize(bytes.length);
   return PickedMediaFile(
@@ -132,6 +133,12 @@ String contentTypeForFileName(String fileName) {
     'mp3' => 'audio/mpeg',
     'ogg' || 'opus' => 'audio/ogg',
     'wav' => 'audio/wav',
+    'mp4' || 'm4v' => 'video/mp4',
+    'mov' => 'video/quicktime',
+    'webm' => 'video/webm',
+    'mkv' => 'video/x-matroska',
+    'avi' => 'video/x-msvideo',
+    '3gp' => 'video/3gpp',
     _ => 'application/octet-stream',
   };
 }

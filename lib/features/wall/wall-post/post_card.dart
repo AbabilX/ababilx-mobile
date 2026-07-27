@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/link_preview.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
 import '../wall_utils.dart';
@@ -48,14 +49,16 @@ class WallPostCard extends ConsumerWidget {
                   Text(
                     body.isEmpty ? '(empty post)' : body,
                     maxLines: expanded ? null : 8,
-                    overflow:
-                        expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                    overflow: expanded
+                        ? TextOverflow.visible
+                        : TextOverflow.ellipsis,
                     style: TextStyle(
                       color: scheme.onSurface,
                       height: 1.35,
                       fontSize: 15,
                     ),
                   ),
+                  if (body.isNotEmpty) MessageLinkPreviews(text: body),
                 ],
               ),
             ),

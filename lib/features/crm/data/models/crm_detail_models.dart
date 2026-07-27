@@ -348,6 +348,12 @@ class CrmDocument extends Equatable {
     ).hasMatch(fileName);
   }
 
+  bool get isPdf {
+    final mt = mimeType.toLowerCase();
+    if (mt == 'application/pdf' || mt == 'application/x-pdf') return true;
+    return fileName.toLowerCase().endsWith('.pdf');
+  }
+
   factory CrmDocument.fromJson(Map<String, dynamic> json) => CrmDocument(
     id: json['id'] as String? ?? '',
     leadId: json['lead_id'] as String? ?? '',
@@ -419,6 +425,12 @@ class CrmOrganizationDocument extends Equatable {
       r'\.(m4a|aac|mp3|ogg|opus|wav|webm)$',
       caseSensitive: false,
     ).hasMatch(fileName);
+  }
+
+  bool get isPdf {
+    final mt = mimeType.toLowerCase();
+    if (mt == 'application/pdf' || mt == 'application/x-pdf') return true;
+    return fileName.toLowerCase().endsWith('.pdf');
   }
 
   factory CrmOrganizationDocument.fromJson(Map<String, dynamic> json) =>

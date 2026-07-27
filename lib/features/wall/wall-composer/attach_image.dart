@@ -37,6 +37,7 @@ Future<WallAttachmentInput?> pickWallImageAttachment(
               ListTile(
                 leading: const ChatIcon(HugeIcons.strokeRoundedImage01),
                 title: const Text('Gallery'),
+                subtitle: const Text('Photos & videos'),
                 onTap: () => Navigator.pop(ctx, ImageSource.gallery),
               ),
             ],

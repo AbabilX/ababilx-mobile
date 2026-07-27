@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/link_preview.dart';
 import '../data/models/chat_models.dart';
 import '../tiptap_plain_text.dart';
 import 'mention_text.dart';
@@ -36,6 +37,7 @@ class MessageBody extends StatelessWidget {
           ),
         if (plain.isNotEmpty)
           MentionText(text: plain, edited: message.editedAt != null),
+        if (plain.isNotEmpty) MessageLinkPreviews(text: plain),
         if (message.attachments.isNotEmpty)
           MessageAttachments(attachments: message.attachments),
       ],

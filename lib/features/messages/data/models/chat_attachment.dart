@@ -35,8 +35,18 @@ class ChatMessageAttachment extends Equatable {
     return fileName.toLowerCase().endsWith('.pdf');
   }
 
+  bool get isVideo {
+    if (contentType.toLowerCase().startsWith('video/')) return true;
+    return RegExp(
+      r'\.(mp4|m4v|mov|webm|mkv|avi|3gp)$',
+      caseSensitive: false,
+    ).hasMatch(fileName);
+  }
+
   bool get isAudio {
     if (contentType.toLowerCase().startsWith('audio/')) return true;
+    // Prefer video when extension is ambiguous (e.g. .webm).
+    if (isVideo) return false;
     return RegExp(
       r'\.(m4a|aac|mp3|ogg|opus|wav|webm)$',
       caseSensitive: false,

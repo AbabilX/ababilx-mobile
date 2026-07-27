@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../shared/widgets/pdf_preview.dart';
 import '../data/models/chat_models.dart';
 
 Future<void> openChatAttachment(
   BuildContext context,
   ChatMessageAttachment file,
 ) async {
-  final uri = Uri.tryParse(file.fileUrl);
-  if (uri == null) {
-    _toast(context, 'Invalid file URL');
+  if (file.isPdf) {
+    await showPdfPreview(
+      context,
+      fileUrl: file.fileUrl,
+      fileName: file.fileName,
+    );
     return;
   }
 
-  if (file.isPdf) {
-    final ok = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-    if (!ok && context.mounted) {
-      final fallback =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!fallback && context.mounted) _toast(context, 'Could not open PDF');
-    }
+  final uri = Uri.tryParse(file.fileUrl);
+  if (uri == null) {
+    _toast(context, 'Invalid file URL');
     return;
   }
 

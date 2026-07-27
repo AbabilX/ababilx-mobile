@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../messages/chat_icon.dart';
+import '../../../shared/widgets/network_video_player.dart';
 import '../data/models/wall_models.dart';
 
 /// Pending wall attachments — thumbnails + add-photo tile (camera/gallery).
@@ -109,6 +110,14 @@ class _Thumb extends StatelessWidget {
     ).hasMatch(attachment.fileName);
   }
 
+  bool get _isVideo {
+    if (attachment.contentType.toLowerCase().startsWith('video/')) return true;
+    return RegExp(
+      r'\.(mp4|m4v|mov|webm|mkv|avi|3gp)$',
+      caseSensitive: false,
+    ).hasMatch(attachment.fileName);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -125,7 +134,8 @@ class _Thumb extends StatelessWidget {
                   ? CachedNetworkImage(
                       imageUrl: attachment.fileUrl,
                       fit: BoxFit.cover,
-                      placeholder: (_, _) => ColoredBox(color: placeholderColor),
+                      placeholder: (_, _) =>
+                          ColoredBox(color: placeholderColor),
                       errorWidget: (_, _, _) => ColoredBox(
                         color: placeholderColor,
                         child: Icon(
@@ -133,6 +143,11 @@ class _Thumb extends StatelessWidget {
                           color: colors.onSurfaceVariant,
                         ),
                       ),
+                    )
+                  : _isVideo
+                  ? VideoPendingThumb(
+                      placeholderColor: placeholderColor,
+                      size: size,
                     )
                   : ColoredBox(
                       color: placeholderColor,

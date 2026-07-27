@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Minimal image payload for fullscreen preview (wall + chat).
 class PreviewImage {
-  const PreviewImage({
-    required this.fileUrl,
-    required this.fileName,
-  });
+  const PreviewImage({required this.fileUrl, required this.fileName});
 
   final String fileUrl;
   final String fileName;
@@ -21,18 +18,13 @@ Future<void> showImagePreview(
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.92),
-    builder: (ctx) => _ImagePreviewDialog(
-      images: images,
-      initialIndex: initialIndex,
-    ),
+    builder: (ctx) =>
+        _ImagePreviewDialog(images: images, initialIndex: initialIndex),
   );
 }
 
 class _ImagePreviewDialog extends StatefulWidget {
-  const _ImagePreviewDialog({
-    required this.images,
-    required this.initialIndex,
-  });
+  const _ImagePreviewDialog({required this.images, required this.initialIndex});
 
   final List<PreviewImage> images;
   final int initialIndex;
@@ -90,9 +82,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        shadows: [
-                          Shadow(blurRadius: 8, color: Colors.black87),
-                        ],
+                        shadows: [Shadow(blurRadius: 8, color: Colors.black87)],
                       ),
                     ),
                   ),
@@ -103,9 +93,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 13,
-                        shadows: [
-                          Shadow(blurRadius: 8, color: Colors.black87),
-                        ],
+                        shadows: [Shadow(blurRadius: 8, color: Colors.black87)],
                       ),
                     ),
                   ],
@@ -197,10 +185,12 @@ class _ZoomableImageState extends State<_ZoomableImage>
         clipBehavior: Clip.none,
         panEnabled: true,
         scaleEnabled: true,
-        child: Center(
+        // Fill the viewport; keep aspect (no tiny strip / no stretch).
+        child: SizedBox.expand(
           child: Image.network(
             widget.url,
             fit: BoxFit.contain,
+            alignment: Alignment.center,
             errorBuilder: (_, _, _) => const Icon(
               Icons.broken_image_outlined,
               color: Colors.white54,

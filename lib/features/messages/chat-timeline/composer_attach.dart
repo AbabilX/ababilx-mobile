@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../shared/media/picked_media_file.dart';
+import '../../../shared/widgets/network_video_player.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -117,6 +118,14 @@ class _PendingThumb extends StatelessWidget {
     ).hasMatch(attachment.fileName);
   }
 
+  bool get _isVideo {
+    if (attachment.contentType.toLowerCase().startsWith('video/')) return true;
+    return RegExp(
+      r'\.(mp4|m4v|mov|webm|mkv|avi|3gp)$',
+      caseSensitive: false,
+    ).hasMatch(attachment.fileName);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -142,6 +151,11 @@ class _PendingThumb extends StatelessWidget {
                           color: colors.onSurfaceVariant,
                         ),
                       ),
+                    )
+                  : _isVideo
+                  ? VideoPendingThumb(
+                      placeholderColor: placeholderColor,
+                      size: size,
                     )
                   : ColoredBox(
                       color: placeholderColor,
@@ -195,6 +209,7 @@ Future<ComposerAttachKind?> showComposerAttachSheet(BuildContext context) {
           ListTile(
             leading: const ChatIcon(HugeIcons.strokeRoundedImage01),
             title: const Text('Gallery'),
+            subtitle: const Text('Photos & videos'),
             onTap: () => Navigator.pop(ctx, ComposerAttachKind.gallery),
           ),
           ListTile(

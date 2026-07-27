@@ -11,9 +11,20 @@ void main() {
       contentTypeForFileName('proposal.docx'),
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     );
+    expect(contentTypeForFileName('clip.mp4'), 'video/mp4');
+    expect(contentTypeForFileName('clip.mov'), 'video/quicktime');
     expect(
-      contentTypeForFileName('unknown.custom'),
-      'application/octet-stream',
+      const WallAttachment(
+        id: 'v',
+        postId: 'p',
+        fileName: 'demo.mp4',
+        fileUrl: 'https://example.com/demo.mp4',
+        contentType: 'video/mp4',
+        sizeBytes: 10,
+        uploadedBy: 'u',
+        createdAt: '',
+      ).isVideo,
+      isTrue,
     );
   });
 

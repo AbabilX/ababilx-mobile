@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/widgets/image_preview.dart';
+import '../../../shared/widgets/network_video_player.dart';
+import '../../../shared/widgets/pdf_preview.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import 'chat_file_preview.dart';
@@ -21,8 +23,11 @@ class MessageAttachments extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final images = attachments.where((a) => a.isImage).toList();
+    final videos = attachments.where((a) => a.isVideo).toList();
     final audio = attachments.where((a) => a.isAudio).toList();
-    final files = attachments.where((a) => !a.isImage && !a.isAudio).toList();
+    final files = attachments
+        .where((a) => !a.isImage && !a.isVideo && !a.isAudio)
+        .toList();
     final colors = Theme.of(context).colorScheme;
     final solo = images.length == 1;
 
@@ -69,12 +74,27 @@ class MessageAttachments extends StatelessWidget {
                       ),
                   ],
                 ),
+        for (final v in videos)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: NetworkVideoPlayer(url: v.fileUrl, maxHeight: _soloMaxH),
+          ),
         for (final a in audio) VoiceAttachmentPlayer(attachment: a),
         for (final a in files)
-          _FileAttachment(
-            attachment: a,
-            onTap: () => openChatAttachment(context, a),
-          ),
+          a.isPdf
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: PdfPreviewCard(
+                    fileUrl: a.fileUrl,
+                    fileName: a.fileName,
+                    hideFileName: false,
+                    height: 200,
+                  ),
+                )
+              : _FileAttachment(
+                  attachment: a,
+                  onTap: () => openChatAttachment(context, a),
+                ),
       ],
     );
   }
