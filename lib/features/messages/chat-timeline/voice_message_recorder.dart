@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:record/record.dart';
 
 class RecordedVoiceMessage {
   const RecordedVoiceMessage({
@@ -20,80 +20,97 @@ class RecordedVoiceMessage {
   static const contentType = 'audio/mp4';
 }
 
-/// Android audio-only recorder backed by the WebRTC audio device already used
-/// by voice calls. This avoids adding another large native recorder dependency.
+class MicrophonePermissionException implements Exception {
+  const MicrophonePermissionException({this.permanentlyDenied = false});
+
+  final bool permanentlyDenied;
+}
+
+/// Native mic recorder for voice messages. Uses the `record` package instead of
+/// flutter_webrtc MediaRecorder, which produced empty files for audio-only
+/// capture on Android.
 class VoiceMessageRecorder {
-  MediaRecorder? _recorder;
-  MediaStream? _stream;
+  final _recorder = AudioRecorder();
   DateTime? _startedAt;
   String? _path;
+  bool _paused = false;
 
-  bool get active => _recorder != null;
+  bool get active => _path != null;
+  bool get paused => _paused;
 
   Future<void> start() async {
     if (active) return;
-    final permission = await Permission.microphone.request();
-    if (!permission.isGranted) {
-      throw StateError('microphone permission denied');
+
+    // Use the record plugin's native permission flow so Android/iOS show the
+    // system dialog. permission_handler.request() here was returning denied
+    // without prompting and blocking recording.
+    final granted = await _recorder.hasPermission(request: true);
+    if (!granted) {
+      final status = await Permission.microphone.status;
+      throw MicrophonePermissionException(
+        permanentlyDenied: status.isPermanentlyDenied,
+      );
     }
 
     final directory = await getTemporaryDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final path = '${directory.path}/voice-$timestamp.m4a';
-    final stream = await navigator.mediaDevices.getUserMedia({
-      'audio': {
-        'echoCancellation': true,
-        'noiseSuppression': true,
-        'autoGainControl': true,
-      },
-      'video': false,
-    });
-    final recorder = MediaRecorder();
 
-    try {
-      await recorder.start(path, audioChannel: RecorderAudioChannel.INPUT);
-    } catch (_) {
-      for (final track in stream.getTracks()) {
-        await track.stop();
-      }
-      await stream.dispose();
-      rethrow;
-    }
+    await _recorder.start(
+      const RecordConfig(
+        encoder: AudioEncoder.aacLc,
+        bitRate: 128000,
+        sampleRate: 44100,
+        numChannels: 1,
+        autoGain: true,
+        echoCancel: true,
+        noiseSuppress: true,
+      ),
+      path: path,
+    );
 
-    _stream = stream;
-    _recorder = recorder;
     _path = path;
     _startedAt = DateTime.now();
+    _paused = false;
+  }
+
+  Future<void> pause() async {
+    if (!active || _paused) return;
+    await _recorder.pause();
+    _paused = true;
+  }
+
+  Future<void> resume() async {
+    if (!active || !_paused) return;
+    await _recorder.resume();
+    _paused = false;
   }
 
   Future<RecordedVoiceMessage?> stop() async {
-    final recorder = _recorder;
     final path = _path;
     final startedAt = _startedAt;
-    if (recorder == null || path == null || startedAt == null) return null;
+    if (path == null || startedAt == null) return null;
 
-    _recorder = null;
     _path = null;
     _startedAt = null;
-    await recorder.stop();
-    await _releaseStream();
+    _paused = false;
 
-    final file = File(path);
+    final stoppedPath = await _recorder.stop();
+    final filePath = stoppedPath ?? path;
+    final file = File(filePath);
     final sizeBytes = await _waitForFinalizedFile(file);
     if (sizeBytes == 0) return null;
+
     final duration = DateTime.now().difference(startedAt);
     final seconds = duration.inSeconds.clamp(1, 3599);
     return RecordedVoiceMessage(
-      path: path,
+      path: filePath,
       fileName: 'voice-message-${seconds}s.m4a',
       sizeBytes: sizeBytes,
       duration: duration,
     );
   }
 
-  /// flutter_webrtc completes `stop()` before Android's MediaMuxer has always
-  /// flushed the AAC/MP4 file. Wait for a non-empty, stable file instead of
-  /// incorrectly treating a valid recording as a short/empty press.
   Future<int> _waitForFinalizedFile(File file) async {
     var previousSize = 0;
     var stableReads = 0;
@@ -113,21 +130,12 @@ class VoiceMessageRecorder {
   }
 
   Future<void> cancel() async {
-    final path = _path;
-    final recorder = _recorder;
-    _recorder = null;
     _path = null;
     _startedAt = null;
-    if (recorder != null) {
-      try {
-        await recorder.stop();
-      } catch (_) {}
-    }
-    await _releaseStream();
-    if (path != null) {
-      final file = File(path);
-      if (await file.exists()) await file.delete();
-    }
+    _paused = false;
+    try {
+      await _recorder.cancel();
+    } catch (_) {}
   }
 
   Future<void> delete(RecordedVoiceMessage recording) async {
@@ -135,15 +143,8 @@ class VoiceMessageRecorder {
     if (await file.exists()) await file.delete();
   }
 
-  Future<void> _releaseStream() async {
-    final stream = _stream;
-    _stream = null;
-    if (stream == null) return;
-    for (final track in stream.getTracks()) {
-      await track.stop();
-    }
-    await stream.dispose();
+  Future<void> dispose() async {
+    await cancel();
+    await _recorder.dispose();
   }
-
-  Future<void> dispose() => cancel();
 }

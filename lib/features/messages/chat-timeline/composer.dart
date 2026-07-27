@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../data/models/chat_models.dart';
@@ -50,14 +51,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   bool _recording = false;
   bool _recordPreparing = false;
   bool _recordFinishing = false;
-  bool _releaseRequested = false;
   bool _uploadingVoice = false;
-  bool _holdingMic = false;
-  int? _micPointer;
+  bool _paused = false;
+  bool _viewOnce = false;
 
   String get _hint => 'Message ${widget.hintName}';
   bool get _hasDraft => _ctrl.text.trim().isNotEmpty || _pending.isNotEmpty;
   bool get _expanded => _forceExpanded || _focused || _hasDraft;
+  bool get _voiceSheetOpen => _recording || _recordPreparing || _uploadingVoice;
 
   @override
   void initState() {
@@ -113,49 +114,43 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     _focus.unfocus();
   }
 
-  Future<void> _attach({ImageSource? source}) => pickAndUploadImage(
-    context,
-    ref,
-    conversationId: widget.conversationId,
-    source: source,
-    onAdded: (a) {
+  Future<void> _attach({ImageSource? source}) async {
+    if (!mounted) return;
+    try {
+      await pickAndUploadAttachment(
+        context,
+        ref,
+        conversationId: widget.conversationId,
+        source: source,
+        onAdded: (a) {
+          if (!mounted) return;
+          setState(() {
+            _pending.add(a);
+            _forceExpanded = true;
+          });
+          _focus.requestFocus();
+        },
+      );
+    } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _pending.add(a);
-        _forceExpanded = true;
-      });
-      _focus.requestFocus();
-    },
-  );
+      _showMessage('Could not attach this file.', 'ফাইল সংযুক্ত করা যায়নি।');
+    }
+  }
 
   Future<void> _startVoiceRecording() async {
-    if (_recording ||
-        _recordPreparing ||
-        _uploadingVoice ||
-        ref.read(chatProvider).sending) {
+    if (_voiceSheetOpen || _recordFinishing || ref.read(chatProvider).sending) {
       return;
     }
     _focus.unfocus();
     setState(() {
       _recordPreparing = true;
-      _releaseRequested = false;
+      _paused = false;
       _recordElapsed = Duration.zero;
     });
     try {
       await _voiceRecorder.start();
       if (!mounted) {
         await _voiceRecorder.cancel();
-        return;
-      }
-      // Finger already lifted while mic/session was starting.
-      if (_releaseRequested || !_holdingMic) {
-        await _voiceRecorder.cancel();
-        if (!mounted) return;
-        setState(() => _recordPreparing = false);
-        _showMessage(
-          'Hold a little longer to record.',
-          'রেকর্ড করতে একটু বেশি সময় ধরে রাখুন।',
-        );
         return;
       }
       setState(() {
@@ -167,22 +162,23 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         ..start();
       _recordClock?.cancel();
       _recordClock = Timer.periodic(const Duration(milliseconds: 200), (_) {
-        if (mounted) {
-          setState(() => _recordElapsed = _recordStopwatch.elapsed);
-          if (_recordElapsed >= const Duration(seconds: 60)) {
-            unawaited(_finishVoiceRecording());
-          }
+        if (!mounted || _paused) return;
+        setState(() => _recordElapsed = _recordStopwatch.elapsed);
+        if (_recordElapsed >= const Duration(seconds: 60)) {
+          unawaited(_finishVoiceRecording());
         }
       });
-      if (_releaseRequested || !_holdingMic) await _finishVoiceRecording();
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _recording = false;
         _recordPreparing = false;
+        _paused = false;
       });
-      _holdingMic = false;
-      _micPointer = null;
+      if (error is MicrophonePermissionException && error.permanentlyDenied) {
+        _showMicPermissionSettings();
+        return;
+      }
       _showMessage(
         'Microphone permission is required to record.',
         'রেকর্ড করতে মাইক্রোফোনের অনুমতি প্রয়োজন।',
@@ -190,23 +186,42 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
   }
 
-  void _releaseVoiceRecording([int? pointer]) {
-    if (pointer != null && _micPointer != null && pointer != _micPointer) {
-      return;
+  Future<void> _cancelVoiceRecording() async {
+    if (_recordFinishing || _uploadingVoice) return;
+    _recordClock?.cancel();
+    _recordStopwatch
+      ..stop()
+      ..reset();
+    await _voiceRecorder.cancel();
+    if (!mounted) return;
+    setState(() {
+      _recording = false;
+      _recordPreparing = false;
+      _paused = false;
+      _recordElapsed = Duration.zero;
+    });
+  }
+
+  Future<void> _togglePause() async {
+    if (!_recording || _recordFinishing || _uploadingVoice) return;
+    if (_paused) {
+      await _voiceRecorder.resume();
+      if (!mounted) return;
+      _recordStopwatch.start();
+      setState(() => _paused = false);
+    } else {
+      await _voiceRecorder.pause();
+      if (!mounted) return;
+      _recordStopwatch.stop();
+      setState(() {
+        _paused = true;
+        _recordElapsed = _recordStopwatch.elapsed;
+      });
     }
-    _holdingMic = false;
-    _micPointer = null;
-    if (_recordFinishing) return;
-    if (_recordPreparing) {
-      _releaseRequested = true;
-      return;
-    }
-    if (!_recording) return;
-    unawaited(_finishVoiceRecording());
   }
 
   Future<void> _finishVoiceRecording() async {
-    if (_recordFinishing) return;
+    if (_recordFinishing || !_recording) return;
     final notifier = ref.read(chatProvider.notifier);
     _recordFinishing = true;
     _recordStopwatch.stop();
@@ -216,17 +231,15 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       recording = await _voiceRecorder.stop();
       if (recording == null ||
           recording.sizeBytes == 0 ||
-          recording.duration < const Duration(milliseconds: 700)) {
+          recording.duration < const Duration(milliseconds: 400)) {
         if (recording != null) await _voiceRecorder.delete(recording);
         if (mounted) {
           setState(() {
             _recording = false;
             _recordPreparing = false;
+            _paused = false;
           });
-          _showMessage(
-            'Hold a little longer to record.',
-            'রেকর্ড করতে একটু বেশি সময় ধরে রাখুন।',
-          );
+          _showMessage('Recording was too short.', 'রেকর্ডিং খুব ছোট হয়েছে।');
         }
         return;
       }
@@ -235,6 +248,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         setState(() {
           _recording = false;
           _recordPreparing = false;
+          _paused = false;
           _uploadingVoice = true;
         });
       }
@@ -279,13 +293,12 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     } finally {
       if (recording != null) await _voiceRecorder.delete(recording);
       _recordFinishing = false;
-      _holdingMic = false;
-      _micPointer = null;
       if (mounted) {
         setState(() {
           _recording = false;
           _recordPreparing = false;
           _uploadingVoice = false;
+          _paused = false;
           _recordElapsed = Duration.zero;
         });
       }
@@ -301,76 +314,88 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     );
   }
 
-  void _pressMic(PointerDownEvent event) {
-    if (_recording ||
-        _recordPreparing ||
-        _uploadingVoice ||
-        ref.read(chatProvider).sending) {
-      return;
-    }
-    _holdingMic = true;
-    _micPointer = event.pointer;
-    unawaited(_startVoiceRecording());
+  void _showMicPermissionSettings() {
+    if (!mounted) return;
+    final language = ref.read(appLanguageProvider);
+    final isBn = language == 'bn';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isBn
+              ? 'মাইক্রোফোন বন্ধ আছে। সেটিংস থেকে অনুমতি চালু করুন।'
+              : 'Microphone access is blocked. Enable it in Settings.',
+        ),
+        action: SnackBarAction(
+          label: isBn ? 'সেটিংস' : 'Settings',
+          onPressed: openAppSettings,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final sending = ref.watch(chatProvider).sending;
+    final language = ref.watch(appLanguageProvider);
     String tr(String key) => AppTranslations.translate(context, ref, key);
-    late final Widget composer;
-    if (_recording || _uploadingVoice) {
-      composer = ComposerRecordingBar(
+
+    if (_voiceSheetOpen) {
+      return ComposerRecordingBar(
         elapsed: _recordElapsed,
         preparing: _recordPreparing,
         uploading: _uploadingVoice,
-        releaseLabel: tr('chat_release_to_send'),
+        paused: _paused,
+        viewOnce: _viewOnce,
+        useBengaliDigits: language == 'bn',
+        pauseLabel: tr('chat_voice_pause'),
+        resumeLabel: tr('chat_voice_resume'),
         preparingLabel: tr('chat_recording_starting'),
         sendingLabel: tr('chat_voice_sending'),
+        onDelete: () => unawaited(_cancelVoiceRecording()),
+        onPauseToggle: () => unawaited(_togglePause()),
+        onSend: () => unawaited(_finishVoiceRecording()),
+        onViewOnceToggle: () => setState(() => _viewOnce = !_viewOnce),
       );
-    } else if (!_expanded) {
-      composer = ComposerCollapsed(
+    }
+
+    if (!_expanded) {
+      return ComposerCollapsed(
         hint: _hint,
         onFocusTap: _openExpanded,
         onPlus: () => _attach(),
-        onMicDown: _pressMic,
-        voiceTooltip: tr('chat_hold_to_record'),
+        onMic: () => unawaited(_startVoiceRecording()),
+        voiceTooltip: tr('chat_tap_to_record'),
         preparingVoice: _recordPreparing,
       );
-    } else {
-      composer = ComposerExpandedShell(
-        pending: _pending,
-        onRemove: (i) => setState(() => _pending.removeAt(i)),
-        onAddPhoto: () => _attach(),
-        field: ComposerSlackField(
-          controller: _ctrl,
-          focusNode: _focus,
-          hint: _hint,
-          sending: sending,
-          canSend: _hasDraft,
-          expanded: _tall,
-          onAttach: () => _attach(source: ImageSource.gallery),
-          onFormat: () => wrapComposerBold(_ctrl),
-          onEmoji: () => showEmojiPicker(
-            context,
-            (emoji) => insertComposerEmoji(_ctrl, emoji),
-          ),
-          onMention: () => insertComposerAt(_ctrl),
-          onExpand: () => setState(() => _tall = !_tall),
-          onSend: _send,
-          attachTooltip: tr('chat_attach'),
-          formatTooltip: tr('chat_format'),
-          emojiTooltip: tr('chat_emoji'),
-          mentionTooltip: tr('chat_mention'),
-          expandTooltip: tr('chat_expand'),
-          sendTooltip: tr('chat_send'),
-        ),
-      );
     }
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerUp: (e) => _releaseVoiceRecording(e.pointer),
-      onPointerCancel: (e) => _releaseVoiceRecording(e.pointer),
-      child: composer,
+
+    return ComposerExpandedShell(
+      pending: _pending,
+      onRemove: (i) => setState(() => _pending.removeAt(i)),
+      onAddPhoto: () => _attach(),
+      field: ComposerSlackField(
+        controller: _ctrl,
+        focusNode: _focus,
+        hint: _hint,
+        sending: sending,
+        canSend: _hasDraft,
+        expanded: _tall,
+        onAttach: () => _attach(),
+        onFormat: () => wrapComposerBold(_ctrl),
+        onEmoji: () => showEmojiPicker(
+          context,
+          (emoji) => insertComposerEmoji(_ctrl, emoji),
+        ),
+        onMention: () => insertComposerAt(_ctrl),
+        onExpand: () => setState(() => _tall = !_tall),
+        onSend: _send,
+        attachTooltip: tr('chat_attach'),
+        formatTooltip: tr('chat_format'),
+        emojiTooltip: tr('chat_emoji'),
+        mentionTooltip: tr('chat_mention'),
+        expandTooltip: tr('chat_expand'),
+        sendTooltip: tr('chat_send'),
+      ),
     );
   }
 }

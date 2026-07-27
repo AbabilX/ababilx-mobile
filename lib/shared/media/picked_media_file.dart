@@ -37,6 +37,10 @@ Future<PickedMediaFile?> pickLiveCameraFile() async {
 }
 
 Future<PickedMediaFile?> pickGalleryImageFile() async {
+  if (Platform.isAndroid) {
+    return _pickImageViaFilePicker();
+  }
+
   final file = await ImagePicker().pickImage(
     source: ImageSource.gallery,
     imageQuality: 90,
@@ -48,6 +52,32 @@ Future<PickedMediaFile?> pickGalleryImageFile() async {
     bytes: bytes,
     fileName: file.name,
     contentType: file.mimeType ?? contentTypeForFileName(file.name),
+  );
+}
+
+Future<PickedMediaFile?> _pickImageViaFilePicker() async {
+  final result = await FilePicker.platform.pickFiles(
+    type: FileType.image,
+    allowMultiple: false,
+    withData: false,
+  );
+  if (result == null || result.files.isEmpty) return null;
+  final file = result.files.first;
+  _checkSize(file.size);
+
+  Uint8List? bytes = file.bytes;
+  final path = file.path;
+  if (bytes == null && path != null && path.isNotEmpty) {
+    bytes = await File(path).readAsBytes();
+  }
+  if (bytes == null || bytes.isEmpty) {
+    throw const FileSystemException('Could not read the selected image');
+  }
+  _checkSize(bytes.length);
+  return PickedMediaFile(
+    bytes: bytes,
+    fileName: file.name,
+    contentType: contentTypeForFileName(file.name),
   );
 }
 

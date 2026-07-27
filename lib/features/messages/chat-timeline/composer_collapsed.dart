@@ -58,35 +58,34 @@ class ComposerCollapsed extends StatelessWidget {
                     button: true,
                     label: voiceTooltip,
                     hint: voiceTooltip,
-                    child: Listener(
-                      onPointerDown: preparingVoice
-                          ? null
-                          : (event) {
-                              if (onMicDown != null) {
-                                onMicDown!(event);
-                              } else {
-                                onMic?.call();
-                              }
-                            },
-                      child: Tooltip(
-                        message: voiceTooltip,
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: preparingVoice
-                              ? SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: colors.primary,
-                                  ),
-                                )
-                              : ChatIcon(
-                                  HugeIcons.strokeRoundedMic01,
-                                  color: colors.onSurfaceVariant,
+                    child: Tooltip(
+                      message: voiceTooltip,
+                      child: preparingVoice
+                          ? Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: colors.primary,
                                 ),
-                        ),
-                      ),
+                              ),
+                            )
+                          : IconButton(
+                              onPressed: onMicDown != null || onMic != null
+                                  ? () {
+                                      if (onMic != null) {
+                                        onMic!();
+                                      }
+                                    }
+                                  : null,
+                              tooltip: voiceTooltip,
+                              icon: ChatIcon(
+                                HugeIcons.strokeRoundedMic01,
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
                     ),
                   ),
             ],

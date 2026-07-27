@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../shared/media/picked_media_file.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
+
+enum ComposerAttachKind { gallery, camera, file }
 
 /// Pending attachment strip — image thumbnails + “add photo” tile.
 class ComposerPendingPreviews extends StatelessWidget {
@@ -35,10 +38,7 @@ class ComposerPendingPreviews extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           if (i == items.length) {
-            return _AddPhotoTile(
-              size: _size,
-              onTap: onAddPhoto,
-            );
+            return _AddPhotoTile(size: _size, onTap: onAddPhoto);
           }
           final a = items[i];
           return _PendingThumb(
@@ -133,7 +133,8 @@ class _PendingThumb extends StatelessWidget {
                   ? CachedNetworkImage(
                       imageUrl: attachment.fileUrl,
                       fit: BoxFit.cover,
-                      placeholder: (_, _) => ColoredBox(color: placeholderColor),
+                      placeholder: (_, _) =>
+                          ColoredBox(color: placeholderColor),
                       errorWidget: (_, _, _) => ColoredBox(
                         color: placeholderColor,
                         child: Icon(
@@ -144,28 +145,14 @@ class _PendingThumb extends StatelessWidget {
                     )
                   : ColoredBox(
                       color: placeholderColor,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ChatIcon(
-                              HugeIcons.strokeRoundedFile01,
-                              size: 22,
-                              color: colors.onSurfaceVariant,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              attachment.fileName,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: colors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+                      child: Tooltip(
+                        message: attachment.fileName,
+                        child: Center(
+                          child: ChatIcon(
+                            HugeIcons.strokeRoundedFile01,
+                            size: 28,
+                            color: colors.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ),
@@ -198,53 +185,96 @@ class _PendingThumb extends StatelessWidget {
   }
 }
 
-Future<void> pickAndUploadImage(
+Future<ComposerAttachKind?> showComposerAttachSheet(BuildContext context) {
+  return showModalBottomSheet<ComposerAttachKind>(
+    context: context,
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const ChatIcon(HugeIcons.strokeRoundedImage01),
+            title: const Text('Gallery'),
+            onTap: () => Navigator.pop(ctx, ComposerAttachKind.gallery),
+          ),
+          ListTile(
+            leading: const ChatIcon(HugeIcons.strokeRoundedCamera01),
+            title: const Text('Camera'),
+            onTap: () => Navigator.pop(ctx, ComposerAttachKind.camera),
+          ),
+          ListTile(
+            leading: const ChatIcon(HugeIcons.strokeRoundedAttachment),
+            title: const Text('File'),
+            onTap: () => Navigator.pop(ctx, ComposerAttachKind.file),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Future<void> pickAndUploadAttachment(
   BuildContext context,
   WidgetRef ref, {
   required String conversationId,
   required ValueChanged<ChatAttachmentInput> onAdded,
   ImageSource? source,
 }) async {
-  final pickedSource = source ??
-      await showModalBottomSheet<ImageSource>(
-        context: context,
-        builder: (ctx) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const ChatIcon(HugeIcons.strokeRoundedImage01),
-                title: const Text('Gallery'),
-                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-              ),
-              ListTile(
-                leading: const ChatIcon(HugeIcons.strokeRoundedCamera01),
-                title: const Text('Camera'),
-                onTap: () => Navigator.pop(ctx, ImageSource.camera),
-              ),
-            ],
-          ),
-        ),
-      );
-  if (pickedSource == null) return;
-  final file = await ImagePicker().pickImage(source: pickedSource);
-  if (file == null) return;
-  final bytes = await file.readAsBytes();
-  final contentType = file.mimeType ?? 'image/jpeg';
+  ComposerAttachKind? kind;
+  if (source == ImageSource.gallery) {
+    kind = ComposerAttachKind.gallery;
+  } else if (source == ImageSource.camera) {
+    kind = ComposerAttachKind.camera;
+  } else {
+    kind = await showComposerAttachSheet(context);
+  }
+  if (kind == null) return;
+
+  // Native pickers fail on some Android builds if opened while the sheet
+  // is still animating closed.
+  await Future<void>.delayed(const Duration(milliseconds: 280));
+
+  final picked = switch (kind) {
+    ComposerAttachKind.gallery => await pickGalleryImageFile(),
+    ComposerAttachKind.camera => await pickLiveCameraFile(),
+    ComposerAttachKind.file => await pickDeviceFile(),
+  };
+  if (picked == null) return;
+
   final n = ref.read(chatProvider.notifier);
   final presign = await n.presignAttachment(
     conversationId,
-    contentType: contentType,
-    fileName: file.name,
-    sizeBytes: bytes.length,
+    contentType: picked.contentType,
+    fileName: picked.fileName,
+    sizeBytes: picked.sizeBytes,
   );
-  await n.uploadAttachmentBytes(presign, bytes, contentType);
-  onAdded(
-    ChatAttachmentInput(
-      fileUrl: presign.publicUrl,
-      fileName: file.name,
-      contentType: contentType,
-      sizeBytes: bytes.length,
-    ),
-  );
+  try {
+    await n.uploadAttachmentBytes(presign, picked.bytes, picked.contentType);
+    onAdded(
+      ChatAttachmentInput(
+        fileUrl: presign.publicUrl,
+        fileName: picked.fileName,
+        contentType: picked.contentType,
+        sizeBytes: picked.sizeBytes,
+      ),
+    );
+  } catch (_) {
+    await n.discardUpload(conversationId, presign.publicUrl);
+    rethrow;
+  }
 }
+
+/// Backwards-compatible alias used by older call sites.
+Future<void> pickAndUploadImage(
+  BuildContext context,
+  WidgetRef ref, {
+  required String conversationId,
+  required ValueChanged<ChatAttachmentInput> onAdded,
+  ImageSource? source,
+}) => pickAndUploadAttachment(
+  context,
+  ref,
+  conversationId: conversationId,
+  onAdded: onAdded,
+  source: source,
+);
