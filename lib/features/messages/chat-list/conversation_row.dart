@@ -25,9 +25,15 @@ class ConversationRow extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final title = conversation.displayTitle(currentUserId);
-    final preview = previewWithYou(conversation, currentUserId);
+    final preview = chatListPreview(conversation, currentUserId);
     final time = relativeChatTime(conversation.lastMessageAt);
     final unread = conversation.unreadCount > 0;
+    final previewStyle = TextStyle(
+      fontSize: 15,
+      height: 1.28,
+      color: colors.onSurfaceVariant,
+      fontWeight: unread ? FontWeight.w600 : FontWeight.w400,
+    );
 
     return InkWell(
       onTap: onTap,
@@ -80,17 +86,12 @@ class ConversationRow extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          preview,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 15,
-                            height: 1.28,
-                            color: colors.onSurfaceVariant,
-                            fontWeight: unread
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                        child: _PreviewLine(
+                          preview: preview,
+                          style: previewStyle,
+                          youStyle: previewStyle.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: colors.onSurface,
                           ),
                         ),
                       ),
@@ -102,6 +103,111 @@ class ConversationRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// One-row message preview + file badges; scrolls horizontally when needed.
+class _PreviewLine extends StatelessWidget {
+  const _PreviewLine({
+    required this.preview,
+    required this.style,
+    required this.youStyle,
+  });
+
+  final ChatListPreview preview;
+  final TextStyle style;
+  final TextStyle youStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final empty = !preview.hasText && !preview.hasFiles;
+
+    return SizedBox(
+      height: 28,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        children: [
+          if (preview.fromMe)
+            Center(
+              child: Text('You: ', style: youStyle),
+            ),
+          if (preview.hasText)
+            Center(
+              child: Text(preview.text, style: style),
+            )
+          else if (empty)
+            Center(
+              child: Text('No messages yet', style: style),
+            ),
+          if (preview.hasFiles) ...[
+            if (preview.hasText || preview.fromMe) const SizedBox(width: 8),
+            for (var i = 0; i < preview.files.length; i++) ...[
+              if (i > 0) const SizedBox(width: 6),
+              _FileBadge(file: preview.files[i], colors: colors),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FileBadge extends StatelessWidget {
+  const _FileBadge({required this.file, required this.colors});
+
+  final ChatLastAttachment file;
+  final ColorScheme colors;
+
+  IconData get _icon {
+    if (file.isImage) return Icons.image_outlined;
+    if (file.isVideo) return Icons.videocam_outlined;
+    if (file.isAudio) return Icons.graphic_eq_rounded;
+    if (file.isPdf) return Icons.picture_as_pdf_outlined;
+    return Icons.attach_file_rounded;
+  }
+
+  String get _label {
+    final name = file.fileName.trim();
+    if (name.isNotEmpty) return name;
+    if (file.isImage) return 'Photo';
+    if (file.isVideo) return 'Video';
+    if (file.isAudio) return 'Audio';
+    if (file.isPdf) return 'PDF';
+    return 'File';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 140),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.outlineVariant.withValues(alpha: 0.6)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_icon, size: 14, color: colors.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              _label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colors.onSurface,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

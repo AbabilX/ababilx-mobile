@@ -1,5 +1,40 @@
 import 'package:equatable/equatable.dart';
 
+class ChatLastAttachment extends Equatable {
+  const ChatLastAttachment({
+    required this.fileName,
+    required this.contentType,
+  });
+
+  final String fileName;
+  final String contentType;
+
+  factory ChatLastAttachment.fromJson(Map<String, dynamic> json) =>
+      ChatLastAttachment(
+        fileName: _jsonString(json['file_name'] ?? json['fileName']) ?? '',
+        contentType:
+            _jsonString(json['content_type'] ?? json['contentType']) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'file_name': fileName,
+        'content_type': contentType,
+      };
+
+  bool get isImage => contentType.toLowerCase().startsWith('image/');
+  bool get isVideo => contentType.toLowerCase().startsWith('video/');
+  bool get isAudio => contentType.toLowerCase().startsWith('audio/');
+  bool get isPdf {
+    final ct = contentType.toLowerCase();
+    return ct == 'application/pdf' ||
+        ct == 'application/x-pdf' ||
+        fileName.toLowerCase().endsWith('.pdf');
+  }
+
+  @override
+  List<Object?> get props => [fileName, contentType];
+}
+
 class ChatConversation extends Equatable {
   const ChatConversation({
     required this.id,
@@ -17,6 +52,7 @@ class ChatConversation extends Equatable {
     this.lastMessageUserId,
     this.lastMessageAttachmentType,
     this.lastMessageAttachmentName,
+    this.lastMessageAttachments = const [],
     this.peerUserId,
     this.peerUserName,
     this.peerUserAvatar,
@@ -41,6 +77,7 @@ class ChatConversation extends Equatable {
   final String? lastMessageUserId;
   final String? lastMessageAttachmentType;
   final String? lastMessageAttachmentName;
+  final List<ChatLastAttachment> lastMessageAttachments;
   final String? peerUserId;
   final String? peerUserName;
   final String? peerUserAvatar;
@@ -52,6 +89,15 @@ class ChatConversation extends Equatable {
   bool get isChannel => type == 'channel';
   bool get isDm => type == 'dm';
 
+  /// Resolved file chips for list preview (API list or legacy single fields).
+  List<ChatLastAttachment> get previewAttachments {
+    if (lastMessageAttachments.isNotEmpty) return lastMessageAttachments;
+    final type = lastMessageAttachmentType?.trim() ?? '';
+    final name = lastMessageAttachmentName?.trim() ?? '';
+    if (type.isEmpty && name.isEmpty) return const [];
+    return [ChatLastAttachment(fileName: name, contentType: type)];
+  }
+
   String displayTitle(String? currentUserId) {
     if (isChannel) return name ?? slug ?? 'Channel';
     return peerUserName ?? 'Direct message';
@@ -59,32 +105,56 @@ class ChatConversation extends Equatable {
 
   factory ChatConversation.fromJson(
     Map<String, dynamic> json,
-  ) => ChatConversation(
-    id: json['id'] as String? ?? '',
-    teamId: json['team_id'] as String? ?? '',
-    type: json['type'] as String? ?? 'channel',
-    name: json['name'] as String?,
-    slug: json['slug'] as String?,
-    isPrivate: json['is_private'] as bool? ?? false,
-    createdBy: json['created_by'] as String?,
-    createdAt: json['created_at'] as String? ?? '',
-    archivedAt: json['archived_at'] as String?,
-    unreadCount: json['unread_count'] as int? ?? 0,
-    lastMessageAt: json['last_message_at'] as String?,
-    lastMessageBody: json['last_message_body'] as String?,
-    lastMessageUserId: json['last_message_user_id'] as String?,
-    lastMessageAttachmentType: json['last_message_attachment_type'] as String?,
-    lastMessageAttachmentName: json['last_message_attachment_name'] as String?,
-    peerUserId: json['peer_user_id'] as String?,
-    peerUserName: json['peer_user_name'] as String?,
-    peerUserAvatar: json['peer_user_avatar'] as String?,
-    peerLeft: json['peer_left'] as bool? ?? false,
-    muted: json['muted'] as bool? ?? false,
-    memberAvatars: (json['member_avatars'] as List<dynamic>? ?? [])
-        .map((e) => e.toString())
-        .toList(),
-    memberCount: json['member_count'] as int?,
-  );
+  ) {
+    final attsRaw = json['last_message_attachments'] ??
+        json['lastMessageAttachments'];
+    final parsedAtts = <ChatLastAttachment>[];
+    if (attsRaw is List) {
+      for (final e in attsRaw) {
+        if (e is Map<String, dynamic>) {
+          parsedAtts.add(ChatLastAttachment.fromJson(e));
+        } else if (e is Map) {
+          parsedAtts.add(
+            ChatLastAttachment.fromJson(Map<String, dynamic>.from(e)),
+          );
+        }
+      }
+    }
+
+    return ChatConversation(
+      id: _jsonString(json['id']) ?? '',
+      teamId: _jsonString(json['team_id']) ?? '',
+      type: _jsonString(json['type']) ?? 'channel',
+      name: _jsonString(json['name']),
+      slug: _jsonString(json['slug']),
+      isPrivate: json['is_private'] as bool? ?? false,
+      createdBy: _jsonString(json['created_by']),
+      createdAt: _jsonString(json['created_at']) ?? '',
+      archivedAt: _jsonString(json['archived_at']),
+      unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
+      lastMessageAt: _jsonString(json['last_message_at']),
+      lastMessageBody: _jsonString(json['last_message_body']),
+      lastMessageUserId: _jsonString(
+        json['last_message_user_id'] ?? json['lastMessageUserId'],
+      ),
+      lastMessageAttachmentType: _jsonString(
+        json['last_message_attachment_type'],
+      ),
+      lastMessageAttachmentName: _jsonString(
+        json['last_message_attachment_name'],
+      ),
+      lastMessageAttachments: parsedAtts,
+      peerUserId: _jsonString(json['peer_user_id']),
+      peerUserName: _jsonString(json['peer_user_name']),
+      peerUserAvatar: _jsonString(json['peer_user_avatar']),
+      peerLeft: json['peer_left'] as bool? ?? false,
+      muted: json['muted'] as bool? ?? false,
+      memberAvatars: (json['member_avatars'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList(),
+      memberCount: (json['member_count'] as num?)?.toInt(),
+    );
+  }
 
   ChatConversation copyWith({
     int? unreadCount,
@@ -93,6 +163,7 @@ class ChatConversation extends Equatable {
     String? lastMessageUserId,
     String? lastMessageAttachmentType,
     String? lastMessageAttachmentName,
+    List<ChatLastAttachment>? lastMessageAttachments,
     bool clearLastMessageAttachment = false,
     bool? muted,
     String? name,
@@ -116,6 +187,9 @@ class ChatConversation extends Equatable {
     lastMessageAttachmentName: clearLastMessageAttachment
         ? null
         : (lastMessageAttachmentName ?? this.lastMessageAttachmentName),
+    lastMessageAttachments: clearLastMessageAttachment
+        ? const []
+        : (lastMessageAttachments ?? this.lastMessageAttachments),
     peerUserId: peerUserId,
     peerUserName: peerUserName,
     peerUserAvatar: peerUserAvatar,
@@ -131,9 +205,21 @@ class ChatConversation extends Equatable {
     unreadCount,
     lastMessageAt,
     lastMessageBody,
+    lastMessageUserId,
     lastMessageAttachmentType,
     lastMessageAttachmentName,
+    lastMessageAttachments,
     muted,
     name,
+    peerUserName,
   ];
+}
+
+String? _jsonString(dynamic value) {
+  if (value == null) return null;
+  if (value is String) {
+    final t = value.trim();
+    return t.isEmpty ? null : t;
+  }
+  return value.toString();
 }

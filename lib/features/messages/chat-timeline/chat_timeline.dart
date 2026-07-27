@@ -130,6 +130,8 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
                   .conversationById(widget.conversationId)
                   ?.displayTitle(chat.currentUserId) ??
               'someone',
+          isGroup: chat.conversationById(widget.conversationId)?.isChannel ??
+              false,
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -78,30 +79,86 @@ class _Btn extends StatelessWidget {
   }
 }
 
+/// Full mobile-style emoji keyboard (not a fixed shortlist).
 Future<void> showEmojiPicker(
   BuildContext context,
-  ValueChanged<String> onPick,
+  TextEditingController controller,
 ) async {
-  const emojis = ['👍', '❤️', '😂', '🎉', '🔥', '👀', '✅', '🙏'];
-  final picked = await showModalBottomSheet<String>(
+  final scheme = Theme.of(context).colorScheme;
+  await showModalBottomSheet<void>(
     context: context,
+    isScrollControlled: true,
+    backgroundColor: scheme.surface,
     builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: emojis
-              .map(
-                (e) => InkWell(
-                  onTap: () => Navigator.pop(ctx, e),
-                  child: Text(e, style: const TextStyle(fontSize: 28)),
-                ),
-              )
-              .toList(),
+      child: SizedBox(
+        height: 320,
+        child: EmojiPicker(
+          textEditingController: controller,
+          config: Config(
+            height: 320,
+            checkPlatformCompatibility: true,
+            emojiViewConfig: EmojiViewConfig(
+              backgroundColor: scheme.surface,
+              columns: 8,
+              emojiSizeMax: 28,
+            ),
+            categoryViewConfig: CategoryViewConfig(
+              backgroundColor: scheme.surface,
+              iconColor: scheme.onSurfaceVariant,
+              iconColorSelected: scheme.primary,
+              indicatorColor: scheme.primary,
+            ),
+            bottomActionBarConfig: const BottomActionBarConfig(enabled: false),
+            searchViewConfig: SearchViewConfig(
+              backgroundColor: scheme.surface,
+              buttonIconColor: scheme.onSurfaceVariant,
+            ),
+          ),
         ),
       ),
     ),
   );
-  if (picked != null) onPick(picked);
+}
+
+/// Inline emoji panel under the composer (toggles with soft keyboard).
+class ComposerEmojiPanel extends StatelessWidget {
+  const ComposerEmojiPanel({
+    super.key,
+    required this.controller,
+    this.height = 280,
+  });
+
+  final TextEditingController controller;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: height,
+      child: EmojiPicker(
+        textEditingController: controller,
+        config: Config(
+          height: height,
+          checkPlatformCompatibility: true,
+          emojiViewConfig: EmojiViewConfig(
+            backgroundColor: scheme.surface,
+            columns: 8,
+            emojiSizeMax: 28,
+          ),
+          categoryViewConfig: CategoryViewConfig(
+            backgroundColor: scheme.surface,
+            iconColor: scheme.onSurfaceVariant,
+            iconColorSelected: scheme.primary,
+            indicatorColor: scheme.primary,
+          ),
+          bottomActionBarConfig: const BottomActionBarConfig(enabled: false),
+          searchViewConfig: SearchViewConfig(
+            backgroundColor: scheme.surface,
+            buttonIconColor: scheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
 }

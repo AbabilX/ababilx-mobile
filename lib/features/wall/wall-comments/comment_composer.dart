@@ -10,7 +10,6 @@ import '../../../shared/media/picked_media_file.dart';
 import '../../../shared/widgets/action_composer.dart';
 import '../../../shared/widgets/voice_capture_action.dart';
 import '../../messages/chat-timeline/composer_collapsed.dart';
-import '../../messages/chat-timeline/composer_text_actions.dart';
 import '../../messages/chat-timeline/composer_toolbar.dart';
 import '../../messages/chat-timeline/voice_message_recorder.dart';
 import '../../messages/providers/team_gate_provider.dart';
@@ -307,10 +306,7 @@ class _WallCommentComposerState extends ConsumerState<WallCommentComposer> {
         ComposerActionButton(
           tooltip: 'Emoji',
           icon: Icons.sentiment_satisfied_alt_outlined,
-          onPressed: () => showEmojiPicker(
-            context,
-            (emoji) => insertComposerEmoji(_ctrl, emoji),
-          ),
+          onPressed: () => showEmojiPicker(context, _ctrl),
         ),
         ComposerActionButton(
           tooltip: _tall ? 'Collapse' : 'Expand',

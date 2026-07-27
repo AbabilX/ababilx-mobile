@@ -17,6 +17,8 @@ extension ChatConversationJson on ChatConversation {
         'last_message_user_id': lastMessageUserId,
         'last_message_attachment_type': lastMessageAttachmentType,
         'last_message_attachment_name': lastMessageAttachmentName,
+        'last_message_attachments':
+            lastMessageAttachments.map((a) => a.toJson()).toList(),
         'peer_user_id': peerUserId,
         'peer_user_name': peerUserName,
         'peer_user_avatar': peerUserAvatar,

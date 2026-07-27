@@ -1,5 +1,29 @@
 import 'dart:convert';
 
+/// True when body is empty / empty TipTap doc (web `isTiptapEmpty`).
+bool isTiptapEmpty(String? value) {
+  final trimmed = value?.trim() ?? '';
+  if (trimmed.isEmpty) return true;
+  if (!_looksLikeTiptapJson(trimmed)) return false;
+  try {
+    final decoded = jsonDecode(trimmed);
+    if (decoded is! Map) return false;
+    final map = Map<String, dynamic>.from(decoded);
+    if (map['type'] != 'doc') return false;
+    final content = map['content'];
+    if (content is! List || content.isEmpty) return true;
+    return content.every((block) {
+      if (block is! Map) return false;
+      final b = Map<String, dynamic>.from(block);
+      if (b['type'] != 'paragraph') return false;
+      final inner = b['content'];
+      return inner == null || (inner is List && inner.isEmpty);
+    });
+  } catch (_) {
+    return false;
+  }
+}
+
 /// TipTap/ProseMirror JSON → plain text (mirrors web `tiptapToPlainText`).
 String tiptapToPlainText(String? value) {
   final trimmed = value?.trim() ?? '';

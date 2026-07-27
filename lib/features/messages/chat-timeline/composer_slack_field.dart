@@ -3,8 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../chat_icon.dart';
 
-/// Focused two-level composer matching Slack mobile: writing area on top,
-/// quick actions below, and a persistent send action at the far right.
+/// Focused two-level composer: writing area on top, quick actions below.
 class ComposerSlackField extends StatelessWidget {
   const ComposerSlackField({
     super.key,
@@ -14,18 +13,19 @@ class ComposerSlackField extends StatelessWidget {
     required this.sending,
     required this.canSend,
     required this.expanded,
+    required this.isGroup,
     required this.onAttach,
-    required this.onFormat,
-    required this.onEmoji,
+    required this.onVoice,
+    required this.onShareContact,
     required this.onMention,
     required this.onExpand,
     required this.onSend,
     required this.attachTooltip,
-    required this.formatTooltip,
-    required this.emojiTooltip,
+    required this.voiceTooltip,
+    required this.shareContactTooltip,
     required this.mentionTooltip,
     required this.expandTooltip,
-    required this.sendTooltip,
+    required this.sendLabel,
   });
 
   final TextEditingController controller;
@@ -34,18 +34,24 @@ class ComposerSlackField extends StatelessWidget {
   final bool sending;
   final bool canSend;
   final bool expanded;
+
+  /// Channel/group — show @ mention beside share-contact.
+  final bool isGroup;
   final VoidCallback onAttach;
-  final VoidCallback onFormat;
-  final VoidCallback onEmoji;
+  final VoidCallback onVoice;
+  final VoidCallback onShareContact;
   final VoidCallback onMention;
   final VoidCallback onExpand;
   final VoidCallback onSend;
   final String attachTooltip;
-  final String formatTooltip;
-  final String emojiTooltip;
+  final String voiceTooltip;
+  final String shareContactTooltip;
   final String mentionTooltip;
   final String expandTooltip;
-  final String sendTooltip;
+  final String sendLabel;
+
+  static const double _actionSize = 40;
+  static const double _iconSize = 22;
 
   @override
   Widget build(BuildContext context) {
@@ -93,54 +99,50 @@ class ComposerSlackField extends StatelessWidget {
             textInputAction: TextInputAction.newline,
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 0, 8, 8),
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
             child: Row(
               children: [
-                _CircleAction(
+                _ToolbarAction(
                   tooltip: attachTooltip,
                   onPressed: sending ? null : onAttach,
                   child: ChatIcon(
                     HugeIcons.strokeRoundedAdd01,
-                    size: 22,
+                    size: _iconSize,
                     color: muted,
                   ),
                 ),
-                const SizedBox(width: 8),
                 _ToolbarAction(
-                  tooltip: formatTooltip,
-                  onPressed: sending ? null : onFormat,
-                  child: Text(
-                    'Aa',
-                    style: TextStyle(
-                      color: muted,
-                      fontSize: 20,
-                      height: 1,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                _ToolbarAction(
-                  tooltip: emojiTooltip,
-                  onPressed: sending ? null : onEmoji,
-                  child: Icon(
-                    Icons.sentiment_satisfied_alt_outlined,
+                  tooltip: voiceTooltip,
+                  onPressed: sending ? null : onVoice,
+                  child: ChatIcon(
+                    HugeIcons.strokeRoundedMic01,
+                    size: _iconSize,
                     color: muted,
-                    size: 23,
                   ),
                 ),
                 _ToolbarAction(
-                  tooltip: mentionTooltip,
-                  onPressed: sending ? null : onMention,
-                  child: Text(
-                    '@',
-                    style: TextStyle(
-                      color: muted,
-                      fontSize: 25,
-                      height: 1,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  tooltip: shareContactTooltip,
+                  onPressed: sending ? null : onShareContact,
+                  child: ChatIcon(
+                    HugeIcons.strokeRoundedContactBook,
+                    size: _iconSize,
+                    color: muted,
                   ),
                 ),
+                if (isGroup)
+                  _ToolbarAction(
+                    tooltip: mentionTooltip,
+                    onPressed: sending ? null : onMention,
+                    child: Text(
+                      '@',
+                      style: TextStyle(
+                        color: muted,
+                        fontSize: 22,
+                        height: 1,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 _ToolbarAction(
                   tooltip: expandTooltip,
                   onPressed: sending ? null : onExpand,
@@ -149,64 +151,41 @@ class ComposerSlackField extends StatelessWidget {
                         ? Icons.close_fullscreen_rounded
                         : Icons.edit_outlined,
                     color: muted,
-                    size: 22,
+                    size: _iconSize,
                   ),
                 ),
                 const Spacer(),
                 if (sending)
-                  const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: SizedBox(
-                      width: 21,
-                      height: 21,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                  const SizedBox(
+                    width: _actionSize,
+                    height: _actionSize,
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     ),
                   )
                 else
-                  IconButton(
-                    tooltip: sendTooltip,
+                  TextButton(
                     onPressed: canSend ? onSend : null,
-                    icon: Icon(
-                      Icons.send_rounded,
-                      size: 27,
-                      color: canSend
-                          ? colors.primary
-                          : muted.withValues(alpha: 0.45),
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(0, _actionSize),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      foregroundColor: colors.primary,
+                      disabledForegroundColor: muted.withValues(alpha: 0.45),
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                    child: Text(sendLabel),
                   ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CircleAction extends StatelessWidget {
-  const _CircleAction({
-    required this.tooltip,
-    required this.onPressed,
-    required this.child,
-  });
-
-  final String tooltip;
-  final VoidCallback? onPressed;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: colors.surfaceContainerHighest,
-        shape: const CircleBorder(),
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: const CircleBorder(),
-          child: SizedBox(width: 40, height: 40, child: Center(child: child)),
-        ),
       ),
     );
   }
@@ -227,8 +206,11 @@ class _ToolbarAction extends StatelessWidget {
   Widget build(BuildContext context) => IconButton(
     tooltip: tooltip,
     onPressed: onPressed,
-    visualDensity: VisualDensity.compact,
-    constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+    visualDensity: VisualDensity.standard,
+    constraints: const BoxConstraints.tightFor(
+      width: ComposerSlackField._actionSize,
+      height: ComposerSlackField._actionSize,
+    ),
     padding: EdgeInsets.zero,
     icon: child,
   );

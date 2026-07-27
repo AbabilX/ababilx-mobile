@@ -21,6 +21,20 @@ void insertComposerAt(TextEditingController ctrl) {
   );
 }
 
+void insertComposerText(TextEditingController ctrl, String snippet) {
+  final t = ctrl.text;
+  final at = ctrl.selection.isValid ? ctrl.selection.start : t.length;
+  final before = t.substring(0, at);
+  final after = t.substring(at);
+  final needsPadBefore =
+      before.isNotEmpty && !before.endsWith('\n') && !before.endsWith(' ');
+  final insert = '${needsPadBefore ? '\n' : ''}$snippet';
+  ctrl.value = TextEditingValue(
+    text: '$before$insert$after',
+    selection: TextSelection.collapsed(offset: before.length + insert.length),
+  );
+}
+
 void insertComposerEmoji(TextEditingController ctrl, String emoji) {
   final t = ctrl.text;
   final at = ctrl.selection.isValid ? ctrl.selection.start : t.length;

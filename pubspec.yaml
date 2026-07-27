@@ -66,6 +66,7 @@ dependencies:
   pdfx: ^2.9.2
   webview_flutter: ^4.14.1
   video_player: ^2.13.0
+  emoji_picker_flutter: ^4.5.3
 
 dev_dependencies:
   flutter_test:

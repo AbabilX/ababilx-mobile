@@ -11,6 +11,7 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
     String? lastMessageUserId,
     String? lastMessageAttachmentType,
     String? lastMessageAttachmentName,
+    List<ChatLastAttachment>? lastMessageAttachments,
     bool clearLastMessageAttachment = false,
     bool? muted,
     String? name,
@@ -27,6 +28,7 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
         lastMessageUserId: lastMessageUserId,
         lastMessageAttachmentType: lastMessageAttachmentType,
         lastMessageAttachmentName: lastMessageAttachmentName,
+        lastMessageAttachments: lastMessageAttachments,
         clearLastMessageAttachment: clearLastMessageAttachment,
         muted: muted ?? c.muted,
         name: name,
@@ -40,7 +42,14 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
     ChatMessage msg, {
     required bool bumpUnread,
   }) {
-    final att = msg.attachments.isNotEmpty ? msg.attachments.first : null;
+    final atts = [
+      for (final a in msg.attachments)
+        ChatLastAttachment(
+          fileName: a.fileName,
+          contentType: a.contentType,
+        ),
+    ];
+    final first = atts.isNotEmpty ? atts.first : null;
     state = state.copyWith(
       dms: patchList(
         state.dms,
@@ -48,9 +57,10 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
         lastMessageAt: msg.createdAt,
         lastMessageBody: msg.body,
         lastMessageUserId: msg.userId,
-        lastMessageAttachmentType: att?.contentType,
-        lastMessageAttachmentName: att?.fileName,
-        clearLastMessageAttachment: att == null,
+        lastMessageAttachmentType: first?.contentType,
+        lastMessageAttachmentName: first?.fileName,
+        lastMessageAttachments: atts,
+        clearLastMessageAttachment: atts.isEmpty,
         bumpUnread: bumpUnread,
       ),
       channels: patchList(
@@ -59,9 +69,10 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
         lastMessageAt: msg.createdAt,
         lastMessageBody: msg.body,
         lastMessageUserId: msg.userId,
-        lastMessageAttachmentType: att?.contentType,
-        lastMessageAttachmentName: att?.fileName,
-        clearLastMessageAttachment: att == null,
+        lastMessageAttachmentType: first?.contentType,
+        lastMessageAttachmentName: first?.fileName,
+        lastMessageAttachments: atts,
+        clearLastMessageAttachment: atts.isEmpty,
         bumpUnread: bumpUnread,
       ),
     );
@@ -78,6 +89,13 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
                         lastMessageAt: dm.lastMessageAt ?? d.lastMessageAt,
                         lastMessageBody:
                             dm.lastMessageBody ?? d.lastMessageBody,
+                        lastMessageUserId:
+                            dm.lastMessageUserId ?? d.lastMessageUserId,
+                        lastMessageAttachmentType:
+                            dm.lastMessageAttachmentType,
+                        lastMessageAttachmentName:
+                            dm.lastMessageAttachmentName,
+                        lastMessageAttachments: dm.lastMessageAttachments,
                         name: dm.name,
                       )
                     : d,

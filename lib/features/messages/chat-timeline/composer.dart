@@ -14,9 +14,9 @@ import 'composer_attach.dart';
 import 'composer_collapsed.dart';
 import 'composer_expanded_shell.dart';
 import 'composer_recording_bar.dart';
+import 'composer_share_contact.dart';
 import 'composer_slack_field.dart';
 import 'composer_text_actions.dart';
-import 'composer_toolbar.dart';
 import 'voice_message_recorder.dart';
 
 class MessageComposer extends ConsumerStatefulWidget {
@@ -26,12 +26,16 @@ class MessageComposer extends ConsumerStatefulWidget {
     this.parentId,
     this.hintName = 'someone',
     this.initialText = '',
+    this.isGroup = false,
   });
 
   final String conversationId;
   final String? parentId;
   final String hintName;
   final String initialText;
+
+  /// Channel/group — show @ mention beside share-contact.
+  final bool isGroup;
 
   @override
   ConsumerState<MessageComposer> createState() => _MessageComposerState();
@@ -306,6 +310,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
   }
 
+  Future<void> _shareContact() async {
+    final member = await showShareContactSheet(context);
+    if (member == null || !mounted) return;
+    insertComposerText(_ctrl, formatSharedContact(member));
+    setState(() => _forceExpanded = true);
+    _focus.requestFocus();
+  }
+
   void _showMessage(String english, String bangla) {
     if (!mounted) return;
     final language = ref.read(appLanguageProvider);
@@ -380,21 +392,19 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         sending: sending,
         canSend: _hasDraft,
         expanded: _tall,
+        isGroup: widget.isGroup,
         onAttach: () => _attach(),
-        onFormat: () => wrapComposerBold(_ctrl),
-        onEmoji: () => showEmojiPicker(
-          context,
-          (emoji) => insertComposerEmoji(_ctrl, emoji),
-        ),
+        onVoice: () => unawaited(_startVoiceRecording()),
+        onShareContact: () => unawaited(_shareContact()),
         onMention: () => insertComposerAt(_ctrl),
         onExpand: () => setState(() => _tall = !_tall),
         onSend: _send,
         attachTooltip: tr('chat_attach'),
-        formatTooltip: tr('chat_format'),
-        emojiTooltip: tr('chat_emoji'),
+        voiceTooltip: tr('chat_tap_to_record'),
+        shareContactTooltip: tr('chat_share_contact'),
         mentionTooltip: tr('chat_mention'),
         expandTooltip: tr('chat_expand'),
-        sendTooltip: tr('chat_send'),
+        sendLabel: tr('chat_send'),
       ),
     );
   }
