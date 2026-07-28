@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
@@ -55,14 +56,8 @@ class BoardScreen extends ConsumerWidget {
 class _BoardListBody extends ConsumerWidget {
   const _BoardListBody();
 
-  void _openSoon(BuildContext context, KanbanBoard board) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${board.name} — full board view coming soon on mobile. Use the web app for now.',
-        ),
-      ),
-    );
+  void _openBoard(BuildContext context, KanbanBoard board) {
+    context.push('/board/${board.id}');
   }
 
   @override
@@ -101,7 +96,7 @@ class _BoardListBody extends ConsumerWidget {
                 color: colors.surface,
                 borderRadius: BorderRadius.circular(14),
                 child: InkWell(
-                  onTap: () => _openSoon(context, board),
+                  onTap: () => _openBoard(context, board),
                   borderRadius: BorderRadius.circular(14),
                   child: Ink(
                     decoration: BoxDecoration(

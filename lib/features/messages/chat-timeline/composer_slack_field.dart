@@ -26,6 +26,8 @@ class ComposerSlackField extends StatelessWidget {
     required this.mentionTooltip,
     required this.expandTooltip,
     required this.sendLabel,
+    this.showVoice = true,
+    this.showShareContact = true,
   });
 
   final TextEditingController controller;
@@ -49,6 +51,8 @@ class ComposerSlackField extends StatelessWidget {
   final String mentionTooltip;
   final String expandTooltip;
   final String sendLabel;
+  final bool showVoice;
+  final bool showShareContact;
 
   static const double _actionSize = 40;
   static const double _iconSize = 22;
@@ -111,24 +115,26 @@ class ComposerSlackField extends StatelessWidget {
                     color: muted,
                   ),
                 ),
-                _ToolbarAction(
-                  tooltip: voiceTooltip,
-                  onPressed: sending ? null : onVoice,
-                  child: ChatIcon(
-                    HugeIcons.strokeRoundedMic01,
-                    size: _iconSize,
-                    color: muted,
+                if (showVoice)
+                  _ToolbarAction(
+                    tooltip: voiceTooltip,
+                    onPressed: sending ? null : onVoice,
+                    child: ChatIcon(
+                      HugeIcons.strokeRoundedMic01,
+                      size: _iconSize,
+                      color: muted,
+                    ),
                   ),
-                ),
-                _ToolbarAction(
-                  tooltip: shareContactTooltip,
-                  onPressed: sending ? null : onShareContact,
-                  child: ChatIcon(
-                    HugeIcons.strokeRoundedContactBook,
-                    size: _iconSize,
-                    color: muted,
+                if (showShareContact)
+                  _ToolbarAction(
+                    tooltip: shareContactTooltip,
+                    onPressed: sending ? null : onShareContact,
+                    child: ChatIcon(
+                      HugeIcons.strokeRoundedContactBook,
+                      size: _iconSize,
+                      color: muted,
+                    ),
                   ),
-                ),
                 if (isGroup)
                   _ToolbarAction(
                     tooltip: mentionTooltip,

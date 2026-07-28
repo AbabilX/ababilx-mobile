@@ -17,6 +17,19 @@ class ApiConstants {
   // Team
   static const String teamsMe = '/api/teams/me';
   static const String kanbanBoards = '/api/teams/kanban/boards';
+  static String kanbanBoard(String boardId) =>
+      '/api/teams/kanban/boards/$boardId';
+  static String kanbanBoardTasks(String boardId) =>
+      '/api/teams/kanban/boards/$boardId/tasks';
+  static String kanbanTask(String taskId) => '/api/teams/kanban/tasks/$taskId';
+  static String kanbanTaskMove(String taskId) =>
+      '/api/teams/kanban/tasks/$taskId/move';
+  static String kanbanTaskComments(String taskId) =>
+      '/api/teams/kanban/tasks/$taskId/comments';
+  static String kanbanTaskAttachmentsPresign(String taskId) =>
+      '/api/teams/kanban/tasks/$taskId/attachments/presign';
+  static String kanbanTaskAttachmentsDiscard(String taskId) =>
+      '/api/teams/kanban/tasks/$taskId/attachments/discard';
 
   // CRM
   static const String crmDashboard = '/api/teams/crm/dashboard';

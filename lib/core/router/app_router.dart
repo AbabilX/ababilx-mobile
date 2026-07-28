@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/board/screens/board_screen.dart';
+import '../../features/board/screens/board_detail_screen.dart';
+import '../../features/board/screens/board_task_detail_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
@@ -103,6 +105,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => ConversationScreen(
           conversationId: state.pathParameters['id']!,
           threadRootId: state.uri.queryParameters['thread'],
+        ),
+      ),
+      GoRoute(
+        path: '/board/:boardId/tasks/:taskId',
+        builder: (_, state) => BoardTaskDetailScreen(
+          boardId: state.pathParameters['boardId']!,
+          taskId: state.pathParameters['taskId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/board/:boardId',
+        builder: (_, state) => BoardDetailScreen(
+          boardId: state.pathParameters['boardId']!,
+          taskId: state.uri.queryParameters['taskId'],
         ),
       ),
       GoRoute(

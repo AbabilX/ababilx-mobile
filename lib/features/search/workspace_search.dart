@@ -64,11 +64,14 @@ class WorkspaceSearchDelegate extends SearchDelegate<void> {
         }
       case 'task':
       case 'task_comment':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Board tasks are not available on mobile yet'),
-          ),
-        );
+        final boardId = hit.boardId;
+        final taskId = hit.taskId;
+        if (boardId != null &&
+            boardId.isNotEmpty &&
+            taskId != null &&
+            taskId.isNotEmpty) {
+          context.push('/board/$boardId/tasks/$taskId');
+        }
       default:
         break;
     }

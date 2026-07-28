@@ -9,6 +9,7 @@ import 'message_actions.dart';
 import 'message_body.dart';
 import 'quick_react_sheet.dart';
 import 'reaction_row.dart';
+import 'thread_sheet.dart';
 import 'thread_summary.dart';
 
 class MessageRow extends ConsumerWidget {
@@ -31,7 +32,7 @@ class MessageRow extends ConsumerWidget {
     final name = message.userName ?? 'Unknown';
     final n = ref.read(chatProvider.notifier);
 
-    // GestureDetector (long-press only) so attachment taps are not stolen.
+    // Long-press actions; double-tap opens thread (DM + channels).
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: () => showMessageActions(
@@ -41,6 +42,9 @@ class MessageRow extends ConsumerWidget {
         conversationId: conversationId,
         threadRootId: threadRootId,
       ),
+      onDoubleTap: threadRootId == null
+          ? () => openThreadSheet(context, conversationId, message)
+          : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
         child: Row(
