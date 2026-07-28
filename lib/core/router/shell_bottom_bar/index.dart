@@ -20,7 +20,7 @@ class ShellBottomBar extends StatelessWidget {
     this.messagesLabel = '',
     this.wallLabel = '',
     this.crmLabel = '',
-    this.profileLabel = '',
+    this.boardLabel = '',
     this.showCrm = false,
     this.unread = 0,
     // Contacts
@@ -48,7 +48,7 @@ class ShellBottomBar extends StatelessWidget {
   final String messagesLabel;
   final String wallLabel;
   final String crmLabel;
-  final String profileLabel;
+  final String boardLabel;
   final bool showCrm;
   final int unread;
 
@@ -102,7 +102,7 @@ class ShellBottomBar extends StatelessWidget {
                         messagesLabel: messagesLabel,
                         wallLabel: wallLabel,
                         crmLabel: crmLabel,
-                        profileLabel: profileLabel,
+                        boardLabel: boardLabel,
                         showCrm: showCrm,
                         unread: unread,
                       ),

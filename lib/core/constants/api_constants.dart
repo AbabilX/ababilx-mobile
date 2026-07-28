@@ -16,6 +16,7 @@ class ApiConstants {
 
   // Team
   static const String teamsMe = '/api/teams/me';
+  static const String kanbanBoards = '/api/teams/kanban/boards';
 
   // CRM
   static const String crmDashboard = '/api/teams/crm/dashboard';

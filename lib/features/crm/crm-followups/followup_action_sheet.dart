@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../crm-contacts/contact_badge.dart';
 import '../data/models/crm_models.dart';
@@ -7,15 +6,14 @@ import '../shared/crm_dates.dart';
 import '../shared/followup_buckets.dart';
 import '../shared/stage_chip.dart';
 
+enum FollowupSheetAction { complete, edit, delete, openDetail }
+
 /// Web FollowupActionDialog — summary + pending Complete/Edit; Delete if canDelete.
-Future<void> showFollowupActionSheet(
+Future<FollowupSheetAction?> showFollowupActionSheet(
   BuildContext context, {
   required CrmFollowup followup,
   required bool canUpdate,
   required bool canDelete,
-  required VoidCallback onComplete,
-  required VoidCallback onEdit,
-  required VoidCallback onDelete,
   bool showOpenDetail = true,
 }) {
   final pending = followup.isPending;
@@ -23,7 +21,7 @@ Future<void> showFollowupActionSheet(
   final theme = Theme.of(context);
   final colors = theme.colorScheme;
 
-  return showModalBottomSheet<void>(
+  return showModalBottomSheet<FollowupSheetAction>(
     context: context,
     showDragHandle: true,
     builder: (ctx) => SafeArea(
@@ -104,10 +102,7 @@ Future<void> showFollowupActionSheet(
                   color: colors.tertiary,
                 ),
                 title: const Text('Complete'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  onComplete();
-                },
+                onTap: () => Navigator.pop(ctx, FollowupSheetAction.complete),
               ),
             if (pending && canUpdate)
               ListTile(
@@ -117,30 +112,21 @@ Future<void> showFollowupActionSheet(
                   color: colors.primary,
                 ),
                 title: const Text('Edit / reschedule'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  onEdit();
-                },
+                onTap: () => Navigator.pop(ctx, FollowupSheetAction.edit),
               ),
             if (canDelete)
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.delete_outline, color: colors.error),
                 title: Text('Delete', style: TextStyle(color: colors.error)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  onDelete();
-                },
+                onTap: () => Navigator.pop(ctx, FollowupSheetAction.delete),
               ),
             if (showOpenDetail)
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.open_in_new_rounded),
                 title: const Text('Open details'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  context.push('/crm/followups/${followup.id}');
-                },
+                onTap: () => Navigator.pop(ctx, FollowupSheetAction.openDetail),
               ),
           ],
         ),

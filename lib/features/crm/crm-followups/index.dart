@@ -48,6 +48,44 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
     });
   }
 
+  Future<T?> _withShellSheetHidden<T>(Future<T?> Function() show) async {
+    final ui = ref.read(crmFollowupsUiProvider.notifier);
+    final alreadyOpen = ref.read(crmFollowupsUiProvider).formSheetOpen;
+    if (!alreadyOpen) ui.setFormSheetOpen(true);
+    try {
+      return await show();
+    } finally {
+      if (!alreadyOpen) ui.setFormSheetOpen(false);
+    }
+  }
+
+  Future<void> _openActionSheet(CrmFollowup f) async {
+    final perms = ref.read(crmPermsProvider);
+    final ui = ref.read(crmFollowupsUiProvider.notifier);
+    ui.setFormSheetOpen(true);
+    try {
+      final action = await showFollowupActionSheet(
+        context,
+        followup: f,
+        canUpdate: perms.update,
+        canDelete: perms.delete,
+      );
+      if (!mounted || action == null) return;
+      switch (action) {
+        case FollowupSheetAction.complete:
+          await _completeFollowup(f);
+        case FollowupSheetAction.edit:
+          await _editFollowup(f);
+        case FollowupSheetAction.delete:
+          await _deleteFollowup(f);
+        case FollowupSheetAction.openDetail:
+          await context.push('/crm/followups/${f.id}');
+      }
+    } finally {
+      ui.setFormSheetOpen(false);
+    }
+  }
+
   Future<void> _openCreate() async {
     final ui = ref.read(crmFollowupsUiProvider.notifier);
     ui.setFormSheetOpen(true);
@@ -146,28 +184,30 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
   Future<void> _bulkReassign(List<TeamMember> members) async {
     final active = members.where((m) => m.status == 'active').toList();
     if (active.isEmpty) return;
-    final userId = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Text(
-                'Reassign to',
-                style: Theme.of(
-                  ctx,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+    final userId = await _withShellSheetHidden(
+      () => showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        builder: (ctx) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Text(
+                  'Reassign to',
+                  style: Theme.of(
+                    ctx,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
-            ),
-            for (final m in active)
-              ListTile(
-                title: Text(m.displayName),
-                onTap: () => Navigator.pop(ctx, m.userId),
-              ),
-          ],
+              for (final m in active)
+                ListTile(
+                  title: Text(m.displayName),
+                  onTap: () => Navigator.pop(ctx, m.userId),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -192,13 +232,15 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
     final stages = lead == null
         ? const <CrmStage>[]
         : _stagesForLead(lead, config);
-    final body = await showFollowupFormSheet(
-      context,
-      lead: lead ?? leadStubFromFollowup(f),
-      config: config,
-      stages: stages,
-      activityTypes: config.activityTypes,
-      initial: f,
+    final body = await _withShellSheetHidden(
+      () => showFollowupFormSheet(
+        context,
+        lead: lead ?? leadStubFromFollowup(f),
+        config: config,
+        stages: stages,
+        activityTypes: config.activityTypes,
+        initial: f,
+      ),
     );
     if (body == null || !mounted) return;
     setState(() => _busy = true);
@@ -227,9 +269,11 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
   }
 
   Future<void> _completeFollowup(CrmFollowup f) async {
-    final result = await showCompleteFollowupSheet(
-      context,
-      title: formatCrmDateTime(f.scheduledAt),
+    final result = await _withShellSheetHidden(
+      () => showCompleteFollowupSheet(
+        context,
+        title: formatCrmDateTime(f.scheduledAt),
+      ),
     );
     if (result == null) return;
     final repo = ref.read(crmRepositoryProvider);
@@ -497,6 +541,7 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
                             followup: f,
                             selecting: _selecting,
                             selected: _selected.contains(f.id),
+                            showMenu: perms.update || perms.delete,
                             onToggleSelect: (v) {
                               setState(() {
                                 if (v) {
@@ -512,15 +557,8 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
                                 _selected.add(f.id);
                               });
                             },
-                            onTap: () => showFollowupActionSheet(
-                              context,
-                              followup: f,
-                              canUpdate: perms.update,
-                              canDelete: perms.delete,
-                              onComplete: () => _completeFollowup(f),
-                              onEdit: () => _editFollowup(f),
-                              onDelete: () => _deleteFollowup(f),
-                            ),
+                            onTap: () => _openActionSheet(f),
+                            onMenu: () => _openActionSheet(f),
                           );
                         },
                       ),

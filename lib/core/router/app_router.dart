@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/board/screens/board_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
@@ -92,6 +93,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, _) => const CrmFollowupsScreen(),
           ),
           GoRoute(path: '/crm', builder: (_, _) => const CrmHubScreen()),
+          GoRoute(path: '/board', builder: (_, _) => const BoardScreen()),
           GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
         ],
       ),

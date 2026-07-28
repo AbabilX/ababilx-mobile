@@ -11,6 +11,8 @@ class FollowupRow extends StatelessWidget {
     super.key,
     required this.followup,
     required this.onTap,
+    this.onMenu,
+    this.showMenu = false,
     this.onLongPress,
     this.selected = false,
     this.selecting = false,
@@ -19,6 +21,8 @@ class FollowupRow extends StatelessWidget {
 
   final CrmFollowup followup;
   final VoidCallback onTap;
+  final VoidCallback? onMenu;
+  final bool showMenu;
   final VoidCallback? onLongPress;
   final bool selected;
   final bool selecting;
@@ -67,7 +71,7 @@ class FollowupRow extends StatelessWidget {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            padding: EdgeInsets.fromLTRB(12, 12, showMenu && !selecting ? 4 : 12, 12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -142,6 +146,16 @@ class FollowupRow extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (showMenu && !selecting)
+                  IconButton(
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: colors.onSurfaceVariant,
+                      size: 20,
+                    ),
+                    onPressed: onMenu ?? onTap,
+                    tooltip: 'Actions',
+                  ),
               ],
             ),
           ),

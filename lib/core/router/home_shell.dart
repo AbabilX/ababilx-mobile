@@ -21,12 +21,12 @@ class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
 
-  static const _tabsWithCrm = ['/messages', '/wall', '/crm', '/profile'];
-  static const _tabsNoCrm = ['/messages', '/wall', '/profile'];
+  static const _tabsWithCrm = ['/messages', '/wall', '/crm', '/board'];
+  static const _tabsNoCrm = ['/messages', '/wall', '/board'];
 
   int _currentIndex(BuildContext context, {required bool showCrm}) {
     final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith('/profile')) return showCrm ? 3 : 2;
+    if (location.startsWith('/board')) return showCrm ? 3 : 2;
     if (location.startsWith('/crm')) return showCrm ? 2 : 0;
     if (location.startsWith('/wall')) return 1;
     return 0;
@@ -186,11 +186,11 @@ class HomeShell extends ConsumerWidget {
             messagesLabel: AppTranslations.translate(context, ref, 'messages'),
             wallLabel: AppTranslations.translate(context, ref, 'wall'),
             crmLabel: AppTranslations.translate(context, ref, 'crm'),
-            profileLabel: AppTranslations.translate(context, ref, 'profile'),
+            boardLabel: AppTranslations.translate(context, ref, 'board'),
             onSelect: (i) => context.go(tabs[i]),
             onSearch: () {
               // CRM hub (and any /crm* on home bar) → CRM deep search.
-              // Messages / Wall / Profile → web Cmd+K workspace search.
+              // Messages / Wall / Board → web Cmd+K workspace search.
               if (location.startsWith('/crm')) {
                 openCrmDeepSearch(context, ref);
               } else {

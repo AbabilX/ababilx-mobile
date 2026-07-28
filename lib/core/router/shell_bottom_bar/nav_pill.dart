@@ -5,7 +5,7 @@ import 'nav_tab_item.dart';
 import 'shell_pill_chrome.dart';
 import 'shell_pill_metrics.dart';
 
-/// Left floating nav — Messages | Wall | (CRM?) | Profile.
+/// Left floating nav — Messages | Wall | (CRM?) | Board.
 class NavPill extends StatelessWidget {
   const NavPill({
     super.key,
@@ -14,7 +14,7 @@ class NavPill extends StatelessWidget {
     required this.messagesLabel,
     required this.wallLabel,
     required this.crmLabel,
-    required this.profileLabel,
+    required this.boardLabel,
     this.showCrm = false,
     this.unread = 0,
   });
@@ -24,7 +24,7 @@ class NavPill extends StatelessWidget {
   final String messagesLabel;
   final String wallLabel;
   final String crmLabel;
-  final String profileLabel;
+  final String boardLabel;
   final bool showCrm;
   final int unread;
 
@@ -32,7 +32,7 @@ class NavPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profileIndex = showCrm ? 3 : 2;
+    final boardIndex = showCrm ? 3 : 2;
 
     return ShellPillChrome(
       child: SizedBox(
@@ -65,11 +65,11 @@ class NavPill extends StatelessWidget {
                   onTap: () => onSelect(2),
                 ),
               NavTabItem(
-                icon: HugeIcons.strokeRoundedUser02,
-                selectedIcon: HugeIcons.strokeRoundedUser03,
-                label: profileLabel,
-                selected: selectedIndex == profileIndex,
-                onTap: () => onSelect(profileIndex),
+                icon: HugeIcons.strokeRoundedTask01,
+                selectedIcon: HugeIcons.strokeRoundedTask02,
+                label: boardLabel,
+                selected: selectedIndex == boardIndex,
+                onTap: () => onSelect(boardIndex),
               ),
             ],
           ),
