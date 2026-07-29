@@ -22,39 +22,52 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       _onMessageCreated(ev);
       return;
     }
+    // Apply updates/deletes/reactions to ANY loaded feed — not just the active
+    // conversation. The feed map is keyed so only the right conv is affected.
     final convId = ev['conversation_id'] as String? ?? '';
-    if (convId != state.activeConversationId) return;
+    if (convId.isEmpty) return;
+
     if (type == 'chat.message.updated') {
       final msgJson = ev['message'] as Map<String, dynamic>?;
       if (msgJson == null) return;
       final msg = ChatMessage.fromJson(msgJson);
+      // Update the main conversation feed.
       updateFeedMessage(convId, msg);
-      final thread = msg.parentId ?? state.threadRootId;
-      if (thread != null) {
-        updateFeedMessage(convId, msg, threadRootId: thread);
+      // Update any relevant thread feed (parentId from msg, or any open thread).
+      final threadRootId = msg.parentId ?? state.threadRootId;
+      if (threadRootId != null) {
+        updateFeedMessage(convId, msg, threadRootId: threadRootId);
       }
+      // Patch thread replies preview map (sidebar thread summary).
       if (msg.parentId != null) patchThreadReply(msg.parentId!, msg);
     }
+
     if (type == 'chat.message.deleted') {
       final id = ev['id'] as String? ?? '';
+      if (id.isEmpty) return;
       removeFeedMessage(convId, id);
-      final thread = state.threadRootId;
-      if (thread != null) {
-        removeFeedMessage(convId, id, threadRootId: thread);
-      }
+      // Remove from all known thread feeds.
       for (final rootId in state.threadRepliesByRoot.keys) {
+        final threadKey = feedKey(convId, threadRootId: rootId);
+        if (state.feeds.containsKey(threadKey)) {
+          removeFeedMessage(convId, id, threadRootId: rootId);
+        }
         markThreadReplyDeleted(rootId, id);
       }
     }
+
     if (type == 'chat.reaction.updated') {
       final id = ev['id'] as String? ?? '';
       final reactions = (ev['reactions'] as List<dynamic>? ?? [])
           .map((e) => ChatReactionGroup.fromJson(e as Map<String, dynamic>))
           .toList();
       updateFeedReactions(convId, id, reactions);
-      final thread = state.threadRootId;
-      if (thread != null) {
-        updateFeedReactions(convId, id, reactions, threadRootId: thread);
+      // Update reactions in all loaded thread feeds for this conv.
+      for (final rootId in state.threadRepliesByRoot.keys) {
+        final threadKey = feedKey(convId, threadRootId: rootId);
+        if (state.feeds.containsKey(threadKey)) {
+          updateFeedReactions(convId, id, reactions, threadRootId: rootId);
+        }
       }
     }
   }
@@ -69,18 +82,18 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
         state.dms.any((d) => d.id == convId) ||
         state.channels.any((c) => c.id == convId);
     if (!known) unawaited(fetchSidebarSilent());
-    if (!isActive) {
-      applyIncomingMessage(
-        convId,
-        msg,
-        bumpUnread: msg.userId != state.currentUserId,
-      );
-      return;
-    }
-    applyIncomingMessage(convId, msg, bumpUnread: false);
+
+    // Always update sidebar preview and unread badge.
+    applyIncomingMessage(
+      convId,
+      msg,
+      bumpUnread: !isActive && msg.userId != state.currentUserId,
+    );
+
+    // Always append to the in-memory feed if it exists, so switching to this
+    // conversation immediately shows the latest message without a reload.
     if (msg.parentId != null) {
       final parentId = msg.parentId!;
-      // Always update the thread feed so an open thread sheet refreshes live.
       appendFeedMessage(convId, msg, threadRootId: parentId);
       if (appendThreadReply(parentId, msg)) {
         incrementThreadCount(convId, parentId);

@@ -90,12 +90,17 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
     String? threadRootId,
   }) {
     final key = feedKey(conversationId, threadRootId: threadRootId);
-    final feed = state.feeds[key] ?? const ChatFeed();
-    if (feed.messages.any((m) => m.id == msg.id)) return;
+    final existing = state.feeds[key];
+    // Only update an already-loaded feed. If the feed has never been fetched,
+    // skip — it will be loaded fresh (with full history) when the user opens
+    // the conversation. Appending to an empty/unfetched feed would prevent the
+    // full-history load from replacing it and leave the feed with only 1 msg.
+    if (existing == null || existing.fetchedAt == 0) return;
+    if (existing.messages.any((m) => m.id == msg.id)) return;
     setFeed(
       key,
-      feed.copyWith(
-        messages: [...feed.messages, msg],
+      existing.copyWith(
+        messages: [...existing.messages, msg],
         fetchedAt: DateTime.now().millisecondsSinceEpoch,
       ),
     );

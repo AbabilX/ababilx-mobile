@@ -27,6 +27,11 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
   final _scrollCtrl = ScrollController();
   bool _headerVisible = true;
   double _lastPixels = 0;
+  int _prevMessageCount = 0;
+
+  // Auto-scroll when new messages arrive if user is within this many pixels
+  // of the bottom (pixel 0 in a reverse: true list).
+  static const _autoScrollThreshold = 200.0;
 
   @override
   void initState() {
@@ -40,6 +45,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.conversationId != widget.conversationId ||
         oldWidget.threadRootId != widget.threadRootId) {
+      _prevMessageCount = 0;
       _load();
       if (!_headerVisible) setState(() => _headerVisible = true);
       _lastPixels = 0;
@@ -48,10 +54,31 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
 
   void _load() {
     final n = ref.read(chatProvider.notifier);
-    n.loadFeed(widget.conversationId, threadRootId: widget.threadRootId);
+    // Always force-fetch on first load / conversation switch so any messages
+    // received via WS while the feed was not open are pulled in immediately.
+    n.loadFeed(
+      widget.conversationId,
+      threadRootId: widget.threadRootId,
+      force: true,
+    );
     if (widget.threadRootId == null) {
       n.markConversationRead(widget.conversationId);
     }
+  }
+
+  /// Scroll to the bottom (newest message) in a reverse:true list.
+  void _scrollToBottom() {
+    if (!_scrollCtrl.hasClients) return;
+    _scrollCtrl.animateTo(
+      0,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
+
+  bool get _isNearBottom {
+    if (!_scrollCtrl.hasClients) return true;
+    return _scrollCtrl.position.pixels <= _autoScrollThreshold;
   }
 
   void _onScroll() {
@@ -100,6 +127,16 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
       widget.conversationId,
       threadRootId: widget.threadRootId,
     );
+
+    // Auto-scroll to bottom when a new message arrives and user is near bottom.
+    final currentCount = feed.messages.length;
+    if (currentCount > _prevMessageCount && _prevMessageCount > 0) {
+      if (_isNearBottom) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
+    }
+    _prevMessageCount = currentCount;
+
     return Column(
       children: [
         if (widget.header != null)
