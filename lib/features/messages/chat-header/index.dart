@@ -40,29 +40,43 @@ class ChatHeader extends ConsumerWidget {
               icon: const Icon(Icons.arrow_back),
               onPressed: () => popOrGoMessages(context),
             ),
-            middle: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-                if (conversation.isChannel && conversation.memberCount != null)
-                  Text(
-                    '${conversation.memberCount} members',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colors.onSurfaceVariant,
+            middle: InkWell(
+              onTap: () async {
+                if (conversation.isChannel) {
+                  await showGroupDetailsDialog(context, ref, conversation);
+                } else {
+                  await showDmActionsSheet(context, ref, conversation);
+                }
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                  ),
-              ],
+                    if (conversation.isChannel && conversation.memberCount != null)
+                      Text(
+                        '${conversation.memberCount} members',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
