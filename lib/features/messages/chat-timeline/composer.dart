@@ -290,6 +290,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         widget.conversationId,
         sentMsg,
         nonMembers,
+        onAdded: _loadChannelMembers,
       );
     }
   }
@@ -621,8 +622,9 @@ Future<void> _showNotInChannelDialog(
   WidgetRef ref,
   String conversationId,
   ChatMessage sentMsg,
-  List<MentionCandidate> nonMembers,
-) async {
+  List<MentionCandidate> nonMembers, {
+  VoidCallback? onAdded,
+}) async {
   final names = nonMembers.map((m) => '@${m.displayName}').join(', ');
   final isPlural = nonMembers.length > 1;
 
@@ -678,10 +680,14 @@ Future<void> _showNotInChannelDialog(
             onPressed: () async {
               Navigator.pop(dialogCtx);
               for (final member in nonMembers) {
-                await ref
-                    .read(chatProvider.notifier)
-                    .addChannelMember(conversationId, member.userId);
+                try {
+                  await ref
+                      .read(chatProvider.notifier)
+                      .addChannelMember(conversationId, member.userId);
+                } catch (_) {}
               }
+              await ref.read(chatProvider.notifier).fetchSidebar(silent: true);
+              onAdded?.call();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

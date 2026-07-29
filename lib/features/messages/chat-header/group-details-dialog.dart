@@ -35,12 +35,12 @@ Future<void> showGroupDetailsDialog(
             controller: scroll,
             padding: const EdgeInsets.all(16),
             children: [
-              Text('Channel details',
+              Text('Group details',
                   style: Theme.of(ctx).textTheme.titleMedium),
               const SizedBox(height: 12),
               TextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Channel name'),
+                decoration: const InputDecoration(labelText: 'Group name'),
               ),
               const SizedBox(height: 8),
               FilledButton(
@@ -109,17 +109,30 @@ Future<void> showGroupDetailsDialog(
                     Navigator.pop(context);
                   }
                 },
-                child: const Text('Leave channel'),
+                child: const Text('Leave group'),
               ),
               TextButton(
                 onPressed: () async {
                   final ok = await showDialog<bool>(
                     context: ctx,
                     builder: (d) => AlertDialog(
-                      title: const Text('Delete channel?'),
+                      title: const Text('Delete group?'),
+                      content: const Text(
+                        'Are you sure you want to delete this group? All messages, attachments, and members will be removed automatically from this group. This action cannot be undone.',
+                        style: TextStyle(fontSize: 14, height: 1.4),
+                      ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancel')),
-                        FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('Delete')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(d, false),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                          onPressed: () => Navigator.pop(d, true),
+                          child: const Text('Delete group'),
+                        ),
                       ],
                     ),
                   );
@@ -131,7 +144,7 @@ Future<void> showGroupDetailsDialog(
                     }
                   }
                 },
-                child: const Text('Delete channel', style: TextStyle(color: Colors.red)),
+                child: const Text('Delete group', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
