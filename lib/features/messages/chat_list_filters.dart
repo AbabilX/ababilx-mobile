@@ -103,9 +103,19 @@ ChatListPreview chatListPreview(
 
   final me = currentUserId?.trim() ?? '';
   final sender = conv.lastMessageUserId?.trim() ?? '';
-  final fromMe = me.isNotEmpty && sender.isNotEmpty && sender == me;
+  // Call history rows are system-like — never "You: Missed voice call".
+  final looksLikeCall = _looksLikeVoiceCallPreview(text);
+  final fromMe =
+      !looksLikeCall && me.isNotEmpty && sender.isNotEmpty && sender == me;
 
   return ChatListPreview(text: text, fromMe: fromMe, files: files);
+}
+
+bool _looksLikeVoiceCallPreview(String text) {
+  final t = text.toLowerCase();
+  return t.contains('voice call') ||
+      t == 'no answer' ||
+      t.contains('missed voice call');
 }
 
 /// Back-compat wrapper used by tests / older call sites.

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../auth/providers/auth_provider.dart';
 import '../messages/providers/team_gate_provider.dart';
 import 'providers/voice_call_provider.dart';
+import 'voice_call_log.dart';
 
 class CallStoreSync extends ConsumerStatefulWidget {
   const CallStoreSync({super.key, required this.router, required this.child});
@@ -25,7 +28,16 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
   String get _currentPath =>
       widget.router.routerDelegate.currentConfiguration.uri.path;
 
-  bool get _isForeground => _lifecycle == AppLifecycleState.resumed;
+  /// Flutter route/UI can update while resumed or in the brief inactive
+  /// transition (e.g. notification shade). Paused/hidden → native CallKit.
+  bool get _canOpenFlutterCallScreen =>
+      _lifecycle == AppLifecycleState.resumed ||
+      _lifecycle == AppLifecycleState.inactive;
+
+  bool get _isBackgrounded =>
+      _lifecycle == AppLifecycleState.paused ||
+      _lifecycle == AppLifecycleState.hidden ||
+      _lifecycle == AppLifecycleState.detached;
 
   @override
   void initState() {
@@ -41,21 +53,62 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final previous = _lifecycle;
     _lifecycle = state;
-    // CallKit may accept while backgrounded; open /call once Flutter is active.
-    if (state == AppLifecycleState.resumed) {
-      _openCallScreenIfNeeded(ref.read(voiceCallProvider));
+    voiceCallLog(
+      'lifecycle',
+      phase: ref.read(voiceCallProvider).phase.name,
+      reason: '${previous.name}→${state.name}',
+    );
+
+    if (_canOpenFlutterCallScreen) {
+      // CallKit may already be ringing while Flutter was backgrounded — sync
+      // state, then open /call (or continue after Accept).
+      final notifier = ref.read(voiceCallProvider.notifier);
+      unawaited(
+        notifier.syncFromNativeIncoming().then((_) {
+          if (!mounted) return;
+          _openCallScreenIfNeeded(ref.read(voiceCallProvider));
+        }),
+      );
+      return;
+    }
+
+    if (_isBackgrounded) {
+      // App lost focus while ringing → surface native full-screen CallKit.
+      final call = ref.read(voiceCallProvider);
+      if (call.phase == VoiceCallPhase.incomingRinging) {
+        ref.read(voiceCallProvider.notifier).ensureNativeIncomingUi();
+      }
     }
   }
 
   void _openCallScreenIfNeeded(VoiceCallState next) {
     if (!next.shouldOpenCallScreen || _currentPath == '/call') return;
-    // Never push Flutter navigation over native CallKit / locked / background UI.
-    if (!_isForeground) return;
+    if (!_canOpenFlutterCallScreen) {
+      // Still prepare the route so Accept / resume lands on /call immediately.
+      if (next.phase == VoiceCallPhase.incomingRinging ||
+          next.phase == VoiceCallPhase.connecting ||
+          next.phase == VoiceCallPhase.connected) {
+        voiceCallLog(
+          'nav.call.deferred',
+          callId: next.call?.id,
+          phase: next.phase.name,
+          reason: 'lifecycle=${_lifecycle.name}',
+        );
+      }
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_isForeground) return;
+      if (!mounted || !_canOpenFlutterCallScreen) return;
       if (_currentPath == '/call') return;
       if (!ref.read(voiceCallProvider).shouldOpenCallScreen) return;
+      voiceCallLog(
+        'nav.call.open',
+        callId: next.call?.id,
+        phase: next.phase.name,
+        source: 'CallStoreSync',
+      );
       widget.router.go('/call');
     });
   }
@@ -86,7 +139,12 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
 
     ref.listen(voiceCallProvider, (previous, next) {
       if (next.shouldOpenCallScreen) {
-        _openCallScreenIfNeeded(next);
+        if (_canOpenFlutterCallScreen) {
+          _openCallScreenIfNeeded(next);
+        } else if (next.phase == VoiceCallPhase.incomingRinging) {
+          // Callee app backgrounded / no focus → native CallKit call screen.
+          ref.read(voiceCallProvider.notifier).ensureNativeIncomingUi();
+        }
         return;
       }
       if (next.phase == VoiceCallPhase.idle && _currentPath == '/call') {

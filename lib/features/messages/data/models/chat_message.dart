@@ -24,6 +24,7 @@ class ChatMessage extends Equatable {
     this.threadCount = 0,
     this.viaAbabilx = false,
     this.messageType = 'text',
+    this.meta,
     this.forwardedFromName,
     this.forwardedFromSource,
     // Optimistic-send fields — not present in server JSON.
@@ -49,6 +50,7 @@ class ChatMessage extends Equatable {
   final int threadCount;
   final bool viaAbabilx;
   final String messageType;
+  final Map<String, dynamic>? meta;
   final String? forwardedFromName;
   final String? forwardedFromSource;
 
@@ -66,6 +68,7 @@ class ChatMessage extends Equatable {
 
   bool get isDeleted => deletedAt != null;
   bool get isSystem => messageType == 'system';
+  bool get isVoiceCall => messageType == 'voice_call';
   bool get isPending => sendStatus != MessageSendStatus.sent;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
@@ -89,6 +92,9 @@ class ChatMessage extends Equatable {
         threadCount: json['thread_count'] as int? ?? 0,
         viaAbabilx: json['via_ababilx'] as bool? ?? false,
         messageType: json['message_type'] as String? ?? 'text',
+        meta: json['meta'] is Map
+            ? Map<String, dynamic>.from(json['meta'] as Map)
+            : null,
         forwardedFromName: json['forwarded_from_name'] as String?,
         forwardedFromSource: json['forwarded_from_source'] as String?,
         // sendStatus / clientRef not in server JSON → defaults to sent/null.
@@ -110,6 +116,7 @@ class ChatMessage extends Equatable {
         'thread_count': threadCount,
         'via_ababilx': viaAbabilx,
         'message_type': messageType,
+        if (meta != null) 'meta': meta,
         if (forwardedFromName != null) 'forwarded_from_name': forwardedFromName,
         if (forwardedFromSource != null)
           'forwarded_from_source': forwardedFromSource,
@@ -143,6 +150,7 @@ class ChatMessage extends Equatable {
         threadCount: threadCount ?? this.threadCount,
         viaAbabilx: viaAbabilx,
         messageType: messageType,
+        meta: meta,
         forwardedFromName: forwardedFromName,
         forwardedFromSource: forwardedFromSource,
         sendStatus: sendStatus ?? this.sendStatus,

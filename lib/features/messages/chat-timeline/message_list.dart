@@ -6,6 +6,7 @@ import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import 'message_row.dart';
 import 'thread_sheet.dart';
+import 'voice_call_event_row.dart';
 
 class MessageList extends ConsumerWidget {
   const MessageList({
@@ -53,14 +54,20 @@ class MessageList extends ConsumerWidget {
           children: [
             if (showDate)
               ChatDateDivider(label: formatDateDivider(msg.createdAt)),
-            MessageRow(
-              message: msg,
-              conversationId: conversationId,
-              threadRootId: threadRootId,
-              onOpenThread: threadRootId == null && msg.threadCount > 0
-                  ? () => openThreadSheet(context, conversationId, msg)
-                  : null,
-            ),
+            if (msg.isVoiceCall)
+              VoiceCallEventRow(
+                message: msg,
+                currentUserId: currentUserId,
+              )
+            else
+              MessageRow(
+                message: msg,
+                conversationId: conversationId,
+                threadRootId: threadRootId,
+                onOpenThread: threadRootId == null && msg.threadCount > 0
+                    ? () => openThreadSheet(context, conversationId, msg)
+                    : null,
+              ),
           ],
         );
       },

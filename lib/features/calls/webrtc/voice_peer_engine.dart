@@ -1,10 +1,22 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../data/models/ice_server.dart';
 
 typedef VoiceSignalSender = Future<bool> Function(Map<String, dynamic> signal);
+
+/// iOS/macOS only — Android has no native `ensureAudioSession` method and
+/// throws [MissingPluginException], which previously aborted every accept.
+Future<void> _ensureAudioSessionIfNeeded() async {
+  if (!Platform.isIOS && !Platform.isMacOS) return;
+  try {
+    await Helper.ensureAudioSession();
+  } catch (_) {
+    // Non-fatal: getUserMedia / peer connection still proceed.
+  }
+}
 
 class VoicePeerEngine {
   VoicePeerEngine({
@@ -46,7 +58,7 @@ class VoicePeerEngine {
         forceHandleAudioRouting: true,
       ),
     );
-    await Helper.ensureAudioSession();
+    await _ensureAudioSessionIfNeeded();
     final stream = await navigator.mediaDevices.getUserMedia({
       'audio': {
         'echoCancellation': true,
@@ -157,7 +169,7 @@ class VoicePeerEngine {
     switch (state) {
       case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
         _disconnectTimer?.cancel();
-        unawaited(Helper.ensureAudioSession());
+        unawaited(_ensureAudioSessionIfNeeded());
         if (!_connected) {
           _connected = true;
           onConnected();
