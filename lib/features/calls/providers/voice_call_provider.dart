@@ -152,6 +152,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       );
       _ringTimer?.cancel();
       await _prepareEngine(session);
+      if (_engine == null || state.call?.id != call.id) return;
       await _flushPendingSignals();
     } catch (error) {
       await _failLocal('accept_failed', error);
@@ -284,6 +285,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       state = state.copyWith(phase: VoiceCallPhase.connecting, call: call);
       _ringTimer?.cancel();
       await _prepareEngine(session);
+      if (_engine == null || state.call?.id != call.id) return;
       await _engine!.createAndSendOffer();
     } catch (error) {
       await _failLocal('offer_failed', error);
@@ -292,25 +294,37 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
   Future<void> _prepareEngine(VoiceCallSession session) async {
     final call = session.call;
+    final callId = call.id;
     final engine = VoicePeerEngine(
       sendSignal: (signal) => _ws.sendWhenConnected({
         'type': 'call.signal',
-        'call_id': call.id,
+        'call_id': callId,
         'signal': signal,
       }),
       onConnected: () {
-        if (state.call?.id != call.id) return;
+        if (state.call?.id != callId) return;
+        _ringTimer?.cancel();
         state = state.copyWith(
           phase: VoiceCallPhase.connected,
           connectedAt: DateTime.now(),
           clearError: true,
         );
-        unawaited(FlutterCallkitIncoming.setCallConnected(call.id));
+        unawaited(FlutterCallkitIncoming.setCallConnected(callId));
       },
       onFailed: (reason) => unawaited(_failLocal(reason)),
     );
-    _engine = engine;
     await engine.prepare(iceServers: session.iceServers);
+    // Call may have ended, been replaced, or left connecting while prepare ran.
+    if (state.call?.id != callId ||
+        (state.phase != VoiceCallPhase.connecting &&
+            state.phase != VoiceCallPhase.connected)) {
+      await engine.dispose();
+      return;
+    }
+    _engine = engine;
+    if (state.muted) {
+      await engine.setMuted(true);
+    }
     // VoicePeerEngine starts Android calls on speaker for an audible default.
     state = state.copyWith(speaker: true);
   }
@@ -420,18 +434,45 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
   void _startRingTimer(VoiceCall call) {
     _ringTimer?.cancel();
+    final callId = call.id;
     final remaining = call.expiresAt.difference(DateTime.now());
     if (remaining <= Duration.zero) {
-      unawaited(_finishLocal(VoiceCallPhase.ended));
+      unawaited(_onRingTimeout(callId));
       return;
     }
     _ringTimer = Timer(remaining + const Duration(seconds: 1), () {
-      if (state.call?.id == call.id &&
-          (state.phase == VoiceCallPhase.incomingRinging ||
-              state.phase == VoiceCallPhase.outgoingRinging)) {
-        unawaited(_finishLocal(VoiceCallPhase.ended));
-      }
+      unawaited(_onRingTimeout(callId));
     });
+  }
+
+  /// Ring expiry: caller cancels; callee only stops local UI so the server
+  /// sweeper can mark the call `missed` (no client `missed`/`timeout` action).
+  Future<void> _onRingTimeout(String callId) async {
+    final call = state.call;
+    if (call == null || call.id != callId) return;
+    if (call.isTerminal) return;
+    final phase = state.phase;
+    if (phase != VoiceCallPhase.outgoingRinging &&
+        phase != VoiceCallPhase.incomingRinging) {
+      return;
+    }
+
+    if (phase == VoiceCallPhase.outgoingRinging) {
+      try {
+        await _repository.action(callId, 'cancel');
+      } catch (_) {
+        // Sweeper / peer may already have finished the ringing call.
+      }
+      if (state.call?.id != callId ||
+          state.phase != VoiceCallPhase.outgoingRinging) {
+        return;
+      }
+      await _finishLocal(VoiceCallPhase.ended);
+      return;
+    }
+
+    // Incoming timeout: do not decline — user did not explicitly reject.
+    await _finishLocal(VoiceCallPhase.ended);
   }
 
   void _scheduleReset() {

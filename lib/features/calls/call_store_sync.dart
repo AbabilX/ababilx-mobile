@@ -16,12 +16,49 @@ class CallStoreSync extends ConsumerStatefulWidget {
   ConsumerState<CallStoreSync> createState() => _CallStoreSyncState();
 }
 
-class _CallStoreSyncState extends ConsumerState<CallStoreSync> {
+class _CallStoreSyncState extends ConsumerState<CallStoreSync>
+    with WidgetsBindingObserver {
   bool _booted = false;
   bool _shutdownScheduled = false;
+  AppLifecycleState _lifecycle = AppLifecycleState.resumed;
 
   String get _currentPath =>
       widget.router.routerDelegate.currentConfiguration.uri.path;
+
+  bool get _isForeground => _lifecycle == AppLifecycleState.resumed;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _lifecycle = state;
+    // CallKit may accept while backgrounded; open /call once Flutter is active.
+    if (state == AppLifecycleState.resumed) {
+      _openCallScreenIfNeeded(ref.read(voiceCallProvider));
+    }
+  }
+
+  void _openCallScreenIfNeeded(VoiceCallState next) {
+    if (!next.shouldOpenCallScreen || _currentPath == '/call') return;
+    // Never push Flutter navigation over native CallKit / locked / background UI.
+    if (!_isForeground) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_isForeground) return;
+      if (_currentPath == '/call') return;
+      if (!ref.read(voiceCallProvider).shouldOpenCallScreen) return;
+      widget.router.go('/call');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,11 +85,8 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync> {
     }
 
     ref.listen(voiceCallProvider, (previous, next) {
-      if (next.shouldOpenCallScreen && _currentPath != '/call') {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          widget.router.go('/call');
-        });
+      if (next.shouldOpenCallScreen) {
+        _openCallScreenIfNeeded(next);
         return;
       }
       if (next.phase == VoiceCallPhase.idle && _currentPath == '/call') {

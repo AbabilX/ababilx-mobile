@@ -164,7 +164,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
       case VoiceCallPhase.starting:
         return 'Starting call…';
       case VoiceCallPhase.outgoingRinging:
-        return 'Ringing…';
+        // Caller is waiting; only the callee is actually ringing.
+        return 'Calling…';
       case VoiceCallPhase.incomingRinging:
         return 'Incoming voice call';
       case VoiceCallPhase.connecting:

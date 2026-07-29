@@ -44,9 +44,13 @@ class VoiceCallState {
       phase != VoiceCallPhase.ended &&
       phase != VoiceCallPhase.failed;
 
+  /// Phases that warrant the in-app call screen.
+  /// Navigation itself is gated to Flutter foreground in [CallStoreSync]
+  /// so background CallKit ringing is not overridden.
   bool get shouldOpenCallScreen =>
       phase == VoiceCallPhase.starting ||
       phase == VoiceCallPhase.outgoingRinging ||
+      phase == VoiceCallPhase.incomingRinging ||
       phase == VoiceCallPhase.connecting ||
       phase == VoiceCallPhase.connected;
 

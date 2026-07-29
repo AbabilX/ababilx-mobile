@@ -137,11 +137,13 @@ class VoicePeerEngine {
       case 'ice':
         final candidate = signal['candidate'] as String? ?? '';
         if (candidate.isEmpty) return;
-        final parsed = RTCIceCandidate(
-          candidate,
-          signal['sdp_mid'] as String?,
-          signal['sdp_mline_index'] as int?,
-        );
+        // Server contract is snake_case; accept camelCase defensively.
+        final sdpMid =
+            (signal['sdp_mid'] as String?) ?? (signal['sdpMid'] as String?);
+        final rawIndex =
+            signal['sdp_mline_index'] ?? signal['sdpMLineIndex'];
+        final sdpMLineIndex = rawIndex is num ? rawIndex.toInt() : null;
+        final parsed = RTCIceCandidate(candidate, sdpMid, sdpMLineIndex);
         if (!_remoteDescriptionSet) {
           _pendingCandidates.add(parsed);
         } else {
