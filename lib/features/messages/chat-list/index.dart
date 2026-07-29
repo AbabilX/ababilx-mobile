@@ -85,7 +85,7 @@ class _ChatListState extends ConsumerState<ChatList> {
       if (action == 'dm') {
         final dm = await showNewDmDialog(context, ref);
         if (dm != null && context.mounted) context.push('/messages/${dm.id}');
-      } else if (action == 'channel') {
+      } else if (action == 'channel' || action == 'group') {
         final ch = await showCreateChannelDialog(context, ref);
         if (ch != null && context.mounted) context.push('/messages/${ch.id}');
       }

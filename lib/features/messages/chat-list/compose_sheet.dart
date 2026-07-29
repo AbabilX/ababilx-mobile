@@ -16,9 +16,9 @@ Future<String?> showComposeSheet(BuildContext context) {
             onTap: () => Navigator.pop(ctx, 'dm'),
           ),
           ListTile(
-            leading: const ChatIcon(HugeIcons.strokeRoundedTag01),
-            title: const Text('New channel'),
-            onTap: () => Navigator.pop(ctx, 'channel'),
+            leading: const ChatIcon(HugeIcons.strokeRoundedUserGroup),
+            title: const Text('New group'),
+            onTap: () => Navigator.pop(ctx, 'group'),
           ),
         ],
       ),

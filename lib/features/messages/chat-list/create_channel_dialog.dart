@@ -14,18 +14,18 @@ Future<ChatConversation?> showCreateChannelDialog(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) => AlertDialog(
-        title: const Text('Create channel'),
+        title: const Text('Create group'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Channel name'),
+              decoration: const InputDecoration(labelText: 'Group name'),
               autofocus: true,
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Private channel'),
+              title: const Text('Private group'),
               value: isPrivate,
               onChanged: (v) => setState(() => isPrivate = v),
             ),
