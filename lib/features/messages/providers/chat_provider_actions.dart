@@ -177,11 +177,42 @@ mixin _ChatActionsMixin
     ChatMessage confirmed, {
     String? parentId,
   }) {
-    _patchInFeed(
-      convId,
-      (m) => m.clientRef == clientRef ? confirmed : m,
-      threadRootId: parentId,
-    );
+    final key = feedKey(convId, threadRootId: parentId);
+    final feed = state.feeds[key];
+    if (feed != null) {
+      final alreadyInFeed = feed.messages.any((m) => m.id == confirmed.id);
+      final hasPending = feed.messages.any((m) => m.clientRef == clientRef || m.id == clientRef);
+
+      if (alreadyInFeed) {
+        // If WS already added confirmed message, filter out the pending message
+        setFeed(
+          key,
+          feed.copyWith(
+            messages: feed.messages
+                .where((m) => m.clientRef != clientRef && m.id != clientRef)
+                .toList(),
+          ),
+        );
+      } else if (hasPending) {
+        // Replace pending with confirmed
+        setFeed(
+          key,
+          feed.copyWith(
+            messages: feed.messages.map((m) {
+              if (m.clientRef == clientRef || m.id == clientRef) return confirmed;
+              return m;
+            }).toList(),
+          ),
+        );
+      } else {
+        // Feed is loaded but pending was lost, append confirmed
+        setFeed(
+          key,
+          feed.copyWith(messages: [...feed.messages, confirmed]),
+        );
+      }
+    }
+
     if (parentId != null) {
       patchThreadReply(parentId, confirmed);
     }

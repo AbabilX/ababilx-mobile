@@ -83,14 +83,34 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
         state.channels.any((c) => c.id == convId);
     if (!known) unawaited(fetchSidebarSilent());
 
-    // If we already inserted this confirmed message via optimistic send
-    // (_replacePendingMessage), the feed already has msg.id — skip everything
-    // to avoid a duplicate bubble and a second sidebar update.
-    final feedForConv = state.feeds[feedKey(convId)];
-    final alreadyInFeed =
-        feedForConv != null &&
-        feedForConv.messages.any((m) => m.id == msg.id);
-    if (alreadyInFeed) return;
+    final key = feedKey(convId, threadRootId: msg.parentId);
+    final feedForConv = state.feeds[key];
+
+    if (feedForConv != null) {
+      // 1. If exact message ID is already in the feed, skip duplicate.
+      if (feedForConv.messages.any((m) => m.id == msg.id)) return;
+
+      // 2. If message is sent by current user, check if there's a pending bubble
+      if (msg.userId == state.currentUserId) {
+        ChatMessage? pendingMsg;
+        for (final m in feedForConv.messages) {
+          if (m.isPending && m.userId == state.currentUserId) {
+            pendingMsg = m;
+            break;
+          }
+        }
+        if (pendingMsg != null && pendingMsg.clientRef != null) {
+          // WS arrived before HTTP returned: replace pending bubble now
+          _replacePendingMessage(
+            convId,
+            pendingMsg.clientRef!,
+            msg,
+            parentId: msg.parentId,
+          );
+          return;
+        }
+      }
+    }
 
     // Always update sidebar preview and unread badge.
     applyIncomingMessage(
@@ -99,8 +119,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       bumpUnread: !isActive && msg.userId != state.currentUserId,
     );
 
-    // Always append to the in-memory feed if it exists, so switching to this
-    // conversation immediately shows the latest message without a reload.
+    // Always append to the in-memory feed if it exists.
     if (msg.parentId != null) {
       final parentId = msg.parentId!;
       appendFeedMessage(convId, msg, threadRootId: parentId);

@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../messages/data/local/chat_feed_cache.dart';
 import '../../messages/data/local/chat_sidebar_cache.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../../notifications/providers/fcm_provider.dart';
@@ -28,9 +30,10 @@ class AuthNotifier extends AsyncNotifier<bool> {
     } catch (_) {}
     ref.read(notificationPermissionProvider.notifier).setGranted(false);
 
-    // Clear chat disk cache so next account never sees prior sidebar.
+    // Clear chat disk cache so next account never sees prior sidebar or feeds.
     try {
       await ref.read(chatSidebarCacheProvider).clearAll();
+      await ref.read(chatFeedCacheProvider).clearAll();
     } catch (_) {}
     ref.read(chatProvider.notifier).resetTeamChatState();
     await ref.read(authRepositoryProvider).signOut();
