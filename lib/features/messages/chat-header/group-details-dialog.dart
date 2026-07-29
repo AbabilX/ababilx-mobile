@@ -5,6 +5,8 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../providers/team_gate_provider.dart';
 
+import '../chat-timeline/user_profile_sheet.dart';
+
 Future<void> showGroupDetailsDialog(
   BuildContext context,
   WidgetRef ref,
@@ -64,6 +66,16 @@ Future<void> showGroupDetailsDialog(
               ...members.map((m) => ListTile(
                     dense: true,
                     title: Text(m.name),
+                    trailing: const Icon(Icons.chevron_right_rounded, size: 18),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      showUserProfileSheet(
+                        context: context,
+                        ref: ref,
+                        userId: m.userId,
+                        userName: m.name,
+                      );
+                    },
                   )),
               const SizedBox(height: 8),
               Text('Add member', style: Theme.of(ctx).textTheme.titleSmall),

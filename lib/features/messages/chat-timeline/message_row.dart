@@ -12,6 +12,8 @@ import 'reaction_row.dart';
 import 'thread_sheet.dart';
 import 'thread_summary.dart';
 
+import 'user_profile_sheet.dart';
+
 class MessageRow extends ConsumerStatefulWidget {
   const MessageRow({
     super.key,
@@ -135,10 +137,21 @@ class _MessageRowState extends ConsumerState<MessageRow>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppAvatar(
-                  size: 36,
-                  url: widget.message.userAvatarUrl,
-                  name: name,
+                GestureDetector(
+                  onTap: () {
+                    showUserProfileSheet(
+                      context: context,
+                      ref: ref,
+                      userId: widget.message.userId,
+                      userName: name,
+                      userAvatarUrl: widget.message.userAvatarUrl,
+                    );
+                  },
+                  child: AppAvatar(
+                    size: 36,
+                    url: widget.message.userAvatarUrl,
+                    name: name,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -148,13 +161,24 @@ class _MessageRowState extends ConsumerState<MessageRow>
                       Row(
                         children: [
                           Flexible(
-                            child: Text(
-                              name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
+                            child: GestureDetector(
+                              onTap: () {
+                                showUserProfileSheet(
+                                  context: context,
+                                  ref: ref,
+                                  userId: widget.message.userId,
+                                  userName: name,
+                                  userAvatarUrl: widget.message.userAvatarUrl,
+                                );
+                              },
+                              child: Text(
+                                name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 6),
