@@ -10,9 +10,11 @@ import '../../../core/localization/app_translations.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
+import '../providers/team_gate_provider.dart';
 import 'composer_attach.dart';
 import 'composer_collapsed.dart';
 import 'composer_expanded_shell.dart';
+import 'composer_mention_picker.dart';
 import 'composer_recording_bar.dart';
 import 'composer_reply_banner.dart';
 import 'composer_share_contact.dart';
@@ -60,6 +62,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   bool _paused = false;
   bool _viewOnce = false;
 
+  List<MentionCandidate> _mentionCandidates = [];
+  final Set<String> _mentionedUserIds = {};
+  bool _showMentions = false;
+  int _mentionStartIndex = -1;
+
   String get _hint => 'Message ${widget.hintName}';
   bool get _hasDraft => _ctrl.text.trim().isNotEmpty || _pending.isNotEmpty;
   bool get _expanded =>
@@ -73,8 +80,84 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: widget.initialText)
-      ..addListener(() => setState(() {}));
+      ..addListener(_onTextChanged);
     _focus = FocusNode()..addListener(_onFocus);
+  }
+
+  void _onTextChanged() {
+    setState(() {});
+    final text = _ctrl.text;
+    final sel = _ctrl.selection;
+
+    if (!sel.isValid || !sel.isCollapsed) {
+      if (_showMentions) setState(() => _showMentions = false);
+      return;
+    }
+
+    final cursor = sel.start;
+    final beforeCursor = text.substring(0, cursor);
+    final lastAt = beforeCursor.lastIndexOf('@');
+
+    if (lastAt != -1) {
+      final query = beforeCursor.substring(lastAt + 1);
+      if (!query.contains(' ') && !query.contains('\n')) {
+        _mentionStartIndex = lastAt;
+        _updateMentionCandidates(query);
+        return;
+      }
+    }
+
+    if (_showMentions) setState(() => _showMentions = false);
+  }
+
+  void _updateMentionCandidates(String query) {
+    final teamMembers = ref.read(teamMembersProvider);
+    final currentUserId = ref.read(chatProvider).currentUserId;
+
+    final q = query.toLowerCase();
+    final candidates = teamMembers
+        .where((tm) => tm.userId != currentUserId)
+        .where((tm) =>
+            q.isEmpty ||
+            tm.displayName.toLowerCase().contains(q) ||
+            (tm.username != null && tm.username!.toLowerCase().contains(q)))
+        .map((tm) => MentionCandidate(
+              userId: tm.userId,
+              displayName: tm.displayName,
+              avatarUrl: tm.avatarUrl,
+            ))
+        .toList();
+
+    setState(() {
+      _mentionCandidates = candidates;
+      _showMentions = candidates.isNotEmpty;
+    });
+  }
+
+  void _selectMention(MentionCandidate candidate) {
+    if (_mentionStartIndex == -1) return;
+    final text = _ctrl.text;
+    final cursor =
+        _ctrl.selection.isValid ? _ctrl.selection.start : text.length;
+
+    final before = text.substring(0, _mentionStartIndex);
+    final after = cursor <= text.length ? text.substring(cursor) : '';
+    final inserted = '@${candidate.displayName} ';
+
+    _ctrl.value = TextEditingValue(
+      text: '$before$inserted$after',
+      selection: TextSelection.collapsed(
+        offset: before.length + inserted.length,
+      ),
+    );
+
+    _mentionedUserIds.add(candidate.userId);
+    setState(() => _showMentions = false);
+  }
+
+  void _triggerMention() {
+    insertComposerAt(_ctrl);
+    _onTextChanged();
   }
 
   void _onFocus() {
@@ -113,10 +196,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     ref.read(chatProvider.notifier).setReplyToMessage(null);
     final body = plain.isEmpty ? '' : textToTiptapJson(plain);
     final attachments = List<ChatAttachmentInput>.of(_pending);
+    final mentionedIds = _mentionedUserIds.toList();
+
+    _mentionedUserIds.clear();
     if (!mounted) return;
     _ctrl.clear();
     setState(() {
       _pending.clear();
+      _showMentions = false;
       _forceExpanded = false;
       _tall = false;
     });
@@ -127,6 +214,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         .sendMessage(
           body: body,
           attachments: attachments,
+          mentionedUserIds: mentionedIds,
           parentId: effectiveParentId,
         ));
   }
@@ -415,6 +503,12 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       pending: _pending,
       onRemove: (i) => setState(() => _pending.removeAt(i)),
       onAddPhoto: () => _attach(),
+      mentionPicker: _showMentions
+          ? ComposerMentionPicker(
+              candidates: _mentionCandidates,
+              onSelect: _selectMention,
+            )
+          : null,
       replyBanner: replyToMsg != null
           ? ComposerReplyBanner(
               message: replyToMsg,
@@ -433,7 +527,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         onAttach: () => _attach(),
         onVoice: () => unawaited(_startVoiceRecording()),
         onShareContact: () => unawaited(_shareContact()),
-        onMention: () => insertComposerAt(_ctrl),
+        onMention: _triggerMention,
         onExpand: () => setState(() => _tall = !_tall),
         onSend: _send,
         attachTooltip: tr('chat_attach'),

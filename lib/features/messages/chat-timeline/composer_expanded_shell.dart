@@ -11,6 +11,7 @@ class ComposerExpandedShell extends StatelessWidget {
     required this.onAddPhoto,
     required this.field,
     this.replyBanner,
+    this.mentionPicker,
   });
 
   final List<ChatAttachmentInput> pending;
@@ -18,6 +19,7 @@ class ComposerExpandedShell extends StatelessWidget {
   final VoidCallback onAddPhoto;
   final Widget field;
   final Widget? replyBanner;
+  final Widget? mentionPicker;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +34,7 @@ class ComposerExpandedShell extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (mentionPicker case final picker?) picker,
             if (replyBanner case final banner?) banner,
             if (pending.isNotEmpty)
               Padding(
