@@ -7,11 +7,13 @@ class MentionCandidate {
     required this.userId,
     required this.displayName,
     this.avatarUrl,
+    this.isInChannel = true,
   });
 
   final String userId;
   final String displayName;
   final String? avatarUrl;
+  final bool isInChannel;
 }
 
 class ComposerMentionPicker extends StatelessWidget {
@@ -29,8 +31,11 @@ class ComposerMentionPicker extends StatelessWidget {
     if (candidates.isEmpty) return const SizedBox.shrink();
     final colors = Theme.of(context).colorScheme;
 
+    final inChannel = candidates.where((c) => c.isInChannel).toList();
+    final notInChannel = candidates.where((c) => !c.isInChannel).toList();
+
     return Container(
-      constraints: const BoxConstraints(maxHeight: 210),
+      constraints: const BoxConstraints(maxHeight: 240),
       decoration: BoxDecoration(
         color: colors.surfaceContainerHigh,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -70,39 +75,83 @@ class ComposerMentionPicker extends StatelessWidget {
           ),
           const Divider(height: 1),
           Flexible(
-            child: ListView.separated(
+            child: ListView(
               shrinkWrap: true,
               padding: const EdgeInsets.symmetric(vertical: 4),
-              itemCount: candidates.length,
-              separatorBuilder: (_, __) => Divider(
-                height: 1,
-                indent: 48,
-                color: colors.outlineVariant.withOpacity(0.2),
-              ),
-              itemBuilder: (ctx, index) {
-                final c = candidates[index];
-                return ListTile(
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  leading: AppAvatar(
-                    size: 30,
-                    url: c.avatarUrl,
-                    name: c.displayName,
-                  ),
-                  title: Text(
-                    c.displayName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+              children: [
+                if (inChannel.isNotEmpty) ...[
+                  if (notInChannel.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+                      child: Text(
+                        'MEMBERS IN THIS CHANNEL',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: colors.onSurfaceVariant,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ...inChannel.map((c) => _buildCandidateTile(context, c)),
+                ],
+                if (inChannel.isNotEmpty && notInChannel.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Divider(
+                      height: 1,
+                      thickness: 1.5,
+                      color: colors.outlineVariant.withOpacity(0.5),
                     ),
                   ),
-                  onTap: () => onSelect(c),
-                );
-              },
+                ],
+                if (notInChannel.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+                    child: Text(
+                      'NOT IN THIS CHANNEL',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: colors.error.withOpacity(0.9),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  ...notInChannel.map((c) => _buildCandidateTile(context, c)),
+                ],
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCandidateTile(BuildContext context, MentionCandidate c) {
+    final colors = Theme.of(context).colorScheme;
+    return ListTile(
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      leading: AppAvatar(
+        size: 30,
+        url: c.avatarUrl,
+        name: c.displayName,
+      ),
+      title: Text(
+        c.displayName,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+      ),
+      subtitle: !c.isInChannel
+          ? Text(
+              'Not in channel',
+              style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
+            )
+          : null,
+      onTap: () => onSelect(c),
     );
   }
 }

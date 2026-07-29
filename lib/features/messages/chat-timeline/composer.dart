@@ -76,12 +76,33 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       ref.watch(chatProvider).replyToMessage != null;
   bool get _voiceSheetOpen => _recording || _recordPreparing || _uploadingVoice;
 
+  List<MentionCandidate> _channelMembers = [];
+
   @override
   void initState() {
     super.initState();
+    _loadChannelMembers();
     _ctrl = TextEditingController(text: widget.initialText)
       ..addListener(_onTextChanged);
     _focus = FocusNode()..addListener(_onFocus);
+  }
+
+  Future<void> _loadChannelMembers() async {
+    try {
+      final members = await ref
+          .read(chatProvider.notifier)
+          .listChannelMembers(widget.conversationId);
+      if (mounted) {
+        setState(() {
+          _channelMembers = members
+              .map((m) => MentionCandidate(
+                    userId: m.userId,
+                    displayName: m.name,
+                  ))
+              .toList();
+        });
+      }
+    } catch (_) {}
   }
 
   void _onTextChanged() {
@@ -112,20 +133,50 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   void _updateMentionCandidates(String query) {
     final teamMembers = ref.read(teamMembersProvider);
-    final currentUserId = ref.read(chatProvider).currentUserId;
+    final chatState = ref.read(chatProvider);
+    final currentUserId = chatState.currentUserId;
+
+    final map = <String, MentionCandidate>{};
+
+    // 1. Add channel members
+    for (final cm in _channelMembers) {
+      if (cm.userId.isNotEmpty && cm.userId != currentUserId) {
+        map[cm.userId] = cm;
+      }
+    }
+
+    // 2. Add team members
+    for (final tm in teamMembers) {
+      if (tm.userId.isNotEmpty && tm.userId != currentUserId) {
+        map[tm.userId] = MentionCandidate(
+          userId: tm.userId,
+          displayName: tm.displayName,
+          avatarUrl: tm.avatarUrl,
+        );
+      }
+    }
+
+    // 3. Add DM peers
+    for (final dm in chatState.dms) {
+      final peerId = dm.peerUserId;
+      final peerName = dm.peerUserName;
+      if (peerId != null && peerId.isNotEmpty && peerId != currentUserId && peerName != null && peerName.isNotEmpty) {
+        map.putIfAbsent(
+          peerId,
+          () => MentionCandidate(
+            userId: peerId,
+            displayName: peerName,
+            avatarUrl: dm.peerUserAvatar,
+          ),
+        );
+      }
+    }
 
     final q = query.toLowerCase();
-    final candidates = teamMembers
-        .where((tm) => tm.userId != currentUserId)
-        .where((tm) =>
+    final candidates = map.values
+        .where((c) =>
             q.isEmpty ||
-            tm.displayName.toLowerCase().contains(q) ||
-            (tm.username != null && tm.username!.toLowerCase().contains(q)))
-        .map((tm) => MentionCandidate(
-              userId: tm.userId,
-              displayName: tm.displayName,
-              avatarUrl: tm.avatarUrl,
-            ))
+            c.displayName.toLowerCase().contains(q))
         .toList();
 
     setState(() {
@@ -191,8 +242,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     if (plain.isEmpty && _pending.isEmpty) return;
     final replyTarget = ref.read(chatProvider).replyToMessage;
     final effectiveParentId = replyTarget?.id ?? widget.parentId;
-    // Clear the composer immediately — the message is already in the feed
-    // as a pending bubble (optimistic UI). No need to await.
     ref.read(chatProvider.notifier).setReplyToMessage(null);
     final body = plain.isEmpty ? '' : textToTiptapJson(plain);
     final attachments = List<ChatAttachmentInput>.of(_pending);
@@ -208,15 +257,41 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       _tall = false;
     });
     _focus.unfocus();
-    // Fire-and-forget — result (success/fail) reflected in the bubble icon.
-    unawaited(ref
+
+    // Perform optimistic send
+    final sentMsg = await ref
         .read(chatProvider.notifier)
         .sendMessage(
           body: body,
           attachments: attachments,
           mentionedUserIds: mentionedIds,
           parentId: effectiveParentId,
-        ));
+        );
+
+    // Slack parity: Check if any mentioned users are not members of this channel/group
+    if (widget.isGroup && sentMsg != null && mentionedIds.isNotEmpty && mounted) {
+      _checkNotInChannelMentions(sentMsg, mentionedIds);
+    }
+  }
+
+  void _checkNotInChannelMentions(
+    ChatMessage sentMsg,
+    List<String> mentionedIds,
+  ) {
+    final channelUserIds = _channelMembers.map((m) => m.userId).toSet();
+    final nonMembers = _mentionCandidates
+        .where((c) => !channelUserIds.contains(c.userId) && mentionedIds.contains(c.userId))
+        .toList();
+
+    if (nonMembers.isNotEmpty) {
+      _showNotInChannelDialog(
+        context,
+        ref,
+        widget.conversationId,
+        sentMsg,
+        nonMembers,
+      );
+    }
   }
 
 
@@ -539,4 +614,86 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       ),
     );
   }
+}
+
+Future<void> _showNotInChannelDialog(
+  BuildContext context,
+  WidgetRef ref,
+  String conversationId,
+  ChatMessage sentMsg,
+  List<MentionCandidate> nonMembers,
+) async {
+  final names = nonMembers.map((m) => '@${m.displayName}').join(', ');
+  final isPlural = nonMembers.length > 1;
+
+  await showDialog<void>(
+    context: context,
+    builder: (dialogCtx) {
+      final colors = Theme.of(dialogCtx).colorScheme;
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            Icon(Icons.person_add_outlined, color: colors.primary, size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                isPlural ? 'Users not in channel' : 'User not in channel',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          '$names ${isPlural ? "are" : "is"} mentioned, but not in this channel. Would you like to add ${isPlural ? "them" : "them"} to this channel or remove the message?',
+          style: const TextStyle(fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              await ref.read(chatProvider.notifier).deleteMessage(sentMsg.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Message removed')),
+                );
+              }
+            },
+            child: Text(
+              'Remove message',
+              style: TextStyle(
+                color: colors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Do nothing'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              for (final member in nonMembers) {
+                await ref
+                    .read(chatProvider.notifier)
+                    .addChannelMember(conversationId, member.userId);
+              }
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Added $names to the channel'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Add to channel'),
+          ),
+        ],
+      );
+    },
+  );
 }
