@@ -14,6 +14,12 @@ class ChatReactionUser extends Equatable {
         avatarUrl: json['avatar_url'] as String?,
       );
 
+  Map<String, dynamic> toJson() => {
+        'user_id': userId,
+        if (name != null) 'name': name,
+        if (avatarUrl != null) 'avatar_url': avatarUrl,
+      };
+
   @override
   List<Object?> get props => [userId];
 }
@@ -40,6 +46,13 @@ class ChatReactionGroup extends Equatable {
             .toList(),
         reactedByMe: json['reacted_by_me'] as bool? ?? false,
       );
+
+  Map<String, dynamic> toJson() => {
+        'emoji': emoji,
+        'count': count,
+        'users': users.map((u) => u.toJson()).toList(),
+        'reacted_by_me': reactedByMe,
+      };
 
   @override
   List<Object?> get props => [emoji, count, reactedByMe];

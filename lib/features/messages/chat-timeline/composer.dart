@@ -108,14 +108,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     if (plain.isEmpty && _pending.isEmpty) return;
     final replyTarget = ref.read(chatProvider).replyToMessage;
     final effectiveParentId = replyTarget?.id ?? widget.parentId;
-    await ref
-        .read(chatProvider.notifier)
-        .sendMessage(
-          body: plain.isEmpty ? '' : textToTiptapJson(plain),
-          attachments: List.of(_pending),
-          parentId: effectiveParentId,
-        );
+    // Clear the composer immediately — the message is already in the feed
+    // as a pending bubble (optimistic UI). No need to await.
     ref.read(chatProvider.notifier).setReplyToMessage(null);
+    final body = plain.isEmpty ? '' : textToTiptapJson(plain);
+    final attachments = List<ChatAttachmentInput>.of(_pending);
     if (!mounted) return;
     _ctrl.clear();
     setState(() {
@@ -124,7 +121,16 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       _tall = false;
     });
     _focus.unfocus();
+    // Fire-and-forget — result (success/fail) reflected in the bubble icon.
+    unawaited(ref
+        .read(chatProvider.notifier)
+        .sendMessage(
+          body: body,
+          attachments: attachments,
+          parentId: effectiveParentId,
+        ));
   }
+
 
   Future<void> _attach({ImageSource? source}) async {
     if (!mounted) return;

@@ -7,6 +7,7 @@ import '../../../core/network/ws_client.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat_utils.dart';
 import '../data/chat_repository.dart';
+import '../data/local/chat_feed_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
 import 'chat_state.dart';
@@ -43,6 +44,9 @@ class ChatNotifier extends Notifier<ChatState>
 
   @override
   ChatSidebarCache get sidebarCache => ref.read(chatSidebarCacheProvider);
+
+  @override
+  ChatFeedCache get feedCache => ref.read(chatFeedCacheProvider);
 
   @override
   bool get realtimeStarted => _realtimeStarted;

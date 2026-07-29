@@ -3,6 +3,10 @@ import 'package:equatable/equatable.dart';
 import 'chat_attachment.dart';
 import 'chat_reaction.dart';
 
+/// Send-state for optimistic messages. Server-confirmed messages are [sent].
+/// [sending] = in-flight, [failed] = network/server error, user can retry.
+enum MessageSendStatus { sent, sending, failed }
+
 class ChatMessage extends Equatable {
   const ChatMessage({
     required this.id,
@@ -22,6 +26,12 @@ class ChatMessage extends Equatable {
     this.messageType = 'text',
     this.forwardedFromName,
     this.forwardedFromSource,
+    // Optimistic-send fields — not present in server JSON.
+    this.sendStatus = MessageSendStatus.sent,
+    this.clientRef,
+    this.pendingAttachments = const [],
+    this.pendingParentId,
+    this.pendingMentionedUserIds = const [],
   });
 
   final String id;
@@ -42,8 +52,21 @@ class ChatMessage extends Equatable {
   final String? forwardedFromName;
   final String? forwardedFromSource;
 
+  /// Optimistic UI: current send state.
+  final MessageSendStatus sendStatus;
+
+  /// Stable local ID used to match this pending message to the server reply.
+  /// Null for server-confirmed messages.
+  final String? clientRef;
+
+  /// Pending data kept only until server confirms — not serialised to cache.
+  final List<ChatAttachmentInput> pendingAttachments;
+  final String? pendingParentId;
+  final List<String> pendingMentionedUserIds;
+
   bool get isDeleted => deletedAt != null;
   bool get isSystem => messageType == 'system';
+  bool get isPending => sendStatus != MessageSendStatus.sent;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
         id: json['id'] as String? ?? '',
@@ -68,17 +91,44 @@ class ChatMessage extends Equatable {
         messageType: json['message_type'] as String? ?? 'text',
         forwardedFromName: json['forwarded_from_name'] as String?,
         forwardedFromSource: json['forwarded_from_source'] as String?,
+        // sendStatus / clientRef not in server JSON → defaults to sent/null.
       );
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'conversation_id': conversationId,
+        'user_id': userId,
+        'body': body,
+        if (parentId != null) 'parent_id': parentId,
+        'created_at': createdAt,
+        if (editedAt != null) 'edited_at': editedAt,
+        if (deletedAt != null) 'deleted_at': deletedAt,
+        if (userName != null) 'user_name': userName,
+        if (userAvatarUrl != null) 'user_avatar_url': userAvatarUrl,
+        'attachments': attachments.map((a) => a.toJson()).toList(),
+        'reactions': reactions.map((r) => r.toJson()).toList(),
+        'thread_count': threadCount,
+        'via_ababilx': viaAbabilx,
+        'message_type': messageType,
+        if (forwardedFromName != null) 'forwarded_from_name': forwardedFromName,
+        if (forwardedFromSource != null)
+          'forwarded_from_source': forwardedFromSource,
+        // Pending fields deliberately excluded from cache serialisation.
+      };
+
   ChatMessage copyWith({
+    String? id,
     String? body,
     String? editedAt,
     String? deletedAt,
     List<ChatReactionGroup>? reactions,
     int? threadCount,
+    MessageSendStatus? sendStatus,
+    String? clientRef,
+    bool clearClientRef = false,
   }) =>
       ChatMessage(
-        id: id,
+        id: id ?? this.id,
         conversationId: conversationId,
         userId: userId,
         body: body ?? this.body,
@@ -95,10 +145,16 @@ class ChatMessage extends Equatable {
         messageType: messageType,
         forwardedFromName: forwardedFromName,
         forwardedFromSource: forwardedFromSource,
+        sendStatus: sendStatus ?? this.sendStatus,
+        clientRef: clearClientRef ? null : (clientRef ?? this.clientRef),
+        pendingAttachments: pendingAttachments,
+        pendingParentId: pendingParentId,
+        pendingMentionedUserIds: pendingMentionedUserIds,
       );
 
   @override
-  List<Object?> get props => [id, body, editedAt, deletedAt, reactions, threadCount];
+  List<Object?> get props =>
+      [id, body, editedAt, deletedAt, reactions, threadCount, sendStatus];
 }
 
 class ChatMessagesPage extends Equatable {

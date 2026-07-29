@@ -83,6 +83,15 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
         state.channels.any((c) => c.id == convId);
     if (!known) unawaited(fetchSidebarSilent());
 
+    // If we already inserted this confirmed message via optimistic send
+    // (_replacePendingMessage), the feed already has msg.id — skip everything
+    // to avoid a duplicate bubble and a second sidebar update.
+    final feedForConv = state.feeds[feedKey(convId)];
+    final alreadyInFeed =
+        feedForConv != null &&
+        feedForConv.messages.any((m) => m.id == msg.id);
+    if (alreadyInFeed) return;
+
     // Always update sidebar preview and unread badge.
     applyIncomingMessage(
       convId,

@@ -75,8 +75,35 @@ mixin _ChatActionsMixin
   }) async {
     final convId = conversationId ?? state.activeConversationId;
     if (convId == null) return null;
-    state = state.copyWith(sending: true);
+
+    // ── Step 1: Build a pending message and show it instantly in the UI ──────
+    final clientRef = 'pending_${DateTime.now().microsecondsSinceEpoch}';
+    final currentUser = state.currentUserId;
+    // Look up the user's display name and avatar from any conversation they appear in.
+    final conv = state.conversationById(convId);
+    final pendingMsg = ChatMessage(
+      id: clientRef,
+      conversationId: convId,
+      userId: currentUser,
+      body: body,
+      parentId: parentId,
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+      sendStatus: MessageSendStatus.sending,
+      clientRef: clientRef,
+      pendingAttachments: List.unmodifiable(attachments),
+      pendingParentId: parentId,
+      pendingMentionedUserIds: List.unmodifiable(mentionedUserIds),
+      // Show the sender's own name if we can resolve it from the DM peer info.
+      userName: conv?.peerUserName,
+    );
+
+    // Inject into feed immediately so user sees it at once.
+    _appendPendingMessage(convId, pendingMsg, parentId: parentId);
+    // Update sidebar preview with optimistic body.
+    applyIncomingMessage(convId, pendingMsg, bumpUnread: false);
+
     try {
+      // ── Step 2: Fire the actual network call ─────────────────────────────
       final msg = await repo.sendMessage(
         convId,
         body: body,
@@ -84,21 +111,123 @@ mixin _ChatActionsMixin
         attachments: attachments,
         mentionedUserIds: mentionedUserIds,
       );
-      // Use parentId (composer), not state.threadRootId — thread sheet may
-      // not have set the global thread root yet / at all.
-      if (parentId != null) {
-        appendFeedMessage(convId, msg, threadRootId: parentId);
-        if (appendThreadReply(parentId, msg)) {
-          incrementThreadCount(convId, parentId);
-        }
-      } else {
-        appendFeedMessage(convId, msg);
-      }
-      applyIncomingMessage(convId, msg, bumpUnread: false);
+      // ── Step 3: Replace the pending bubble with the confirmed message ─────
+      _replacePendingMessage(convId, clientRef, msg, parentId: parentId);
       return msg;
-    } finally {
-      state = state.copyWith(sending: false);
+    } catch (_) {
+      // ── Step 4: Mark the bubble as failed so user can retry ───────────────
+      _markPendingFailed(convId, clientRef, parentId: parentId);
+      return null;
     }
+  }
+
+  /// Re-sends a message that previously failed. Looks up the pending data
+  /// stored on the [ChatMessage] itself and calls [sendMessage] again.
+  Future<void> retrySend(ChatMessage failedMsg) async {
+    if (failedMsg.sendStatus != MessageSendStatus.failed) return;
+    final convId = failedMsg.conversationId;
+    if (convId.isEmpty) return;
+
+    // Remove the failed bubble first — sendMessage will create a fresh pending one.
+    _removePendingFromFeed(convId, failedMsg.id, parentId: failedMsg.parentId);
+
+    await sendMessage(
+      conversationId: convId,
+      body: failedMsg.body,
+      attachments: failedMsg.pendingAttachments,
+      mentionedUserIds: failedMsg.pendingMentionedUserIds,
+      parentId: failedMsg.pendingParentId,
+    );
+  }
+
+  // ── Private helpers ────────────────────────────────────────────────────────
+
+  void _appendPendingMessage(
+    String convId,
+    ChatMessage msg, {
+    String? parentId,
+  }) {
+    if (parentId != null) {
+      _appendToFeed(convId, msg, threadRootId: parentId);
+      if (appendThreadReply(parentId, msg)) {
+        incrementThreadCount(convId, parentId);
+      }
+    } else {
+      _appendToFeed(convId, msg);
+    }
+  }
+
+  /// Forcibly appends [msg] to the feed even if it has never been fetched —
+  /// needed for the local pending bubble (we know it's valid).
+  void _appendToFeed(
+    String convId,
+    ChatMessage msg, {
+    String? threadRootId,
+  }) {
+    final key = feedKey(convId, threadRootId: threadRootId);
+    final feed = state.feeds[key] ??
+        ChatFeed(fetchedAt: DateTime.now().millisecondsSinceEpoch);
+    if (feed.messages.any((m) => m.id == msg.id)) return;
+    setFeed(key, feed.copyWith(messages: [...feed.messages, msg]));
+  }
+
+  void _replacePendingMessage(
+    String convId,
+    String clientRef,
+    ChatMessage confirmed, {
+    String? parentId,
+  }) {
+    _patchInFeed(
+      convId,
+      (m) => m.clientRef == clientRef ? confirmed : m,
+      threadRootId: parentId,
+    );
+    if (parentId != null) {
+      patchThreadReply(parentId, confirmed);
+    }
+    // Update sidebar with confirmed message body.
+    applyIncomingMessage(convId, confirmed, bumpUnread: false);
+  }
+
+  void _markPendingFailed(
+    String convId,
+    String clientRef, {
+    String? parentId,
+  }) {
+    _patchInFeed(
+      convId,
+      (m) => m.clientRef == clientRef
+          ? m.copyWith(sendStatus: MessageSendStatus.failed)
+          : m,
+      threadRootId: parentId,
+    );
+  }
+
+  void _removePendingFromFeed(
+    String convId,
+    String pendingId, {
+    String? parentId,
+  }) {
+    final key = feedKey(convId, threadRootId: parentId);
+    final feed = state.feeds[key];
+    if (feed == null) return;
+    setFeed(key, feed.copyWith(
+      messages: feed.messages.where((m) => m.id != pendingId).toList(),
+    ));
+  }
+
+  /// Applies [mapper] to every message in the feed for [convId].
+  void _patchInFeed(
+    String convId,
+    ChatMessage Function(ChatMessage) mapper, {
+    String? threadRootId,
+  }) {
+    final key = feedKey(convId, threadRootId: threadRootId);
+    final feed = state.feeds[key];
+    if (feed == null) return;
+    setFeed(key, feed.copyWith(
+      messages: feed.messages.map(mapper).toList(),
+    ));
   }
 
   Future<void> markConversationRead(String conversationId) async {

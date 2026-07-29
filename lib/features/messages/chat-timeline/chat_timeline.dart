@@ -54,13 +54,16 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
 
   void _load() {
     final n = ref.read(chatProvider.notifier);
-    // Always force-fetch on first load / conversation switch so any messages
-    // received via WS while the feed was not open are pulled in immediately.
-    n.loadFeed(
-      widget.conversationId,
-      threadRootId: widget.threadRootId,
-      force: true,
-    );
+    // Cache-first: hydrate from SQLite immediately so messages show with 0
+    // network latency. Then force a fresh network fetch in the background.
+    // This is exactly how WhatsApp loads conversations.
+    n.hydrateFeedFromCache(widget.conversationId).then((_) {
+      n.loadFeed(
+        widget.conversationId,
+        threadRootId: widget.threadRootId,
+        force: true,
+      );
+    });
     if (widget.threadRootId == null) {
       n.markConversationRead(widget.conversationId);
     }

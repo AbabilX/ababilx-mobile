@@ -65,6 +65,17 @@ class ChatMessageAttachment extends Equatable {
         createdAt: json['created_at'] as String? ?? '',
       );
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'message_id': messageId,
+        'file_name': fileName,
+        'file_url': fileUrl,
+        'content_type': contentType,
+        'size_bytes': sizeBytes,
+        'uploaded_by': uploadedBy,
+        'created_at': createdAt,
+      };
+
   @override
   List<Object?> get props => [id, fileUrl];
 }

@@ -28,15 +28,18 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       );
       final sorted =
           threadRootId != null ? page.messages : page.messages.reversed.toList();
-      setFeed(
-        key,
-        ChatFeed(
-          messages: sorted,
-          nextCursor: page.nextCursor,
-          hasMore: page.hasMore,
-          fetchedAt: DateTime.now().millisecondsSinceEpoch,
-        ),
+      final freshFeed = ChatFeed(
+        messages: sorted,
+        nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
+        fetchedAt: DateTime.now().millisecondsSinceEpoch,
       );
+      setFeed(key, freshFeed);
+      // Persist main conversation feed (not thread feeds) to local DB so the
+      // next open is instant (cache-first load). Fire-and-forget.
+      if (threadRootId == null) {
+        (this as _ChatCacheMixin).persistFeedAsync(conversationId, sorted);
+      }
       if (threadRootId != null) {
         final replies =
             sorted.where((m) => m.id != threadRootId).toList(growable: false);
