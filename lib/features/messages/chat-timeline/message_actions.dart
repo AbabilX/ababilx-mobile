@@ -18,6 +18,9 @@ Future<void> showMessageActions(
 }) async {
   if (msg.isDeleted) return;
   final isMine = msg.userId == ref.read(chatProvider).currentUserId;
+  final conversation = ref.read(chatProvider).conversationById(conversationId);
+  final isDm = conversation?.isDm ?? true;
+
   final action = await showModalBottomSheet<String>(
     context: context,
     builder: (ctx) => SafeArea(
@@ -30,11 +33,16 @@ Future<void> showMessageActions(
             onTap: () => Navigator.pop(ctx, 'react'),
           ),
           ListTile(
+            leading: const Icon(Icons.reply, size: 22),
+            title: const Text('Reply'),
+            onTap: () => Navigator.pop(ctx, 'reply'),
+          ),
+          ListTile(
             leading: const ChatIcon(HugeIcons.strokeRoundedForward01),
             title: const Text('Forward'),
             onTap: () => Navigator.pop(ctx, 'forward'),
           ),
-          if (threadRootId == null)
+          if (!isDm && threadRootId == null)
             ListTile(
               leading: const ChatIcon(HugeIcons.strokeRoundedComment01),
               title: const Text('Reply in thread'),
@@ -64,10 +72,16 @@ Future<void> showMessageActions(
   switch (action) {
     case 'react':
       await n.toggleReaction(msg.id, '👍');
+    case 'reply':
+      n.setReplyToMessage(msg);
     case 'forward':
       await showForwardSheet(context, ref, msg);
     case 'thread':
-      openThreadSheet(context, conversationId, msg);
+      if (isDm) {
+        n.setReplyToMessage(msg);
+      } else {
+        openThreadSheet(context, conversationId, msg);
+      }
     case 'edit':
       final edited = await _editDialog(
         context,

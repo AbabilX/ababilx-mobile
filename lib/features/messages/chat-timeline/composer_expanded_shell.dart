@@ -10,12 +10,14 @@ class ComposerExpandedShell extends StatelessWidget {
     required this.onRemove,
     required this.onAddPhoto,
     required this.field,
+    this.replyBanner,
   });
 
   final List<ChatAttachmentInput> pending;
   final ValueChanged<int> onRemove;
   final VoidCallback onAddPhoto;
   final Widget field;
+  final Widget? replyBanner;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +32,7 @@ class ComposerExpandedShell extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (replyBanner case final banner?) banner,
             if (pending.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),

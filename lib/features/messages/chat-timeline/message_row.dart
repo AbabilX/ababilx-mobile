@@ -32,7 +32,10 @@ class MessageRow extends ConsumerWidget {
     final name = message.userName ?? 'Unknown';
     final n = ref.read(chatProvider.notifier);
 
-    // Long-press actions; double-tap opens thread (DM + channels).
+    final conversation = ref.watch(chatProvider).conversationById(conversationId);
+    final isDm = conversation?.isDm ?? true;
+
+    // Long-press actions; double-tap replies inline (DM) or opens thread (channels).
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: () => showMessageActions(
@@ -43,7 +46,13 @@ class MessageRow extends ConsumerWidget {
         threadRootId: threadRootId,
       ),
       onDoubleTap: threadRootId == null
-          ? () => openThreadSheet(context, conversationId, message)
+          ? () {
+              if (isDm) {
+                n.setReplyToMessage(message);
+              } else {
+                openThreadSheet(context, conversationId, message);
+              }
+            }
           : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),

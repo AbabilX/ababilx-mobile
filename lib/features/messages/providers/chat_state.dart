@@ -53,6 +53,7 @@ class ChatState {
     this.searchResults = const [],
     this.searchLoading = false,
     this.wsConnected = false,
+    this.replyToMessage,
   });
 
   final List<ChatConversation> dms;
@@ -61,6 +62,7 @@ class ChatState {
   final String currentUserId;
   final String? activeConversationId;
   final String? threadRootId;
+  final ChatMessage? replyToMessage;
   final Map<String, ChatFeed> feeds;
   final Map<String, List<ChatMessage>> threadRepliesByRoot;
   final bool sending;
@@ -93,6 +95,8 @@ class ChatState {
     String? activeConversationId,
     String? threadRootId,
     bool clearThreadRoot = false,
+    ChatMessage? replyToMessage,
+    bool clearReplyTo = false,
     Map<String, ChatFeed>? feeds,
     Map<String, List<ChatMessage>>? threadRepliesByRoot,
     bool? sending,
@@ -109,6 +113,8 @@ class ChatState {
         activeConversationId: activeConversationId ?? this.activeConversationId,
         threadRootId:
             clearThreadRoot ? null : (threadRootId ?? this.threadRootId),
+        replyToMessage:
+            clearReplyTo ? null : (replyToMessage ?? this.replyToMessage),
         feeds: feeds ?? this.feeds,
         threadRepliesByRoot:
             threadRepliesByRoot ?? this.threadRepliesByRoot,

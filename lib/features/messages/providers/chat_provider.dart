@@ -135,11 +135,22 @@ class ChatNotifier extends Notifier<ChatState>
 
   void setActiveConversation(String? id) {
     if (id != null && !isValidConversationId(id)) return;
-    state = state.copyWith(activeConversationId: id, clearThreadRoot: true);
+    state = state.copyWith(
+      activeConversationId: id,
+      clearThreadRoot: true,
+      clearReplyTo: true,
+    );
   }
 
   void setThreadRootId(String? id) {
     state = state.copyWith(threadRootId: id, clearThreadRoot: id == null);
+  }
+
+  void setReplyToMessage(ChatMessage? message) {
+    state = state.copyWith(
+      replyToMessage: message,
+      clearReplyTo: message == null,
+    );
   }
 
   void clearUnread(String conversationId) {

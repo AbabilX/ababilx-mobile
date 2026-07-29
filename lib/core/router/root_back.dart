@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 /// App "home" — system back lands here before the OS can exit.
@@ -11,11 +12,16 @@ bool isAppHomeLocation(String location) => location == kAppHomePath;
 /// Returns `true` when back was handled (stay in app).
 /// Returns `false` only on Messages home or login — caller may exit.
 bool handleRootBack(BuildContext context) {
-  final router = GoRouter.of(context);
-  if (router.canPop()) {
+  final router = GoRouter.maybeOf(context);
+  if (router != null && router.canPop()) {
     router.pop();
     return true;
   }
+  if (Navigator.of(context).canPop()) {
+    Navigator.of(context).pop();
+    return true;
+  }
+  if (router == null) return false;
   final loc = GoRouterState.of(context).matchedLocation;
   if (loc == '/login') return false;
   if (!isAppHomeLocation(loc)) {
@@ -39,8 +45,15 @@ class RootBackScope extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BackButtonListener(
-      onBackButtonPressed: () async => handleRootBack(context),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final handled = handleRootBack(context);
+        if (!handled) {
+          SystemNavigator.pop();
+        }
+      },
       child: child,
     );
   }

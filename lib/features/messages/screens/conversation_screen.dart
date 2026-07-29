@@ -48,7 +48,8 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final conversation = chat.conversationById(widget.conversationId);
 
     // Prefer stack pop when list→chat push; else Messages home (notification go).
-    final canPop = GoRouter.of(context).canPop();
+    final canPop =
+        GoRouter.maybeOf(context)?.canPop() ?? Navigator.of(context).canPop();
     return PopScope(
       canPop: canPop,
       onPopInvokedWithResult: (didPop, _) {

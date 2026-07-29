@@ -39,7 +39,8 @@ class _WallPostScreenState extends ConsumerState<WallPostScreen> {
         _replyTo == null ? null : (_replyTo!.parentId ?? _replyTo!.id);
 
     return PopScope(
-      canPop: GoRouter.of(context).canPop(),
+      canPop: GoRouter.maybeOf(context)?.canPop() ??
+          Navigator.of(context).canPop(),
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) popOrGoHome(context);
       },

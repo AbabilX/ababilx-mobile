@@ -51,6 +51,8 @@ class WallPostActions extends ConsumerWidget {
             label: '${post.commentCount}',
             onTap: onComment ??
                 () {
+                  final router = GoRouter.maybeOf(context);
+                  if (router == null) return;
                   final loc = GoRouterState.of(context).matchedLocation;
                   if (loc == '/wall/post/${post.id}') return;
                   context.push('/wall/post/${post.id}');

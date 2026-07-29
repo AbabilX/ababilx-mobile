@@ -14,6 +14,7 @@ import 'composer_attach.dart';
 import 'composer_collapsed.dart';
 import 'composer_expanded_shell.dart';
 import 'composer_recording_bar.dart';
+import 'composer_reply_banner.dart';
 import 'composer_share_contact.dart';
 import 'composer_slack_field.dart';
 import 'composer_text_actions.dart';
@@ -61,7 +62,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   String get _hint => 'Message ${widget.hintName}';
   bool get _hasDraft => _ctrl.text.trim().isNotEmpty || _pending.isNotEmpty;
-  bool get _expanded => _forceExpanded || _focused || _hasDraft;
+  bool get _expanded =>
+      _forceExpanded ||
+      _focused ||
+      _hasDraft ||
+      ref.watch(chatProvider).replyToMessage != null;
   bool get _voiceSheetOpen => _recording || _recordPreparing || _uploadingVoice;
 
   @override
@@ -101,13 +106,16 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   Future<void> _send() async {
     final plain = _ctrl.text.trim();
     if (plain.isEmpty && _pending.isEmpty) return;
+    final replyTarget = ref.read(chatProvider).replyToMessage;
+    final effectiveParentId = replyTarget?.id ?? widget.parentId;
     await ref
         .read(chatProvider.notifier)
         .sendMessage(
           body: plain.isEmpty ? '' : textToTiptapJson(plain),
           attachments: List.of(_pending),
-          parentId: widget.parentId,
+          parentId: effectiveParentId,
         );
+    ref.read(chatProvider.notifier).setReplyToMessage(null);
     if (!mounted) return;
     _ctrl.clear();
     setState(() {
@@ -270,10 +278,12 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           bytes,
           RecordedVoiceMessage.contentType,
         );
+        final replyTarget = ref.read(chatProvider).replyToMessage;
+        final effectiveParentId = replyTarget?.id ?? widget.parentId;
         await notifier.sendMessage(
           conversationId: widget.conversationId,
           body: '',
-          parentId: widget.parentId,
+          parentId: effectiveParentId,
           attachments: [
             ChatAttachmentInput(
               fileUrl: presign.publicUrl,
@@ -283,6 +293,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
             ),
           ],
         );
+        notifier.setReplyToMessage(null);
       } catch (_) {
         await notifier.discardUpload(widget.conversationId, presign.publicUrl);
         rethrow;
@@ -347,8 +358,21 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<ChatMessage?>(
+      chatProvider.select((s) => s.replyToMessage),
+      (prev, next) {
+        if (next != null && mounted) {
+          setState(() => _forceExpanded = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _focus.requestFocus();
+          });
+        }
+      },
+    );
+
     final sending = ref.watch(chatProvider).sending;
     final language = ref.watch(appLanguageProvider);
+    final replyToMsg = ref.watch(chatProvider).replyToMessage;
     String tr(String key) => AppTranslations.translate(context, ref, key);
 
     if (_voiceSheetOpen) {
@@ -385,6 +409,13 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       pending: _pending,
       onRemove: (i) => setState(() => _pending.removeAt(i)),
       onAddPhoto: () => _attach(),
+      replyBanner: replyToMsg != null
+          ? ComposerReplyBanner(
+              message: replyToMsg,
+              onCancel: () =>
+                  ref.read(chatProvider.notifier).setReplyToMessage(null),
+            )
+          : null,
       field: ComposerSlackField(
         controller: _ctrl,
         focusNode: _focus,
