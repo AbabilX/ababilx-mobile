@@ -56,6 +56,7 @@ class ChatConversation extends Equatable {
     this.peerUserId,
     this.peerUserName,
     this.peerUserAvatar,
+    this.peerUserEmail,
     this.peerLeft = false,
     this.muted = false,
     this.memberAvatars = const [],
@@ -81,6 +82,7 @@ class ChatConversation extends Equatable {
   final String? peerUserId;
   final String? peerUserName;
   final String? peerUserAvatar;
+  final String? peerUserEmail;
   final bool peerLeft;
   final bool muted;
   final List<String> memberAvatars;
@@ -147,6 +149,7 @@ class ChatConversation extends Equatable {
       peerUserId: _jsonString(json['peer_user_id']),
       peerUserName: _jsonString(json['peer_user_name']),
       peerUserAvatar: _jsonString(json['peer_user_avatar']),
+      peerUserEmail: _jsonString(json['peer_user_email'] ?? json['peerUserEmail']),
       peerLeft: json['peer_left'] as bool? ?? false,
       muted: json['muted'] as bool? ?? false,
       memberAvatars: (json['member_avatars'] as List<dynamic>? ?? [])

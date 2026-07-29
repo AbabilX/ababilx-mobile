@@ -6,6 +6,7 @@ import '../../../shared/widgets/app_avatar.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
+import '../providers/team_gate_provider.dart';
 
 Future<void> showDmActionsSheet(
   BuildContext context,
@@ -15,6 +16,17 @@ Future<void> showDmActionsSheet(
   final name = conversation.peerUserName ?? 'Direct message';
   final avatar = conversation.peerUserAvatar;
   final colors = Theme.of(context).colorScheme;
+
+  String? peerEmail = conversation.peerUserEmail;
+  if ((peerEmail == null || peerEmail.isEmpty) && conversation.peerUserId != null) {
+    final teamMembers = ref.watch(teamMembersProvider);
+    for (final m in teamMembers) {
+      if (m.userId == conversation.peerUserId) {
+        peerEmail = m.email;
+        break;
+      }
+    }
+  }
 
   await showModalBottomSheet<void>(
     context: context,
@@ -155,6 +167,33 @@ Future<void> showDmActionsSheet(
                     ),
                     subtitle: Text(
                       _maskUserId(conversation.peerUserId!),
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+
+                if (peerEmail != null && peerEmail.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: colors.surfaceContainerHighest,
+                        shape: BoxShape.circle,
+                      ),
+                      child: ChatIcon(
+                        HugeIcons.strokeRoundedMail01,
+                        size: 20,
+                        color: colors.onSurface,
+                      ),
+                    ),
+                    title: const Text(
+                      'Email',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      peerEmail,
                       style: const TextStyle(fontSize: 12),
                     ),
                   ),
