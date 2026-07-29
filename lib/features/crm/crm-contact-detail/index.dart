@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../core/router/root_back.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../crm-contacts/contact_form_sheet.dart';
 import '../crm-leads/lead_form_sheet.dart';
@@ -235,13 +236,7 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
-              onPressed: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/crm/contacts');
-                }
-              },
+              onPressed: () => popOrGoHome(context),
             ),
             title: Text(contact.name),
             actions: [

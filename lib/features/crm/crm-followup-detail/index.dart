@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/root_back.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../crm-lead-detail/complete_followup_sheet.dart';
 import '../crm-lead-detail/documents_tab.dart';
@@ -361,13 +362,7 @@ class _CrmFollowupDetailPageState extends ConsumerState<CrmFollowupDetailPage>
               appBar: AppBar(
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_rounded),
-                  onPressed: () {
-                    if (context.canPop()) {
-                      context.pop();
-                    } else {
-                      context.go('/crm/followups');
-                    }
-                  },
+                  onPressed: () => popOrGoHome(context),
                 ),
                 title: const Text('Follow-up'),
                 actions: [

@@ -106,9 +106,11 @@ class LocalNotifications {
         channelDescription: 'AbabilX',
         importance: Importance.high,
         priority: Priority.high,
+        // Status-bar / left badge: Android requires white-on-transparent silhouette
+        // (derived from our app icon). Full-color logo goes in largeIcon below.
         icon: 'ic_stat_ababilx',
         color: const Color(0xFF6366F1),
-        // Full-color app logo on the right side of the notification.
+        // Same full-color app icon as the launcher (home screen).
         largeIcon: const DrawableResourceAndroidBitmap('ic_launcher'),
       ),
     );

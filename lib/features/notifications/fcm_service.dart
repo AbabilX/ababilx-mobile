@@ -153,13 +153,42 @@ class FcmService {
       final pending = _pendingPath;
       if (pending == null || pending.isEmpty) return;
       try {
-        r.go(pending);
+        _openDeepLink(r, pending);
         _pendingPath = null;
         fcmLog('navigate.ok', pending);
       } catch (e) {
         fcmLog('navigate.fail', e);
       }
     });
+  }
+
+  /// Seed Messages under detail routes so back reaches home before exit.
+  void _openDeepLink(GoRouter r, String path) {
+    final bare = path.split('?').first;
+    if (bare == '/messages' || bare == '/login' || _isShellTab(bare)) {
+      r.go(path);
+      return;
+    }
+    r.go('/messages');
+    Future<void>.delayed(const Duration(milliseconds: 50), () {
+      try {
+        r.push(path);
+      } catch (e) {
+        fcmLog('navigate.push.fail', e);
+        r.go(path);
+      }
+    });
+  }
+
+  bool _isShellTab(String path) {
+    return path == '/wall' ||
+        path == '/crm' ||
+        path == '/crm/contacts' ||
+        path == '/crm/leads' ||
+        path == '/crm/followups' ||
+        path == '/crm/organizations' ||
+        path == '/board' ||
+        path == '/profile';
   }
 
   /// Peek without clearing — used by GoRouter login redirect.

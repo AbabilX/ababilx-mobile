@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/router/root_back.dart';
 import '../board-kanban/index.dart';
 import '../providers/board_detail_provider.dart';
 
@@ -21,6 +22,10 @@ class BoardDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => popOrGoHome(context),
+        ),
         title: Text(title),
         actions: [
           if (state.loading)

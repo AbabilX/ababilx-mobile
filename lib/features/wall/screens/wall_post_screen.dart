@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/router/root_back.dart';
 import '../../messages/chat_icon.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
@@ -29,14 +30,6 @@ class _WallPostScreenState extends ConsumerState<WallPostScreen> {
     return fetched;
   }
 
-  void _back(BuildContext context) {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/wall');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(wallPostProvider(widget.postId));
@@ -45,16 +38,15 @@ class _WallPostScreenState extends ConsumerState<WallPostScreen> {
     final parentId =
         _replyTo == null ? null : (_replyTo!.parentId ?? _replyTo!.id);
 
-    final canPop = context.canPop();
     return PopScope(
-      canPop: canPop,
+      canPop: GoRouter.of(context).canPop(),
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) context.go('/wall');
+        if (!didPop) popOrGoHome(context);
       },
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-            onPressed: () => _back(context),
+            onPressed: () => popOrGoHome(context),
             icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
           ),
           title: const Text('Post'),

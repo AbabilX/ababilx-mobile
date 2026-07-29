@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/router/root_back.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../providers/voice_call_provider.dart';
 
@@ -55,7 +56,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                   alignment: Alignment.centerLeft,
                   child: IconButton(
                     tooltip: 'Minimize call',
-                    onPressed: () => Navigator.of(context).maybePop(),
+                    onPressed: () => popOrGoHome(context),
                     icon: const Icon(Icons.keyboard_arrow_down_rounded),
                   ),
                 ),

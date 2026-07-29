@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/root_back.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../crm-organizations/organization_form_sheet.dart';
 import '../crm-organizations/organization_documents.dart';
@@ -122,7 +123,7 @@ class CrmOrganizationDetailScreen extends ConsumerWidget {
         child: Scaffold(
           appBar: AppBar(
             leading: IconButton(
-              onPressed: () => context.pop(),
+              onPressed: () => popOrGoHome(context),
               icon: const Icon(Icons.arrow_back_rounded),
             ),
             title: Text(record.name),

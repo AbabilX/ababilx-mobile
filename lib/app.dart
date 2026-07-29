@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
+import 'core/router/root_back.dart';
 import 'core/theme/app_theme.dart';
 import 'features/messages/chat_store_sync.dart';
 import 'features/notifications/fcm_bootstrap.dart';
@@ -25,6 +26,9 @@ class AbabilXApp extends ConsumerWidget {
             darkTheme: AppTheme.dark,
             themeMode: ThemeMode.system,
             routerConfig: router,
+            builder: (context, child) => RootBackScope(
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         ),
       ),

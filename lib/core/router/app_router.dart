@@ -22,7 +22,6 @@ import '../../features/crm/screens/crm_followup_detail_screen.dart';
 import '../../features/crm/screens/crm_contact_detail_screen.dart';
 import '../../features/crm/screens/crm_organizations_screen.dart';
 import '../../features/crm/screens/crm_organization_detail_screen.dart';
-import '../../features/notifications/providers/fcm_provider.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import 'home_shell.dart';
 
@@ -63,9 +62,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!isLoggedIn && !isLoginPage) return '/login';
       if (isLoggedIn && isLoginPage) {
-        // Notification cold-start: open that chat instead of generic inbox.
-        final pending = ref.read(fcmServiceProvider).consumePendingPath();
-        if (pending != null && pending.isNotEmpty) return pending;
+        // Always land on Messages first. FcmService.flushPendingNav seeds
+        // the deep-link (push) so Android back returns here instead of exit.
         return '/messages';
       }
       return null;

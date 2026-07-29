@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/root_back.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../crm-leads/lead_form_sheet.dart';
 import '../data/crm_repository.dart';
@@ -183,15 +184,7 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
-              onPressed: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else if (lead.contactId.isNotEmpty) {
-                  context.go('/crm/contacts/${lead.contactId}');
-                } else {
-                  context.go('/crm/leads');
-                }
-              },
+              onPressed: () => popOrGoHome(context),
             ),
             title: Text(
               (lead.contactName ?? '').isNotEmpty
