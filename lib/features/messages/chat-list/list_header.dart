@@ -8,7 +8,7 @@ import 'header_profile_pill.dart';
 import 'workspace_title.dart';
 import 'you-sheet/index.dart';
 
-/// Slack-style list app bar: workspace left, history+profile pill right.
+/// Slack-style list app bar: workspace left, status+profile pill right.
 class ChatListHeader extends ConsumerWidget {
   const ChatListHeader({super.key});
 

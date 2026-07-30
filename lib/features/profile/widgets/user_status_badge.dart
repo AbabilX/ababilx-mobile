@@ -8,6 +8,7 @@ class UserStatusBadge extends StatelessWidget {
     super.key,
     required this.status,
     this.compact = false,
+    this.plain = false,
     this.borderRadius,
     this.maxWidth,
   });
@@ -16,6 +17,9 @@ class UserStatusBadge extends StatelessWidget {
 
   /// Smaller text for list rows / dense tiles.
   final bool compact;
+
+  /// No chip background/padding — just emoji + text (app-bar dense use).
+  final bool plain;
 
   /// Defaults to a fully-rounded pill; pass a fixed value (e.g. to match
   /// [AppAvatar.radius]) when placed right next to an avatar.
@@ -29,7 +33,41 @@ class UserStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final content = Container(
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (status.emoji.isNotEmpty) ...[
+          Text(status.emoji, style: TextStyle(fontSize: compact ? 11 : 13)),
+          SizedBox(width: compact ? 3 : 4),
+        ],
+        Flexible(
+          child: Text(
+            status.text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: (compact ? textTheme.labelSmall : textTheme.labelMedium)
+                ?.copyWith(
+                  color: plain
+                      ? colors.onSurfaceVariant
+                      : colors.onSecondaryContainer,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                ),
+          ),
+        ),
+      ],
+    );
+
+    if (plain) {
+      return ConstrainedBox(
+        constraints: maxWidth != null
+            ? BoxConstraints(maxWidth: maxWidth!)
+            : const BoxConstraints(),
+        child: row,
+      );
+    }
+
+    return Container(
       constraints: maxWidth != null
           ? BoxConstraints(maxWidth: maxWidth!)
           : null,
@@ -41,29 +79,7 @@ class UserStatusBadge extends StatelessWidget {
         color: colors.secondaryContainer,
         borderRadius: BorderRadius.circular(borderRadius ?? 999),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (status.emoji.isNotEmpty) ...[
-            Text(status.emoji, style: TextStyle(fontSize: compact ? 11 : 13)),
-            SizedBox(width: compact ? 3 : 4),
-          ],
-          Flexible(
-            child: Text(
-              status.text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: (compact ? textTheme.labelSmall : textTheme.labelMedium)
-                  ?.copyWith(
-                    color: colors.onSecondaryContainer,
-                    fontWeight: FontWeight.w700,
-                    height: 1.1,
-                  ),
-            ),
-          ),
-        ],
-      ),
+      child: row,
     );
-    return content;
   }
 }
