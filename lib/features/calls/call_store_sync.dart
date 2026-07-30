@@ -150,17 +150,35 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
         }
         return;
       }
-      if (next.phase == VoiceCallPhase.idle && _currentPath == '/call') {
-        final conversationId = previous?.conversationId;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          if (conversationId != null && conversationId.isNotEmpty) {
-            widget.router.go('/messages/$conversationId');
-          } else {
-            widget.router.go('/messages');
-          }
-        });
-      }
+      // Leave /call when idle (normal) or shortly after ended/failed so Decline
+      // does not strand the user on a "Done" button for 5s.
+      final terminal = next.phase == VoiceCallPhase.ended ||
+          next.phase == VoiceCallPhase.failed;
+      final wasLive = previous?.shouldOpenCallScreen == true;
+      final shouldLeave = _currentPath == '/call' &&
+          (next.phase == VoiceCallPhase.idle || terminal) &&
+          (wasLive ||
+              previous?.phase == VoiceCallPhase.ended ||
+              previous?.phase == VoiceCallPhase.failed);
+      if (!shouldLeave) return;
+      final conversationId = next.conversationId ?? previous?.conversationId;
+      final delay = terminal
+          ? const Duration(milliseconds: 700)
+          : Duration.zero;
+      Future<void>.delayed(delay, () {
+        if (!mounted || _currentPath != '/call') return;
+        final phase = ref.read(voiceCallProvider).phase;
+        if (phase != VoiceCallPhase.idle &&
+            phase != VoiceCallPhase.ended &&
+            phase != VoiceCallPhase.failed) {
+          return;
+        }
+        if (conversationId != null && conversationId.isNotEmpty) {
+          widget.router.go('/messages/$conversationId');
+        } else {
+          widget.router.go('/messages');
+        }
+      });
     });
 
     return widget.child;

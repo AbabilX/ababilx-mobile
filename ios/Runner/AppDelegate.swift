@@ -38,20 +38,25 @@ import UIKit
     // Best-effort system alert sound loop while the in-app call screen is open.
     // Full lock-screen ringing stays on CallKit.
     let candidates = [
+      "/Library/Ringtones/Opening.m4r",
       "/System/Library/Audio/UISounds/nano/Alert_Calendar_Haptic.caf",
       "/System/Library/Audio/UISounds/sms-received1.caf",
+      "/System/Library/Audio/UISounds/SIMToolkitCallDropped.caf",
       "/System/Library/Audio/UISounds/Tink.caf",
+      "/System/Library/Audio/UISounds/new-mail.caf",
     ]
     guard let path = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
       return
     }
     do {
-      try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.duckOthers])
-      try AVAudioSession.sharedInstance().setActive(true)
+      let session = AVAudioSession.sharedInstance()
+      try session.setCategory(.playback, mode: .default, options: [.duckOthers, .mixWithOthers])
+      try session.setActive(true, options: [])
       let player = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: path))
       player.numberOfLoops = -1
       player.volume = 1.0
-      player.play()
+      player.prepareToPlay()
+      guard player.play() else { return }
       ringtonePlayer = player
     } catch {
       // Keep silent rather than crash if the system sound is unavailable.

@@ -307,21 +307,35 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   Future<void> declineIncoming([String? callId]) async {
     final id = callId ?? state.call?.id;
     if (id == null || id.isEmpty) return;
+    // Already leaving the call UI — ignore duplicate Decline taps.
+    if (!state.active && callId == null) return;
+    if (_transitioning) return;
+    _transitioning = true;
     voiceCallLog('decline.begin', callId: id, phase: _phaseName);
+    // End local UI/ringtone first so Decline feels instant (no second tap).
+    final declined = state.call?.copyWith(status: 'declined');
+    if (declined != null) {
+      state = state.copyWith(call: declined);
+    }
+    await _finishLocal(VoiceCallPhase.ended, reason: 'decline.local');
     try {
       await _repository.action(id, 'decline');
     } catch (_) {
       // The server may already have expired the ringing call.
+    } finally {
+      _transitioning = false;
     }
-    await _finishLocal(VoiceCallPhase.ended, reason: 'decline.local');
   }
 
   Future<void> hangUp({String source = 'hangUp'}) async {
+    if (_transitioning) return;
     final call = state.call;
     if (call == null) {
       await _finishLocal(VoiceCallPhase.ended, reason: '$source.no_call');
       return;
     }
+    if (!state.active) return;
+    _transitioning = true;
     final action = switch (state.phase) {
       VoiceCallPhase.outgoingRinging => 'cancel',
       VoiceCallPhase.incomingRinging => 'decline',
@@ -334,12 +348,15 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       source: source,
       reason: action,
     );
+    // Tear down UI immediately; lifecycle API can finish in the background.
+    await _finishLocal(VoiceCallPhase.ended, reason: '$source.$action');
     try {
       await _repository.action(call.id, action);
     } catch (_) {
       // Local media must stop even if the final lifecycle request times out.
+    } finally {
+      _transitioning = false;
     }
-    await _finishLocal(VoiceCallPhase.ended, reason: '$source.$action');
   }
 
   Future<void> toggleMute() async {

@@ -1,15 +1,15 @@
 package com.ababilx.app
 
 import android.media.AudioAttributes
-import android.media.Ringtone
+import android.media.MediaPlayer
 import android.media.RingtoneManager
-import android.os.Build
+import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private var ringtone: Ringtone? = null
+    private var mediaPlayer: MediaPlayer? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -33,26 +33,41 @@ class MainActivity : FlutterActivity() {
 
     private fun startRingtone() {
         stopRingtone()
-        val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-        val tone = RingtoneManager.getRingtone(applicationContext, uri) ?: return
-        tone.audioAttributes =
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            tone.isLooping = true
+        val uri = ringtoneUri() ?: return
+        try {
+            val player = MediaPlayer()
+            player.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build(),
+            )
+            player.setDataSource(applicationContext, uri)
+            player.isLooping = true
+            player.prepare()
+            player.start()
+            mediaPlayer = player
+        } catch (_: Exception) {
+            stopRingtone()
         }
-        tone.play()
-        ringtone = tone
+    }
+
+    private fun ringtoneUri(): Uri? {
+        val ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        if (ringtone != null) return ringtone
+        return RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
     }
 
     private fun stopRingtone() {
         try {
-            ringtone?.stop()
+            mediaPlayer?.stop()
         } catch (_: Exception) {
         }
-        ringtone = null
+        try {
+            mediaPlayer?.release()
+        } catch (_: Exception) {
+        }
+        mediaPlayer = null
     }
 
     override fun onDestroy() {

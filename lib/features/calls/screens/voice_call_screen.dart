@@ -17,7 +17,9 @@ class VoiceCallScreen extends ConsumerStatefulWidget {
 
 class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
   Timer? _clock;
-  bool _wasIncoming = false;
+  Timer? _autoClose;
+  bool _ringtoneOn = false;
+  bool _closing = false;
 
   @override
   void initState() {
@@ -34,26 +36,54 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
   @override
   void dispose() {
     _clock?.cancel();
+    _autoClose?.cancel();
     unawaited(IncomingCallRingtone.stop());
     super.dispose();
   }
 
   void _syncRingtone(VoiceCallPhase phase) {
     if (phase == VoiceCallPhase.incomingRinging) {
-      _wasIncoming = true;
+      if (_ringtoneOn) return;
+      _ringtoneOn = true;
       unawaited(IncomingCallRingtone.start());
       return;
     }
-    if (_wasIncoming) {
-      _wasIncoming = false;
-      unawaited(IncomingCallRingtone.stop());
+    if (!_ringtoneOn) return;
+    _ringtoneOn = false;
+    unawaited(IncomingCallRingtone.stop());
+  }
+
+  void _scheduleAutoClose(VoiceCallPhase phase) {
+    if (phase != VoiceCallPhase.ended && phase != VoiceCallPhase.failed) {
+      _autoClose?.cancel();
+      _autoClose = null;
+      return;
     }
+    if (_closing) return;
+    _autoClose?.cancel();
+    // Brief beat so the caller can read "busy" / "ended"; callee decline
+    // already feels instant because phase flips before the API returns.
+    final delay = phase == VoiceCallPhase.failed
+        ? const Duration(milliseconds: 900)
+        : const Duration(milliseconds: 650);
+    _autoClose = Timer(delay, () {
+      if (!mounted || _closing) return;
+      final current = ref.read(voiceCallProvider).phase;
+      if (current != VoiceCallPhase.ended &&
+          current != VoiceCallPhase.failed &&
+          current != VoiceCallPhase.idle) {
+        return;
+      }
+      _closing = true;
+      popOrGoHome(context);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     ref.listen(voiceCallProvider.select((s) => s.phase), (prev, next) {
       _syncRingtone(next);
+      _scheduleAutoClose(next);
     });
     final call = ref.watch(voiceCallProvider);
     final notifier = ref.read(voiceCallProvider.notifier);

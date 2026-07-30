@@ -12,23 +12,46 @@ class IncomingCallRingtone {
   IncomingCallRingtone._();
 
   static const _channel = MethodChannel('com.ababilx.app/ringtone');
-  static bool _playing = false;
 
-  static Future<void> start() async {
-    if (_playing) return;
-    _playing = true;
-    try {
-      await _channel.invokeMethod<void>('start');
-    } catch (_) {
-      _playing = false;
-    }
+  /// Desired playing state. Native calls are serialized so overlapping
+  /// start/stop cannot leave the tone stuck on or silently skipped.
+  static bool _wantPlaying = false;
+  static Future<void>? _chain;
+
+  static Future<void> start() {
+    _wantPlaying = true;
+    return _enqueue();
   }
 
-  static Future<void> stop() async {
-    if (!_playing) return;
-    _playing = false;
-    try {
-      await _channel.invokeMethod<void>('stop');
-    } catch (_) {}
+  static Future<void> stop() {
+    _wantPlaying = false;
+    return _enqueue();
+  }
+
+  static Future<void> _enqueue() {
+    final previous = _chain;
+    late final Future<void> next;
+    next = () async {
+      if (previous != null) {
+        try {
+          await previous;
+        } catch (_) {}
+      }
+      await _applyDesired();
+    }();
+    _chain = next;
+    return next;
+  }
+
+  static Future<void> _applyDesired() async {
+    // Loop until native matches the latest desired flag (handles churn while
+    // awaiting the platform channel).
+    while (true) {
+      final want = _wantPlaying;
+      try {
+        await _channel.invokeMethod<void>(want ? 'start' : 'stop');
+      } catch (_) {}
+      if (_wantPlaying == want) return;
+    }
   }
 }

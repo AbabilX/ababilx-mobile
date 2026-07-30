@@ -49,6 +49,25 @@ class VoiceCall {
   String? peerAvatar(String currentUserId) =>
       callerId == currentUserId ? calleeAvatarUrl : callerAvatarUrl;
 
+  VoiceCall copyWith({String? status}) => VoiceCall(
+    id: id,
+    teamId: teamId,
+    conversationId: conversationId,
+    callerId: callerId,
+    calleeId: calleeId,
+    status: status ?? this.status,
+    callerName: callerName,
+    callerAvatarUrl: callerAvatarUrl,
+    calleeName: calleeName,
+    calleeAvatarUrl: calleeAvatarUrl,
+    expiresAt: expiresAt,
+    acceptedAt: acceptedAt,
+    endedAt: endedAt,
+    endedBy: endedBy,
+    endReason: endReason,
+    createdAt: createdAt,
+  );
+
   factory VoiceCall.fromJson(Map<String, dynamic> json) => VoiceCall(
     id: json['id'] as String? ?? '',
     teamId: json['team_id'] as String? ?? '',
