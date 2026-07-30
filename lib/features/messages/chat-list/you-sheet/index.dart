@@ -4,28 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../profile/providers/profile_provider.dart';
 import 'you_identity.dart';
 import 'you_menu.dart';
-import 'you_photo_cta.dart';
-import 'you_sheet_bar.dart';
-import 'you_status_field.dart';
 
 Future<void> showYouSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    showDragHandle: false,
+    showDragHandle: true,
     builder: (_) => const YouSheet(),
   );
 }
 
 class YouSheet extends ConsumerWidget {
   const YouSheet({super.key});
-
-  void _soon(BuildContext context, String label) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label coming soon')),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,10 +35,14 @@ class YouSheet extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const YouSheetBar(),
-              YouIdentity(name: name, avatarUrl: avatar),
-              YouPhotoCta(onTap: () => _soon(context, 'Profile photo')),
-              YouStatusField(onTap: () => _soon(context, 'Status')),
+              YouIdentity(
+                name: name,
+                currentUserId: user?.id ?? '',
+                avatarUrl: avatar,
+              ),
+              const SizedBox(height: 8),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
               const YouMenu(),
               const SizedBox(height: 12),
             ],

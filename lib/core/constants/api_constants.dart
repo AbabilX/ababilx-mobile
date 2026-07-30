@@ -13,6 +13,7 @@ class ApiConstants {
   static const String meProfile = '/api/me/profile';
   static const String mePlan = '/api/me/plan';
   static const String meConnections = '/api/me/connections';
+  static const String meStatus = '/api/me/status';
 
   // Team
   static const String teamsMe = '/api/teams/me';

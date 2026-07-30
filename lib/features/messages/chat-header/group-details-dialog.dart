@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
+import '../../profile/providers/user_status_provider.dart';
+import '../../profile/widgets/user_status_badge.dart';
 import '../chat-timeline/user_profile_sheet.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -68,10 +70,16 @@ Future<void> showGroupDetailsDialog(
                 (m) => Consumer(
                   builder: (context, ref, _) {
                     final inCall = ref.watch(isUserInCallProvider(m.userId));
+                    final status = ref.watch(userStatusForProvider(m.userId));
+                    final subtitle = inCall
+                        ? const InCallLabel(compact: true)
+                        : status != null
+                            ? UserStatusBadge(status: status, compact: true)
+                            : null;
                     return ListTile(
                       dense: true,
                       title: Text(m.name),
-                      subtitle: inCall ? const InCallLabel(compact: true) : null,
+                      subtitle: subtitle,
                       trailing:
                           const Icon(Icons.chevron_right_rounded, size: 18),
                       onTap: () {

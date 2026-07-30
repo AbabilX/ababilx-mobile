@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/providers/auth_provider.dart';
 import '../messages/providers/team_gate_provider.dart';
+import '../profile/providers/user_status_provider.dart';
 import 'providers/in_call_presence_provider.dart';
 import 'providers/voice_call_provider.dart';
 import 'voice_call_log.dart';
@@ -126,6 +127,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
         if (!mounted) return;
         ref.read(voiceCallProvider.notifier).bootstrap();
         unawaited(ref.read(inCallPresenceProvider.notifier).bootstrap());
+        unawaited(ref.read(userStatusProvider.notifier).bootstrap());
       });
     }
     if ((!loggedIn || !hasTeam) && _booted && !_shutdownScheduled) {
@@ -135,6 +137,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
         if (!mounted) return;
         await ref.read(voiceCallProvider.notifier).shutdown();
         ref.read(inCallPresenceProvider.notifier).clear();
+        ref.read(userStatusProvider.notifier).clear();
         if (!mounted) return;
         _shutdownScheduled = false;
       });

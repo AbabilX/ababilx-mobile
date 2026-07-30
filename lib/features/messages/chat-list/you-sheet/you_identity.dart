@@ -1,65 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/app_avatar.dart';
+import '../../../profile/providers/user_status_provider.dart';
+import '../../../profile/widgets/user_status_badge.dart';
+import 'set_status_sheet.dart';
 
-class YouIdentity extends StatelessWidget {
+/// Centered identity block: avatar → name → tappable status.
+class YouIdentity extends ConsumerWidget {
   const YouIdentity({
     super.key,
     required this.name,
+    required this.currentUserId,
     this.avatarUrl,
   });
 
   final String name;
+  final String currentUserId;
   final String? avatarUrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final status = ref.watch(userStatusForProvider(currentUserId));
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+      child: Column(
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              AppAvatar(size: 56, url: avatarUrl, name: name),
-              Positioned(
-                right: -2,
-                bottom: -2,
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: AppColors.green,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: colors.surface, width: 2),
-                  ),
-                ),
-              ),
-            ],
+          AppAvatar(size: 88, url: avatarUrl, name: name),
+          const SizedBox(height: 14),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Active',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          InkWell(
+            borderRadius: BorderRadius.circular(999),
+            onTap: () => showSetStatusSheet(context, ref, currentUserId),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: status != null
+                  ? UserStatusBadge(status: status)
+                  : Text(
+                      "What's your status?",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
             ),
           ),
         ],

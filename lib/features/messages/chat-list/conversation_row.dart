@@ -5,6 +5,8 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
+import '../../profile/providers/user_status_provider.dart';
+import '../../profile/widgets/user_status_badge.dart';
 import '../chat_icon.dart';
 import '../chat_list_filters.dart';
 import '../chat-unread-badge.dart';
@@ -33,6 +35,9 @@ class ConversationRow extends ConsumerWidget {
     final unread = conversation.unreadCount > 0;
     final peerInCall = conversation.isDm &&
         ref.watch(isUserInCallProvider(conversation.peerUserId));
+    final peerStatus = conversation.isDm && !peerInCall
+        ? ref.watch(userStatusForProvider(conversation.peerUserId))
+        : null;
     final previewStyle = TextStyle(
       fontSize: 15,
       height: 1.28,
@@ -71,6 +76,9 @@ class ConversationRow extends ConsumerWidget {
                       if (peerInCall) ...[
                         const SizedBox(width: 6),
                         const InCallLabel(compact: true),
+                      ] else if (peerStatus != null) ...[
+                        const SizedBox(width: 6),
+                        UserStatusBadge(status: peerStatus, compact: true),
                       ],
                       if (conversation.muted)
                         Padding(

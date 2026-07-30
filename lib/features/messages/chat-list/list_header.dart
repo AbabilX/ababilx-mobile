@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/team_gate_provider.dart';
 import 'header_profile_pill.dart';
@@ -33,10 +34,21 @@ class ChatListHeader extends ConsumerWidget {
           HeaderProfilePill(
             name: userName,
             avatarUrl: user?.avatarUrl,
-            onProfileTap: () => showYouSheet(context),
+            currentUserId: user?.id,
+            onProfileTap: () => _openYouSheet(context, ref),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _openYouSheet(BuildContext context, WidgetRef ref) async {
+    final shellChrome = ref.read(shellBottomBarHiddenProvider.notifier);
+    shellChrome.state = true;
+    try {
+      await showYouSheet(context);
+    } finally {
+      shellChrome.state = false;
+    }
   }
 }

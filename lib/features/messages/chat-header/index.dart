@@ -5,6 +5,8 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/providers/voice_call_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
+import '../../profile/providers/user_status_provider.dart';
+import '../../profile/widgets/user_status_badge.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../nav_back.dart';
@@ -31,6 +33,9 @@ class ChatHeader extends ConsumerWidget {
     );
     final peerInCall = conversation.isDm &&
         ref.watch(isUserInCallProvider(conversation.peerUserId));
+    final peerStatus = conversation.isDm && !peerInCall
+        ? ref.watch(userStatusForProvider(conversation.peerUserId))
+        : null;
 
     return Material(
       color: surface,
@@ -73,6 +78,11 @@ class ChatHeader extends ConsumerWidget {
                       const Padding(
                         padding: EdgeInsets.only(top: 2),
                         child: InCallLabel(compact: true),
+                      )
+                    else if (peerStatus != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: UserStatusBadge(status: peerStatus, compact: true),
                       )
                     else if (conversation.isChannel &&
                         conversation.memberCount != null)

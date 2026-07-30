@@ -1,26 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/app_avatar.dart';
+import '../../profile/providers/user_status_provider.dart';
+import '../../profile/widgets/user_status_badge.dart';
 import '../chat_icon.dart';
 
-/// Right app-bar pill: history (visual only) + profile avatar.
-class HeaderProfilePill extends StatelessWidget {
+/// Right app-bar pill: history (visual only) + status + profile avatar.
+class HeaderProfilePill extends ConsumerWidget {
   const HeaderProfilePill({
     super.key,
     required this.name,
     this.avatarUrl,
+    this.currentUserId,
     required this.onProfileTap,
   });
 
   final String name;
   final String? avatarUrl;
+  final String? currentUserId;
   final VoidCallback onProfileTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final status = ref.watch(userStatusForProvider(currentUserId));
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surfaceContainerHighest.withValues(alpha: 0.55),
@@ -37,6 +44,17 @@ class HeaderProfilePill extends StatelessWidget {
               size: 20,
               color: colors.onSurface,
             ),
+            if (status != null) ...[
+              const SizedBox(width: 6),
+              // Kept short so it never crowds out the workspace title on
+              // the left — same corner radius as the avatar next to it.
+              UserStatusBadge(
+                status: status,
+                compact: true,
+                borderRadius: AppAvatar.radius,
+                maxWidth: 72,
+              ),
+            ],
             const SizedBox(width: 8),
             GestureDetector(
               onTap: onProfileTap,

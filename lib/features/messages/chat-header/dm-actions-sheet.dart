@@ -5,6 +5,8 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
+import '../../profile/providers/user_status_provider.dart';
+import '../../profile/widgets/user_status_badge.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -106,6 +108,15 @@ Future<void> showDmActionsSheet(
                         return const Padding(
                           padding: EdgeInsets.only(top: 4),
                           child: InCallLabel(),
+                        );
+                      }
+                      final status = ref.watch(
+                        userStatusForProvider(conversation.peerUserId),
+                      );
+                      if (status != null) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: UserStatusBadge(status: status),
                         );
                       }
                       return Text(

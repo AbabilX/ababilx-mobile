@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
+import '../../profile/providers/user_status_provider.dart';
+import '../../profile/widgets/user_status_badge.dart';
 import '../providers/chat_provider.dart';
 import '../providers/team_gate_provider.dart';
 
@@ -136,10 +138,17 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
           Consumer(
             builder: (context, ref, _) {
               final inCall = ref.watch(isUserInCallProvider(widget.userId));
-              if (!inCall) return const SizedBox.shrink();
-              return const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: InCallLabel(),
+              if (inCall) {
+                return const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: InCallLabel(),
+                );
+              }
+              final status = ref.watch(userStatusForProvider(widget.userId));
+              if (status == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: UserStatusBadge(status: status),
               );
             },
           ),
