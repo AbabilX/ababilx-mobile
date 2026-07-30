@@ -14,6 +14,7 @@ import '../callkit_ended_suppress.dart';
 import '../data/models/voice_call.dart';
 import '../data/models/voice_call_session.dart';
 import '../data/voice_call_repository.dart';
+import '../incoming_call_ringtone.dart';
 import '../native/android_call_ui.dart';
 import '../voice_call_log.dart';
 import '../webrtc/voice_peer_engine.dart';
@@ -643,6 +644,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _ringTimer?.cancel();
     _connectWatchdog?.cancel();
     _renegotiateTimer?.cancel();
+    await IncomingCallRingtone.stop();
     await _engine?.dispose();
     _engine = null;
     _pendingSignals.clear();

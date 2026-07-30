@@ -67,6 +67,7 @@ dependencies:
   webview_flutter: ^4.14.1
   video_player: ^2.13.0
   emoji_picker_flutter: ^4.5.3
+  flutter_ringtone_player: ^4.0.0+4
 
 dev_dependencies:
   flutter_test:

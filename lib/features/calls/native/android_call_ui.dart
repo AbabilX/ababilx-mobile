@@ -41,6 +41,8 @@ class AndroidCallUi {
       isShowLogo: true,
       logoUrl: 'assets/icon/icon.png',
       isShowCallID: false,
+      // System phone ringtone (res/raw optional). Empty path was silent on some OEMs.
+      ringtonePath: 'system_ringtone_default',
       incomingCallNotificationChannelName: 'Voice calls',
       missedCallNotificationChannelName: 'Missed voice calls',
       isImportant: true,
@@ -98,6 +100,7 @@ class AndroidCallUi {
         isShowLogo: true,
         logoUrl: 'assets/icon/icon.png',
         isShowCallID: false,
+        ringtonePath: 'system_ringtone_default',
         incomingCallNotificationChannelName: 'Voice calls',
         missedCallNotificationChannelName: 'Missed voice calls',
         isShowFullLockedScreen: true,

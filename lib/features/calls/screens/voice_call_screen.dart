@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/router/root_back.dart';
 import '../../../shared/widgets/app_avatar.dart';
+import '../incoming_call_ringtone.dart';
 import '../providers/voice_call_provider.dart';
 
 class VoiceCallScreen extends ConsumerStatefulWidget {
@@ -16,6 +17,7 @@ class VoiceCallScreen extends ConsumerStatefulWidget {
 
 class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
   Timer? _clock;
+  bool _wasIncoming = false;
 
   @override
   void initState() {
@@ -23,20 +25,46 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _syncRingtone(ref.read(voiceCallProvider).phase);
+    });
   }
 
   @override
   void dispose() {
     _clock?.cancel();
+    unawaited(IncomingCallRingtone.stop());
     super.dispose();
+  }
+
+  void _syncRingtone(VoiceCallPhase phase) {
+    if (phase == VoiceCallPhase.incomingRinging) {
+      _wasIncoming = true;
+      unawaited(IncomingCallRingtone.start());
+      return;
+    }
+    if (_wasIncoming) {
+      _wasIncoming = false;
+      unawaited(IncomingCallRingtone.stop());
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(voiceCallProvider.select((s) => s.phase), (prev, next) {
+      _syncRingtone(next);
+    });
     final call = ref.watch(voiceCallProvider);
     final notifier = ref.read(voiceCallProvider.notifier);
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    final live = call.phase == VoiceCallPhase.connected ||
+        call.phase == VoiceCallPhase.connecting ||
+        call.phase == VoiceCallPhase.outgoingRinging ||
+        call.phase == VoiceCallPhase.incomingRinging ||
+        call.phase == VoiceCallPhase.starting;
 
     return Scaffold(
       body: DecoratedBox(
@@ -55,14 +83,18 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: IconButton(
-                    tooltip: 'Minimize call',
+                    tooltip: live ? 'Minimize call' : 'Close',
                     onPressed: () => popOrGoHome(context),
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                    icon: Icon(
+                      live
+                          ? Icons.keyboard_arrow_down_rounded
+                          : Icons.close_rounded,
+                    ),
                   ),
                 ),
                 const Spacer(),
                 AppAvatar(
-                  size: 112,
+                  size: 120,
                   url: call.peerAvatar,
                   name: call.peerName,
                   border: Border.all(color: colors.outlineVariant, width: 2),
@@ -75,12 +107,29 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Text(
-                  _status(call),
-                  style: textTheme.bodyLarge?.copyWith(
+                  'AbabilX voice call',
+                  style: textTheme.labelLarge?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _status(call),
+                  textAlign: TextAlign.center,
+                  style: call.phase == VoiceCallPhase.connected
+                      ? textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                          letterSpacing: 1.2,
+                        )
+                      : textTheme.titleMedium?.copyWith(
+                          color: call.phase == VoiceCallPhase.failed
+                              ? colors.error
+                              : colors.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
                 ),
                 if (call.error != null) ...[
                   const SizedBox(height: 16),
@@ -100,16 +149,29 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                         icon: Icons.call_end_rounded,
                         background: colors.error,
                         foreground: colors.onError,
-                        onPressed: notifier.declineIncoming,
+                        onPressed: () {
+                          unawaited(IncomingCallRingtone.stop());
+                          notifier.declineIncoming();
+                        },
                       ),
                       _CallControl(
                         label: 'Accept',
                         icon: Icons.call_rounded,
                         background: colors.primary,
                         foreground: colors.onPrimary,
-                        onPressed: notifier.acceptIncoming,
+                        onPressed: () {
+                          unawaited(IncomingCallRingtone.stop());
+                          notifier.acceptIncoming();
+                        },
                       ),
                     ],
+                  )
+                else if (call.phase == VoiceCallPhase.ended ||
+                    call.phase == VoiceCallPhase.failed ||
+                    call.phase == VoiceCallPhase.idle)
+                  FilledButton.tonal(
+                    onPressed: () => popOrGoHome(context),
+                    child: const Text('Done'),
                   )
                 else
                   Row(
@@ -133,7 +195,10 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                         foreground: colors.onError,
                         onPressed:
                             call.active && call.phase != VoiceCallPhase.starting
-                            ? notifier.hangUp
+                            ? () {
+                                unawaited(IncomingCallRingtone.stop());
+                                notifier.hangUp();
+                              }
                             : null,
                       ),
                       _CallControl(
@@ -164,24 +229,33 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
       case VoiceCallPhase.starting:
         return 'Starting call…';
       case VoiceCallPhase.outgoingRinging:
-        // Caller is waiting; only the callee is actually ringing.
         return 'Calling…';
       case VoiceCallPhase.incomingRinging:
-        return 'Incoming voice call';
+        return 'Incoming call…';
       case VoiceCallPhase.connecting:
         return 'Connecting…';
       case VoiceCallPhase.connected:
-        final started = state.connectedAt;
-        if (started == null) return 'Connected';
-        final duration = DateTime.now().difference(started);
-        final minutes = duration.inMinutes.toString().padLeft(2, '0');
-        final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
-        return '$minutes:$seconds';
+        return _formatDuration(state.connectedAt);
       case VoiceCallPhase.ended:
-        return 'Call ended';
+        final lasted = _formatDuration(state.connectedAt);
+        return lasted == '00:00' ? 'Call ended' : 'Call ended · $lasted';
       case VoiceCallPhase.failed:
         return 'Call failed';
     }
+  }
+
+  String _formatDuration(DateTime? started) {
+    if (started == null) return '00:00';
+    final duration = DateTime.now().difference(started);
+    final total = duration.inSeconds.clamp(0, 24 * 3600);
+    final minutes = (total ~/ 60).toString().padLeft(2, '0');
+    final seconds = (total % 60).toString().padLeft(2, '0');
+    if (total >= 3600) {
+      final hours = (total ~/ 3600).toString().padLeft(2, '0');
+      final m = ((total % 3600) ~/ 60).toString().padLeft(2, '0');
+      return '$hours:$m:$seconds';
+    }
+    return '$minutes:$seconds';
   }
 }
 
@@ -219,7 +293,7 @@ class _CallControl extends StatelessWidget {
             foregroundColor: fg,
             disabledBackgroundColor: bg.withValues(alpha: 0.45),
             disabledForegroundColor: fg.withValues(alpha: 0.45),
-            minimumSize: const Size(62, 62),
+            minimumSize: const Size(64, 64),
           ),
           icon: Icon(icon, size: 28),
         ),
