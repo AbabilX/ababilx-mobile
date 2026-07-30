@@ -11,6 +11,7 @@ import '../nav_back.dart';
 import '../providers/chat_provider.dart';
 import 'dm-actions-sheet.dart';
 import 'group-details-dialog.dart';
+import 'start_call_sheet.dart';
 
 /// Conversation top bar — used inside the scroll shell (auto-hides on scroll).
 class ChatHeader extends ConsumerWidget {
@@ -101,13 +102,11 @@ class ChatHeader extends ConsumerWidget {
                   ),
                 if (conversation.isDm && !conversation.peerLeft)
                   IconButton(
-                    tooltip: 'Voice call',
+                    tooltip: 'Call',
                     icon: const Icon(Icons.call_rounded),
                     onPressed: callActive
                         ? null
-                        : () => ref
-                              .read(voiceCallProvider.notifier)
-                              .startOutgoing(conversation),
+                        : () => showStartCallSheet(context, ref, conversation),
                   ),
                 IconButton(
                   icon: const ChatIcon(HugeIcons.strokeRoundedMoreVertical),
