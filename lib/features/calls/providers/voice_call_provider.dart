@@ -30,8 +30,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   Timer? _ringTimer;
   Timer? _resetTimer;
   Timer? _connectWatchdog;
+  Timer? _renegotiateTimer;
   bool _booted = false;
   bool _transitioning = false;
+  bool _offerResent = false;
   final CallKitEndedSuppress _suppressCallKitEnded = CallKitEndedSuppress();
 
   VoiceCallRepository get _repository => ref.read(voiceCallRepositoryProvider);
@@ -71,6 +73,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _ringTimer?.cancel();
     _resetTimer?.cancel();
     _connectWatchdog?.cancel();
+    _renegotiateTimer?.cancel();
     await _wsSub?.cancel();
     await _wsReconnectSub?.cancel();
     await _nativeSub?.cancel();
@@ -239,7 +242,13 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         await FlutterCallkitIncoming.setCallConnected(call.id);
         voiceCallLog('callkit.setConnected', callId: call.id);
       } catch (_) {}
-      voiceCallLog('engine.prepare.begin', callId: call.id, phase: 'connecting');
+      voiceCallLog(
+        'engine.prepare.begin',
+        callId: call.id,
+        phase: 'connecting',
+      );
+      // Callee must be on WS before the caller offer arrives / is flushed.
+      await _ws.connect();
       await _prepareEngine(session);
       if (_engine == null || state.call?.id != call.id) {
         voiceCallLog(
@@ -473,11 +482,15 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
     if (!state.outgoing || _engine != null) return;
     try {
-      final session = VoiceCallSession(
+      final ice = state.iceServers.isNotEmpty
+          ? state.iceServers
+          : (await _repository.get(call.id)).iceServers;
+      final session = VoiceCallSession(call: call, iceServers: ice);
+      state = state.copyWith(
+        phase: VoiceCallPhase.connecting,
         call: call,
-        iceServers: state.iceServers,
+        iceServers: ice,
       );
-      state = state.copyWith(phase: VoiceCallPhase.connecting, call: call);
       _ringTimer?.cancel();
       voiceCallLog(
         'engine.prepare.begin',
@@ -485,13 +498,37 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         phase: 'connecting',
         source: 'caller.onAccepted',
       );
+      // Offer/answer must ride the notification WS — wait before negotiating.
+      await _ws.connect();
       await _prepareEngine(session);
       if (_engine == null || state.call?.id != call.id) return;
       await _engine!.createAndSendOffer();
       voiceCallLog('signal.offer.sent', callId: call.id, phase: _phaseName);
+      _scheduleOfferRetry(call.id);
     } catch (error) {
       await _failLocal('offer_failed', error);
     }
+  }
+
+  /// If the first offer was lost (WS gap / full buffer), resend once.
+  void _scheduleOfferRetry(String callId) {
+    _renegotiateTimer?.cancel();
+    _offerResent = false;
+    _renegotiateTimer = Timer(const Duration(seconds: 6), () {
+      if (state.call?.id != callId) return;
+      if (state.phase != VoiceCallPhase.connecting) return;
+      final engine = _engine;
+      if (engine == null || !engine.ready || engine.answerReceived) return;
+      if (_offerResent) return;
+      _offerResent = true;
+      voiceCallLog(
+        'signal.offer.retry',
+        callId: callId,
+        phase: _phaseName,
+        reason: 'no_answer_yet',
+      );
+      unawaited(engine.createAndSendOffer(renegotiate: true));
+    });
   }
 
   Future<void> _prepareEngine(VoiceCallSession session) async {
@@ -507,6 +544,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         if (state.call?.id != callId) return;
         _ringTimer?.cancel();
         _connectWatchdog?.cancel();
+        _renegotiateTimer?.cancel();
         voiceCallLog('ice.state.connected', callId: callId, phase: 'connected');
         state = state.copyWith(
           phase: VoiceCallPhase.connected,
@@ -604,9 +642,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     );
     _ringTimer?.cancel();
     _connectWatchdog?.cancel();
+    _renegotiateTimer?.cancel();
     await _engine?.dispose();
     _engine = null;
     _pendingSignals.clear();
+    _offerResent = false;
     if (callId != null) {
       await _endNative(callId, source: 'finishLocal.$reason');
     }
@@ -642,10 +682,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
           source: 'callkit',
         );
         // Plugin / UI cleanup after Accept must not be treated as hang-up.
-        _suppressCallKitEnded.arm(
-          callKitParams.id,
-          source: 'callkit.accept',
-        );
+        _suppressCallKitEnded.arm(callKitParams.id, source: 'callkit.accept');
         unawaited(acceptIncoming(callKitParams.id));
       case CallEventActionCallDecline(:final callKitParams):
         voiceCallLog(
@@ -865,9 +902,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _ringTimer?.cancel();
     _resetTimer?.cancel();
     _connectWatchdog?.cancel();
+    _renegotiateTimer?.cancel();
     await _engine?.dispose();
     _engine = null;
     _pendingSignals.clear();
+    _offerResent = false;
   }
 
   String _friendlyError(Object error) {

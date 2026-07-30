@@ -10,12 +10,14 @@ import 'api_client.dart';
 
 typedef WsEventHandler = void Function(Map<String, dynamic> event);
 typedef WsReconnectHandler = void Function();
+typedef WsEnsureAuth = Future<bool> Function();
 
 /// WebSocket client mirroring web `ws-client.ts`.
 class WsClient {
-  WsClient(this._storage);
+  WsClient(this._storage, {this._ensureAuth});
 
   final SecureStorage _storage;
+  final WsEnsureAuth? _ensureAuth;
   WebSocketChannel? _channel;
   StreamSubscription? _subscription;
   Timer? _reconnectTimer;
@@ -77,13 +79,22 @@ class WsClient {
     return send(payload);
   }
 
-  Future<void> _connectOnce() async {
+  Future<void> _connectOnce({bool retriedAuth = false}) async {
     if (_closed || _connecting || _connected) return;
     _connecting = true;
 
     final token = await _storage.readJwt();
     if (token == null || token.isEmpty) {
       _connecting = false;
+      // Stale/missing access token — refresh then retry once.
+      if (!retriedAuth && _ensureAuth != null) {
+        final ok = await _ensureAuth.call();
+        if (ok) {
+          await _connectOnce(retriedAuth: true);
+          return;
+        }
+      }
+      _scheduleReconnect();
       return;
     }
 
@@ -119,6 +130,14 @@ class WsClient {
     } catch (_) {
       _connecting = false;
       _connected = false;
+      // 401 / upgrade failure often means expired JWT — refresh once, then retry.
+      if (!retriedAuth && _ensureAuth != null) {
+        final ok = await _ensureAuth.call();
+        if (ok && !_closed) {
+          await _connectOnce(retriedAuth: true);
+          return;
+        }
+      }
       _scheduleReconnect();
     }
   }
@@ -150,7 +169,9 @@ class WsClient {
 }
 
 final wsClientProvider = Provider<WsClient>((ref) {
-  final client = WsClient(ref.watch(secureStorageProvider));
+  final storage = ref.watch(secureStorageProvider);
+  final api = ref.watch(apiClientProvider);
+  final client = WsClient(storage, ensureAuth: api.ensureFreshAccessToken);
   ref.onDispose(client.dispose);
   return client;
 });

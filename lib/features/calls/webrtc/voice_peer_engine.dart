@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../data/models/ice_server.dart';
+import '../voice_call_log.dart';
 
 typedef VoiceSignalSender = Future<bool> Function(Map<String, dynamic> signal);
 
@@ -36,13 +37,30 @@ class VoicePeerEngine {
   bool _remoteDescriptionSet = false;
   bool _disposed = false;
   bool _connected = false;
+  bool _answerReceived = false;
   Timer? _disconnectTimer;
 
   bool get ready => _peer != null && _localStream != null;
 
+  bool get hasRemoteDescription => _remoteDescriptionSet;
+
+  bool get answerReceived => _answerReceived;
+
   Future<void> prepare({required List<IceServer> iceServers}) async {
     if (_disposed) throw StateError('Voice peer engine is disposed');
     if (ready) return;
+
+    final hasTurn = iceServers.any(
+      (s) =>
+          s.urls.any((u) => u.startsWith('turn:') || u.startsWith('turns:')) &&
+          (s.username?.isNotEmpty ?? false),
+    );
+    voiceCallLog(
+      'engine.ice.config',
+      reason: hasTurn
+          ? 'stun+turn servers=${iceServers.length}'
+          : 'stun_only servers=${iceServers.length} (cellular may stall)',
+    );
 
     await Helper.setAndroidAudioConfiguration(
       AndroidAudioConfiguration(
@@ -88,6 +106,13 @@ class VoicePeerEngine {
         }),
       );
     };
+    peer.onIceConnectionState = (state) {
+      if (_disposed) return;
+      voiceCallLog('ice.connection', reason: state.toString());
+      if (state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
+        onFailed('peer_connection_failed');
+      }
+    };
     peer.onConnectionState = _handleConnectionState;
     peer.onTrack = (event) {
       if (_disposed || event.track.kind != 'audio') return;
@@ -108,13 +133,28 @@ class VoicePeerEngine {
     await Helper.setSpeakerphoneOn(true);
   }
 
-  Future<void> createAndSendOffer() async {
+  Future<void> createAndSendOffer({bool renegotiate = false}) async {
     final peer = _requirePeer();
-    final offer = await peer.createOffer({
-      'mandatory': {'OfferToReceiveAudio': true, 'OfferToReceiveVideo': false},
-    });
-    await peer.setLocalDescription(offer);
-    final sent = await sendSignal({'kind': 'offer', 'sdp': offer.sdp});
+    if (!renegotiate) {
+      final offer = await peer.createOffer({
+        'mandatory': {
+          'OfferToReceiveAudio': true,
+          'OfferToReceiveVideo': false,
+        },
+      });
+      await peer.setLocalDescription(offer);
+    }
+    final local = await peer.getLocalDescription();
+    final sdp = local?.sdp;
+    if (sdp == null || sdp.isEmpty) {
+      onFailed('signaling_unavailable');
+      return;
+    }
+    final sent = await sendSignal({'kind': 'offer', 'sdp': sdp});
+    voiceCallLog(
+      'signal.offer.send',
+      reason: sent ? (renegotiate ? 'retry_ok' : 'ok') : 'ws_unavailable',
+    );
     if (!sent) onFailed('signaling_unavailable');
   }
 
@@ -137,6 +177,10 @@ class VoicePeerEngine {
         });
         await peer.setLocalDescription(answer);
         final sent = await sendSignal({'kind': 'answer', 'sdp': answer.sdp});
+        voiceCallLog(
+          'signal.answer.send',
+          reason: sent ? 'ok' : 'ws_unavailable',
+        );
         if (!sent) onFailed('signaling_unavailable');
       case 'answer':
         final sdp = signal['sdp'] as String? ?? '';
@@ -145,6 +189,7 @@ class VoicePeerEngine {
           RTCSessionDescription(sdp, 'answer'),
         );
         _remoteDescriptionSet = true;
+        _answerReceived = true;
         await _flushCandidates();
       case 'ice':
         final candidate = signal['candidate'] as String? ?? '';
@@ -152,8 +197,7 @@ class VoicePeerEngine {
         // Server contract is snake_case; accept camelCase defensively.
         final sdpMid =
             (signal['sdp_mid'] as String?) ?? (signal['sdpMid'] as String?);
-        final rawIndex =
-            signal['sdp_mline_index'] ?? signal['sdpMLineIndex'];
+        final rawIndex = signal['sdp_mline_index'] ?? signal['sdpMLineIndex'];
         final sdpMLineIndex = rawIndex is num ? rawIndex.toInt() : null;
         final parsed = RTCIceCandidate(candidate, sdpMid, sdpMLineIndex);
         if (!_remoteDescriptionSet) {
@@ -166,6 +210,7 @@ class VoicePeerEngine {
 
   void _handleConnectionState(RTCPeerConnectionState state) {
     if (_disposed) return;
+    voiceCallLog('pc.state', reason: state.toString());
     switch (state) {
       case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
         _disconnectTimer?.cancel();

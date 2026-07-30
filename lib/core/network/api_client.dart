@@ -73,6 +73,9 @@ class ApiClient {
     return _refreshInFlight!;
   }
 
+  /// Used by the WebSocket client before (re)connect — WS has no Dio 401 retry.
+  Future<bool> ensureFreshAccessToken() => _tryRefreshToken();
+
   Future<bool> _refreshAccessToken() async {
     final refreshToken = await _storage.readRefreshToken();
     if (refreshToken == null) return false;
@@ -99,9 +102,10 @@ class ApiClient {
 
   Dio get dio => _dio;
 
-  Future<Response<T>> get<T>(String path,
-          {Map<String, dynamic>? queryParameters}) =>
-      _dio.get<T>(path, queryParameters: queryParameters);
+  Future<Response<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) => _dio.get<T>(path, queryParameters: queryParameters);
 
   Future<Response<T>> post<T>(String path, {dynamic data}) =>
       _dio.post<T>(path, data: data);
