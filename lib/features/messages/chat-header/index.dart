@@ -108,16 +108,6 @@ class ChatHeader extends ConsumerWidget {
                         ? null
                         : () => showStartCallSheet(context, ref, conversation),
                   ),
-                IconButton(
-                  icon: const ChatIcon(HugeIcons.strokeRoundedMoreVertical),
-                  onPressed: () async {
-                    if (conversation.isChannel) {
-                      await showGroupDetailsDialog(context, ref, conversation);
-                    } else {
-                      await showDmActionsSheet(context, ref, conversation);
-                    }
-                  },
-                ),
               ],
             ),
             centerMiddle: true,
