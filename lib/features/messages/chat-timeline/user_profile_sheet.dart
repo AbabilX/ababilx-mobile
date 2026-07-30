@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
+import '../../calls/providers/in_call_presence_provider.dart';
+import '../../calls/widgets/in_call_label.dart';
 import '../providers/chat_provider.dart';
 import '../providers/team_gate_provider.dart';
 
@@ -130,6 +132,16 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
               fontWeight: FontWeight.w700,
             ),
             textAlign: TextAlign.center,
+          ),
+          Consumer(
+            builder: (context, ref, _) {
+              final inCall = ref.watch(isUserInCallProvider(widget.userId));
+              if (!inCall) return const SizedBox.shrink();
+              return const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: InCallLabel(),
+              );
+            },
           ),
 
           if (widget.email != null && widget.email!.isNotEmpty) ...[

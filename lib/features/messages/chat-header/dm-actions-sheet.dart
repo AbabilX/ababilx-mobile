@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
+import '../../calls/providers/in_call_presence_provider.dart';
+import '../../calls/widgets/in_call_label.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -95,12 +97,25 @@ Future<void> showDmActionsSheet(
                     ),
                   )
                 else
-                  Text(
-                    'Direct Message',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colors.onSurfaceVariant,
-                    ),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final inCall = ref.watch(
+                        isUserInCallProvider(conversation.peerUserId),
+                      );
+                      if (inCall) {
+                        return const Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: InCallLabel(),
+                        );
+                      }
+                      return Text(
+                        'Direct Message',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colors.onSurfaceVariant,
+                        ),
+                      );
+                    },
                   ),
 
                 const SizedBox(height: 24),

@@ -237,6 +237,14 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
       case VoiceCallPhase.connected:
         return _formatDuration(state.connectedAt);
       case VoiceCallPhase.ended:
+        final status = state.call?.status;
+        // Caller sees a formal busy message when the peer declines.
+        if (status == 'declined' && state.outgoing) {
+          return '${state.peerName} is busy right now';
+        }
+        if (status == 'declined') return 'Call declined';
+        if (status == 'cancelled') return 'Call cancelled';
+        if (status == 'missed') return 'No answer';
         final lasted = _formatDuration(state.connectedAt);
         return lasted == '00:00' ? 'Call ended' : 'Call ended · $lasted';
       case VoiceCallPhase.failed:

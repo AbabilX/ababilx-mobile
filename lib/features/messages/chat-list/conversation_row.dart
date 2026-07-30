@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
+import '../../calls/providers/in_call_presence_provider.dart';
+import '../../calls/widgets/in_call_label.dart';
 import '../chat_icon.dart';
 import '../chat_list_filters.dart';
 import '../chat-unread-badge.dart';
 import '../data/models/chat_models.dart';
 import 'group_avatar_stack.dart';
 
-class ConversationRow extends StatelessWidget {
+class ConversationRow extends ConsumerWidget {
   const ConversationRow({
     super.key,
     required this.conversation,
@@ -21,13 +24,15 @@ class ConversationRow extends StatelessWidget {
   final String? currentUserId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final title = conversation.displayTitle(currentUserId);
     final preview = chatListPreview(conversation, currentUserId);
     final time = relativeChatTime(conversation.lastMessageAt);
     final unread = conversation.unreadCount > 0;
+    final peerInCall = conversation.isDm &&
+        ref.watch(isUserInCallProvider(conversation.peerUserId));
     final previewStyle = TextStyle(
       fontSize: 15,
       height: 1.28,
@@ -50,7 +55,7 @@ class ConversationRow extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Expanded(
+                      Flexible(
                         child: Text(
                           title,
                           maxLines: 1,
@@ -63,11 +68,18 @@ class ConversationRow extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (peerInCall) ...[
+                        const SizedBox(width: 6),
+                        const InCallLabel(compact: true),
+                      ],
                       if (conversation.muted)
-                        ChatIcon(
-                          HugeIcons.strokeRoundedNotificationOff01,
-                          size: 14,
-                          color: colors.onSurfaceVariant,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: ChatIcon(
+                            HugeIcons.strokeRoundedNotificationOff01,
+                            size: 14,
+                            color: colors.onSurfaceVariant,
+                          ),
                         ),
                       if (time.isNotEmpty) ...[
                         const SizedBox(width: 6),

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../calls/providers/in_call_presence_provider.dart';
+import '../../calls/widgets/in_call_label.dart';
+import '../chat-timeline/user_profile_sheet.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../providers/team_gate_provider.dart';
-
-import '../chat-timeline/user_profile_sheet.dart';
 
 Future<void> showGroupDetailsDialog(
   BuildContext context,
@@ -63,20 +64,29 @@ Future<void> showGroupDetailsDialog(
               ),
               const Divider(),
               Text('Members', style: Theme.of(ctx).textTheme.titleSmall),
-              ...members.map((m) => ListTile(
-                    dense: true,
-                    title: Text(m.name),
-                    trailing: const Icon(Icons.chevron_right_rounded, size: 18),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      showUserProfileSheet(
-                        context: context,
-                        ref: ref,
-                        userId: m.userId,
-                        userName: m.name,
-                      );
-                    },
-                  )),
+              ...members.map(
+                (m) => Consumer(
+                  builder: (context, ref, _) {
+                    final inCall = ref.watch(isUserInCallProvider(m.userId));
+                    return ListTile(
+                      dense: true,
+                      title: Text(m.name),
+                      subtitle: inCall ? const InCallLabel(compact: true) : null,
+                      trailing:
+                          const Icon(Icons.chevron_right_rounded, size: 18),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        showUserProfileSheet(
+                          context: context,
+                          ref: ref,
+                          userId: m.userId,
+                          userName: m.name,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
               const SizedBox(height: 8),
               Text('Add member', style: Theme.of(ctx).textTheme.titleSmall),
               ...ref.watch(teamMembersProvider).map((tm) {

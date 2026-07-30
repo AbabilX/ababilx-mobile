@@ -914,7 +914,13 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   String _friendlyError(Object error) {
     final apiError = _apiError(error);
     final value = '$apiError ${error.toString()}';
-    if (value.contains('voice_call_busy')) return 'This person is busy.';
+    if (value.contains('voice_call_busy')) {
+      final name = state.pendingPeerName?.trim();
+      if (name != null && name.isNotEmpty) {
+        return '$name is in another call';
+      }
+      return 'This person is in another call';
+    }
     if (value.contains('voice_call_peer_unavailable')) {
       return 'This person is unavailable.';
     }

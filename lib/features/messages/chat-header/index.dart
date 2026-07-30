@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/providers/voice_call_provider.dart';
+import '../../calls/widgets/in_call_label.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../nav_back.dart';
@@ -26,6 +28,8 @@ class ChatHeader extends ConsumerWidget {
     final callActive = ref.watch(
       voiceCallProvider.select((state) => state.active),
     );
+    final peerInCall = conversation.isDm &&
+        ref.watch(isUserInCallProvider(conversation.peerUserId));
 
     return Material(
       color: surface,
@@ -64,7 +68,13 @@ class ChatHeader extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
-                    if (conversation.isChannel && conversation.memberCount != null)
+                    if (peerInCall)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: InCallLabel(compact: true),
+                      )
+                    else if (conversation.isChannel &&
+                        conversation.memberCount != null)
                       Text(
                         '${conversation.memberCount} members',
                         textAlign: TextAlign.center,
