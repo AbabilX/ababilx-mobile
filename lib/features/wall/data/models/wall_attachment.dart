@@ -11,6 +11,7 @@ class WallAttachment extends Equatable {
     required this.sizeBytes,
     required this.uploadedBy,
     required this.createdAt,
+    this.locked = false,
   });
 
   final String id;
@@ -22,6 +23,7 @@ class WallAttachment extends Equatable {
   final int sizeBytes;
   final String uploadedBy;
   final String createdAt;
+  final bool locked;
 
   bool get isImage {
     if (contentType.startsWith('image/')) return true;
@@ -64,6 +66,7 @@ class WallAttachment extends Equatable {
     sizeBytes: json['size_bytes'] as int? ?? 0,
     uploadedBy: json['uploaded_by'] as String? ?? '',
     createdAt: json['created_at'] as String? ?? '',
+    locked: json['locked'] as bool? ?? false,
   );
 
   @override

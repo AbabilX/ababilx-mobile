@@ -8,6 +8,10 @@ Future<void> openChatAttachment(
   BuildContext context,
   ChatMessageAttachment file,
 ) async {
+  if (file.locked || file.fileUrl.isEmpty) {
+    _toast(context, 'This file is locked');
+    return;
+  }
   if (file.isPdf) {
     await showPdfPreview(
       context,

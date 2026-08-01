@@ -10,6 +10,7 @@ class ChatMessageAttachment extends Equatable {
     required this.sizeBytes,
     required this.uploadedBy,
     required this.createdAt,
+    this.locked = false,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class ChatMessageAttachment extends Equatable {
   final int sizeBytes;
   final String uploadedBy;
   final String createdAt;
+  final bool locked;
 
   bool get isImage {
     if (contentType.toLowerCase().startsWith('image/')) return true;
@@ -63,6 +65,7 @@ class ChatMessageAttachment extends Equatable {
         sizeBytes: json['size_bytes'] as int? ?? 0,
         uploadedBy: json['uploaded_by'] as String? ?? '',
         createdAt: json['created_at'] as String? ?? '',
+        locked: json['locked'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -74,6 +77,7 @@ class ChatMessageAttachment extends Equatable {
         'size_bytes': sizeBytes,
         'uploaded_by': uploadedBy,
         'created_at': createdAt,
+        'locked': locked,
       };
 
   @override

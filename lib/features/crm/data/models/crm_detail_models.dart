@@ -327,6 +327,7 @@ class CrmDocument extends Equatable {
     this.sizeBytes = 0,
     this.createdAt = '',
     this.uploaderName,
+    this.locked = false,
   });
 
   final String id;
@@ -339,6 +340,7 @@ class CrmDocument extends Equatable {
   final int sizeBytes;
   final String createdAt;
   final String? uploaderName;
+  final bool locked;
 
   bool get isAudio {
     if (mimeType.toLowerCase().startsWith('audio/')) return true;
@@ -365,6 +367,7 @@ class CrmDocument extends Equatable {
     sizeBytes: (json['size_bytes'] as num?)?.toInt() ?? 0,
     createdAt: json['created_at'] as String? ?? '',
     uploaderName: json['uploader_name'] as String?,
+    locked: json['locked'] as bool? ?? false,
   );
 
   @override
@@ -403,6 +406,7 @@ class CrmOrganizationDocument extends Equatable {
     this.sizeBytes = 0,
     this.createdAt = '',
     this.uploaderName,
+    this.locked = false,
   });
 
   final String id;
@@ -416,6 +420,7 @@ class CrmOrganizationDocument extends Equatable {
   final int sizeBytes;
   final String createdAt;
   final String? uploaderName;
+  final bool locked;
 
   String get url => fileUrl.isNotEmpty ? fileUrl : externalUrl;
 
@@ -446,6 +451,7 @@ class CrmOrganizationDocument extends Equatable {
         sizeBytes: (json['size_bytes'] as num?)?.toInt() ?? 0,
         createdAt: json['created_at'] as String? ?? '',
         uploaderName: json['uploader_name'] as String?,
+        locked: json['locked'] as bool? ?? false,
       );
 
   @override

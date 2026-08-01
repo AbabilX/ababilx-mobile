@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../shared/media/picked_media_file.dart';
+import '../../../shared/widgets/locked_file_placeholder.dart';
 import '../../../shared/widgets/pdf_preview.dart';
 import '../../../shared/widgets/voice_url_player.dart';
 import '../data/crm_repository.dart';
@@ -93,6 +94,7 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
   }
 
   Future<void> _open(CrmDocument d) async {
+    if (d.locked || d.fileUrl.isEmpty) return;
     if (d.isPdf) {
       await showPdfPreview(
         context,
@@ -176,10 +178,12 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                 children: [
                   ListTile(
                     leading: Icon(
-                      d.isAudio
+                      d.locked
+                          ? Icons.lock_outline_rounded
+                          : d.isAudio
                           ? Icons.graphic_eq_rounded
                           : Icons.insert_drive_file_outlined,
-                      color: colors.primary,
+                      color: d.locked ? colors.onSurfaceVariant : colors.primary,
                     ),
                     title: Text(
                       d.label.isNotEmpty ? d.label : d.fileName,
@@ -187,6 +191,7 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
+                        color: d.locked ? colors.onSurfaceVariant : null,
                       ),
                     ),
                     subtitle: Text(
@@ -194,12 +199,13 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                         if (d.label.isNotEmpty) d.fileName,
                         if ((d.uploaderName ?? '').isNotEmpty) d.uploaderName!,
                         formatCrmDate(d.createdAt),
+                        if (d.locked) 'Locked',
                       ].where((s) => s.isNotEmpty).join(' · '),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colors.onSurfaceVariant,
                       ),
                     ),
-                    onTap: d.isAudio ? null : () => _open(d),
+                    onTap: (d.locked || d.isAudio) ? null : () => _open(d),
                     trailing: widget.canDelete
                         ? IconButton(
                             icon: Icon(
@@ -210,13 +216,21 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                           )
                         : null,
                   ),
-                  if (d.isAudio)
+                  if (d.isAudio && !d.locked)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       child: VoiceUrlPlayer(
                         url: d.fileUrl,
                         fileName: d.fileName,
                         compact: true,
+                      ),
+                    )
+                  else if (d.isAudio && d.locked)
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      child: LockedFilePlaceholder(
+                        fileName: '',
+                        compact: false,
                       ),
                     ),
                 ],

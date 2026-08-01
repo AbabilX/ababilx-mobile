@@ -19,6 +19,10 @@ Future<void> openWallFile(
   BuildContext context,
   WallAttachment file,
 ) async {
+  if (file.locked || file.fileUrl.isEmpty) {
+    _toast(context, 'This file is locked');
+    return;
+  }
   final uri = Uri.tryParse(file.fileUrl);
   if (uri == null) {
     _toast(context, 'Invalid file URL');

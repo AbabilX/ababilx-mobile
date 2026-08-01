@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../shared/media/picked_media_file.dart';
+import '../../../shared/widgets/locked_file_placeholder.dart';
 import '../../../shared/widgets/pdf_preview.dart';
 import '../../../shared/widgets/voice_url_player.dart';
 import '../../messages/chat-timeline/voice_message_recorder.dart';
@@ -88,6 +89,7 @@ class _OrganizationDocumentsState extends ConsumerState<OrganizationDocuments> {
   }
 
   Future<void> _open(CrmOrganizationDocument document) async {
+    if (document.locked || document.url.isEmpty) return;
     if (document.isPdf) {
       await showPdfPreview(
         context,
@@ -177,10 +179,14 @@ class _OrganizationDocumentsState extends ConsumerState<OrganizationDocuments> {
                       children: [
                         ListTile(
                           leading: Icon(
-                            document.isAudio
+                            document.locked
+                                ? Icons.lock_outline_rounded
+                                : document.isAudio
                                 ? Icons.graphic_eq_rounded
                                 : Icons.insert_drive_file_outlined,
-                            color: colors.primary,
+                            color: document.locked
+                                ? colors.onSurfaceVariant
+                                : colors.primary,
                           ),
                           title: Text(
                             document.title.isNotEmpty
@@ -188,14 +194,18 @@ class _OrganizationDocumentsState extends ConsumerState<OrganizationDocuments> {
                                 : document.fileName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            style: document.locked
+                                ? TextStyle(color: colors.onSurfaceVariant)
+                                : null,
                           ),
                           subtitle: Text(
                             [
                               document.uploaderName ?? 'Workspace member',
                               formatCrmDate(document.createdAt),
+                              if (document.locked) 'Locked',
                             ].join(' · '),
                           ),
-                          onTap: document.isAudio
+                          onTap: (document.locked || document.isAudio)
                               ? null
                               : () => _open(document),
                           trailing: widget.canDelete
@@ -214,13 +224,21 @@ class _OrganizationDocumentsState extends ConsumerState<OrganizationDocuments> {
                             padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                             child: Text(document.description),
                           ),
-                        if (document.isAudio)
+                        if (document.isAudio && !document.locked)
                           Padding(
                             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                             child: VoiceUrlPlayer(
                               url: document.url,
                               fileName: document.fileName,
                               compact: true,
+                            ),
+                          )
+                        else if (document.isAudio && document.locked)
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
+                            child: LockedFilePlaceholder(
+                              fileName: '',
+                              compact: false,
                             ),
                           ),
                       ],

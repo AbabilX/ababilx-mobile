@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/locked_file_placeholder.dart';
 import '../../../shared/widgets/network_video_player.dart';
 import '../../../shared/widgets/pdf_preview.dart';
 import '../../../shared/widgets/voice_url_player.dart';
@@ -25,13 +26,15 @@ class WallAttachmentGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final images = attachments.where((a) => a.isImage).toList();
-    final videos = attachments.where((a) => a.isVideo).toList();
-    final audio = attachments.where((a) => a.isAudio).toList();
-    final pdfs = attachments
+    final lockedFiles = attachments.where((a) => a.locked).toList();
+    final open = attachments.where((a) => !a.locked).toList();
+    final images = open.where((a) => a.isImage).toList();
+    final videos = open.where((a) => a.isVideo).toList();
+    final audio = open.where((a) => a.isAudio).toList();
+    final pdfs = open
         .where((a) => !a.isImage && !a.isVideo && !a.isAudio && a.isPdf)
         .toList();
-    final others = attachments
+    final others = open
         .where((a) => !a.isImage && !a.isVideo && !a.isAudio && !a.isPdf)
         .toList();
     final scheme = Theme.of(context).colorScheme;
@@ -135,6 +138,18 @@ class WallAttachmentGrid extends StatelessWidget {
                 leading: const Icon(Icons.attach_file),
                 title: Text(f.fileName, overflow: TextOverflow.ellipsis),
                 onTap: () => openWallFile(context, f),
+              ),
+            if (lockedFiles.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final f in lockedFiles)
+                      LockedFilePlaceholder(fileName: f.fileName),
+                  ],
+                ),
               ),
           ],
         );
