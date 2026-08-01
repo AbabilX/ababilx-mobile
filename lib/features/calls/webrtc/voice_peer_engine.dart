@@ -5,6 +5,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../data/models/ice_server.dart';
 import '../voice_call_log.dart';
+import 'ice_candidate_stats.dart';
 
 typedef VoiceSignalSender = Future<bool> Function(Map<String, dynamic> signal);
 
@@ -34,6 +35,7 @@ class VoicePeerEngine {
   MediaStream? _localStream;
   final List<MediaStream> _remoteStreams = [];
   final List<RTCIceCandidate> _pendingCandidates = [];
+  final IceCandidateStats _localCandidates = IceCandidateStats();
   bool _remoteDescriptionSet = false;
   bool _disposed = false;
   bool _connected = false;
@@ -97,6 +99,7 @@ class VoicePeerEngine {
     peer.onIceCandidate = (candidate) {
       final value = candidate.candidate;
       if (value == null || value.isEmpty || _disposed) return;
+      _localCandidates.add(value);
       unawaited(
         sendSignal({
           'kind': 'ice',
@@ -106,11 +109,25 @@ class VoicePeerEngine {
         }),
       );
     };
+    peer.onIceGatheringState = (state) {
+      if (_disposed) return;
+      if (state != RTCIceGatheringState.RTCIceGatheringStateComplete) return;
+      voiceCallLog('ice.gathered', reason: _localCandidates.toString());
+      if (_localCandidates.lanOnly) {
+        // Not fatal on its own (same-LAN calls still connect), but it is the
+        // single most useful line when a cross-network call never connects.
+        voiceCallLog(
+          'ice.gathered.warning',
+          reason: 'no srflx/relay — STUN/TURN unreachable, '
+              'only same-network calls can connect',
+        );
+      }
+    };
     peer.onIceConnectionState = (state) {
       if (_disposed) return;
       voiceCallLog('ice.connection', reason: state.toString());
       if (state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
-        onFailed('peer_connection_failed');
+        onFailed(_failureReason());
       }
     };
     peer.onConnectionState = _handleConnectionState;
@@ -220,7 +237,7 @@ class VoicePeerEngine {
           onConnected();
         }
       case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
-        onFailed('peer_connection_failed');
+        onFailed(_failureReason());
       case RTCPeerConnectionState.RTCPeerConnectionStateDisconnected:
         _disconnectTimer?.cancel();
         _disconnectTimer = Timer(const Duration(seconds: 12), () {
@@ -232,6 +249,10 @@ class VoicePeerEngine {
         break;
     }
   }
+
+  /// Distinguishes "the connection dropped" from "no route could ever exist".
+  String _failureReason() =>
+      _localCandidates.lanOnly ? 'ice_no_relay' : 'peer_connection_failed';
 
   Future<void> _flushCandidates() async {
     final peer = _requirePeer();

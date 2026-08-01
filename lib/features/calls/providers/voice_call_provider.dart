@@ -520,6 +520,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       await _ws.connect();
       await _prepareEngine(session);
       if (_engine == null || state.call?.id != call.id) return;
+      // Anything the callee sent while prepare() was still running (mic
+      // permission / getUserMedia can take seconds) is queued, not dropped.
+      await _flushPendingSignals();
       await _engine!.createAndSendOffer();
       voiceCallLog('signal.offer.sent', callId: call.id, phase: _phaseName);
       _scheduleOfferRetry(call.id);
@@ -987,6 +990,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   String _failureLabel(String reason) {
     return switch (reason) {
       'signaling_unavailable' => 'The realtime connection was lost.',
+      'ice_no_relay' =>
+        'Calls only work on the same network right now. '
+            'The call relay server is unreachable.',
       'connect_timeout' => 'Could not connect. Check your network.',
       'peer_connection_failed' ||
       'peer_connection_disconnected' => 'The call connection dropped.',
