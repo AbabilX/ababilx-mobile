@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../chat_icon.dart';
 import '../providers/team_gate_provider.dart';
 import 'header_profile_pill.dart';
 import 'workspace_title.dart';
@@ -30,6 +33,11 @@ class ChatListHeader extends ConsumerWidget {
               name: workspaceName,
               avatarUrl: team?.avatarUrl,
             ),
+          ),
+          IconButton(
+            onPressed: () => context.push('/local-share'),
+            icon: const ChatIcon(HugeIcons.strokeRoundedFolderTransfer),
+            tooltip: 'Local Share',
           ),
           HeaderProfilePill(
             name: userName,

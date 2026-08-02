@@ -148,6 +148,32 @@ class LocalDiscoveryService {
     }
   }
 
+  /// Directly probes a single address (e.g. from a scanned QR code) and
+  /// returns its [LocalDevice] info, bypassing the broadcast/subnet flow.
+  Future<LocalDevice?> fetchDeviceInfo({
+    required String ip,
+    int port = defaultPort,
+    required LocalDevice currentDevice,
+  }) async {
+    try {
+      final url = 'http://$ip:$port/api/localsend/v2/info';
+      final response = await _dio.get(url);
+
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final json = response.data as Map<String, dynamic>;
+        final fingerprint = json['fingerprint'] as String? ?? '';
+        if (fingerprint == currentDevice.fingerprint) return null;
+
+        final device = LocalDevice.fromJson(json, ip: ip);
+        _discoveredDevicesController?.add(device);
+        return device;
+      }
+    } catch (_) {
+      // Host unreachable or not a LocalSend server
+    }
+    return null;
+  }
+
   /// Stops discovery socket listeners.
   Future<void> stop() async {
     _isListening = false;

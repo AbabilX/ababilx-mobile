@@ -72,5 +72,12 @@
 	<string>AbabilX needs camera access to take photos for messages and posts.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>AbabilX needs photo library access to attach images and videos.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>AbabilX needs local network access to discover and share files with nearby devices.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_localsend._tcp</string>
+		<string>_localsend._udp</string>
+	</array>
 </dict>
 </plist>
