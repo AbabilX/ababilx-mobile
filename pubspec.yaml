@@ -68,6 +68,10 @@ dependencies:
   video_player: ^2.13.0
   emoji_picker_flutter: ^4.5.3
 
+  # Local share / network
+  network_info_plus: ^6.0.0
+  mime: ^2.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

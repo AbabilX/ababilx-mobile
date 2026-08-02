@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
+import '../../local_share/providers/local_share_providers.dart';
 import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
 import '../chat_icon.dart';
@@ -38,6 +39,17 @@ class ConversationRow extends ConsumerWidget {
     final peerStatus = conversation.isDm && !peerInCall
         ? ref.watch(userStatusForProvider(conversation.peerUserId))
         : null;
+
+    // Show local share icon when peer device is detected on same Wi-Fi network.
+    // Matching is done by comparing the peer's display name against each
+    // discovered device's alias broadcast via UDP Multicast (LocalSend v2.1).
+    final isLocalPeerNearby = conversation.isDm &&
+        conversation.peerUserName != null &&
+        ref
+            .watch(nearbyDevicesProvider)
+            .values
+            .any((d) => d.alias.contains(conversation.peerUserName!));
+
     final previewStyle = TextStyle(
       fontSize: 15,
       height: 1.28,
@@ -59,47 +71,70 @@ class ConversationRow extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Flexible(
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontSize: 16,
-                            fontWeight: unread
-                                ? FontWeight.w800
-                                : FontWeight.w600,
-                          ),
+                      // Left: name + inline status badges + mute icon
+                      Expanded(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: unread
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            if (peerInCall) ...[
+                              const SizedBox(width: 6),
+                              const InCallLabel(compact: true),
+                            ] else if (peerStatus != null) ...[
+                              const SizedBox(width: 6),
+                              UserStatusBadge(status: peerStatus, compact: true),
+                            ],
+                            if (conversation.muted)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: ChatIcon(
+                                  HugeIcons.strokeRoundedNotificationOff01,
+                                  size: 14,
+                                  color: colors.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      if (peerInCall) ...[
-                        const SizedBox(width: 6),
-                        const InCallLabel(compact: true),
-                      ] else if (peerStatus != null) ...[
-                        const SizedBox(width: 6),
-                        UserStatusBadge(status: peerStatus, compact: true),
-                      ],
-                      if (conversation.muted)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: ChatIcon(
-                            HugeIcons.strokeRoundedNotificationOff01,
-                            size: 14,
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      if (time.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          time,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
+                      // Right: local-share indicator + timestamp, always at edge
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isLocalPeerNearby) ...[
+                            const SizedBox(width: 4),
+                            ChatIcon(
+                              HugeIcons.strokeRoundedFolderTransfer,
+                              size: 15,
+                              color: colors.primary,
+                            ),
+                          ],
+                          if (time.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              time,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -113,6 +148,7 @@ class ConversationRow extends ConsumerWidget {
                             fontWeight: FontWeight.w700,
                             color: colors.onSurface,
                           ),
+                          currentUserId: currentUserId,
                         ),
                       ),
                       ChatUnreadBadge(count: conversation.unreadCount),
@@ -128,53 +164,147 @@ class ConversationRow extends ConsumerWidget {
   }
 }
 
-/// One-row message preview + file badges; scrolls horizontally when needed.
+/// Two-line message preview + file badges with rich URLs and mention badges.
 class _PreviewLine extends StatelessWidget {
   const _PreviewLine({
     required this.preview,
     required this.style,
     required this.youStyle,
+    this.currentUserId,
   });
 
   final ChatListPreview preview;
   final TextStyle style;
   final TextStyle youStyle;
+  final String? currentUserId;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final empty = !preview.hasText && !preview.hasFiles;
 
-    return SizedBox(
-      height: 28,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        children: [
-          if (preview.fromMe)
-            Center(
-              child: Text('You: ', style: youStyle),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text.rich(
+          TextSpan(
+            children: _buildSpans(
+              text: preview.text,
+              style: style,
+              youStyle: youStyle,
+              colors: colors,
+              fromMe: preview.fromMe && (preview.hasText || preview.hasFiles),
+              empty: empty,
             ),
-          if (preview.hasText)
-            Center(
-              child: Text(preview.text, style: style),
-            )
-          else if (empty)
-            Center(
-              child: Text('No messages yet', style: style),
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (preview.hasFiles) ...[
+          const SizedBox(height: 4),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < preview.files.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 6),
+                  _FileBadge(file: preview.files[i], colors: colors),
+                ],
+              ],
             ),
-          if (preview.hasFiles) ...[
-            if (preview.hasText || preview.fromMe) const SizedBox(width: 8),
-            for (var i = 0; i < preview.files.length; i++) ...[
-              if (i > 0) const SizedBox(width: 6),
-              _FileBadge(file: preview.files[i], colors: colors),
-            ],
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
+
+  List<InlineSpan> _buildSpans({
+    required String text,
+    required TextStyle style,
+    required TextStyle youStyle,
+    required ColorScheme colors,
+    required bool fromMe,
+    required bool empty,
+  }) {
+    final spans = <InlineSpan>[];
+
+    if (fromMe) {
+      spans.add(TextSpan(text: 'You: ', style: youStyle));
+    }
+
+    if (empty) {
+      spans.add(TextSpan(text: 'No messages yet', style: style));
+      return spans;
+    }
+
+    // Pattern to match URLs (http:// or https://) or @mentions
+    final pattern = RegExp(
+      r'(https?://[^\s]+|@[A-Za-z0-9_\-\u0980-\u09FF]+(?:\s+-\s+[\u0980-\u09FF]+)?)',
+    );
+    int lastIndex = 0;
+
+    for (final match in pattern.allMatches(text)) {
+      if (match.start > lastIndex) {
+        spans.add(TextSpan(
+          text: text.substring(lastIndex, match.start),
+          style: style,
+        ));
+      }
+
+      final token = match.group(0)!;
+      if (token.startsWith('http://') || token.startsWith('https://')) {
+        spans.add(TextSpan(
+          text: token,
+          style: style.copyWith(
+            color: colors.primary,
+            fontWeight: FontWeight.w500,
+          ),
+        ));
+      } else if (token.startsWith('@')) {
+        final isMeMention = currentUserId != null &&
+            token.toLowerCase().contains(currentUserId!.toLowerCase());
+
+        spans.add(WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Container(
+            margin: const EdgeInsets.only(right: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: isMeMention
+                  ? Colors.amber.withValues(alpha: 0.25)
+                  : colors.primaryContainer.withValues(alpha: 0.65),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              token,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isMeMention ? Colors.amber.shade300 : colors.primary,
+              ),
+            ),
+          ),
+        ));
+      }
+
+      lastIndex = match.end;
+    }
+
+    if (lastIndex < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(lastIndex),
+        style: style,
+      ));
+    }
+
+    return spans;
+  }
 }
+
+
 
 class _FileBadge extends StatelessWidget {
   const _FileBadge({required this.file, required this.colors});

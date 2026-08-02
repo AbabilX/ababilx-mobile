@@ -88,8 +88,10 @@ String extractFromBrokenTiptapJson(String body) {
 }
 
 String _recoverBroken(String body) {
-  final recovered = extractFromBrokenTiptapJson(body);
-  return recovered.isNotEmpty ? recovered : 'Message';
+  // The API sidebar truncates body at 120 chars. If we still cannot recover
+  // any text from the broken JSON fragment, return empty so the preview line
+  // shows "No messages yet" rather than the misleading literal "Message".
+  return extractFromBrokenTiptapJson(body);
 }
 
 String _nodeToPlainText(dynamic node) {

@@ -96,9 +96,12 @@ ChatListPreview chatListPreview(
       .where((a) => a.fileName.trim().isNotEmpty || a.contentType.isNotEmpty)
       .toList();
 
-  // Text-only fallback when there is no body but also no file chips yet.
+  // If the body exists but tiptap parsing yields nothing (e.g. the API
+  // truncated the JSON at 120 chars), leave text empty so the preview shows
+  // the file chips or the natural "No messages yet" empty state rather than
+  // the misleading literal word "Message".
   if (text.isEmpty && files.isEmpty && hasBody) {
-    text = 'Message';
+    text = '';
   }
 
   final me = currentUserId?.trim() ?? '';
