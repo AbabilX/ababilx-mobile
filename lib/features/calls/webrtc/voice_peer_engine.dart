@@ -20,6 +20,20 @@ Future<void> _ensureAudioSessionIfNeeded() async {
   }
 }
 
+/// Debug switch: force ALL media through TURN relay to isolate the relay path.
+///
+/// When true the peer connection discards host/srflx candidates and can only
+/// connect if a `relay` candidate works end-to-end. Use it to prove whether
+/// coturn's relay media ports (not just the 3478 control port) are reachable:
+///   connects with relay-only  → relay path healthy
+///   fails    with relay-only  → allocation succeeds but relay media is blocked
+///                                (Docker port range / UFW / cloud firewall)
+/// Leave false for production — it removes the same-LAN fast path.
+const bool kForceRelayTransport = bool.fromEnvironment(
+  'FORCE_RELAY',
+  defaultValue: false,
+);
+
 class VoicePeerEngine {
   VoicePeerEngine({
     required this.sendSignal,
@@ -94,7 +108,14 @@ class VoicePeerEngine {
       'sdpSemantics': 'unified-plan',
       'bundlePolicy': 'max-bundle',
       'rtcpMuxPolicy': 'require',
+      if (kForceRelayTransport) 'iceTransportPolicy': 'relay',
     });
+    if (kForceRelayTransport) {
+      voiceCallLog(
+        'engine.ice.forceRelay',
+        reason: 'iceTransportPolicy=relay (debug: relay-only test)',
+      );
+    }
     _peer = peer;
     peer.onIceCandidate = (candidate) {
       final value = candidate.candidate;
@@ -235,6 +256,9 @@ class VoicePeerEngine {
         if (!_connected) {
           _connected = true;
           onConnected();
+          // One-shot pair snapshot, then a 5s follow-up to confirm media flow.
+          unawaited(logSelectedPair());
+          Timer(const Duration(seconds: 5), () => unawaited(logMediaFlow()));
         }
       case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
         onFailed(_failureReason());
@@ -260,6 +284,70 @@ class VoicePeerEngine {
       await peer.addCandidate(candidate);
     }
     _pendingCandidates.clear();
+  }
+
+  /// Logs the negotiated candidate pair — the single most useful line for a
+  /// cross-network call: shows whether media rides host / srflx / relay and
+  /// over UDP or TCP. `relay/relay` here while audio is silent points squarely
+  /// at the TURN relay media ports, not the mobile client.
+  Future<void> logSelectedPair() async {
+    final peer = _peer;
+    if (peer == null || _disposed) return;
+    try {
+      final stats = await peer.getStats();
+      final byId = {for (final r in stats) r.id: r.values};
+      for (final report in stats) {
+        if (report.type != 'candidate-pair') continue;
+        final v = report.values;
+        final selected = v['selected'] == true || v['state'] == 'succeeded';
+        if (!selected) continue;
+        final local = byId[v['localCandidateId']] ?? const {};
+        final remote = byId[v['remoteCandidateId']] ?? const {};
+        voiceCallLog(
+          'stats.selectedPair',
+          reason:
+              'local=${local['candidateType']}/${local['protocol']} '
+              'remote=${remote['candidateType']}/${remote['protocol']} '
+              'rtt=${v['currentRoundTripTime']}',
+        );
+        return;
+      }
+      voiceCallLog('stats.selectedPair', reason: 'no_succeeded_pair');
+    } catch (e) {
+      voiceCallLog('stats.selectedPair.error', reason: e.toString());
+    }
+  }
+
+  /// Confirms bytes are actually crossing the wire. Zero received a few seconds
+  /// after "connected" means signalling/ICE worked but media is not flowing —
+  /// e.g. relay allocated but relay port blocked, or wrong audio route.
+  Future<void> logMediaFlow() async {
+    final peer = _peer;
+    if (peer == null || _disposed) return;
+    try {
+      final stats = await peer.getStats();
+      for (final report in stats) {
+        final v = report.values;
+        if (report.type == 'inbound-rtp' && v['kind'] == 'audio') {
+          voiceCallLog(
+            'stats.inbound',
+            reason:
+                'bytesRecv=${v['bytesReceived']} '
+                'packetsRecv=${v['packetsReceived']} '
+                'lost=${v['packetsLost']} jitter=${v['jitter']}',
+          );
+        } else if (report.type == 'outbound-rtp' && v['kind'] == 'audio') {
+          voiceCallLog(
+            'stats.outbound',
+            reason:
+                'bytesSent=${v['bytesSent']} '
+                'packetsSent=${v['packetsSent']}',
+          );
+        }
+      }
+    } catch (e) {
+      voiceCallLog('stats.mediaFlow.error', reason: e.toString());
+    }
   }
 
   Future<void> setMuted(bool muted) async {
