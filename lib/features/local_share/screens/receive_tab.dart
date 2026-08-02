@@ -1,17 +1,16 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
-import '../models/device_model.dart';
-import '../models/file_dto.dart';
 import '../models/session_state.dart';
 import '../providers/local_share_providers.dart';
-import '../widgets/incoming_request_dialog.dart';
 import '../widgets/transfer_progress_tile.dart';
 
+/// Shows this device's address/QR and any in-progress incoming transfers.
+/// Accept/decline for a new incoming request is handled globally by
+/// [LocalShareSync] (so it pops up regardless of which screen is open) —
+/// this tab only needs to (re-)ensure the server is running and display it.
 class ReceiveTab extends ConsumerStatefulWidget {
   const ReceiveTab({super.key});
 
@@ -26,9 +25,6 @@ class _ReceiveTabState extends ConsumerState<ReceiveTab> {
   @override
   void initState() {
     super.initState();
-    ref.read(localServerServiceProvider).onReceiveRequested =
-        (peer, files, decisionCompleter) => _promptAccept(peer, files, decisionCompleter);
-
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
 
@@ -40,25 +36,6 @@ class _ReceiveTabState extends ConsumerState<ReceiveTab> {
       _ip = ips.isNotEmpty ? ips.first : null;
       _port = port;
     });
-  }
-
-  Future<void> _promptAccept(
-    LocalDevice peer,
-    List<LocalFileDto> files,
-    Completer<bool> decisionCompleter,
-  ) async {
-    if (!mounted) {
-      decisionCompleter.complete(true);
-      return;
-    }
-    final accepted = await IncomingRequestDialog.show(context, peer: peer, files: files);
-    if (!decisionCompleter.isCompleted) decisionCompleter.complete(accepted);
-  }
-
-  @override
-  void dispose() {
-    ref.read(localServerServiceProvider).onReceiveRequested = null;
-    super.dispose();
   }
 
   @override

@@ -1,3 +1,4 @@
+export 'local_share_sync.dart';
 export 'models/device_model.dart';
 export 'models/file_dto.dart';
 export 'models/session_state.dart';

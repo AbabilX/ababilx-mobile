@@ -26,6 +26,10 @@ import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
 import 'home_shell.dart';
 
+/// Root navigator key — lets app-wide listeners (incoming call, incoming
+/// local-share request) show UI on top of whatever screen is current.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 class _RouterRefreshNotifier extends ChangeNotifier {
   void refresh() => notifyListeners();
 }
@@ -48,6 +52,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refreshListenable = ref.watch(_routerRefreshNotifierProvider);
 
   final router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/login',
     refreshListenable: refreshListenable,
     redirect: (context, state) {

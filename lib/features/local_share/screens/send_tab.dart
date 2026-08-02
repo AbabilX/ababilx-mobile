@@ -22,15 +22,9 @@ class SendTab extends ConsumerStatefulWidget {
 }
 
 class _SendTabState extends ConsumerState<SendTab> {
+  // Discovery/server bootstrap is app-wide — see LocalShareSync — so this
+  // tab only needs to watch nearbyDevicesProvider, not (re)start discovery.
   final List<PlatformFile> _picked = [];
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(nearbyDevicesProvider.notifier).startDiscovery();
-    });
-  }
 
   Future<void> _pickFiles() async {
     final result = await FilePicker.platform.pickFiles(allowMultiple: true);
