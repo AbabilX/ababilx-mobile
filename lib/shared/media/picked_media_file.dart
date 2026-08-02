@@ -37,11 +37,12 @@ Future<PickedMediaFile?> pickLiveCameraFile() async {
 }
 
 /// Gallery: images **and** videos (web parity).
+///
+/// All platforms go through `pickMedia`, which on Android 13+ opens the system
+/// Android Photo Picker (`ACTION_PICK_IMAGES`) and on older versions falls back
+/// to a scoped visual-media chooser. Neither path needs READ_MEDIA_* /
+/// READ_EXTERNAL_STORAGE runtime permission.
 Future<PickedMediaFile?> pickGalleryMediaFile() async {
-  if (Platform.isAndroid) {
-    return _pickMediaViaFilePicker();
-  }
-
   final file = await ImagePicker().pickMedia();
   if (file == null) return null;
   final bytes = await file.readAsBytes();
@@ -55,32 +56,6 @@ Future<PickedMediaFile?> pickGalleryMediaFile() async {
 
 /// Backwards-compatible alias — now also allows video.
 Future<PickedMediaFile?> pickGalleryImageFile() => pickGalleryMediaFile();
-
-Future<PickedMediaFile?> _pickMediaViaFilePicker() async {
-  final result = await FilePicker.platform.pickFiles(
-    type: FileType.media,
-    allowMultiple: false,
-    withData: false,
-  );
-  if (result == null || result.files.isEmpty) return null;
-  final file = result.files.first;
-  _checkSize(file.size);
-
-  Uint8List? bytes = file.bytes;
-  final path = file.path;
-  if (bytes == null && path != null && path.isNotEmpty) {
-    bytes = await File(path).readAsBytes();
-  }
-  if (bytes == null || bytes.isEmpty) {
-    throw const FileSystemException('Could not read the selected media');
-  }
-  _checkSize(bytes.length);
-  return PickedMediaFile(
-    bytes: bytes,
-    fileName: file.name,
-    contentType: contentTypeForFileName(file.name),
-  );
-}
 
 Future<PickedMediaFile?> pickDeviceFile() async {
   final result = await FilePicker.platform.pickFiles(
