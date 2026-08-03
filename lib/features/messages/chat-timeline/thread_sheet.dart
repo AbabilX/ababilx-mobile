@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'chat_timeline.dart';
+import 'thread_header.dart';
+import 'thread_root_card.dart';
 
 void openThreadSheet(
   BuildContext context,
@@ -12,50 +14,39 @@ void openThreadSheet(
 ) {
   final container = ProviderScope.containerOf(context);
   container.read(chatProvider.notifier).setThreadRootId(root.id);
+  final conversation = container
+      .read(chatProvider)
+      .conversationById(conversationId);
 
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (sheetContext) {
-      final bottomInset = MediaQuery.viewInsetsOf(sheetContext).bottom;
-      return Padding(
-        padding: EdgeInsets.only(bottom: bottomInset),
-        child: DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.85,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          builder: (ctx, _) => Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Thread',
-                        style: Theme.of(ctx).textTheme.titleMedium,
+  Navigator.of(context)
+      .push(
+        MaterialPageRoute<void>(
+          builder: (_) => Scaffold(
+            body: Column(
+              children: [
+                ThreadHeader(conversation: conversation),
+                Expanded(
+                  child: Column(
+                    children: [
+                      ThreadRootCard(
+                        message: root,
+                        conversationId: conversationId,
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
+                      Expanded(
+                        child: ChatTimeline(
+                          conversationId: conversationId,
+                          threadRootId: root.id,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: ChatTimeline(
-                  conversationId: conversationId,
-                  threadRootId: root.id,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      );
-    },
-  ).whenComplete(() {
-    container.read(chatProvider.notifier).setThreadRootId(null);
-  });
+      )
+      .then((_) {
+        container.read(chatProvider.notifier).setThreadRootId(null);
+      });
 }

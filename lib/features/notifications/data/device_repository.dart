@@ -12,19 +12,16 @@ class DeviceRepository {
 
   Future<void> register(String fcmToken, {String platform = 'android'}) async {
     final url = '${ApiConstants.baseUrl}${ApiConstants.devices}';
-    fcmLog('api.register.start', 'POST $url platform=$platform token=${fcmTokenPreview(fcmToken)}');
+    fcmLog(
+      'api.register.start',
+      'POST $url platform=$platform token=${fcmTokenPreview(fcmToken)}',
+    );
     try {
       final res = await _client.post(
         ApiConstants.devices,
-        data: {
-          'fcm_token': fcmToken,
-          'platform': platform,
-        },
+        data: {'fcm_token': fcmToken, 'platform': platform},
       );
-      fcmLog(
-        'api.register.ok',
-        'status=${res.statusCode} body=${res.data}',
-      );
+      fcmLog('api.register.ok', 'status=${res.statusCode} body=${res.data}');
     } on DioException catch (e) {
       fcmLog(
         'api.register.fail',

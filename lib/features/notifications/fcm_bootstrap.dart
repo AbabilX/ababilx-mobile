@@ -8,11 +8,7 @@ import 'providers/fcm_provider.dart';
 
 /// Starts FCM after login / cold start; attaches GoRouter for deep links.
 class FcmBootstrap extends ConsumerStatefulWidget {
-  const FcmBootstrap({
-    super.key,
-    required this.router,
-    required this.child,
-  });
+  const FcmBootstrap({super.key, required this.router, required this.child});
 
   final GoRouter router;
   final Widget child;

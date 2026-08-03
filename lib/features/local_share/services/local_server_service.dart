@@ -12,7 +12,7 @@ import '../models/session_state.dart';
 class LocalServerService {
   HttpServer? _server;
   bool _isRunning = false;
-  int _port = 53317;
+  int _port = 12045;
 
   final Map<String, ShareSessionState> _activeSessions = {};
   final Map<String, Completer<bool>> _pendingUserDecisions = {};
@@ -27,7 +27,7 @@ class LocalServerService {
   /// Starts the local HTTP server.
   Future<int> startServer({
     required LocalDevice currentDevice,
-    int initialPort = 53317,
+    int initialPort = 12045,
   }) async {
     if (_isRunning) return _port;
 
@@ -35,7 +35,7 @@ class LocalServerService {
     try {
       _server = await HttpServer.bind(InternetAddress.anyIPv4, bindPort);
     } catch (_) {
-      // Fallback to random available port if 53317 is occupied
+      // Fallback to random available port if 12045 is occupied
       _server = await HttpServer.bind(InternetAddress.anyIPv4, 0);
     }
 

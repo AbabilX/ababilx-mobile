@@ -8,7 +8,7 @@ import 'local_ip_service.dart';
 
 class LocalDiscoveryService {
   static const String multicastGroupIp = '224.0.0.167';
-  static const int defaultPort = 53317;
+  static const int defaultPort = 12045;
 
   final LocalIpService _ipService = LocalIpService();
   final Dio _dio = Dio(BaseOptions(

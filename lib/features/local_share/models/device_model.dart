@@ -33,7 +33,7 @@ class LocalDevice extends Equatable {
       deviceType: json['deviceType'] as String? ?? 'mobile',
       fingerprint: json['fingerprint'] as String? ?? '',
       ip: ip,
-      port: json['port'] as int? ?? 53317,
+      port: json['port'] as int? ?? 12045,
       protocol: json['protocol'] as String? ?? 'http',
       download: json['download'] as bool? ?? true,
     );

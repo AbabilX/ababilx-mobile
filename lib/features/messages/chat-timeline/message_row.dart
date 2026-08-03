@@ -44,9 +44,10 @@ class _MessageRowState extends ConsumerState<MessageRow>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
+    _pulseAnim = Tween<double>(
+      begin: 0.3,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -73,8 +74,6 @@ class _MessageRowState extends ConsumerState<MessageRow>
     final n = ref.read(chatProvider.notifier);
     final chat = ref.watch(chatProvider);
 
-    final conversation = chat.conversationById(widget.conversationId);
-    final isDm = conversation?.isDm ?? true;
     final isOwnMessage = widget.message.userId == chat.currentUserId;
     final isSending =
         isOwnMessage && widget.message.sendStatus == MessageSendStatus.sending;
@@ -93,15 +92,14 @@ class _MessageRowState extends ConsumerState<MessageRow>
         );
       }
       if (isFailed) {
-        return Icon(
-          Icons.error_outline_rounded,
-          size: 14,
-          color: colors.error,
-        );
+        return Icon(Icons.error_outline_rounded, size: 14, color: colors.error);
       }
       return const SizedBox.shrink();
     }
 
+    // Tap opens the Thread screen, double-tap copies the message text,
+    // long-press opens the full action sheet (react/reply/forward/edit/
+    // delete) — Slack-style, same for DMs and channels.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: () => showMessageActions(
@@ -111,15 +109,15 @@ class _MessageRowState extends ConsumerState<MessageRow>
         conversationId: widget.conversationId,
         threadRootId: widget.threadRootId,
       ),
-      onTap: isFailed ? () => _onRetry(context) : null,
-      onDoubleTap: widget.threadRootId == null && !isFailed
-          ? () {
-              if (isDm) {
-                n.setReplyToMessage(widget.message);
-              } else {
-                openThreadSheet(context, widget.conversationId, widget.message);
-              }
-            }
+      onTap: isFailed
+          ? () => _onRetry(context)
+          : widget.threadRootId == null && !widget.message.isDeleted
+          ? () =>
+                openThreadSheet(context, widget.conversationId, widget.message)
+          : null,
+      onDoubleTap:
+          widget.threadRootId == null && !isFailed && !widget.message.isDeleted
+          ? () => copyMessageText(context, widget.message)
           : null,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
@@ -128,7 +126,7 @@ class _MessageRowState extends ConsumerState<MessageRow>
           // Subtle red tint on the row background for failed messages.
           decoration: isFailed
               ? BoxDecoration(
-                  color: colors.errorContainer.withOpacity(0.15),
+                  color: colors.errorContainer.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 )
               : null,
@@ -219,7 +217,8 @@ class _MessageRowState extends ConsumerState<MessageRow>
                       if (widget.onOpenThread != null)
                         ThreadSummary(
                           root: widget.message,
-                          replies: ref
+                          replies:
+                              ref
                                   .watch(chatProvider)
                                   .threadRepliesByRoot[widget.message.id] ??
                               const [],

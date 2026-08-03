@@ -31,5 +31,5 @@ class NotificationPermissionNotifier extends Notifier<bool?> {
 
 final notificationPermissionProvider =
     NotifierProvider<NotificationPermissionNotifier, bool?>(
-  NotificationPermissionNotifier.new,
-);
+      NotificationPermissionNotifier.new,
+    );

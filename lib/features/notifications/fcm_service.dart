@@ -162,14 +162,14 @@ class FcmService {
     });
   }
 
-  /// Seed Messages under detail routes so back reaches home before exit.
+  /// Seed a shell tab under detail routes so back reaches home before exit.
   void _openDeepLink(GoRouter r, String path) {
     final bare = path.split('?').first;
     if (bare == '/messages' || bare == '/login' || _isShellTab(bare)) {
       r.go(path);
       return;
     }
-    r.go('/messages');
+    r.go(_seedTabFor(bare));
     Future<void>.delayed(const Duration(milliseconds: 50), () {
       try {
         r.push(path);
@@ -178,6 +178,14 @@ class FcmService {
         r.go(path);
       }
     });
+  }
+
+  /// Shell tab a detail route belongs to — pushed under it so Android back
+  /// lands on that tab instead of exiting the app.
+  String _seedTabFor(String bare) {
+    if (bare.startsWith('/board/')) return '/board';
+    if (bare.startsWith('/wall/')) return '/wall';
+    return '/messages';
   }
 
   bool _isShellTab(String path) {
@@ -323,6 +331,18 @@ class FcmService {
       case 'chat_mention':
       case 'chat_message':
         return 'chat';
+      case 'kanban_assignment':
+      case 'kanban_mention':
+      case 'kanban_comment':
+      case 'kanban_watcher':
+      case 'board_notes':
+      case 'board_notes_mention':
+        return 'board';
+      case 'wall_mention':
+      case 'wall_comment':
+      case 'wall_reply':
+      case 'wall_category_request':
+        return 'wall';
       case 'voice_call':
         return 'voice_calls';
       case 'pre_send_review':

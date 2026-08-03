@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -7,6 +8,7 @@ import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
+import 'quick_react_sheet.dart';
 import 'thread_sheet.dart';
 
 Future<void> showMessageActions(
@@ -29,7 +31,7 @@ Future<void> showMessageActions(
         children: [
           ListTile(
             leading: const ChatIcon(HugeIcons.strokeRoundedSmile),
-            title: const Text('React 👍'),
+            title: const Text('React'),
             onTap: () => Navigator.pop(ctx, 'react'),
           ),
           ListTile(
@@ -41,6 +43,11 @@ Future<void> showMessageActions(
             leading: const ChatIcon(HugeIcons.strokeRoundedForward01),
             title: const Text('Forward'),
             onTap: () => Navigator.pop(ctx, 'forward'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.copy_rounded, size: 22),
+            title: const Text('Copy'),
+            onTap: () => Navigator.pop(ctx, 'copy'),
           ),
           if (!isDm && threadRootId == null)
             ListTile(
@@ -71,11 +78,16 @@ Future<void> showMessageActions(
   final n = ref.read(chatProvider.notifier);
   switch (action) {
     case 'react':
-      await n.toggleReaction(msg.id, '👍');
+      final emoji = await showQuickReactSheet(context);
+      if (emoji != null) {
+        await n.toggleReaction(msg.id, emoji);
+      }
     case 'reply':
       n.setReplyToMessage(msg);
     case 'forward':
       await showForwardSheet(context, ref, msg);
+    case 'copy':
+      await copyMessageText(context, msg);
     case 'thread':
       if (isDm) {
         n.setReplyToMessage(msg);
@@ -83,16 +95,26 @@ Future<void> showMessageActions(
         openThreadSheet(context, conversationId, msg);
       }
     case 'edit':
-      final edited = await _editDialog(
-        context,
-        tiptapToPlainText(msg.body),
-      );
+      final edited = await _editDialog(context, tiptapToPlainText(msg.body));
       if (edited != null) {
         await n.editMessage(msg.id, textToTiptapJson(edited));
       }
     case 'delete':
       await n.deleteMessage(msg.id);
   }
+}
+
+/// Double-tap action — copy message text straight to clipboard, no popup.
+Future<void> copyMessageText(BuildContext context, ChatMessage msg) async {
+  if (msg.isDeleted) return;
+  await Clipboard.setData(ClipboardData(text: tiptapToPlainText(msg.body)));
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Copied to clipboard'),
+      duration: Duration(seconds: 2),
+    ),
+  );
 }
 
 Future<String?> _editDialog(BuildContext context, String initial) {
@@ -103,7 +125,10 @@ Future<String?> _editDialog(BuildContext context, String initial) {
       title: const Text('Edit message'),
       content: TextField(controller: ctrl, maxLines: 4),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
           child: const Text('Save'),

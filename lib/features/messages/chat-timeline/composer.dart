@@ -67,7 +67,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   bool _showMentions = false;
   int _mentionStartIndex = -1;
 
-  String get _hint => 'Message ${widget.hintName}';
+  String get _hint =>
+      widget.parentId != null ? 'Add a reply' : 'Message ${widget.hintName}';
   bool get _hasDraft => _ctrl.text.trim().isNotEmpty || _pending.isNotEmpty;
   bool get _expanded =>
       _forceExpanded ||
@@ -95,10 +96,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       if (mounted) {
         setState(() {
           _channelMembers = members
-              .map((m) => MentionCandidate(
-                    userId: m.userId,
-                    displayName: m.name,
-                  ))
+              .map(
+                (m) => MentionCandidate(userId: m.userId, displayName: m.name),
+              )
               .toList();
         });
       }
@@ -160,7 +160,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     for (final dm in chatState.dms) {
       final peerId = dm.peerUserId;
       final peerName = dm.peerUserName;
-      if (peerId != null && peerId.isNotEmpty && peerId != currentUserId && peerName != null && peerName.isNotEmpty) {
+      if (peerId != null &&
+          peerId.isNotEmpty &&
+          peerId != currentUserId &&
+          peerName != null &&
+          peerName.isNotEmpty) {
         map.putIfAbsent(
           peerId,
           () => MentionCandidate(
@@ -174,9 +178,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
     final q = query.toLowerCase();
     final candidates = map.values
-        .where((c) =>
-            q.isEmpty ||
-            c.displayName.toLowerCase().contains(q))
+        .where((c) => q.isEmpty || c.displayName.toLowerCase().contains(q))
         .toList();
 
     setState(() {
@@ -188,8 +190,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   void _selectMention(MentionCandidate candidate) {
     if (_mentionStartIndex == -1) return;
     final text = _ctrl.text;
-    final cursor =
-        _ctrl.selection.isValid ? _ctrl.selection.start : text.length;
+    final cursor = _ctrl.selection.isValid
+        ? _ctrl.selection.start
+        : text.length;
 
     final before = text.substring(0, _mentionStartIndex);
     final after = cursor <= text.length ? text.substring(cursor) : '';
@@ -269,7 +272,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         );
 
     // Slack parity: Check if any mentioned users are not members of this channel/group
-    if (widget.isGroup && sentMsg != null && mentionedIds.isNotEmpty && mounted) {
+    if (widget.isGroup &&
+        sentMsg != null &&
+        mentionedIds.isNotEmpty &&
+        mounted) {
       _checkNotInChannelMentions(sentMsg, mentionedIds);
     }
   }
@@ -280,7 +286,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   ) {
     final channelUserIds = _channelMembers.map((m) => m.userId).toSet();
     final nonMembers = _mentionCandidates
-        .where((c) => !channelUserIds.contains(c.userId) && mentionedIds.contains(c.userId))
+        .where(
+          (c) =>
+              !channelUserIds.contains(c.userId) &&
+              mentionedIds.contains(c.userId),
+        )
         .toList();
 
     if (nonMembers.isNotEmpty) {
@@ -294,7 +304,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       );
     }
   }
-
 
   Future<void> _attach({ImageSource? source}) async {
     if (!mounted) return;
@@ -528,17 +537,17 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<ChatMessage?>(
-      chatProvider.select((s) => s.replyToMessage),
-      (prev, next) {
-        if (next != null && mounted) {
-          setState(() => _forceExpanded = true);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _focus.requestFocus();
-          });
-        }
-      },
-    );
+    ref.listen<ChatMessage?>(chatProvider.select((s) => s.replyToMessage), (
+      prev,
+      next,
+    ) {
+      if (next != null && mounted) {
+        setState(() => _forceExpanded = true);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _focus.requestFocus();
+        });
+      }
+    });
 
     final sending = ref.watch(chatProvider).sending;
     final language = ref.watch(appLanguageProvider);
@@ -690,9 +699,7 @@ Future<void> _showNotInChannelDialog(
               onAdded?.call();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Added $names to the channel'),
-                  ),
+                  SnackBar(content: Text('Added $names to the channel')),
                 );
               }
             },

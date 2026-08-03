@@ -36,7 +36,7 @@ final currentLocalDeviceProvider = Provider<LocalDevice>((ref) {
     deviceType: 'mobile',
     fingerprint: ref.watch(_deviceFingerprintProvider),
     ip: '127.0.0.1',
-    port: 53317,
+    port: 12045,
     protocol: 'http',
     download: true,
   );

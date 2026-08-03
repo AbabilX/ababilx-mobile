@@ -24,20 +24,19 @@ class NotificationPermissionTile extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () async {
-            final ok =
-                await ref.read(fcmServiceProvider).retryPermission();
-            ref
-                .read(notificationPermissionProvider.notifier)
-                .setGranted(ok);
+            final ok = await ref.read(fcmServiceProvider).retryPermission();
+            ref.read(notificationPermissionProvider.notifier).setGranted(ok);
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
                   ok
-                      ? AppTranslations.translate(
-                          context, ref, 'notif_enabled')
+                      ? AppTranslations.translate(context, ref, 'notif_enabled')
                       : AppTranslations.translate(
-                          context, ref, 'notif_still_denied'),
+                          context,
+                          ref,
+                          'notif_still_denied',
+                        ),
                 ),
               ),
             );
@@ -46,8 +45,11 @@ class NotificationPermissionTile extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                Icon(Icons.notifications_off_outlined,
-                    color: colors.error, size: 22),
+                Icon(
+                  Icons.notifications_off_outlined,
+                  color: colors.error,
+                  size: 22,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -55,7 +57,10 @@ class NotificationPermissionTile extends ConsumerWidget {
                     children: [
                       Text(
                         AppTranslations.translate(
-                            context, ref, 'notif_enable_title'),
+                          context,
+                          ref,
+                          'notif_enable_title',
+                        ),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -63,7 +68,10 @@ class NotificationPermissionTile extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Text(
                         AppTranslations.translate(
-                            context, ref, 'notif_enable_body'),
+                          context,
+                          ref,
+                          'notif_enable_body',
+                        ),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
@@ -71,8 +79,10 @@ class NotificationPermissionTile extends ConsumerWidget {
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded,
-                    color: colors.onSurfaceVariant),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: colors.onSurfaceVariant,
+                ),
               ],
             ),
           ),

@@ -21,6 +21,18 @@ class LocalNotifications {
       importance: Importance.high,
     ),
     AndroidNotificationChannel(
+      'board',
+      'Board',
+      description: 'Task assignments, comments and board notes',
+      importance: Importance.high,
+    ),
+    AndroidNotificationChannel(
+      'wall',
+      'Wall',
+      description: 'Team wall mentions, comments and replies',
+      importance: Importance.high,
+    ),
+    AndroidNotificationChannel(
       'general',
       'General',
       description: 'General AbabilX alerts',
@@ -73,8 +85,10 @@ class LocalNotifications {
       }
     } catch (_) {}
 
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android != null) {
       for (final channel in _channels) {
         await android.createNotificationChannel(channel);
@@ -85,8 +99,10 @@ class LocalNotifications {
   }
 
   Future<bool> requestPermission() async {
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     final granted = await android?.requestNotificationsPermission();
     return granted ?? true;
   }
