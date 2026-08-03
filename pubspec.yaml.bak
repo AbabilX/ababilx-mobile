@@ -1,0 +1,102 @@
+name: ababilx
+description: "AbabilX — Slack standup automation with push notifications."
+publish_to: "none"
+version: 1.0.1+9
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+  firebase_auth: ^5.3.1
+
+  # Google Sign-In (mobile-native flow)
+  google_sign_in: ^6.2.1
+
+  # HTTP client
+  dio: ^5.7.0
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^14.3.0
+
+  # Secure token storage
+  flutter_secure_storage: ^10.3.1
+
+  # Local notifications (foreground FCM display + tap routing)
+  flutter_local_notifications: ^21.0.0
+
+  # UI / Fonts / Animations
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.0
+
+  # Image caching (avatar display)
+  cached_network_image: ^3.4.1
+
+  # Utilities
+  intl: ^0.19.0
+  timeago: ^3.6.1
+  equatable: ^2.0.5
+  shared_preferences: ^2.5.5
+  web_socket_channel: ^3.0.3
+  flutter_webrtc: ^1.5.2
+  flutter_callkit_incoming: ^3.1.3
+  image_picker: ^1.2.3
+  hugeicons: ^1.1.7
+  # Local chat cache (SQLite via Drift — cache-first sidebar)
+  drift: ^2.34.2
+  sqlite3_flutter_libs: ^0.6.0+eol
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  url_launcher: ^6.3.2
+  file_picker: ^10.3.8
+  share_plus: ^12.0.2
+  fl_chart: ^1.2.0
+  permission_handler: ^12.0.3
+  audioplayers: ^6.8.1
+  record: ^6.1.2
+  pdfx: ^2.9.2
+  webview_flutter: ^4.14.1
+  video_player: ^2.13.0
+  emoji_picker_flutter: ^4.5.3
+
+  # Local share / network
+  network_info_plus: ^6.0.0
+  mime: ^2.0.0
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.2.3
+  media_store_plus: ^0.1.3
+  open_filex: ^4.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.13
+  drift_dev: ^2.34.2
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "assets/icon/icon.png"
+  remove_alpha_ios: true
+  min_sdk_android: 21
+  web:
+    generate: false
+  macos:
+    generate: true
+    image_path: "assets/icon/icon.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/icon.png

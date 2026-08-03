@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/router/app_router.dart';
 import '../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../auth/providers/auth_provider.dart';
+import 'data/device_identity_store.dart';
 import 'models/device_model.dart';
 import 'models/file_dto.dart';
 import 'providers/local_share_providers.dart';
@@ -27,8 +28,41 @@ class LocalShareSync extends ConsumerStatefulWidget {
   ConsumerState<LocalShareSync> createState() => _LocalShareSyncState();
 }
 
-class _LocalShareSyncState extends ConsumerState<LocalShareSync> {
+class _LocalShareSyncState extends ConsumerState<LocalShareSync>
+    with WidgetsBindingObserver {
   bool _booted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Wi-Fi may have changed while backgrounded — force a fresh
+    // announce/scan so a network switch doesn't leave stale/missing peers.
+    if (state == AppLifecycleState.resumed && _booted) {
+      ref.read(nearbyDevicesProvider.notifier).refresh();
+    }
+  }
+
+  Future<void> _bootstrap() async {
+    final fingerprint = await loadOrCreateDeviceFingerprint();
+    if (!mounted) return;
+    ref.read(deviceFingerprintProvider.notifier).state = fingerprint;
+
+    ref.read(localServerServiceProvider).onReceiveRequested = _handleIncoming;
+    await ref.read(localShareSessionsProvider.notifier).startServer();
+    if (!mounted) return;
+    await ref.read(nearbyDevicesProvider.notifier).startDiscovery();
+  }
 
   Future<void> _handleIncoming(
     LocalDevice peer,
@@ -62,9 +96,7 @@ class _LocalShareSyncState extends ConsumerState<LocalShareSync> {
       _booted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref.read(localServerServiceProvider).onReceiveRequested = _handleIncoming;
-        ref.read(localShareSessionsProvider.notifier).startServer();
-        ref.read(nearbyDevicesProvider.notifier).startDiscovery();
+        unawaited(_bootstrap());
       });
     } else if (!loggedIn && _booted) {
       _booted = false;

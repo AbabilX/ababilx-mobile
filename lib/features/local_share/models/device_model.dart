@@ -25,7 +25,10 @@ class LocalDevice extends Equatable {
   });
 
   /// Parse from LocalSend v2 JSON payload.
-  factory LocalDevice.fromJson(Map<String, dynamic> json, {required String ip}) {
+  factory LocalDevice.fromJson(
+    Map<String, dynamic> json, {
+    required String ip,
+  }) {
     return LocalDevice(
       alias: json['alias'] as String? ?? 'Unknown Device',
       version: json['version'] as String? ?? '2.1',
@@ -79,14 +82,14 @@ class LocalDevice extends Equatable {
 
   @override
   List<Object?> get props => [
-        alias,
-        version,
-        deviceModel,
-        deviceType,
-        fingerprint,
-        ip,
-        port,
-        protocol,
-        download,
-      ];
+    alias,
+    version,
+    deviceModel,
+    deviceType,
+    fingerprint,
+    ip,
+    port,
+    protocol,
+    download,
+  ];
 }

@@ -29,6 +29,41 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.ababilx.app/media_store",
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "saveToDownloads" -> {
+                    val sourcePath = call.argument<String>("sourcePath")
+                    val fileName = call.argument<String>("fileName")
+                    val subfolder = call.argument<String>("subfolder") ?: ""
+                    val mimeType = call.argument<String>("mimeType")
+                    if (sourcePath == null || fileName == null) {
+                        result.error("bad_args", "sourcePath and fileName are required", null)
+                        return@setMethodCallHandler
+                    }
+                    Thread {
+                        val savedPath = MediaStoreBridge.saveToDownloads(
+                            applicationContext,
+                            sourcePath,
+                            fileName,
+                            subfolder,
+                            mimeType,
+                        )
+                        runOnUiThread {
+                            if (savedPath != null) {
+                                result.success(savedPath)
+                            } else {
+                                result.error("save_failed", "Could not save file to Downloads", null)
+                            }
+                        }
+                    }.start()
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
 
     private fun startRingtone() {

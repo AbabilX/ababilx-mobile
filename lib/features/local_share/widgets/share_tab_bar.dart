@@ -30,10 +30,16 @@ class ShareTabBar extends StatelessWidget {
               onTap: () => onSelect(0),
             ),
             _ShareTabItem(
-              icon: HugeIcons.strokeRoundedDownload04,
-              label: 'Receive',
+              icon: HugeIcons.strokeRoundedClock01,
+              label: 'History',
               selected: selectedIndex == 1,
               onTap: () => onSelect(1),
+            ),
+            _ShareTabItem(
+              icon: HugeIcons.strokeRoundedDownload04,
+              label: 'Receive',
+              selected: selectedIndex == 2,
+              onTap: () => onSelect(2),
             ),
           ],
         ),

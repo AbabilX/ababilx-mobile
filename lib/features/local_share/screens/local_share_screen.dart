@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../messages/chat_icon.dart';
 import '../widgets/share_tab_bar.dart';
+import 'history_tab.dart';
 import 'receive_tab.dart';
 import 'send_tab.dart';
 
@@ -53,7 +54,7 @@ class _LocalShareScreenState extends State<LocalShareScreen> {
                 Expanded(
                   child: IndexedStack(
                     index: _index,
-                    children: const [SendTab(), ReceiveTab()],
+                    children: const [SendTab(), HistoryTab(), ReceiveTab()],
                   ),
                 ),
               ],

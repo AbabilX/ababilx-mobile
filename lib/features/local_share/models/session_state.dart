@@ -13,13 +13,7 @@ enum TransferSessionStatus {
   error,
 }
 
-enum FileStatus {
-  queue,
-  transferring,
-  finished,
-  failed,
-  canceled,
-}
+enum FileStatus { queue, transferring, finished, failed, canceled }
 
 class FileTransferProgress extends Equatable {
   final LocalFileDto file;
@@ -34,7 +28,8 @@ class FileTransferProgress extends Equatable {
     this.errorMessage,
   });
 
-  double get progress => file.size == 0 ? 0.0 : (bytesTransferred / file.size).clamp(0.0, 1.0);
+  double get progress =>
+      file.size == 0 ? 0.0 : (bytesTransferred / file.size).clamp(0.0, 1.0);
 
   FileTransferProgress copyWith({
     LocalFileDto? file,
@@ -73,9 +68,12 @@ class ShareSessionState extends Equatable {
     DateTime? startTime,
   }) : startTime = startTime ?? DateTime.now();
 
-  int get totalBytes => files.values.fold(0, (sum, item) => sum + item.file.size);
-  int get transferredBytes => files.values.fold(0, (sum, item) => sum + item.bytesTransferred);
-  double get overallProgress => totalBytes == 0 ? 0.0 : (transferredBytes / totalBytes).clamp(0.0, 1.0);
+  int get totalBytes =>
+      files.values.fold(0, (sum, item) => sum + item.file.size);
+  int get transferredBytes =>
+      files.values.fold(0, (sum, item) => sum + item.bytesTransferred);
+  double get overallProgress =>
+      totalBytes == 0 ? 0.0 : (transferredBytes / totalBytes).clamp(0.0, 1.0);
 
   ShareSessionState copyWith({
     String? sessionId,
@@ -98,5 +96,13 @@ class ShareSessionState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [sessionId, targetDevice, isOutgoing, status, files, errorMessage, startTime];
+  List<Object?> get props => [
+    sessionId,
+    targetDevice,
+    isOutgoing,
+    status,
+    files,
+    errorMessage,
+    startTime,
+  ];
 }

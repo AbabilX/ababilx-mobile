@@ -79,5 +79,9 @@
 		<string>_localsend._tcp</string>
 		<string>_localsend._udp</string>
 	</array>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

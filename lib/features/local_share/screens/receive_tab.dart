@@ -30,7 +30,9 @@ class _ReceiveTabState extends ConsumerState<ReceiveTab> {
 
   Future<void> _start() async {
     final ips = await ref.read(localIpServiceProvider).getLocalIps();
-    final port = await ref.read(localShareSessionsProvider.notifier).startServer();
+    final port = await ref
+        .read(localShareSessionsProvider.notifier)
+        .startServer();
     if (!mounted) return;
     setState(() {
       _ip = ips.isNotEmpty ? ips.first : null;
@@ -42,14 +44,17 @@ class _ReceiveTabState extends ConsumerState<ReceiveTab> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final currentDevice = ref.watch(currentLocalDeviceProvider);
-    final sessions = ref
-        .watch(localShareSessionsProvider)
-        .values
-        .where((s) => !s.isOutgoing)
-        .toList()
-      ..sort((a, b) => b.startTime.compareTo(a.startTime));
+    final sessions =
+        ref
+            .watch(localShareSessionsProvider)
+            .values
+            .where((s) => !s.isOutgoing)
+            .toList()
+          ..sort((a, b) => b.startTime.compareTo(a.startTime));
 
-    final qrData = (_ip != null && _port != null) ? 'ababilx://$_ip:$_port' : null;
+    final qrData = (_ip != null && _port != null)
+        ? 'ababilx://$_ip:$_port'
+        : null;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -110,7 +115,10 @@ class _ReceiveTabState extends ConsumerState<ReceiveTab> {
                   const SizedBox(width: 6),
                   Text(
                     'Listening for nearby devices',
-                    style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -156,9 +164,13 @@ class _ReceiveSessionCard extends StatelessWidget {
         children: [
           Text(
             'From ${session.targetDevice.alias}',
-            style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onSurface),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface,
+            ),
           ),
-          for (final f in session.files.values) TransferProgressTile(progress: f),
+          for (final f in session.files.values)
+            TransferProgressTile(progress: f),
         ],
       ),
     );

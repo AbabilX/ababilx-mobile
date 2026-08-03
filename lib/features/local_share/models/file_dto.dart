@@ -92,5 +92,13 @@ class LocalFileDto extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, fileName, size, fileType, hash, preview, filePath];
+  List<Object?> get props => [
+    id,
+    fileName,
+    size,
+    fileType,
+    hash,
+    preview,
+    filePath,
+  ];
 }

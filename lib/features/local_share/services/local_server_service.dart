@@ -3,23 +3,39 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
+import '../data/received_files_store.dart';
 import '../models/device_model.dart';
 import '../models/file_dto.dart';
 import '../models/session_state.dart';
 
-class LocalServerService {
+part 'server/prepare_upload_handler.dart';
+part 'server/upload_handler.dart';
+
+class LocalServerService with PrepareUploadHandler, UploadHandler {
   HttpServer? _server;
   bool _isRunning = false;
   int _port = 12045;
 
+  @override
   final Map<String, ShareSessionState> _activeSessions = {};
+  @override
   final Map<String, Completer<bool>> _pendingUserDecisions = {};
+  // '$sessionId:$fileId' -> minted upload token, so /upload can reject a
+  // request that guessed/observed a session id without the matching token.
+  @override
+  final Map<String, String> _uploadTokens = {};
 
   // Handlers for session changes
+  @override
   Function(ShareSessionState)? onSessionUpdated;
-  Function(LocalDevice peer, List<LocalFileDto> files, Completer<bool> decisionCompleter)? onReceiveRequested;
+  @override
+  Function(
+    LocalDevice peer,
+    List<LocalFileDto> files,
+    Completer<bool> decisionCompleter,
+  )?
+  onReceiveRequested;
 
   bool get isRunning => _isRunning;
   int get port => _port;
@@ -55,8 +71,14 @@ class LocalServerService {
 
     // CORS & Content-Type headers
     request.response.headers.add('Access-Control-Allow-Origin', '*');
-    request.response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    request.response.headers.add('Access-Control-Allow-Headers', 'Content-Type');
+    request.response.headers.add(
+      'Access-Control-Allow-Methods',
+      'GET, POST, OPTIONS',
+    );
+    request.response.headers.add(
+      'Access-Control-Allow-Headers',
+      'Content-Type',
+    );
 
     if (method == 'OPTIONS') {
       request.response.statusCode = HttpStatus.ok;
@@ -65,14 +87,19 @@ class LocalServerService {
     }
 
     try {
-      if (method == 'GET' && (path == '/api/localsend/v2/info' || path == '/api/localsend/v1/info')) {
+      if (method == 'GET' &&
+          (path == '/api/localsend/v2/info' ||
+              path == '/api/localsend/v1/info')) {
         _handleGetInfo(request, currentDevice);
-      } else if (method == 'POST' && (path == '/api/localsend/v2/register' || path == '/api/localsend/v1/register')) {
+      } else if (method == 'POST' &&
+          (path == '/api/localsend/v2/register' ||
+              path == '/api/localsend/v1/register')) {
         _handleRegister(request);
-      } else if (method == 'POST' && path == '/api/localsend/v2/prepare-upload') {
-        await _handlePrepareUpload(request);
+      } else if (method == 'POST' &&
+          path == '/api/localsend/v2/prepare-upload') {
+        await handlePrepareUpload(request);
       } else if (method == 'POST' && path == '/api/localsend/v2/upload') {
-        await _handleUpload(request);
+        await handleUpload(request);
       } else if (method == 'POST' && path == '/api/localsend/v2/cancel') {
         _handleCancel(request);
       } else {
@@ -100,168 +127,13 @@ class LocalServerService {
     await request.response.close();
   }
 
-  Future<void> _handlePrepareUpload(HttpRequest request) async {
-    final bodyString = await utf8.decoder.bind(request).join();
-    final Map<String, dynamic> json = jsonDecode(bodyString) as Map<String, dynamic>;
-
-    final senderInfoJson = json['info'] as Map<String, dynamic>? ?? {};
-    final senderDevice = LocalDevice.fromJson(senderInfoJson, ip: request.connectionInfo?.remoteAddress.address ?? '');
-
-    final filesMap = json['files'] as Map<String, dynamic>? ?? {};
-    final fileDtos = <LocalFileDto>[];
-    for (final entry in filesMap.entries) {
-      if (entry.value is Map<String, dynamic>) {
-        fileDtos.add(LocalFileDto.fromJson(entry.value as Map<String, dynamic>));
-      }
-    }
-
-    final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
-    final fileProgressMap = <String, FileTransferProgress>{};
-    final responseTokens = <String, String>{};
-
-    for (final f in fileDtos) {
-      final token = 'token_${f.id}_$sessionId';
-      fileProgressMap[f.id] = FileTransferProgress(file: f, status: FileStatus.queue);
-      responseTokens[f.id] = token;
-    }
-
-    final session = ShareSessionState(
-      sessionId: sessionId,
-      targetDevice: senderDevice,
-      isOutgoing: false,
-      status: TransferSessionStatus.waitingForRecipient,
-      files: fileProgressMap,
-    );
-
-    _activeSessions[sessionId] = session;
-    onSessionUpdated?.call(session);
-
-    // Request recipient acceptance
-    final decisionCompleter = Completer<bool>();
-    _pendingUserDecisions[sessionId] = decisionCompleter;
-
-    if (onReceiveRequested != null) {
-      onReceiveRequested!(senderDevice, fileDtos, decisionCompleter);
-    } else {
-      // Auto-accept if no prompt handler attached
-      decisionCompleter.complete(true);
-    }
-
-    final accepted = await decisionCompleter.future.timeout(
-      const Duration(seconds: 60),
-      onTimeout: () => false,
-    );
-
-    _pendingUserDecisions.remove(sessionId);
-
-    if (!accepted) {
-      final updated = session.copyWith(status: TransferSessionStatus.declined);
-      _activeSessions[sessionId] = updated;
-      onSessionUpdated?.call(updated);
-
-      request.response.statusCode = HttpStatus.forbidden;
-      request.response.write(jsonEncode({'message': 'Recipient declined transfer'}));
-      await request.response.close();
-      return;
-    }
-
-    final acceptedSession = session.copyWith(status: TransferSessionStatus.receiving);
-    _activeSessions[sessionId] = acceptedSession;
-    onSessionUpdated?.call(acceptedSession);
-
-    request.response.statusCode = HttpStatus.ok;
-    request.response.headers.contentType = ContentType.json;
-    request.response.write(jsonEncode({
-      'sessionId': sessionId,
-      'files': responseTokens,
-    }));
-    await request.response.close();
-  }
-
-  Future<void> _handleUpload(HttpRequest request) async {
-    final sessionId = request.uri.queryParameters['sessionId'];
-    final fileId = request.uri.queryParameters['fileId'];
-
-    if (sessionId == null || fileId == null || !_activeSessions.containsKey(sessionId)) {
-      request.response.statusCode = HttpStatus.badRequest;
-      await request.response.close();
-      return;
-    }
-
-    final session = _activeSessions[sessionId]!;
-    final fileProgress = session.files[fileId];
-
-    if (fileProgress == null) {
-      request.response.statusCode = HttpStatus.notFound;
-      await request.response.close();
-      return;
-    }
-
-    // Security: Sanitize target file name to prevent path traversal
-    final rawFileName = fileProgress.file.fileName;
-    final sanitizedFileName = p.basename(rawFileName);
-
-    final saveDir = await getApplicationDocumentsDirectory();
-    final savePath = p.join(saveDir.path, 'AbabilX_Downloads', sanitizedFileName);
-    final saveFile = File(savePath);
-    await saveFile.parent.create(recursive: true);
-
-    final sink = saveFile.openWrite();
-    int receivedBytes = 0;
-
-    try {
-      await request.listen((chunk) {
-        sink.add(chunk);
-        receivedBytes += chunk.length;
-
-        // Update progress state
-        final updatedFileProgress = fileProgress.copyWith(
-          bytesTransferred: receivedBytes,
-          status: FileStatus.transferring,
-        );
-
-        final updatedFiles = Map<String, FileTransferProgress>.from(session.files);
-        updatedFiles[fileId] = updatedFileProgress;
-
-        final updatedSession = session.copyWith(files: updatedFiles);
-        _activeSessions[sessionId] = updatedSession;
-        onSessionUpdated?.call(updatedSession);
-      }).asFuture();
-
-      await sink.flush();
-      await sink.close();
-
-      final finishedFileProgress = fileProgress.copyWith(
-        bytesTransferred: receivedBytes,
-        status: FileStatus.finished,
-      );
-
-      final updatedFiles = Map<String, FileTransferProgress>.from(session.files);
-      updatedFiles[fileId] = finishedFileProgress;
-
-      final isAllFinished = updatedFiles.values.every((f) => f.status == FileStatus.finished);
-      final finalSession = session.copyWith(
-        files: updatedFiles,
-        status: isAllFinished ? TransferSessionStatus.finished : TransferSessionStatus.receiving,
-      );
-
-      _activeSessions[sessionId] = finalSession;
-      onSessionUpdated?.call(finalSession);
-
-      request.response.statusCode = HttpStatus.ok;
-      await request.response.close();
-    } catch (e) {
-      await sink.close();
-      request.response.statusCode = HttpStatus.internalServerError;
-      await request.response.close();
-    }
-  }
-
   void _handleCancel(HttpRequest request) async {
     final sessionId = request.uri.queryParameters['sessionId'];
     if (sessionId != null && _activeSessions.containsKey(sessionId)) {
       final session = _activeSessions[sessionId]!;
-      final canceledSession = session.copyWith(status: TransferSessionStatus.canceled);
+      final canceledSession = session.copyWith(
+        status: TransferSessionStatus.canceled,
+      );
       _activeSessions[sessionId] = canceledSession;
       onSessionUpdated?.call(canceledSession);
     }
@@ -276,5 +148,6 @@ class LocalServerService {
     _server = null;
     _activeSessions.clear();
     _pendingUserDecisions.clear();
+    _uploadTokens.clear();
   }
 }

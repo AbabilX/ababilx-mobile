@@ -62,10 +62,7 @@ class TransferProgressTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                _statusLabel,
-                style: TextStyle(fontSize: 12, color: color),
-              ),
+              Text(_statusLabel, style: TextStyle(fontSize: 12, color: color)),
             ],
           ),
           const SizedBox(height: 6),

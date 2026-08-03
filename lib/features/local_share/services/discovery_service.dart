@@ -11,24 +11,28 @@ class LocalDiscoveryService {
   static const int defaultPort = 12045;
 
   final LocalIpService _ipService = LocalIpService();
-  final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(milliseconds: 600),
-    receiveTimeout: const Duration(milliseconds: 600),
-  ));
+  final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(milliseconds: 600),
+      receiveTimeout: const Duration(milliseconds: 600),
+    ),
+  );
 
   RawDatagramSocket? _socket;
   StreamController<LocalDevice>? _discoveredDevicesController;
   bool _isListening = false;
 
-  Stream<LocalDevice>? get onDeviceDiscovered => _discoveredDevicesController?.stream;
+  Stream<LocalDevice>? get onDeviceDiscovered =>
+      _discoveredDevicesController?.stream;
 
-  /// Starts listening on the UDP Multicast socket.
+  /// Starts listening on the UDP Multicast socket. [currentDevice] should
+  /// already carry the real bound server port (not the default) so peers
+  /// dial back somewhere that's actually listening.
   Future<void> startMulticastListener({
     required LocalDevice currentDevice,
   }) async {
     if (_isListening) return;
-    _isListening = true;
-    _discoveredDevicesController = StreamController<LocalDevice>.broadcast();
+    _discoveredDevicesController ??= StreamController<LocalDevice>.broadcast();
 
     try {
       final localIps = await _ipService.getLocalIps();
@@ -38,6 +42,7 @@ class LocalDiscoveryService {
         reuseAddress: true,
         reusePort: true,
       );
+      _isListening = true;
 
       final group = InternetAddress(multicastGroupIp);
       _socket?.joinMulticast(group);
@@ -50,12 +55,14 @@ class LocalDiscoveryService {
 
           try {
             final rawMessage = utf8.decode(datagram.data);
-            final Map<String, dynamic> json = jsonDecode(rawMessage) as Map<String, dynamic>;
+            final Map<String, dynamic> json =
+                jsonDecode(rawMessage) as Map<String, dynamic>;
             final senderIp = datagram.address.address;
 
             // Ignore own announcements
             final fingerprint = json['fingerprint'] as String? ?? '';
-            if (fingerprint == currentDevice.fingerprint || localIps.contains(senderIp)) {
+            if (fingerprint == currentDevice.fingerprint ||
+                localIps.contains(senderIp)) {
               return;
             }
 
@@ -67,14 +74,15 @@ class LocalDiscoveryService {
         }
       });
     } catch (_) {
-      // Multicast binding failed (or not supported on network interface)
+      // Multicast binding failed (or not supported on network interface) —
+      // leave _isListening false so a later call can retry.
+      _isListening = false;
     }
   }
 
   /// Broadcasts an announcement ping over UDP Multicast to nearby devices.
-  Future<void> announce({
-    required LocalDevice currentDevice,
-  }) async {
+  /// [currentDevice] should carry the real bound server port.
+  Future<void> announce({required LocalDevice currentDevice}) async {
     try {
       final group = InternetAddress(multicastGroupIp);
       final payload = jsonEncode({
@@ -92,7 +100,9 @@ class LocalDiscoveryService {
     }
   }
 
-  /// Scans local subnet IPs over HTTP fallback if multicast is blocked by router AP isolation.
+  /// Scans local subnet IPs over HTTP fallback if multicast is blocked by
+  /// router AP isolation. Batched so we don't open 250+ sockets at once,
+  /// which causes spurious probe failures on Android.
   Future<void> scanSubnet({
     required LocalDevice currentDevice,
     int port = defaultPort,
@@ -101,8 +111,7 @@ class LocalDiscoveryService {
     final localIps = await _ipService.getLocalIps();
     if (localIps.isEmpty) return;
 
-    final futures = <Future<void>>[];
-
+    final targets = <String>[];
     for (final localIp in localIps) {
       final subnet = LocalIpService.getSubnet(localIp);
       if (subnet == null) continue;
@@ -110,17 +119,27 @@ class LocalDiscoveryService {
       for (int i = 1; i <= 254; i++) {
         final targetIp = '$subnet.$i';
         if (targetIp == localIp) continue;
-
-        futures.add(_probeDevice(
-          targetIp: targetIp,
-          port: port,
-          currentDevice: currentDevice,
-          onFound: onFound,
-        ));
+        targets.add(targetIp);
       }
     }
 
-    await Future.wait(futures);
+    const batchSize = 32;
+    for (var i = 0; i < targets.length; i += batchSize) {
+      final batch = targets.sublist(
+        i,
+        (i + batchSize).clamp(0, targets.length),
+      );
+      await Future.wait(
+        batch.map(
+          (targetIp) => _probeDevice(
+            targetIp: targetIp,
+            port: port,
+            currentDevice: currentDevice,
+            onFound: onFound,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _probeDevice({
@@ -129,23 +148,10 @@ class LocalDiscoveryService {
     required LocalDevice currentDevice,
     Function(LocalDevice)? onFound,
   }) async {
-    try {
-      final url = 'http://$targetIp:$port/api/localsend/v2/info';
-      final response = await _dio.get(url);
-
-      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-        final json = response.data as Map<String, dynamic>;
-        final fingerprint = json['fingerprint'] as String? ?? '';
-
-        if (fingerprint != currentDevice.fingerprint) {
-          final device = LocalDevice.fromJson(json, ip: targetIp);
-          _discoveredDevicesController?.add(device);
-          onFound?.call(device);
-        }
-      }
-    } catch (_) {
-      // Host unreachable or not a LocalSend server
-    }
+    final device = await _fetchPeerInfo(targetIp, port, currentDevice);
+    if (device == null) return;
+    _discoveredDevicesController?.add(device);
+    onFound?.call(device);
   }
 
   /// Directly probes a single address (e.g. from a scanned QR code) and
@@ -155,18 +161,26 @@ class LocalDiscoveryService {
     int port = defaultPort,
     required LocalDevice currentDevice,
   }) async {
+    final device = await _fetchPeerInfo(ip, port, currentDevice);
+    if (device != null) _discoveredDevicesController?.add(device);
+    return device;
+  }
+
+  /// GETs `/info` from a peer and parses it, returning `null` for our own
+  /// device, an unreachable host, or a non-LocalSend response.
+  Future<LocalDevice?> _fetchPeerInfo(
+    String ip,
+    int port,
+    LocalDevice currentDevice,
+  ) async {
     try {
       final url = 'http://$ip:$port/api/localsend/v2/info';
       final response = await _dio.get(url);
-
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final json = response.data as Map<String, dynamic>;
         final fingerprint = json['fingerprint'] as String? ?? '';
         if (fingerprint == currentDevice.fingerprint) return null;
-
-        final device = LocalDevice.fromJson(json, ip: ip);
-        _discoveredDevicesController?.add(device);
-        return device;
+        return LocalDevice.fromJson(json, ip: ip);
       }
     } catch (_) {
       // Host unreachable or not a LocalSend server
