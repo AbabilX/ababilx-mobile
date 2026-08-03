@@ -60,7 +60,8 @@ class RecentContactTile extends StatelessWidget {
         width: 64,
         child: Column(
           children: [
-            AppAvatar(size: 56, url: avatar, name: title),            const SizedBox(height: 6),
+            AppAvatar(size: 56, url: avatar, name: title),
+            const SizedBox(height: 6),
             Text(
               title,
               maxLines: 1,

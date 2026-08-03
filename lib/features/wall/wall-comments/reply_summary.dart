@@ -11,14 +11,12 @@ class WallReplySummary extends StatelessWidget {
     super.key,
     required this.root,
     required this.replies,
-    required this.expanded,
-    required this.onToggle,
+    required this.onTap,
   });
 
   final WallComment root;
   final List<WallComment> replies;
-  final bool expanded;
-  final VoidCallback onToggle;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +29,9 @@ class WallReplySummary extends StatelessWidget {
     final people = wallThreadParticipants(root, replies);
 
     return Padding(
-      padding: const EdgeInsets.only(left: 36, top: 4, bottom: 4),
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: InkWell(
-        onTap: onToggle,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

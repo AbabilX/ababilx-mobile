@@ -33,7 +33,11 @@ class YouMenu extends ConsumerWidget {
                   color: colors.errorContainer,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(Icons.logout_rounded, color: colors.error, size: 28),
+                child: Icon(
+                  Icons.logout_rounded,
+                  color: colors.error,
+                  size: 28,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -61,7 +65,9 @@ class YouMenu extends ConsumerWidget {
                         shape: const StadiumBorder(),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: Text(AppTranslations.translate(context, ref, 'cancel')),
+                      child: Text(
+                        AppTranslations.translate(context, ref, 'cancel'),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),

@@ -44,7 +44,7 @@ class WallCommentTile extends ConsumerWidget {
           ? null
           : () => copyWallText(context, plain),
       child: Padding(
-        padding: EdgeInsets.only(left: isReply ? 36 : 0, top: 6, bottom: 6),
+        padding: const EdgeInsets.only(top: 6, bottom: 6),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

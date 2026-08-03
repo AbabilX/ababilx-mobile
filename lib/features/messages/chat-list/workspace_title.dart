@@ -6,11 +6,7 @@ import '../chat_icon.dart';
 
 /// Left app-bar: workspace avatar + name + chevron (tap no-op for now).
 class WorkspaceTitle extends StatelessWidget {
-  const WorkspaceTitle({
-    super.key,
-    required this.name,
-    this.avatarUrl,
-  });
+  const WorkspaceTitle({super.key, required this.name, this.avatarUrl});
 
   final String name;
   final String? avatarUrl;
@@ -34,10 +30,7 @@ class WorkspaceTitle extends StatelessWidget {
         Flexible(
           child: Text(
             name,
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
             overflow: TextOverflow.ellipsis,
           ),
         ),

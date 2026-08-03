@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../data/models/chat_models.dart';
 import 'conversation_row.dart';
+import 'conversation_row_swipe.dart';
 
 class ConversationRows extends StatelessWidget {
   const ConversationRows({
@@ -10,12 +11,16 @@ class ConversationRows extends StatelessWidget {
     required this.conversations,
     required this.onTap,
     required this.onRefresh,
+    required this.onMarkRead,
+    required this.onLeaveChannel,
     this.currentUserId,
   });
 
   final List<ChatConversation> conversations;
   final void Function(ChatConversation) onTap;
   final Future<void> Function() onRefresh;
+  final void Function(ChatConversation) onMarkRead;
+  final void Function(ChatConversation) onLeaveChannel;
   final String? currentUserId;
 
   @override
@@ -45,10 +50,16 @@ class ConversationRows extends StatelessWidget {
         ),
         itemBuilder: (_, i) {
           final c = conversations[i];
-          return ConversationRow(
+          return ConversationRowSwipe(
+            key: ValueKey(c.id),
             conversation: c,
-            currentUserId: currentUserId,
-            onTap: () => onTap(c),
+            onMarkRead: () => onMarkRead(c),
+            onLeaveChannel: () => onLeaveChannel(c),
+            child: ConversationRow(
+              conversation: c,
+              currentUserId: currentUserId,
+              onTap: () => onTap(c),
+            ),
           );
         },
       ),

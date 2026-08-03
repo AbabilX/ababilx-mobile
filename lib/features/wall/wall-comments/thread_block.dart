@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../data/models/wall_models.dart';
+import 'comment_thread_screen.dart';
 import 'comment_tile.dart';
 import 'reply_summary.dart';
 
-/// One root comment + collapsible reply thread (web WallCommentThread parity).
-class WallCommentThreadBlock extends StatefulWidget {
+/// One root comment + a reply-count summary that opens a dedicated thread
+/// screen (DM-thread parity — no inline expand, no nested indent).
+class WallCommentThreadBlock extends StatelessWidget {
   const WallCommentThreadBlock({
     super.key,
     required this.root,
@@ -20,40 +22,22 @@ class WallCommentThreadBlock extends StatefulWidget {
   final VoidCallback onReply;
 
   @override
-  State<WallCommentThreadBlock> createState() => _WallCommentThreadBlockState();
-}
-
-class _WallCommentThreadBlockState extends State<WallCommentThreadBlock> {
-  bool _expanded = false;
-
-  @override
   Widget build(BuildContext context) {
-    final root = widget.root;
-    final replies = widget.replies;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        WallCommentTile(
-          comment: root,
-          postId: widget.postId,
-          onReply: widget.onReply,
-        ),
+        WallCommentTile(comment: root, postId: postId, onReply: onReply),
         if (replies.isNotEmpty)
           WallReplySummary(
             root: root,
             replies: replies,
-            expanded: _expanded,
-            onToggle: () => setState(() => _expanded = !_expanded),
-          ),
-        if (_expanded)
-          for (final r in replies)
-            WallCommentTile(
-              comment: r,
-              postId: widget.postId,
-              isReply: true,
-              replyToName: root.userName,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    WallCommentThreadScreen(postId: postId, rootId: root.id),
+              ),
             ),
+          ),
       ],
     );
   }

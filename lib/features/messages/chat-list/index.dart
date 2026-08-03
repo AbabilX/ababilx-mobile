@@ -62,6 +62,11 @@ class _ChatListState extends ConsumerState<ChatList> {
                       onRefresh: () =>
                           ref.read(chatProvider.notifier).fetchSidebar(),
                       onTap: (c) => context.push('/messages/${c.id}'),
+                      onMarkRead: (c) => ref
+                          .read(chatProvider.notifier)
+                          .markConversationRead(c.id),
+                      onLeaveChannel: (c) =>
+                          ref.read(chatProvider.notifier).leaveChannel(c.id),
                     ),
             ),
           ],

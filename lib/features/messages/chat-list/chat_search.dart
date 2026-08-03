@@ -8,10 +8,7 @@ import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 
 void openChatSearch(BuildContext context, WidgetRef ref) {
-  showSearch<String?>(
-    context: context,
-    delegate: ChatSearchDelegate(ref),
-  );
+  showSearch<String?>(context: context, delegate: ChatSearchDelegate(ref));
 }
 
 class ChatSearchDelegate extends SearchDelegate<String?> {
@@ -20,17 +17,17 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
 
   @override
   List<Widget>? buildActions(BuildContext context) => [
-        IconButton(
-          icon: const ChatIcon(HugeIcons.strokeRoundedCancel01),
-          onPressed: () => query = '',
-        ),
-      ];
+    IconButton(
+      icon: const ChatIcon(HugeIcons.strokeRoundedCancel01),
+      onPressed: () => query = '',
+    ),
+  ];
 
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-        icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
-        onPressed: () => close(context, null),
-      );
+    icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+    onPressed: () => close(context, null),
+  );
 
   @override
   Widget buildResults(BuildContext context) => _list(context);

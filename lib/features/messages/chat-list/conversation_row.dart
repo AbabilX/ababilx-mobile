@@ -34,7 +34,8 @@ class ConversationRow extends ConsumerWidget {
     final preview = chatListPreview(conversation, currentUserId);
     final time = relativeChatTime(conversation.lastMessageAt);
     final unread = conversation.unreadCount > 0;
-    final peerInCall = conversation.isDm &&
+    final peerInCall =
+        conversation.isDm &&
         ref.watch(isUserInCallProvider(conversation.peerUserId));
     final peerStatus = conversation.isDm && !peerInCall
         ? ref.watch(userStatusForProvider(conversation.peerUserId))
@@ -43,7 +44,8 @@ class ConversationRow extends ConsumerWidget {
     // Show local share icon when peer device is detected on same Wi-Fi network.
     // Matching is done by comparing the peer's display name against each
     // discovered device's alias broadcast via UDP Multicast (LocalSend v2.1).
-    final isLocalPeerNearby = conversation.isDm &&
+    final isLocalPeerNearby =
+        conversation.isDm &&
         conversation.peerUserName != null &&
         ref
             .watch(nearbyDevicesProvider)
@@ -96,7 +98,10 @@ class ConversationRow extends ConsumerWidget {
                               const InCallLabel(compact: true),
                             ] else if (peerStatus != null) ...[
                               const SizedBox(width: 6),
-                              UserStatusBadge(status: peerStatus, compact: true),
+                              UserStatusBadge(
+                                status: peerStatus,
+                                compact: true,
+                              ),
                             ],
                             if (conversation.muted)
                               Padding(
@@ -248,63 +253,62 @@ class _PreviewLine extends StatelessWidget {
 
     for (final match in pattern.allMatches(text)) {
       if (match.start > lastIndex) {
-        spans.add(TextSpan(
-          text: text.substring(lastIndex, match.start),
-          style: style,
-        ));
+        spans.add(
+          TextSpan(text: text.substring(lastIndex, match.start), style: style),
+        );
       }
 
       final token = match.group(0)!;
       if (token.startsWith('http://') || token.startsWith('https://')) {
-        spans.add(TextSpan(
-          text: token,
-          style: style.copyWith(
-            color: colors.primary,
-            fontWeight: FontWeight.w500,
+        spans.add(
+          TextSpan(
+            text: token,
+            style: style.copyWith(
+              color: colors.primary,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ));
+        );
       } else if (token.startsWith('@')) {
-        final isMeMention = currentUserId != null &&
+        final isMeMention =
+            currentUserId != null &&
             token.toLowerCase().contains(currentUserId!.toLowerCase());
 
-        spans.add(WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: Container(
-            margin: const EdgeInsets.only(right: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-            decoration: BoxDecoration(
-              color: isMeMention
-                  ? Colors.amber.withValues(alpha: 0.25)
-                  : colors.primaryContainer.withValues(alpha: 0.65),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              token,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isMeMention ? Colors.amber.shade300 : colors.primary,
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Container(
+              margin: const EdgeInsets.only(right: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: isMeMention
+                    ? Colors.amber.withValues(alpha: 0.25)
+                    : colors.primaryContainer.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                token,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isMeMention ? Colors.amber.shade300 : colors.primary,
+                ),
               ),
             ),
           ),
-        ));
+        );
       }
 
       lastIndex = match.end;
     }
 
     if (lastIndex < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(lastIndex),
-        style: style,
-      ));
+      spans.add(TextSpan(text: text.substring(lastIndex), style: style));
     }
 
     return spans;
   }
 }
-
-
 
 class _FileBadge extends StatelessWidget {
   const _FileBadge({required this.file, required this.colors});
