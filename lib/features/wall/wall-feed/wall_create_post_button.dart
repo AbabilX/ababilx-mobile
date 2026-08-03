@@ -23,10 +23,7 @@ class WallCreatePostButton extends StatelessWidget {
         ),
         label: Text(
           'Create post',
-          style: TextStyle(
-            color: colors.primary,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700),
         ),
       ),
     );

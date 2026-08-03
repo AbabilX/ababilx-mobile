@@ -53,10 +53,7 @@ mixin _WallMutateMixin on Notifier<WallState> {
     (this as WallNotifier)._patchPost(postId, (p) {
       final comments = [
         for (final c in p.comments)
-          if (c.id == commentId)
-            c.copyWith(reactions: result.reactions)
-          else
-            c,
+          if (c.id == commentId) c.copyWith(reactions: result.reactions) else c,
       ];
       return p.copyWith(comments: comments);
     });
@@ -100,35 +97,28 @@ mixin _WallMutateMixin on Notifier<WallState> {
     List<String>? conversationIds,
     List<String>? userIds,
     String? caption,
-  }) =>
-      repo.forward(
-        postId: postId,
-        conversationIds: conversationIds,
-        userIds: userIds,
-        caption: caption,
-      );
+  }) => repo.forward(
+    postId: postId,
+    conversationIds: conversationIds,
+    userIds: userIds,
+    caption: caption,
+  );
 
   Future<WallPresignResult> presignAttachment({
     required String contentType,
     required String fileName,
     required int sizeBytes,
-  }) =>
-      repo.presignAttachment(
-        contentType: contentType,
-        fileName: fileName,
-        sizeBytes: sizeBytes,
-      );
+  }) => repo.presignAttachment(
+    contentType: contentType,
+    fileName: fileName,
+    sizeBytes: sizeBytes,
+  );
 
   Future<void> uploadBytes(
     WallPresignResult presign,
     List<int> bytes,
     String contentType,
-  ) =>
-      repo.uploadBytes(
-        presign,
-        Uint8List.fromList(bytes),
-        contentType,
-      );
+  ) => repo.uploadBytes(presign, Uint8List.fromList(bytes), contentType);
 
   Future<void> discardUpload(String fileUrl) => repo.discardUpload(fileUrl);
 }

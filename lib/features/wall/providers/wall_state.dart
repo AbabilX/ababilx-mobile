@@ -5,17 +5,11 @@ import '../data/models/wall_models.dart';
 enum WallFeedKind { all, mine, saved, category }
 
 class WallFeedFilter extends Equatable {
-  const WallFeedFilter.all()
-      : kind = WallFeedKind.all,
-        category = null;
+  const WallFeedFilter.all() : kind = WallFeedKind.all, category = null;
 
-  const WallFeedFilter.mine()
-      : kind = WallFeedKind.mine,
-        category = null;
+  const WallFeedFilter.mine() : kind = WallFeedKind.mine, category = null;
 
-  const WallFeedFilter.saved()
-      : kind = WallFeedKind.saved,
-        category = null;
+  const WallFeedFilter.saved() : kind = WallFeedKind.saved, category = null;
 
   const WallFeedFilter.category(this.category) : kind = WallFeedKind.category;
 
@@ -63,31 +57,30 @@ class WallState extends Equatable {
     List<WallCategory>? categories,
     WallStats? stats,
     String? currentUserId,
-  }) =>
-      WallState(
-        posts: posts ?? this.posts,
-        filter: filter ?? this.filter,
-        nextCursor: nextCursor ?? this.nextCursor,
-        hasMore: hasMore ?? this.hasMore,
-        loading: loading ?? this.loading,
-        loadingMore: loadingMore ?? this.loadingMore,
-        error: clearError ? null : (error ?? this.error),
-        categories: categories ?? this.categories,
-        stats: stats ?? this.stats,
-        currentUserId: currentUserId ?? this.currentUserId,
-      );
+  }) => WallState(
+    posts: posts ?? this.posts,
+    filter: filter ?? this.filter,
+    nextCursor: nextCursor ?? this.nextCursor,
+    hasMore: hasMore ?? this.hasMore,
+    loading: loading ?? this.loading,
+    loadingMore: loadingMore ?? this.loadingMore,
+    error: clearError ? null : (error ?? this.error),
+    categories: categories ?? this.categories,
+    stats: stats ?? this.stats,
+    currentUserId: currentUserId ?? this.currentUserId,
+  );
 
   @override
   List<Object?> get props => [
-        posts,
-        filter,
-        nextCursor,
-        hasMore,
-        loading,
-        loadingMore,
-        error,
-        categories,
-        stats,
-        currentUserId,
-      ];
+    posts,
+    filter,
+    nextCursor,
+    hasMore,
+    loading,
+    loadingMore,
+    error,
+    categories,
+    stats,
+    currentUserId,
+  ];
 }

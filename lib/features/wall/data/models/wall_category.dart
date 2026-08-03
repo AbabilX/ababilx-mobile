@@ -22,15 +22,15 @@ class WallCategory extends Equatable {
   final String updatedAt;
 
   factory WallCategory.fromJson(Map<String, dynamic> json) => WallCategory(
-        id: json['id'] as String? ?? '',
-        teamId: json['team_id'] as String? ?? '',
-        slug: json['slug'] as String? ?? '',
-        label: json['label'] as String? ?? '',
-        description: json['description'] as String?,
-        status: json['status'] as String? ?? 'published',
-        createdAt: json['created_at'] as String? ?? '',
-        updatedAt: json['updated_at'] as String? ?? '',
-      );
+    id: json['id'] as String? ?? '',
+    teamId: json['team_id'] as String? ?? '',
+    slug: json['slug'] as String? ?? '',
+    label: json['label'] as String? ?? '',
+    description: json['description'] as String?,
+    status: json['status'] as String? ?? 'published',
+    createdAt: json['created_at'] as String? ?? '',
+    updatedAt: json['updated_at'] as String? ?? '',
+  );
 
   @override
   List<Object?> get props => [id, slug, label];

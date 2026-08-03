@@ -19,8 +19,10 @@ class WallPostActions extends ConsumerWidget {
   });
 
   final WallPost post;
+
   /// When set (e.g. already on post detail), Comment won't push another page.
   final VoidCallback? onComment;
+
   /// Hide on post detail — composer is already fixed at the bottom.
   final bool showComment;
 
@@ -49,7 +51,8 @@ class WallPostActions extends ConsumerWidget {
           _Action(
             icon: HugeIcons.strokeRoundedComment01,
             label: '${post.commentCount}',
-            onTap: onComment ??
+            onTap:
+                onComment ??
                 () {
                   final router = GoRouter.maybeOf(context);
                   if (router == null) return;

@@ -31,27 +31,24 @@ class WallComment extends Equatable {
   final List<WallReactionGroup> reactions;
 
   factory WallComment.fromJson(Map<String, dynamic> json) => WallComment(
-        id: json['id'] as String? ?? '',
-        postId: json['post_id'] as String? ?? '',
-        userId: json['user_id'] as String? ?? '',
-        parentId: json['parent_id'] as String?,
-        body: json['body'] as String? ?? '',
-        createdAt: json['created_at'] as String? ?? '',
-        userName: json['user_name'] as String?,
-        userAvatarUrl: json['user_avatar_url'] as String?,
-        userIsPremium: json['user_is_premium'] as bool? ?? false,
-        attachments: (json['attachments'] as List<dynamic>? ?? [])
-            .map((e) => WallAttachment.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        reactions: (json['reactions'] as List<dynamic>? ?? [])
-            .map((e) => WallReactionGroup.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    id: json['id'] as String? ?? '',
+    postId: json['post_id'] as String? ?? '',
+    userId: json['user_id'] as String? ?? '',
+    parentId: json['parent_id'] as String?,
+    body: json['body'] as String? ?? '',
+    createdAt: json['created_at'] as String? ?? '',
+    userName: json['user_name'] as String?,
+    userAvatarUrl: json['user_avatar_url'] as String?,
+    userIsPremium: json['user_is_premium'] as bool? ?? false,
+    attachments: (json['attachments'] as List<dynamic>? ?? [])
+        .map((e) => WallAttachment.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    reactions: (json['reactions'] as List<dynamic>? ?? [])
+        .map((e) => WallReactionGroup.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 
-  WallComment copyWith({
-    String? body,
-    List<WallReactionGroup>? reactions,
-  }) =>
+  WallComment copyWith({String? body, List<WallReactionGroup>? reactions}) =>
       WallComment(
         id: id,
         postId: postId,

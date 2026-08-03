@@ -24,15 +24,17 @@ object MediaStoreBridge {
         fileName: String,
         subfolder: String,
         mimeType: String?,
+        collection: String = "downloads",
     ): String? {
         val source = File(sourcePath)
         if (!source.exists()) return null
+        val isImages = collection == "images"
 
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                saveViaMediaStore(context, source, fileName, subfolder, mimeType)
+                saveViaMediaStore(context, source, fileName, subfolder, mimeType, isImages)
             } else {
-                saveLegacy(source, fileName, subfolder)
+                saveLegacy(source, fileName, subfolder, isImages)
             }
         } catch (e: Exception) {
             null
@@ -47,14 +49,18 @@ object MediaStoreBridge {
         fileName: String,
         subfolder: String,
         mimeType: String?,
+        isImages: Boolean,
     ): String? {
         val resolver = context.contentResolver
+        val baseDir = if (isImages) Environment.DIRECTORY_PICTURES else Environment.DIRECTORY_DOWNLOADS
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType ?: "application/octet-stream")
-            put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/$subfolder")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "$baseDir/$subfolder")
         }
-        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return null
+        val collectionUri =
+            if (isImages) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Downloads.EXTERNAL_CONTENT_URI
+        val uri = resolver.insert(collectionUri, values) ?: return null
 
         val copied = resolver.openOutputStream(uri)?.use { out ->
             FileInputStream(source).use { input -> input.copyTo(out) }
@@ -62,23 +68,24 @@ object MediaStoreBridge {
         } ?: false
         if (!copied) return null
 
-        return resolveSavedPath(resolver, uri, subfolder)
+        return resolveSavedPath(resolver, uri, subfolder, baseDir)
     }
 
-    private fun resolveSavedPath(resolver: ContentResolver, uri: Uri, subfolder: String): String? {
+    private fun resolveSavedPath(resolver: ContentResolver, uri: Uri, subfolder: String, baseDir: String): String? {
         val projection = arrayOf(MediaStore.MediaColumns.DISPLAY_NAME)
         resolver.query(uri, projection, null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val savedName = cursor.getString(0)
-                val downloadsDir = "${Environment.getExternalStorageDirectory()}/${Environment.DIRECTORY_DOWNLOADS}"
-                return "$downloadsDir/$subfolder/$savedName"
+                val rootDir = "${Environment.getExternalStorageDirectory()}/$baseDir"
+                return "$rootDir/$subfolder/$savedName"
             }
         }
         return uri.toString()
     }
 
-    private fun saveLegacy(source: File, fileName: String, subfolder: String): String {
-        val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), subfolder)
+    private fun saveLegacy(source: File, fileName: String, subfolder: String, isImages: Boolean): String {
+        val baseDir = if (isImages) Environment.DIRECTORY_PICTURES else Environment.DIRECTORY_DOWNLOADS
+        val dir = File(Environment.getExternalStoragePublicDirectory(baseDir), subfolder)
         if (!dir.exists()) dir.mkdirs()
 
         var dest = File(dir, fileName)

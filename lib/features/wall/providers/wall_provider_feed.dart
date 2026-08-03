@@ -52,10 +52,7 @@ mixin _WallFeedMixin on Notifier<WallState> {
 
   Future<void> setFilter(WallFeedFilter filter) => loadInitial(filter: filter);
 
-  Future<WallPostsPage> _fetchPage(
-    WallFeedFilter f, {
-    String? cursor,
-  }) {
+  Future<WallPostsPage> _fetchPage(WallFeedFilter f, {String? cursor}) {
     return repo.listPosts(
       cursor: cursor,
       category: f.kind == WallFeedKind.category ? f.category : null,

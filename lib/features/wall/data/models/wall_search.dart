@@ -42,8 +42,9 @@ class WallSearchCommentHit extends Equatable {
       WallSearchCommentHit(
         postId: json['post_id'] as String? ?? '',
         postAuthorName: json['post_author_name'] as String?,
-        comment:
-            WallComment.fromJson(json['comment'] as Map<String, dynamic>? ?? {}),
+        comment: WallComment.fromJson(
+          json['comment'] as Map<String, dynamic>? ?? {},
+        ),
         excerpt: json['excerpt'] as String? ?? '',
       );
 
@@ -52,10 +53,7 @@ class WallSearchCommentHit extends Equatable {
 }
 
 class WallSearchResponse extends Equatable {
-  const WallSearchResponse({
-    this.posts = const [],
-    this.comments = const [],
-  });
+  const WallSearchResponse({this.posts = const [], this.comments = const []});
 
   final List<WallSearchPostHit> posts;
   final List<WallSearchCommentHit> comments;

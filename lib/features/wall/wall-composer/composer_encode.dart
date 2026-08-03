@@ -74,10 +74,7 @@ String encodeWallBody({
   return jsonEncode({
     'type': 'doc',
     'content': [
-      {
-        'type': 'paragraph',
-        if (nodes.isNotEmpty) 'content': nodes,
-      },
+      {'type': 'paragraph', if (nodes.isNotEmpty) 'content': nodes},
     ],
   });
 }

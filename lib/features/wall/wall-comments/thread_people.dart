@@ -27,8 +27,7 @@ List<WallThreadPerson> wallThreadParticipants(
     consider(r);
   }
   if (byUser.isEmpty) consider(root);
-  final ranked = byUser.values.toList()
-    ..sort((a, b) => b.ts.compareTo(a.ts));
+  final ranked = byUser.values.toList()..sort((a, b) => b.ts.compareTo(a.ts));
   return ranked.take(max).map((e) => e.p).toList();
 }
 

@@ -58,31 +58,28 @@ List<Widget> wallFeedSlivers(
         ShellPillMetrics.contentBottomInset,
       ),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, i) {
-            if (i >= state.posts.length) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                  ),
+        delegate: SliverChildBuilderDelegate((context, i) {
+          if (i >= state.posts.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
                 ),
-              );
-            }
-            final post = state.posts[i];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: WallPostCard(
-                post: post,
-                onOpen: () => context.push('/wall/post/${post.id}'),
               ),
             );
-          },
-          childCount: count,
-        ),
+          }
+          final post = state.posts[i];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: WallPostCard(
+              post: post,
+              onOpen: () => context.push('/wall/post/${post.id}'),
+            ),
+          );
+        }, childCount: count),
       ),
     ),
   ];

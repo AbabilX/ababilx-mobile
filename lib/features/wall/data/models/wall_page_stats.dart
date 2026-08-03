@@ -14,12 +14,12 @@ class WallPostsPage extends Equatable {
   final bool hasMore;
 
   factory WallPostsPage.fromJson(Map<String, dynamic> json) => WallPostsPage(
-        posts: (json['posts'] as List<dynamic>? ?? [])
-            .map((e) => WallPost.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        nextCursor: json['next_cursor'] as String? ?? '',
-        hasMore: json['has_more'] as bool? ?? false,
-      );
+    posts: (json['posts'] as List<dynamic>? ?? [])
+        .map((e) => WallPost.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    nextCursor: json['next_cursor'] as String? ?? '',
+    hasMore: json['has_more'] as bool? ?? false,
+  );
 
   @override
   List<Object?> get props => [posts, nextCursor, hasMore];

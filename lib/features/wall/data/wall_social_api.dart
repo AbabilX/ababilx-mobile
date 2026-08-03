@@ -55,10 +55,7 @@ class WallReactionsApi {
   }) async {
     final res = await _client.post(
       ApiConstants.wallPostReactions(postId),
-      data: {
-        'emoji': emoji,
-        'comment_id': commentId,
-      },
+      data: {'emoji': emoji, 'comment_id': commentId},
     );
     final data = unwrapApiData<Map<String, dynamic>>(res);
     final reactions = (data['reactions'] as List<dynamic>? ?? [])

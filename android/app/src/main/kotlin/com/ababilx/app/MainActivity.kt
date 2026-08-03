@@ -40,6 +40,7 @@ class MainActivity : FlutterActivity() {
                     val fileName = call.argument<String>("fileName")
                     val subfolder = call.argument<String>("subfolder") ?: ""
                     val mimeType = call.argument<String>("mimeType")
+                    val collection = call.argument<String>("collection") ?: "downloads"
                     if (sourcePath == null || fileName == null) {
                         result.error("bad_args", "sourcePath and fileName are required", null)
                         return@setMethodCallHandler
@@ -51,6 +52,7 @@ class MainActivity : FlutterActivity() {
                             fileName,
                             subfolder,
                             mimeType,
+                            collection,
                         )
                         runOnUiThread {
                             if (savedPath != null) {

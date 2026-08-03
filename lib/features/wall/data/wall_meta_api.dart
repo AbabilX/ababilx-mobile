@@ -42,10 +42,7 @@ class WallAttachmentsApi {
       presign.uploadUrl,
       data: bytes,
       options: Options(
-        headers: {
-          'Content-Type': contentType,
-          'Content-Length': bytes.length,
-        },
+        headers: {'Content-Type': contentType, 'Content-Length': bytes.length},
       ),
     );
   }

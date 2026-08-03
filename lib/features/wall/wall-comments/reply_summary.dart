@@ -45,7 +45,13 @@ class WallReplySummary extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _SummaryText(title: title, total: total, preview: preview)),
+              Expanded(
+                child: _SummaryText(
+                  title: title,
+                  total: total,
+                  preview: preview,
+                ),
+              ),
               if (people.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 _AvatarStack(people: people),
@@ -82,7 +88,10 @@ class _SummaryText extends StatelessWidget {
                 title.isEmpty ? 'Thread' : title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
               ),
             ),
             const SizedBox(width: 8),

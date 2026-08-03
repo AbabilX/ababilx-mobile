@@ -40,6 +40,7 @@ dependencies:
 
   # Image caching (avatar display)
   cached_network_image: ^3.4.1
+  flutter_cache_manager: ^3.4.1
 
   # Utilities
   intl: ^0.19.0

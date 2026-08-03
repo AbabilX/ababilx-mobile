@@ -50,7 +50,11 @@ void applyComposerTrigger(
 ) {
   final t = ctrl.text;
   final insert = '${trigger.isMention ? '@' : '#'}$label ';
-  final next = t.replaceRange(trigger.start, trigger.end.clamp(0, t.length), insert);
+  final next = t.replaceRange(
+    trigger.start,
+    trigger.end.clamp(0, t.length),
+    insert,
+  );
   ctrl.value = TextEditingValue(
     text: next,
     selection: TextSelection.collapsed(offset: trigger.start + insert.length),

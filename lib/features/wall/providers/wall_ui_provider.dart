@@ -6,25 +6,31 @@ class WallUiState {
     this.composerSheetOpen = false,
     this.reactionSheetOpen = false,
     this.forwardSheetOpen = false,
+    this.postActionsSheetOpen = false,
   });
 
   final bool composerSheetOpen;
   final bool reactionSheetOpen;
   final bool forwardSheetOpen;
+  final bool postActionsSheetOpen;
 
   bool get hideBottomBar =>
-      composerSheetOpen || reactionSheetOpen || forwardSheetOpen;
+      composerSheetOpen ||
+      reactionSheetOpen ||
+      forwardSheetOpen ||
+      postActionsSheetOpen;
 
   WallUiState copyWith({
     bool? composerSheetOpen,
     bool? reactionSheetOpen,
     bool? forwardSheetOpen,
-  }) =>
-      WallUiState(
-        composerSheetOpen: composerSheetOpen ?? this.composerSheetOpen,
-        reactionSheetOpen: reactionSheetOpen ?? this.reactionSheetOpen,
-        forwardSheetOpen: forwardSheetOpen ?? this.forwardSheetOpen,
-      );
+    bool? postActionsSheetOpen,
+  }) => WallUiState(
+    composerSheetOpen: composerSheetOpen ?? this.composerSheetOpen,
+    reactionSheetOpen: reactionSheetOpen ?? this.reactionSheetOpen,
+    forwardSheetOpen: forwardSheetOpen ?? this.forwardSheetOpen,
+    postActionsSheetOpen: postActionsSheetOpen ?? this.postActionsSheetOpen,
+  );
 }
 
 class WallUiNotifier extends Notifier<WallUiState> {
@@ -45,7 +51,13 @@ class WallUiNotifier extends Notifier<WallUiState> {
     if (state.forwardSheetOpen == open) return;
     state = state.copyWith(forwardSheetOpen: open);
   }
+
+  void setPostActionsSheetOpen(bool open) {
+    if (state.postActionsSheetOpen == open) return;
+    state = state.copyWith(postActionsSheetOpen: open);
+  }
 }
 
-final wallUiProvider =
-    NotifierProvider<WallUiNotifier, WallUiState>(WallUiNotifier.new);
+final wallUiProvider = NotifierProvider<WallUiNotifier, WallUiState>(
+  WallUiNotifier.new,
+);

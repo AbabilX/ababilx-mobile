@@ -14,7 +14,9 @@ Future<void> submitWallComposer({
   required List<WallAttachmentInput> pending,
 }) async {
   final hasCat = category != null && plain.contains('#${category.label}');
-  await ref.read(wallProvider.notifier).createPost(
+  await ref
+      .read(wallProvider.notifier)
+      .createPost(
         body: encodeWallBody(
           plain: plain.isEmpty ? ' ' : plain,
           mentionByLabel: mentions,
@@ -22,8 +24,9 @@ Future<void> submitWallComposer({
         ),
         category: hasCat ? category.slug : null,
         attachments: pending.isEmpty ? null : pending,
-        mentionedUserIds:
-            mentions.isEmpty ? null : mentions.values.toSet().toList(),
+        mentionedUserIds: mentions.isEmpty
+            ? null
+            : mentions.values.toSet().toList(),
       );
   if (context.mounted) Navigator.pop(context);
 }

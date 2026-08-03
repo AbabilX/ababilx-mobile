@@ -10,11 +10,11 @@ import 'wall_social_api.dart';
 
 class WallRepository {
   WallRepository(ApiClient client)
-      : _posts = WallPostsApi(client),
-        _comments = WallCommentsApi(client),
-        _reactions = WallReactionsApi(client),
-        _attachments = WallAttachmentsApi(client),
-        _meta = WallMetaApi(client);
+    : _posts = WallPostsApi(client),
+      _comments = WallCommentsApi(client),
+      _reactions = WallReactionsApi(client),
+      _attachments = WallAttachmentsApi(client),
+      _meta = WallMetaApi(client);
 
   final WallPostsApi _posts;
   final WallCommentsApi _comments;
@@ -28,14 +28,13 @@ class WallRepository {
     String? category,
     bool saved = false,
     bool mine = false,
-  }) =>
-      _posts.list(
-        cursor: cursor,
-        limit: limit,
-        category: category,
-        saved: saved,
-        mine: mine,
-      );
+  }) => _posts.list(
+    cursor: cursor,
+    limit: limit,
+    category: category,
+    saved: saved,
+    mine: mine,
+  );
 
   Future<WallPost> getPost(String id) => _posts.get(id);
 
@@ -44,13 +43,12 @@ class WallRepository {
     String? category,
     List<WallAttachmentInput>? attachments,
     List<String>? mentionedUserIds,
-  }) =>
-      _posts.create(
-        body: body,
-        category: category,
-        attachments: attachments,
-        mentionedUserIds: mentionedUserIds,
-      );
+  }) => _posts.create(
+    body: body,
+    category: category,
+    attachments: attachments,
+    mentionedUserIds: mentionedUserIds,
+  );
 
   Future<WallPost> patchPost(String id, String body) => _posts.patch(id, body);
 
@@ -64,21 +62,19 @@ class WallRepository {
     String? parentId,
     List<WallAttachmentInput>? attachments,
     List<String>? mentionedUserIds,
-  }) =>
-      _comments.create(
-        postId,
-        body: body,
-        parentId: parentId,
-        attachments: attachments,
-        mentionedUserIds: mentionedUserIds,
-      );
+  }) => _comments.create(
+    postId,
+    body: body,
+    parentId: parentId,
+    attachments: attachments,
+    mentionedUserIds: mentionedUserIds,
+  );
 
   Future<WallComment> patchComment(
     String postId,
     String commentId,
     String body,
-  ) =>
-      _comments.patch(postId, commentId, body);
+  ) => _comments.patch(postId, commentId, body);
 
   Future<void> deleteComment(String postId, String commentId) =>
       _comments.delete(postId, commentId);
@@ -87,19 +83,17 @@ class WallRepository {
     String postId, {
     required String emoji,
     String? commentId,
-  }) =>
-      _reactions.toggle(postId, emoji: emoji, commentId: commentId);
+  }) => _reactions.toggle(postId, emoji: emoji, commentId: commentId);
 
   Future<WallPresignResult> presignAttachment({
     required String contentType,
     required String fileName,
     required int sizeBytes,
-  }) =>
-      _attachments.presign(
-        contentType: contentType,
-        fileName: fileName,
-        sizeBytes: sizeBytes,
-      );
+  }) => _attachments.presign(
+    contentType: contentType,
+    fileName: fileName,
+    sizeBytes: sizeBytes,
+  );
 
   Future<void> discardUpload(String fileUrl) => _attachments.discard(fileUrl);
 
@@ -107,8 +101,7 @@ class WallRepository {
     WallPresignResult presign,
     Uint8List bytes,
     String contentType,
-  ) =>
-      _attachments.uploadBytes(presign, bytes, contentType);
+  ) => _attachments.uploadBytes(presign, bytes, contentType);
 
   Future<List<WallCategory>> listCategories() => _meta.listCategories();
 
@@ -122,13 +115,12 @@ class WallRepository {
     List<String>? conversationIds,
     List<String>? userIds,
     String? caption,
-  }) =>
-      _meta.forward(
-        postId: postId,
-        conversationIds: conversationIds,
-        userIds: userIds,
-        caption: caption,
-      );
+  }) => _meta.forward(
+    postId: postId,
+    conversationIds: conversationIds,
+    userIds: userIds,
+    caption: caption,
+  );
 }
 
 final wallRepositoryProvider = Provider<WallRepository>(

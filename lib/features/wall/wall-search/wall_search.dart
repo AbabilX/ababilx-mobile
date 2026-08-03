@@ -7,10 +7,7 @@ import '../data/wall_repository.dart';
 import '../wall_utils.dart';
 
 Future<void> openWallSearch(BuildContext context, WidgetRef ref) async {
-  await showSearch<void>(
-    context: context,
-    delegate: WallSearchDelegate(ref),
-  );
+  await showSearch<void>(context: context, delegate: WallSearchDelegate(ref));
 }
 
 class WallSearchDelegate extends SearchDelegate<void> {
@@ -19,18 +16,15 @@ class WallSearchDelegate extends SearchDelegate<void> {
 
   @override
   List<Widget>? buildActions(BuildContext context) => [
-        if (query.isNotEmpty)
-          IconButton(
-            onPressed: () => query = '',
-            icon: const Icon(Icons.clear),
-          ),
-      ];
+    if (query.isNotEmpty)
+      IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear)),
+  ];
 
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-        onPressed: () => close(context, null),
-        icon: const Icon(Icons.arrow_back),
-      );
+    onPressed: () => close(context, null),
+    icon: const Icon(Icons.arrow_back),
+  );
 
   @override
   Widget buildResults(BuildContext context) => _build(context);

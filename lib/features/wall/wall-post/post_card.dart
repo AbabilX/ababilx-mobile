@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/link_preview.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
+import '../wall_copy_actions.dart';
 import '../wall_utils.dart';
 import 'attachment_grid.dart';
 import 'post_actions.dart';
@@ -40,6 +41,11 @@ class WallPostCard extends ConsumerWidget {
           children: [
             InkWell(
               onTap: onOpen,
+              onLongPress: () => showWallCopyActions(
+                context,
+                bodyText: body,
+                images: post.attachments.where((a) => a.isImage).toList(),
+              ),
               borderRadius: BorderRadius.circular(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -21,16 +21,17 @@ class WallNotifier extends Notifier<WallState>
   Future<void> bootstrap() async {
     final profile = await ref.read(profileProvider.future);
     state = state.copyWith(currentUserId: profile.id);
-    await Future.wait([
-      loadInitial(),
-      refreshMeta(),
-    ]);
+    await Future.wait([loadInitial(), refreshMeta()]);
   }
 }
 
-final wallProvider = NotifierProvider<WallNotifier, WallState>(WallNotifier.new);
+final wallProvider = NotifierProvider<WallNotifier, WallState>(
+  WallNotifier.new,
+);
 
-final wallPostProvider =
-    FutureProvider.family<WallPost, String>((ref, postId) async {
+final wallPostProvider = FutureProvider.family<WallPost, String>((
+  ref,
+  postId,
+) async {
   return ref.watch(wallRepositoryProvider).getPost(postId);
 });

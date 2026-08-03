@@ -58,9 +58,7 @@ class _WallForwardSheetState extends ConsumerState<_WallForwardSheet> {
                 child: Row(
                   children: [
                     TextButton(
-                      onPressed: _sending
-                          ? null
-                          : () => Navigator.pop(context),
+                      onPressed: _sending ? null : () => Navigator.pop(context),
                       child: const Text('Close'),
                     ),
                     const Expanded(
@@ -78,9 +76,7 @@ class _WallForwardSheetState extends ConsumerState<_WallForwardSheet> {
                           ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Send'),
                     ),
@@ -131,7 +127,9 @@ class _WallForwardSheetState extends ConsumerState<_WallForwardSheet> {
   Future<void> _forward() async {
     setState(() => _sending = true);
     try {
-      await ref.read(wallProvider.notifier).forwardPost(
+      await ref
+          .read(wallProvider.notifier)
+          .forwardPost(
             postId: widget.postId,
             conversationIds: _selected.toList(),
           );

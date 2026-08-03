@@ -35,12 +35,13 @@ class _WallPostScreenState extends ConsumerState<WallPostScreen> {
     final async = ref.watch(wallPostProvider(widget.postId));
     final feed = ref.watch(wallProvider).posts;
     final scheme = Theme.of(context).colorScheme;
-    final parentId =
-        _replyTo == null ? null : (_replyTo!.parentId ?? _replyTo!.id);
+    final parentId = _replyTo == null
+        ? null
+        : (_replyTo!.parentId ?? _replyTo!.id);
 
     return PopScope(
-      canPop: GoRouter.maybeOf(context)?.canPop() ??
-          Navigator.of(context).canPop(),
+      canPop:
+          GoRouter.maybeOf(context)?.canPop() ?? Navigator.of(context).canPop(),
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) popOrGoHome(context);
       },
@@ -53,9 +54,8 @@ class _WallPostScreenState extends ConsumerState<WallPostScreen> {
           title: const Text('Post'),
         ),
         body: async.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(strokeWidth: 2.5),
-          ),
+          loading: () =>
+              const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
           error: (e, _) => Center(child: Text('Failed to load\n$e')),
           data: (post) {
             final shown = _resolve(post, feed);
