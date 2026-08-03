@@ -3,6 +3,7 @@ class ApiConstants {
   ApiConstants._();
 
   static const String baseUrl = 'https://api.ababilx.cloud';
+  static const String webPrivacyPolicyUrl = 'https://ababilx.cloud/privacy-policy';
 
   // Auth
   static const String mobileGoogleAuth = '/auth/google/mobile';
@@ -14,6 +15,7 @@ class ApiConstants {
   static const String mePlan = '/api/me/plan';
   static const String meConnections = '/api/me/connections';
   static const String meStatus = '/api/me/status';
+  static const String meAcceptPolicy = '/api/me/accept-policy';
 
   // Team
   static const String teamsMe = '/api/teams/me';

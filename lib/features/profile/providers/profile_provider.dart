@@ -22,6 +22,14 @@ class ProfileNotifier extends AsyncNotifier<AppUser> {
       () => ref.read(profileRepositoryProvider).updateLanguage(lang),
     );
   }
+
+  Future<void> acceptPolicy() async {
+    final current = state.valueOrNull;
+    await ref.read(profileRepositoryProvider).acceptPolicy();
+    if (current != null) {
+      state = AsyncData(current.copyWith(acceptPolicy: true));
+    }
+  }
 }
 
 final profileProvider =

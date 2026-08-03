@@ -110,6 +110,21 @@ class AppTranslations {
       'battery_opt_enabled': 'Battery optimization disabled for AbabilX',
       'battery_opt_still_denied':
           'Still restricted — enable Unrestricted in battery settings',
+
+      'policy_title': 'Privacy & Policy',
+      'policy_subtitle': 'A quick summary before you continue.',
+      'policy_bullet_1':
+          'We store your profile, connected accounts, and the content you create (messages, posts, tasks).',
+      'policy_bullet_2':
+          'No ads, no trackers, no selling your data — ever.',
+      'policy_bullet_3':
+          'AI features process your content only to generate the summary you asked for.',
+      'policy_bullet_4':
+          'Disconnect integrations or delete your account anytime from Settings.',
+      'policy_read_full': 'Read the full policy',
+      'policy_accept': 'I Agree',
+      'policy_decline_signout': 'Decline & Sign Out',
+      'policy_error': 'Could not save. Try again.',
     },
     'bn': {
       'login_subtitle':
@@ -203,6 +218,21 @@ class AppTranslations {
       'battery_opt_enabled': 'AbabilX-এর জন্য ব্যাটারি অপটিমাইজেশন বন্ধ',
       'battery_opt_still_denied':
           'এখনো সীমিত — ব্যাটারি সেটিংসে Unrestricted চালু করুন',
+
+      'policy_title': 'গোপনীয়তা ও নীতিমালা',
+      'policy_subtitle': 'চালিয়ে যাওয়ার আগে একটি সংক্ষিপ্ত সারাংশ।',
+      'policy_bullet_1':
+          'আমরা আপনার প্রোফাইল, সংযুক্ত অ্যাকাউন্ট এবং আপনার তৈরি কন্টেন্ট (বার্তা, পোস্ট, টাস্ক) সংরক্ষণ করি।',
+      'policy_bullet_2':
+          'কোনো বিজ্ঞাপন নেই, ট্র্যাকার নেই, আপনার ডেটা কখনো বিক্রি করা হয় না।',
+      'policy_bullet_3':
+          'AI ফিচার শুধু আপনার অনুরোধ করা সারাংশ তৈরি করতে আপনার কন্টেন্ট প্রক্রিয়া করে।',
+      'policy_bullet_4':
+          'সেটিংস থেকে যেকোনো সময় ইন্টিগ্রেশন সংযোগ বিচ্ছিন্ন বা অ্যাকাউন্ট মুছে ফেলতে পারবেন।',
+      'policy_read_full': 'সম্পূর্ণ নীতিমালা পড়ুন',
+      'policy_accept': 'আমি সম্মত',
+      'policy_decline_signout': 'প্রত্যাখ্যান ও প্রস্থান',
+      'policy_error': 'সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।',
     },
   };
 

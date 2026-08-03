@@ -18,6 +18,8 @@ class AppUser extends Equatable {
     this.slackConnected = false,
     this.githubUsername = '',
     this.appLanguage = 'en',
+    this.acceptPolicy = true,
+    this.policyVersion = '',
   });
 
   final String id;
@@ -33,6 +35,8 @@ class AppUser extends Equatable {
   final bool slackConnected;
   final String githubUsername;
   final String appLanguage;
+  final bool acceptPolicy;
+  final String policyVersion;
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'] as String? ?? '',
@@ -51,6 +55,26 @@ class AppUser extends Equatable {
         slackConnected: json['slack_connected'] as bool? ?? false,
         githubUsername: json['github_username'] as String? ?? '',
         appLanguage: json['app_language'] as String? ?? 'en',
+        acceptPolicy: json['accept_policy'] as bool? ?? true,
+        policyVersion: json['policy_version'] as String? ?? '',
+      );
+
+  AppUser copyWith({bool? acceptPolicy, String? policyVersion}) => AppUser(
+        id: id,
+        name: name,
+        email: email,
+        provider: provider,
+        avatarUrl: avatarUrl,
+        plan: plan,
+        premiumUntil: premiumUntil,
+        effectivePlan: effectivePlan,
+        planExpired: planExpired,
+        showPlanExpiredDialog: showPlanExpiredDialog,
+        slackConnected: slackConnected,
+        githubUsername: githubUsername,
+        appLanguage: appLanguage,
+        acceptPolicy: acceptPolicy ?? this.acceptPolicy,
+        policyVersion: policyVersion ?? this.policyVersion,
       );
 
   /// Merges split GET /api/me/* payloads (same order as web `mergeMeUser`).
@@ -68,7 +92,8 @@ class AppUser extends Equatable {
       });
 
   @override
-  List<Object?> get props => [id, name, plan, slackConnected];
+  List<Object?> get props =>
+      [id, name, plan, slackConnected, acceptPolicy, policyVersion];
 }
 
 class ProfileRepository {
@@ -109,6 +134,10 @@ class ProfileRepository {
     );
     final data = (res.data as Map<String, dynamic>)['data'];
     return AppUser.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<void> acceptPolicy() async {
+    await _client.post(ApiConstants.meAcceptPolicy);
   }
 }
 
