@@ -22,9 +22,10 @@ class ChatFeedCache {
   Future<List<ChatMessage>?> read(String conversationId) async {
     if (conversationId.isEmpty) return null;
     try {
-      final row = await (_db.select(_db.cachedMessageFeeds)
-            ..where((t) => t.conversationId.equals(conversationId)))
-          .getSingleOrNull();
+      final row =
+          await (_db.select(_db.cachedMessageFeeds)
+                ..where((t) => t.conversationId.equals(conversationId)))
+              .getSingleOrNull();
       if (row == null) return null;
       final list = jsonDecode(row.payloadJson) as List<dynamic>;
       return list
@@ -49,7 +50,9 @@ class ChatFeedCache {
           ? confirmed.sublist(confirmed.length - _maxCachedMessages)
           : confirmed;
       final payload = jsonEncode(toCache.map((m) => m.toJson()).toList());
-      await _db.into(_db.cachedMessageFeeds).insertOnConflictUpdate(
+      await _db
+          .into(_db.cachedMessageFeeds)
+          .insertOnConflictUpdate(
             CachedMessageFeedsCompanion.insert(
               conversationId: conversationId,
               payloadJson: payload,
@@ -70,9 +73,9 @@ class ChatFeedCache {
   Future<void> clearConversation(String conversationId) async {
     if (conversationId.isEmpty) return;
     try {
-      await (_db.delete(_db.cachedMessageFeeds)
-            ..where((t) => t.conversationId.equals(conversationId)))
-          .go();
+      await (_db.delete(
+        _db.cachedMessageFeeds,
+      )..where((t) => t.conversationId.equals(conversationId))).go();
     } catch (_) {}
   }
 }

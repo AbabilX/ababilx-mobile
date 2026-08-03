@@ -102,4 +102,8 @@ class ChatConversationsApi {
     final data = unwrapApiData<Map<String, dynamic>>(res);
     return data['muted'] as bool? ?? muted;
   }
+
+  Future<void> hideDm(String conversationId) async {
+    await _client.post(ApiConstants.chatConversationHide(conversationId));
+  }
 }

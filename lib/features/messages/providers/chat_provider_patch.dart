@@ -44,10 +44,7 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
   }) {
     final atts = [
       for (final a in msg.attachments)
-        ChatLastAttachment(
-          fileName: a.fileName,
-          contentType: a.contentType,
-        ),
+        ChatLastAttachment(fileName: a.fileName, contentType: a.contentType),
     ];
     final first = atts.isNotEmpty ? atts.first : null;
     state = state.copyWith(
@@ -91,10 +88,8 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
                             dm.lastMessageBody ?? d.lastMessageBody,
                         lastMessageUserId:
                             dm.lastMessageUserId ?? d.lastMessageUserId,
-                        lastMessageAttachmentType:
-                            dm.lastMessageAttachmentType,
-                        lastMessageAttachmentName:
-                            dm.lastMessageAttachmentName,
+                        lastMessageAttachmentType: dm.lastMessageAttachmentType,
+                        lastMessageAttachmentName: dm.lastMessageAttachmentName,
                         lastMessageAttachments: dm.lastMessageAttachments,
                         name: dm.name,
                       )

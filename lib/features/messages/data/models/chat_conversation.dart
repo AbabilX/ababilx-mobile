@@ -1,10 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class ChatLastAttachment extends Equatable {
-  const ChatLastAttachment({
-    required this.fileName,
-    required this.contentType,
-  });
+  const ChatLastAttachment({required this.fileName, required this.contentType});
 
   final String fileName;
   final String contentType;
@@ -17,9 +14,9 @@ class ChatLastAttachment extends Equatable {
       );
 
   Map<String, dynamic> toJson() => {
-        'file_name': fileName,
-        'content_type': contentType,
-      };
+    'file_name': fileName,
+    'content_type': contentType,
+  };
 
   bool get isImage => contentType.toLowerCase().startsWith('image/');
   bool get isVideo => contentType.toLowerCase().startsWith('video/');
@@ -105,11 +102,9 @@ class ChatConversation extends Equatable {
     return peerUserName ?? 'Direct message';
   }
 
-  factory ChatConversation.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final attsRaw = json['last_message_attachments'] ??
-        json['lastMessageAttachments'];
+  factory ChatConversation.fromJson(Map<String, dynamic> json) {
+    final attsRaw =
+        json['last_message_attachments'] ?? json['lastMessageAttachments'];
     final parsedAtts = <ChatLastAttachment>[];
     if (attsRaw is List) {
       for (final e in attsRaw) {
@@ -149,7 +144,9 @@ class ChatConversation extends Equatable {
       peerUserId: _jsonString(json['peer_user_id']),
       peerUserName: _jsonString(json['peer_user_name']),
       peerUserAvatar: _jsonString(json['peer_user_avatar']),
-      peerUserEmail: _jsonString(json['peer_user_email'] ?? json['peerUserEmail']),
+      peerUserEmail: _jsonString(
+        json['peer_user_email'] ?? json['peerUserEmail'],
+      ),
       peerLeft: json['peer_left'] as bool? ?? false,
       muted: json['muted'] as bool? ?? false,
       memberAvatars: (json['member_avatars'] as List<dynamic>? ?? [])

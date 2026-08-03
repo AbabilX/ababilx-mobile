@@ -131,13 +131,20 @@ class WallAttachmentGrid extends StatelessWidget {
                   height: 360,
                 ),
               ),
-            for (final f in others)
-              ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.attach_file),
-                title: Text(f.fileName, overflow: TextOverflow.ellipsis),
-                onTap: () => openWallFile(context, f),
+            if (others.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final f in others)
+                      _OtherFileChip(
+                        attachment: f,
+                        onTap: () => openWallFile(context, f),
+                      ),
+                  ],
+                ),
               ),
             if (lockedFiles.isNotEmpty)
               Padding(
@@ -154,6 +161,76 @@ class WallAttachmentGrid extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+IconData _otherFileIcon(WallAttachment f) {
+  final ct = f.contentType.toLowerCase();
+  final name = f.fileName.toLowerCase();
+  if (ct.contains('zip') ||
+      ct.contains('tar') ||
+      ct.contains('gzip') ||
+      ct.contains('compress') ||
+      RegExp(r'\.(zip|rar|7z|tar|gz)$').hasMatch(name)) {
+    return Icons.folder_zip_outlined;
+  }
+  if (ct.contains('presentation') || RegExp(r'\.pptx?$').hasMatch(name)) {
+    return Icons.slideshow_outlined;
+  }
+  if (ct.contains('spreadsheet') ||
+      ct.contains('excel') ||
+      RegExp(r'\.(xlsx?|csv)$').hasMatch(name)) {
+    return Icons.grid_on_outlined;
+  }
+  if (ct.contains('word') || RegExp(r'\.docx?$').hasMatch(name)) {
+    return Icons.description_outlined;
+  }
+  return Icons.insert_drive_file_outlined;
+}
+
+/// Web parity ([otherFiles] in wall-attachment-grid.tsx): bordered chip with
+/// a type-specific icon, not a bare filename row.
+class _OtherFileChip extends StatelessWidget {
+  const _OtherFileChip({required this.attachment, required this.onTap});
+
+  final WallAttachment attachment;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            border: Border.all(color: scheme.outlineVariant),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(_otherFileIcon(attachment), size: 16, color: scheme.primary),
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 160),
+                child: Text(
+                  attachment.fileName,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

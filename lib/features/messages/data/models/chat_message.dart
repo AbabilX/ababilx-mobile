@@ -72,56 +72,55 @@ class ChatMessage extends Equatable {
   bool get isPending => sendStatus != MessageSendStatus.sent;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
-        id: json['id'] as String? ?? '',
-        conversationId: json['conversation_id'] as String? ?? '',
-        userId: json['user_id'] as String? ?? '',
-        body: json['body'] as String? ?? '',
-        parentId: json['parent_id'] as String?,
-        createdAt: json['created_at'] as String? ?? '',
-        editedAt: json['edited_at'] as String?,
-        deletedAt: json['deleted_at'] as String?,
-        userName: json['user_name'] as String?,
-        userAvatarUrl: json['user_avatar_url'] as String?,
-        attachments: (json['attachments'] as List<dynamic>? ?? [])
-            .map((e) =>
-                ChatMessageAttachment.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        reactions: (json['reactions'] as List<dynamic>? ?? [])
-            .map((e) => ChatReactionGroup.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        threadCount: json['thread_count'] as int? ?? 0,
-        viaAbabilx: json['via_ababilx'] as bool? ?? false,
-        messageType: json['message_type'] as String? ?? 'text',
-        meta: json['meta'] is Map
-            ? Map<String, dynamic>.from(json['meta'] as Map)
-            : null,
-        forwardedFromName: json['forwarded_from_name'] as String?,
-        forwardedFromSource: json['forwarded_from_source'] as String?,
-        // sendStatus / clientRef not in server JSON → defaults to sent/null.
-      );
+    id: json['id'] as String? ?? '',
+    conversationId: json['conversation_id'] as String? ?? '',
+    userId: json['user_id'] as String? ?? '',
+    body: json['body'] as String? ?? '',
+    parentId: json['parent_id'] as String?,
+    createdAt: json['created_at'] as String? ?? '',
+    editedAt: json['edited_at'] as String?,
+    deletedAt: json['deleted_at'] as String?,
+    userName: json['user_name'] as String?,
+    userAvatarUrl: json['user_avatar_url'] as String?,
+    attachments: (json['attachments'] as List<dynamic>? ?? [])
+        .map((e) => ChatMessageAttachment.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    reactions: (json['reactions'] as List<dynamic>? ?? [])
+        .map((e) => ChatReactionGroup.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    threadCount: json['thread_count'] as int? ?? 0,
+    viaAbabilx: json['via_ababilx'] as bool? ?? false,
+    messageType: json['message_type'] as String? ?? 'text',
+    meta: json['meta'] is Map
+        ? Map<String, dynamic>.from(json['meta'] as Map)
+        : null,
+    forwardedFromName: json['forwarded_from_name'] as String?,
+    forwardedFromSource: json['forwarded_from_source'] as String?,
+    // sendStatus / clientRef not in server JSON → defaults to sent/null.
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'conversation_id': conversationId,
-        'user_id': userId,
-        'body': body,
-        if (parentId != null) 'parent_id': parentId,
-        'created_at': createdAt,
-        if (editedAt != null) 'edited_at': editedAt,
-        if (deletedAt != null) 'deleted_at': deletedAt,
-        if (userName != null) 'user_name': userName,
-        if (userAvatarUrl != null) 'user_avatar_url': userAvatarUrl,
-        'attachments': attachments.map((a) => a.toJson()).toList(),
-        'reactions': reactions.map((r) => r.toJson()).toList(),
-        'thread_count': threadCount,
-        'via_ababilx': viaAbabilx,
-        'message_type': messageType,
-        if (meta != null) 'meta': meta,
-        if (forwardedFromName != null) 'forwarded_from_name': forwardedFromName,
-        if (forwardedFromSource != null)
-          'forwarded_from_source': forwardedFromSource,
-        // Pending fields deliberately excluded from cache serialisation.
-      };
+    'id': id,
+    'conversation_id': conversationId,
+    'user_id': userId,
+    'body': body,
+    if (parentId != null) 'parent_id': parentId,
+    'created_at': createdAt,
+    if (editedAt != null) 'edited_at': editedAt,
+    if (deletedAt != null) 'deleted_at': deletedAt,
+    if (userName != null) 'user_name': userName,
+    if (userAvatarUrl != null) 'user_avatar_url': userAvatarUrl,
+    'attachments': attachments.map((a) => a.toJson()).toList(),
+    'reactions': reactions.map((r) => r.toJson()).toList(),
+    'thread_count': threadCount,
+    'via_ababilx': viaAbabilx,
+    'message_type': messageType,
+    if (meta != null) 'meta': meta,
+    if (forwardedFromName != null) 'forwarded_from_name': forwardedFromName,
+    if (forwardedFromSource != null)
+      'forwarded_from_source': forwardedFromSource,
+    // Pending fields deliberately excluded from cache serialisation.
+  };
 
   ChatMessage copyWith({
     String? id,
@@ -133,36 +132,42 @@ class ChatMessage extends Equatable {
     MessageSendStatus? sendStatus,
     String? clientRef,
     bool clearClientRef = false,
-  }) =>
-      ChatMessage(
-        id: id ?? this.id,
-        conversationId: conversationId,
-        userId: userId,
-        body: body ?? this.body,
-        parentId: parentId,
-        createdAt: createdAt,
-        editedAt: editedAt ?? this.editedAt,
-        deletedAt: deletedAt ?? this.deletedAt,
-        userName: userName,
-        userAvatarUrl: userAvatarUrl,
-        attachments: attachments,
-        reactions: reactions ?? this.reactions,
-        threadCount: threadCount ?? this.threadCount,
-        viaAbabilx: viaAbabilx,
-        messageType: messageType,
-        meta: meta,
-        forwardedFromName: forwardedFromName,
-        forwardedFromSource: forwardedFromSource,
-        sendStatus: sendStatus ?? this.sendStatus,
-        clientRef: clearClientRef ? null : (clientRef ?? this.clientRef),
-        pendingAttachments: pendingAttachments,
-        pendingParentId: pendingParentId,
-        pendingMentionedUserIds: pendingMentionedUserIds,
-      );
+  }) => ChatMessage(
+    id: id ?? this.id,
+    conversationId: conversationId,
+    userId: userId,
+    body: body ?? this.body,
+    parentId: parentId,
+    createdAt: createdAt,
+    editedAt: editedAt ?? this.editedAt,
+    deletedAt: deletedAt ?? this.deletedAt,
+    userName: userName,
+    userAvatarUrl: userAvatarUrl,
+    attachments: attachments,
+    reactions: reactions ?? this.reactions,
+    threadCount: threadCount ?? this.threadCount,
+    viaAbabilx: viaAbabilx,
+    messageType: messageType,
+    meta: meta,
+    forwardedFromName: forwardedFromName,
+    forwardedFromSource: forwardedFromSource,
+    sendStatus: sendStatus ?? this.sendStatus,
+    clientRef: clearClientRef ? null : (clientRef ?? this.clientRef),
+    pendingAttachments: pendingAttachments,
+    pendingParentId: pendingParentId,
+    pendingMentionedUserIds: pendingMentionedUserIds,
+  );
 
   @override
-  List<Object?> get props =>
-      [id, body, editedAt, deletedAt, reactions, threadCount, sendStatus];
+  List<Object?> get props => [
+    id,
+    body,
+    editedAt,
+    deletedAt,
+    reactions,
+    threadCount,
+    sendStatus,
+  ];
 }
 
 class ChatMessagesPage extends Equatable {

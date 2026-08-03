@@ -3,31 +3,39 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../data/models/chat_models.dart';
 
-/// Swipe-right (unread tiles) → pinned "Read" action button.
-/// Swipe-left (channels only) → pinned "Leave" action button.
-/// DMs have no server-side delete/hide, so they never swipe-left.
+/// Swipe-right (any tile) → pinned "Read" action button.
+/// Swipe-left → pinned "Leave" (groups) or "Remove" (DMs, "delete for me" —
+/// reappears once the peer sends a new message).
 class ConversationRowSwipe extends StatelessWidget {
   const ConversationRowSwipe({
     super.key,
     required this.conversation,
     required this.onMarkRead,
     required this.onLeaveChannel,
+    required this.onRemoveDm,
     required this.child,
   });
 
   final ChatConversation conversation;
   final VoidCallback onMarkRead;
   final VoidCallback onLeaveChannel;
+  final VoidCallback onRemoveDm;
   final Widget child;
 
-  Future<void> _confirmLeave(BuildContext context) async {
+  Future<void> _confirmEndAction(BuildContext context) async {
+    final isChannel = conversation.isChannel;
+    final title = isChannel ? 'Leave group?' : 'Remove conversation?';
+    final message = isChannel
+        ? 'You will stop receiving messages from "${conversation.displayTitle(null)}".'
+        : 'This removes "${conversation.displayTitle(null)}" from your list. '
+              'It comes back if they message you again.';
+    final actionLabel = isChannel ? 'Leave' : 'Remove';
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Leave group?'),
-        content: Text(
-          'You will stop receiving messages from "${conversation.displayTitle(null)}".',
-        ),
+        title: Text(title),
+        content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -36,18 +44,21 @@ class ConversationRowSwipe extends StatelessWidget {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Leave'),
+            child: Text(actionLabel),
           ),
         ],
       ),
     );
-    if (ok == true) onLeaveChannel();
+    if (ok != true) return;
+    if (isChannel) {
+      onLeaveChannel();
+    } else {
+      onRemoveDm();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final canLeave = conversation.isChannel;
-
     // Always swipeable on every DM and group tile, read or not — this is
     // a gesture affordance, not something gated on current unread state.
     return Slidable(
@@ -65,21 +76,21 @@ class ConversationRowSwipe extends StatelessWidget {
           ),
         ],
       ),
-      endActionPane: canLeave
-          ? ActionPane(
-              motion: const ScrollMotion(),
-              extentRatio: 0.28,
-              children: [
-                SlidableAction(
-                  onPressed: (ctx) => _confirmLeave(ctx),
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  icon: Icons.logout_rounded,
-                  label: 'Leave',
-                ),
-              ],
-            )
-          : null,
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        extentRatio: 0.28,
+        children: [
+          SlidableAction(
+            onPressed: (ctx) => _confirmEndAction(ctx),
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            icon: conversation.isChannel
+                ? Icons.logout_rounded
+                : Icons.delete_outline_rounded,
+            label: conversation.isChannel ? 'Leave' : 'Remove',
+          ),
+        ],
+      ),
       child: child,
     );
   }

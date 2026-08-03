@@ -133,17 +133,10 @@ class ComposerMentionPicker extends StatelessWidget {
     return ListTile(
       dense: true,
       visualDensity: VisualDensity.compact,
-      leading: AppAvatar(
-        size: 30,
-        url: c.avatarUrl,
-        name: c.displayName,
-      ),
+      leading: AppAvatar(size: 30, url: c.avatarUrl, name: c.displayName),
       title: Text(
         c.displayName,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-        ),
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
       ),
       subtitle: !c.isInChannel
           ? Text(

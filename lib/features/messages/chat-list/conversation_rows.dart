@@ -13,6 +13,7 @@ class ConversationRows extends StatelessWidget {
     required this.onRefresh,
     required this.onMarkRead,
     required this.onLeaveChannel,
+    required this.onRemoveDm,
     this.currentUserId,
   });
 
@@ -21,6 +22,7 @@ class ConversationRows extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final void Function(ChatConversation) onMarkRead;
   final void Function(ChatConversation) onLeaveChannel;
+  final void Function(ChatConversation) onRemoveDm;
   final String? currentUserId;
 
   @override
@@ -55,6 +57,7 @@ class ConversationRows extends StatelessWidget {
             conversation: c,
             onMarkRead: () => onMarkRead(c),
             onLeaveChannel: () => onLeaveChannel(c),
+            onRemoveDm: () => onRemoveDm(c),
             child: ConversationRow(
               conversation: c,
               currentUserId: currentUserId,

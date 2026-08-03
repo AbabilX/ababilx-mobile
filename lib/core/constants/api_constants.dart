@@ -3,7 +3,8 @@ class ApiConstants {
   ApiConstants._();
 
   static const String baseUrl = 'https://api.ababilx.cloud';
-  static const String webPrivacyPolicyUrl = 'https://ababilx.cloud/privacy-policy';
+  static const String webPrivacyPolicyUrl =
+      'https://ababilx.cloud/privacy-policy';
 
   // Auth
   static const String mobileGoogleAuth = '/auth/google/mobile';
@@ -108,6 +109,8 @@ class ApiConstants {
       '/api/teams/chat/conversations/$conversationId/read';
   static String chatConversationMute(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/mute';
+  static String chatConversationHide(String conversationId) =>
+      '/api/teams/chat/conversations/$conversationId/hide';
   static String chatConversationPresign(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/attachments/presign';
   static String chatConversationDiscard(String conversationId) =>

@@ -34,9 +34,10 @@ class _ChatForwardSheetState extends ConsumerState<_ChatForwardSheet> {
   @override
   Widget build(BuildContext context) {
     final chat = ref.watch(chatProvider);
-    final targets = [...chat.channels, ...chat.dms]
-        .where((c) => c.id != widget.message.conversationId)
-        .toList();
+    final targets = [
+      ...chat.channels,
+      ...chat.dms,
+    ].where((c) => c.id != widget.message.conversationId).toList();
     final colors = Theme.of(context).colorScheme;
     final maxH = MediaQuery.sizeOf(context).height * 0.72;
 
@@ -55,8 +56,7 @@ class _ChatForwardSheetState extends ConsumerState<_ChatForwardSheet> {
                 child: Row(
                   children: [
                     TextButton(
-                      onPressed:
-                          _sending ? null : () => Navigator.pop(context),
+                      onPressed: _sending ? null : () => Navigator.pop(context),
                       child: const Text('Close'),
                     ),
                     const Expanded(
@@ -74,9 +74,7 @@ class _ChatForwardSheetState extends ConsumerState<_ChatForwardSheet> {
                           ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Text(
                               _selected.isEmpty
@@ -131,7 +129,9 @@ class _ChatForwardSheetState extends ConsumerState<_ChatForwardSheet> {
   Future<void> _forward() async {
     setState(() => _sending = true);
     try {
-      await ref.read(chatProvider.notifier).forwardMessage(
+      await ref
+          .read(chatProvider.notifier)
+          .forwardMessage(
             messageId: widget.message.id,
             conversationIds: _selected.toList(),
           );

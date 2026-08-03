@@ -26,7 +26,8 @@ Future<void> showUserProfileSheet({
   final teamMembers = ref.read(teamMembersProvider);
   final teamMember = teamMembers.where((tm) => tm.userId == userId).firstOrNull;
 
-  final displayName = teamMember?.displayName ??
+  final displayName =
+      teamMember?.displayName ??
       (userName != null && userName.isNotEmpty ? userName : 'User');
   final avatarUrl = teamMember?.avatarUrl ?? userAvatarUrl;
   final role = teamMember?.role;
@@ -120,11 +121,7 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
           const SizedBox(height: 20),
 
           // User Avatar
-          AppAvatar(
-            size: 76,
-            url: widget.avatarUrl,
-            name: widget.displayName,
-          ),
+          AppAvatar(size: 76, url: widget.avatarUrl, name: widget.displayName),
           const SizedBox(height: 14),
 
           // Display Name
@@ -167,8 +164,7 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
           if (widget.role != null && widget.role!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: colors.primaryContainer.withOpacity(0.6),
                 borderRadius: BorderRadius.circular(12),
@@ -221,8 +217,7 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
             ),
           ] else ...[
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: colors.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(12),
@@ -230,8 +225,11 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.person_outline_rounded,
-                      size: 18, color: colors.onSurfaceVariant),
+                  Icon(
+                    Icons.person_outline_rounded,
+                    size: 18,
+                    color: colors.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'This is you',

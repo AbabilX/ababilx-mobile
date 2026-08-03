@@ -46,9 +46,9 @@ class _ShareContactSheet extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 'Share contact',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
           ),

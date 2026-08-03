@@ -14,11 +14,11 @@ class ChatMember extends Equatable {
   final String joinedAt;
 
   factory ChatMember.fromJson(Map<String, dynamic> json) => ChatMember(
-        userId: json['user_id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        avatarUrl: json['avatar_url'] as String?,
-        joinedAt: json['joined_at'] as String? ?? '',
-      );
+    userId: json['user_id'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    avatarUrl: json['avatar_url'] as String?,
+    joinedAt: json['joined_at'] as String? ?? '',
+  );
 
   @override
   List<Object?> get props => [userId];

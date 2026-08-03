@@ -76,10 +76,7 @@ class ChatListPreview {
   }
 }
 
-ChatListPreview chatListPreview(
-  ChatConversation conv,
-  String? currentUserId,
-) {
+ChatListPreview chatListPreview(ChatConversation conv, String? currentUserId) {
   final rawBody = conv.lastMessageBody?.trim() ?? '';
   final hasBody = rawBody.isNotEmpty && !isTiptapEmpty(rawBody);
   var text = '';

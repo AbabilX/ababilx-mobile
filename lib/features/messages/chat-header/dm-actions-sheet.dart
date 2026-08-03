@@ -22,7 +22,8 @@ Future<void> showDmActionsSheet(
   final colors = Theme.of(context).colorScheme;
 
   String? peerEmail = conversation.peerUserEmail;
-  if ((peerEmail == null || peerEmail.isEmpty) && conversation.peerUserId != null) {
+  if ((peerEmail == null || peerEmail.isEmpty) &&
+      conversation.peerUserId != null) {
     final teamMembers = ref.watch(teamMembersProvider);
     for (final m in teamMembers) {
       if (m.userId == conversation.peerUserId) {
@@ -61,11 +62,7 @@ Future<void> showDmActionsSheet(
                 const SizedBox(height: 20),
 
                 // Large Avatar
-                AppAvatar(
-                  size: 72,
-                  url: avatar,
-                  name: name,
-                ),
+                AppAvatar(size: 72, url: avatar, name: name),
                 const SizedBox(height: 12),
 
                 // User Name
@@ -83,8 +80,10 @@ Future<void> showDmActionsSheet(
                 if (conversation.peerLeft)
                   Container(
                     margin: const EdgeInsets.only(top: 4),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: colors.errorContainer,
                       borderRadius: BorderRadius.circular(12),

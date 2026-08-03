@@ -8,11 +8,7 @@ import 'tiptap_plain_text.dart';
 
 /// Renders TipTap / ProseMirror JSON as Flutter widgets (read-only).
 class TiptapViewer extends StatelessWidget {
-  const TiptapViewer({
-    super.key,
-    required this.content,
-    this.style,
-  });
+  const TiptapViewer({super.key, required this.content, this.style});
 
   final String? content;
   final TextStyle? style;
@@ -20,7 +16,8 @@ class TiptapViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final base = style ??
+    final base =
+        style ??
         theme.textTheme.bodyMedium?.copyWith(
           height: 1.5,
           color: theme.colorScheme.onSurface,
@@ -50,8 +47,10 @@ class TiptapViewer extends StatelessWidget {
       if (doc['type'] != 'doc') {
         return Text(tiptapToPlainText(trimmed), style: base);
       }
-      final blocks = _TiptapRenderer(context: context, baseStyle: base!)
-          .buildDoc(doc);
+      final blocks = _TiptapRenderer(
+        context: context,
+        baseStyle: base!,
+      ).buildDoc(doc);
       if (blocks.isEmpty) {
         return Text(
           'No description',
@@ -141,24 +140,24 @@ class _TiptapRenderer {
 
   Widget _heading(Map<String, dynamic> node) {
     final level = (node['attrs'] as Map?)?['level'] as int? ?? 2;
-    final spans = _inlineSpans(node['content']) ??
-        [TextSpan(text: '', style: baseStyle)];
+    final spans =
+        _inlineSpans(node['content']) ?? [TextSpan(text: '', style: baseStyle)];
     final style = switch (level) {
       1 => baseStyle.copyWith(
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-          height: 1.25,
-        ),
+        fontSize: 22,
+        fontWeight: FontWeight.w800,
+        height: 1.25,
+      ),
       2 => baseStyle.copyWith(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-          height: 1.3,
-        ),
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+        height: 1.3,
+      ),
       _ => baseStyle.copyWith(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          height: 1.35,
-        ),
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        height: 1.35,
+      ),
     };
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 8),
@@ -182,8 +181,7 @@ class _TiptapRenderer {
 
   Widget _orderedList(Map<String, dynamic> node) {
     final items = _listItems(node);
-    final start =
-        (node['attrs'] as Map?)?['start'] as int? ?? 1;
+    final start = (node['attrs'] as Map?)?['start'] as int? ?? 1;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
@@ -216,7 +214,9 @@ class _TiptapRenderer {
                     color: colors.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
-                  Expanded(child: _listItemBody(Map<String, dynamic>.from(item))),
+                  Expanded(
+                    child: _listItemBody(Map<String, dynamic>.from(item)),
+                  ),
                 ],
               ),
             ),
@@ -279,7 +279,10 @@ class _TiptapRenderer {
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
       decoration: BoxDecoration(
         border: Border(
-          left: BorderSide(color: colors.primary.withValues(alpha: 0.55), width: 3),
+          left: BorderSide(
+            color: colors.primary.withValues(alpha: 0.55),
+            width: 3,
+          ),
         ),
         color: colors.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(8),
@@ -416,8 +419,7 @@ class _TiptapRenderer {
       return TextSpan(
         text: text,
         style: style,
-        recognizer: TapGestureRecognizer()
-          ..onTap = () => _openUrl(link!),
+        recognizer: TapGestureRecognizer()..onTap = () => _openUrl(link!),
       );
     }
     return TextSpan(text: text, style: style);

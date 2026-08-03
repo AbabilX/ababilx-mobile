@@ -55,10 +55,7 @@ class MessageList extends ConsumerWidget {
             if (showDate)
               ChatDateDivider(label: formatDateDivider(msg.createdAt)),
             if (msg.isVoiceCall)
-              VoiceCallEventRow(
-                message: msg,
-                currentUserId: currentUserId,
-              )
+              VoiceCallEventRow(message: msg, currentUserId: currentUserId)
             else
               MessageRow(
                 message: msg,

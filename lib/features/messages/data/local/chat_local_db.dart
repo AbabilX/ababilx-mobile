@@ -20,14 +20,14 @@ class ChatLocalDb extends _$ChatLocalDb {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
-        onUpgrade: (m, from, to) async {
-          // V1 → V2: create the message-feed cache table.
-          if (from < 2) {
-            await m.createTable(cachedMessageFeeds);
-          }
-        },
-      );
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      // V1 → V2: create the message-feed cache table.
+      if (from < 2) {
+        await m.createTable(cachedMessageFeeds);
+      }
+    },
+  );
 }
 
 LazyDatabase _openConnection() {

@@ -3,12 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 /// Thin HugeIcon wrapper so call sites stay short.
 class ChatIcon extends StatelessWidget {
-  const ChatIcon(
-    this.icon, {
-    super.key,
-    this.size = 22,
-    this.color,
-  });
+  const ChatIcon(this.icon, {super.key, this.size = 22, this.color});
 
   final List<List<dynamic>> icon;
   final double size;

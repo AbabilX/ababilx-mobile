@@ -159,13 +159,10 @@ mixin _ChatActionsMixin
 
   /// Forcibly appends [msg] to the feed even if it has never been fetched —
   /// needed for the local pending bubble (we know it's valid).
-  void _appendToFeed(
-    String convId,
-    ChatMessage msg, {
-    String? threadRootId,
-  }) {
+  void _appendToFeed(String convId, ChatMessage msg, {String? threadRootId}) {
     final key = feedKey(convId, threadRootId: threadRootId);
-    final feed = state.feeds[key] ??
+    final feed =
+        state.feeds[key] ??
         ChatFeed(fetchedAt: DateTime.now().millisecondsSinceEpoch);
     if (feed.messages.any((m) => m.id == msg.id)) return;
     setFeed(key, feed.copyWith(messages: [...feed.messages, msg]));
@@ -181,7 +178,9 @@ mixin _ChatActionsMixin
     final feed = state.feeds[key];
     if (feed != null) {
       final alreadyInFeed = feed.messages.any((m) => m.id == confirmed.id);
-      final hasPending = feed.messages.any((m) => m.clientRef == clientRef || m.id == clientRef);
+      final hasPending = feed.messages.any(
+        (m) => m.clientRef == clientRef || m.id == clientRef,
+      );
 
       if (alreadyInFeed) {
         // If WS already added confirmed message, filter out the pending message
@@ -199,17 +198,15 @@ mixin _ChatActionsMixin
           key,
           feed.copyWith(
             messages: feed.messages.map((m) {
-              if (m.clientRef == clientRef || m.id == clientRef) return confirmed;
+              if (m.clientRef == clientRef || m.id == clientRef)
+                return confirmed;
               return m;
             }).toList(),
           ),
         );
       } else {
         // Feed is loaded but pending was lost, append confirmed
-        setFeed(
-          key,
-          feed.copyWith(messages: [...feed.messages, confirmed]),
-        );
+        setFeed(key, feed.copyWith(messages: [...feed.messages, confirmed]));
       }
     }
 
@@ -220,11 +217,7 @@ mixin _ChatActionsMixin
     applyIncomingMessage(convId, confirmed, bumpUnread: false);
   }
 
-  void _markPendingFailed(
-    String convId,
-    String clientRef, {
-    String? parentId,
-  }) {
+  void _markPendingFailed(String convId, String clientRef, {String? parentId}) {
     _patchInFeed(
       convId,
       (m) => m.clientRef == clientRef
@@ -242,9 +235,12 @@ mixin _ChatActionsMixin
     final key = feedKey(convId, threadRootId: parentId);
     final feed = state.feeds[key];
     if (feed == null) return;
-    setFeed(key, feed.copyWith(
-      messages: feed.messages.where((m) => m.id != pendingId).toList(),
-    ));
+    setFeed(
+      key,
+      feed.copyWith(
+        messages: feed.messages.where((m) => m.id != pendingId).toList(),
+      ),
+    );
   }
 
   /// Applies [mapper] to every message in the feed for [convId].
@@ -256,9 +252,7 @@ mixin _ChatActionsMixin
     final key = feedKey(convId, threadRootId: threadRootId);
     final feed = state.feeds[key];
     if (feed == null) return;
-    setFeed(key, feed.copyWith(
-      messages: feed.messages.map(mapper).toList(),
-    ));
+    setFeed(key, feed.copyWith(messages: feed.messages.map(mapper).toList()));
   }
 
   Future<void> markConversationRead(String conversationId) async {

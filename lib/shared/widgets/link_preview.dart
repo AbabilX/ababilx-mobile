@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -256,7 +257,7 @@ class _LinkPreviewCardState extends State<LinkPreviewCard> {
                   ),
                   if (meta.imageUrl != null)
                     SizedBox(
-                      width: 96,
+                      width: 116,
                       child: CachedNetworkImage(
                         imageUrl: meta.imageUrl!,
                         fit: BoxFit.cover,
@@ -272,6 +273,96 @@ class _LinkPreviewCardState extends State<LinkPreviewCard> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Body text with http(s) URLs rendered as tappable, underlined links.
+class LinkifiedText extends StatefulWidget {
+  const LinkifiedText({
+    super.key,
+    required this.text,
+    this.style,
+    this.maxLines,
+    this.overflow = TextOverflow.clip,
+  });
+
+  final String text;
+  final TextStyle? style;
+  final int? maxLines;
+  final TextOverflow overflow;
+
+  @override
+  State<LinkifiedText> createState() => _LinkifiedTextState();
+}
+
+class _LinkifiedTextState extends State<LinkifiedText> {
+  final _recognizers = <TapGestureRecognizer>[];
+
+  void _clearRecognizers() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    _recognizers.clear();
+  }
+
+  @override
+  void dispose() {
+    _clearRecognizers();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _clearRecognizers();
+    final scheme = Theme.of(context).colorScheme;
+    final base =
+        widget.style ??
+        DefaultTextStyle.of(context).style.copyWith(color: scheme.onSurface);
+    final linkStyle = base.copyWith(
+      color: scheme.primary,
+      decoration: TextDecoration.underline,
+      decorationColor: scheme.primary,
+    );
+
+    final re = RegExp(r'https?:\/\/[^\s<>\[\]()"]+', caseSensitive: false);
+    final spans = <InlineSpan>[];
+    var last = 0;
+    for (final m in re.allMatches(widget.text)) {
+      var end = m.end;
+      var url = m.group(0)!;
+      final trailing = RegExp(r'[.,;!?)]+$').firstMatch(url);
+      if (trailing != null) {
+        end -= trailing.group(0)!.length;
+        url = url.substring(0, url.length - trailing.group(0)!.length);
+      }
+      if (url.isEmpty) continue;
+      if (m.start > last) {
+        spans.add(TextSpan(text: widget.text.substring(last, m.start)));
+      }
+      final recognizer = TapGestureRecognizer()
+        ..onTap = () {
+          final uri = Uri.tryParse(url);
+          if (uri != null) launchUrl(uri, mode: LaunchMode.externalApplication);
+        };
+      _recognizers.add(recognizer);
+      spans.add(
+        TextSpan(
+          text: widget.text.substring(m.start, end),
+          style: linkStyle,
+          recognizer: recognizer,
+        ),
+      );
+      last = end;
+    }
+    if (last < widget.text.length) {
+      spans.add(TextSpan(text: widget.text.substring(last)));
+    }
+
+    return Text.rich(
+      TextSpan(style: base, children: spans),
+      maxLines: widget.maxLines,
+      overflow: widget.overflow,
     );
   }
 }

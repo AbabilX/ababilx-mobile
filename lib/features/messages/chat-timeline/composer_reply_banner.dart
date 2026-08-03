@@ -22,21 +22,12 @@ class ComposerReplyBanner extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: colors.surfaceContainerHigh.withValues(alpha: 0.6),
-        border: Border(
-          left: BorderSide(
-            color: colors.primary,
-            width: 3.5,
-          ),
-        ),
+        border: Border(left: BorderSide(color: colors.primary, width: 3.5)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
-          Icon(
-            Icons.reply,
-            size: 18,
-            color: colors.primary,
-          ),
+          Icon(Icons.reply, size: 18, color: colors.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -71,10 +62,7 @@ class ComposerReplyBanner extends StatelessWidget {
                     plainText,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colors.onSurface,
-                    ),
+                    style: TextStyle(fontSize: 13, color: colors.onSurface),
                   ),
                 ],
               ],
@@ -83,10 +71,7 @@ class ComposerReplyBanner extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.close, size: 18),
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 28,
-              minHeight: 28,
-            ),
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
             splashRadius: 16,
             onPressed: onCancel,
             tooltip: 'Cancel reply',

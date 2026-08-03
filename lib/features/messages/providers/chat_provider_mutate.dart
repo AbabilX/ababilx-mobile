@@ -45,13 +45,12 @@ mixin _ChatMutateMixin on Notifier<ChatState>, _ChatActionsMixin {
     List<String>? conversationIds,
     List<String>? userIds,
     String? caption,
-  }) =>
-      repo.forwardMessage(
-        messageId: messageId,
-        conversationIds: conversationIds,
-        userIds: userIds,
-        caption: caption,
-      );
+  }) => repo.forwardMessage(
+    messageId: messageId,
+    conversationIds: conversationIds,
+    userIds: userIds,
+    caption: caption,
+  );
 
   Future<void> searchMessages(String q) async {
     state = state.copyWith(searchQuery: q, searchLoading: true);
@@ -68,13 +67,12 @@ mixin _ChatMutateMixin on Notifier<ChatState>, _ChatActionsMixin {
     required String contentType,
     required String fileName,
     required int sizeBytes,
-  }) =>
-      repo.presignAttachment(
-        conversationId,
-        contentType: contentType,
-        fileName: fileName,
-        sizeBytes: sizeBytes,
-      );
+  }) => repo.presignAttachment(
+    conversationId,
+    contentType: contentType,
+    fileName: fileName,
+    sizeBytes: sizeBytes,
+  );
 
   Future<void> uploadAttachmentBytes(
     ChatPresignResult presign,
@@ -115,6 +113,20 @@ mixin _ChatMutateMixin on Notifier<ChatState>, _ChatActionsMixin {
   Future<void> leaveChannel(String channelId) async {
     await repo.leaveChannel(channelId);
     await (this as ChatNotifier).fetchSidebar(silent: true);
+  }
+
+  /// Removes a DM from just this device's list ("delete for me") — it
+  /// reappears once the peer sends a new message. Removed optimistically;
+  /// on failure the next silent sidebar refresh brings it back.
+  Future<void> hideDm(String conversationId) async {
+    state = state.copyWith(
+      dms: state.dms.where((c) => c.id != conversationId).toList(),
+    );
+    try {
+      await repo.hideDm(conversationId);
+    } catch (_) {
+      await (this as ChatNotifier).fetchSidebar(silent: true);
+    }
   }
 
   Future<void> deleteChannel(String channelId) async {

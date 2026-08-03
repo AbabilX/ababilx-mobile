@@ -27,15 +27,14 @@ class ChatFeed {
     String? nextCursor,
     bool? hasMore,
     int? fetchedAt,
-  }) =>
-      ChatFeed(
-        messages: messages ?? this.messages,
-        loading: loading ?? this.loading,
-        loadingMore: loadingMore ?? this.loadingMore,
-        nextCursor: nextCursor ?? this.nextCursor,
-        hasMore: hasMore ?? this.hasMore,
-        fetchedAt: fetchedAt ?? this.fetchedAt,
-      );
+  }) => ChatFeed(
+    messages: messages ?? this.messages,
+    loading: loading ?? this.loading,
+    loadingMore: loadingMore ?? this.loadingMore,
+    nextCursor: nextCursor ?? this.nextCursor,
+    hasMore: hasMore ?? this.hasMore,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
 }
 
 class ChatState {
@@ -104,24 +103,22 @@ class ChatState {
     List<ChatMessage>? searchResults,
     bool? searchLoading,
     bool? wsConnected,
-  }) =>
-      ChatState(
-        dms: dms ?? this.dms,
-        channels: channels ?? this.channels,
-        sidebarLoading: sidebarLoading ?? this.sidebarLoading,
-        currentUserId: currentUserId ?? this.currentUserId,
-        activeConversationId: activeConversationId ?? this.activeConversationId,
-        threadRootId:
-            clearThreadRoot ? null : (threadRootId ?? this.threadRootId),
-        replyToMessage:
-            clearReplyTo ? null : (replyToMessage ?? this.replyToMessage),
-        feeds: feeds ?? this.feeds,
-        threadRepliesByRoot:
-            threadRepliesByRoot ?? this.threadRepliesByRoot,
-        sending: sending ?? this.sending,
-        searchQuery: searchQuery ?? this.searchQuery,
-        searchResults: searchResults ?? this.searchResults,
-        searchLoading: searchLoading ?? this.searchLoading,
-        wsConnected: wsConnected ?? this.wsConnected,
-      );
+  }) => ChatState(
+    dms: dms ?? this.dms,
+    channels: channels ?? this.channels,
+    sidebarLoading: sidebarLoading ?? this.sidebarLoading,
+    currentUserId: currentUserId ?? this.currentUserId,
+    activeConversationId: activeConversationId ?? this.activeConversationId,
+    threadRootId: clearThreadRoot ? null : (threadRootId ?? this.threadRootId),
+    replyToMessage: clearReplyTo
+        ? null
+        : (replyToMessage ?? this.replyToMessage),
+    feeds: feeds ?? this.feeds,
+    threadRepliesByRoot: threadRepliesByRoot ?? this.threadRepliesByRoot,
+    sending: sending ?? this.sending,
+    searchQuery: searchQuery ?? this.searchQuery,
+    searchResults: searchResults ?? this.searchResults,
+    searchLoading: searchLoading ?? this.searchLoading,
+    wsConnected: wsConnected ?? this.wsConnected,
+  );
 }

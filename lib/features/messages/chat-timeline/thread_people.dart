@@ -1,11 +1,7 @@
 import '../data/models/chat_models.dart';
 
 class ThreadPerson {
-  const ThreadPerson({
-    required this.userId,
-    this.name,
-    this.avatarUrl,
-  });
+  const ThreadPerson({required this.userId, this.name, this.avatarUrl});
 
   final String userId;
   final String? name;
@@ -48,7 +44,8 @@ List<ThreadPerson> threadParticipants(
 String? latestReplyAt(List<ChatMessage> replies) {
   if (replies.isEmpty) return null;
   ChatMessage latest = replies.first;
-  var latestTs = DateTime.tryParse(latest.createdAt)?.millisecondsSinceEpoch ?? 0;
+  var latestTs =
+      DateTime.tryParse(latest.createdAt)?.millisecondsSinceEpoch ?? 0;
   for (final m in replies.skip(1)) {
     final ts = DateTime.tryParse(m.createdAt)?.millisecondsSinceEpoch ?? 0;
     if (ts > latestTs) {

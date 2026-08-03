@@ -18,7 +18,9 @@ Future<void> showGroupDetailsDialog(
   final nameCtrl = TextEditingController(text: conversation.name ?? '');
   List<ChatMember> members = [];
   try {
-    members = await ref.read(chatProvider.notifier).listChannelMembers(conversation.id);
+    members = await ref
+        .read(chatProvider.notifier)
+        .listChannelMembers(conversation.id);
   } catch (_) {}
 
   if (!context.mounted) return;
@@ -38,8 +40,7 @@ Future<void> showGroupDetailsDialog(
             controller: scroll,
             padding: const EdgeInsets.all(16),
             children: [
-              Text('Group details',
-                  style: Theme.of(ctx).textTheme.titleMedium),
+              Text('Group details', style: Theme.of(ctx).textTheme.titleMedium),
               const SizedBox(height: 12),
               TextField(
                 controller: nameCtrl,
@@ -50,7 +51,9 @@ Future<void> showGroupDetailsDialog(
                 onPressed: () async {
                   final name = nameCtrl.text.trim();
                   if (name.isEmpty) return;
-                  await ref.read(chatProvider.notifier).renameChannel(conversation.id, name);
+                  await ref
+                      .read(chatProvider.notifier)
+                      .renameChannel(conversation.id, name);
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: const Text('Save name'),
@@ -60,7 +63,9 @@ Future<void> showGroupDetailsDialog(
                 title: const Text('Mute notifications'),
                 value: conversation.muted,
                 onChanged: (v) async {
-                  await ref.read(chatProvider.notifier).muteConversation(conversation.id, v);
+                  await ref
+                      .read(chatProvider.notifier)
+                      .muteConversation(conversation.id, v);
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
               ),
@@ -74,14 +79,16 @@ Future<void> showGroupDetailsDialog(
                     final subtitle = inCall
                         ? const InCallLabel(compact: true)
                         : status != null
-                            ? UserStatusBadge(status: status, compact: true)
-                            : null;
+                        ? UserStatusBadge(status: status, compact: true)
+                        : null;
                     return ListTile(
                       dense: true,
                       title: Text(m.name),
                       subtitle: subtitle,
-                      trailing:
-                          const Icon(Icons.chevron_right_rounded, size: 18),
+                      trailing: const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                      ),
                       onTap: () {
                         Navigator.pop(ctx);
                         showUserProfileSheet(
@@ -121,7 +128,9 @@ Future<void> showGroupDetailsDialog(
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: () async {
-                  await ref.read(chatProvider.notifier).leaveChannel(conversation.id);
+                  await ref
+                      .read(chatProvider.notifier)
+                      .leaveChannel(conversation.id);
                   if (ctx.mounted) {
                     Navigator.pop(ctx);
                     Navigator.pop(context);
@@ -155,14 +164,19 @@ Future<void> showGroupDetailsDialog(
                     ),
                   );
                   if (ok == true) {
-                    await ref.read(chatProvider.notifier).deleteChannel(conversation.id);
+                    await ref
+                        .read(chatProvider.notifier)
+                        .deleteChannel(conversation.id);
                     if (ctx.mounted) {
                       Navigator.pop(ctx);
                       Navigator.pop(context);
                     }
                   }
                 },
-                child: const Text('Delete group', style: TextStyle(color: Colors.red)),
+                child: const Text(
+                  'Delete group',
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
             ],
           ),

@@ -52,8 +52,8 @@ class WallPostCard extends ConsumerWidget {
                 children: [
                   WallPostHeader(post: post, isOwner: post.userId == me),
                   const SizedBox(height: 10),
-                  Text(
-                    body.isEmpty ? '(empty post)' : body,
+                  LinkifiedText(
+                    text: body.isEmpty ? '(empty post)' : body,
                     maxLines: expanded ? null : 8,
                     overflow: expanded
                         ? TextOverflow.visible

@@ -15,7 +15,8 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
     final key = feedKey(conversationId, threadRootId: threadRootId);
     final existing = state.feeds[key] ?? const ChatFeed();
     final hasMessages = existing.messages.isNotEmpty;
-    final stale = existing.fetchedAt == 0 ||
+    final stale =
+        existing.fetchedAt == 0 ||
         DateTime.now().millisecondsSinceEpoch - existing.fetchedAt >
             feedStaleMs;
     if (!force && hasMessages && !stale) return;
@@ -26,8 +27,9 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         limit: threadRootId != null ? 100 : 50,
         thread: threadRootId,
       );
-      final sorted =
-          threadRootId != null ? page.messages : page.messages.reversed.toList();
+      final sorted = threadRootId != null
+          ? page.messages
+          : page.messages.reversed.toList();
       final freshFeed = ChatFeed(
         messages: sorted,
         nextCursor: page.nextCursor,
@@ -41,8 +43,9 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         (this as _ChatCacheMixin).persistFeedAsync(conversationId, sorted);
       }
       if (threadRootId != null) {
-        final replies =
-            sorted.where((m) => m.id != threadRootId).toList(growable: false);
+        final replies = sorted
+            .where((m) => m.id != threadRootId)
+            .toList(growable: false);
         state = state.copyWith(
           threadRepliesByRoot: {
             ...state.threadRepliesByRoot,
@@ -51,7 +54,10 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         );
       }
     } catch (_) {
-      setFeed(key, (state.feeds[key] ?? const ChatFeed()).copyWith(loading: false));
+      setFeed(
+        key,
+        (state.feeds[key] ?? const ChatFeed()).copyWith(loading: false),
+      );
     }
   }
 
@@ -70,8 +76,9 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         limit: threadRootId != null ? 100 : 50,
         thread: threadRootId,
       );
-      final sorted =
-          threadRootId != null ? page.messages : page.messages.reversed.toList();
+      final sorted = threadRootId != null
+          ? page.messages
+          : page.messages.reversed.toList();
       setFeed(
         key,
         feed.copyWith(
@@ -155,8 +162,9 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       key,
       feed.copyWith(
         messages: feed.messages
-            .map((m) =>
-                m.id == messageId ? m.copyWith(reactions: reactions) : m)
+            .map(
+              (m) => m.id == messageId ? m.copyWith(reactions: reactions) : m,
+            )
             .toList(),
         fetchedAt: DateTime.now().millisecondsSinceEpoch,
       ),

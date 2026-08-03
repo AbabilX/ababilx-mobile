@@ -7,10 +7,7 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../providers/team_gate_provider.dart';
 
-Future<ChatConversation?> showNewDmDialog(
-  BuildContext context,
-  WidgetRef ref,
-) {
+Future<ChatConversation?> showNewDmDialog(BuildContext context, WidgetRef ref) {
   return showModalBottomSheet<ChatConversation>(
     context: context,
     isScrollControlled: true,
@@ -46,9 +43,9 @@ class NewDmSheet extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: Text(
               'New message',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           Expanded(
@@ -58,10 +55,15 @@ class NewDmSheet extends ConsumerWidget {
               itemBuilder: (_, i) {
                 final m = members[i];
                 if (m.userId == me) return const SizedBox.shrink();
-                return _MemberTile(member: m, onTap: () async {
-                  final dm = await ref.read(chatProvider.notifier).startDm(m.userId);
-                  if (context.mounted) Navigator.pop(context, dm);
-                });
+                return _MemberTile(
+                  member: m,
+                  onTap: () async {
+                    final dm = await ref
+                        .read(chatProvider.notifier)
+                        .startDm(m.userId);
+                    if (context.mounted) Navigator.pop(context, dm);
+                  },
+                );
               },
             ),
           ),

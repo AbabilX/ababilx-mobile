@@ -31,7 +31,8 @@ class ChatHeader extends ConsumerWidget {
     final callActive = ref.watch(
       voiceCallProvider.select((state) => state.active),
     );
-    final peerInCall = conversation.isDm &&
+    final peerInCall =
+        conversation.isDm &&
         ref.watch(isUserInCallProvider(conversation.peerUserId));
     final peerStatus = conversation.isDm && !peerInCall
         ? ref.watch(userStatusForProvider(conversation.peerUserId))
@@ -82,7 +83,10 @@ class ChatHeader extends ConsumerWidget {
                     else if (peerStatus != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
-                        child: UserStatusBadge(status: peerStatus, compact: true),
+                        child: UserStatusBadge(
+                          status: peerStatus,
+                          compact: true,
+                        ),
                       )
                     else if (conversation.isChannel &&
                         conversation.memberCount != null)

@@ -39,8 +39,7 @@ class ChatMessagesApi {
         if (parentId != null) 'parent_id': parentId,
         if (attachments.isNotEmpty)
           'attachments': attachments.map((a) => a.toJson()).toList(),
-        if (mentionedUserIds.isNotEmpty)
-          'mentioned_user_ids': mentionedUserIds,
+        if (mentionedUserIds.isNotEmpty) 'mentioned_user_ids': mentionedUserIds,
       },
     );
     return ChatMessage.fromJson(unwrapApiData<Map<String, dynamic>>(res));

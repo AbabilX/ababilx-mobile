@@ -74,7 +74,10 @@ class WallCommentTile extends ConsumerWidget {
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   if (plain.trim().isNotEmpty)
-                    Text(plain, style: TextStyle(color: scheme.onSurface)),
+                    LinkifiedText(
+                      text: plain,
+                      style: TextStyle(color: scheme.onSurface),
+                    ),
                   if (plain.trim().isNotEmpty) MessageLinkPreviews(text: plain),
                   if (comment.attachments.isNotEmpty) ...[
                     const SizedBox(height: 5),

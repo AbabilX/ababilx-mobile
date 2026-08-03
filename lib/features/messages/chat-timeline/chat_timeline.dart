@@ -90,7 +90,9 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
     final pixels = pos.pixels;
 
     if (pixels >= pos.maxScrollExtent - 120) {
-      ref.read(chatProvider.notifier).loadMoreFeed(
+      ref
+          .read(chatProvider.notifier)
+          .loadMoreFeed(
             widget.conversationId,
             threadRootId: widget.threadRootId,
           );
@@ -166,12 +168,13 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
         MessageComposer(
           conversationId: widget.conversationId,
           parentId: widget.threadRootId,
-          hintName: chat
+          hintName:
+              chat
                   .conversationById(widget.conversationId)
                   ?.displayTitle(chat.currentUserId) ??
               'someone',
-          isGroup: chat.conversationById(widget.conversationId)?.isChannel ??
-              false,
+          isGroup:
+              chat.conversationById(widget.conversationId)?.isChannel ?? false,
         ),
       ],
     );

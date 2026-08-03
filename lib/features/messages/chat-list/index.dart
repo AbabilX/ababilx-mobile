@@ -67,6 +67,8 @@ class _ChatListState extends ConsumerState<ChatList> {
                           .markConversationRead(c.id),
                       onLeaveChannel: (c) =>
                           ref.read(chatProvider.notifier).leaveChannel(c.id),
+                      onRemoveDm: (c) =>
+                          ref.read(chatProvider.notifier).hideDm(c.id),
                     ),
             ),
           ],

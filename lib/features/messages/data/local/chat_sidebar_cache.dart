@@ -13,9 +13,9 @@ class ChatSidebarCache {
 
   Future<ChatSidebar?> read(String userId) async {
     if (userId.isEmpty) return null;
-    final row = await (_db.select(_db.cachedSidebars)
-          ..where((t) => t.userId.equals(userId)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.cachedSidebars,
+    )..where((t) => t.userId.equals(userId))).getSingleOrNull();
     if (row == null) return null;
     try {
       final map = jsonDecode(row.payloadJson) as Map<String, dynamic>;
@@ -27,7 +27,9 @@ class ChatSidebarCache {
 
   Future<void> write(String userId, ChatSidebar sidebar) async {
     if (userId.isEmpty) return;
-    await _db.into(_db.cachedSidebars).insertOnConflictUpdate(
+    await _db
+        .into(_db.cachedSidebars)
+        .insertOnConflictUpdate(
           CachedSidebarsCompanion.insert(
             userId: userId,
             payloadJson: jsonEncode(sidebar.toJson()),
@@ -42,9 +44,9 @@ class ChatSidebarCache {
 
   Future<void> clearUser(String userId) async {
     if (userId.isEmpty) return;
-    await (_db.delete(_db.cachedSidebars)
-          ..where((t) => t.userId.equals(userId)))
-        .go();
+    await (_db.delete(
+      _db.cachedSidebars,
+    )..where((t) => t.userId.equals(userId))).go();
   }
 }
 

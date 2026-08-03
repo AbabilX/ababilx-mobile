@@ -32,8 +32,10 @@ class ReactionRow extends StatelessWidget {
               onTap: () => onToggle(r.emoji),
               borderRadius: BorderRadius.circular(16),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: active
                       ? colors.primary.withValues(alpha: 0.16)
