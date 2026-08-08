@@ -32,6 +32,19 @@ class NotificationRouter {
       case 'pre_send_review':
         return '/profile';
       case 'ai_assistant':
+        // Proactive nudges carry the ids of whatever they are nudging about.
+        // Open that item directly; fall back to the AI chat when the nudge is
+        // not about one specific thing (e.g. the morning briefing).
+        if (boardId != null && boardId.isNotEmpty) {
+          if (taskId != null && taskId.isNotEmpty) {
+            return '/board/$boardId/tasks/$taskId';
+          }
+          return '/board/$boardId';
+        }
+        if (postId != null && postId.isNotEmpty) return '/wall/post/$postId';
+        if (conversationId != null && conversationId.isNotEmpty) {
+          return '/messages/$conversationId';
+        }
         return '/messages';
       case 'team_member_left':
         return '/profile';
