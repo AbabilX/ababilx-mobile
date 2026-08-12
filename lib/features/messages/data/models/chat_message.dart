@@ -27,6 +27,10 @@ class ChatMessage extends Equatable {
     this.meta,
     this.forwardedFromName,
     this.forwardedFromSource,
+    this.encryptedBody,
+    this.encryptionNonce,
+    this.encryptionVersion,
+    this.encryptionKeyVersion,
     // Optimistic-send fields — not present in server JSON.
     this.sendStatus = MessageSendStatus.sent,
     this.clientRef,
@@ -53,6 +57,10 @@ class ChatMessage extends Equatable {
   final Map<String, dynamic>? meta;
   final String? forwardedFromName;
   final String? forwardedFromSource;
+  final String? encryptedBody;
+  final String? encryptionNonce;
+  final int? encryptionVersion;
+  final int? encryptionKeyVersion;
 
   /// Optimistic UI: current send state.
   final MessageSendStatus sendStatus;
@@ -70,6 +78,7 @@ class ChatMessage extends Equatable {
   bool get isSystem => messageType == 'system';
   bool get isVoiceCall => messageType == 'voice_call';
   bool get isPending => sendStatus != MessageSendStatus.sent;
+  bool get isEncrypted => encryptionVersion == 1 && encryptedBody != null;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
     id: json['id'] as String? ?? '',
@@ -96,6 +105,10 @@ class ChatMessage extends Equatable {
         : null,
     forwardedFromName: json['forwarded_from_name'] as String?,
     forwardedFromSource: json['forwarded_from_source'] as String?,
+    encryptedBody: json['encrypted_body'] as String?,
+    encryptionNonce: json['encryption_nonce'] as String?,
+    encryptionVersion: (json['encryption_version'] as num?)?.toInt(),
+    encryptionKeyVersion: (json['encryption_key_version'] as num?)?.toInt(),
     // sendStatus / clientRef not in server JSON → defaults to sent/null.
   );
 
@@ -119,6 +132,11 @@ class ChatMessage extends Equatable {
     if (forwardedFromName != null) 'forwarded_from_name': forwardedFromName,
     if (forwardedFromSource != null)
       'forwarded_from_source': forwardedFromSource,
+    if (encryptedBody != null) 'encrypted_body': encryptedBody,
+    if (encryptionNonce != null) 'encryption_nonce': encryptionNonce,
+    if (encryptionVersion != null) 'encryption_version': encryptionVersion,
+    if (encryptionKeyVersion != null)
+      'encryption_key_version': encryptionKeyVersion,
     // Pending fields deliberately excluded from cache serialisation.
   };
 
@@ -151,6 +169,10 @@ class ChatMessage extends Equatable {
     meta: meta,
     forwardedFromName: forwardedFromName,
     forwardedFromSource: forwardedFromSource,
+    encryptedBody: encryptedBody,
+    encryptionNonce: encryptionNonce,
+    encryptionVersion: encryptionVersion,
+    encryptionKeyVersion: encryptionKeyVersion,
     sendStatus: sendStatus ?? this.sendStatus,
     clientRef: clearClientRef ? null : (clientRef ?? this.clientRef),
     pendingAttachments: pendingAttachments,

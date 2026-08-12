@@ -15,9 +15,32 @@ mixin _ChatMutateMixin on Notifier<ChatState>, _ChatActionsMixin {
   }
 
   Future<void> editMessage(String messageId, String body) async {
-    final msg = await repo.patchMessage(messageId, body);
     final convId = state.activeConversationId;
     if (convId == null) return;
+    final conversation = state.conversationById(convId);
+    EncryptedDmPayload? encrypted;
+    if (conversation?.isDm == true && body.isNotEmpty) {
+      encrypted = await ref
+          .read(messageVaultProvider)
+          .encryptExisting(
+            conversationId: convId,
+            text: body,
+            currentUserId: state.currentUserId,
+          );
+    }
+    var msg = await repo.patchMessage(
+      messageId,
+      encrypted == null ? body : '',
+      encryptedBody: encrypted?.encryptedBody,
+      encryptionNonce: encrypted?.nonce,
+      encryptionVersion: encrypted == null ? null : 1,
+      encryptionKeyVersion: encrypted?.keyVersion,
+    );
+    if (msg.isEncrypted) {
+      msg = await ref
+          .read(messageVaultProvider)
+          .decryptMessage(msg, state.currentUserId);
+    }
     updateFeedMessage(convId, msg);
     final thread = msg.parentId ?? state.threadRootId;
     if (thread != null) {

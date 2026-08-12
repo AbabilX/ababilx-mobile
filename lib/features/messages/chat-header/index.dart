@@ -66,7 +66,7 @@ class ChatHeader extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      title,
+                      conversation.isDm ? '🔒 $title' : title,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 17,

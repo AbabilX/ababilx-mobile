@@ -50,6 +50,10 @@ class ChatConversation extends Equatable {
     this.lastMessageAttachmentType,
     this.lastMessageAttachmentName,
     this.lastMessageAttachments = const [],
+    this.lastMessageEncryptedBody,
+    this.lastMessageEncryptionNonce,
+    this.lastMessageEncryptionVersion,
+    this.lastMessageEncryptionKeyVersion,
     this.peerUserId,
     this.peerUserName,
     this.peerUserAvatar,
@@ -76,6 +80,10 @@ class ChatConversation extends Equatable {
   final String? lastMessageAttachmentType;
   final String? lastMessageAttachmentName;
   final List<ChatLastAttachment> lastMessageAttachments;
+  final String? lastMessageEncryptedBody;
+  final String? lastMessageEncryptionNonce;
+  final int? lastMessageEncryptionVersion;
+  final int? lastMessageEncryptionKeyVersion;
   final String? peerUserId;
   final String? peerUserName;
   final String? peerUserAvatar;
@@ -141,6 +149,16 @@ class ChatConversation extends Equatable {
         json['last_message_attachment_name'],
       ),
       lastMessageAttachments: parsedAtts,
+      lastMessageEncryptedBody: _jsonString(
+        json['last_message_encrypted_body'],
+      ),
+      lastMessageEncryptionNonce: _jsonString(
+        json['last_message_encryption_nonce'],
+      ),
+      lastMessageEncryptionVersion:
+          (json['last_message_encryption_version'] as num?)?.toInt(),
+      lastMessageEncryptionKeyVersion:
+          (json['last_message_encryption_key_version'] as num?)?.toInt(),
       peerUserId: _jsonString(json['peer_user_id']),
       peerUserName: _jsonString(json['peer_user_name']),
       peerUserAvatar: _jsonString(json['peer_user_avatar']),
@@ -190,6 +208,10 @@ class ChatConversation extends Equatable {
     lastMessageAttachments: clearLastMessageAttachment
         ? const []
         : (lastMessageAttachments ?? this.lastMessageAttachments),
+    lastMessageEncryptedBody: lastMessageEncryptedBody,
+    lastMessageEncryptionNonce: lastMessageEncryptionNonce,
+    lastMessageEncryptionVersion: lastMessageEncryptionVersion,
+    lastMessageEncryptionKeyVersion: lastMessageEncryptionKeyVersion,
     peerUserId: peerUserId,
     peerUserName: peerUserName,
     peerUserAvatar: peerUserAvatar,

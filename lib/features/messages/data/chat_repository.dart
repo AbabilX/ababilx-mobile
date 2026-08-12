@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import 'chat_attachments_api.dart';
+import 'chat_e2ee_api.dart';
 import 'chat_conversations_api.dart';
 import 'chat_messages_api.dart';
 import 'models/chat_models.dart';
@@ -9,10 +10,12 @@ class ChatRepository {
   ChatRepository(ApiClient client)
     : _conversations = ChatConversationsApi(client),
       _messages = ChatMessagesApi(client),
+      _e2ee = ChatE2eeApi(client),
       _attachments = ChatAttachmentsApi(client);
 
   final ChatConversationsApi _conversations;
   final ChatMessagesApi _messages;
+  final ChatE2eeApi _e2ee;
   final ChatAttachmentsApi _attachments;
 
   Future<ChatSidebar> listConversations() => _conversations.listConversations();
@@ -75,19 +78,40 @@ class ChatRepository {
   Future<ChatMessage> sendMessage(
     String conversationId, {
     required String body,
+    String? encryptedBody,
+    String? encryptionNonce,
+    int? encryptionVersion,
+    int? encryptionKeyVersion,
     String? parentId,
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
   }) => _messages.sendMessage(
     conversationId,
     body: body,
+    encryptedBody: encryptedBody,
+    encryptionNonce: encryptionNonce,
+    encryptionVersion: encryptionVersion,
+    encryptionKeyVersion: encryptionKeyVersion,
     parentId: parentId,
     attachments: attachments,
     mentionedUserIds: mentionedUserIds,
   );
 
-  Future<ChatMessage> patchMessage(String messageId, String body) =>
-      _messages.patchMessage(messageId, body);
+  Future<ChatMessage> patchMessage(
+    String messageId,
+    String body, {
+    String? encryptedBody,
+    String? encryptionNonce,
+    int? encryptionVersion,
+    int? encryptionKeyVersion,
+  }) => _messages.patchMessage(
+    messageId,
+    body,
+    encryptedBody: encryptedBody,
+    encryptionNonce: encryptionNonce,
+    encryptionVersion: encryptionVersion,
+    encryptionKeyVersion: encryptionKeyVersion,
+  );
 
   Future<void> deleteMessage(String messageId) =>
       _messages.deleteMessage(messageId);
@@ -99,6 +123,17 @@ class ChatRepository {
 
   Future<void> markRead(String conversationId) =>
       _messages.markRead(conversationId);
+
+  Future<Map<String, dynamic>> getE2eeVault() => _e2ee.getVault();
+  Future<void> putE2eeVault(Map<String, dynamic> data) => _e2ee.putVault(data);
+  Future<Map<String, dynamic>> getE2eePublicKey(String userId) =>
+      _e2ee.getPublicKey(userId);
+  Future<Map<String, dynamic>> getE2eeConversationKey(String conversationId) =>
+      _e2ee.getConversationKey(conversationId);
+  Future<Map<String, dynamic>> createE2eeConversationKey(
+    String conversationId,
+    Map<String, dynamic> envelopes,
+  ) => _e2ee.createConversationKey(conversationId, envelopes);
 
   Future<bool> muteConversation(String conversationId, bool muted) =>
       _conversations.muteConversation(conversationId, muted);

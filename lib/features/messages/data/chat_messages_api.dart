@@ -28,6 +28,10 @@ class ChatMessagesApi {
   Future<ChatMessage> sendMessage(
     String conversationId, {
     required String body,
+    String? encryptedBody,
+    String? encryptionNonce,
+    int? encryptionVersion,
+    int? encryptionKeyVersion,
     String? parentId,
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
@@ -36,6 +40,11 @@ class ChatMessagesApi {
       ApiConstants.chatMessages(conversationId),
       data: {
         'body': body,
+        if (encryptedBody != null) 'encrypted_body': encryptedBody,
+        if (encryptionNonce != null) 'encryption_nonce': encryptionNonce,
+        if (encryptionVersion != null) 'encryption_version': encryptionVersion,
+        if (encryptionKeyVersion != null)
+          'encryption_key_version': encryptionKeyVersion,
         if (parentId != null) 'parent_id': parentId,
         if (attachments.isNotEmpty)
           'attachments': attachments.map((a) => a.toJson()).toList(),
@@ -45,10 +54,24 @@ class ChatMessagesApi {
     return ChatMessage.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
 
-  Future<ChatMessage> patchMessage(String messageId, String body) async {
+  Future<ChatMessage> patchMessage(
+    String messageId,
+    String body, {
+    String? encryptedBody,
+    String? encryptionNonce,
+    int? encryptionVersion,
+    int? encryptionKeyVersion,
+  }) async {
     final res = await _client.patch(
       ApiConstants.chatMessage(messageId),
-      data: {'body': body},
+      data: {
+        'body': body,
+        if (encryptedBody != null) 'encrypted_body': encryptedBody,
+        if (encryptionNonce != null) 'encryption_nonce': encryptionNonce,
+        if (encryptionVersion != null) 'encryption_version': encryptionVersion,
+        if (encryptionKeyVersion != null)
+          'encryption_key_version': encryptionKeyVersion,
+      },
     );
     return ChatMessage.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }

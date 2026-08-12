@@ -20,6 +20,10 @@ extension ChatConversationJson on ChatConversation {
     'last_message_attachments': lastMessageAttachments
         .map((a) => a.toJson())
         .toList(),
+    'last_message_encrypted_body': lastMessageEncryptedBody,
+    'last_message_encryption_nonce': lastMessageEncryptionNonce,
+    'last_message_encryption_version': lastMessageEncryptionVersion,
+    'last_message_encryption_key_version': lastMessageEncryptionKeyVersion,
     'peer_user_id': peerUserId,
     'peer_user_name': peerUserName,
     'peer_user_avatar': peerUserAvatar,

@@ -103,14 +103,38 @@ mixin _ChatActionsMixin
     applyIncomingMessage(convId, pendingMsg, bumpUnread: false);
 
     try {
+      EncryptedDmPayload? encrypted;
+      if (conv?.isDm == true && body.isNotEmpty) {
+        final peerId = conv?.peerUserId;
+        if (peerId == null || peerId.isEmpty) {
+          throw StateError('Secure DM recipient is unavailable');
+        }
+        encrypted = await ref
+            .read(messageVaultProvider)
+            .encryptNew(
+              conversationId: convId,
+              text: body,
+              currentUserId: currentUser,
+              peerUserId: peerId,
+            );
+      }
       // ── Step 2: Fire the actual network call ─────────────────────────────
-      final msg = await repo.sendMessage(
+      var msg = await repo.sendMessage(
         convId,
-        body: body,
+        body: encrypted == null ? body : '',
+        encryptedBody: encrypted?.encryptedBody,
+        encryptionNonce: encrypted?.nonce,
+        encryptionVersion: encrypted == null ? null : 1,
+        encryptionKeyVersion: encrypted?.keyVersion,
         parentId: parentId,
         attachments: attachments,
         mentionedUserIds: mentionedUserIds,
       );
+      if (msg.isEncrypted) {
+        msg = await ref
+            .read(messageVaultProvider)
+            .decryptMessage(msg, currentUser);
+      }
       // ── Step 3: Replace the pending bubble with the confirmed message ─────
       _replacePendingMessage(convId, clientRef, msg, parentId: parentId);
       return msg;

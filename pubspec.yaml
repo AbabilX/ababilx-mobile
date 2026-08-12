@@ -1,7 +1,7 @@
 name: ababilx
 description: "AbabilX — Slack standup automation with push notifications."
 publish_to: "none"
-version: 1.0.1+9
+version: 2.0.1+1
 
 environment:
   sdk: ^3.12.0
@@ -29,6 +29,8 @@ dependencies:
 
   # Secure token storage
   flutter_secure_storage: ^10.3.1
+  cryptography: ^2.7.0
+  cryptography_flutter: ^2.3.2
 
   # Local notifications (foreground FCM display + tap routing)
   flutter_local_notifications: ^21.0.0

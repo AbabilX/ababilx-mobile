@@ -27,9 +27,15 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         limit: threadRootId != null ? 100 : 50,
         thread: threadRootId,
       );
+      final conversation = state.conversationById(conversationId);
+      final messages = conversation?.isDm == true
+          ? await ref
+                .read(messageVaultProvider)
+                .decryptMessages(page.messages, state.currentUserId)
+          : page.messages;
       final sorted = threadRootId != null
-          ? page.messages
-          : page.messages.reversed.toList();
+          ? messages
+          : messages.reversed.toList();
       final freshFeed = ChatFeed(
         messages: sorted,
         nextCursor: page.nextCursor,
@@ -76,9 +82,15 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         limit: threadRootId != null ? 100 : 50,
         thread: threadRootId,
       );
+      final conversation = state.conversationById(conversationId);
+      final messages = conversation?.isDm == true
+          ? await ref
+                .read(messageVaultProvider)
+                .decryptMessages(page.messages, state.currentUserId)
+          : page.messages;
       final sorted = threadRootId != null
-          ? page.messages
-          : page.messages.reversed.toList();
+          ? messages
+          : messages.reversed.toList();
       setFeed(
         key,
         feed.copyWith(

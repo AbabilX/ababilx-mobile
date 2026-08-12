@@ -29,7 +29,19 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     final userId = state.currentUserId;
     if (userId.isEmpty) return;
     try {
-      await sidebarCache.write(userId, sidebar);
+      // Cache no decrypted E2EE preview text. The encrypted metadata is kept
+      // and a live sidebar refresh restores the preview after PIN unlock.
+      final safeDms = sidebar.dms
+          .map(
+            (dm) => dm.lastMessageEncryptionVersion == 1
+                ? dm.copyWith(lastMessageBody: 'Encrypted message')
+                : dm,
+          )
+          .toList();
+      await sidebarCache.write(
+        userId,
+        ChatSidebar(channels: sidebar.channels, dms: safeDms),
+      );
     } catch (_) {}
   }
 
@@ -49,8 +61,13 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     final existing = state.feeds[feedKey(conversationId)];
     if (existing != null && existing.fetchedAt > 0) return true;
     try {
-      final messages = await feedCache.read(conversationId);
+      var messages = await feedCache.read(conversationId);
       if (messages == null || messages.isEmpty) return false;
+      if (state.conversationById(conversationId)?.isDm == true) {
+        messages = await ref
+            .read(messageVaultProvider)
+            .decryptMessages(messages, state.currentUserId);
+      }
       setFeed(
         feedKey(conversationId),
         ChatFeed(

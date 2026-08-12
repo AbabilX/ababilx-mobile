@@ -49,7 +49,15 @@ class ChatFeedCache {
       final toCache = confirmed.length > _maxCachedMessages
           ? confirmed.sublist(confirmed.length - _maxCachedMessages)
           : confirmed;
-      final payload = jsonEncode(toCache.map((m) => m.toJson()).toList());
+      // Decrypted DM text is never written to SQLite. Ciphertext remains so
+      // the PIN-controlled vault can decrypt it after the next app launch.
+      final payload = jsonEncode(
+        toCache.map((m) {
+          final json = m.toJson();
+          if (m.isEncrypted) json['body'] = '';
+          return json;
+        }).toList(),
+      );
       await _db
           .into(_db.cachedMessageFeeds)
           .insertOnConflictUpdate(

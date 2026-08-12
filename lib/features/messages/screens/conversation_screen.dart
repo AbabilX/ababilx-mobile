@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../chat-header/index.dart';
 import '../chat-timeline/index.dart';
 import '../nav_back.dart';
+import '../message_e2ee/message_vault.dart';
+import '../message_e2ee/message_vault_gate.dart';
 import '../providers/chat_provider.dart';
 
 class ConversationScreen extends ConsumerStatefulWidget {
@@ -46,6 +48,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   Widget build(BuildContext context) {
     final chat = ref.watch(chatProvider);
     final conversation = chat.conversationById(widget.conversationId);
+    final vault = ref.read(messageVaultProvider);
 
     // Prefer stack pop when list→chat push; else Messages home (notification go).
     final canPop =
@@ -56,13 +59,29 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
         if (!didPop) popOrGoMessages(context);
       },
       child: Scaffold(
-        body: ChatTimeline(
-          conversationId: widget.conversationId,
-          threadRootId: widget.threadRootId,
-          header: conversation != null
-              ? ChatHeader(conversation: conversation)
-              : const _FallbackHeader(),
-        ),
+        body: conversation?.isDm == true && !vault.isUnlocked
+            ? Column(
+                children: [
+                  ChatHeader(conversation: conversation!),
+                  Expanded(
+                    child: MessageVaultGate(
+                      onUnlocked: () {
+                        ref
+                            .read(chatProvider.notifier)
+                            .loadFeed(widget.conversationId, force: true);
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ],
+              )
+            : ChatTimeline(
+                conversationId: widget.conversationId,
+                threadRootId: widget.threadRootId,
+                header: conversation != null
+                    ? ChatHeader(conversation: conversation)
+                    : const _FallbackHeader(),
+              ),
       ),
     );
   }

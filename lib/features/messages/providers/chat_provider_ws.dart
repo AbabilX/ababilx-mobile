@@ -19,7 +19,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       return;
     }
     if (type == 'chat.message.created') {
-      _onMessageCreated(ev);
+      unawaited(_onMessageCreated(ev));
       return;
     }
     // Apply updates/deletes/reactions to ANY loaded feed — not just the active
@@ -30,16 +30,8 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     if (type == 'chat.message.updated') {
       final msgJson = ev['message'] as Map<String, dynamic>?;
       if (msgJson == null) return;
-      final msg = ChatMessage.fromJson(msgJson);
-      // Update the main conversation feed.
-      updateFeedMessage(convId, msg);
-      // Update any relevant thread feed (parentId from msg, or any open thread).
-      final threadRootId = msg.parentId ?? state.threadRootId;
-      if (threadRootId != null) {
-        updateFeedMessage(convId, msg, threadRootId: threadRootId);
-      }
-      // Patch thread replies preview map (sidebar thread summary).
-      if (msg.parentId != null) patchThreadReply(msg.parentId!, msg);
+      unawaited(_onMessageUpdated(convId, msgJson));
+      return;
     }
 
     if (type == 'chat.message.deleted') {
@@ -72,11 +64,16 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     }
   }
 
-  void _onMessageCreated(Map<String, dynamic> ev) {
+  Future<void> _onMessageCreated(Map<String, dynamic> ev) async {
     final convId = ev['conversation_id'] as String? ?? '';
     final msgJson = ev['message'] as Map<String, dynamic>?;
     if (msgJson == null) return;
-    final msg = ChatMessage.fromJson(msgJson);
+    var msg = ChatMessage.fromJson(msgJson);
+    if (msg.isEncrypted) {
+      msg = await ref
+          .read(messageVaultProvider)
+          .decryptMessage(msg, state.currentUserId);
+    }
     final isActive = convId == state.activeConversationId;
     final known =
         state.dms.any((d) => d.id == convId) ||
@@ -128,6 +125,26 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       }
     } else {
       appendFeedMessage(convId, msg);
+    }
+  }
+
+  Future<void> _onMessageUpdated(
+    String convId,
+    Map<String, dynamic> msgJson,
+  ) async {
+    var msg = ChatMessage.fromJson(msgJson);
+    if (msg.isEncrypted) {
+      msg = await ref
+          .read(messageVaultProvider)
+          .decryptMessage(msg, state.currentUserId);
+    }
+    updateFeedMessage(convId, msg);
+    final threadRootId = msg.parentId ?? state.threadRootId;
+    if (threadRootId != null) {
+      updateFeedMessage(convId, msg, threadRootId: threadRootId);
+    }
+    if (msg.parentId != null) {
+      patchThreadReply(msg.parentId!, msg);
     }
   }
 

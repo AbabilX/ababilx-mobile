@@ -86,6 +86,11 @@ class ApiConstants {
 
   // Chat
   static const String chatConversations = '/api/teams/chat/conversations';
+  static const String chatE2eeVault = '/api/teams/chat/e2ee/vault';
+  static String chatE2eePublicKey(String userId) =>
+      '/api/teams/chat/e2ee/users/$userId/public-key';
+  static String chatE2eeConversationKey(String conversationId) =>
+      '/api/teams/chat/conversations/$conversationId/e2ee-key';
   static const String chatChannels = '/api/teams/chat/channels';
   static String chatChannel(String id) => '/api/teams/chat/channels/$id';
   static String chatChannelMembers(String id) =>
@@ -159,4 +164,5 @@ class StorageKeys {
   static const String jwt = 'ababilx_jwt';
   static const String refreshToken = 'ababilx_refresh_token';
   static const String fcmToken = 'ababilx_fcm_token';
+  static const String messageVaultIdentity = 'ababilx_message_vault_identity';
 }

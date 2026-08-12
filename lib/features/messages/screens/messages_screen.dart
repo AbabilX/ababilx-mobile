@@ -3,20 +3,53 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../chat-empty-state/index.dart';
 import '../chat-list/index.dart';
+import '../message_e2ee/message_vault.dart';
+import '../message_e2ee/message_vault_gate.dart';
+import '../providers/chat_provider.dart';
 import '../providers/team_gate_provider.dart';
 
-class MessagesScreen extends ConsumerWidget {
+class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MessagesScreen> createState() => _MessagesScreenState();
+}
+
+class _MessagesScreenState extends ConsumerState<MessagesScreen> {
+  bool _checkingVault = true;
+  bool _vaultUnlocked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreVault();
+  }
+
+  Future<void> _restoreVault() async {
+    final unlocked = await ref
+        .read(messageVaultProvider)
+        .restoreTrustedIdentity();
+    if (!mounted) return;
+    if (unlocked) {
+      await ref.read(chatProvider.notifier).fetchSidebar(silent: true);
+    }
+    if (mounted) {
+      setState(() {
+        _checkingVault = false;
+        _vaultUnlocked = unlocked;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final teamAsync = ref.watch(teamGateProvider);
 
     return teamAsync.when(
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
       ),
-      error: (_, __) => const Scaffold(
+      error: (_, _) => const Scaffold(
         body: ChatEmptyState(
           title: 'Could not load team',
           subtitle: 'Pull to refresh or try again later.',
@@ -34,7 +67,30 @@ class MessagesScreen extends ConsumerWidget {
             ),
           );
         }
-        return const ChatList();
+        if (_checkingVault) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+          );
+        }
+        return Stack(
+          children: [
+            const ChatList(),
+            if (!_vaultUnlocked)
+              Positioned.fill(
+                child: Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  child: MessageVaultGate(
+                    onUnlocked: () {
+                      setState(() => _vaultUnlocked = true);
+                      ref
+                          .read(chatProvider.notifier)
+                          .fetchSidebar(silent: true);
+                    },
+                  ),
+                ),
+              ),
+          ],
+        );
       },
     );
   }

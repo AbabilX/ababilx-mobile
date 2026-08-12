@@ -10,6 +10,7 @@ import '../data/chat_repository.dart';
 import '../data/local/chat_feed_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
+import '../message_e2ee/message_vault.dart';
 import 'chat_state.dart';
 
 export 'chat_state.dart';
@@ -98,6 +99,7 @@ class ChatNotifier extends Notifier<ChatState>
     }
     final userId = ref.read(profileProvider).valueOrNull?.id;
     if (userId != null) state = state.copyWith(currentUserId: userId);
+    await ref.read(messageVaultProvider).restoreTrustedIdentity();
 
     // WhatsApp-style: paint cached sidebar first, then refresh network.
     final hadCache = await hydrateSidebarFromCache();
@@ -113,7 +115,7 @@ class ChatNotifier extends Notifier<ChatState>
     if (!silent) state = state.copyWith(sidebarLoading: true);
     try {
       final data = await _repo.listConversations();
-      final dms = sortDms(data.dms);
+      final dms = sortDms(await _decryptDmPreviews(data.dms));
       final channels = sortChannels(data.channels);
       final active = state.activeConversationId;
       final known =
@@ -161,6 +163,39 @@ class ChatNotifier extends Notifier<ChatState>
     state = state.copyWith(
       dms: patchList(state.dms, conversationId, unreadCount: 0),
       channels: patchList(state.channels, conversationId, unreadCount: 0),
+    );
+  }
+
+  Future<List<ChatConversation>> _decryptDmPreviews(
+    List<ChatConversation> dms,
+  ) async {
+    final userId = state.currentUserId;
+    if (userId.isEmpty) return dms;
+    return Future.wait(
+      dms.map((dm) async {
+        if (dm.lastMessageEncryptionVersion != 1 ||
+            dm.lastMessageEncryptedBody == null ||
+            dm.lastMessageUserId == null) {
+          return dm;
+        }
+        final preview = await ref
+            .read(messageVaultProvider)
+            .decryptMessage(
+              ChatMessage(
+                id: 'sidebar-${dm.id}',
+                conversationId: dm.id,
+                userId: dm.lastMessageUserId!,
+                body: dm.lastMessageBody ?? '',
+                createdAt: dm.lastMessageAt ?? '',
+                encryptedBody: dm.lastMessageEncryptedBody,
+                encryptionNonce: dm.lastMessageEncryptionNonce,
+                encryptionVersion: dm.lastMessageEncryptionVersion,
+                encryptionKeyVersion: dm.lastMessageEncryptionKeyVersion,
+              ),
+              userId,
+            );
+        return dm.copyWith(lastMessageBody: preview.body);
+      }),
     );
   }
 }
