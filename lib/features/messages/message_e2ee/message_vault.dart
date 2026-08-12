@@ -43,16 +43,23 @@ class MessageVault {
   Future<bool> restoreTrustedIdentity() async {
     try {
       final saved = await _storage.readMessageVaultIdentity();
-      if (saved == null) return false;
+      if (saved == null) {
+        lock();
+        return false;
+      }
       final data = Map<String, dynamic>.from(jsonDecode(saved) as Map);
       final status = await _repo.getE2eeVault();
-      if (status['exists'] != true) return false;
+      if (status['exists'] != true) {
+        lock();
+        return false;
+      }
       final serverPublic = Map<String, dynamic>.from(
         (status['vault'] as Map)['public_key'] as Map,
       );
       final localPublic = Map<String, dynamic>.from(data['public_key'] as Map);
       if (serverPublic['x'] != localPublic['x'] ||
           serverPublic['y'] != localPublic['y']) {
+        lock();
         await _storage.deleteMessageVaultIdentity();
         return false;
       }
@@ -63,6 +70,7 @@ class MessageVault {
       _keys.clear();
       return true;
     } catch (_) {
+      lock();
       return false;
     }
   }
@@ -200,6 +208,9 @@ class MessageVault {
   ) async {
     if (!message.isEncrypted) return message;
     if (!isUnlocked) return message.copyWith(body: 'Encrypted message');
+    if (currentUserId.isEmpty) {
+      return message.copyWith(body: 'Encrypted message');
+    }
     try {
       final key = await _loadKey(message.conversationId, currentUserId);
       if (key == null || key.version != message.encryptionKeyVersion) {

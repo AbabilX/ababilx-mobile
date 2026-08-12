@@ -64,9 +64,11 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
       var messages = await feedCache.read(conversationId);
       if (messages == null || messages.isEmpty) return false;
       if (state.conversationById(conversationId)?.isDm == true) {
+        final currentUserId = await (this as ChatNotifier)
+            .ensureCurrentUserId();
         messages = await ref
             .read(messageVaultProvider)
-            .decryptMessages(messages, state.currentUserId);
+            .decryptMessages(messages, currentUserId);
       }
       setFeed(
         feedKey(conversationId),

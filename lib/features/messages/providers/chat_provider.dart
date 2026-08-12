@@ -93,12 +93,7 @@ class ChatNotifier extends Notifier<ChatState>
   }
 
   Future<void> bootstrap() async {
-    final profile = ref.read(profileProvider);
-    if (profile.valueOrNull == null) {
-      await ref.read(profileProvider.notifier).refresh();
-    }
-    final userId = ref.read(profileProvider).valueOrNull?.id;
-    if (userId != null) state = state.copyWith(currentUserId: userId);
+    await ensureCurrentUserId();
     await ref.read(messageVaultProvider).restoreTrustedIdentity();
 
     // WhatsApp-style: paint cached sidebar first, then refresh network.
@@ -107,8 +102,29 @@ class ChatNotifier extends Notifier<ChatState>
     initRealtime();
   }
 
-  void resetTeamChatState() {
-    state = ChatState(currentUserId: state.currentUserId);
+  /// E2EE envelopes are authenticated with the backend user UUID. Never
+  /// attempt key unwrap/decryption until that UUID has been resolved.
+  Future<String> ensureCurrentUserId() async {
+    final existing = state.currentUserId.trim();
+    if (existing.isNotEmpty) return existing;
+
+    var profile = ref.read(profileProvider).valueOrNull;
+    if (profile == null || profile.id.trim().isEmpty) {
+      await ref.read(profileProvider.notifier).refresh();
+      profile = ref.read(profileProvider).valueOrNull;
+    }
+    final userId = profile?.id.trim() ?? '';
+    if (userId.isEmpty) {
+      throw StateError('Authenticated user is not ready');
+    }
+    state = state.copyWith(currentUserId: userId);
+    return userId;
+  }
+
+  void resetTeamChatState({bool clearCurrentUser = false}) {
+    state = ChatState(
+      currentUserId: clearCurrentUser ? '' : state.currentUserId,
+    );
   }
 
   Future<void> fetchSidebar({bool silent = false}) async {
@@ -169,8 +185,7 @@ class ChatNotifier extends Notifier<ChatState>
   Future<List<ChatConversation>> _decryptDmPreviews(
     List<ChatConversation> dms,
   ) async {
-    final userId = state.currentUserId;
-    if (userId.isEmpty) return dms;
+    final userId = await ensureCurrentUserId();
     return Future.wait(
       dms.map((dm) async {
         if (dm.lastMessageEncryptionVersion != 1 ||

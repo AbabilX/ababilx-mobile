@@ -28,10 +28,13 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         thread: threadRootId,
       );
       final conversation = state.conversationById(conversationId);
+      final currentUserId = conversation?.isDm == true
+          ? await (this as ChatNotifier).ensureCurrentUserId()
+          : state.currentUserId;
       final messages = conversation?.isDm == true
           ? await ref
                 .read(messageVaultProvider)
-                .decryptMessages(page.messages, state.currentUserId)
+                .decryptMessages(page.messages, currentUserId)
           : page.messages;
       final sorted = threadRootId != null
           ? messages
@@ -83,10 +86,13 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         thread: threadRootId,
       );
       final conversation = state.conversationById(conversationId);
+      final currentUserId = conversation?.isDm == true
+          ? await (this as ChatNotifier).ensureCurrentUserId()
+          : state.currentUserId;
       final messages = conversation?.isDm == true
           ? await ref
                 .read(messageVaultProvider)
-                .decryptMessages(page.messages, state.currentUserId)
+                .decryptMessages(page.messages, currentUserId)
           : page.messages;
       final sorted = threadRootId != null
           ? messages

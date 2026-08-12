@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../messages/data/local/chat_feed_cache.dart';
 import '../../messages/data/local/chat_sidebar_cache.dart';
+import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../data/auth_repository.dart';
@@ -35,14 +36,16 @@ class AuthNotifier extends AsyncNotifier<bool> {
       await ref.read(chatSidebarCacheProvider).clearAll();
       await ref.read(chatFeedCacheProvider).clearAll();
     } catch (_) {}
-    ref.read(chatProvider.notifier).resetTeamChatState();
+    ref.read(messageVaultProvider).lock();
+    ref.read(chatProvider.notifier).resetTeamChatState(clearCurrentUser: true);
     await ref.read(authRepositoryProvider).signOut();
     state = const AsyncData(false);
   }
 }
 
-final authProvider =
-    AsyncNotifierProvider<AuthNotifier, bool>(AuthNotifier.new);
+final authProvider = AsyncNotifierProvider<AuthNotifier, bool>(
+  AuthNotifier.new,
+);
 
 /// Convenience — true if authenticated.
 final isAuthenticatedProvider = Provider<bool>(
