@@ -139,7 +139,8 @@ class VoicePeerEngine {
         // single most useful line when a cross-network call never connects.
         voiceCallLog(
           'ice.gathered.warning',
-          reason: 'no srflx/relay — STUN/TURN unreachable, '
+          reason:
+              'no srflx/relay — STUN/TURN unreachable, '
               'only same-network calls can connect',
         );
       }
@@ -206,7 +207,6 @@ class VoicePeerEngine {
         final peer = _requirePeer();
         await peer.setRemoteDescription(RTCSessionDescription(sdp, 'offer'));
         _remoteDescriptionSet = true;
-        await _flushCandidates();
         final answer = await peer.createAnswer({
           'mandatory': {
             'OfferToReceiveAudio': true,
@@ -220,6 +220,9 @@ class VoicePeerEngine {
           reason: sent ? 'ok' : 'ws_unavailable',
         );
         if (!sent) onFailed('signaling_unavailable');
+        // A stale or unsupported trickled candidate must not prevent the SDP
+        // answer from reaching the caller. Other candidates can still connect.
+        await _flushCandidates();
       case 'answer':
         final sdp = signal['sdp'] as String? ?? '';
         if (sdp.isEmpty) return;
@@ -241,7 +244,7 @@ class VoicePeerEngine {
         if (!_remoteDescriptionSet) {
           _pendingCandidates.add(parsed);
         } else {
-          await _requirePeer().addCandidate(parsed);
+          await _addCandidate(parsed);
         }
     }
   }
@@ -279,11 +282,20 @@ class VoicePeerEngine {
       _localCandidates.lanOnly ? 'ice_no_relay' : 'peer_connection_failed';
 
   Future<void> _flushCandidates() async {
-    final peer = _requirePeer();
     for (final candidate in _pendingCandidates) {
-      await peer.addCandidate(candidate);
+      await _addCandidate(candidate);
     }
     _pendingCandidates.clear();
+  }
+
+  Future<void> _addCandidate(RTCIceCandidate candidate) async {
+    try {
+      await _requirePeer().addCandidate(candidate);
+    } catch (error) {
+      // ICE is opportunistic. Keep negotiating through the remaining
+      // host/srflx/relay candidates and retain a useful diagnostic trace.
+      voiceCallLog('ice.candidate.ignored', reason: error.toString());
+    }
   }
 
   /// Logs the negotiated candidate pair — the single most useful line for a

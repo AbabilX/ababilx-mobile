@@ -400,7 +400,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       if (engine == null || !engine.ready) {
         _pendingSignals.add(parsed);
       } else {
-        unawaited(engine.handleSignal(parsed));
+        unawaited(_handleLiveSignal(callId, engine, parsed));
       }
       return;
     }
@@ -623,6 +623,25 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       await engine.handleSignal(signal);
     }
     _pendingSignals.clear();
+  }
+
+  Future<void> _handleLiveSignal(
+    String callId,
+    VoicePeerEngine engine,
+    Map<String, dynamic> signal,
+  ) async {
+    try {
+      await engine.handleSignal(signal);
+    } catch (error) {
+      if (state.call?.id != callId || !state.active) return;
+      voiceCallLog(
+        'signal.handle.failed',
+        callId: callId,
+        phase: _phaseName,
+        reason: _debugError(error),
+      );
+      await _failLocal('signal_handle_failed', error);
+    }
   }
 
   Future<void> _failLocal(String reason, [Object? error]) async {
