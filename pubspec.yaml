@@ -103,3 +103,12 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon/icon.png
+
+# Tell sqlite3's build hook to use the system/bundled library provided by
+# sqlite3_flutter_libs instead of downloading a precompiled binary from GitHub.
+# This avoids network failures in restricted environments (firewalls, offline).
+# source=system means: look for libsqlite3.so already linked into the app by
+# sqlite3_flutter_libs, which bundles it via CMake for Android/iOS.
+hook:
+  sqlite3:
+    source: system
