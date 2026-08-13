@@ -1,3 +1,5 @@
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+
 import '../data/models/ice_server.dart';
 import '../data/models/voice_call.dart';
 
@@ -20,6 +22,9 @@ class VoiceCallState {
     this.currentUserId = '',
     this.muted = false,
     this.speaker = false,
+    this.screenSharing = false,
+    this.remoteScreenStream,
+    this.screenShareError,
     this.pendingConversationId,
     this.pendingPeerName,
     this.pendingPeerAvatar,
@@ -33,6 +38,9 @@ class VoiceCallState {
   final String currentUserId;
   final bool muted;
   final bool speaker;
+  final bool screenSharing;
+  final MediaStream? remoteScreenStream;
+  final String? screenShareError;
   final String? pendingConversationId;
   final String? pendingPeerName;
   final String? pendingPeerAvatar;
@@ -71,6 +79,11 @@ class VoiceCallState {
     String? currentUserId,
     bool? muted,
     bool? speaker,
+    bool? screenSharing,
+    MediaStream? remoteScreenStream,
+    bool clearRemoteScreen = false,
+    String? screenShareError,
+    bool clearScreenShareError = false,
     String? pendingConversationId,
     String? pendingPeerName,
     String? pendingPeerAvatar,
@@ -85,6 +98,13 @@ class VoiceCallState {
     currentUserId: currentUserId ?? this.currentUserId,
     muted: muted ?? this.muted,
     speaker: speaker ?? this.speaker,
+    screenSharing: screenSharing ?? this.screenSharing,
+    remoteScreenStream: clearRemoteScreen
+        ? null
+        : (remoteScreenStream ?? this.remoteScreenStream),
+    screenShareError: clearScreenShareError
+        ? null
+        : (screenShareError ?? this.screenShareError),
     pendingConversationId: pendingConversationId ?? this.pendingConversationId,
     pendingPeerName: pendingPeerName ?? this.pendingPeerName,
     pendingPeerAvatar: pendingPeerAvatar ?? this.pendingPeerAvatar,

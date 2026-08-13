@@ -7,6 +7,7 @@ import '../../../core/router/root_back.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../incoming_call_ringtone.dart';
 import '../providers/voice_call_provider.dart';
+import '../widgets/remote_screen_view.dart';
 
 class VoiceCallScreen extends ConsumerStatefulWidget {
   const VoiceCallScreen({super.key});
@@ -90,7 +91,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final live = call.phase == VoiceCallPhase.connected ||
+    final live =
+        call.phase == VoiceCallPhase.connected ||
         call.phase == VoiceCallPhase.connecting ||
         call.phase == VoiceCallPhase.outgoingRinging ||
         call.phase == VoiceCallPhase.incomingRinging ||
@@ -122,13 +124,18 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                     ),
                   ),
                 ),
-                const Spacer(),
-                AppAvatar(
-                  size: 120,
-                  url: call.peerAvatar,
-                  name: call.peerName,
-                  border: Border.all(color: colors.outlineVariant, width: 2),
-                ),
+                if (call.remoteScreenStream == null) const Spacer(),
+                if (call.remoteScreenStream != null)
+                  Expanded(
+                    child: RemoteScreenView(stream: call.remoteScreenStream!),
+                  )
+                else
+                  AppAvatar(
+                    size: 120,
+                    url: call.peerAvatar,
+                    name: call.peerName,
+                    border: Border.all(color: colors.outlineVariant, width: 2),
+                  ),
                 const SizedBox(height: 24),
                 Text(
                   call.peerName,
@@ -149,11 +156,16 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                   _status(call),
                   textAlign: TextAlign.center,
                   style: call.phase == VoiceCallPhase.connected
-                      ? textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                          letterSpacing: 1.2,
-                        )
+                      ? (call.remoteScreenStream == null
+                                ? textTheme.displaySmall
+                                : textTheme.titleLarge)
+                            ?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                              letterSpacing: 1.2,
+                            )
                       : textTheme.titleMedium?.copyWith(
                           color: call.phase == VoiceCallPhase.failed
                               ? colors.error
@@ -169,7 +181,27 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                     style: textTheme.bodyMedium?.copyWith(color: colors.error),
                   ),
                 ],
-                const Spacer(flex: 2),
+                if (call.screenSharing) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'You are sharing your screen',
+                    style: textTheme.labelLarge?.copyWith(
+                      color: colors.primary,
+                    ),
+                  ),
+                ],
+                if (call.screenShareError != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    call.screenShareError!,
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodySmall?.copyWith(color: colors.error),
+                  ),
+                ],
+                if (call.remoteScreenStream == null)
+                  const Spacer(flex: 2)
+                else
+                  const SizedBox(height: 20),
                 if (call.phase == VoiceCallPhase.incomingRinging)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -219,16 +251,16 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                             : null,
                       ),
                       _CallControl(
-                        label: 'End',
-                        icon: Icons.call_end_rounded,
-                        background: colors.error,
-                        foreground: colors.onError,
+                        label: call.screenSharing ? 'Stop share' : 'Share',
+                        icon: call.screenSharing
+                            ? Icons.stop_screen_share_rounded
+                            : Icons.screen_share_rounded,
+                        selected: call.screenSharing,
                         onPressed:
-                            call.active && call.phase != VoiceCallPhase.starting
-                            ? () {
-                                unawaited(IncomingCallRingtone.stop());
-                                notifier.hangUp();
-                              }
+                            call.phase == VoiceCallPhase.connected &&
+                                (call.remoteScreenStream == null ||
+                                    call.screenSharing)
+                            ? notifier.toggleScreenShare
                             : null,
                       ),
                       _CallControl(
@@ -240,6 +272,19 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                         onPressed:
                             call.active && call.phase != VoiceCallPhase.starting
                             ? notifier.toggleSpeaker
+                            : null,
+                      ),
+                      _CallControl(
+                        label: 'End',
+                        icon: Icons.call_end_rounded,
+                        background: colors.error,
+                        foreground: colors.onError,
+                        onPressed:
+                            call.active && call.phase != VoiceCallPhase.starting
+                            ? () {
+                                unawaited(IncomingCallRingtone.stop());
+                                notifier.hangUp();
+                              }
                             : null,
                       ),
                     ],

@@ -375,6 +375,32 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     state = state.copyWith(speaker: next);
   }
 
+  Future<void> toggleScreenShare() async {
+    final engine = _engine;
+    if (engine == null || state.phase != VoiceCallPhase.connected) return;
+    if (state.remoteScreenStream != null && !state.screenSharing) return;
+    try {
+      state = state.copyWith(clearScreenShareError: true);
+      if (state.screenSharing) {
+        await engine.stopScreenShare();
+      } else {
+        await engine.startScreenShare();
+      }
+    } catch (error) {
+      voiceCallLog(
+        'screenShare.failed',
+        callId: state.call?.id,
+        phase: _phaseName,
+        reason: _debugError(error),
+      );
+      state = state.copyWith(
+        screenShareError: error.toString().toLowerCase().contains('permission')
+            ? 'Screen sharing permission was not granted.'
+            : 'Could not share this screen.',
+      );
+    }
+  }
+
   void reset() {
     _resetTimer?.cancel();
     state = VoiceCallState(currentUserId: state.currentUserId);
@@ -575,6 +601,20 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         unawaited(FlutterCallkitIncoming.setCallConnected(callId));
       },
       onFailed: (reason) => unawaited(_failLocal(reason)),
+      onLocalScreenChanged: (sharing) {
+        if (state.call?.id != callId) return;
+        state = state.copyWith(
+          screenSharing: sharing,
+          clearScreenShareError: true,
+        );
+      },
+      onRemoteScreenChanged: (stream) {
+        if (state.call?.id != callId) return;
+        state = state.copyWith(
+          remoteScreenStream: stream,
+          clearRemoteScreen: stream == null,
+        );
+      },
     );
     await engine.prepare(iceServers: session.iceServers);
     // Call may have ended, been replaced, or left connecting while prepare ran.
