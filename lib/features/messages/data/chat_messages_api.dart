@@ -40,12 +40,11 @@ class ChatMessagesApi {
       ApiConstants.chatMessages(conversationId),
       data: {
         'body': body,
-        if (encryptedBody != null) 'encrypted_body': encryptedBody,
-        if (encryptionNonce != null) 'encryption_nonce': encryptionNonce,
-        if (encryptionVersion != null) 'encryption_version': encryptionVersion,
-        if (encryptionKeyVersion != null)
-          'encryption_key_version': encryptionKeyVersion,
-        if (parentId != null) 'parent_id': parentId,
+        'encrypted_body': ?encryptedBody,
+        'encryption_nonce': ?encryptionNonce,
+        'encryption_version': ?encryptionVersion,
+        'encryption_key_version': ?encryptionKeyVersion,
+        'parent_id': ?parentId,
         if (attachments.isNotEmpty)
           'attachments': attachments.map((a) => a.toJson()).toList(),
         if (mentionedUserIds.isNotEmpty) 'mentioned_user_ids': mentionedUserIds,
@@ -66,11 +65,10 @@ class ChatMessagesApi {
       ApiConstants.chatMessage(messageId),
       data: {
         'body': body,
-        if (encryptedBody != null) 'encrypted_body': encryptedBody,
-        if (encryptionNonce != null) 'encryption_nonce': encryptionNonce,
-        if (encryptionVersion != null) 'encryption_version': encryptionVersion,
-        if (encryptionKeyVersion != null)
-          'encryption_key_version': encryptionKeyVersion,
+        'encrypted_body': ?encryptedBody,
+        'encryption_nonce': ?encryptionNonce,
+        'encryption_version': ?encryptionVersion,
+        'encryption_key_version': ?encryptionKeyVersion,
       },
     );
     return ChatMessage.fromJson(unwrapApiData<Map<String, dynamic>>(res));

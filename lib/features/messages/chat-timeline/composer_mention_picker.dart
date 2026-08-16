@@ -41,7 +41,7 @@ class ComposerMentionPicker extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -101,7 +101,7 @@ class ComposerMentionPicker extends StatelessWidget {
                     child: Divider(
                       height: 1,
                       thickness: 1.5,
-                      color: colors.outlineVariant.withOpacity(0.5),
+                      color: colors.outlineVariant.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -113,7 +113,7 @@ class ComposerMentionPicker extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: colors.error.withOpacity(0.9),
+                        color: colors.error.withValues(alpha: 0.9),
                         letterSpacing: 0.5,
                       ),
                     ),

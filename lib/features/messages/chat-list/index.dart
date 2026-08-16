@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
-import '../chat-sidebar/new-dm-dialog.dart';
+import '../chat-sidebar/new_dm_dialog.dart';
 import '../chat_list_filters.dart';
 import '../providers/chat_provider.dart';
 import 'compose_sheet.dart';

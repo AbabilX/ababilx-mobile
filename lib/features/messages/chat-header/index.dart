@@ -11,8 +11,8 @@ import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../nav_back.dart';
 import '../providers/chat_provider.dart';
-import 'dm-actions-sheet.dart';
-import 'group-details-dialog.dart';
+import 'dm_actions_sheet.dart';
+import 'group_details_dialog.dart';
 import 'group_call_action.dart';
 import 'start_call_sheet.dart';
 

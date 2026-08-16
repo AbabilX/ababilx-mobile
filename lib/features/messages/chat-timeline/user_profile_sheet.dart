@@ -114,7 +114,7 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: colors.onSurfaceVariant.withOpacity(0.3),
+              color: colors.onSurfaceVariant.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -166,7 +166,7 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: colors.primaryContainer.withOpacity(0.6),
+                color: colors.primaryContainer.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

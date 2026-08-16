@@ -22,7 +22,7 @@ class ChatConversationsApi {
       ApiConstants.chatChannels,
       data: {
         'name': name,
-        if (slug != null) 'slug': slug,
+        'slug': ?slug,
         'is_private': isPrivate,
       },
     );
@@ -37,8 +37,8 @@ class ChatConversationsApi {
     final res = await _client.patch(
       ApiConstants.chatChannel(id),
       data: {
-        if (name != null) 'name': name,
-        if (archive != null) 'archive': archive,
+        'name': ?name,
+        'archive': ?archive,
       },
     );
     return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));
@@ -85,9 +85,9 @@ class ChatConversationsApi {
       ApiConstants.chatForward,
       data: {
         'message_id': messageId,
-        if (conversationIds != null) 'conversation_ids': conversationIds,
-        if (userIds != null) 'user_ids': userIds,
-        if (caption != null) 'caption': caption,
+        'conversation_ids': ?conversationIds,
+        'user_ids': ?userIds,
+        'caption': ?caption,
       },
     );
     final data = unwrapApiData<Map<String, dynamic>>(res);

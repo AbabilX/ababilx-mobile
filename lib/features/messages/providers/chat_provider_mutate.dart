@@ -1,6 +1,7 @@
 part of 'chat_provider.dart';
 
 mixin _ChatMutateMixin on Notifier<ChatState>, _ChatActionsMixin {
+  @override
   ChatRepository get repo;
 
   Future<void> toggleReaction(String messageId, String emoji) async {

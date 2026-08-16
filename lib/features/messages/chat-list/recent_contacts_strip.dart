@@ -23,7 +23,7 @@ class RecentContactsStrip extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
         itemCount: conversations.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 14),
+        separatorBuilder: (_, _) => const SizedBox(width: 14),
         itemBuilder: (_, i) {
           final c = conversations[i];
           return RecentContactTile(
