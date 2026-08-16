@@ -6,6 +6,7 @@ import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import 'message_row.dart';
 import 'thread_sheet.dart';
+import 'group_call_event_row.dart';
 import 'voice_call_event_row.dart';
 
 class MessageList extends ConsumerWidget {
@@ -56,6 +57,8 @@ class MessageList extends ConsumerWidget {
               ChatDateDivider(label: formatDateDivider(msg.createdAt)),
             if (msg.isVoiceCall)
               VoiceCallEventRow(message: msg, currentUserId: currentUserId)
+            else if (msg.isGroupCall)
+              GroupCallEventRow(message: msg)
             else
               MessageRow(
                 message: msg,

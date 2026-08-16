@@ -51,6 +51,8 @@ dependencies:
   shared_preferences: ^2.5.5
   web_socket_channel: ^3.0.3
   flutter_webrtc: ^1.5.2
+  # SFU client for channel group calls (DM calls stay on raw flutter_webrtc).
+  livekit_client: ^2.9.0
   flutter_callkit_incoming: ^3.1.3
   image_picker: ^1.2.3
   hugeicons: ^1.1.7
@@ -103,6 +105,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon/icon.png
+    - assets/ringtone/Clear_Agenda.mp3
 
 # Tell sqlite3's build hook to use the system/bundled library provided by
 # sqlite3_flutter_libs instead of downloading a precompiled binary from GitHub.

@@ -103,6 +103,14 @@ class ApiConstants {
   static String chatVoiceCall(String callId) => '/api/teams/chat/calls/$callId';
   static String chatVoiceCallActions(String callId) =>
       '/api/teams/chat/calls/$callId/actions';
+  static String chatGroupCall(String conversationId) =>
+      '/api/teams/chat/conversations/$conversationId/group-call';
+  static String chatGroupCallJoin(String conversationId) =>
+      '/api/teams/chat/conversations/$conversationId/group-call/join';
+  static String chatGroupCallLeave(String callId) =>
+      '/api/teams/chat/group-calls/$callId/leave';
+  static String chatGroupCallScreenShare(String callId) =>
+      '/api/teams/chat/group-calls/$callId/screen-share';
   static const String chatForward = '/api/teams/chat/forward';
   static String chatMessages(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/messages';

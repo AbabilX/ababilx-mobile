@@ -4,12 +4,14 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
+  connectivity_plus
   emoji_picker_flutter
   file_selector_windows
   firebase_auth
   firebase_core
   flutter_secure_storage_windows
   flutter_webrtc
+  livekit_client
   pdfx
   permission_handler_windows
   record_windows

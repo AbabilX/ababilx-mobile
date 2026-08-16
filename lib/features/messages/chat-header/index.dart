@@ -13,6 +13,7 @@ import '../nav_back.dart';
 import '../providers/chat_provider.dart';
 import 'dm-actions-sheet.dart';
 import 'group-details-dialog.dart';
+import 'group_call_action.dart';
 import 'start_call_sheet.dart';
 
 /// Conversation top bar — used inside the scroll shell (auto-hides on scroll).
@@ -122,6 +123,9 @@ class ChatHeader extends ConsumerWidget {
                         ? null
                         : () => showStartCallSheet(context, ref, conversation),
                   ),
+                // Group calls are channel-only, same as the server gate.
+                if (conversation.isChannel)
+                  GroupCallAction(conversation: conversation),
               ],
             ),
             centerMiddle: true,

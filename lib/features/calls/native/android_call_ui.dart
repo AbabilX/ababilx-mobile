@@ -41,8 +41,9 @@ class AndroidCallUi {
       isShowLogo: true,
       logoUrl: 'assets/icon/icon.png',
       isShowCallID: false,
-      // System phone ringtone (res/raw optional). Empty path was silent on some OEMs.
-      ringtonePath: 'system_ringtone_default',
+      // Bundled app ringtone (android/app/src/main/res/raw/clear_agenda.mp3),
+      // the same tone the in-app dialog and the web client play.
+      ringtonePath: 'clear_agenda',
       incomingCallNotificationChannelName: 'Voice calls',
       missedCallNotificationChannelName: 'Missed voice calls',
       isImportant: true,
@@ -52,7 +53,7 @@ class AndroidCallUi {
   static CallKitParams paramsFromPush(Map<String, dynamic> data) {
     final expiresAt =
         DateTime.tryParse(data['expires_at']?.toString() ?? '')?.toLocal() ??
-        DateTime.now().add(const Duration(seconds: 45));
+        DateTime.now().add(const Duration(seconds: 60));
     return _params(
       callId: data['call_id']?.toString() ?? '',
       conversationId: data['conversation_id']?.toString() ?? '',
@@ -79,7 +80,7 @@ class AndroidCallUi {
       avatar: callerAvatarUrl,
       handle: 'Voice call',
       type: 0,
-      duration: remaining.clamp(1000, 45000),
+      duration: remaining.clamp(1000, 60000),
       missedCallNotification: const NotificationParams(
         showNotification: true,
         subtitle: 'Missed voice call',
@@ -100,7 +101,7 @@ class AndroidCallUi {
         isShowLogo: true,
         logoUrl: 'assets/icon/icon.png',
         isShowCallID: false,
-        ringtonePath: 'system_ringtone_default',
+        ringtonePath: 'clear_agenda',
         incomingCallNotificationChannelName: 'Voice calls',
         missedCallNotificationChannelName: 'Missed voice calls',
         isShowFullLockedScreen: true,

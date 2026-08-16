@@ -77,6 +77,7 @@ class ChatMessage extends Equatable {
   bool get isDeleted => deletedAt != null;
   bool get isSystem => messageType == 'system';
   bool get isVoiceCall => messageType == 'voice_call';
+  bool get isGroupCall => messageType == 'group_call';
   bool get isPending => sendStatus != MessageSendStatus.sent;
   bool get isEncrypted => encryptionVersion == 1 && encryptedBody != null;
 
