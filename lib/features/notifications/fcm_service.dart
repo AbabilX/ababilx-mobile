@@ -14,12 +14,15 @@ import 'notification_router.dart';
 
 /// Owns FCM permission, token sync, and foreground display.
 class FcmService {
+  // Params keep public names (devices/storage) while fields stay private —
+  // an initializing formal would force the external param name to match the
+  // private field name, which callers in fcm_provider.dart can't reference.
   FcmService({
     required DeviceRepository devices,
     required SecureStorage storage,
     required LocalNotifications localNotifications,
-  }) : _devices = devices,
-       _storage = storage,
+  }) : _devices = devices, // ignore: prefer_initializing_formals
+       _storage = storage, // ignore: prefer_initializing_formals
        _local = localNotifications;
 
   final DeviceRepository _devices;

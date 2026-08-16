@@ -34,8 +34,8 @@ class ComposerExpandedShell extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (mentionPicker case final picker?) picker,
-            if (replyBanner case final banner?) banner,
+            ?mentionPicker,
+            ?replyBanner,
             if (pending.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),

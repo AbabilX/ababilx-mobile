@@ -2,6 +2,7 @@ part of 'chat_provider.dart';
 
 mixin _ChatActionsMixin
     on Notifier<ChatState>, _ChatPatchMixin, _ChatFeedMixin {
+  @override
   ChatRepository get repo;
 
   void incrementThreadCount(String conversationId, String rootId) {
@@ -222,8 +223,9 @@ mixin _ChatActionsMixin
           key,
           feed.copyWith(
             messages: feed.messages.map((m) {
-              if (m.clientRef == clientRef || m.id == clientRef)
+              if (m.clientRef == clientRef || m.id == clientRef) {
                 return confirmed;
+              }
               return m;
             }).toList(),
           ),

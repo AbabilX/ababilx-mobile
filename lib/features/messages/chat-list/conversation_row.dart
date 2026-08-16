@@ -10,7 +10,7 @@ import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
 import '../chat_icon.dart';
 import '../chat_list_filters.dart';
-import '../chat-unread-badge.dart';
+import '../chat_unread_badge.dart';
 import '../data/models/chat_models.dart';
 import 'group_avatar_stack.dart';
 
