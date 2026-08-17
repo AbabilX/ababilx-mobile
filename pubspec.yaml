@@ -1,7 +1,7 @@
 name: ababilx
-description: "AbabilX — Slack standup automation with push notifications."
+description: "AbabilX — All-in-one team collaboration platform featuring messaging, calls, CRM, Kanban boards, and local sharing."
 publish_to: "none"
-version: 2.0.1+1
+version: 5.0.2+12
 
 environment:
   sdk: ^3.12.0
