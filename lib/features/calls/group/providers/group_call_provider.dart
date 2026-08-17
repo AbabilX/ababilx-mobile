@@ -40,6 +40,7 @@ abstract class GroupCallBase extends Notifier<GroupCallState> {
   StreamSubscription<CallEvent?>? _nativeSub;
   bool _booted = false;
   bool _joinPending = false;
+  int _joinEpoch = 0;
   final Set<String> _leftCallIds = {};
   String _currentUserId = '';
 
@@ -104,6 +105,7 @@ class GroupCallNotifier extends GroupCallBase
   Future<void> join(String conversationId) async {
     if (_joinPending || _room != null) return;
     _joinPending = true;
+    final joinEpoch = ++_joinEpoch;
     _invites?.dismiss();
     state = state.copyWith(
       phase: GroupCallPhase.joining,
@@ -118,12 +120,25 @@ class GroupCallNotifier extends GroupCallBase
     try {
       final session = await _repository.join(conversationId);
       call = session.call;
+      // Leave may have been tapped while the join request was in flight. Do
+      // not let its late response rebuild media/state and reopen the screen.
+      if (joinEpoch != _joinEpoch) {
+        _invites?.markAnswered(call.id);
+        await AndroidGroupCallUi.endCall(call.id);
+        await leaveOnce(call.id);
+        return;
+      }
       _leftCallIds.remove(call.id);
       _invites?.markAnswered(call.id);
       await AndroidGroupCallUi.hideIncoming(call.id);
       // Ongoing-call notification + `phoneCall|microphone` foreground service,
       // so Android keeps the SFU connection alive once the app leaves screen.
       await AndroidGroupCallUi.startOngoing(call);
+      if (joinEpoch != _joinEpoch) {
+        await AndroidGroupCallUi.endCall(call.id);
+        await leaveOnce(call.id);
+        return;
+      }
       final room = Room(
         roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
       );
@@ -134,7 +149,7 @@ class GroupCallNotifier extends GroupCallBase
       await room.connect(session.serverUrl, session.participantToken);
       final micOn = await enableMicrophone(room);
       await AudioManager.instance.setSpeakerOutputPreferred(true);
-      if (_room != room) return;
+      if (_room != room || joinEpoch != _joinEpoch) return;
       state = state.copyWith(
         phase: GroupCallPhase.connected,
         microphoneUnavailable: !micOn,
@@ -142,6 +157,10 @@ class GroupCallNotifier extends GroupCallBase
       );
       syncRoom();
     } catch (error) {
+      if (joinEpoch != _joinEpoch) {
+        if (call != null) await leaveOnce(call.id);
+        return;
+      }
       await clearRoom(error: groupCallErrorMessage(error));
       if (call != null) unawaited(leaveOnce(call.id));
     } finally {
@@ -151,6 +170,8 @@ class GroupCallNotifier extends GroupCallBase
 
   @override
   Future<void> leave() async {
+    // Invalidates a join whose HTTP/LiveKit awaits have not completed yet.
+    ++_joinEpoch;
     final call = state.call;
     await clearRoom();
     if (call != null) await leaveOnce(call.id);
@@ -187,6 +208,7 @@ class GroupCallNotifier extends GroupCallBase
   }
 
   Future<void> _teardown() async {
+    ++_joinEpoch;
     await _wsSub?.cancel();
     _wsSub = null;
     await _foregroundPushSub?.cancel();

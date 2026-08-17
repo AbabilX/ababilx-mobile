@@ -51,8 +51,26 @@ mixin GroupCallCallkit on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
       final active = await FlutterCallkitIncoming.activeCalls();
       for (final params in active) {
         if (!AndroidGroupCallUi.isGroupCall(params)) continue;
+        if (_leftCallIds.contains(params.id)) {
+          // CallKit can retain an accepted record briefly after local Leave.
+          // It is cleanup residue, not a request to join the call again.
+          await AndroidGroupCallUi.endCall(params.id);
+          continue;
+        }
         final conversationId = AndroidGroupCallUi.conversationIdOf(params);
         if (conversationId.isEmpty) continue;
+        GroupCall? liveCall;
+        try {
+          liveCall = await _repository.active(conversationId);
+        } catch (_) {
+          // Recovery is allowed to navigate only after server verification.
+          await AndroidGroupCallUi.endCall(params.id);
+          continue;
+        }
+        if (liveCall == null || !liveCall.active || liveCall.id != params.id) {
+          await AndroidGroupCallUi.endCall(params.id);
+          continue;
+        }
         if (params.isAccepted) {
           _invites?.markAnswered(params.id);
           await join(conversationId);
@@ -62,8 +80,7 @@ mixin GroupCallCallkit on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
         // `group_call.started` to this device, so hand the ring to the in-app
         // invite rather than dropping it when CallKit is dismissed below.
         // GroupCallInvites re-checks the ring window and the answered set.
-        final call = AndroidGroupCallUi.callFrom(params);
-        if (call != null) _invites?.offer(call, currentUserId: _currentUserId);
+        _invites?.offer(liveCall, currentUserId: _currentUserId);
         await syncNativeInviteUi();
         if (state.invite?.id != params.id) {
           await AndroidGroupCallUi.hideIncoming(params.id);
@@ -80,6 +97,10 @@ mixin GroupCallCallkit on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
     switch (event) {
       case CallEventActionCallAccept(:final callKitParams):
         if (!AndroidGroupCallUi.isGroupCall(callKitParams)) return;
+        if (_leftCallIds.contains(callKitParams.id)) {
+          unawaited(AndroidGroupCallUi.endCall(callKitParams.id));
+          return;
+        }
         final conversationId = AndroidGroupCallUi.conversationIdOf(
           callKitParams,
         );

@@ -224,6 +224,9 @@ class FcmService {
 
   Future<void> stopAndDeregister() async {
     fcmLog('stop.begin');
+    // A notification opened for the previous session must not navigate the
+    // next account immediately after login.
+    _pendingPath = null;
     await _tokenRefreshSub?.cancel();
     await _foregroundSub?.cancel();
     await _openedSub?.cancel();
@@ -362,9 +365,18 @@ class FcmService {
   }
 
   void _go(String path) {
-    _pendingPath = path;
-    fcmLog('navigate.queue', path);
+    final safePath = _safeDeepLink(path);
+    _pendingPath = safePath;
+    fcmLog('navigate.queue', safePath);
     flushPendingNav();
+  }
+
+  /// Older already-delivered local notifications may still carry these raw
+  /// routes. Providers own call navigation after live-state verification.
+  String _safeDeepLink(String path) {
+    final bare = path.split('?').first;
+    if (bare == '/call' || bare == '/group-call') return '/messages';
+    return path;
   }
 
   String _channelFor(String? type) {

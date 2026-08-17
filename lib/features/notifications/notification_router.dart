@@ -60,7 +60,14 @@ class NotificationRouter {
         }
         return '/messages';
       case 'voice_call':
-        return '/call';
+      case 'group_call':
+        // Call screens are state-driven by CallStoreSync/GroupCallSync after
+        // the provider verifies that the call is still live. A notification
+        // route must never open a stale call screen after login/cold start.
+        if (conversationId != null && conversationId.isNotEmpty) {
+          return '/messages/$conversationId';
+        }
+        return '/messages';
       default:
         if (conversationId != null && conversationId.isNotEmpty) {
           return '/messages/$conversationId';

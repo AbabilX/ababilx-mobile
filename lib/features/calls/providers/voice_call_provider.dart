@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
@@ -28,6 +29,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   StreamSubscription<Map<String, dynamic>>? _wsSub;
   StreamSubscription<void>? _wsReconnectSub;
   StreamSubscription<CallEvent?>? _nativeSub;
+  StreamSubscription<RemoteMessage>? _foregroundPushSub;
   VoicePeerEngine? _engine;
   final List<Map<String, dynamic>> _pendingSignals = [];
   Timer? _ringTimer;
@@ -37,6 +39,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   bool _booted = false;
   bool _transitioning = false;
   bool _offerResent = false;
+  final Set<String> _finishedCallIds = {};
   final CallKitEndedSuppress _suppressCallKitEnded = CallKitEndedSuppress();
 
   VoiceCallRepository get _repository => ref.read(voiceCallRepositoryProvider);
@@ -65,6 +68,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       unawaited(resyncActiveCall());
     });
     _nativeSub = FlutterCallkitIncoming.onEvent.listen(_handleNativeEvent);
+    _foregroundPushSub = FirebaseMessaging.onMessage.listen(
+      _handleForegroundCallPush,
+    );
     await _ws.connect();
     unawaited(prewarmCallPermissions());
     await _recoverNativeCall();
@@ -80,14 +86,17 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     await _wsSub?.cancel();
     await _wsReconnectSub?.cancel();
     await _nativeSub?.cancel();
+    await _foregroundPushSub?.cancel();
     _wsSub = null;
     _wsReconnectSub = null;
     _nativeSub = null;
+    _foregroundPushSub = null;
     final callId = state.call?.id;
     final currentUserId = state.currentUserId;
     await _resetResources();
     if (callId != null) await _endNative(callId, source: 'shutdown');
     _suppressCallKitEnded.clear();
+    _finishedCallIds.clear();
     state = VoiceCallState(currentUserId: currentUserId);
   }
 
@@ -149,6 +158,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   }
 
   Future<void> acceptIncoming([String? callId]) async {
+    if (callId != null && _wasFinished(callId)) {
+      await _endNative(callId, source: 'accept.finished');
+      return;
+    }
     if (_transitioning) {
       voiceCallLog(
         'accept.skip',
@@ -467,6 +480,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   }
 
   Future<void> _onIncoming(VoiceCall call) async {
+    if (_wasFinished(call.id) || call.isTerminal) {
+      await _endNative(call.id, source: 'incoming.finished');
+      return;
+    }
     if (call.expiresAt.isBefore(DateTime.now())) return;
     if (state.active) return;
     state = VoiceCallState(
@@ -525,6 +542,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   }
 
   Future<void> _onAccepted(VoiceCall call) async {
+    if (_wasFinished(call.id)) return;
     if (state.call?.id != call.id) return;
     // Another device answered while this one is still only ringing.
     if (state.phase == VoiceCallPhase.incomingRinging && !_transitioning) {
@@ -728,6 +746,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     bool preserveError = false,
   }) async {
     final callId = state.call?.id;
+    _rememberFinished(callId);
     voiceCallLog(
       'finishLocal',
       callId: callId,
@@ -794,14 +813,15 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       case CallEventActionCallEnded(:final callKitParams):
         final id = callKitParams.id;
         final suppressed = _suppressCallKitEnded.consume(id);
+        final alreadyFinished = _wasFinished(id);
         voiceCallLog(
           'callkit.event.ended',
           callId: id,
           phase: _phaseName,
           source: 'callkit',
-          suppress: suppressed,
+          suppress: suppressed || alreadyFinished,
         );
-        if (suppressed) return;
+        if (suppressed || alreadyFinished) return;
         if (state.call?.id == id && state.active) {
           unawaited(hangUp(source: 'callkit.ended'));
         }
@@ -820,13 +840,56 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
   }
 
+  /// FCM is the lifecycle fallback when the notification WebSocket has a gap.
+  /// A terminal push must clear both CallKit and Flutter state immediately;
+  /// an incoming push is allowed to ring only after an authoritative GET.
+  void _handleForegroundCallPush(RemoteMessage message) {
+    final data = Map<String, dynamic>.from(message.data);
+    final type = data['type']?.toString() ?? '';
+    final callId = data['call_id']?.toString() ?? '';
+    if (callId.isEmpty) return;
+
+    if (type == 'voice_call_ended') {
+      _rememberFinished(callId);
+      unawaited(AndroidCallUi.endCall(callId));
+      if (state.call?.id == callId &&
+          state.phase != VoiceCallPhase.idle &&
+          state.phase != VoiceCallPhase.ended &&
+          state.phase != VoiceCallPhase.failed) {
+        unawaited(
+          _finishLocal(VoiceCallPhase.ended, reason: 'fcm.voice_call_ended'),
+        );
+      }
+      return;
+    }
+    if (type != 'voice_call' || state.active || _wasFinished(callId)) return;
+    unawaited(_recoverForegroundIncoming(callId));
+  }
+
+  Future<void> _recoverForegroundIncoming(String callId) async {
+    try {
+      final session = await _repository.get(callId);
+      final call = session.call;
+      if (_wasFinished(callId) ||
+          call.status != 'ringing' ||
+          call.expiresAt.isBefore(DateTime.now())) {
+        await AndroidCallUi.endCall(callId);
+        return;
+      }
+      await _onIncoming(call);
+    } catch (_) {
+      await AndroidCallUi.endCall(callId);
+    }
+  }
+
   bool _isGroupCallEvent(CallEvent event) => switch (event) {
     CallEventActionCallAccept(:final callKitParams) ||
     CallEventActionCallDecline(:final callKitParams) ||
     CallEventActionCallEnded(:final callKitParams) ||
     CallEventActionCallIncoming(:final callKitParams) ||
-    CallEventActionCallStart(:final callKitParams) =>
-      AndroidGroupCallUi.isGroupCall(callKitParams),
+    CallEventActionCallStart(
+      :final callKitParams,
+    ) => AndroidGroupCallUi.isGroupCall(callKitParams),
     // Timeout/mute carry only an id, so fall back to "not ours" by id.
     CallEventActionCallTimeout(:final id) => state.call?.id != id,
     _ => false,
@@ -842,8 +905,21 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
           .toList(growable: false);
       if (dmCalls.isEmpty) return;
       final native = dmCalls.first;
-      final session = await _repository.get(native.id);
+      if (_wasFinished(native.id)) {
+        await _endNative(native.id, source: 'recover.finished');
+        return;
+      }
+      VoiceCallSession session;
+      try {
+        session = await _repository.get(native.id);
+      } catch (_) {
+        // A persisted native record from an old login/offline call is not
+        // enough to reopen UI. Recovery requires a live server call.
+        await _endNative(native.id, source: 'recover.lookup_failed');
+        return;
+      }
       if (session.call.isTerminal) {
+        _rememberFinished(native.id);
         await _endNative(native.id, source: 'recover.terminal');
         return;
       }
@@ -968,6 +1044,21 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _resetTimer?.cancel();
     _resetTimer = Timer(const Duration(seconds: 5), reset);
   }
+
+  /// A terminal lifecycle event can race a replayed WS event or a persisted
+  /// CallKit record. Remember locally finished IDs so neither can resurrect a
+  /// call screen after the user has already left it.
+  void _rememberFinished(String? callId) {
+    if (callId == null || callId.isEmpty) return;
+    _finishedCallIds
+      ..remove(callId)
+      ..add(callId);
+    while (_finishedCallIds.length > 64) {
+      _finishedCallIds.remove(_finishedCallIds.first);
+    }
+  }
+
+  bool _wasFinished(String callId) => _finishedCallIds.contains(callId);
 
   /// Microphone must be granted before WebRTC capture.
   ///
