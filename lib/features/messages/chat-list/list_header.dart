@@ -4,12 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
+import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat_icon.dart';
 import '../providers/team_gate_provider.dart';
 import 'header_profile_pill.dart';
 import 'workspace_title.dart';
 import 'you-sheet/index.dart';
+import 'you-sheet/you_sheet_action.dart';
 
 /// Slack-style list app bar: workspace left, status+profile pill right.
 class ChatListHeader extends ConsumerWidget {
@@ -53,10 +55,15 @@ class ChatListHeader extends ConsumerWidget {
   Future<void> _openYouSheet(BuildContext context, WidgetRef ref) async {
     final shellChrome = ref.read(shellBottomBarHiddenProvider.notifier);
     shellChrome.state = true;
+    YouSheetAction? action;
     try {
-      await showYouSheet(context);
+      action = await showYouSheet(context);
     } finally {
       shellChrome.state = false;
+    }
+
+    if (action == YouSheetAction.scanQrLogin && context.mounted) {
+      await QrLoginFlow.start(context, ref);
     }
   }
 }

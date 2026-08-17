@@ -5,8 +5,8 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../core/localization/app_translations.dart';
 import '../../../auth/providers/auth_provider.dart';
-import '../../../auth/widgets/qr_login_flow.dart';
 import 'you_menu_item.dart';
+import 'you_sheet_action.dart';
 
 class YouMenu extends ConsumerWidget {
   const YouMenu({super.key});
@@ -115,11 +115,10 @@ class YouMenu extends ConsumerWidget {
           icon: HugeIcons.strokeRoundedQrCode,
           label: 'Scan QR to sign in',
           onTap: () {
-            // The sheet's context dies with the pop, so drive the scan flow
-            // from the navigator that outlives it.
-            final rootContext = Navigator.of(context, rootNavigator: true).context;
-            Navigator.pop(context);
-            QrLoginFlow.start(rootContext, ref);
+            // Let the parent start scanning after this route finishes closing.
+            // Pushing a second modal while this one is popping can leave the
+            // navigator with a blank surface after a QR result is returned.
+            Navigator.pop(context, YouSheetAction.scanQrLogin);
           },
         ),
         YouMenuItem(

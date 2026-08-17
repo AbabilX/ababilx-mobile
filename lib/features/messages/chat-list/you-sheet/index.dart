@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../profile/providers/profile_provider.dart';
 import 'you_identity.dart';
 import 'you_menu.dart';
+import 'you_sheet_action.dart';
 
-Future<void> showYouSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
+Future<YouSheetAction?> showYouSheet(BuildContext context) {
+  return showModalBottomSheet<YouSheetAction>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
