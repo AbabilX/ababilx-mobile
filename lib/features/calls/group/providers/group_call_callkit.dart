@@ -31,14 +31,12 @@ mixin GroupCallCallkit on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
       _invites?.setLocalRing(true);
       return;
     }
-    final foreground =
-        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
-    if (foreground) {
+    if (flutterOwnsRingingUi) {
       // Dismiss first: tearing the native screen down drops its audio focus,
       // which would cut an in-app tone that had already started underneath it.
       await AndroidGroupCallUi.hideIncoming(invite.id);
       _invites?.setLocalRing(true);
-      await CallRingtone.refresh();
+      await CallRingtone.handoff();
       return;
     }
     _invites?.setLocalRing(false);

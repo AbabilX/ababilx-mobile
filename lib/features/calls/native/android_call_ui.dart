@@ -40,9 +40,9 @@ class AndroidCallUi {
       isCustomNotification: true,
       isShowLogo: false,
       isShowCallID: false,
-      // Bundled app ringtone (android/app/src/main/res/raw/clear_agenda.mp3),
-      // the same tone the in-app dialog and the web client play.
-      ringtonePath: 'clear_agenda',
+      // Use Android's configured phone ringtone. This is the plugin's
+      // documented fallback and avoids device-specific raw MP3 decoding.
+      ringtonePath: 'system_ringtone_default',
       incomingCallNotificationChannelName: 'Voice calls',
       missedCallNotificationChannelName: 'Missed voice calls',
       isImportant: true,
@@ -101,7 +101,9 @@ class AndroidCallUi {
         // caller identity plus the two call actions, without a second logo.
         isShowLogo: false,
         isShowCallID: false,
-        ringtonePath: 'clear_agenda',
+        // Native background/killed-app calls must always have an OS ringtone;
+        // the Flutter in-app surface keeps using its own foreground tone.
+        ringtonePath: 'system_ringtone_default',
         incomingCallNotificationChannelName: 'Voice calls',
         missedCallNotificationChannelName: 'Missed voice calls',
         isShowFullLockedScreen: true,
@@ -109,7 +111,7 @@ class AndroidCallUi {
         // Keep this false: the plugin's direct-Activity branch shows the
         // caller screen but skips its ringtone player. The high-priority call
         // notification still launches the same full-screen UI (including over
-        // the lock screen) and starts the bundled ringtone first.
+        // the lock screen) and starts the configured system ringtone first.
         isFullScreen: false,
         textAccept: 'Accept',
         textDecline: 'Decline',

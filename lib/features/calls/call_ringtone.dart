@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 
+import 'ringtone_watchdog.dart';
 import 'voice_call_log.dart';
 
 /// Shared in-app ringtone for both call systems (1:1 DM and channel group).
@@ -15,11 +16,26 @@ class CallRingtone {
 
   static const _asset = 'ringtone/Clear_Agenda.mp3';
 
+  /// A dismissed CallKit screen abandons its audio focus and tears its ringer
+  /// down asynchronously, so a re-play landing inside that window collides
+  /// with the teardown. Wait it out before taking the ring back.
+  static const _handoffSettle = Duration(milliseconds: 250);
+
   static final _player = AudioPlayer(playerId: 'ababilx_call_ringtone');
   static final Set<String> _holders = {};
   static bool _playing = false;
   static bool _restart = false;
   static Future<void>? _chain;
+
+  static final _watchdog = RingtoneWatchdog(
+    position: () => _player.getCurrentPosition(),
+    playing: () => _playing,
+    restart: refresh,
+    onStall: (position) => voiceCallLog(
+      'ringtone.stalled',
+      reason: 'position=${position?.inMilliseconds ?? -1}ms',
+    ),
+  );
 
   /// Ring on behalf of [holder] (`dm`, `group`, …). Idempotent.
   static Future<void> hold(String holder) {
@@ -38,16 +54,21 @@ class CallRingtone {
     return _apply();
   }
 
-  /// Play again from the top for whoever is still holding.
-  ///
-  /// Dismissing the native CallKit screen takes its ringer *and* its audio
-  /// focus down with it, which can stop a stream that started underneath it —
-  /// so the tone is restarted after that teardown rather than trusted to
-  /// survive it. No-op when nothing is ringing.
+  /// Play again from the top for whoever is still holding. No-op when nothing
+  /// is ringing.
   static Future<void> refresh() {
     if (_holders.isEmpty) return Future<void>.value();
     _restart = true;
     return _apply();
+  }
+
+  /// Take the ring back from a native ringer that was just dismissed, once its
+  /// teardown has had time to finish. See [_handoffSettle].
+  static Future<void> handoff() async {
+    if (_holders.isEmpty) return;
+    await Future<void>.delayed(_handoffSettle);
+    if (_holders.isEmpty) return;
+    await refresh();
   }
 
   /// Native calls are serialized so overlapping hold/release cannot leave the
@@ -83,6 +104,13 @@ class CallRingtone {
           _playing = false;
         }
       }
+      // Guard the tone for as long as anyone wants it, including after a
+      // failed start — the watchdog is what retries that.
+      if (_holders.isEmpty) {
+        _watchdog.stop();
+      } else {
+        _watchdog.start();
+      }
       if (_holders.isNotEmpty == want) return;
     }
   }
@@ -95,6 +123,7 @@ class CallRingtone {
       try {
         await _player.setReleaseMode(ReleaseMode.loop);
         await _player.play(AssetSource(_asset), volume: 1, ctx: context);
+        _watchdog.reset();
         return true;
       } catch (error) {
         voiceCallLog(
@@ -115,15 +144,18 @@ class CallRingtone {
     }
   }
 
-  /// Ring over other audio and route to the loudspeaker, not the earpiece — an
-  /// incoming call must be audible across the room. Some OEMs reject these
-  /// attributes outright, which is why [_start] retries with the default.
+  /// Route to the loudspeaker — an incoming call must be audible across the
+  /// room — but request **no** audio focus: audioplayers answers a focus loss
+  /// by pausing the native player behind Dart's back, so any competing ringer
+  /// or notification would silence the call tone for good. Mixing over other
+  /// audio is the lesser evil. Some OEMs reject these attributes outright,
+  /// which is why [_start] retries with the default context.
   static AudioContext get _ringContext => AudioContext(
     android: const AudioContextAndroid(
       isSpeakerphoneOn: true,
       contentType: AndroidContentType.music,
       usageType: AndroidUsageType.notificationRingtone,
-      audioFocus: AndroidAudioFocus.gainTransient,
+      audioFocus: AndroidAudioFocus.none,
     ),
     iOS: AudioContextIOS(
       category: AVAudioSessionCategory.playback,

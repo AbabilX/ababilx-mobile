@@ -32,6 +32,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
 
   /// Flutter route/UI can update while resumed or in the brief inactive
   /// transition (e.g. notification shade). Paused/hidden → native CallKit.
+  /// Same rule the call providers use — see `flutterOwnsRingingUi`.
   bool get _canOpenFlutterCallScreen =>
       _lifecycle == AppLifecycleState.resumed ||
       _lifecycle == AppLifecycleState.inactive;

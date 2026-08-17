@@ -76,8 +76,8 @@ CallKitParams _params({
       // Match the deliberately minimal 1:1 native caller surface.
       isShowLogo: false,
       isShowCallID: false,
-      // Same bundled tone as the DM ring and the web client.
-      ringtonePath: 'clear_agenda',
+      // Same reliable OS-level fallback as an incoming 1:1 call.
+      ringtonePath: 'system_ringtone_default',
       incomingCallNotificationChannelName: 'Group calls',
       missedCallNotificationChannelName: 'Missed group calls',
       isShowFullLockedScreen: true,

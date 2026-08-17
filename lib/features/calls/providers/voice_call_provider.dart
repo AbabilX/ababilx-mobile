@@ -10,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../core/network/ws_client.dart';
 import '../../messages/data/models/chat_conversation.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../call_lifecycle.dart';
 import '../callkit_ended_suppress.dart';
 import '../data/models/voice_call.dart';
 import '../data/models/voice_call_session.dart';
@@ -490,8 +491,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     if (call.isTerminal || call.expiresAt.isBefore(DateTime.now())) return;
 
     final lifecycle = WidgetsBinding.instance.lifecycleState;
-    final flutterFocused = lifecycle == AppLifecycleState.resumed;
-    if (flutterFocused && !force) {
+    if (flutterOwnsRingingUi && !force) {
       voiceCallLog(
         'incoming.callkit.skip',
         callId: call.id,

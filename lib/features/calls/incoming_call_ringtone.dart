@@ -3,7 +3,7 @@ import 'call_ringtone.dart';
 /// In-app incoming ringtone for the 1:1 DM call screen (foreground).
 ///
 /// Background / lock-screen ringing is handled by CallKit
-/// (`ringtonePath: clear_agenda`). This covers the path where CallStoreSync
+/// (`ringtonePath: system_ringtone_default`). This covers the path where CallStoreSync
 /// opens `/call` while the app is focused and CallKit is skipped.
 ///
 /// Delegates to [CallRingtone] so the DM tone and a channel group-call tone are
@@ -19,7 +19,7 @@ class IncomingCallRingtone {
   /// the hand-off from the native CallKit ringer to the in-app one.
   static Future<void> restart() async {
     await CallRingtone.hold(_holder);
-    await CallRingtone.refresh();
+    await CallRingtone.handoff();
   }
 
   static Future<void> stop() => CallRingtone.release(_holder);
