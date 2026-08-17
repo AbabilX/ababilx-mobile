@@ -7,6 +7,7 @@ import '../providers/profile_provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../../shared/widgets/app_avatar.dart';
+import '../../auth/widgets/qr_login_flow.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -191,6 +192,14 @@ class ProfileScreen extends ConsumerWidget {
                     valueColor: user.slackConnected
                         ? const Color(0xFF22C55E)
                         : const Color(0xFFCAC4D0),
+                  ),
+                  Divider(color: colors.outline, height: 1),
+                  // Approve a desktop/web sign-in by scanning its QR code.
+                  _InfoRow(
+                    icon: Icons.qr_code_scanner_rounded,
+                    label: AppTranslations.translate(context, ref, 'qr_login_title'),
+                    value: AppTranslations.translate(context, ref, 'qr_login_subtitle'),
+                    onTap: () => QrLoginFlow.start(context, ref),
                   ),
                   Divider(color: colors.outline, height: 1),
                   // Interactive Language Selector Row!

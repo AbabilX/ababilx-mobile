@@ -9,6 +9,9 @@ class ApiConstants {
   // Auth
   static const String mobileGoogleAuth = '/auth/google/mobile';
   static const String authRefresh = '/auth/refresh';
+  static const String qrLoginInfo = '/api/auth/qr/info';
+  static const String qrLoginApprove = '/api/auth/qr/approve';
+  static const String qrLoginDeny = '/api/auth/qr/deny';
 
   // User
   static const String me = '/api/me';
