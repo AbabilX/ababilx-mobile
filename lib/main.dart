@@ -9,6 +9,8 @@ import 'firebase_options.dart';
 import 'features/calls/native/android_call_background.dart';
 import 'features/calls/native/android_call_ui.dart';
 import 'features/calls/native/android_group_call_ui.dart';
+import 'features/notifications/chat_push_notification.dart';
+import 'features/notifications/local_notifications.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -23,6 +25,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       await AndroidGroupCallUi.showIncomingFromPush(data);
     case 'group_call_ended':
       await AndroidGroupCallUi.endCall(data['call_id']?.toString() ?? '');
+    case 'chat_dm':
+      // Encrypted DMs arrive data-only on Android: the server has no plaintext,
+      // so this isolate decrypts and raises the notification itself.
+      if (!isEncryptedChatPush(data)) return;
+      final local = LocalNotifications();
+      await local.initForBackground();
+      await showEncryptedChatPush(local, data);
   }
 }
 

@@ -163,6 +163,8 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
             scrollController: _scrollCtrl,
             conversationId: widget.conversationId,
             threadRootId: widget.threadRootId,
+            error: feed.error,
+            onRetry: _load,
           ),
         ),
         MessageComposer(

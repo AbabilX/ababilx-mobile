@@ -41,6 +41,9 @@ class AppTranslations {
       'chat_voice_sending': 'Sending…',
       'chat_voice_pause': 'Pause',
       'chat_voice_resume': 'Resume',
+      'chat_call': 'Call',
+      'chat_call_join': 'Join',
+      'chat_call_in': 'In call',
 
       'crm_section_customer': 'Customer',
       'crm_section_overview': 'Overview',
@@ -159,6 +162,9 @@ class AppTranslations {
       'chat_voice_sending': 'পাঠানো হচ্ছে…',
       'chat_voice_pause': 'পজ করুন',
       'chat_voice_resume': 'আবার চালু করুন',
+      'chat_call': 'কল',
+      'chat_call_join': 'যোগ দিন',
+      'chat_call_in': 'কলে আছেন',
 
       'crm_section_customer': 'কাস্টমার',
       'crm_section_overview': 'ওভারভিউ',

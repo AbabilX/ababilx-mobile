@@ -98,6 +98,27 @@ class LocalNotifications {
     _ready = true;
   }
 
+  /// Initialises the plugin inside the FCM background isolate, where no tap
+  /// callback can be wired: a tap there launches the app, and the main isolate
+  /// picks the payload up through getNotificationAppLaunchDetails.
+  Future<void> initForBackground() async {
+    if (_ready) return;
+    const androidInit = AndroidInitializationSettings('ic_stat_ababilx');
+    await _plugin.initialize(
+      settings: const InitializationSettings(android: androidInit),
+    );
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (android != null) {
+      for (final channel in _channels) {
+        await android.createNotificationChannel(channel);
+      }
+    }
+    _ready = true;
+  }
+
   Future<bool> requestPermission() async {
     final android = _plugin
         .resolvePlatformSpecificImplementation<
@@ -112,6 +133,10 @@ class LocalNotifications {
     required String body,
     required String channelId,
     required String payload,
+
+    /// Stable id keeps a message from being shown twice (foreground handler and
+    /// background isolate can both see the same push).
+    int? id,
   }) async {
     if (!_ready) return;
 
@@ -132,7 +157,7 @@ class LocalNotifications {
     );
 
     await _plugin.show(
-      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      id: id ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title: title,
       body: body,
       notificationDetails: details,

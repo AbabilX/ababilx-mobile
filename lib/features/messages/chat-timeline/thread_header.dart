@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/providers/voice_call_provider.dart';
+import '../chat-header/call_action_pill.dart';
 import '../chat-header/start_call_sheet.dart';
 import '../data/models/chat_models.dart';
 
@@ -65,12 +67,19 @@ class ThreadHeader extends ConsumerWidget {
               children: [
                 AppAvatar(size: 30, url: avatarUrl, name: avatarName),
                 if (convo != null && convo.isDm && !convo.peerLeft)
-                  IconButton(
-                    tooltip: 'Call',
-                    icon: const Icon(Icons.call_rounded),
-                    onPressed: callActive
-                        ? null
-                        : () => showStartCallSheet(context, ref, convo),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: CallActionPill(
+                      icon: Icons.call_rounded,
+                      label: AppTranslations.translate(
+                        context,
+                        ref,
+                        'chat_call',
+                      ),
+                      onTap: callActive
+                          ? null
+                          : () => showStartCallSheet(context, ref, convo),
+                    ),
                   ),
               ],
             ),

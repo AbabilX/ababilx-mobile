@@ -25,7 +25,7 @@ class _ChatStoreSyncState extends ConsumerState<ChatStoreSync> {
     if (isLoggedIn && hasTeam && !_booted) {
       _booted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(chatProvider.notifier).bootstrap();
+        ref.read(chatProvider.notifier).ensureReady();
       });
     }
 
@@ -35,7 +35,7 @@ class _ChatStoreSyncState extends ConsumerState<ChatStoreSync> {
 
     ref.listen(hasTeamProvider, (prev, next) {
       if (next && prev != next) {
-        ref.read(chatProvider.notifier).bootstrap();
+        ref.read(chatProvider.notifier).ensureReady();
       }
     });
 

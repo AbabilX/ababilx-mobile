@@ -45,6 +45,27 @@ extension MessageVaultIdentity on MessageVault {
     }
   }
 
+  /// Same restore without the server round-trip, for the FCM background
+  /// isolate: a push has seconds to decrypt, and the public-key comparison is
+  /// only a staleness check — a rotated identity simply fails the AES-GCM tag
+  /// and the notification falls back to its placeholder.
+  Future<bool> restoreTrustedIdentityOffline() async {
+    try {
+      final saved = await _storage.readMessageVaultIdentity();
+      if (saved == null) return false;
+      final data = Map<String, dynamic>.from(jsonDecode(saved) as Map);
+      _identity = _identityFromJwk(
+        Map<String, dynamic>.from(data['private_key'] as Map),
+      );
+      _publicJwk = Map<String, dynamic>.from(data['public_key'] as Map);
+      _keys.clear();
+      return true;
+    } catch (_) {
+      lock();
+      return false;
+    }
+  }
+
   Future<void> setup(String pin) async {
     _validatePin(pin);
     final identity = P256Ecdh.newKeyPair();

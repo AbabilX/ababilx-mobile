@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../chat-date-divider/index.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
+import 'message_list_error.dart';
 import 'message_row.dart';
 import 'thread_sheet.dart';
 import 'group_call_event_row.dart';
@@ -19,6 +20,8 @@ class MessageList extends ConsumerWidget {
     required this.scrollController,
     required this.conversationId,
     this.threadRootId,
+    this.error = '',
+    this.onRetry,
   });
 
   final List<ChatMessage> messages;
@@ -28,11 +31,16 @@ class MessageList extends ConsumerWidget {
   final ScrollController scrollController;
   final String conversationId;
   final String? threadRootId;
+  final String error;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (loading && messages.isEmpty) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
+    }
+    if (messages.isEmpty && error.isNotEmpty) {
+      return MessageListError(message: error, onRetry: onRetry);
     }
     return ListView.builder(
       controller: scrollController,

@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../calls/group/providers/group_call_provider.dart';
 import '../data/models/chat_models.dart';
+import 'call_action_pill.dart';
 
 /// Channel header action: "Start call" when nobody is calling, "Join · N" when
 /// a group call is live. Mirrors web `chat-header/group-call-action.tsx`,
@@ -45,7 +47,6 @@ class _GroupCallActionState extends ConsumerState<GroupCallAction> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(groupCallProvider);
-    final colors = Theme.of(context).colorScheme;
     final active = state.callFor(widget.conversation.id);
     final inThisCall =
         state.phase == GroupCallPhase.connected &&
@@ -57,15 +58,21 @@ class _GroupCallActionState extends ConsumerState<GroupCallAction> {
     // Already busy in some other call — joining a second one would drop it.
     final busyElsewhere = state.active && !inThisCall && !joiningThis;
 
-    return IconButton(
-      tooltip: inThisCall
-          ? 'In call'
-          : active != null
-          ? 'Join group call (${active.participantCount})'
-          : 'Start group call',
+    final label = inThisCall
+        ? AppTranslations.translate(context, ref, 'chat_call_in')
+        : active != null
+        ? AppTranslations.translate(context, ref, 'chat_call_join')
+        : AppTranslations.translate(context, ref, 'chat_call');
+
+    return CallActionPill(
+      icon: Icons.headset_mic_rounded,
+      label: label,
+      highlighted: inThisCall || active != null,
+      busy: joiningThis,
+      badgeCount: active?.participantCount ?? 0,
       // Already in this call means the user minimized it — take them back to
       // the call screen instead of a join that would no-op.
-      onPressed: busyElsewhere || joiningThis
+      onTap: busyElsewhere || joiningThis
           ? null
           : inThisCall
           ? () => context.push('/group-call')
@@ -73,20 +80,6 @@ class _GroupCallActionState extends ConsumerState<GroupCallAction> {
               ref
                   .read(groupCallProvider.notifier)
                   .join(widget.conversation.id),
-            ),
-      icon: joiningThis
-          ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Badge(
-              isLabelVisible: active != null && active.participantCount > 0,
-              label: Text('${active?.participantCount ?? 0}'),
-              child: Icon(
-                Icons.headset_mic_rounded,
-                color: active != null || inThisCall ? colors.primary : null,
-              ),
             ),
     );
   }

@@ -7,6 +7,17 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
     state = state.copyWith(feeds: {...state.feeds, key: feed});
   }
 
+  /// Decrypts when the page itself carries E2EE rows. Deciding this from the
+  /// sidebar entry instead breaks the push-notification path: the conversation
+  /// screen can mount before the sidebar exists, and the rows render blank.
+  Future<List<ChatMessage>> decryptIfNeeded(List<ChatMessage> messages) async {
+    if (!messages.any((m) => m.isEncrypted)) return messages;
+    final currentUserId = await (this as ChatNotifier).ensureCurrentUserId();
+    return ref
+        .read(messageVaultProvider)
+        .decryptMessages(messages, currentUserId);
+  }
+
   Future<void> loadFeed(
     String conversationId, {
     String? threadRootId,
@@ -20,22 +31,14 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         DateTime.now().millisecondsSinceEpoch - existing.fetchedAt >
             feedStaleMs;
     if (!force && hasMessages && !stale) return;
-    if (!hasMessages) setFeed(key, existing.copyWith(loading: true));
+    if (!hasMessages) setFeed(key, existing.copyWith(loading: true, error: ''));
     try {
       final page = await repo.listMessages(
         conversationId,
         limit: threadRootId != null ? 100 : 50,
         thread: threadRootId,
       );
-      final conversation = state.conversationById(conversationId);
-      final currentUserId = conversation?.isDm == true
-          ? await (this as ChatNotifier).ensureCurrentUserId()
-          : state.currentUserId;
-      final messages = conversation?.isDm == true
-          ? await ref
-                .read(messageVaultProvider)
-                .decryptMessages(page.messages, currentUserId)
-          : page.messages;
+      final messages = await decryptIfNeeded(page.messages);
       final sorted = threadRootId != null
           ? messages
           : messages.reversed.toList();
@@ -65,7 +68,10 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
     } catch (_) {
       setFeed(
         key,
-        (state.feeds[key] ?? const ChatFeed()).copyWith(loading: false),
+        (state.feeds[key] ?? const ChatFeed()).copyWith(
+          loading: false,
+          error: 'Could not load messages',
+        ),
       );
     }
   }
@@ -85,15 +91,7 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         limit: threadRootId != null ? 100 : 50,
         thread: threadRootId,
       );
-      final conversation = state.conversationById(conversationId);
-      final currentUserId = conversation?.isDm == true
-          ? await (this as ChatNotifier).ensureCurrentUserId()
-          : state.currentUserId;
-      final messages = conversation?.isDm == true
-          ? await ref
-                .read(messageVaultProvider)
-                .decryptMessages(page.messages, currentUserId)
-          : page.messages;
+      final messages = await decryptIfNeeded(page.messages);
       final sorted = threadRootId != null
           ? messages
           : messages.reversed.toList();

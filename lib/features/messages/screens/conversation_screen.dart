@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../chat-header/index.dart';
 import '../chat-timeline/index.dart';
+import '../data/models/chat_models.dart';
 import '../nav_back.dart';
 import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/message_vault_gate.dart';
 import '../providers/chat_provider.dart';
+import 'conversation_states.dart';
 
 class ConversationScreen extends ConsumerStatefulWidget {
   const ConversationScreen({
@@ -24,9 +26,15 @@ class ConversationScreen extends ConsumerStatefulWidget {
 }
 
 class _ConversationScreenState extends ConsumerState<ConversationScreen> {
+  bool _ready = false;
+
   @override
   void initState() {
     super.initState();
+    // Opened from a push notification this screen can mount before anything
+    // else has loaded chat, so it starts the bootstrap itself instead of
+    // racing whatever ChatStoreSync is doing.
+    _prepare();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(chatProvider.notifier)
@@ -35,6 +43,21 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
         ref.read(chatProvider.notifier).setThreadRootId(widget.threadRootId);
       }
     });
+  }
+
+  Future<void> _prepare() async {
+    try {
+      await ref.read(chatProvider.notifier).ensureReady();
+    } catch (_) {
+      // Errors surface as an unavailable conversation below.
+    }
+    if (mounted) setState(() => _ready = true);
+  }
+
+  Future<void> _retry() async {
+    setState(() => _ready = false);
+    await ref.read(chatProvider.notifier).fetchSidebar();
+    if (mounted) setState(() => _ready = true);
   }
 
   @override
@@ -58,59 +81,37 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) popOrGoMessages(context);
       },
-      child: Scaffold(
-        body: conversation?.isDm == true && !vault.isUnlocked
-            ? Column(
-                children: [
-                  ChatHeader(conversation: conversation!),
-                  Expanded(
-                    child: MessageVaultGate(
-                      onUnlocked: () {
-                        ref
-                            .read(chatProvider.notifier)
-                            .loadFeed(widget.conversationId, force: true);
-                        setState(() {});
-                      },
-                    ),
-                  ),
-                ],
-              )
-            : ChatTimeline(
-                conversationId: widget.conversationId,
-                threadRootId: widget.threadRootId,
-                header: conversation != null
-                    ? ChatHeader(conversation: conversation)
-                    : const _FallbackHeader(),
-              ),
-      ),
+      child: Scaffold(body: _body(conversation, vault)),
     );
   }
-}
 
-class _FallbackHeader extends StatelessWidget {
-  const _FallbackHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      child: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          height: kToolbarHeight,
-          child: NavigationToolbar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => popOrGoMessages(context),
+  Widget _body(ChatConversation? conversation, MessageVault vault) {
+    if (conversation == null) {
+      return _ready
+          ? ConversationUnavailable(onRetry: _retry)
+          : const ConversationLoading();
+    }
+    if (conversation.isDm && !vault.isUnlocked) {
+      return Column(
+        children: [
+          ChatHeader(conversation: conversation),
+          Expanded(
+            child: MessageVaultGate(
+              onUnlocked: () {
+                ref
+                    .read(chatProvider.notifier)
+                    .loadFeed(widget.conversationId, force: true);
+                setState(() {});
+              },
             ),
-            middle: const Text(
-              'Conversation',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
-            centerMiddle: true,
           ),
-        ),
-      ),
+        ],
+      );
+    }
+    return ChatTimeline(
+      conversationId: widget.conversationId,
+      threadRootId: widget.threadRootId,
+      header: ChatHeader(conversation: conversation),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../core/localization/app_translations.dart';
 import '../../../auth/providers/auth_provider.dart';
+import '../../../auth/widgets/qr_login_flow.dart';
 import 'you_menu_item.dart';
 
 class YouMenu extends ConsumerWidget {
@@ -108,6 +109,17 @@ class YouMenu extends ConsumerWidget {
           onTap: () {
             Navigator.pop(context);
             context.go('/profile');
+          },
+        ),
+        YouMenuItem(
+          icon: HugeIcons.strokeRoundedQrCode,
+          label: 'Scan QR to sign in',
+          onTap: () {
+            // The sheet's context dies with the pop, so drive the scan flow
+            // from the navigator that outlives it.
+            final rootContext = Navigator.of(context, rootNavigator: true).context;
+            Navigator.pop(context);
+            QrLoginFlow.start(rootContext, ref);
           },
         ),
         YouMenuItem(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/providers/voice_call_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
@@ -11,6 +12,7 @@ import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../nav_back.dart';
 import '../providers/chat_provider.dart';
+import 'call_action_pill.dart';
 import 'dm_actions_sheet.dart';
 import 'group_details_dialog.dart';
 import 'group_call_action.dart';
@@ -116,10 +118,10 @@ class ChatHeader extends ConsumerWidget {
                     ),
                   ),
                 if (conversation.isDm && !conversation.peerLeft)
-                  IconButton(
-                    tooltip: 'Call',
-                    icon: const Icon(Icons.call_rounded),
-                    onPressed: callActive
+                  CallActionPill(
+                    icon: Icons.call_rounded,
+                    label: AppTranslations.translate(context, ref, 'chat_call'),
+                    onTap: callActive
                         ? null
                         : () => showStartCallSheet(context, ref, conversation),
                   ),

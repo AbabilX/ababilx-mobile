@@ -9,6 +9,7 @@ import '../../../core/storage/secure_storage.dart';
 import '../calls/call_lifecycle.dart';
 import '../calls/native/android_call_ui.dart';
 import '../calls/native/android_group_call_ui.dart';
+import 'chat_push_notification.dart';
 import 'data/device_repository.dart';
 import 'fcm_log.dart';
 import 'local_notifications.dart';
@@ -309,6 +310,18 @@ class FcmService {
         await AndroidCallUi.showIncomingFromPush(data);
       } else {
         await AndroidGroupCallUi.showIncomingFromPush(data);
+      }
+      return;
+    }
+
+    if (isEncryptedChatPush(data)) {
+      // Data-only DM: no notification block, the text lives in the ciphertext.
+      fcmLog('push.foreground.encrypted', 'decrypting chat_dm for tray');
+      try {
+        await showEncryptedChatPush(_local, data);
+        fcmLog('push.foreground.shown');
+      } catch (e) {
+        fcmLog('push.foreground.show.fail', e);
       }
       return;
     }

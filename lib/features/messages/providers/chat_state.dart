@@ -11,6 +11,7 @@ class ChatFeed {
     this.nextCursor = '',
     this.hasMore = false,
     this.fetchedAt = 0,
+    this.error = '',
   });
 
   final List<ChatMessage> messages;
@@ -20,6 +21,10 @@ class ChatFeed {
   final bool hasMore;
   final int fetchedAt;
 
+  /// Set when a load failed. Without it a failed fetch is indistinguishable
+  /// from an empty conversation and the screen stays silently blank.
+  final String error;
+
   ChatFeed copyWith({
     List<ChatMessage>? messages,
     bool? loading,
@@ -27,6 +32,7 @@ class ChatFeed {
     String? nextCursor,
     bool? hasMore,
     int? fetchedAt,
+    String? error,
   }) => ChatFeed(
     messages: messages ?? this.messages,
     loading: loading ?? this.loading,
@@ -34,6 +40,7 @@ class ChatFeed {
     nextCursor: nextCursor ?? this.nextCursor,
     hasMore: hasMore ?? this.hasMore,
     fetchedAt: fetchedAt ?? this.fetchedAt,
+    error: error ?? this.error,
   );
 }
 

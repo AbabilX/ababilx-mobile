@@ -33,6 +33,8 @@ class ChatNotifier extends Notifier<ChatState>
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
   WsClient get _ws => ref.read(wsClientProvider);
   bool _realtimeStarted = false;
+  bool _bootstrapped = false;
+  Future<void>? _bootstrapInFlight;
   StreamSubscription<Map<String, dynamic>>? _wsEventSub;
   StreamSubscription<void>? _wsReconnectSub;
   StreamSubscription<void>? _wsDisconnectSub;
@@ -100,6 +102,18 @@ class ChatNotifier extends Notifier<ChatState>
     final hadCache = await hydrateSidebarFromCache();
     await fetchSidebar(silent: hadCache);
     initRealtime();
+    _bootstrapped = true;
+  }
+
+  /// Runs [bootstrap] at most once per session, whoever asks first. A chat
+  /// opened straight from a push notification has no MessagesScreen above it,
+  /// so it must be able to start the same load ChatStoreSync normally does —
+  /// otherwise it renders before the sidebar and vault exist.
+  Future<void> ensureReady() {
+    if (_bootstrapped) return Future<void>.value();
+    return _bootstrapInFlight ??= bootstrap().whenComplete(() {
+      _bootstrapInFlight = null;
+    });
   }
 
   /// E2EE envelopes are authenticated with the backend user UUID. Never
@@ -122,6 +136,7 @@ class ChatNotifier extends Notifier<ChatState>
   }
 
   void resetTeamChatState({bool clearCurrentUser = false}) {
+    _bootstrapped = false;
     state = ChatState(
       currentUserId: clearCurrentUser ? '' : state.currentUserId,
     );
