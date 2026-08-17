@@ -10,6 +10,16 @@ class DeviceRepository {
 
   final ApiClient _client;
 
+  /// Push shapes this build understands. `e2ee_push` tells the server this app
+  /// has the background handler that decrypts a data-only encrypted DM — a
+  /// build without it must keep receiving normal tray notifications, or the
+  /// message would arrive with nothing shown at all.
+  ///
+  /// Left empty for now: a build that declared this stopped receiving any
+  /// notification at all for encrypted DMs on-device, cause not yet found.
+  /// Re-enable only after that is confirmed reliable via a device test.
+  static const pushCaps = <String>[];
+
   Future<void> register(String fcmToken, {String platform = 'android'}) async {
     final url = '${ApiConstants.baseUrl}${ApiConstants.devices}';
     fcmLog(
@@ -19,7 +29,11 @@ class DeviceRepository {
     try {
       final res = await _client.post(
         ApiConstants.devices,
-        data: {'fcm_token': fcmToken, 'platform': platform},
+        data: {
+          'fcm_token': fcmToken,
+          'platform': platform,
+          'push_caps': pushCaps,
+        },
       );
       fcmLog('api.register.ok', 'status=${res.statusCode} body=${res.data}');
     } on DioException catch (e) {

@@ -1,3 +1,5 @@
+import 'dart:ui' show DartPluginRegistrant;
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -26,12 +28,26 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     case 'group_call_ended':
       await AndroidGroupCallUi.endCall(data['call_id']?.toString() ?? '');
     case 'chat_dm':
-      // Encrypted DMs arrive data-only on Android: the server has no plaintext,
-      // so this isolate decrypts and raises the notification itself.
-      if (!isEncryptedChatPush(data)) return;
-      final local = LocalNotifications();
-      await local.initForBackground();
-      await showEncryptedChatPush(local, data);
+      await _handleChatPushInBackground(data);
+  }
+}
+
+/// Encrypted DMs arrive data-only on Android: the server holds no plaintext, so
+/// this isolate decrypts and raises the notification itself. Everything here is
+/// best-effort — an uncaught throw in the background isolate takes the process
+/// down, and a missed notification must never do that.
+Future<void> _handleChatPushInBackground(Map<String, dynamic> data) async {
+  if (!isEncryptedChatPush(data)) return;
+  try {
+    // Fresh isolate: plugins (secure storage, local notifications) are not
+    // registered until asked for.
+    WidgetsFlutterBinding.ensureInitialized();
+    DartPluginRegistrant.ensureInitialized();
+    final local = LocalNotifications();
+    await local.initForBackground();
+    await showEncryptedChatPush(local, data);
+  } catch (_) {
+    // Nothing to show is better than a crash loop on every message.
   }
 }
 
