@@ -2,9 +2,9 @@
 class ApiConstants {
   ApiConstants._();
 
-  static const String baseUrl = 'https://api.ababilx.cloud';
+  static const String baseUrl = 'https://api.ababilx.com';
   static const String webPrivacyPolicyUrl =
-      'https://ababilx.cloud/privacy-policy';
+      'https://ababilx.com/privacy-policy';
 
   // Auth
   static const String mobileGoogleAuth = '/auth/google/mobile';
