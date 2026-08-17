@@ -285,6 +285,17 @@ class FcmService {
     final channel = _channelFor(data['type']?.toString());
 
     final type = data['type'];
+    if (type == 'voice_call_ended') {
+      // Silent terminal push for a call whose WS cannot reach this process.
+      await AndroidCallUi.endCall(data['call_id']?.toString() ?? '');
+      return;
+    }
+    if (type == 'group_call_ended') {
+      // This is a silent lifecycle push, not a user notification. It closes a
+      // native ring/ongoing surface when the WebSocket missed the ended event.
+      await AndroidGroupCallUi.endCall(data['call_id']?.toString() ?? '');
+      return;
+    }
     if (type == 'voice_call' || type == 'group_call') {
       // While the app is on screen the socket drives the call providers and
       // they raise the Flutter ringing UI. Showing CallKit as well puts a

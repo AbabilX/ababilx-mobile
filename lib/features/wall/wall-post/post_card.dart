@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/link_preview.dart';
+import '../../messages/tiptap_viewer.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
 import '../wall_copy_actions.dart';
@@ -52,12 +53,12 @@ class WallPostCard extends ConsumerWidget {
                 children: [
                   WallPostHeader(post: post, isOwner: post.userId == me),
                   const SizedBox(height: 10),
-                  LinkifiedText(
-                    text: body.isEmpty ? '(empty post)' : body,
-                    maxLines: expanded ? null : 8,
-                    overflow: expanded
-                        ? TextOverflow.visible
-                        : TextOverflow.ellipsis,
+                  TiptapViewer(
+                    content: post.body,
+                    emptyPlaceholder: '(empty post)',
+                    // Collapsed cards clip at roughly the eight lines the feed
+                    // showed before rich text.
+                    maxHeight: expanded ? null : 8 * 21.0,
                     style: TextStyle(
                       color: scheme.onSurface,
                       height: 1.35,

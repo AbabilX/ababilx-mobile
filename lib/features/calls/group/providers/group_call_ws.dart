@@ -12,6 +12,7 @@ mixin GroupCallWs on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
 
     if (ended) {
       _invites?.withdraw(call.id);
+      unawaited(AndroidGroupCallUi.endCall(call.id));
     } else if (type == 'group_call.started' && !state.active) {
       // The server also replays this on socket connect, so a device that was
       // backgrounded or restarted still gets its invite. GroupCallInvites
@@ -31,6 +32,33 @@ mixin GroupCallWs on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
     }
     applyCall(call);
     unawaited(yieldScreenShareIfTakenOver(call));
+  }
+
+  /// Foreground FCM is a fallback for the brief socket gaps where the push
+  /// arrives but `group_call.started`/`ended` does not. The FCM service skips
+  /// its own native overlay while resumed, so this feeds the regular Flutter
+  /// full-screen invite and shared ringtone instead.
+  void handleForegroundGroupCallPush(RemoteMessage message) {
+    final data = Map<String, dynamic>.from(message.data);
+    final type = data['type']?.toString() ?? '';
+    final callId = data['call_id']?.toString() ?? '';
+    if (type == 'group_call_ended') {
+      if (callId.isEmpty) return;
+      _invites?.withdraw(callId);
+      unawaited(AndroidGroupCallUi.endCall(callId));
+      if (state.call?.id == callId) unawaited(clearRoom());
+      final conversationId = data['conversation_id']?.toString() ?? '';
+      if (conversationId.isNotEmpty) rememberActiveCall(conversationId, null);
+      return;
+    }
+    if (type != 'group_call') return;
+    final params = AndroidGroupCallUi.paramsFromPush(data);
+    final call = AndroidGroupCallUi.callFrom(params);
+    if (call == null || !call.active) return;
+    rememberActiveCall(call.conversationId, call);
+    if (!state.active) {
+      _invites?.offer(call, currentUserId: _currentUserId);
+    }
   }
 
   /// Updates the header map, and the in-call copy when it is the same call.
@@ -60,7 +88,10 @@ mixin GroupCallWs on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
     final room = _room;
     final call = state.call;
     if (room == null || call == null) return;
-    final snapshot = groupRoomSnapshot(room, screenOwnerId: call.screenSharerId);
+    final snapshot = groupRoomSnapshot(
+      room,
+      screenOwnerId: call.screenSharerId,
+    );
     state = state.copyWith(
       participants: snapshot.participants,
       screen: snapshot.screen,

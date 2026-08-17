@@ -23,9 +23,9 @@ class WallReplySummary extends StatelessWidget {
     if (replies.isEmpty) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
     final total = replies.length + 1;
-    final title = wallBodyPlain(root.body).trim();
+    final title = wallBodyPreview(root.body);
     final latest = wallLatestReply(replies);
-    final preview = wallBodyPlain(latest.body).trim();
+    final preview = wallBodyPreview(latest.body);
     final people = wallThreadParticipants(root, replies);
 
     return Padding(

@@ -34,8 +34,11 @@ mixin GroupCallCallkit on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
     final foreground =
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     if (foreground) {
-      _invites?.setLocalRing(true);
+      // Dismiss first: tearing the native screen down drops its audio focus,
+      // which would cut an in-app tone that had already started underneath it.
       await AndroidGroupCallUi.hideIncoming(invite.id);
+      _invites?.setLocalRing(true);
+      await CallRingtone.refresh();
       return;
     }
     _invites?.setLocalRing(false);

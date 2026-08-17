@@ -17,8 +17,12 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   switch (data['type']) {
     case 'voice_call':
       await AndroidCallUi.showIncomingFromPush(data);
+    case 'voice_call_ended':
+      await AndroidCallUi.endCall(data['call_id']?.toString() ?? '');
     case 'group_call':
       await AndroidGroupCallUi.showIncomingFromPush(data);
+    case 'group_call_ended':
+      await AndroidGroupCallUi.endCall(data['call_id']?.toString() ?? '');
   }
 }
 

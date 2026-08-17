@@ -20,6 +20,17 @@ Future<void> androidCallkitBackgroundHandler(CallEvent event) async {
 
   final raw = const FlutterSecureStorage();
 
+  // Group-call Ignore/End is local-only. The plugin itself removes the native
+  // call record; sending these IDs to the 1:1 voice-call API creates a false
+  // lifecycle action and can make a later call recover the rejected group.
+  final params = switch (event) {
+    CallEventActionCallAccept(:final callKitParams) ||
+    CallEventActionCallDecline(:final callKitParams) ||
+    CallEventActionCallEnded(:final callKitParams) => callKitParams,
+    _ => null,
+  };
+  if (params?.extra?['type'] == 'group_call') return;
+
   switch (event) {
     case CallEventActionCallAccept(:final callKitParams):
       final id = callKitParams.id;

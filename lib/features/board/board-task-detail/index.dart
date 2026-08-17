@@ -43,7 +43,10 @@ class _BoardTaskDetailPageState extends ConsumerState<BoardTaskDetailPage> {
     );
   }
 
-  Future<void> _pickStatus(KanbanTaskDetail task, List<KanbanColumn> cols) async {
+  Future<void> _pickStatus(
+    KanbanTaskDetail task,
+    List<KanbanColumn> cols,
+  ) async {
     final picked = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -100,9 +103,10 @@ class _BoardTaskDetailPageState extends ConsumerState<BoardTaskDetailPage> {
       ),
     );
     if (picked == null || picked == task.priority) return;
-    await ref
-        .read(boardDetailProvider(widget.boardId).notifier)
-        .patchTask(task.id, {'priority': picked});
+    await ref.read(boardDetailProvider(widget.boardId).notifier).patchTask(
+      task.id,
+      {'priority': picked},
+    );
     ref.invalidate(kanbanTaskProvider(task.id));
   }
 
@@ -182,14 +186,17 @@ class _BoardTaskDetailPageState extends ConsumerState<BoardTaskDetailPage> {
     );
     ctrl.dispose();
     if (next == null || next.isEmpty || next == task.title) return;
-    await ref
-        .read(boardDetailProvider(widget.boardId).notifier)
-        .patchTask(task.id, {'title': next});
+    await ref.read(boardDetailProvider(widget.boardId).notifier).patchTask(
+      task.id,
+      {'title': next},
+    );
     ref.invalidate(kanbanTaskProvider(task.id));
   }
 
   Future<void> _editDescription(KanbanTaskDetail task) async {
-    final ctrl = TextEditingController(text: tiptapToPlainText(task.description));
+    final ctrl = TextEditingController(
+      text: tiptapToPlainText(task.description),
+    );
     final next = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -218,9 +225,10 @@ class _BoardTaskDetailPageState extends ConsumerState<BoardTaskDetailPage> {
     );
     ctrl.dispose();
     if (next == null || next == tiptapToPlainText(task.description)) return;
-    await ref
-        .read(boardDetailProvider(widget.boardId).notifier)
-        .patchTask(task.id, {'description': textToTiptapJson(next)});
+    await ref.read(boardDetailProvider(widget.boardId).notifier).patchTask(
+      task.id,
+      {'description': textToTiptapJson(next)},
+    );
     ref.invalidate(kanbanTaskProvider(task.id));
   }
 
@@ -253,7 +261,10 @@ class _BoardTaskDetailPageState extends ConsumerState<BoardTaskDetailPage> {
     final colors = Theme.of(context).colorScheme;
     return [
       const PopupMenuItem(value: 'title', child: Text('Edit title')),
-      const PopupMenuItem(value: 'description', child: Text('Edit description')),
+      const PopupMenuItem(
+        value: 'description',
+        child: Text('Edit description'),
+      ),
       const PopupMenuItem(value: 'status', child: Text('Change status')),
       const PopupMenuItem(value: 'priority', child: Text('Change priority')),
       const PopupMenuItem(value: 'assignee', child: Text('Change assignee')),
@@ -323,12 +334,8 @@ class _BoardTaskDetailPageState extends ConsumerState<BoardTaskDetailPage> {
             actions: [
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
-                onSelected: (v) => _onMenuSelected(
-                  v,
-                  task,
-                  boardState.columns,
-                  members,
-                ),
+                onSelected: (v) =>
+                    _onMenuSelected(v, task, boardState.columns, members),
                 itemBuilder: (_) => _menuItems(),
               ),
             ],
@@ -360,8 +367,9 @@ class _BoardTaskDetailPageState extends ConsumerState<BoardTaskDetailPage> {
                       height: 240,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: colors.surfaceContainerHighest
-                            .withValues(alpha: 0.4),
+                        color: colors.surfaceContainerHighest.withValues(
+                          alpha: 0.4,
+                        ),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: colors.outlineVariant.withValues(alpha: 0.55),
@@ -371,7 +379,10 @@ class _BoardTaskDetailPageState extends ConsumerState<BoardTaskDetailPage> {
                         borderRadius: BorderRadius.circular(13),
                         child: SingleChildScrollView(
                           padding: const EdgeInsets.all(14),
-                          child: TiptapViewer(content: task.description),
+                          child: TiptapViewer(
+                            content: task.description,
+                            emptyPlaceholder: 'No description',
+                          ),
                         ),
                       ),
                     ),
@@ -426,7 +437,9 @@ class _BoardTaskDetailPageState extends ConsumerState<BoardTaskDetailPage> {
                 hintName: 'comment',
                 sendLabelKey: 'Post',
                 onSubmit: ({required bodyJson, required attachments}) async {
-                  await ref.read(boardRepositoryProvider).createComment(
+                  await ref
+                      .read(boardRepositoryProvider)
+                      .createComment(
                         task.id,
                         bodyJson,
                         attachments: attachments,

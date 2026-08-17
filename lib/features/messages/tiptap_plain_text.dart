@@ -24,7 +24,14 @@ bool isTiptapEmpty(String? value) {
   }
 }
 
+/// Single-line form for sidebar rows, search hits and reply banners, where a
+/// multi-line body has to fit one line. Never use it for a message body — that
+/// is what flattened every paragraph into one run-on line.
+String tiptapToPreviewText(String? value) =>
+    tiptapToPlainText(value).replaceAll(RegExp(r'\s+'), ' ').trim();
+
 /// TipTap/ProseMirror JSON → plain text (mirrors web `tiptapToPlainText`).
+/// Paragraph breaks survive as newlines, exactly as on web.
 String tiptapToPlainText(String? value) {
   final trimmed = value?.trim() ?? '';
   if (trimmed.isEmpty) return '';
@@ -41,7 +48,6 @@ String tiptapToPlainText(String? value) {
         .map((line) => line.trimRight())
         .where((line) => line.isNotEmpty)
         .join('\n')
-        .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
     if (plain.isEmpty || _looksLikeTiptapJson(plain)) {
       return _recoverBroken(trimmed);

@@ -82,7 +82,7 @@ ChatListPreview chatListPreview(ChatConversation conv, String? currentUserId) {
   var text = '';
 
   if (hasBody) {
-    text = tiptapToPlainText(rawBody).trim();
+    text = tiptapToPreviewText(rawBody);
     if (text.isEmpty || _looksLikeJson(text)) {
       text = extractFromBrokenTiptapJson(rawBody).trim();
     }

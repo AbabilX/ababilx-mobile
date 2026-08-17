@@ -141,7 +141,7 @@ class _Participant {
 }
 
 String _threadTitle(KanbanTaskComment root) {
-  final plain = tiptapToPlainText(root.body).trim();
+  final plain = tiptapToPreviewText(root.body);
   if (plain.isNotEmpty) return plain;
   return root.userName ?? 'Thread';
 }
@@ -155,7 +155,7 @@ String _threadPreview(List<KanbanTaskComment> replies) {
         ? b
         : a;
   });
-  final plain = tiptapToPlainText(latest.body).trim();
+  final plain = tiptapToPreviewText(latest.body);
   if (plain.isNotEmpty) return plain;
   return '${latest.userName ?? 'Someone'} replied';
 }

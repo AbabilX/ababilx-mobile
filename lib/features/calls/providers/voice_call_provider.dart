@@ -501,7 +501,13 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       // A push may have raised CallKit a moment before Flutter came forward.
       // Take the ringing UI back so the user sees one screen, not a native
       // overlay on top of `/call` with the in-app tone muted underneath it.
+      // Dismissing it is not a hang-up, so the ENDED echo must be swallowed.
+      _suppressCallKitEnded.arm(call.id, source: 'incoming.callkit.hide');
       await AndroidCallUi.hideIncoming(call.id);
+      // Flutter now owns the ringing, so the in-app tone has to take over from
+      // the native ringer — started *after* the dismiss, because that teardown
+      // drops CallKit's audio focus and would cut a stream begun before it.
+      await IncomingCallRingtone.restart();
       return;
     }
 
@@ -512,6 +518,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       source: force ? 'force' : 'background',
       reason: 'lifecycle=${lifecycle?.name ?? 'unknown'}',
     );
+    // CallKit brings its own ringer, so the in-app tone hands back rather than
+    // playing underneath it — two players fight for focus and one drops out.
+    await IncomingCallRingtone.stop();
     await AndroidCallUi.showIncomingFromCall(call);
   }
 

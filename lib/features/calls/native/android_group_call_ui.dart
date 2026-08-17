@@ -81,7 +81,9 @@ class AndroidGroupCallUi {
       startedBy: data['started_by']?.toString() ?? '',
       starterName: data['starter_name']?.toString() ?? 'Someone',
       starterAvatarUrl: data['starter_avatar_url']?.toString(),
-      channelName: (channel == null || channel.isEmpty) ? 'Group call' : channel,
+      channelName: (channel == null || channel.isEmpty)
+          ? 'Group call'
+          : channel,
       startedAt: startedAt,
     );
   }
@@ -120,6 +122,14 @@ class AndroidGroupCallUi {
   }
 
   static Future<void> endOngoing(String callId) async {
+    await endCall(callId);
+  }
+
+  /// Stops either a ringing or ongoing native group-call surface and removes
+  /// it from CallKit's persisted active-call registry. `hideIncoming` only
+  /// hides the pixels/sound and intentionally keeps the record for a Flutter
+  /// hand-off; terminal/decline paths must use this method instead.
+  static Future<void> endCall(String callId) async {
     if (callId.isEmpty) return;
     try {
       await FlutterCallkitIncoming.endCall(callId);

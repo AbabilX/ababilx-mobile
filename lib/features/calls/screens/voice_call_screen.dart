@@ -7,6 +7,7 @@ import '../../../core/router/root_back.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../incoming_call_ringtone.dart';
 import '../providers/voice_call_provider.dart';
+import '../widgets/call_control_button.dart';
 import '../widgets/remote_screen_view.dart';
 
 class VoiceCallScreen extends ConsumerStatefulWidget {
@@ -206,7 +207,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _CallControl(
+                      CallControlButton(
                         label: 'Decline',
                         icon: Icons.call_end_rounded,
                         background: colors.error,
@@ -216,7 +217,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                           notifier.declineIncoming();
                         },
                       ),
-                      _CallControl(
+                      CallControlButton(
                         label: 'Accept',
                         icon: Icons.call_rounded,
                         background: colors.primary,
@@ -239,7 +240,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _CallControl(
+                      CallControlButton(
                         label: call.muted ? 'Unmute' : 'Mute',
                         icon: call.muted
                             ? Icons.mic_off_rounded
@@ -250,7 +251,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                             ? notifier.toggleMute
                             : null,
                       ),
-                      _CallControl(
+                      CallControlButton(
                         label: call.screenSharing ? 'Stop share' : 'Share',
                         icon: call.screenSharing
                             ? Icons.stop_screen_share_rounded
@@ -263,7 +264,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                             ? notifier.toggleScreenShare
                             : null,
                       ),
-                      _CallControl(
+                      CallControlButton(
                         label: 'Speaker',
                         icon: call.speaker
                             ? Icons.volume_up_rounded
@@ -274,7 +275,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                             ? notifier.toggleSpeaker
                             : null,
                       ),
-                      _CallControl(
+                      CallControlButton(
                         label: 'End',
                         icon: Icons.call_end_rounded,
                         background: colors.error,
@@ -339,50 +340,5 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
       return '$hours:$m:$seconds';
     }
     return '$minutes:$seconds';
-  }
-}
-
-class _CallControl extends StatelessWidget {
-  const _CallControl({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-    this.selected = false,
-    this.background,
-    this.foreground,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final bool selected;
-  final Color? background;
-  final Color? foreground;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final bg =
-        background ??
-        (selected ? colors.primary : colors.surfaceContainerHighest);
-    final fg = foreground ?? (selected ? colors.onPrimary : colors.onSurface);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton.filled(
-          onPressed: onPressed,
-          style: IconButton.styleFrom(
-            backgroundColor: bg,
-            foregroundColor: fg,
-            disabledBackgroundColor: bg.withValues(alpha: 0.45),
-            disabledForegroundColor: fg.withValues(alpha: 0.45),
-            minimumSize: const Size(64, 64),
-          ),
-          icon: Icon(icon, size: 28),
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: Theme.of(context).textTheme.labelMedium),
-      ],
-    );
   }
 }

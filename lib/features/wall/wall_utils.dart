@@ -12,6 +12,10 @@ String wallRelativeTime(String? iso) {
   return '${dt.day}/${dt.month}/${dt.year}';
 }
 
+/// Copy/share text — paragraph breaks kept, same as web's copy.
 String wallBodyPlain(String body) => tiptapToPlainText(body);
+
+/// One-line form for search hits and reply summaries.
+String wallBodyPreview(String body) => tiptapToPreviewText(body);
 
 String wallBodyForApi(String plain) => textToTiptapJson(plain.trim());

@@ -58,7 +58,7 @@ class WallSearchDelegate extends SearchDelegate<void> {
             for (final hit in data.posts)
               ListTile(
                 title: Text(
-                  wallBodyPlain(hit.post.body),
+                  wallBodyPreview(hit.post.body),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -72,7 +72,7 @@ class WallSearchDelegate extends SearchDelegate<void> {
               ListTile(
                 leading: const Icon(Icons.comment_outlined),
                 title: Text(
-                  wallBodyPlain(hit.comment.body),
+                  wallBodyPreview(hit.comment.body),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

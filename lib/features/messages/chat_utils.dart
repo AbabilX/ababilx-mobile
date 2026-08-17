@@ -58,7 +58,7 @@ String conversationPreview(ChatConversation conv) {
     }
     return name != null ? 'File: $name' : 'Attachment';
   }
-  final body = tiptapToPlainText(conv.lastMessageBody).trim();
+  final body = tiptapToPreviewText(conv.lastMessageBody).trim();
   if (body.isNotEmpty) return body;
   return 'No messages yet';
 }

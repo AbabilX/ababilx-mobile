@@ -38,8 +38,7 @@ class AndroidCallUi {
     },
     android: const AndroidParams(
       isCustomNotification: true,
-      isShowLogo: true,
-      logoUrl: 'assets/icon/icon.png',
+      isShowLogo: false,
       isShowCallID: false,
       // Bundled app ringtone (android/app/src/main/res/raw/clear_agenda.mp3),
       // the same tone the in-app dialog and the web client play.
@@ -98,15 +97,20 @@ class AndroidCallUi {
       },
       android: const AndroidParams(
         isCustomNotification: true,
-        isShowLogo: true,
-        logoUrl: 'assets/icon/icon.png',
+        // Keep the native caller surface as simple as the in-app receiver:
+        // caller identity plus the two call actions, without a second logo.
+        isShowLogo: false,
         isShowCallID: false,
         ringtonePath: 'clear_agenda',
         incomingCallNotificationChannelName: 'Voice calls',
         missedCallNotificationChannelName: 'Missed voice calls',
         isShowFullLockedScreen: true,
         isImportant: true,
-        isFullScreen: true,
+        // Keep this false: the plugin's direct-Activity branch shows the
+        // caller screen but skips its ringtone player. The high-priority call
+        // notification still launches the same full-screen UI (including over
+        // the lock screen) and starts the bundled ringtone first.
+        isFullScreen: false,
         textAccept: 'Accept',
         textDecline: 'Decline',
       ),
@@ -125,6 +129,17 @@ class AndroidCallUi {
 
   static Future<void> startOutgoing(VoiceCall call, String currentUserId) =>
       FlutterCallkitIncoming.startCall(paramsForOutgoing(call, currentUserId));
+
+  /// Terminal push / WebSocket fallback: close the full-screen Activity,
+  /// ringtone, notification actions and persisted native call together.
+  static Future<void> endCall(String callId) async {
+    if (callId.isEmpty) return;
+    try {
+      await FlutterCallkitIncoming.endCall(callId);
+    } catch (_) {
+      // The native call may already have been cleared by a local action.
+    }
+  }
 
   /// Clears the native incoming UI + its ringtone without ending the call and
   /// without emitting a CallKit event, so the Flutter `/call` screen can take

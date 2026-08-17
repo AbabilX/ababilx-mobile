@@ -58,7 +58,7 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
         return ListTile(
           title: Text(msg.userName ?? 'Unknown'),
           subtitle: Text(
-            tiptapToPlainText(msg.body),
+            tiptapToPreviewText(msg.body),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

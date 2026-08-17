@@ -22,8 +22,7 @@ CallKitParams _ongoingParams(GroupCall call) => CallKitParams(
   },
   android: const AndroidParams(
     isCustomNotification: true,
-    isShowLogo: true,
-    logoUrl: 'assets/icon/icon.png',
+    isShowLogo: false,
     isShowCallID: false,
     incomingCallNotificationChannelName: 'Group calls',
     missedCallNotificationChannelName: 'Missed group calls',
@@ -53,7 +52,10 @@ CallKitParams _params({
     avatar: starterAvatarUrl,
     handle: '$starterName started a group call',
     type: 0,
-    duration: remaining.clamp(1000, AndroidGroupCallUi.ringWindow.inMilliseconds),
+    duration: remaining.clamp(
+      1000,
+      AndroidGroupCallUi.ringWindow.inMilliseconds,
+    ),
     missedCallNotification: const NotificationParams(
       showNotification: true,
       subtitle: 'Missed group call',
@@ -71,8 +73,8 @@ CallKitParams _params({
     },
     android: const AndroidParams(
       isCustomNotification: true,
-      isShowLogo: true,
-      logoUrl: 'assets/icon/icon.png',
+      // Match the deliberately minimal 1:1 native caller surface.
+      isShowLogo: false,
       isShowCallID: false,
       // Same bundled tone as the DM ring and the web client.
       ringtonePath: 'clear_agenda',
@@ -80,7 +82,10 @@ CallKitParams _params({
       missedCallNotificationChannelName: 'Missed group calls',
       isShowFullLockedScreen: true,
       isImportant: true,
-      isFullScreen: true,
+      // The plugin's direct-Activity path does not start its sound player.
+      // The notification full-screen intent gives the same caller screen and
+      // keeps native ringing reliable when Flutter has been killed.
+      isFullScreen: false,
       textAccept: 'Join',
       textDecline: 'Ignore',
     ),

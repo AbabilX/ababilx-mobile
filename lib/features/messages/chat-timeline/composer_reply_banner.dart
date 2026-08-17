@@ -17,7 +17,7 @@ class ComposerReplyBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final name = message.userName ?? 'someone';
-    final plainText = tiptapToPlainText(message.body);
+    final plainText = tiptapToPreviewText(message.body);
 
     return Container(
       decoration: BoxDecoration(

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 
+import 'voice_call_log.dart';
+
 /// Shared in-app ringtone for both call systems (1:1 DM and channel group).
 ///
 /// Mirrors web `src/lib/calls/ringtone.ts`, but keyed by named holder instead
@@ -16,6 +18,7 @@ class CallRingtone {
   static final _player = AudioPlayer(playerId: 'ababilx_call_ringtone');
   static final Set<String> _holders = {};
   static bool _playing = false;
+  static bool _restart = false;
   static Future<void>? _chain;
 
   /// Ring on behalf of [holder] (`dm`, `group`, …). Idempotent.
@@ -32,6 +35,18 @@ class CallRingtone {
 
   static Future<void> releaseAll() {
     _holders.clear();
+    return _apply();
+  }
+
+  /// Play again from the top for whoever is still holding.
+  ///
+  /// Dismissing the native CallKit screen takes its ringer *and* its audio
+  /// focus down with it, which can stop a stream that started underneath it —
+  /// so the tone is restarted after that teardown rather than trusted to
+  /// survive it. No-op when nothing is ringing.
+  static Future<void> refresh() {
+    if (_holders.isEmpty) return Future<void>.value();
+    _restart = true;
     return _apply();
   }
 
@@ -57,38 +72,62 @@ class CallRingtone {
     // awaiting the platform channel).
     while (true) {
       final want = _holders.isNotEmpty;
-      if (want != _playing) {
-        try {
-          if (want) {
-            await _player.setReleaseMode(ReleaseMode.loop);
-            await _player.play(
-              AssetSource(_asset),
-              volume: 1,
-              // Ring over other audio and route to the loudspeaker, not the
-              // earpiece — an incoming call must be audible across the room.
-              ctx: AudioContext(
-                android: const AudioContextAndroid(
-                  isSpeakerphoneOn: true,
-                  contentType: AndroidContentType.music,
-                  usageType: AndroidUsageType.notificationRingtone,
-                  audioFocus: AndroidAudioFocus.gainTransient,
-                ),
-                iOS: AudioContextIOS(
-                  category: AVAudioSessionCategory.playback,
-                  options: const {AVAudioSessionOptions.duckOthers},
-                ),
-              ),
-            );
-          } else {
-            await _player.stop();
-          }
-          _playing = want;
-        } catch (_) {
-          // A missing audio route must never take the call dialog down with it.
-          _playing = want;
+      final restart = want && _restart;
+      _restart = false;
+      if (want != _playing || restart) {
+        if (want) {
+          if (restart) await _stop();
+          _playing = await _start();
+        } else {
+          await _stop();
+          _playing = false;
         }
       }
       if (_holders.isNotEmpty == want) return;
     }
   }
+
+  /// True only when the tone is actually running. A failed start must stay
+  /// false: recording it as playing made every later hold a no-op, so one
+  /// rejected attempt silenced ringing for the rest of the process.
+  static Future<bool> _start() async {
+    for (final context in [_ringContext, null]) {
+      try {
+        await _player.setReleaseMode(ReleaseMode.loop);
+        await _player.play(AssetSource(_asset), volume: 1, ctx: context);
+        return true;
+      } catch (error) {
+        voiceCallLog(
+          'ringtone.play.failed',
+          source: context == null ? 'default_context' : 'ring_context',
+          reason: '$error',
+        );
+      }
+    }
+    return false;
+  }
+
+  static Future<void> _stop() async {
+    try {
+      await _player.stop();
+    } catch (_) {
+      // A missing audio route must never take the call dialog down with it.
+    }
+  }
+
+  /// Ring over other audio and route to the loudspeaker, not the earpiece — an
+  /// incoming call must be audible across the room. Some OEMs reject these
+  /// attributes outright, which is why [_start] retries with the default.
+  static AudioContext get _ringContext => AudioContext(
+    android: const AudioContextAndroid(
+      isSpeakerphoneOn: true,
+      contentType: AndroidContentType.music,
+      usageType: AndroidUsageType.notificationRingtone,
+      audioFocus: AndroidAudioFocus.gainTransient,
+    ),
+    iOS: AudioContextIOS(
+      category: AVAudioSessionCategory.playback,
+      options: const {AVAudioSessionOptions.duckOthers},
+    ),
+  );
 }

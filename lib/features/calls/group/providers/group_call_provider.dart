@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
@@ -8,6 +9,7 @@ import 'package:livekit_client/livekit_client.dart';
 
 import '../../../../core/network/ws_client.dart';
 import '../../../profile/providers/profile_provider.dart';
+import '../../call_ringtone.dart';
 import '../../native/android_group_call_ui.dart';
 import '../data/group_call_api.dart';
 import '../data/group_call_repository.dart';
@@ -34,6 +36,7 @@ abstract class GroupCallBase extends Notifier<GroupCallState> {
   GroupScreenShare? _screenShare;
   GroupCallInvites? _invites;
   StreamSubscription<Map<String, dynamic>>? _wsSub;
+  StreamSubscription<RemoteMessage>? _foregroundPushSub;
   StreamSubscription<CallEvent?>? _nativeSub;
   bool _booted = false;
   bool _joinPending = false;
@@ -65,6 +68,7 @@ class GroupCallNotifier extends GroupCallBase
             : state.copyWith(invite: invite);
         unawaited(syncNativeInviteUi());
       },
+      onExpired: (callId) => unawaited(AndroidGroupCallUi.endCall(callId)),
     );
     _screenShare = GroupScreenShare(_repository);
     return const GroupCallState();
@@ -75,6 +79,9 @@ class GroupCallNotifier extends GroupCallBase
     _booted = true;
     initNativeCallUi();
     _wsSub = _ws.events.listen(handleWsEvent);
+    _foregroundPushSub = FirebaseMessaging.onMessage.listen(
+      handleForegroundGroupCallPush,
+    );
     // A CallKit "Join" from a killed app relaunches the process — pick that up
     // before the socket, which may take a moment to connect.
     await recoverNativeAccept();
@@ -155,7 +162,12 @@ class GroupCallNotifier extends GroupCallBase
   }
 
   /// Local-only: silences this device, the call keeps running for everyone else.
-  void declineInvite() => _invites?.dismiss();
+  void declineInvite() {
+    final declined = _invites?.dismiss();
+    if (declined != null) {
+      unawaited(AndroidGroupCallUi.endCall(declined.id));
+    }
+  }
 
   void clearError() => state = state.copyWith(clearError: true);
 
@@ -177,10 +189,12 @@ class GroupCallNotifier extends GroupCallBase
   Future<void> _teardown() async {
     await _wsSub?.cancel();
     _wsSub = null;
+    await _foregroundPushSub?.cancel();
+    _foregroundPushSub = null;
     _booted = false;
     await disposeNativeCallUi();
     final invite = state.invite;
-    if (invite != null) await AndroidGroupCallUi.hideIncoming(invite.id);
+    if (invite != null) await AndroidGroupCallUi.endCall(invite.id);
     _invites?.dispose();
     await clearRoom();
   }

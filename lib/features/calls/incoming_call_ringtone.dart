@@ -15,5 +15,12 @@ class IncomingCallRingtone {
 
   static Future<void> start() => CallRingtone.hold(_holder);
 
+  /// Hold and play from the top even if this holder was already ringing — for
+  /// the hand-off from the native CallKit ringer to the in-app one.
+  static Future<void> restart() async {
+    await CallRingtone.hold(_holder);
+    await CallRingtone.refresh();
+  }
+
   static Future<void> stop() => CallRingtone.release(_holder);
 }

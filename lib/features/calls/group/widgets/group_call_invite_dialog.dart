@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/widgets/app_avatar.dart';
+import '../../widgets/call_control_button.dart';
 import '../data/models/group_call.dart';
 import '../providers/group_call_provider.dart';
 
-/// Ringing card for a channel group call, mirroring the incoming 1:1 call
-/// screen: one Join button and one Deny button, nothing else to get wrong.
+/// Full-screen ringing surface for a channel group call.
 ///
-/// Deny is local only — the call keeps running for everyone else and the
+/// Deliberately the same layout as the incoming 1:1 call screen — gradient,
+/// large avatar, name, status line, then Decline and Join at the bottom — so a
+/// ringing channel call is not a small card while a DM takes over the display.
+///
+/// Deny is local only: the call keeps running for everyone else and the
 /// channel header still offers "Join".
 class GroupCallInviteDialog extends ConsumerWidget {
   const GroupCallInviteDialog({super.key, required this.call});
@@ -22,92 +26,77 @@ class GroupCallInviteDialog extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
 
     return Material(
-      color: Colors.black.withValues(alpha: 0.72),
-      child: SafeArea(
-        child: Center(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [colors.primaryContainer, colors.surface, colors.surface],
+          ),
+        ),
+        child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 380),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(28),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            child: Column(
+              children: [
+                const Spacer(),
+                AppAvatar(
+                  size: 120,
+                  url: call.starterAvatarUrl,
+                  name: call.title,
+                  border: Border.all(color: colors.outlineVariant, width: 2),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 32,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AppAvatar(
-                        size: 96,
-                        url: call.starterAvatarUrl,
-                        name: call.title,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        call.title,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: text.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${call.starterName} started a group call',
-                        textAlign: TextAlign.center,
-                        style: text.bodyMedium?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                      if (call.participantCount > 0) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.group_rounded,
-                              size: 14,
-                              color: colors.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${call.participantCount} already in call',
-                              style: text.bodySmall?.copyWith(
-                                color: colors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      const SizedBox(height: 32),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _AnswerButton(
-                            icon: Icons.headset_mic_rounded,
-                            label: 'Join',
-                            background: const Color(0xFF22C55E),
-                            onTap: notifier.acceptInvite,
-                          ),
-                          const SizedBox(width: 36),
-                          _AnswerButton(
-                            icon: Icons.call_end_rounded,
-                            label: 'Deny',
-                            background: colors.error,
-                            onTap: notifier.declineInvite,
-                          ),
-                        ],
-                      ),
-                    ],
+                const SizedBox(height: 24),
+                Text(
+                  call.title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  'AbabilX channel call',
+                  style: text.labelLarge?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '${call.starterName} started a group call',
+                  textAlign: TextAlign.center,
+                  style: text.titleMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (call.participantCount > 0) ...[
+                  const SizedBox(height: 10),
+                  _ParticipantCount(count: call.participantCount),
+                ],
+                const Spacer(flex: 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    CallControlButton(
+                      label: 'Deny',
+                      icon: Icons.call_end_rounded,
+                      background: colors.error,
+                      foreground: colors.onError,
+                      onPressed: notifier.declineInvite,
+                    ),
+                    CallControlButton(
+                      label: 'Join',
+                      icon: Icons.headset_mic_rounded,
+                      background: colors.primary,
+                      foreground: colors.onPrimary,
+                      onPressed: notifier.acceptInvite,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -116,38 +105,26 @@ class GroupCallInviteDialog extends ConsumerWidget {
   }
 }
 
-class _AnswerButton extends StatelessWidget {
-  const _AnswerButton({
-    required this.icon,
-    required this.label,
-    required this.background,
-    required this.onTap,
-  });
+class _ParticipantCount extends StatelessWidget {
+  const _ParticipantCount({required this.count});
 
-  final IconData icon;
-  final String label;
-  final Color background;
-  final VoidCallback onTap;
+  final int count;
 
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Material(
-        color: background,
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: SizedBox(
-            width: 68,
-            height: 68,
-            child: Icon(icon, color: Colors.white, size: 28),
-          ),
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.group_rounded, size: 16, color: colors.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Text(
+          '$count already in call',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
         ),
-      ),
-      const SizedBox(height: 8),
-      Text(label, style: Theme.of(context).textTheme.labelLarge),
-    ],
-  );
+      ],
+    );
+  }
 }

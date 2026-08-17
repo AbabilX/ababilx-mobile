@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../../shared/widgets/link_preview.dart';
 import '../../messages/chat_icon.dart';
+import '../../messages/tiptap_viewer.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
 import '../providers/wall_ui_provider.dart';
@@ -74,8 +75,8 @@ class WallCommentTile extends ConsumerWidget {
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   if (plain.trim().isNotEmpty)
-                    LinkifiedText(
-                      text: plain,
+                    TiptapViewer(
+                      content: comment.body,
                       style: TextStyle(color: scheme.onSurface),
                     ),
                   if (plain.trim().isNotEmpty) MessageLinkPreviews(text: plain),

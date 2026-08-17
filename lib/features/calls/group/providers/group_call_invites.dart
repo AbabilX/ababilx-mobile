@@ -22,11 +22,12 @@ Duration groupCallRingTimeLeft(GroupCall call) {
 /// group calls, so a decline silences this device and nothing else. The call
 /// keeps running and the channel header still offers "Join".
 class GroupCallInvites {
-  GroupCallInvites({required this.onChanged});
+  GroupCallInvites({required this.onChanged, required this.onExpired});
 
   static const _ringtoneHolder = 'group';
 
   final void Function(GroupCall? invite) onChanged;
+  final void Function(String callId) onExpired;
   final Set<String> _answered = {};
   Timer? _timer;
   GroupCall? _invite;
@@ -50,9 +51,20 @@ class GroupCallInvites {
     if (_invite?.id == call.id) return;
     final left = groupCallRingTimeLeft(call);
     if (left <= Duration.zero) return;
+    final previous = _invite;
+    if (previous != null) {
+      _answered.add(previous.id);
+      _set(null);
+      onExpired(previous.id);
+    }
     _set(call);
     _timer?.cancel();
-    _timer = Timer(left, dismiss);
+    _timer = Timer(left, () {
+      final expired = _invite;
+      if (expired == null || expired.id != call.id) return;
+      dismiss();
+      onExpired(expired.id);
+    });
   }
 
   /// Remember [callId] as answered without there being a ringing invite —
@@ -65,16 +77,20 @@ class GroupCallInvites {
 
   /// Stop ringing for [callId] because it ended or was superseded.
   void withdraw(String callId) {
+    // Remember terminal IDs even when no invite is currently visible; an
+    // out-of-order/replayed start event must not resurrect an ended call.
+    _answered.add(callId);
     if (_invite?.id != callId) return;
     _set(null);
   }
 
   /// Answering — join, deny, or joining another call from the channel header —
   /// stops this call ringing here again for the rest of the session.
-  void dismiss() {
+  GroupCall? dismiss() {
     final current = _invite;
     if (current != null) _answered.add(current.id);
     _set(null);
+    return current;
   }
 
   void dispose() {
