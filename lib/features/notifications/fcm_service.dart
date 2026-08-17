@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../calls/native/android_call_ui.dart';
+import '../calls/native/android_group_call_ui.dart';
 import 'data/device_repository.dart';
 import 'fcm_log.dart';
 import 'local_notifications.dart';
@@ -282,8 +284,21 @@ class FcmService {
     final path = NotificationRouter.pathForData(data);
     final channel = _channelFor(data['type']?.toString());
 
-    if (data['type'] == 'voice_call') {
-      await AndroidCallUi.showIncomingFromPush(data);
+    final type = data['type'];
+    if (type == 'voice_call' || type == 'group_call') {
+      // While the app is on screen the socket drives the call providers and
+      // they raise the Flutter ringing UI. Showing CallKit as well puts a
+      // native full-screen activity over that screen and steals audio focus,
+      // so the in-app ringtone goes silent behind an unexpected overlay.
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        fcmLog('push.$type.skip', 'app resumed — in-app call UI owns this');
+        return;
+      }
+      if (type == 'voice_call') {
+        await AndroidCallUi.showIncomingFromPush(data);
+      } else {
+        await AndroidGroupCallUi.showIncomingFromPush(data);
+      }
       return;
     }
 

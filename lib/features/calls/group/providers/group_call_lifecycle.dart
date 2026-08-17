@@ -24,7 +24,11 @@ mixin GroupCallLifecycle on GroupCallBase {
 
   Future<void> clearRoom({String? error}) async {
     final room = _room;
+    final callId = state.call?.id;
     _room = null;
+    // Drop the ongoing notification with the room, so the foreground service
+    // does not outlive the call it is keeping alive.
+    if (callId != null) await AndroidGroupCallUi.endOngoing(callId);
     await _binding?.detach();
     _binding = null;
     await _screenShare?.reset();

@@ -126,6 +126,21 @@ class AndroidCallUi {
   static Future<void> startOutgoing(VoiceCall call, String currentUserId) =>
       FlutterCallkitIncoming.startCall(paramsForOutgoing(call, currentUserId));
 
+  /// Clears the native incoming UI + its ringtone without ending the call and
+  /// without emitting a CallKit event, so the Flutter `/call` screen can take
+  /// over as the single visible ringing UI. Used when the app is in the
+  /// foreground — two ringing UIs fight over audio focus and one goes silent.
+  static Future<void> hideIncoming(String callId) async {
+    if (callId.isEmpty) return;
+    try {
+      await FlutterCallkitIncoming.hideCallkitIncoming(
+        CallKitParams(id: callId),
+      );
+    } catch (_) {
+      // Nothing native was showing — the Flutter screen is already alone.
+    }
+  }
+
   static Future<void> _showOnce(CallKitParams params) async {
     final active = await FlutterCallkitIncoming.activeCalls();
     if (active.any((call) => call.id == params.id)) return;

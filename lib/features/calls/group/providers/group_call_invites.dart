@@ -30,8 +30,17 @@ class GroupCallInvites {
   final Set<String> _answered = {};
   Timer? _timer;
   GroupCall? _invite;
+  bool _localRing = true;
 
   GroupCall? get invite => _invite;
+
+  /// Silences the in-app tone while the native CallKit screen is ringing
+  /// instead — two players would fight for audio focus and one would drop out.
+  void setLocalRing(bool enabled) {
+    if (_localRing == enabled) return;
+    _localRing = enabled;
+    _applyRingtone();
+  }
 
   /// Ring for [call] unless this device started it, already answered it, or the
   /// call is older than the ring window.
@@ -81,11 +90,15 @@ class GroupCallInvites {
       _timer = null;
     }
     _invite = call;
-    unawaited(
-      call == null
-          ? CallRingtone.release(_ringtoneHolder)
-          : CallRingtone.hold(_ringtoneHolder),
-    );
+    _applyRingtone();
     onChanged(call);
+  }
+
+  void _applyRingtone() {
+    unawaited(
+      _invite != null && _localRing
+          ? CallRingtone.hold(_ringtoneHolder)
+          : CallRingtone.release(_ringtoneHolder),
+    );
   }
 }

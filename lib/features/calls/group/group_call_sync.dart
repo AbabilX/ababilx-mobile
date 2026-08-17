@@ -23,12 +23,38 @@ class GroupCallSync extends ConsumerStatefulWidget {
   ConsumerState<GroupCallSync> createState() => _GroupCallSyncState();
 }
 
-class _GroupCallSyncState extends ConsumerState<GroupCallSync> {
+class _GroupCallSyncState extends ConsumerState<GroupCallSync>
+    with WidgetsBindingObserver {
   static const _route = '/group-call';
   bool _booted = false;
 
   String get _currentPath =>
       widget.router.routerDelegate.currentConfiguration.uri.path;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// A ringing invite has to move between the in-app dialog and the native
+  /// CallKit screen as the app gains and loses focus — Android will not let a
+  /// backgrounded process raise the Flutter one, and two ringing UIs at once
+  /// fight over audio focus.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted) return;
+    unawaited(ref.read(groupCallProvider.notifier).syncNativeInviteUi());
+    if (state == AppLifecycleState.resumed) {
+      unawaited(ref.read(groupCallProvider.notifier).recoverNativeAccept());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

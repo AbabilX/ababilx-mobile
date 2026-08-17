@@ -68,7 +68,11 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
       // state, then open /call (or continue after Accept).
       final notifier = ref.read(voiceCallProvider.notifier);
       unawaited(
-        notifier.syncFromNativeIncoming().then((_) {
+        notifier.syncFromNativeIncoming().then((_) async {
+          if (!mounted) return;
+          // Flutter owns the ringing UI again — this clears any CallKit screen
+          // a push raised while we were backgrounded.
+          await notifier.ensureNativeIncomingUi();
           if (!mounted) return;
           _openCallScreenIfNeeded(ref.read(voiceCallProvider));
         }),

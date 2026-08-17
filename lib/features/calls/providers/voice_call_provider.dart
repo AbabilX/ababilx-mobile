@@ -16,6 +16,7 @@ import '../data/models/voice_call_session.dart';
 import '../data/voice_call_repository.dart';
 import '../incoming_call_ringtone.dart';
 import '../native/android_call_ui.dart';
+import '../native/android_group_call_ui.dart';
 import '../voice_call_log.dart';
 import '../webrtc/voice_peer_engine.dart';
 import 'voice_call_state.dart';
@@ -497,6 +498,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         phase: _phaseName,
         reason: 'flutter_focused',
       );
+      // A push may have raised CallKit a moment before Flutter came forward.
+      // Take the ringing UI back so the user sees one screen, not a native
+      // overlay on top of `/call` with the in-app tone muted underneath it.
+      await AndroidCallUi.hideIncoming(call.id);
       return;
     }
 
@@ -754,6 +759,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
   void _handleNativeEvent(CallEvent? event) {
     if (event == null) return;
+    // Both call systems share one CallKit event stream. Group calls carry
+    // `extra.type = group_call` and belong to GroupCallNotifier — accepting one
+    // here would POST a DM action for a call id the DM API has never seen.
+    if (_isGroupCallEvent(event)) return;
     switch (event) {
       case CallEventActionCallAccept(:final callKitParams):
         voiceCallLog(
@@ -802,11 +811,28 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
   }
 
+  bool _isGroupCallEvent(CallEvent event) => switch (event) {
+    CallEventActionCallAccept(:final callKitParams) ||
+    CallEventActionCallDecline(:final callKitParams) ||
+    CallEventActionCallEnded(:final callKitParams) ||
+    CallEventActionCallIncoming(:final callKitParams) ||
+    CallEventActionCallStart(:final callKitParams) =>
+      AndroidGroupCallUi.isGroupCall(callKitParams),
+    // Timeout/mute carry only an id, so fall back to "not ours" by id.
+    CallEventActionCallTimeout(:final id) => state.call?.id != id,
+    _ => false,
+  };
+
   Future<void> _recoverNativeCall() async {
     try {
       final active = await FlutterCallkitIncoming.activeCalls();
       if (active.isEmpty || state.active) return;
-      final native = active.first;
+      // A live group call also shows up here and is not ours to recover.
+      final dmCalls = active
+          .where((params) => !AndroidGroupCallUi.isGroupCall(params))
+          .toList(growable: false);
+      if (dmCalls.isEmpty) return;
+      final native = dmCalls.first;
       final session = await _repository.get(native.id);
       if (session.call.isTerminal) {
         await _endNative(native.id, source: 'recover.terminal');

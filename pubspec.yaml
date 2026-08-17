@@ -31,6 +31,10 @@ dependencies:
   flutter_secure_storage: ^10.3.1
   cryptography: ^2.7.0
   cryptography_flutter: ^2.3.2
+  # ECDH P-256 for message E2EE. cryptography_flutter's platform ECDH is not
+  # usable: its Android bridge parses d/x/y with signed BigInteger, so most
+  # identities derive a shared secret the web client never produces.
+  pointycastle: ^4.0.0
 
   # Local notifications (foreground FCM display + tap routing)
   flutter_local_notifications: ^21.0.0

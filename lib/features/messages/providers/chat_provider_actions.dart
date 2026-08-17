@@ -79,7 +79,14 @@ mixin _ChatActionsMixin
 
     // ── Step 1: Build a pending message and show it instantly in the UI ──────
     final clientRef = 'pending_${DateTime.now().microsecondsSinceEpoch}';
-    final currentUser = state.currentUserId;
+    // E2EE binds the sender UUID into the AAD, so an empty id here would seal a
+    // message nobody — including this device — can ever open again.
+    final String currentUser;
+    try {
+      currentUser = await (this as ChatNotifier).ensureCurrentUserId();
+    } catch (_) {
+      return null;
+    }
     // Look up the user's display name and avatar from any conversation they appear in.
     final conv = state.conversationById(convId);
     final pendingMsg = ChatMessage(

@@ -8,14 +8,17 @@ import 'app.dart';
 import 'firebase_options.dart';
 import 'features/calls/native/android_call_background.dart';
 import 'features/calls/native/android_call_ui.dart';
+import 'features/calls/native/android_group_call_ui.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  if (message.data['type'] == 'voice_call') {
-    await AndroidCallUi.showIncomingFromPush(
-      Map<String, dynamic>.from(message.data),
-    );
+  final data = Map<String, dynamic>.from(message.data);
+  switch (data['type']) {
+    case 'voice_call':
+      await AndroidCallUi.showIncomingFromPush(data);
+    case 'group_call':
+      await AndroidGroupCallUi.showIncomingFromPush(data);
   }
 }
 

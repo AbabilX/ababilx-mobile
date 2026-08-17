@@ -1,10 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
+import 'package:flutter_callkit_incoming/entities/call_event.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
 
 import '../../../../core/network/ws_client.dart';
 import '../../../profile/providers/profile_provider.dart';
+import '../../native/android_group_call_ui.dart';
 import '../data/group_call_api.dart';
 import '../data/group_call_repository.dart';
 import '../data/models/group_call.dart';
@@ -17,6 +21,7 @@ import 'group_screen_share.dart';
 
 export 'group_call_state.dart';
 
+part 'group_call_callkit.dart';
 part 'group_call_lifecycle.dart';
 part 'group_call_media.dart';
 part 'group_call_ws.dart';
@@ -29,6 +34,7 @@ abstract class GroupCallBase extends Notifier<GroupCallState> {
   GroupScreenShare? _screenShare;
   GroupCallInvites? _invites;
   StreamSubscription<Map<String, dynamic>>? _wsSub;
+  StreamSubscription<CallEvent?>? _nativeSub;
   bool _booted = false;
   bool _joinPending = false;
   final Set<String> _leftCallIds = {};
@@ -43,7 +49,7 @@ abstract class GroupCallBase extends Notifier<GroupCallState> {
 /// Deliberately separate from `voiceCallProvider` (1:1 DM peer-to-peer WebRTC):
 /// the two systems share only the ringtone, exactly as on web.
 class GroupCallNotifier extends GroupCallBase
-    with GroupCallLifecycle, GroupCallMedia, GroupCallWs {
+    with GroupCallLifecycle, GroupCallMedia, GroupCallWs, GroupCallCallkit {
   @override
   GroupCallState build() {
     ref.onDispose(() => unawaited(_teardown()));
@@ -53,9 +59,12 @@ class GroupCallNotifier extends GroupCallBase
       if (id != null && id.isNotEmpty) _currentUserId = id;
     });
     _invites = GroupCallInvites(
-      onChanged: (invite) => state = invite == null
-          ? state.copyWith(clearInvite: true)
-          : state.copyWith(invite: invite),
+      onChanged: (invite) {
+        state = invite == null
+            ? state.copyWith(clearInvite: true)
+            : state.copyWith(invite: invite);
+        unawaited(syncNativeInviteUi());
+      },
     );
     _screenShare = GroupScreenShare(_repository);
     return const GroupCallState();
@@ -64,7 +73,11 @@ class GroupCallNotifier extends GroupCallBase
   Future<void> bootstrap() async {
     if (_booted) return;
     _booted = true;
+    initNativeCallUi();
     _wsSub = _ws.events.listen(handleWsEvent);
+    // A CallKit "Join" from a killed app relaunches the process — pick that up
+    // before the socket, which may take a moment to connect.
+    await recoverNativeAccept();
     await _ws.connect();
   }
 
@@ -80,6 +93,7 @@ class GroupCallNotifier extends GroupCallBase
     }
   }
 
+  @override
   Future<void> join(String conversationId) async {
     if (_joinPending || _room != null) return;
     _joinPending = true;
@@ -99,6 +113,10 @@ class GroupCallNotifier extends GroupCallBase
       call = session.call;
       _leftCallIds.remove(call.id);
       _invites?.markAnswered(call.id);
+      await AndroidGroupCallUi.hideIncoming(call.id);
+      // Ongoing-call notification + `phoneCall|microphone` foreground service,
+      // so Android keeps the SFU connection alive once the app leaves screen.
+      await AndroidGroupCallUi.startOngoing(call);
       final room = Room(
         roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
       );
@@ -124,6 +142,7 @@ class GroupCallNotifier extends GroupCallBase
     }
   }
 
+  @override
   Future<void> leave() async {
     final call = state.call;
     await clearRoom();
@@ -159,6 +178,9 @@ class GroupCallNotifier extends GroupCallBase
     await _wsSub?.cancel();
     _wsSub = null;
     _booted = false;
+    await disposeNativeCallUi();
+    final invite = state.invite;
+    if (invite != null) await AndroidGroupCallUi.hideIncoming(invite.id);
     _invites?.dispose();
     await clearRoom();
   }
