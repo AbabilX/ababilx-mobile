@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/network/friendly_error.dart';
 import '../../../core/router/root_back.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../crm-leads/lead_form_sheet.dart';
@@ -123,7 +124,7 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
           content: Text(
             message.contains('open_followup')
                 ? 'This lead already has an open follow-up'
-                : message,
+                : friendlyErrorMessage(error),
           ),
         ),
       );

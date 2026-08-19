@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../messages/chat-empty-state/index.dart';
+import '../../../core/network/friendly_error.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../crm-contact-detail/index.dart';
 
@@ -20,18 +21,14 @@ class CrmContactDetailScreen extends ConsumerWidget {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
       ),
-      error: (_, _) => Scaffold(
+      error: (error, _) => Scaffold(
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: () => context.pop(),
           ),
         ),
-        body: const ChatEmptyState(
-          title: 'Could not load team',
-          subtitle: 'Pull to refresh or try again later.',
-          icon: Icons.error_outline,
-        ),
+        body: LoadErrorState(error),
       ),
       data: (detail) {
         if (detail == null || !detail.canViewCrm) {

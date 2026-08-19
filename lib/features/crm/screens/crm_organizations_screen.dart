@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/network/friendly_error.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../messages/providers/team_gate_provider.dart';
@@ -142,7 +143,7 @@ class _CrmOrganizationsScreenState
       ),
       body: organizations.when(
         loading: () => const CrmLoading(),
-        error: (error, _) => CrmErrorBox(message: error.toString()),
+        error: (error, _) => CrmErrorBox(message: friendlyErrorMessage(error)),
         data: (items) => items.isEmpty
             ? const CrmEmpty(message: 'No organizations yet.')
             : RefreshIndicator(

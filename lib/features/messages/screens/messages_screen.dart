@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,12 +27,14 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   }
 
   Future<void> _restoreVault() async {
+    // Start local cache hydration immediately
+    unawaited(ref.read(chatProvider.notifier).ensureReady());
     final unlocked = await ref
         .read(messageVaultProvider)
         .restoreTrustedIdentity();
     if (!mounted) return;
     if (unlocked) {
-      await ref.read(chatProvider.notifier).fetchSidebar(silent: true);
+      unawaited(ref.read(chatProvider.notifier).fetchSidebar(silent: true));
     }
     if (mounted) {
       setState(() {
@@ -44,6 +47,25 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   @override
   Widget build(BuildContext context) {
     final teamAsync = ref.watch(teamGateProvider);
+    final chatState = ref.watch(chatProvider);
+    final hasCachedChats =
+        chatState.dms.isNotEmpty || chatState.channels.isNotEmpty;
+
+    // Instant offline render: if chats exist in local cache, show them immediately
+    if (hasCachedChats) {
+      return Stack(
+        children: [
+          const ChatList(),
+          if (!_vaultUnlocked && !_checkingVault)
+            Positioned.fill(
+              child: Material(
+                color: Theme.of(context).colorScheme.surface,
+                child: MessageVaultGate(onUnlocked: _onVaultUnlocked),
+              ),
+            ),
+        ],
+      );
+    }
 
     return teamAsync.when(
       loading: () => const Scaffold(
@@ -51,9 +73,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
       ),
       error: (_, _) => const Scaffold(
         body: ChatEmptyState(
-          title: 'Could not load team',
-          subtitle: 'Pull to refresh or try again later.',
-          icon: Icons.error_outline,
+          title: 'Waiting for connection',
+          subtitle: 'Swipe down to refresh or check your internet.',
+          icon: Icons.wifi_off_rounded,
         ),
       ),
       data: (detail) {
@@ -79,19 +101,22 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
               Positioned.fill(
                 child: Material(
                   color: Theme.of(context).colorScheme.surface,
-                  child: MessageVaultGate(
-                    onUnlocked: () {
-                      setState(() => _vaultUnlocked = true);
-                      ref
-                          .read(chatProvider.notifier)
-                          .fetchSidebar(silent: true);
-                    },
-                  ),
+                  child: MessageVaultGate(onUnlocked: _onVaultUnlocked),
                 ),
               ),
           ],
         );
       },
     );
+  }
+
+  /// Unlocking the vault only decrypts what's on screen; a DM outbox bubble
+  /// hydrated from a previous session (still showing the locked placeholder)
+  /// needs its own decrypt pass so it stops looking stuck and becomes
+  /// retryable again.
+  void _onVaultUnlocked() {
+    setState(() => _vaultUnlocked = true);
+    ref.read(chatProvider.notifier).fetchSidebar(silent: true);
+    ref.read(chatProvider.notifier).redecryptFailedMessages();
   }
 }

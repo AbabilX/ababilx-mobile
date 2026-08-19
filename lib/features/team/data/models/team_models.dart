@@ -25,6 +25,14 @@ class Team extends Equatable {
         createdAt: json['created_at'] as String? ?? '',
       );
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'owner_user_id': ownerUserId,
+        'name': name,
+        'avatar_url': avatarUrl,
+        'created_at': createdAt,
+      };
+
   @override
   List<Object?> get props => [id, name];
 }
@@ -68,6 +76,19 @@ class TeamMember extends Equatable {
         avatarUrl: json['avatar_url'] as String?,
         email: json['email'] as String?,
       );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'team_id': teamId,
+        'user_id': userId,
+        'role': role,
+        'status': status,
+        'joined_at': joinedAt,
+        'name': name,
+        'username': username,
+        'avatar_url': avatarUrl,
+        'email': email,
+      };
 
   @override
   List<Object?> get props => [userId, name, role];
@@ -134,6 +155,17 @@ class TeamDetail extends Equatable {
       modulePermissions: perms,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'team': team?.toJson(),
+        'members': members.map((m) => m.toJson()).toList(),
+        'my_role': myRole,
+        'team_is_premium': teamIsPremium,
+        'crm_access': crmAccess,
+        'module_permissions': modulePermissions.map(
+          (k, v) => MapEntry(k, v.toJson()),
+        ),
+      };
 
   @override
   List<Object?> get props =>

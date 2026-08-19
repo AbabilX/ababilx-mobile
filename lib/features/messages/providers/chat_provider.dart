@@ -4,10 +4,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/ws_client.dart';
+import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat_utils.dart';
 import '../data/chat_repository.dart';
 import '../data/local/chat_feed_cache.dart';
+import '../data/local/chat_outbox_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
 import '../message_e2ee/message_vault.dart';
@@ -50,6 +52,9 @@ class ChatNotifier extends Notifier<ChatState>
 
   @override
   ChatFeedCache get feedCache => ref.read(chatFeedCacheProvider);
+
+  @override
+  ChatOutboxCache get outboxCache => ref.read(chatOutboxCacheProvider);
 
   @override
   bool get realtimeStarted => _realtimeStarted;
@@ -95,12 +100,21 @@ class ChatNotifier extends Notifier<ChatState>
   }
 
   Future<void> bootstrap() async {
-    await ensureCurrentUserId();
-    await ref.read(messageVaultProvider).restoreTrustedIdentity();
+    try {
+      await ensureCurrentUserId();
+    } catch (_) {}
+    try {
+      await ref.read(messageVaultProvider).restoreTrustedIdentity();
+    } catch (_) {}
 
     // WhatsApp-style: paint cached sidebar first, then refresh network.
     final hadCache = await hydrateSidebarFromCache();
-    await fetchSidebar(silent: hadCache);
+    try {
+      await hydrateOutboxMessages();
+    } catch (_) {}
+    try {
+      await fetchSidebar(silent: hadCache);
+    } catch (_) {}
     initRealtime();
     _bootstrapped = true;
   }
@@ -124,11 +138,23 @@ class ChatNotifier extends Notifier<ChatState>
 
     var profile = ref.read(profileProvider).valueOrNull;
     if (profile == null || profile.id.trim().isEmpty) {
-      await ref.read(profileProvider.notifier).refresh();
-      profile = ref.read(profileProvider).valueOrNull;
+      final cached = await ref.read(profileRepositoryProvider).getCachedMe();
+      if (cached != null && cached.id.trim().isNotEmpty) {
+        profile = cached;
+      } else {
+        try {
+          await ref.read(profileProvider.notifier).refresh();
+          profile = ref.read(profileProvider).valueOrNull;
+        } catch (_) {}
+      }
     }
     final userId = profile?.id.trim() ?? '';
     if (userId.isEmpty) {
+      final cached = await ref.read(profileRepositoryProvider).getCachedMe();
+      if (cached != null && cached.id.trim().isNotEmpty) {
+        state = state.copyWith(currentUserId: cached.id.trim());
+        return cached.id.trim();
+      }
       throw StateError('Authenticated user is not ready');
     }
     state = state.copyWith(currentUserId: userId);
@@ -162,10 +188,7 @@ class ChatNotifier extends Notifier<ChatState>
       );
       await persistSidebar(ChatSidebar(channels: channels, dms: dms));
     } catch (_) {
-      // Keep cached rows on network failure — only clear if nothing to show.
-      if (state.dms.isEmpty && state.channels.isEmpty) {
-        resetTeamChatState();
-      }
+      // Keep cached rows on network failure — never clear local state
       state = state.copyWith(sidebarLoading: false);
     }
   }

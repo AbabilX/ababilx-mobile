@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../messages/data/local/chat_feed_cache.dart';
+import '../../messages/data/local/chat_outbox_cache.dart';
 import '../../messages/data/local/chat_sidebar_cache.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../../notifications/providers/fcm_provider.dart';
+import '../../profile/data/profile_repository.dart';
+import '../../team/data/team_repository.dart';
 import '../data/auth_repository.dart';
 
 /// Auth state — null = logged out / unknown, String = user id or JWT marker.
@@ -35,6 +38,16 @@ class AuthNotifier extends AsyncNotifier<bool> {
     try {
       await ref.read(chatSidebarCacheProvider).clearAll();
       await ref.read(chatFeedCacheProvider).clearAll();
+      // An unsent outbox message is scoped to this account's identity (and,
+      // for channels, plain text) — it must not survive into a different
+      // account signed in on this device, same as the caches above.
+      await ref.read(chatOutboxCacheProvider).clearAll();
+    } catch (_) {}
+    // Same reason: the offline profile/team cache must not leak into the next
+    // account signed in on this device.
+    try {
+      await ref.read(profileRepositoryProvider).clearCache();
+      await ref.read(teamRepositoryProvider).clearCache();
     } catch (_) {}
     ref.read(messageVaultProvider).lock();
     ref.read(chatProvider.notifier).resetTeamChatState(clearCurrentUser: true);

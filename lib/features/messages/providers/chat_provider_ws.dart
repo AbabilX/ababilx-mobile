@@ -166,6 +166,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
           unawaited(loadFeed(active, threadRootId: thread, force: true));
         }
       }
+      unawaited((this as _ChatActionsMixin).retryPendingMessages());
     });
     wsDisconnectSub = ws.disconnects.listen((_) {
       state = state.copyWith(wsConnected: false);

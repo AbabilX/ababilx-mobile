@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../messages/chat-empty-state/index.dart';
+import '../../../core/network/friendly_error.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../providers/wall_provider.dart';
 import '../wall-feed/index.dart';
@@ -24,13 +25,7 @@ class _WallScreenState extends ConsumerState<WallScreen> {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
       ),
-      error: (_, _) => const Scaffold(
-        body: ChatEmptyState(
-          title: 'Could not load team',
-          subtitle: 'Pull to refresh or try again later.',
-          icon: Icons.error_outline,
-        ),
-      ),
+      error: (error, _) => Scaffold(body: LoadErrorState(error)),
       data: (detail) {
         if (detail == null || !detail.hasTeam) {
           return const Scaffold(

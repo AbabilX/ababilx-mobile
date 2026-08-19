@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/network/friendly_error.dart';
 import '../../team/data/models/team_models.dart';
 import '../crm-contacts/contact_avatar.dart';
 import '../data/crm_repository.dart';
@@ -198,7 +199,7 @@ class _OrganizationFormState extends ConsumerState<_OrganizationForm> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
       }
     } finally {
       if (mounted) setState(() => _uploadingLogo = false);

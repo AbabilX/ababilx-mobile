@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/network/friendly_error.dart';
 import '../../../shared/media/picked_media_file.dart';
 import '../../../shared/widgets/voice_capture_action.dart';
 import '../../messages/chat-timeline/voice_message_recorder.dart';
@@ -30,7 +31,7 @@ class CrmMediaActions extends StatelessWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
     }
   }
 

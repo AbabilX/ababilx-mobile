@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/network/friendly_error.dart';
 import '../../../shared/media/picked_media_file.dart';
 import '../../../shared/widgets/action_composer.dart';
 import '../../../shared/widgets/voice_capture_action.dart';
@@ -256,7 +257,7 @@ class _WallCommentComposerState extends ConsumerState<WallCommentComposer> {
   void _showError(Object error) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(error.toString())));
+    ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
   }
 
   Widget _voiceAction() {

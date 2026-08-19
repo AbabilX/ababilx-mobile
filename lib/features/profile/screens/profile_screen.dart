@@ -6,6 +6,7 @@ import '../../notifications/widgets/battery_optimization_tile.dart';
 import '../../notifications/widgets/notification_permission_tile.dart';
 import '../providers/profile_provider.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../core/network/friendly_error.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../auth/widgets/qr_login_flow.dart';
@@ -66,12 +67,23 @@ class ProfileScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: colors.outline),
                 ),
-                child: Icon(Icons.error_outline_rounded,
-                    color: colors.error, size: 32),
+                child: Icon(
+                  describeLoadError(e).icon,
+                  color: colors.error,
+                  size: 32,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
-                e.toString(),
+                describeLoadError(e).title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                describeLoadError(e).subtitle,
                 style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
@@ -133,15 +145,14 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   // Plan badge capsule: Flat Tonal Solid Purple capsule
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF381E72),
                       borderRadius: BorderRadius.circular(100),
-                      border: Border.all(
-                        color: colors.outline,
-                        width: 0.8,
-                      ),
+                      border: Border.all(color: colors.outline, width: 0.8),
                     ),
                     child: Text(
                       user.effectivePlan.toUpperCase(),
@@ -177,7 +188,11 @@ class ProfileScreen extends ConsumerWidget {
                   Divider(color: colors.outline, height: 1),
                   _InfoRow(
                     icon: Icons.code_rounded,
-                    label: AppTranslations.translate(context, ref, 'github_connection'),
+                    label: AppTranslations.translate(
+                      context,
+                      ref,
+                      'github_connection',
+                    ),
                     value: user.githubUsername.isNotEmpty
                         ? '@${user.githubUsername}'
                         : 'Not connected',
@@ -188,7 +203,11 @@ class ProfileScreen extends ConsumerWidget {
                   Divider(color: colors.outline, height: 1),
                   _InfoRow(
                     icon: Icons.chat_bubble_outline_rounded,
-                    label: AppTranslations.translate(context, ref, 'slack_workspace'),
+                    label: AppTranslations.translate(
+                      context,
+                      ref,
+                      'slack_workspace',
+                    ),
                     value: user.slackConnected ? 'Connected' : 'Not connected',
                     valueColor: user.slackConnected
                         ? const Color(0xFF22C55E)
@@ -198,8 +217,16 @@ class ProfileScreen extends ConsumerWidget {
                   // Approve a desktop/web sign-in by scanning its QR code.
                   _InfoRow(
                     icon: Icons.qr_code_scanner_rounded,
-                    label: AppTranslations.translate(context, ref, 'qr_login_title'),
-                    value: AppTranslations.translate(context, ref, 'qr_login_subtitle'),
+                    label: AppTranslations.translate(
+                      context,
+                      ref,
+                      'qr_login_title',
+                    ),
+                    value: AppTranslations.translate(
+                      context,
+                      ref,
+                      'qr_login_subtitle',
+                    ),
                     onTap: () => QrLoginFlow.start(context, ref),
                   ),
                   Divider(color: colors.outline, height: 1),
@@ -207,7 +234,11 @@ class ProfileScreen extends ConsumerWidget {
                   // login: add a device there, take one away here.
                   _InfoRow(
                     icon: Icons.devices_rounded,
-                    label: AppTranslations.translate(context, ref, 'devices_title'),
+                    label: AppTranslations.translate(
+                      context,
+                      ref,
+                      'devices_title',
+                    ),
                     value: '',
                     onTap: () => context.push('/profile/devices'),
                   ),
@@ -215,8 +246,14 @@ class ProfileScreen extends ConsumerWidget {
                   // Interactive Language Selector Row!
                   _InfoRow(
                     icon: Icons.translate_rounded,
-                    label: AppTranslations.translate(context, ref, 'app_language'),
-                    value: user.appLanguage.toUpperCase() == 'BN' ? 'বাংলা (BN)' : 'English (EN)',
+                    label: AppTranslations.translate(
+                      context,
+                      ref,
+                      'app_language',
+                    ),
+                    value: user.appLanguage.toUpperCase() == 'BN'
+                        ? 'বাংলা (BN)'
+                        : 'English (EN)',
                     onTap: () async {
                       final selectedLang = await showDialog<String>(
                         context: context,
@@ -233,7 +270,11 @@ class ProfileScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  AppTranslations.translate(context, ref, 'app_language'),
+                                  AppTranslations.translate(
+                                    context,
+                                    ref,
+                                    'app_language',
+                                  ),
                                   style: theme.textTheme.titleMedium?.copyWith(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w800,
@@ -242,20 +283,42 @@ class ProfileScreen extends ConsumerWidget {
                                 const SizedBox(height: 16),
                                 // English option
                                 ListTile(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  title: const Text('English (EN)', style: TextStyle(fontWeight: FontWeight.w600)),
-                                  trailing: user.appLanguage.toLowerCase() == 'en'
-                                      ? Icon(Icons.check_circle_rounded, color: colors.primary)
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  title: const Text(
+                                    'English (EN)',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  trailing:
+                                      user.appLanguage.toLowerCase() == 'en'
+                                      ? Icon(
+                                          Icons.check_circle_rounded,
+                                          color: colors.primary,
+                                        )
                                       : null,
                                   onTap: () => Navigator.pop(dialogCtx, 'en'),
                                 ),
                                 const SizedBox(height: 8),
                                 // Bangla option
                                 ListTile(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  title: const Text('বাংলা (BN)', style: TextStyle(fontWeight: FontWeight.w600)),
-                                  trailing: user.appLanguage.toLowerCase() == 'bn'
-                                      ? Icon(Icons.check_circle_rounded, color: colors.primary)
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  title: const Text(
+                                    'বাংলা (BN)',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  trailing:
+                                      user.appLanguage.toLowerCase() == 'bn'
+                                      ? Icon(
+                                          Icons.check_circle_rounded,
+                                          color: colors.primary,
+                                        )
                                       : null,
                                   onTap: () => Navigator.pop(dialogCtx, 'bn'),
                                 ),
@@ -265,7 +328,9 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       );
                       if (selectedLang != null) {
-                        await ref.read(profileProvider.notifier).updateLanguage(selectedLang);
+                        await ref
+                            .read(profileProvider.notifier)
+                            .updateLanguage(selectedLang);
                       }
                     },
                   ),
@@ -301,12 +366,19 @@ class ProfileScreen extends ConsumerWidget {
                                 color: colors.errorContainer,
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Icon(Icons.logout_rounded,
-                                  color: colors.error, size: 28),
+                              child: Icon(
+                                Icons.logout_rounded,
+                                color: colors.error,
+                                size: 28,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              AppTranslations.translate(context, ref, 'sign_out'),
+                              AppTranslations.translate(
+                                context,
+                                ref,
+                                'sign_out',
+                              ),
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
@@ -314,9 +386,15 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              AppTranslations.translate(context, ref, 'confirm_signout'),
+                              AppTranslations.translate(
+                                context,
+                                ref,
+                                'confirm_signout',
+                              ),
                               style: const TextStyle(
-                                  color: Color(0xFFCAC4D0), fontSize: 14),
+                                color: Color(0xFFCAC4D0),
+                                fontSize: 14,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
@@ -331,9 +409,16 @@ class ProfileScreen extends ConsumerWidget {
                                       side: BorderSide(color: colors.outline),
                                       shape: const StadiumBorder(),
                                       padding: const EdgeInsets.symmetric(
-                                          vertical: 14),
+                                        vertical: 14,
+                                      ),
                                     ),
-                                    child: Text(AppTranslations.translate(context, ref, 'cancel')),
+                                    child: Text(
+                                      AppTranslations.translate(
+                                        context,
+                                        ref,
+                                        'cancel',
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -346,12 +431,18 @@ class ProfileScreen extends ConsumerWidget {
                                       foregroundColor: colors.onError,
                                       shape: const StadiumBorder(),
                                       padding: const EdgeInsets.symmetric(
-                                          vertical: 14),
+                                        vertical: 14,
+                                      ),
                                     ),
                                     child: Text(
-                                      AppTranslations.translate(context, ref, 'sign_out'),
+                                      AppTranslations.translate(
+                                        context,
+                                        ref,
+                                        'sign_out',
+                                      ),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.w700),
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -429,9 +520,10 @@ class _InfoRow extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-                color: Color(0xFFCAC4D0),
-                fontSize: 14,
-                fontWeight: FontWeight.w500),
+              color: Color(0xFFCAC4D0),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const Spacer(),
           Text(
@@ -445,7 +537,7 @@ class _InfoRow extends StatelessWidget {
           if (onTap != null) ...[
             const SizedBox(width: 6),
             Icon(Icons.chevron_right_rounded, size: 20, color: colors.primary),
-          ]
+          ],
         ],
       ),
     );

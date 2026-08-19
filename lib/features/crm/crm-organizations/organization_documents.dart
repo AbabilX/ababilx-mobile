@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/network/friendly_error.dart';
 
 import '../../../shared/media/picked_media_file.dart';
 import '../../../shared/widgets/locked_file_placeholder.dart';
@@ -64,7 +65,7 @@ class _OrganizationDocumentsState extends ConsumerState<OrganizationDocuments> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -84,7 +85,7 @@ class _OrganizationDocumentsState extends ConsumerState<OrganizationDocuments> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
     }
   }
 
@@ -158,7 +159,8 @@ class _OrganizationDocumentsState extends ConsumerState<OrganizationDocuments> {
         ],
         documents.when(
           loading: () => const CrmLoading(),
-          error: (error, _) => CrmErrorBox(message: error.toString()),
+          error: (error, _) =>
+              CrmErrorBox(message: friendlyErrorMessage(error)),
           data: (items) {
             if (items.isEmpty) {
               return const CrmEmpty(message: 'No organization documents yet.');

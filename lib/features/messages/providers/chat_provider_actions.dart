@@ -126,6 +126,13 @@ mixin _ChatActionsMixin
               peerUserId: peerId,
             );
       }
+      // Persist before the network call — even a send that never gets to
+      // try (app killed offline) must survive as a retryable outbox row.
+      (this as _ChatCacheMixin).persistOutboxAsync(
+        convId,
+        pendingMsg,
+        encrypted: encrypted,
+      );
       // ── Step 2: Fire the actual network call ─────────────────────────────
       var msg = await repo.sendMessage(
         convId,
@@ -144,10 +151,12 @@ mixin _ChatActionsMixin
             .decryptMessage(msg, currentUser);
       }
       // ── Step 3: Replace the pending bubble with the confirmed message ─────
+      (this as _ChatCacheMixin).removeFromOutboxAsync(clientRef);
       _replacePendingMessage(convId, clientRef, msg, parentId: parentId);
       return msg;
     } catch (_) {
       // ── Step 4: Mark the bubble as failed so user can retry ───────────────
+      // The outbox row already written above stays — that's the retry record.
       _markPendingFailed(convId, clientRef, parentId: parentId);
       return null;
     }
@@ -155,13 +164,22 @@ mixin _ChatActionsMixin
 
   /// Re-sends a message that previously failed. Looks up the pending data
   /// stored on the [ChatMessage] itself and calls [sendMessage] again.
+  ///
+  /// Refuses a DM bubble still showing the vault's locked placeholder — its
+  /// `body` is not the real text, so sending it would leak that placeholder
+  /// string as the message. [redecryptFailedMessages] clears this once the
+  /// vault unlocks.
   Future<void> retrySend(ChatMessage failedMsg) async {
     if (failedMsg.sendStatus != MessageSendStatus.failed) return;
+    if (isLockedFailedMessage(failedMsg)) return;
     final convId = failedMsg.conversationId;
     if (convId.isEmpty) return;
 
     // Remove the failed bubble first — sendMessage will create a fresh pending one.
     _removePendingFromFeed(convId, failedMsg.id, parentId: failedMsg.parentId);
+    if (failedMsg.clientRef != null) {
+      (this as _ChatCacheMixin).removeFromOutboxAsync(failedMsg.clientRef!);
+    }
 
     await sendMessage(
       conversationId: convId,
@@ -170,6 +188,26 @@ mixin _ChatActionsMixin
       mentionedUserIds: failedMsg.pendingMentionedUserIds,
       parentId: failedMsg.pendingParentId,
     );
+  }
+
+  /// Automatically flushes all failed messages across active feeds when
+  /// network restores — including ones reloaded from a previous session by
+  /// [hydrateOutboxMessages]. Locked DM bubbles are skipped; they flush once
+  /// [redecryptFailedMessages] resolves their real text after vault unlock.
+  Future<void> retryPendingMessages() async {
+    for (final entry in state.feeds.entries) {
+      final feed = entry.value;
+      final failedList = feed.messages
+          .where(
+            (m) =>
+                m.sendStatus == MessageSendStatus.failed &&
+                !isLockedFailedMessage(m),
+          )
+          .toList();
+      for (final msg in failedList) {
+        await retrySend(msg);
+      }
+    }
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────

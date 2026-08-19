@@ -83,6 +83,16 @@ class ChatHeader extends ConsumerWidget {
                         padding: EdgeInsets.only(top: 2),
                         child: InCallLabel(compact: true),
                       )
+                    else if (!ref.watch(chatProvider).wsConnected)
+                      Text(
+                        'Offline',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: colors.outline,
+                        ),
+                      )
                     else if (peerStatus != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),

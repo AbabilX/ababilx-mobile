@@ -32,6 +32,14 @@ class ModuleActions extends Equatable {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'view': view,
+        'create': create,
+        'update': update,
+        'delete': delete,
+        'configure': configure,
+      };
+
   @override
   List<Object?> get props => [view, create, update, delete, configure];
 }

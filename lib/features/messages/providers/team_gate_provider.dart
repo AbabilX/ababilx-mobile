@@ -1,12 +1,42 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../crm/data/models/crm_models.dart';
 import '../../team/data/models/team_models.dart';
 import '../../team/data/team_repository.dart';
 
-final teamGateProvider = FutureProvider<TeamDetail?>((ref) async {
-  return ref.watch(teamRepositoryProvider).getMyTeam();
-});
+/// The team gate behind Messages, CRM, Wall and Board.
+///
+/// WhatsApp-style: paint the cached team immediately so those tabs never
+/// block cold-opening the app on the network, then refresh in the background.
+class TeamGateNotifier extends AsyncNotifier<TeamDetail?> {
+  @override
+  Future<TeamDetail?> build() async {
+    final repo = ref.watch(teamRepositoryProvider);
+    final cached = await repo.getCachedTeam();
+    if (cached != null) {
+      unawaited(_refreshInBackground(repo));
+      return cached;
+    }
+    // First-ever load, nothing cached yet: this has to wait on the network.
+    return repo.getMyTeam();
+  }
+
+  Future<void> _refreshInBackground(TeamRepository repo) async {
+    try {
+      final fresh = await repo.getMyTeam();
+      state = AsyncData(fresh);
+    } catch (_) {
+      // Offline or the request failed — the cached team already on screen
+      // stays put.
+    }
+  }
+}
+
+final teamGateProvider = AsyncNotifierProvider<TeamGateNotifier, TeamDetail?>(
+  TeamGateNotifier.new,
+);
 
 final hasTeamProvider = Provider<bool>((ref) {
   final team = ref.watch(teamGateProvider);

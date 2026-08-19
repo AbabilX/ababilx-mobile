@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../messages/chat-empty-state/index.dart';
+import '../../../core/network/friendly_error.dart';
 import '../../messages/chat_icon.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../data/models/board_models.dart';
@@ -21,13 +22,7 @@ class BoardScreen extends ConsumerWidget {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
       ),
-      error: (_, _) => const Scaffold(
-        body: ChatEmptyState(
-          title: 'Could not load team',
-          subtitle: 'Pull to refresh or try again later.',
-          icon: Icons.error_outline,
-        ),
-      ),
+      error: (error, _) => Scaffold(body: LoadErrorState(error)),
       data: (detail) {
         if (detail == null || !detail.hasTeam) {
           return Scaffold(
@@ -69,11 +64,7 @@ class _BoardListBody extends ConsumerWidget {
     return boardsAsync.when(
       loading: () =>
           const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
-      error: (e, _) => ChatEmptyState(
-        title: 'Could not load boards',
-        subtitle: e.toString(),
-        icon: Icons.error_outline,
-      ),
+      error: (e, _) => LoadErrorState(e),
       data: (boards) {
         if (boards.isEmpty) {
           return const ChatEmptyState(

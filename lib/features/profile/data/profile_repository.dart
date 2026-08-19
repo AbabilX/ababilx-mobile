@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/constants/api_constants.dart';
 
@@ -59,6 +61,24 @@ class AppUser extends Equatable {
         policyVersion: json['policy_version'] as String? ?? '',
       );
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        'provider': provider,
+        'avatar_url': avatarUrl,
+        'plan': plan,
+        'premium_until': premiumUntil,
+        'effective_plan': effectivePlan,
+        'plan_expired': planExpired,
+        'show_plan_expired_dialog': showPlanExpiredDialog,
+        'slack_connected': slackConnected,
+        'github_username': githubUsername,
+        'app_language': appLanguage,
+        'accept_policy': acceptPolicy,
+        'policy_version': policyVersion,
+      };
+
   AppUser copyWith({bool? acceptPolicy, String? policyVersion}) => AppUser(
         id: id,
         name: name,
@@ -100,25 +120,64 @@ class ProfileRepository {
   const ProfileRepository(this._client);
   final ApiClient _client;
 
+  static const _cacheKey = 'ababilx_cached_user_profile';
+
   Future<AppUser> getMe() async {
-    final sessionFuture = _getMePart(ApiConstants.me);
-    final profileFuture = _getMePart(ApiConstants.meProfile);
-    final planFuture = _getMePart(ApiConstants.mePlan);
-    final connectionsFuture = _getMePart(ApiConstants.meConnections);
+    try {
+      final sessionFuture = _getMePart(ApiConstants.me);
+      final profileFuture = _getMePart(ApiConstants.meProfile);
+      final planFuture = _getMePart(ApiConstants.mePlan);
+      final connectionsFuture = _getMePart(ApiConstants.meConnections);
 
-    final parts = await Future.wait([
-      sessionFuture,
-      profileFuture,
-      planFuture,
-      connectionsFuture,
-    ]);
+      final parts = await Future.wait([
+        sessionFuture,
+        profileFuture,
+        planFuture,
+        connectionsFuture,
+      ]);
 
-    return AppUser.fromMeParts(
-      session: parts[0],
-      profile: parts[1],
-      plan: parts[2],
-      connections: parts[3],
-    );
+      final user = AppUser.fromMeParts(
+        session: parts[0],
+        profile: parts[1],
+        plan: parts[2],
+        connections: parts[3],
+      );
+
+      // Persist to local cache for instant offline restore
+      await _cacheUser(user);
+      return user;
+    } catch (_) {
+      // Fallback to local cache when offline
+      final cached = await getCachedMe();
+      if (cached != null) return cached;
+      rethrow;
+    }
+  }
+
+  Future<AppUser?> getCachedMe() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_cacheKey);
+      if (raw == null || raw.isEmpty) return null;
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      return AppUser.fromJson(json);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _cacheUser(AppUser user) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKey, jsonEncode(user.toJson()));
+    } catch (_) {}
+  }
+
+  Future<void> clearCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cacheKey);
+    } catch (_) {}
   }
 
   Future<Map<String, dynamic>> _getMePart(String path) async {
@@ -133,7 +192,9 @@ class ProfileRepository {
       data: {'language': lang},
     );
     final data = (res.data as Map<String, dynamic>)['data'];
-    return AppUser.fromJson(data as Map<String, dynamic>);
+    final updated = AppUser.fromJson(data as Map<String, dynamic>);
+    await _cacheUser(updated);
+    return updated;
   }
 
   Future<void> acceptPolicy() async {

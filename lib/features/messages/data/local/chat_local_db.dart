@@ -9,14 +9,16 @@ import 'chat_local_tables.dart';
 
 part 'chat_local_db.g.dart';
 
-@DriftDatabase(tables: [CachedSidebars, CachedMessageFeeds])
+@DriftDatabase(
+  tables: [CachedSidebars, CachedMessageFeeds, PendingOutboxMessages],
+)
 class ChatLocalDb extends _$ChatLocalDb {
   ChatLocalDb() : super(_openConnection());
 
   ChatLocalDb.forTesting(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -25,6 +27,10 @@ class ChatLocalDb extends _$ChatLocalDb {
       // V1 → V2: create the message-feed cache table.
       if (from < 2) {
         await m.createTable(cachedMessageFeeds);
+      }
+      // V2 → V3: create the durable send outbox.
+      if (from < 3) {
+        await m.createTable(pendingOutboxMessages);
       }
     },
   );

@@ -24,7 +24,17 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
     bool force = false,
   }) async {
     final key = feedKey(conversationId, threadRootId: threadRootId);
-    final existing = state.feeds[key] ?? const ChatFeed();
+    var existing = state.feeds[key] ?? const ChatFeed();
+
+    // Hydrate from SQLite cache first if this feed is not in memory yet
+    if (existing.messages.isEmpty && threadRootId == null) {
+      final hadCachedFeed = await (this as _ChatCacheMixin)
+          .hydrateFeedFromCache(conversationId);
+      if (hadCachedFeed) {
+        existing = state.feeds[key] ?? existing;
+      }
+    }
+
     final hasMessages = existing.messages.isNotEmpty;
     final stale =
         existing.fetchedAt == 0 ||
@@ -32,6 +42,7 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
             feedStaleMs;
     if (!force && hasMessages && !stale) return;
     if (!hasMessages) setFeed(key, existing.copyWith(loading: true, error: ''));
+
     try {
       final page = await repo.listMessages(
         conversationId,
@@ -47,6 +58,8 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         nextCursor: page.nextCursor,
         hasMore: page.hasMore,
         fetchedAt: DateTime.now().millisecondsSinceEpoch,
+        loading: false,
+        error: '',
       );
       setFeed(key, freshFeed);
       // Persist main conversation feed (not thread feeds) to local DB so the
@@ -66,13 +79,25 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         );
       }
     } catch (_) {
-      setFeed(
-        key,
-        (state.feeds[key] ?? const ChatFeed()).copyWith(
-          loading: false,
-          error: 'Could not load messages',
-        ),
-      );
+      final currentFeed = state.feeds[key] ?? const ChatFeed();
+      // If we have cached messages, keep them rendered without error banner
+      if (currentFeed.messages.isNotEmpty) {
+        setFeed(
+          key,
+          currentFeed.copyWith(
+            loading: false,
+            error: '',
+          ),
+        );
+      } else {
+        setFeed(
+          key,
+          currentFeed.copyWith(
+            loading: false,
+            error: 'Waiting for network connection...',
+          ),
+        );
+      }
     }
   }
 

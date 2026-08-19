@@ -97,6 +97,14 @@ class ChatAttachmentInput extends Equatable {
   final String contentType;
   final int sizeBytes;
 
+  factory ChatAttachmentInput.fromJson(Map<String, dynamic> json) =>
+      ChatAttachmentInput(
+        fileUrl: json['file_url'] as String? ?? '',
+        fileName: json['file_name'] as String? ?? '',
+        contentType: json['content_type'] as String? ?? '',
+        sizeBytes: json['size_bytes'] as int? ?? 0,
+      );
+
   Map<String, dynamic> toJson() => {
     'file_url': fileUrl,
     'file_name': fileName,

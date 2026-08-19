@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/network/friendly_error.dart';
 
 import '../../../core/router/root_back.dart';
 import '../../messages/providers/team_gate_provider.dart';
@@ -116,7 +117,7 @@ class CrmOrganizationDetailScreen extends ConsumerWidget {
       loading: () => const Scaffold(body: CrmLoading()),
       error: (error, _) => Scaffold(
         appBar: AppBar(),
-        body: CrmErrorBox(message: error.toString()),
+        body: CrmErrorBox(message: friendlyErrorMessage(error)),
       ),
       data: (record) => DefaultTabController(
         length: 4,
@@ -222,7 +223,7 @@ class CrmOrganizationDetailScreen extends ConsumerWidget {
                     contacts.when(
                       loading: () => const CrmLoading(),
                       error: (error, _) =>
-                          CrmErrorBox(message: error.toString()),
+                          CrmErrorBox(message: friendlyErrorMessage(error)),
                       data: (items) => items.isEmpty
                           ? const CrmEmpty(message: 'No linked contacts.')
                           : ListView.separated(
@@ -250,7 +251,7 @@ class CrmOrganizationDetailScreen extends ConsumerWidget {
                     leads.when(
                       loading: () => const CrmLoading(),
                       error: (error, _) =>
-                          CrmErrorBox(message: error.toString()),
+                          CrmErrorBox(message: friendlyErrorMessage(error)),
                       data: (items) => items.isEmpty
                           ? const CrmEmpty(message: 'No organization leads.')
                           : ListView.separated(
