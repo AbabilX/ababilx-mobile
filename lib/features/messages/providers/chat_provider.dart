@@ -103,14 +103,18 @@ class ChatNotifier extends Notifier<ChatState>
     try {
       await ensureCurrentUserId();
     } catch (_) {}
-    try {
-      await ref.read(messageVaultProvider).restoreTrustedIdentity();
-    } catch (_) {}
 
-    // WhatsApp-style: paint cached sidebar first, then refresh network.
+    // WhatsApp-style: paint cached sidebar first — before any network call,
+    // including the vault's own key-verification round-trip — so a cold
+    // open offline shows the last known chat list instead of spinning for
+    // up to the 15s connect timeout.
     final hadCache = await hydrateSidebarFromCache();
     try {
       await hydrateOutboxMessages();
+    } catch (_) {}
+
+    try {
+      await ref.read(messageVaultProvider).restoreTrustedIdentity();
     } catch (_) {}
     try {
       await fetchSidebar(silent: hadCache);
