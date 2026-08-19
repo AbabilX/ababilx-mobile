@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/battery_optimization_tile.dart';
 import '../../notifications/widgets/notification_permission_tile.dart';
@@ -200,6 +201,15 @@ class ProfileScreen extends ConsumerWidget {
                     label: AppTranslations.translate(context, ref, 'qr_login_title'),
                     value: AppTranslations.translate(context, ref, 'qr_login_subtitle'),
                     onTap: () => QrLoginFlow.start(context, ref),
+                  ),
+                  Divider(color: colors.outline, height: 1),
+                  // Where this account is signed in — the other half of QR
+                  // login: add a device there, take one away here.
+                  _InfoRow(
+                    icon: Icons.devices_rounded,
+                    label: AppTranslations.translate(context, ref, 'devices_title'),
+                    value: '',
+                    onTap: () => context.push('/profile/devices'),
                   ),
                   Divider(color: colors.outline, height: 1),
                   // Interactive Language Selector Row!

@@ -7,6 +7,7 @@ import '../../features/board/screens/board_screen.dart';
 import '../../features/board/screens/board_detail_screen.dart';
 import '../../features/board/screens/board_task_detail_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/profile/screens/sessions_screen.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
 import '../../features/messages/screens/messages_screen.dart';
@@ -110,6 +111,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const GroupCallScreen(),
       ),
       GoRoute(path: '/local-share', builder: (_, _) => const LocalShareScreen()),
+      GoRoute(path: '/profile/devices', builder: (_, _) => const SessionsScreen()),
       GoRoute(
         path: '/messages/:id',
         builder: (_, state) => ConversationScreen(

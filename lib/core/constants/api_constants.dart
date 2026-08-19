@@ -20,6 +20,8 @@ class ApiConstants {
   static const String meConnections = '/api/me/connections';
   static const String meStatus = '/api/me/status';
   static const String meAcceptPolicy = '/api/me/accept-policy';
+  static const String meSessions = '/api/me/sessions';
+  static const String meSessionsRevokeOthers = '/api/me/sessions/revoke-others';
 
   // Team
   static const String teamsMe = '/api/teams/me';
