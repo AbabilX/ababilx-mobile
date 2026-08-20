@@ -12,28 +12,46 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     var userId = state.currentUserId;
     if (userId.isEmpty) {
       try {
-        userId = await (this as ChatNotifier).ensureCurrentUserId();
-      } catch (_) {}
+        userId = await (this as ChatNotifier).localUserId();
+      } catch (e) {
+        debugPrint(
+          '[ChatCache] hydrateSidebarFromCache: localUserId threw: $e',
+        );
+      }
     }
-    if (userId.isEmpty) return false;
+    if (userId.isEmpty) {
+      debugPrint(
+        '[ChatCache] hydrateSidebarFromCache: no local userId, aborting',
+      );
+      return false;
+    }
     try {
       final cached = await sidebarCache.read(userId);
       if (cached == null) return false;
-      if (cached.dms.isEmpty && cached.channels.isEmpty) return false;
+      if (cached.dms.isEmpty && cached.channels.isEmpty) {
+        debugPrint('[ChatCache] hydrateSidebarFromCache: cached row is empty');
+        return false;
+      }
       state = state.copyWith(
         dms: sortDms(cached.dms),
         channels: sortChannels(cached.channels),
         sidebarLoading: false,
       );
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ChatCache] hydrateSidebarFromCache: read threw: $e');
       return false;
     }
   }
 
   Future<void> persistSidebar(ChatSidebar sidebar) async {
     final userId = state.currentUserId;
-    if (userId.isEmpty) return;
+    if (userId.isEmpty) {
+      debugPrint(
+        '[ChatCache] persistSidebar: currentUserId empty, not writing',
+      );
+      return;
+    }
     try {
       // Cache no decrypted E2EE preview text. The encrypted metadata is kept
       // and a live sidebar refresh restores the preview after PIN unlock.
@@ -48,7 +66,9 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
         userId,
         ChatSidebar(channels: sidebar.channels, dms: safeDms),
       );
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[ChatCache] persistSidebar: write threw: $e');
+    }
   }
 
   Future<void> clearSidebarCache() async {

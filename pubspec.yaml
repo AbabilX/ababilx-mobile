@@ -62,7 +62,6 @@ dependencies:
   hugeicons: ^1.1.7
   # Local chat cache (SQLite via Drift — cache-first sidebar)
   drift: ^2.34.2
-  sqlite3_flutter_libs: ^0.6.0+eol
   path: ^1.9.1
   path_provider: ^2.1.6
   url_launcher: ^6.3.2
@@ -112,11 +111,23 @@ flutter:
     - assets/icon/icon.png
     - assets/ringtone/Clear_Agenda.mp3
 
-# Tell sqlite3's build hook to use the system/bundled library provided by
-# sqlite3_flutter_libs instead of downloading a precompiled binary from GitHub.
-# This avoids network failures in restricted environments (firewalls, offline).
-# source=system means: look for libsqlite3.so already linked into the app by
-# sqlite3_flutter_libs, which bundles it via CMake for Android/iOS.
-hook:
-  sqlite3:
-    source: system
+# `source: system` = package:sqlite3's FFI binding does a plain dlopen of
+# "libsqlite3.so" and expects the app to already carry that library, rather
+# than have the hook download/compile one. Two bugs meant it never actually
+# got bundled: (1) this key used to be `hook: sqlite3: source: system` — the
+# wrong schema (`hook`, not `hooks: user_defines:`), so it was silently
+# ignored; (2) sqlite3_flutter_libs, which used to provide the library via
+# its own Gradle/CMake build, is a no-op as of 0.6.0 (see its CHANGELOG —
+# "no longer does anything, migrate to sqlite3 v3"). Verified as of this
+# Flutter version (3.44.8) that switching to `source: sqlite3` (the hooks/
+# code-assets download path) doesn't work either — Flutter's Android build
+# backend never requests code assets, so the hook's own output directory
+# stays empty and no .so is ever produced for Android. So: stayed on
+# `source: system`, and the actual libsqlite3.so for each Android ABI is
+# vendored directly at android/app/src/main/jniLibs/<abi>/libsqlite3.so
+# (Gradle bundles that into the APK automatically, no plugin required) —
+# see the comment in that directory for provenance/how to update it.
+hooks:
+  user_defines:
+    sqlite3:
+      source: system

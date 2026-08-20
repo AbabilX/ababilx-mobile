@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/network/first_load_timeout.dart';
 import '../../../core/session/authenticated_fetch.dart';
 import '../data/profile_repository.dart';
 
@@ -16,8 +17,9 @@ class ProfileNotifier extends AsyncNotifier<AppUser> {
       unawaited(_refreshInBackground(repo));
       return cached;
     }
-    // First-ever load, nothing cached yet: this has to wait.
-    return repo.getMe();
+    // First-ever load, nothing cached yet: this has to wait — but not out
+    // Dio's full connect+receive timeout on a weak/dead connection.
+    return repo.getMe().timeout(firstLoadNetworkTimeout);
   });
 
   Future<void> _refreshInBackground(ProfileRepository repo) async {

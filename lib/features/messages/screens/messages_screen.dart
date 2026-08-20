@@ -17,31 +17,47 @@ class MessagesScreen extends ConsumerStatefulWidget {
 }
 
 class _MessagesScreenState extends ConsumerState<MessagesScreen> {
-  bool _checkingVault = true;
   bool _vaultUnlocked = false;
 
   @override
   void initState() {
     super.initState();
-    _restoreVault();
+    unawaited(ref.read(chatProvider.notifier).ensureReady());
+    // Local-only restore (secure-storage read + in-memory key check, no
+    // server round-trip) — never blocks this screen on the network.
+    unawaited(_restoreVaultOffline());
   }
 
-  Future<void> _restoreVault() async {
-    // Start local cache hydration immediately
-    unawaited(ref.read(chatProvider.notifier).ensureReady());
+  Future<void> _restoreVaultOffline() async {
     final unlocked = await ref
         .read(messageVaultProvider)
-        .restoreTrustedIdentity();
+        .restoreTrustedIdentityOffline();
     if (!mounted) return;
     if (unlocked) {
       unawaited(ref.read(chatProvider.notifier).fetchSidebar(silent: true));
     }
-    if (mounted) {
-      setState(() {
-        _checkingVault = false;
-        _vaultUnlocked = unlocked;
-      });
-    }
+    setState(() => _vaultUnlocked = unlocked);
+  }
+
+  void _openUnlockSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+        ),
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * 0.62,
+          child: MessageVaultGate(
+            onUnlocked: () {
+              if (mounted) setState(() => _vaultUnlocked = true);
+              Navigator.of(sheetContext).pop();
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -51,19 +67,14 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     final hasCachedChats =
         chatState.dms.isNotEmpty || chatState.channels.isNotEmpty;
 
-    // Instant offline render: if chats exist in local cache, show them immediately
+    // WhatsApp-style: the conversation list is never blocked by anything —
+    // not the network, not the E2EE vault. DM previews already show a safe
+    // "Encrypted message" placeholder until unlocked; the vault only gates
+    // an individual DM's actual content, in ConversationScreen.
     if (hasCachedChats) {
-      return Stack(
-        children: [
-          const ChatList(),
-          if (!_vaultUnlocked && !_checkingVault)
-            Positioned.fill(
-              child: Material(
-                color: Theme.of(context).colorScheme.surface,
-                child: MessageVaultGate(onUnlocked: _onVaultUnlocked),
-              ),
-            ),
-        ],
+      return _MessagesBody(
+        vaultUnlocked: _vaultUnlocked,
+        onUnlockTap: _openUnlockSheet,
       );
     }
 
@@ -89,34 +100,76 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
             ),
           );
         }
-        if (_checkingVault) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
-          );
-        }
-        return Stack(
-          children: [
-            const ChatList(),
-            if (!_vaultUnlocked)
-              Positioned.fill(
-                child: Material(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: MessageVaultGate(onUnlocked: _onVaultUnlocked),
-                ),
-              ),
-          ],
+        return _MessagesBody(
+          vaultUnlocked: _vaultUnlocked,
+          onUnlockTap: _openUnlockSheet,
         );
       },
     );
   }
+}
 
-  /// Unlocking the vault only decrypts what's on screen; a DM outbox bubble
-  /// hydrated from a previous session (still showing the locked placeholder)
-  /// needs its own decrypt pass so it stops looking stuck and becomes
-  /// retryable again.
-  void _onVaultUnlocked() {
-    setState(() => _vaultUnlocked = true);
-    ref.read(chatProvider.notifier).fetchSidebar(silent: true);
-    ref.read(chatProvider.notifier).redecryptFailedMessages();
+/// The chat list plus a small, dismissible-by-tap unlock banner — never a
+/// full-screen block. A user with no DMs, or channels only, never even sees
+/// this banner's target matter.
+class _MessagesBody extends StatelessWidget {
+  const _MessagesBody({required this.vaultUnlocked, required this.onUnlockTap});
+
+  final bool vaultUnlocked;
+  final VoidCallback onUnlockTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const ChatList(),
+        if (!vaultUnlocked)
+          Positioned(
+            top: MediaQuery.paddingOf(context).top + 8,
+            left: 12,
+            right: 12,
+            child: _UnlockBanner(onTap: onUnlockTap),
+          ),
+      ],
+    );
+  }
+}
+
+class _UnlockBanner extends StatelessWidget {
+  const _UnlockBanner({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Material(
+      color: colors.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 2,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              Icon(Icons.lock_rounded, size: 18, color: colors.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Unlock to read encrypted messages',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: colors.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

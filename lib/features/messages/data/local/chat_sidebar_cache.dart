@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/chat_models.dart';
@@ -12,30 +13,54 @@ class ChatSidebarCache {
   final ChatLocalDb _db;
 
   Future<ChatSidebar?> read(String userId) async {
-    if (userId.isEmpty) return null;
+    if (userId.isEmpty) {
+      debugPrint('[ChatCache] read: empty userId, skipping');
+      return null;
+    }
     final row = await (_db.select(
       _db.cachedSidebars,
     )..where((t) => t.userId.equals(userId))).getSingleOrNull();
-    if (row == null) return null;
+    if (row == null) {
+      debugPrint('[ChatCache] read: no row for userId=$userId');
+      return null;
+    }
     try {
       final map = jsonDecode(row.payloadJson) as Map<String, dynamic>;
-      return ChatSidebar.fromJson(map);
-    } catch (_) {
+      final sidebar = ChatSidebar.fromJson(map);
+      debugPrint(
+        '[ChatCache] read: userId=$userId dms=${sidebar.dms.length} '
+        'channels=${sidebar.channels.length}',
+      );
+      return sidebar;
+    } catch (e) {
+      debugPrint('[ChatCache] read: decode failed for userId=$userId: $e');
       return null;
     }
   }
 
   Future<void> write(String userId, ChatSidebar sidebar) async {
-    if (userId.isEmpty) return;
-    await _db
-        .into(_db.cachedSidebars)
-        .insertOnConflictUpdate(
-          CachedSidebarsCompanion.insert(
-            userId: userId,
-            payloadJson: jsonEncode(sidebar.toJson()),
-            updatedAtMs: DateTime.now().millisecondsSinceEpoch,
-          ),
-        );
+    if (userId.isEmpty) {
+      debugPrint('[ChatCache] write: empty userId, skipping');
+      return;
+    }
+    try {
+      await _db
+          .into(_db.cachedSidebars)
+          .insertOnConflictUpdate(
+            CachedSidebarsCompanion.insert(
+              userId: userId,
+              payloadJson: jsonEncode(sidebar.toJson()),
+              updatedAtMs: DateTime.now().millisecondsSinceEpoch,
+            ),
+          );
+      debugPrint(
+        '[ChatCache] write: userId=$userId dms=${sidebar.dms.length} '
+        'channels=${sidebar.channels.length}',
+      );
+    } catch (e) {
+      debugPrint('[ChatCache] write: FAILED for userId=$userId: $e');
+      rethrow;
+    }
   }
 
   Future<void> clearAll() async {

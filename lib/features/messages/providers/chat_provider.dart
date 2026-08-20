@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/first_load_timeout.dart';
 import '../../../core/network/ws_client.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -100,19 +102,20 @@ class ChatNotifier extends Notifier<ChatState>
   }
 
   Future<void> bootstrap() async {
-    try {
-      await ensureCurrentUserId();
-    } catch (_) {}
-
-    // WhatsApp-style: paint cached sidebar first — before any network call,
-    // including the vault's own key-verification round-trip — so a cold
-    // open offline shows the last known chat list instead of spinning for
-    // up to the 15s connect timeout.
+    // WhatsApp-style: paint cached sidebar + outbox first — nothing in this
+    // block may touch the network (see hydrateSidebarFromCache / localUserId),
+    // so a cold open offline shows the last known chat list instantly
+    // instead of waiting on any request to fail or time out.
     final hadCache = await hydrateSidebarFromCache();
     try {
       await hydrateOutboxMessages();
     } catch (_) {}
 
+    // Only now is the app allowed to touch the network: resolve/verify the
+    // real user id, restore the E2EE vault, refresh the sidebar.
+    try {
+      await ensureCurrentUserId();
+    } catch (_) {}
     try {
       await ref.read(messageVaultProvider).restoreTrustedIdentity();
     } catch (_) {}
@@ -121,6 +124,32 @@ class ChatNotifier extends Notifier<ChatState>
     } catch (_) {}
     initRealtime();
     _bootstrapped = true;
+  }
+
+  /// Best-effort user id from purely local sources — current state, whatever
+  /// [profileProvider] already resolved, or the on-disk profile cache. Never
+  /// touches the network, so cache hydration (which needs an id to key the
+  /// sidebar/outbox tables) can never be blocked by a stalled connection.
+  /// Returns '' if nothing local is available yet. Callers that need a
+  /// guaranteed id (sending, decrypting) use [ensureCurrentUserId] instead,
+  /// which is allowed to fall back to the network.
+  Future<String> localUserId() async {
+    final existing = state.currentUserId.trim();
+    if (existing.isNotEmpty) return existing;
+    final live = ref.read(profileProvider).valueOrNull?.id.trim() ?? '';
+    if (live.isNotEmpty) {
+      debugPrint('[ChatCache] localUserId: from live profileProvider: $live');
+      state = state.copyWith(currentUserId: live);
+      return live;
+    }
+    final cached = await ref.read(profileRepositoryProvider).getCachedMe();
+    final id = cached?.id.trim() ?? '';
+    debugPrint(
+      '[ChatCache] localUserId: from on-disk profile cache: '
+      '"${id.isEmpty ? '<none found>' : id}"',
+    );
+    if (id.isNotEmpty) state = state.copyWith(currentUserId: id);
+    return id;
   }
 
   /// Runs [bootstrap] at most once per session, whoever asks first. A chat
@@ -175,7 +204,13 @@ class ChatNotifier extends Notifier<ChatState>
   Future<void> fetchSidebar({bool silent = false}) async {
     if (!silent) state = state.copyWith(sidebarLoading: true);
     try {
-      final data = await _repo.listConversations();
+      // Bounded so a weak/dead connection fails fast instead of hanging out
+      // Dio's full connect+receive timeout — cached rows (if any) stay on
+      // screen either way since this only ever clears sidebarLoading, never
+      // the dms/channels lists, on failure.
+      final data = await _repo.listConversations().timeout(
+        firstLoadNetworkTimeout,
+      );
       final dms = sortDms(await _decryptDmPreviews(data.dms));
       final channels = sortChannels(data.channels);
       final active = state.activeConversationId;
@@ -190,9 +225,14 @@ class ChatNotifier extends Notifier<ChatState>
         clearThreadRoot: !known,
         sidebarLoading: false,
       );
+      debugPrint(
+        '[ChatCache] fetchSidebar: network ok, dms=${dms.length} '
+        'channels=${channels.length} currentUserId=${state.currentUserId}',
+      );
       await persistSidebar(ChatSidebar(channels: channels, dms: dms));
-    } catch (_) {
+    } catch (e) {
       // Keep cached rows on network failure — never clear local state
+      debugPrint('[ChatCache] fetchSidebar: network threw: $e');
       state = state.copyWith(sidebarLoading: false);
     }
   }

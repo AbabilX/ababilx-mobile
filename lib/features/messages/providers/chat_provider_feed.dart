@@ -44,11 +44,13 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
     if (!hasMessages) setFeed(key, existing.copyWith(loading: true, error: ''));
 
     try {
-      final page = await repo.listMessages(
-        conversationId,
-        limit: threadRootId != null ? 100 : 50,
-        thread: threadRootId,
-      );
+      final page = await repo
+          .listMessages(
+            conversationId,
+            limit: threadRootId != null ? 100 : 50,
+            thread: threadRootId,
+          )
+          .timeout(firstLoadNetworkTimeout);
       final messages = await decryptIfNeeded(page.messages);
       final sorted = threadRootId != null
           ? messages
@@ -82,13 +84,7 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       final currentFeed = state.feeds[key] ?? const ChatFeed();
       // If we have cached messages, keep them rendered without error banner
       if (currentFeed.messages.isNotEmpty) {
-        setFeed(
-          key,
-          currentFeed.copyWith(
-            loading: false,
-            error: '',
-          ),
-        );
+        setFeed(key, currentFeed.copyWith(loading: false, error: ''));
       } else {
         setFeed(
           key,

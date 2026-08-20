@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/first_load_timeout.dart';
 import '../../crm/data/models/crm_models.dart';
 import '../../team/data/models/team_models.dart';
 import '../../team/data/team_repository.dart';
@@ -19,8 +20,10 @@ class TeamGateNotifier extends AsyncNotifier<TeamDetail?> {
       unawaited(_refreshInBackground(repo));
       return cached;
     }
-    // First-ever load, nothing cached yet: this has to wait on the network.
-    return repo.getMyTeam();
+    // First-ever load, nothing cached yet: this has to wait on the network —
+    // but a weak/dead connection must fail into the offline state quickly
+    // rather than hang out Dio's full 15s connect + 30s receive timeout.
+    return repo.getMyTeam().timeout(firstLoadNetworkTimeout);
   }
 
   Future<void> _refreshInBackground(TeamRepository repo) async {
