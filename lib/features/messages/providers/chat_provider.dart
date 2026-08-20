@@ -12,6 +12,7 @@ import '../chat_utils.dart';
 import '../data/chat_repository.dart';
 import '../data/local/chat_feed_cache.dart';
 import '../data/local/chat_outbox_cache.dart';
+import '../data/local/attachment_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
 import '../message_e2ee/message_vault.dart';

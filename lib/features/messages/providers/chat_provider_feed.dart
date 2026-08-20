@@ -68,6 +68,7 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       // next open is instant (cache-first load). Fire-and-forget.
       if (threadRootId == null) {
         (this as _ChatCacheMixin).persistFeedAsync(conversationId, sorted);
+        prefetchImageAttachments(sorted.expand((m) => m.attachments).toList());
       }
       if (threadRootId != null) {
         final replies = sorted
