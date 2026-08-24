@@ -5,6 +5,7 @@ import 'nav_pill.dart';
 import 'organizations_action_pill.dart';
 import 'search_pill.dart';
 import 'shell_pill_metrics.dart';
+import 'shell_tabs.dart';
 
 enum ShellBottomBarMode { home, contacts, organizations }
 
@@ -14,14 +15,11 @@ class ShellBottomBar extends StatelessWidget {
     super.key,
     this.mode = ShellBottomBarMode.home,
     // Home
+    this.tabs = const [],
     this.selectedIndex = 0,
     this.onSelect,
     this.onSearch,
-    this.messagesLabel = '',
-    this.wallLabel = '',
-    this.crmLabel = '',
-    this.boardLabel = '',
-    this.showCrm = false,
+    this.labelOf,
     this.unread = 0,
     // Contacts
     this.contactsMineSelected = true,
@@ -40,16 +38,16 @@ class ShellBottomBar extends StatelessWidget {
 
   final ShellBottomBarMode mode;
 
+  /// Home-only: the destinations this account actually has.
+  final List<ShellTab> tabs;
   final int selectedIndex;
   final ValueChanged<int>? onSelect;
 
   /// Home-only: messages/wall search.
   final VoidCallback? onSearch;
-  final String messagesLabel;
-  final String wallLabel;
-  final String crmLabel;
-  final String boardLabel;
-  final bool showCrm;
+
+  /// Home-only: resolves a tab's translated label.
+  final String Function(ShellTab tab)? labelOf;
   final int unread;
 
   final bool contactsMineSelected;
@@ -106,13 +104,10 @@ class ShellBottomBar extends StatelessWidget {
                           onSelectAll: onSelectAll ?? () {},
                         )
                       : NavPill(
+                          tabs: tabs,
                           selectedIndex: selectedIndex,
                           onSelect: onSelect ?? (_) {},
-                          messagesLabel: messagesLabel,
-                          wallLabel: wallLabel,
-                          crmLabel: crmLabel,
-                          boardLabel: boardLabel,
-                          showCrm: showCrm,
+                          labelOf: labelOf ?? (t) => t.labelKey,
                           unread: unread,
                         ),
                 ),

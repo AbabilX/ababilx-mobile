@@ -14,52 +14,47 @@ import '../../features/search/crm_deep_search.dart';
 import '../../features/search/workspace_search.dart';
 import '../../features/wall/providers/wall_ui_provider.dart';
 import '../../core/localization/app_translations.dart';
+import 'shell_bottom_bar/crm_list_bar.dart';
 import 'shell_bottom_bar/index.dart';
 import 'shell_bottom_bar/shell_chrome_provider.dart';
+import 'shell_bottom_bar/shell_tabs.dart';
 
 /// Flat bottom nav, or CRM list [My|Add|All] + search actions.
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
 
-  static const _tabsWithCrm = ['/messages', '/wall', '/crm', '/board'];
-  static const _tabsNoCrm = ['/messages', '/wall', '/board'];
+  bool _isCrmList(String location) =>
+      location == '/crm/contacts' ||
+      location == '/crm/leads' ||
+      location == '/crm/followups' ||
+      location == '/crm/organizations';
 
-  int _currentIndex(BuildContext context, {required bool showCrm}) {
-    final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith('/board')) return showCrm ? 3 : 2;
-    if (location.startsWith('/crm')) return showCrm ? 2 : 0;
-    if (location.startsWith('/wall')) return 1;
-    return 0;
-  }
-
-  bool _isContacts(String location) => location == '/crm/contacts';
-
-  bool _isLeads(String location) => location == '/crm/leads';
-
-  bool _isFollowups(String location) => location == '/crm/followups';
-
-  bool _isOrganizations(String location) => location == '/crm/organizations';
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final hasTeam = ref.watch(hasTeamProvider);
     final showCrm = ref.watch(canViewCrmProvider);
-    final tabs = showCrm ? _tabsWithCrm : _tabsNoCrm;
-    final idx = _currentIndex(context, showCrm: showCrm);
-    final unread = ref.watch(totalUnreadProvider);
+    final tabs = visibleShellTabs(hasTeam: hasTeam, showCrm: showCrm);
     final location = GoRouterState.of(context).matchedLocation;
-    final isContacts = _isContacts(location);
-    final isLeads = _isLeads(location);
-    final isFollowups = _isFollowups(location);
-    final isOrganizations = _isOrganizations(location);
-    final isCrmList = isContacts || isLeads || isFollowups || isOrganizations;
-    final contactsUi = ref.watch(crmContactsUiProvider);
-    final leadsUi = ref.watch(crmLeadsUiProvider);
-    final followupsUi = ref.watch(crmFollowupsUiProvider);
-    final organizationsUi = ref.watch(crmOrganizationsUiProvider);
-    final wallUi = ref.watch(wallUiProvider);
+    final idx = shellTabIndex(tabs, location);
+    final unread = ref.watch(totalUnreadProvider);
+
+    final isContacts = location == '/crm/contacts';
+    final isLeads = location == '/crm/leads';
+    final isFollowups = location == '/crm/followups';
+    final isOrganizations = location == '/crm/organizations';
     final shellBarHidden = ref.watch(shellBottomBarHiddenProvider);
 
-    if (!showCrm && location.startsWith('/crm')) {
+    // A route whose tab is gone (left the team, lost CRM access) has no home
+    // to go back to — bounce to Messages, the one tab every account has.
+    // Only once the team is actually resolved: while it loads `hasTeam` is
+    // false, and bouncing then would kick a deep link off /board or /wall.
+    final teamResolved = ref.watch(teamGateProvider).hasValue;
+    final onHiddenRoute =
+        teamResolved &&
+        !tabs.any((t) => location.startsWith(t.route)) &&
+        location != '/profile';
+    if (onHiddenRoute) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) context.go('/messages');
       });
@@ -67,128 +62,29 @@ class HomeShell extends ConsumerWidget {
 
     final hideBar =
         shellBarHidden ||
-        (isContacts && contactsUi.formSheetOpen) ||
-        (isLeads && leadsUi.formSheetOpen) ||
-        (isFollowups && followupsUi.formSheetOpen) ||
-        (isOrganizations && organizationsUi.formSheetOpen) ||
-        wallUi.hideBottomBar;
-
-    final mineSelected = isFollowups
-        ? followupsUi.scope == FollowupScope.mine
-        : isLeads
-        ? leadsUi.scope == LeadScope.mine
-        : contactsUi.scope == ContactScope.mine;
-    final canAdd = isFollowups
-        ? followupsUi.canCreate
-        : isLeads
-        ? leadsUi.canCreate
-        : isOrganizations
-        ? organizationsUi.canCreate
-        : contactsUi.canCreate;
+        (isContacts && ref.watch(crmContactsUiProvider).formSheetOpen) ||
+        (isLeads && ref.watch(crmLeadsUiProvider).formSheetOpen) ||
+        (isFollowups && ref.watch(crmFollowupsUiProvider).formSheetOpen) ||
+        (isOrganizations &&
+            ref.watch(crmOrganizationsUiProvider).formSheetOpen) ||
+        ref.watch(wallUiProvider).hideBottomBar;
 
     final Widget? bar = hideBar
         ? null
-        : isCrmList
-        ? isOrganizations
-              ? ShellBottomBar(
-                  mode: ShellBottomBarMode.organizations,
-                  organizationsLabel: AppTranslations.translate(
-                    context,
-                    ref,
-                    'crm_organizations',
-                  ),
-                  addLabel: AppTranslations.translate(
-                    context,
-                    ref,
-                    'crm_add_short',
-                  ),
-                  canAdd: canAdd,
-                  onAdd: () => ref
-                      .read(crmOrganizationsUiProvider.notifier)
-                      .requestAdd(),
-                  onContactsSearch: () => ref
-                      .read(crmOrganizationsUiProvider.notifier)
-                      .requestSearch(),
-                )
-              : ShellBottomBar(
-                  mode: ShellBottomBarMode.contacts,
-                  contactsMineSelected: mineSelected,
-                  addLabel: AppTranslations.translate(
-                    context,
-                    ref,
-                    'crm_add_short',
-                  ),
-                  mineLabel: AppTranslations.translate(
-                    context,
-                    ref,
-                    'crm_my_short',
-                  ),
-                  allLabel: AppTranslations.translate(
-                    context,
-                    ref,
-                    'crm_all_short',
-                  ),
-                  canAdd: canAdd,
-                  onAdd: () {
-                    if (isFollowups) {
-                      ref
-                          .read(crmFollowupsUiProvider.notifier)
-                          .setFormSheetOpen(true);
-                      ref.read(crmFollowupsUiProvider.notifier).requestAdd();
-                    } else if (isLeads) {
-                      ref
-                          .read(crmLeadsUiProvider.notifier)
-                          .setFormSheetOpen(true);
-                      ref.read(crmLeadsUiProvider.notifier).requestAdd();
-                    } else {
-                      ref
-                          .read(crmContactsUiProvider.notifier)
-                          .setFormSheetOpen(true);
-                      ref.read(crmContactsUiProvider.notifier).requestAdd();
-                    }
-                  },
-                  onSelectMine: () {
-                    if (isFollowups) {
-                      ref
-                          .read(crmFollowupsUiProvider.notifier)
-                          .setScope(FollowupScope.mine);
-                    } else if (isLeads) {
-                      ref
-                          .read(crmLeadsUiProvider.notifier)
-                          .setScope(LeadScope.mine);
-                    } else {
-                      ref
-                          .read(crmContactsUiProvider.notifier)
-                          .setScope(ContactScope.mine);
-                    }
-                  },
-                  onSelectAll: () {
-                    if (isFollowups) {
-                      ref
-                          .read(crmFollowupsUiProvider.notifier)
-                          .setScope(FollowupScope.all);
-                    } else if (isLeads) {
-                      ref
-                          .read(crmLeadsUiProvider.notifier)
-                          .setScope(LeadScope.all);
-                    } else {
-                      ref
-                          .read(crmContactsUiProvider.notifier)
-                          .setScope(ContactScope.all);
-                    }
-                  },
-                  onContactsSearch: () => openCrmDeepSearch(context, ref),
-                )
+        : _isCrmList(location)
+        ? CrmListBottomBar(
+            isLeads: isLeads,
+            isFollowups: isFollowups,
+            isOrganizations: isOrganizations,
+          )
         : ShellBottomBar(
             mode: ShellBottomBarMode.home,
+            tabs: tabs,
             selectedIndex: idx,
             unread: unread,
-            showCrm: showCrm,
-            messagesLabel: AppTranslations.translate(context, ref, 'messages'),
-            wallLabel: AppTranslations.translate(context, ref, 'wall'),
-            crmLabel: AppTranslations.translate(context, ref, 'crm'),
-            boardLabel: AppTranslations.translate(context, ref, 'board'),
-            onSelect: (i) => context.go(tabs[i]),
+            labelOf: (tab) =>
+                AppTranslations.translate(context, ref, tab.labelKey),
+            onSelect: (i) => context.go(tabs[i].route),
             onSearch: () {
               // CRM hub (and any /crm* on home bar) → CRM deep search.
               // Messages / Wall / Board → web Cmd+K workspace search.

@@ -16,6 +16,9 @@ class ChatEndpoints {
   String get search => independent
       ? ApiConstants.independentChatSearch
       : ApiConstants.chatSearch;
+  String get callLog => independent
+      ? ApiConstants.independentChatCallLog
+      : ApiConstants.chatCallLog;
   String messages(String id) => independent
       ? ApiConstants.independentChatMessages(id)
       : ApiConstants.chatMessages(id);

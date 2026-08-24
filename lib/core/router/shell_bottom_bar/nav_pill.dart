@@ -1,72 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'nav_tab_item.dart';
 import 'shell_pill_metrics.dart';
+import 'shell_tabs.dart';
 
-/// Flat navigation destinations — Messages | Wall | (CRM?) | Board.
+/// Flat navigation destinations, rendered from whatever [tabs] the account
+/// actually has — Messages alone, up to Messages | Wall | CRM | Board.
 class NavPill extends StatelessWidget {
   const NavPill({
     super.key,
+    required this.tabs,
     required this.selectedIndex,
     required this.onSelect,
-    required this.messagesLabel,
-    required this.wallLabel,
-    required this.crmLabel,
-    required this.boardLabel,
-    this.showCrm = false,
+    required this.labelOf,
     this.unread = 0,
   });
 
+  final List<ShellTab> tabs;
   final int selectedIndex;
   final ValueChanged<int> onSelect;
-  final String messagesLabel;
-  final String wallLabel;
-  final String crmLabel;
-  final String boardLabel;
-  final bool showCrm;
+
+  /// Resolves a tab's translated label — the shell owns the localisation
+  /// context, this widget stays a dumb renderer.
+  final String Function(ShellTab tab) labelOf;
+
   final int unread;
 
   static const double height = ShellPillMetrics.height;
 
   @override
   Widget build(BuildContext context) {
-    final boardIndex = showCrm ? 3 : 2;
-
     return SizedBox(
       height: height,
       child: Row(
         children: [
-          NavTabItem(
-            icon: HugeIcons.strokeRoundedBubbleChat,
-            selectedIcon: HugeIcons.strokeRoundedMessage01,
-            label: messagesLabel,
-            selected: selectedIndex == 0,
-            badgeCount: unread,
-            onTap: () => onSelect(0),
-          ),
-          NavTabItem(
-            icon: HugeIcons.strokeRoundedNews,
-            selectedIcon: HugeIcons.strokeRoundedNews,
-            label: wallLabel,
-            selected: selectedIndex == 1,
-            onTap: () => onSelect(1),
-          ),
-          if (showCrm)
+          for (var i = 0; i < tabs.length; i++)
             NavTabItem(
-              icon: HugeIcons.strokeRoundedBriefcase01,
-              selectedIcon: HugeIcons.strokeRoundedBriefcase02,
-              label: crmLabel,
-              selected: selectedIndex == 2,
-              onTap: () => onSelect(2),
+              icon: tabs[i].icon,
+              selectedIcon: tabs[i].selectedIcon,
+              label: labelOf(tabs[i]),
+              selected: selectedIndex == i,
+              badgeCount: tabs[i].showsUnread ? unread : 0,
+              onTap: () => onSelect(i),
             ),
-          NavTabItem(
-            icon: HugeIcons.strokeRoundedTask01,
-            selectedIcon: HugeIcons.strokeRoundedTask02,
-            label: boardLabel,
-            selected: selectedIndex == boardIndex,
-            onTap: () => onSelect(boardIndex),
-          ),
         ],
       ),
     );

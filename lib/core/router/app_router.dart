@@ -26,6 +26,7 @@ import '../../features/crm/screens/crm_contact_detail_screen.dart';
 import '../../features/crm/screens/crm_organizations_screen.dart';
 import '../../features/crm/screens/crm_organization_detail_screen.dart';
 import '../../features/calls/group/screens/group_call_screen.dart';
+import '../../features/calls/screens/calls_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
 import 'home_shell.dart';
@@ -84,6 +85,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _, child) => HomeShell(child: child),
         routes: [
           GoRoute(path: '/messages', builder: (_, _) => const MessagesScreen()),
+          GoRoute(path: '/calls', builder: (_, _) => const CallsScreen()),
           GoRoute(path: '/wall', builder: (_, _) => const WallScreen()),
           GoRoute(
             path: '/crm/organizations',

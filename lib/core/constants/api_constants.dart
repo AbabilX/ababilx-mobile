@@ -136,6 +136,10 @@ class ApiConstants {
       '/api/teams/chat/conversations/$conversationId/attachments/discard';
   static const String chatSearch = '/api/teams/chat/search';
 
+  /// Call history. The workspace path lists this workspace's calls; the
+  /// independent path lists every call the caller took part in.
+  static const String chatCallLog = '/api/teams/chat/calls';
+
   // Independent chat. Keep all dynamic endpoint construction centralized here.
   static const String independentChatRoot = '/api/chat';
   static const String independentChatConversations =
@@ -152,6 +156,7 @@ class ApiConstants {
       '$independentChatRoot/users/search';
   static const String independentChatForward = '$independentChatRoot/forward';
   static const String independentChatSearch = '$independentChatRoot/search';
+  static const String independentChatCallLog = '$independentChatRoot/calls';
   static String independentChatMessages(String conversationId) =>
       '$independentChatConversations/$conversationId/messages';
   static String independentChatConversation(String conversationId) =>
