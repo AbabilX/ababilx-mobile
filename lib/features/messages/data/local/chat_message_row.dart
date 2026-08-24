@@ -1,0 +1,56 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
+
+import '../../tiptap_plain_text.dart';
+import '../models/chat_message.dart';
+import 'chat_local_db.dart';
+
+/// Sort key for a message. The server sends ISO-8601 UTC; an unparseable value
+/// sorts to the very beginning rather than crashing the write.
+int messageTimeMs(ChatMessage m) =>
+    DateTime.tryParse(m.createdAt)?.millisecondsSinceEpoch ?? 0;
+
+/// Message → row. An E2EE DM is written ciphertext-only: its plaintext body is
+/// blanked and it contributes nothing to [CachedMessages.searchText], so the
+/// decrypted text exists on this device only inside the vault and in memory.
+CachedMessagesCompanion messageRow(ChatMessage m) {
+  final json = m.toJson();
+  if (m.isEncrypted) json['body'] = '';
+  return CachedMessagesCompanion.insert(
+    id: m.id,
+    conversationId: m.conversationId,
+    createdAtMs: messageTimeMs(m),
+    threadRootId: Value(m.parentId),
+    payloadJson: jsonEncode(json),
+    searchText: Value(_searchText(m)),
+  );
+}
+
+/// Row → message. Returns null for a row that can no longer be decoded (a
+/// model change, a truncated write) — the caller treats it as a cache miss.
+ChatMessage? messageFromRow(CachedMessage row) {
+  try {
+    return ChatMessage.fromJson(
+      jsonDecode(row.payloadJson) as Map<String, dynamic>,
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
+List<ChatMessage> messagesFromRows(Iterable<CachedMessage> rows) {
+  final out = <ChatMessage>[];
+  for (final row in rows) {
+    final msg = messageFromRow(row);
+    if (msg != null) out.add(msg);
+  }
+  return out;
+}
+
+String _searchText(ChatMessage m) {
+  if (m.isEncrypted || m.isDeleted) return '';
+  final body = tiptapToPreviewText(m.body);
+  final names = m.attachments.map((a) => a.fileName).join(' ');
+  return '$body $names'.trim().toLowerCase();
+}

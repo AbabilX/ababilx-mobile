@@ -10,15 +10,31 @@ class CachedSidebars extends Table {
   Set<Column<Object>> get primaryKey => {userId};
 }
 
-/// One row per conversation — JSON array of last 50 messages (V2).
-/// Pending / failed messages are never written here (only confirmed ones).
-class CachedMessageFeeds extends Table {
+/// One row per message — the durable chat history (V4). Replaces the old
+/// "last 50 messages as one JSON blob per conversation" cache: paging, search
+/// and every offline read are indexed queries over this table, so history stays
+/// browsable with no network and no ceiling other than [pruneKeepPerConversation].
+///
+/// [payloadJson] is the full server message JSON. For an E2EE DM its `body` is
+/// blanked and only the ciphertext fields are kept — the same "ciphertext only
+/// at rest" rule the rest of the local layer follows.
+@TableIndex(
+  name: 'idx_cached_messages_conv_time',
+  columns: {#conversationId, #createdAtMs},
+)
+class CachedMessages extends Table {
+  TextColumn get id => text()();
   TextColumn get conversationId => text()();
+  IntColumn get createdAtMs => integer()();
+  TextColumn get threadRootId => text().nullable()();
   TextColumn get payloadJson => text()();
-  IntColumn get updatedAtMs => integer()();
+
+  /// Lowercased plain text, for offline search. Always empty for an encrypted
+  /// DM — its plaintext never leaves the vault.
+  TextColumn get searchText => text().withDefault(const Constant(''))();
 
   @override
-  Set<Column<Object>> get primaryKey => {conversationId};
+  Set<Column<Object>> get primaryKey => {id};
 }
 
 /// One row per not-yet-confirmed outbound message, so a send that fails (or
@@ -28,7 +44,7 @@ class CachedMessageFeeds extends Table {
 /// Channel messages store [body] in plain text. DM messages store the
 /// already-sealed [encryptedBody]/[encryptionNonce]/[encryptionKeyVersion]
 /// instead and leave [body] empty — the same "ciphertext only at rest" rule
-/// [CachedMessageFeeds] follows, so a failed DM send is durable without ever
+/// [CachedMessages] follows, so a failed DM send is durable without ever
 /// putting plaintext on disk outside the PIN-controlled vault.
 class PendingOutboxMessages extends Table {
   TextColumn get clientRef => text()();

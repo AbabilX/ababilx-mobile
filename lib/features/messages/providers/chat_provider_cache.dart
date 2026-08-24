@@ -1,10 +1,11 @@
 part of 'chat_provider.dart';
 
-/// Cache hydrate / persist for sidebar + message feeds (WhatsApp-style instant load).
+/// Cache hydrate / persist for the sidebar and the durable message history —
+/// both painted from disk before any request, so a cold offline open still
+/// shows the last known chat list and full readable history.
 mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
   ChatSidebarCache get sidebarCache;
-  ChatFeedCache get feedCache;
-  ChatOutboxCache get outboxCache;
+  ChatMessageStore get messageStore;
 
   // ─── Sidebar cache ──────────────────────────────────────────────────────────
 
@@ -77,18 +78,25 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     } catch (_) {}
   }
 
-  // ─── Feed cache ─────────────────────────────────────────────────────────────
+  // ─── Message history (durable — see CachedMessages) ───────────────────────
 
-  /// Reads cached messages for [conversationId] and injects them into the feed
-  /// map immediately. Returns true if cache had data (avoids showing spinner).
+  /// Reads the newest page of [conversationId] straight off disk and paints it
+  /// before any request is made. Returns true when the cache had something, so
+  /// the caller can skip the spinner. [ChatFeed.hasMore] is set from what else
+  /// is on disk, which is what lets an offline user keep scrolling back.
   Future<bool> hydrateFeedFromCache(String conversationId) async {
     if (conversationId.isEmpty) return false;
     // Don't overwrite an already-loaded feed (e.g. user switching back quickly).
     final existing = state.feeds[feedKey(conversationId)];
     if (existing != null && existing.fetchedAt > 0) return true;
     try {
-      var messages = await feedCache.read(conversationId);
-      if (messages == null || messages.isEmpty) return false;
+      var messages = await messageStore.page(conversationId);
+      if (messages.isEmpty) return false;
+      final oldestMs = messageTimeMs(messages.first);
+      final hasOlder = await messageStore.hasOlderThan(
+        conversationId,
+        oldestMs,
+      );
       messages = await decryptIfNeeded(messages);
       setFeed(
         feedKey(conversationId),
@@ -96,6 +104,7 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
           messages: messages,
           fetchedAt: 0, // 0 = from cache, triggers background network refresh
           loading: false,
+          hasMore: hasOlder,
         ),
       );
       return true;
@@ -104,123 +113,46 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     }
   }
 
+  /// Pages backwards through the local history when the server cannot be
+  /// reached (or was never asked). Returns false when disk has nothing more
+  /// to give, so the caller can fall back to its own error handling.
+  Future<bool> loadOlderFromDisk(String conversationId, String key) async {
+    final feed = state.feeds[key];
+    if (feed == null || feed.messages.isEmpty) return false;
+    final older = await messageStore.page(
+      conversationId,
+      beforeMs: messageTimeMs(feed.messages.first),
+    );
+    final known = feed.messages.map((m) => m.id).toSet();
+    final fresh = older.where((m) => !known.contains(m.id)).toList();
+    if (fresh.isEmpty) {
+      setFeed(key, feed.copyWith(loadingMore: false, hasMore: false));
+      return true;
+    }
+    final decrypted = await decryptIfNeeded(fresh);
+    setFeed(
+      key,
+      feed.copyWith(
+        messages: [...decrypted, ...feed.messages],
+        loadingMore: false,
+      ),
+    );
+    return true;
+  }
+
   /// Persists the confirmed messages for [conversationId] to local DB after a
   /// successful server load. Runs fire-and-forget (non-blocking).
   void persistFeedAsync(String conversationId, List<ChatMessage> messages) {
-    feedCache.write(conversationId, messages).ignore();
+    messageStore.saveAll(messages).ignore();
   }
 
-  // ─── Outbox (durable — see PendingOutboxMessages) ──────────────────────────
-
-  /// Writes [pendingMsg] to the outbox before the network call is even made,
-  /// so a send survives an app kill regardless of whether it ever gets to
-  /// try. Pass [encrypted] for a DM send — its ciphertext is stored instead
-  /// of [pendingMsg.body], never the plaintext. Fire-and-forget: the
-  /// in-memory pending bubble is the source of truth for this session, the
-  /// outbox row is only for surviving a restart.
-  void persistOutboxAsync(
-    String conversationId,
-    ChatMessage pendingMsg, {
-    EncryptedDmPayload? encrypted,
-  }) {
-    outboxCache
-        .save(
-          clientRef: pendingMsg.clientRef ?? pendingMsg.id,
-          conversationId: conversationId,
-          body: encrypted == null ? pendingMsg.body : '',
-          parentId: pendingMsg.pendingParentId,
-          attachments: pendingMsg.pendingAttachments,
-          mentionedUserIds: pendingMsg.pendingMentionedUserIds,
-          encryptedBody: encrypted?.encryptedBody,
-          encryptionNonce: encrypted?.nonce,
-          encryptionKeyVersion: encrypted?.keyVersion,
-        )
-        .ignore();
+  /// Persists a single message — the WS path, where re-writing the whole feed
+  /// on every reaction would be wasted work.
+  void persistMessageAsync(ChatMessage message) {
+    messageStore.saveOne(message).ignore();
   }
 
-  void removeFromOutboxAsync(String clientRef) {
-    outboxCache.remove(clientRef).ignore();
-  }
-
-  /// Reloads every outstanding send left over from a previous session and
-  /// re-injects it as a failed bubble in its conversation's feed, so it
-  /// shows up as "tap to retry" immediately — and so [retryPendingMessages]
-  /// (fired on the next WS reconnect) picks it up without the user having to
-  /// open that conversation first. A DM entry only decrypts here if the
-  /// vault is already unlocked; otherwise it shows the same "Encrypted
-  /// message" placeholder used everywhere else until [redecryptFailedMessages]
-  /// runs after unlock.
-  Future<void> hydrateOutboxMessages() async {
-    final userId = state.currentUserId;
-    if (userId.isEmpty) return;
-    final entries = await outboxCache.readAll();
-    final vault = ref.read(messageVaultProvider);
-    for (final entry in entries) {
-      var msg = ChatMessage(
-        id: entry.clientRef,
-        conversationId: entry.conversationId,
-        userId: userId,
-        body: entry.isEncrypted ? 'Encrypted message' : entry.body,
-        parentId: entry.parentId,
-        createdAt: DateTime.fromMillisecondsSinceEpoch(
-          entry.createdAtMs,
-        ).toUtc().toIso8601String(),
-        sendStatus: MessageSendStatus.failed,
-        clientRef: entry.clientRef,
-        encryptedBody: entry.encryptedBody,
-        encryptionNonce: entry.encryptionNonce,
-        encryptionVersion: entry.isEncrypted ? 1 : null,
-        encryptionKeyVersion: entry.encryptionKeyVersion,
-        pendingAttachments: entry.attachments,
-        pendingParentId: entry.parentId,
-        pendingMentionedUserIds: entry.mentionedUserIds,
-      );
-      if (entry.isEncrypted && vault.isUnlocked) {
-        msg = await vault.decryptMessage(msg, userId);
-      }
-      final key = feedKey(entry.conversationId, threadRootId: entry.parentId);
-      final feed =
-          state.feeds[key] ??
-          ChatFeed(fetchedAt: DateTime.now().millisecondsSinceEpoch);
-      if (feed.messages.any((m) => m.id == msg.id)) continue;
-      setFeed(key, feed.copyWith(messages: [...feed.messages, msg]));
-    }
-  }
-
-  /// Decrypts any failed DM bubble still showing the locked placeholder — the
-  /// ones [hydrateOutboxMessages] couldn't read before the vault unlocked.
-  /// Call right after unlock, alongside the sidebar refresh.
-  Future<void> redecryptFailedMessages() async {
-    final userId = state.currentUserId;
-    if (userId.isEmpty) return;
-    final vault = ref.read(messageVaultProvider);
-    if (!vault.isUnlocked) return;
-    for (final key in state.feeds.keys.toList()) {
-      final feed = state.feeds[key];
-      if (feed == null) continue;
-      final locked = feed.messages.where(isLockedFailedMessage).toList();
-      if (locked.isEmpty) continue;
-      final decrypted = await vault.decryptMessages(locked, userId);
-      final byId = {for (final m in decrypted) m.id: m};
-      setFeed(
-        key,
-        feed.copyWith(
-          messages: feed.messages.map((m) => byId[m.id] ?? m).toList(),
-        ),
-      );
-    }
+  void deleteCachedMessageAsync(String messageId) {
+    messageStore.remove(messageId).ignore();
   }
 }
-
-/// True for a failed DM bubble still showing the vault's own placeholder
-/// text — i.e. one nothing has actually decrypted yet. Retrying it as-is
-/// would resend that placeholder string as the message body, so both
-/// [ChatOutboxCache]-driven retry and manual retry must skip these until a
-/// real decrypt (in [hydrateOutboxMessages] or [redecryptFailedMessages])
-/// replaces the placeholder with real text.
-bool isLockedFailedMessage(ChatMessage m) =>
-    m.sendStatus == MessageSendStatus.failed &&
-    m.isEncrypted &&
-    (m.body.isEmpty ||
-        m.body == 'Encrypted message' ||
-        m.body == 'Unable to decrypt this message');

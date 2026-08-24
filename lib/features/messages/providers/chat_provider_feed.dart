@@ -104,8 +104,25 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
   }) async {
     final key = feedKey(conversationId, threadRootId: threadRootId);
     final feed = state.feeds[key] ?? const ChatFeed();
-    if (!feed.hasMore || feed.nextCursor.isEmpty || feed.loadingMore) return;
+    if (!feed.hasMore || feed.loadingMore) return;
+    final canUseDisk = threadRootId == null;
+    if (feed.nextCursor.isEmpty && !canUseDisk) return;
     setFeed(key, feed.copyWith(loadingMore: true));
+
+    // No server cursor yet — this feed was painted from disk (offline open),
+    // so page backwards through the local history instead of asking a server
+    // we have not successfully talked to.
+    if (feed.nextCursor.isEmpty) {
+      final served = await (this as _ChatCacheMixin).loadOlderFromDisk(
+        conversationId,
+        key,
+      );
+      if (!served) {
+        setFeed(key, feed.copyWith(loadingMore: false, hasMore: false));
+      }
+      return;
+    }
+
     try {
       final page = await repo.listMessages(
         conversationId,
@@ -127,85 +144,20 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
           fetchedAt: DateTime.now().millisecondsSinceEpoch,
         ),
       );
+      if (threadRootId == null) {
+        (this as _ChatCacheMixin).persistFeedAsync(conversationId, sorted);
+      }
     } catch (_) {
+      // Network gone mid-scroll: serve the older page from disk so the user
+      // keeps reading instead of hitting a dead end.
+      if (canUseDisk &&
+          await (this as _ChatCacheMixin).loadOlderFromDisk(
+            conversationId,
+            key,
+          )) {
+        return;
+      }
       setFeed(key, feed.copyWith(loadingMore: false));
     }
-  }
-
-  void appendFeedMessage(
-    String conversationId,
-    ChatMessage msg, {
-    String? threadRootId,
-  }) {
-    final key = feedKey(conversationId, threadRootId: threadRootId);
-    final existing = state.feeds[key];
-    // Only update an already-loaded feed. If the feed has never been fetched,
-    // skip — it will be loaded fresh (with full history) when the user opens
-    // the conversation. Appending to an empty/unfetched feed would prevent the
-    // full-history load from replacing it and leave the feed with only 1 msg.
-    if (existing == null || existing.fetchedAt == 0) return;
-    if (existing.messages.any((m) => m.id == msg.id)) return;
-    setFeed(
-      key,
-      existing.copyWith(
-        messages: [...existing.messages, msg],
-        fetchedAt: DateTime.now().millisecondsSinceEpoch,
-      ),
-    );
-  }
-
-  void updateFeedMessage(
-    String conversationId,
-    ChatMessage msg, {
-    String? threadRootId,
-  }) {
-    final key = feedKey(conversationId, threadRootId: threadRootId);
-    final feed = state.feeds[key];
-    if (feed == null) return;
-    setFeed(
-      key,
-      feed.copyWith(
-        messages: feed.messages.map((m) => m.id == msg.id ? msg : m).toList(),
-        fetchedAt: DateTime.now().millisecondsSinceEpoch,
-      ),
-    );
-  }
-
-  void removeFeedMessage(
-    String conversationId,
-    String messageId, {
-    String? threadRootId,
-  }) {
-    final key = feedKey(conversationId, threadRootId: threadRootId);
-    final feed = state.feeds[key];
-    if (feed == null) return;
-    setFeed(
-      key,
-      feed.copyWith(
-        messages: feed.messages.where((m) => m.id != messageId).toList(),
-      ),
-    );
-  }
-
-  void updateFeedReactions(
-    String conversationId,
-    String messageId,
-    List<ChatReactionGroup> reactions, {
-    String? threadRootId,
-  }) {
-    final key = feedKey(conversationId, threadRootId: threadRootId);
-    final feed = state.feeds[key];
-    if (feed == null) return;
-    setFeed(
-      key,
-      feed.copyWith(
-        messages: feed.messages
-            .map(
-              (m) => m.id == messageId ? m.copyWith(reactions: reactions) : m,
-            )
-            .toList(),
-        fetchedAt: DateTime.now().millisecondsSinceEpoch,
-      ),
-    );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../messages/data/local/chat_feed_cache.dart';
+import '../../messages/data/local/chat_message_store.dart';
 import '../../messages/data/local/chat_outbox_cache.dart';
 import '../../messages/data/local/chat_sidebar_cache.dart';
 import '../../messages/message_e2ee/message_vault.dart';
@@ -37,7 +37,7 @@ class AuthNotifier extends AsyncNotifier<bool> {
     // Clear chat disk cache so next account never sees prior sidebar or feeds.
     try {
       await ref.read(chatSidebarCacheProvider).clearAll();
-      await ref.read(chatFeedCacheProvider).clearAll();
+      await ref.read(chatMessageStoreProvider).clearAll();
       // An unsent outbox message is scoped to this account's identity (and,
       // for channels, plain text) — it must not survive into a different
       // account signed in on this device, same as the caches above.

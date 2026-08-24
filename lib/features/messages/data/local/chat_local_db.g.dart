@@ -280,12 +280,21 @@ class CachedSidebarsCompanion extends UpdateCompanion<CachedSidebar> {
   }
 }
 
-class $CachedMessageFeedsTable extends CachedMessageFeeds
-    with TableInfo<$CachedMessageFeedsTable, CachedMessageFeed> {
+class $CachedMessagesTable extends CachedMessages
+    with TableInfo<$CachedMessagesTable, CachedMessage> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $CachedMessageFeedsTable(this.attachedDatabase, [this._alias]);
+  $CachedMessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _conversationIdMeta = const VerificationMeta(
     'conversationId',
   );
@@ -296,6 +305,28 @@ class $CachedMessageFeedsTable extends CachedMessageFeeds
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _threadRootIdMeta = const VerificationMeta(
+    'threadRootId',
+  );
+  @override
+  late final GeneratedColumn<String> threadRootId = GeneratedColumn<String>(
+    'thread_root_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
     'payloadJson',
@@ -308,35 +339,44 @@ class $CachedMessageFeedsTable extends CachedMessageFeeds
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _updatedAtMsMeta = const VerificationMeta(
-    'updatedAtMs',
+  static const VerificationMeta _searchTextMeta = const VerificationMeta(
+    'searchText',
   );
   @override
-  late final GeneratedColumn<int> updatedAtMs = GeneratedColumn<int>(
-    'updated_at_ms',
+  late final GeneratedColumn<String> searchText = GeneratedColumn<String>(
+    'search_text',
     aliasedName,
     false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
   );
   @override
   List<GeneratedColumn> get $columns => [
+    id,
     conversationId,
+    createdAtMs,
+    threadRootId,
     payloadJson,
-    updatedAtMs,
+    searchText,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'cached_message_feeds';
+  static const String $name = 'cached_messages';
   @override
   VerificationContext validateIntegrity(
-    Insertable<CachedMessageFeed> instance, {
+    Insertable<CachedMessage> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
     if (data.containsKey('conversation_id')) {
       context.handle(
         _conversationIdMeta,
@@ -347,6 +387,26 @@ class $CachedMessageFeedsTable extends CachedMessageFeeds
       );
     } else if (isInserting) {
       context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    if (data.containsKey('thread_root_id')) {
+      context.handle(
+        _threadRootIdMeta,
+        threadRootId.isAcceptableOrUnknown(
+          data['thread_root_id']!,
+          _threadRootIdMeta,
+        ),
+      );
     }
     if (data.containsKey('payload_json')) {
       context.handle(
@@ -359,182 +419,261 @@ class $CachedMessageFeedsTable extends CachedMessageFeeds
     } else if (isInserting) {
       context.missing(_payloadJsonMeta);
     }
-    if (data.containsKey('updated_at_ms')) {
+    if (data.containsKey('search_text')) {
       context.handle(
-        _updatedAtMsMeta,
-        updatedAtMs.isAcceptableOrUnknown(
-          data['updated_at_ms']!,
-          _updatedAtMsMeta,
-        ),
+        _searchTextMeta,
+        searchText.isAcceptableOrUnknown(data['search_text']!, _searchTextMeta),
       );
-    } else if (isInserting) {
-      context.missing(_updatedAtMsMeta);
     }
     return context;
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {conversationId};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  CachedMessageFeed map(Map<String, dynamic> data, {String? tablePrefix}) {
+  CachedMessage map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return CachedMessageFeed(
+    return CachedMessage(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
       conversationId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}conversation_id'],
       )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+      threadRootId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}thread_root_id'],
+      ),
       payloadJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}payload_json'],
       )!,
-      updatedAtMs: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}updated_at_ms'],
+      searchText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}search_text'],
       )!,
     );
   }
 
   @override
-  $CachedMessageFeedsTable createAlias(String alias) {
-    return $CachedMessageFeedsTable(attachedDatabase, alias);
+  $CachedMessagesTable createAlias(String alias) {
+    return $CachedMessagesTable(attachedDatabase, alias);
   }
 }
 
-class CachedMessageFeed extends DataClass
-    implements Insertable<CachedMessageFeed> {
+class CachedMessage extends DataClass implements Insertable<CachedMessage> {
+  final String id;
   final String conversationId;
+  final int createdAtMs;
+  final String? threadRootId;
   final String payloadJson;
-  final int updatedAtMs;
-  const CachedMessageFeed({
+
+  /// Lowercased plain text, for offline search. Always empty for an encrypted
+  /// DM — its plaintext never leaves the vault.
+  final String searchText;
+  const CachedMessage({
+    required this.id,
     required this.conversationId,
+    required this.createdAtMs,
+    this.threadRootId,
     required this.payloadJson,
-    required this.updatedAtMs,
+    required this.searchText,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
     map['conversation_id'] = Variable<String>(conversationId);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    if (!nullToAbsent || threadRootId != null) {
+      map['thread_root_id'] = Variable<String>(threadRootId);
+    }
     map['payload_json'] = Variable<String>(payloadJson);
-    map['updated_at_ms'] = Variable<int>(updatedAtMs);
+    map['search_text'] = Variable<String>(searchText);
     return map;
   }
 
-  CachedMessageFeedsCompanion toCompanion(bool nullToAbsent) {
-    return CachedMessageFeedsCompanion(
+  CachedMessagesCompanion toCompanion(bool nullToAbsent) {
+    return CachedMessagesCompanion(
+      id: Value(id),
       conversationId: Value(conversationId),
+      createdAtMs: Value(createdAtMs),
+      threadRootId: threadRootId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(threadRootId),
       payloadJson: Value(payloadJson),
-      updatedAtMs: Value(updatedAtMs),
+      searchText: Value(searchText),
     );
   }
 
-  factory CachedMessageFeed.fromJson(
+  factory CachedMessage.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return CachedMessageFeed(
+    return CachedMessage(
+      id: serializer.fromJson<String>(json['id']),
       conversationId: serializer.fromJson<String>(json['conversationId']),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+      threadRootId: serializer.fromJson<String?>(json['threadRootId']),
       payloadJson: serializer.fromJson<String>(json['payloadJson']),
-      updatedAtMs: serializer.fromJson<int>(json['updatedAtMs']),
+      searchText: serializer.fromJson<String>(json['searchText']),
     );
   }
   @override
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
       'conversationId': serializer.toJson<String>(conversationId),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+      'threadRootId': serializer.toJson<String?>(threadRootId),
       'payloadJson': serializer.toJson<String>(payloadJson),
-      'updatedAtMs': serializer.toJson<int>(updatedAtMs),
+      'searchText': serializer.toJson<String>(searchText),
     };
   }
 
-  CachedMessageFeed copyWith({
+  CachedMessage copyWith({
+    String? id,
     String? conversationId,
+    int? createdAtMs,
+    Value<String?> threadRootId = const Value.absent(),
     String? payloadJson,
-    int? updatedAtMs,
-  }) => CachedMessageFeed(
+    String? searchText,
+  }) => CachedMessage(
+    id: id ?? this.id,
     conversationId: conversationId ?? this.conversationId,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+    threadRootId: threadRootId.present ? threadRootId.value : this.threadRootId,
     payloadJson: payloadJson ?? this.payloadJson,
-    updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+    searchText: searchText ?? this.searchText,
   );
-  CachedMessageFeed copyWithCompanion(CachedMessageFeedsCompanion data) {
-    return CachedMessageFeed(
+  CachedMessage copyWithCompanion(CachedMessagesCompanion data) {
+    return CachedMessage(
+      id: data.id.present ? data.id.value : this.id,
       conversationId: data.conversationId.present
           ? data.conversationId.value
           : this.conversationId,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+      threadRootId: data.threadRootId.present
+          ? data.threadRootId.value
+          : this.threadRootId,
       payloadJson: data.payloadJson.present
           ? data.payloadJson.value
           : this.payloadJson,
-      updatedAtMs: data.updatedAtMs.present
-          ? data.updatedAtMs.value
-          : this.updatedAtMs,
+      searchText: data.searchText.present
+          ? data.searchText.value
+          : this.searchText,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('CachedMessageFeed(')
+    return (StringBuffer('CachedMessage(')
+          ..write('id: $id, ')
           ..write('conversationId: $conversationId, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('threadRootId: $threadRootId, ')
           ..write('payloadJson: $payloadJson, ')
-          ..write('updatedAtMs: $updatedAtMs')
+          ..write('searchText: $searchText')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(conversationId, payloadJson, updatedAtMs);
+  int get hashCode => Object.hash(
+    id,
+    conversationId,
+    createdAtMs,
+    threadRootId,
+    payloadJson,
+    searchText,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CachedMessageFeed &&
+      (other is CachedMessage &&
+          other.id == this.id &&
           other.conversationId == this.conversationId &&
+          other.createdAtMs == this.createdAtMs &&
+          other.threadRootId == this.threadRootId &&
           other.payloadJson == this.payloadJson &&
-          other.updatedAtMs == this.updatedAtMs);
+          other.searchText == this.searchText);
 }
 
-class CachedMessageFeedsCompanion extends UpdateCompanion<CachedMessageFeed> {
+class CachedMessagesCompanion extends UpdateCompanion<CachedMessage> {
+  final Value<String> id;
   final Value<String> conversationId;
+  final Value<int> createdAtMs;
+  final Value<String?> threadRootId;
   final Value<String> payloadJson;
-  final Value<int> updatedAtMs;
+  final Value<String> searchText;
   final Value<int> rowid;
-  const CachedMessageFeedsCompanion({
+  const CachedMessagesCompanion({
+    this.id = const Value.absent(),
     this.conversationId = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+    this.threadRootId = const Value.absent(),
     this.payloadJson = const Value.absent(),
-    this.updatedAtMs = const Value.absent(),
+    this.searchText = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  CachedMessageFeedsCompanion.insert({
+  CachedMessagesCompanion.insert({
+    required String id,
     required String conversationId,
+    required int createdAtMs,
+    this.threadRootId = const Value.absent(),
     required String payloadJson,
-    required int updatedAtMs,
+    this.searchText = const Value.absent(),
     this.rowid = const Value.absent(),
-  }) : conversationId = Value(conversationId),
-       payloadJson = Value(payloadJson),
-       updatedAtMs = Value(updatedAtMs);
-  static Insertable<CachedMessageFeed> custom({
+  }) : id = Value(id),
+       conversationId = Value(conversationId),
+       createdAtMs = Value(createdAtMs),
+       payloadJson = Value(payloadJson);
+  static Insertable<CachedMessage> custom({
+    Expression<String>? id,
     Expression<String>? conversationId,
+    Expression<int>? createdAtMs,
+    Expression<String>? threadRootId,
     Expression<String>? payloadJson,
-    Expression<int>? updatedAtMs,
+    Expression<String>? searchText,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
+      if (id != null) 'id': id,
       if (conversationId != null) 'conversation_id': conversationId,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+      if (threadRootId != null) 'thread_root_id': threadRootId,
       if (payloadJson != null) 'payload_json': payloadJson,
-      if (updatedAtMs != null) 'updated_at_ms': updatedAtMs,
+      if (searchText != null) 'search_text': searchText,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  CachedMessageFeedsCompanion copyWith({
+  CachedMessagesCompanion copyWith({
+    Value<String>? id,
     Value<String>? conversationId,
+    Value<int>? createdAtMs,
+    Value<String?>? threadRootId,
     Value<String>? payloadJson,
-    Value<int>? updatedAtMs,
+    Value<String>? searchText,
     Value<int>? rowid,
   }) {
-    return CachedMessageFeedsCompanion(
+    return CachedMessagesCompanion(
+      id: id ?? this.id,
       conversationId: conversationId ?? this.conversationId,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      threadRootId: threadRootId ?? this.threadRootId,
       payloadJson: payloadJson ?? this.payloadJson,
-      updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+      searchText: searchText ?? this.searchText,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -542,14 +681,23 @@ class CachedMessageFeedsCompanion extends UpdateCompanion<CachedMessageFeed> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
     if (conversationId.present) {
       map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    if (threadRootId.present) {
+      map['thread_root_id'] = Variable<String>(threadRootId.value);
     }
     if (payloadJson.present) {
       map['payload_json'] = Variable<String>(payloadJson.value);
     }
-    if (updatedAtMs.present) {
-      map['updated_at_ms'] = Variable<int>(updatedAtMs.value);
+    if (searchText.present) {
+      map['search_text'] = Variable<String>(searchText.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -559,10 +707,13 @@ class CachedMessageFeedsCompanion extends UpdateCompanion<CachedMessageFeed> {
 
   @override
   String toString() {
-    return (StringBuffer('CachedMessageFeedsCompanion(')
+    return (StringBuffer('CachedMessagesCompanion(')
+          ..write('id: $id, ')
           ..write('conversationId: $conversationId, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('threadRootId: $threadRootId, ')
           ..write('payloadJson: $payloadJson, ')
-          ..write('updatedAtMs: $updatedAtMs, ')
+          ..write('searchText: $searchText, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1238,18 +1389,22 @@ abstract class _$ChatLocalDb extends GeneratedDatabase {
   _$ChatLocalDb(QueryExecutor e) : super(e);
   $ChatLocalDbManager get managers => $ChatLocalDbManager(this);
   late final $CachedSidebarsTable cachedSidebars = $CachedSidebarsTable(this);
-  late final $CachedMessageFeedsTable cachedMessageFeeds =
-      $CachedMessageFeedsTable(this);
+  late final $CachedMessagesTable cachedMessages = $CachedMessagesTable(this);
   late final $PendingOutboxMessagesTable pendingOutboxMessages =
       $PendingOutboxMessagesTable(this);
+  late final Index idxCachedMessagesConvTime = Index(
+    'idx_cached_messages_conv_time',
+    'CREATE INDEX idx_cached_messages_conv_time ON cached_messages (conversation_id, created_at_ms)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     cachedSidebars,
-    cachedMessageFeeds,
+    cachedMessages,
     pendingOutboxMessages,
+    idxCachedMessagesConvTime,
   ];
 }
 
@@ -1421,32 +1576,53 @@ typedef $$CachedSidebarsTableProcessedTableManager =
       CachedSidebar,
       PrefetchHooks Function()
     >;
-typedef $$CachedMessageFeedsTableCreateCompanionBuilder =
-    CachedMessageFeedsCompanion Function({
+typedef $$CachedMessagesTableCreateCompanionBuilder =
+    CachedMessagesCompanion Function({
+      required String id,
       required String conversationId,
+      required int createdAtMs,
+      Value<String?> threadRootId,
       required String payloadJson,
-      required int updatedAtMs,
+      Value<String> searchText,
       Value<int> rowid,
     });
-typedef $$CachedMessageFeedsTableUpdateCompanionBuilder =
-    CachedMessageFeedsCompanion Function({
+typedef $$CachedMessagesTableUpdateCompanionBuilder =
+    CachedMessagesCompanion Function({
+      Value<String> id,
       Value<String> conversationId,
+      Value<int> createdAtMs,
+      Value<String?> threadRootId,
       Value<String> payloadJson,
-      Value<int> updatedAtMs,
+      Value<String> searchText,
       Value<int> rowid,
     });
 
-class $$CachedMessageFeedsTableFilterComposer
-    extends Composer<_$ChatLocalDb, $CachedMessageFeedsTable> {
-  $$CachedMessageFeedsTableFilterComposer({
+class $$CachedMessagesTableFilterComposer
+    extends Composer<_$ChatLocalDb, $CachedMessagesTable> {
+  $$CachedMessagesTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get conversationId => $composableBuilder(
     column: $table.conversationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get threadRootId => $composableBuilder(
+    column: $table.threadRootId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1455,23 +1631,38 @@ class $$CachedMessageFeedsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get updatedAtMs => $composableBuilder(
-    column: $table.updatedAtMs,
+  ColumnFilters<String> get searchText => $composableBuilder(
+    column: $table.searchText,
     builder: (column) => ColumnFilters(column),
   );
 }
 
-class $$CachedMessageFeedsTableOrderingComposer
-    extends Composer<_$ChatLocalDb, $CachedMessageFeedsTable> {
-  $$CachedMessageFeedsTableOrderingComposer({
+class $$CachedMessagesTableOrderingComposer
+    extends Composer<_$ChatLocalDb, $CachedMessagesTable> {
+  $$CachedMessagesTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get conversationId => $composableBuilder(
     column: $table.conversationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get threadRootId => $composableBuilder(
+    column: $table.threadRootId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -1480,23 +1671,36 @@ class $$CachedMessageFeedsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get updatedAtMs => $composableBuilder(
-    column: $table.updatedAtMs,
+  ColumnOrderings<String> get searchText => $composableBuilder(
+    column: $table.searchText,
     builder: (column) => ColumnOrderings(column),
   );
 }
 
-class $$CachedMessageFeedsTableAnnotationComposer
-    extends Composer<_$ChatLocalDb, $CachedMessageFeedsTable> {
-  $$CachedMessageFeedsTableAnnotationComposer({
+class $$CachedMessagesTableAnnotationComposer
+    extends Composer<_$ChatLocalDb, $CachedMessagesTable> {
+  $$CachedMessagesTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
   GeneratedColumn<String> get conversationId => $composableBuilder(
     column: $table.conversationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get threadRootId => $composableBuilder(
+    column: $table.threadRootId,
     builder: (column) => column,
   );
 
@@ -1505,72 +1709,77 @@ class $$CachedMessageFeedsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<int> get updatedAtMs => $composableBuilder(
-    column: $table.updatedAtMs,
+  GeneratedColumn<String> get searchText => $composableBuilder(
+    column: $table.searchText,
     builder: (column) => column,
   );
 }
 
-class $$CachedMessageFeedsTableTableManager
+class $$CachedMessagesTableTableManager
     extends
         RootTableManager<
           _$ChatLocalDb,
-          $CachedMessageFeedsTable,
-          CachedMessageFeed,
-          $$CachedMessageFeedsTableFilterComposer,
-          $$CachedMessageFeedsTableOrderingComposer,
-          $$CachedMessageFeedsTableAnnotationComposer,
-          $$CachedMessageFeedsTableCreateCompanionBuilder,
-          $$CachedMessageFeedsTableUpdateCompanionBuilder,
+          $CachedMessagesTable,
+          CachedMessage,
+          $$CachedMessagesTableFilterComposer,
+          $$CachedMessagesTableOrderingComposer,
+          $$CachedMessagesTableAnnotationComposer,
+          $$CachedMessagesTableCreateCompanionBuilder,
+          $$CachedMessagesTableUpdateCompanionBuilder,
           (
-            CachedMessageFeed,
-            BaseReferences<
-              _$ChatLocalDb,
-              $CachedMessageFeedsTable,
-              CachedMessageFeed
-            >,
+            CachedMessage,
+            BaseReferences<_$ChatLocalDb, $CachedMessagesTable, CachedMessage>,
           ),
-          CachedMessageFeed,
+          CachedMessage,
           PrefetchHooks Function()
         > {
-  $$CachedMessageFeedsTableTableManager(
+  $$CachedMessagesTableTableManager(
     _$ChatLocalDb db,
-    $CachedMessageFeedsTable table,
+    $CachedMessagesTable table,
   ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$CachedMessageFeedsTableFilterComposer($db: db, $table: table),
+              $$CachedMessagesTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$CachedMessageFeedsTableOrderingComposer($db: db, $table: table),
+              $$CachedMessagesTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$CachedMessageFeedsTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
+              $$CachedMessagesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
+                Value<String> id = const Value.absent(),
                 Value<String> conversationId = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+                Value<String?> threadRootId = const Value.absent(),
                 Value<String> payloadJson = const Value.absent(),
-                Value<int> updatedAtMs = const Value.absent(),
+                Value<String> searchText = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => CachedMessageFeedsCompanion(
+              }) => CachedMessagesCompanion(
+                id: id,
                 conversationId: conversationId,
+                createdAtMs: createdAtMs,
+                threadRootId: threadRootId,
                 payloadJson: payloadJson,
-                updatedAtMs: updatedAtMs,
+                searchText: searchText,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
+                required String id,
                 required String conversationId,
+                required int createdAtMs,
+                Value<String?> threadRootId = const Value.absent(),
                 required String payloadJson,
-                required int updatedAtMs,
+                Value<String> searchText = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => CachedMessageFeedsCompanion.insert(
+              }) => CachedMessagesCompanion.insert(
+                id: id,
                 conversationId: conversationId,
+                createdAtMs: createdAtMs,
+                threadRootId: threadRootId,
                 payloadJson: payloadJson,
-                updatedAtMs: updatedAtMs,
+                searchText: searchText,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -1581,25 +1790,21 @@ class $$CachedMessageFeedsTableTableManager
       );
 }
 
-typedef $$CachedMessageFeedsTableProcessedTableManager =
+typedef $$CachedMessagesTableProcessedTableManager =
     ProcessedTableManager<
       _$ChatLocalDb,
-      $CachedMessageFeedsTable,
-      CachedMessageFeed,
-      $$CachedMessageFeedsTableFilterComposer,
-      $$CachedMessageFeedsTableOrderingComposer,
-      $$CachedMessageFeedsTableAnnotationComposer,
-      $$CachedMessageFeedsTableCreateCompanionBuilder,
-      $$CachedMessageFeedsTableUpdateCompanionBuilder,
+      $CachedMessagesTable,
+      CachedMessage,
+      $$CachedMessagesTableFilterComposer,
+      $$CachedMessagesTableOrderingComposer,
+      $$CachedMessagesTableAnnotationComposer,
+      $$CachedMessagesTableCreateCompanionBuilder,
+      $$CachedMessagesTableUpdateCompanionBuilder,
       (
-        CachedMessageFeed,
-        BaseReferences<
-          _$ChatLocalDb,
-          $CachedMessageFeedsTable,
-          CachedMessageFeed
-        >,
+        CachedMessage,
+        BaseReferences<_$ChatLocalDb, $CachedMessagesTable, CachedMessage>,
       ),
-      CachedMessageFeed,
+      CachedMessage,
       PrefetchHooks Function()
     >;
 typedef $$PendingOutboxMessagesTableCreateCompanionBuilder =
@@ -1936,8 +2141,8 @@ class $ChatLocalDbManager {
   $ChatLocalDbManager(this._db);
   $$CachedSidebarsTableTableManager get cachedSidebars =>
       $$CachedSidebarsTableTableManager(_db, _db.cachedSidebars);
-  $$CachedMessageFeedsTableTableManager get cachedMessageFeeds =>
-      $$CachedMessageFeedsTableTableManager(_db, _db.cachedMessageFeeds);
+  $$CachedMessagesTableTableManager get cachedMessages =>
+      $$CachedMessagesTableTableManager(_db, _db.cachedMessages);
   $$PendingOutboxMessagesTableTableManager get pendingOutboxMessages =>
       $$PendingOutboxMessagesTableTableManager(_db, _db.pendingOutboxMessages);
 }

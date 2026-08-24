@@ -38,6 +38,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       final id = ev['id'] as String? ?? '';
       if (id.isEmpty) return;
       removeFeedMessage(convId, id);
+      (this as _ChatCacheMixin).deleteCachedMessageAsync(id);
       // Remove from all known thread feeds.
       for (final rootId in state.threadRepliesByRoot.keys) {
         final threadKey = feedKey(convId, threadRootId: rootId);
@@ -46,7 +47,6 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
         }
         markThreadReplyDeleted(rootId, id);
       }
-      _persistMainFeed(convId);
     }
 
     if (type == 'chat.reaction.updated') {
@@ -62,19 +62,22 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
           updateFeedReactions(convId, id, reactions, threadRootId: rootId);
         }
       }
-      _persistMainFeed(convId);
+      _persistFeedMessage(convId, id);
     }
   }
 
-  /// Writes the in-memory main (non-thread) feed for [convId] to SQLite.
-  /// Called after every WS-driven mutation — not just the initial
-  /// [loadFeed] fetch — so a message that only ever arrived over the
-  /// realtime socket is still on disk if the app goes offline before the
-  /// next full reload. No-op if that feed was never loaded this session.
-  void _persistMainFeed(String convId) {
+  /// Writes one already-patched message from the in-memory main feed back to
+  /// SQLite — the reaction path, where the event itself carries no message.
+  /// No-op if that feed was never loaded this session.
+  void _persistFeedMessage(String convId, String messageId) {
     final feed = state.feeds[feedKey(convId)];
     if (feed == null) return;
-    (this as _ChatCacheMixin).persistFeedAsync(convId, feed.messages);
+    for (final m in feed.messages) {
+      if (m.id == messageId) {
+        (this as _ChatCacheMixin).persistMessageAsync(m);
+        return;
+      }
+    }
   }
 
   Future<void> _onMessageCreated(Map<String, dynamic> ev) async {
@@ -118,7 +121,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
             parentId: msg.parentId,
           );
           prefetchImageAttachments(msg.attachments);
-          _persistMainFeed(convId);
+          (this as _ChatCacheMixin).persistMessageAsync(msg);
           return;
         }
       }
@@ -142,7 +145,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       appendFeedMessage(convId, msg);
     }
     prefetchImageAttachments(msg.attachments);
-    _persistMainFeed(convId);
+    (this as _ChatCacheMixin).persistMessageAsync(msg);
   }
 
   Future<void> _onMessageUpdated(
@@ -164,7 +167,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       patchThreadReply(msg.parentId!, msg);
     }
     prefetchImageAttachments(msg.attachments);
-    _persistMainFeed(convId);
+    (this as _ChatCacheMixin).persistMessageAsync(msg);
   }
 
   void initRealtime() {

@@ -128,7 +128,7 @@ mixin _ChatActionsMixin
       }
       // Persist before the network call — even a send that never gets to
       // try (app killed offline) must survive as a retryable outbox row.
-      (this as _ChatCacheMixin).persistOutboxAsync(
+      (this as _ChatOutboxMixin).persistOutboxAsync(
         convId,
         pendingMsg,
         encrypted: encrypted,
@@ -151,7 +151,7 @@ mixin _ChatActionsMixin
             .decryptMessage(msg, currentUser);
       }
       // ── Step 3: Replace the pending bubble with the confirmed message ─────
-      (this as _ChatCacheMixin).removeFromOutboxAsync(clientRef);
+      (this as _ChatOutboxMixin).removeFromOutboxAsync(clientRef);
       _replacePendingMessage(convId, clientRef, msg, parentId: parentId);
       return msg;
     } catch (_) {
@@ -178,7 +178,7 @@ mixin _ChatActionsMixin
     // Remove the failed bubble first — sendMessage will create a fresh pending one.
     _removePendingFromFeed(convId, failedMsg.id, parentId: failedMsg.parentId);
     if (failedMsg.clientRef != null) {
-      (this as _ChatCacheMixin).removeFromOutboxAsync(failedMsg.clientRef!);
+      (this as _ChatOutboxMixin).removeFromOutboxAsync(failedMsg.clientRef!);
     }
 
     await sendMessage(

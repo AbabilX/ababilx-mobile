@@ -10,7 +10,8 @@ import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat_utils.dart';
 import '../data/chat_repository.dart';
-import '../data/local/chat_feed_cache.dart';
+import '../data/local/chat_message_row.dart';
+import '../data/local/chat_message_store.dart';
 import '../data/local/chat_outbox_cache.dart';
 import '../data/local/attachment_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
@@ -22,19 +23,23 @@ export 'chat_state.dart';
 
 part 'chat_provider_patch.dart';
 part 'chat_provider_feed.dart';
+part 'chat_provider_feed_edit.dart';
 part 'chat_provider_actions.dart';
 part 'chat_provider_mutate.dart';
 part 'chat_provider_ws.dart';
 part 'chat_provider_cache.dart';
+part 'chat_provider_outbox.dart';
 
 class ChatNotifier extends Notifier<ChatState>
     with
         _ChatPatchMixin,
         _ChatFeedMixin,
+        _ChatFeedEditMixin,
         _ChatActionsMixin,
         _ChatMutateMixin,
         _ChatWsMixin,
-        _ChatCacheMixin {
+        _ChatCacheMixin,
+        _ChatOutboxMixin {
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
   WsClient get _ws => ref.read(wsClientProvider);
   bool _realtimeStarted = false;
@@ -54,7 +59,7 @@ class ChatNotifier extends Notifier<ChatState>
   ChatSidebarCache get sidebarCache => ref.read(chatSidebarCacheProvider);
 
   @override
-  ChatFeedCache get feedCache => ref.read(chatFeedCacheProvider);
+  ChatMessageStore get messageStore => ref.read(chatMessageStoreProvider);
 
   @override
   ChatOutboxCache get outboxCache => ref.read(chatOutboxCacheProvider);

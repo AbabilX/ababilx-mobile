@@ -1,6 +1,7 @@
 part of 'chat_provider.dart';
 
-mixin _ChatMutateMixin on Notifier<ChatState>, _ChatActionsMixin {
+mixin _ChatMutateMixin
+    on Notifier<ChatState>, _ChatActionsMixin, _ChatFeedEditMixin {
   @override
   ChatRepository get repo;
 
@@ -76,13 +77,25 @@ mixin _ChatMutateMixin on Notifier<ChatState>, _ChatActionsMixin {
     caption: caption,
   );
 
+  /// Local history answers first so results appear with no round trip, then
+  /// the server result replaces them — it reaches further back than the disk
+  /// window and, unlike the local index, can match inside an E2EE DM.
   Future<void> searchMessages(String q) async {
     state = state.copyWith(searchQuery: q, searchLoading: true);
+    final store = (this as _ChatCacheMixin).messageStore;
+    final local = await store.search(q);
+    if (state.searchQuery != q) return;
+    if (local.isNotEmpty) {
+      state = state.copyWith(searchResults: local, searchLoading: false);
+    }
     try {
       final results = await repo.searchMessages(q);
+      if (state.searchQuery != q) return;
       state = state.copyWith(searchResults: results, searchLoading: false);
     } catch (_) {
-      state = state.copyWith(searchResults: [], searchLoading: false);
+      // Offline: whatever the local index found stands as the answer.
+      if (state.searchQuery != q) return;
+      state = state.copyWith(searchResults: local, searchLoading: false);
     }
   }
 
