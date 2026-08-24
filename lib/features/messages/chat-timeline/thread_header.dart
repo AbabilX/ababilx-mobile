@@ -66,7 +66,7 @@ class ThreadHeader extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppAvatar(size: 30, url: avatarUrl, name: avatarName),
-                if (convo != null && convo.isDm && !convo.peerLeft)
+                if (convo != null && convo.isDm && convo.canMessage)
                   Padding(
                     padding: const EdgeInsets.only(left: 8),
                     child: CallActionPill(

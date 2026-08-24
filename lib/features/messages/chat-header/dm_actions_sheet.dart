@@ -77,7 +77,7 @@ Future<void> showDmActionsSheet(
                 const SizedBox(height: 4),
 
                 // Subtitle / Status
-                if (conversation.peerLeft)
+                if (!conversation.canMessage)
                   Container(
                     margin: const EdgeInsets.only(top: 4),
                     padding: const EdgeInsets.symmetric(

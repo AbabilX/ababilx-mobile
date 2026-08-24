@@ -1,11 +1,12 @@
-import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import 'models/chat_models.dart';
+import 'chat_endpoints.dart';
 
 class ChatAttachmentsApi {
-  const ChatAttachmentsApi(this._client);
+  const ChatAttachmentsApi(this._client, this._endpoints);
 
   final ApiClient _client;
+  final ChatEndpoints _endpoints;
 
   Future<ChatPresignResult> presignAttachment(
     String conversationId, {
@@ -14,7 +15,7 @@ class ChatAttachmentsApi {
     required int sizeBytes,
   }) async {
     final res = await _client.post(
-      ApiConstants.chatConversationPresign(conversationId),
+      _endpoints.action(conversationId, 'attachments/presign'),
       data: {
         'content_type': contentType,
         'file_name': fileName,
@@ -26,7 +27,7 @@ class ChatAttachmentsApi {
 
   Future<void> discardUpload(String conversationId, String fileUrl) async {
     await _client.post(
-      ApiConstants.chatConversationDiscard(conversationId),
+      _endpoints.action(conversationId, 'attachments/discard'),
       data: {'file_url': fileUrl},
     );
   }

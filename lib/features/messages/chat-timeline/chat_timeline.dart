@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/chat_provider.dart';
 import 'composer.dart';
+import 'composer_locked.dart';
 import 'message_list.dart';
 
 class ChatTimeline extends ConsumerStatefulWidget {
@@ -167,17 +168,23 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
             onRetry: _load,
           ),
         ),
-        MessageComposer(
-          conversationId: widget.conversationId,
-          parentId: widget.threadRootId,
-          hintName:
-              chat
-                  .conversationById(widget.conversationId)
-                  ?.displayTitle(chat.currentUserId) ??
-              'someone',
-          isGroup:
-              chat.conversationById(widget.conversationId)?.isChannel ?? false,
-        ),
+        if (chat.conversationById(widget.conversationId)?.canMessage == false)
+          const ComposerLocked()
+        else
+          MessageComposer(
+            conversationId: widget.conversationId,
+            parentId: widget.threadRootId,
+            hintName:
+                chat
+                    .conversationById(widget.conversationId)
+                    ?.displayTitle(chat.currentUserId) ??
+                'someone',
+            isGroup:
+                chat
+                    .conversationById(widget.conversationId)
+                    ?.isGroupConversation ??
+                false,
+          ),
       ],
     );
   }

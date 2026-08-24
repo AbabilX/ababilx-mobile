@@ -354,4 +354,13 @@ mixin _ChatActionsMixin
     upsertDm(dm);
     return dm;
   }
+
+  Future<ChatConversation> createPersonalGroup(
+    String name,
+    List<String> memberIds,
+  ) async {
+    final group = await repo.createPersonalGroup(name, memberIds);
+    upsertChannel(group);
+    return group;
+  }
 }

@@ -23,7 +23,7 @@ class ConversationRowSwipe extends StatelessWidget {
   final Widget child;
 
   Future<void> _confirmEndAction(BuildContext context) async {
-    final isChannel = conversation.isChannel;
+    final isChannel = conversation.isGroupConversation;
     final title = isChannel ? 'Leave group?' : 'Remove conversation?';
     final message = isChannel
         ? 'You will stop receiving messages from "${conversation.displayTitle(null)}".'
@@ -84,10 +84,10 @@ class ConversationRowSwipe extends StatelessWidget {
             onPressed: (ctx) => _confirmEndAction(ctx),
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
-            icon: conversation.isChannel
+            icon: conversation.isGroupConversation
                 ? Icons.logout_rounded
                 : Icons.delete_outline_rounded,
-            label: conversation.isChannel ? 'Leave' : 'Remove',
+            label: conversation.isGroupConversation ? 'Leave' : 'Remove',
           ),
         ],
       ),

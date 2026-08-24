@@ -8,7 +8,7 @@ import 'shell_pill_metrics.dart';
 
 enum ShellBottomBarMode { home, contacts, organizations }
 
-/// Floating pills — home: nav+search; contacts: [My|Add|All] + **contact** search.
+/// Edge-to-edge flat bottom navigation and context actions.
 class ShellBottomBar extends StatelessWidget {
   const ShellBottomBar({
     super.key,
@@ -70,54 +70,63 @@ class ShellBottomBar extends StatelessWidget {
 
     return SafeArea(
       top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: ShellPillMetrics.height,
-                child: isOrganizations
-                    ? OrganizationsActionPill(
-                        organizationsLabel: organizationsLabel,
-                        addLabel: addLabel,
-                        canAdd: canAdd,
-                        onAdd: onAdd ?? () {},
-                      )
-                    : isContacts
-                    ? ContactsScopePill(
-                        selectedIsMine: contactsMineSelected,
-                        addLabel: addLabel,
-                        mineLabel: mineLabel,
-                        allLabel: allLabel,
-                        canAdd: canAdd,
-                        onAdd: onAdd ?? () {},
-                        onSelectMine: onSelectMine ?? () {},
-                        onSelectAll: onSelectAll ?? () {},
-                      )
-                    : NavPill(
-                        selectedIndex: selectedIndex,
-                        onSelect: onSelect ?? (_) {},
-                        messagesLabel: messagesLabel,
-                        wallLabel: wallLabel,
-                        crmLabel: crmLabel,
-                        boardLabel: boardLabel,
-                        showCrm: showCrm,
-                        unread: unread,
-                      ),
+      child: Material(
+        color: Theme.of(context).colorScheme.surface,
+        child: Container(
+          height: ShellPillMetrics.height,
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
               ),
             ),
-            SizedBox(width: ShellPillMetrics.gap),
-            // Separate callbacks so contacts never accidentally hits chat/wall search.
-            SizedBox(
-              width: ShellPillMetrics.height,
-              height: ShellPillMetrics.height,
-              child: isContacts || isOrganizations
-                  ? SearchPill(onTap: onContactsSearch ?? () {})
-                  : SearchPill(onTap: onSearch ?? () {}),
-            ),
-          ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: ShellPillMetrics.height,
+                  child: isOrganizations
+                      ? OrganizationsActionPill(
+                          organizationsLabel: organizationsLabel,
+                          addLabel: addLabel,
+                          canAdd: canAdd,
+                          onAdd: onAdd ?? () {},
+                        )
+                      : isContacts
+                      ? ContactsScopePill(
+                          selectedIsMine: contactsMineSelected,
+                          addLabel: addLabel,
+                          mineLabel: mineLabel,
+                          allLabel: allLabel,
+                          canAdd: canAdd,
+                          onAdd: onAdd ?? () {},
+                          onSelectMine: onSelectMine ?? () {},
+                          onSelectAll: onSelectAll ?? () {},
+                        )
+                      : NavPill(
+                          selectedIndex: selectedIndex,
+                          onSelect: onSelect ?? (_) {},
+                          messagesLabel: messagesLabel,
+                          wallLabel: wallLabel,
+                          crmLabel: crmLabel,
+                          boardLabel: boardLabel,
+                          showCrm: showCrm,
+                          unread: unread,
+                        ),
+                ),
+              ),
+              if (isContacts || isOrganizations) ...[
+                const VerticalDivider(width: 1),
+                SizedBox(
+                  width: ShellPillMetrics.height,
+                  height: ShellPillMetrics.height,
+                  child: SearchPill(onTap: onContactsSearch ?? () {}),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

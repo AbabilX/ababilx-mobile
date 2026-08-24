@@ -97,6 +97,11 @@ class ChatNotifier extends Notifier<ChatState>
       if (id != null && id.isNotEmpty) {
         state = state.copyWith(currentUserId: id);
       }
+      final wasIndependent = prev?.valueOrNull?.independentChat ?? false;
+      final isIndependent = next.valueOrNull?.independentChat ?? false;
+      if (!wasIndependent && isIndependent && _bootstrapped) {
+        unawaited(fetchSidebar(silent: true));
+      }
     });
     final profile = ref.read(profileProvider).valueOrNull;
     return ChatState(currentUserId: profile?.id ?? '');

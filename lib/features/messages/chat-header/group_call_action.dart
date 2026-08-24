@@ -77,9 +77,7 @@ class _GroupCallActionState extends ConsumerState<GroupCallAction> {
           : inThisCall
           ? () => context.push('/group-call')
           : () => unawaited(
-              ref
-                  .read(groupCallProvider.notifier)
-                  .join(widget.conversation.id),
+              ref.read(groupCallProvider.notifier).join(widget.conversation.id),
             ),
     );
   }

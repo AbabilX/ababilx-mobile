@@ -102,7 +102,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
   Future<void> startOutgoing(ChatConversation conversation) async {
     if (state.active || _transitioning || !conversation.isDm) return;
-    if (conversation.peerLeft || conversation.peerUserId == null) {
+    if (!conversation.canMessage || conversation.peerUserId == null) {
       state = state.copyWith(
         phase: VoiceCallPhase.failed,
         error: 'This teammate is no longer available.',

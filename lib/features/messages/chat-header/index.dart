@@ -12,6 +12,7 @@ import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../nav_back.dart';
 import '../providers/chat_provider.dart';
+import '../providers/chat_connections_provider.dart';
 import 'call_action_pill.dart';
 import 'dm_actions_sheet.dart';
 import 'group_details_dialog.dart';
@@ -55,7 +56,11 @@ class ChatHeader extends ConsumerWidget {
             ),
             middle: InkWell(
               onTap: () async {
-                if (conversation.isChannel) {
+                if (conversation.isGroupConversation) {
+                  if (conversation.isPersonal) {
+                    await ref.read(chatConnectionsProvider.notifier).refresh();
+                    if (!context.mounted) return;
+                  }
                   await showGroupDetailsDialog(context, ref, conversation);
                 } else {
                   await showDmActionsSheet(context, ref, conversation);
@@ -101,7 +106,7 @@ class ChatHeader extends ConsumerWidget {
                           compact: true,
                         ),
                       )
-                    else if (conversation.isChannel &&
+                    else if (conversation.isGroupConversation &&
                         conversation.memberCount != null)
                       Text(
                         '${conversation.memberCount} members',
@@ -127,7 +132,7 @@ class ChatHeader extends ConsumerWidget {
                       color: colors.onSurfaceVariant,
                     ),
                   ),
-                if (conversation.isDm && !conversation.peerLeft)
+                if (conversation.isDm && conversation.canMessage)
                   CallActionPill(
                     icon: Icons.call_rounded,
                     label: AppTranslations.translate(context, ref, 'chat_call'),

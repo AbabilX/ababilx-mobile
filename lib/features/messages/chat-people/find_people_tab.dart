@@ -1,0 +1,99 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/localization/app_translations.dart';
+import '../providers/chat_connections_provider.dart';
+import '../providers/chat_provider.dart';
+import '../data/models/chat_connection.dart';
+import 'people_row.dart';
+
+class FindPeopleTab extends ConsumerStatefulWidget {
+  const FindPeopleTab({super.key});
+
+  @override
+  ConsumerState<FindPeopleTab> createState() => _FindPeopleTabState();
+}
+
+class _FindPeopleTabState extends ConsumerState<FindPeopleTab> {
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _search(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      ref.read(chatConnectionsProvider.notifier).search(value);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(chatConnectionsProvider);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            onChanged: _search,
+            autocorrect: false,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search_rounded),
+              hintText: AppTranslations.translate(
+                context,
+                ref,
+                'chat_search_people',
+              ),
+            ),
+          ),
+        ),
+        if (state.searching) const LinearProgressIndicator(minHeight: 2),
+        Expanded(
+          child: ListView.separated(
+            itemCount: state.searchResults.length,
+            separatorBuilder: (_, _) => const Divider(height: 1, indent: 74),
+            itemBuilder: (_, index) {
+              final user = state.searchResults[index];
+              return PeopleRow(
+                user: user,
+                trailing: _action(context, ref, user),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _action(BuildContext context, WidgetRef ref, ChatUserSummary user) {
+    if (user.canMessage == true) {
+      return TextButton(
+        onPressed: () async {
+          final dm = await ref.read(chatProvider.notifier).startDm(user.userId);
+          if (context.mounted) context.push('/messages/${dm.id}');
+        },
+        child: Text(AppTranslations.translate(context, ref, 'chat_message')),
+      );
+    }
+    if (user.connection == 'none' || user.connection == 'rejected') {
+      return TextButton(
+        onPressed: () =>
+            ref.read(chatConnectionsProvider.notifier).sendRequest(user.userId),
+        child: Text(AppTranslations.translate(context, ref, 'chat_connect')),
+      );
+    }
+    return Text(
+      AppTranslations.translate(
+        context,
+        ref,
+        user.connection == 'pending_in' ? 'chat_incoming' : 'chat_pending',
+      ),
+    );
+  }
+}

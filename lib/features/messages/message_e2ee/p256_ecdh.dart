@@ -60,7 +60,10 @@ class P256Ecdh {
     if (d < BigInt.one || d >= _domain.n) {
       throw ArgumentError('Invalid P-256 private scalar');
     }
-    final remote = _publicPoint(decodeCoordinate(remoteX), decodeCoordinate(remoteY));
+    final remote = _publicPoint(
+      decodeCoordinate(remoteX),
+      decodeCoordinate(remoteY),
+    );
     final product = remote * d;
     if (product == null || product.isInfinity) {
       throw ArgumentError('Invalid P-256 shared secret');
@@ -80,7 +83,9 @@ class P256Ecdh {
       throw ArgumentError('Public key is not on the P-256 curve');
     }
     final point = curve.createPoint(x, y);
-    if (point.isInfinity) throw ArgumentError('Public key is the point at infinity');
+    if (point.isInfinity) {
+      throw ArgumentError('Public key is the point at infinity');
+    }
     return point;
   }
 

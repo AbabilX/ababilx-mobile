@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../features/messages/chat_icon.dart';
-import 'shell_pill_chrome.dart';
 import 'shell_pill_metrics.dart';
 
-/// Right circular action — **same height** as left [NavPill] / contacts pill.
+/// Flat trailing action in the bottom bar.
 class ActionPill extends StatelessWidget {
   const ActionPill({
     super.key,
@@ -27,20 +26,14 @@ class ActionPill extends StatelessWidget {
         ? scheme.onSurfaceVariant
         : scheme.onSurfaceVariant.withValues(alpha: 0.35);
 
-    return ShellPillChrome(
-      shape: BoxShape.circle,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: Center(
-              child: ChatIcon(icon, size: 24, color: color),
-            ),
-          ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Center(child: ChatIcon(icon, size: 24, color: color)),
         ),
       ),
     );
@@ -57,9 +50,6 @@ class SearchPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ActionPill(
-      icon: HugeIcons.strokeRoundedSearch01,
-      onTap: onTap,
-    );
+    return ActionPill(icon: HugeIcons.strokeRoundedSearch01, onTap: onTap);
   }
 }

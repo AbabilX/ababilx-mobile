@@ -17,7 +17,7 @@ import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/index.dart';
 import 'shell_bottom_bar/shell_chrome_provider.dart';
 
-/// Bottom nav: home pills, or CRM list [My|Add|All] + search.
+/// Flat bottom nav, or CRM list [My|Add|All] + search actions.
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;

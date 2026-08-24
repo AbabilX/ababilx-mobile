@@ -1,22 +1,36 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import 'chat_attachments_api.dart';
+import 'chat_connections_api.dart';
+import 'chat_endpoints.dart';
 import 'chat_e2ee_api.dart';
 import 'chat_conversations_api.dart';
 import 'chat_messages_api.dart';
 import 'models/chat_models.dart';
+import '../../profile/providers/profile_provider.dart';
 
 class ChatRepository {
-  ChatRepository(ApiClient client)
-    : _conversations = ChatConversationsApi(client),
-      _messages = ChatMessagesApi(client),
-      _e2ee = ChatE2eeApi(client),
-      _attachments = ChatAttachmentsApi(client);
+  ChatRepository(ApiClient client, {bool independent = false})
+    : _conversations = ChatConversationsApi(
+        client,
+        ChatEndpoints(independent: independent),
+      ),
+      _messages = ChatMessagesApi(
+        client,
+        ChatEndpoints(independent: independent),
+      ),
+      _e2ee = ChatE2eeApi(client, ChatEndpoints(independent: independent)),
+      _attachments = ChatAttachmentsApi(
+        client,
+        ChatEndpoints(independent: independent),
+      ),
+      _connections = ChatConnectionsApi(client);
 
   final ChatConversationsApi _conversations;
   final ChatMessagesApi _messages;
   final ChatE2eeApi _e2ee;
   final ChatAttachmentsApi _attachments;
+  final ChatConnectionsApi _connections;
 
   Future<ChatSidebar> listConversations() => _conversations.listConversations();
 
@@ -50,6 +64,24 @@ class ChatRepository {
 
   Future<ChatConversation> startDm(String userId) =>
       _conversations.startDm(userId);
+
+  Future<ChatConversation> createPersonalGroup(
+    String name,
+    List<String> memberIds,
+  ) => _conversations.createPersonalGroup(name, memberIds);
+
+  Future<ChatUserSearchResult> searchUsers(String query) =>
+      _connections.search(query);
+  Future<List<ChatConnection>> listConnections() =>
+      _connections.listConnections();
+  Future<ChatConnectionRequests> listConnectionRequests() =>
+      _connections.listRequests();
+  Future<void> sendConnectionRequest(String userId) =>
+      _connections.sendRequest(userId);
+  Future<void> respondConnectionRequest(String id, {required bool accept}) =>
+      _connections.respond(id, accept: accept);
+  Future<void> blockUser(String userId) => _connections.block(userId);
+  Future<void> removeConnection(String userId) => _connections.remove(userId);
 
   Future<int> forwardMessage({
     required String messageId,
@@ -160,6 +192,8 @@ class ChatRepository {
       _attachments.discardUpload(conversationId, fileUrl);
 }
 
-final chatRepositoryProvider = Provider<ChatRepository>(
-  (ref) => ChatRepository(ref.watch(apiClientProvider)),
-);
+final chatRepositoryProvider = Provider<ChatRepository>((ref) {
+  final independent =
+      ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
+  return ChatRepository(ref.watch(apiClientProvider), independent: independent);
+});

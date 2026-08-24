@@ -22,6 +22,7 @@ class AppUser extends Equatable {
     this.appLanguage = 'en',
     this.acceptPolicy = true,
     this.policyVersion = '',
+    this.independentChat = false,
   });
 
   final String id;
@@ -39,63 +40,65 @@ class AppUser extends Equatable {
   final String appLanguage;
   final bool acceptPolicy;
   final String policyVersion;
+  final bool independentChat;
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        email: json['email'] as String? ?? '',
-        provider: json['provider'] as String? ?? '',
-        avatarUrl: json['avatar_url'] as String? ?? '',
-        plan: json['plan'] as String? ?? 'free',
-        premiumUntil: json['premium_until'] as String?,
-        effectivePlan: json['effective_plan'] as String? ??
-            json['plan'] as String? ??
-            'free',
-        planExpired: json['plan_expired'] as bool? ?? false,
-        showPlanExpiredDialog:
-            json['show_plan_expired_dialog'] as bool? ?? false,
-        slackConnected: json['slack_connected'] as bool? ?? false,
-        githubUsername: json['github_username'] as String? ?? '',
-        appLanguage: json['app_language'] as String? ?? 'en',
-        acceptPolicy: json['accept_policy'] as bool? ?? true,
-        policyVersion: json['policy_version'] as String? ?? '',
-      );
+    id: json['id'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    email: json['email'] as String? ?? '',
+    provider: json['provider'] as String? ?? '',
+    avatarUrl: json['avatar_url'] as String? ?? '',
+    plan: json['plan'] as String? ?? 'free',
+    premiumUntil: json['premium_until'] as String?,
+    effectivePlan:
+        json['effective_plan'] as String? ?? json['plan'] as String? ?? 'free',
+    planExpired: json['plan_expired'] as bool? ?? false,
+    showPlanExpiredDialog: json['show_plan_expired_dialog'] as bool? ?? false,
+    slackConnected: json['slack_connected'] as bool? ?? false,
+    githubUsername: json['github_username'] as String? ?? '',
+    appLanguage: json['app_language'] as String? ?? 'en',
+    acceptPolicy: json['accept_policy'] as bool? ?? true,
+    policyVersion: json['policy_version'] as String? ?? '',
+    independentChat: json['independent_chat'] as bool? ?? false,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'email': email,
-        'provider': provider,
-        'avatar_url': avatarUrl,
-        'plan': plan,
-        'premium_until': premiumUntil,
-        'effective_plan': effectivePlan,
-        'plan_expired': planExpired,
-        'show_plan_expired_dialog': showPlanExpiredDialog,
-        'slack_connected': slackConnected,
-        'github_username': githubUsername,
-        'app_language': appLanguage,
-        'accept_policy': acceptPolicy,
-        'policy_version': policyVersion,
-      };
+    'id': id,
+    'name': name,
+    'email': email,
+    'provider': provider,
+    'avatar_url': avatarUrl,
+    'plan': plan,
+    'premium_until': premiumUntil,
+    'effective_plan': effectivePlan,
+    'plan_expired': planExpired,
+    'show_plan_expired_dialog': showPlanExpiredDialog,
+    'slack_connected': slackConnected,
+    'github_username': githubUsername,
+    'app_language': appLanguage,
+    'accept_policy': acceptPolicy,
+    'policy_version': policyVersion,
+    'independent_chat': independentChat,
+  };
 
   AppUser copyWith({bool? acceptPolicy, String? policyVersion}) => AppUser(
-        id: id,
-        name: name,
-        email: email,
-        provider: provider,
-        avatarUrl: avatarUrl,
-        plan: plan,
-        premiumUntil: premiumUntil,
-        effectivePlan: effectivePlan,
-        planExpired: planExpired,
-        showPlanExpiredDialog: showPlanExpiredDialog,
-        slackConnected: slackConnected,
-        githubUsername: githubUsername,
-        appLanguage: appLanguage,
-        acceptPolicy: acceptPolicy ?? this.acceptPolicy,
-        policyVersion: policyVersion ?? this.policyVersion,
-      );
+    id: id,
+    name: name,
+    email: email,
+    provider: provider,
+    avatarUrl: avatarUrl,
+    plan: plan,
+    premiumUntil: premiumUntil,
+    effectivePlan: effectivePlan,
+    planExpired: planExpired,
+    showPlanExpiredDialog: showPlanExpiredDialog,
+    slackConnected: slackConnected,
+    githubUsername: githubUsername,
+    appLanguage: appLanguage,
+    acceptPolicy: acceptPolicy ?? this.acceptPolicy,
+    policyVersion: policyVersion ?? this.policyVersion,
+    independentChat: independentChat,
+  );
 
   /// Merges split GET /api/me/* payloads (same order as web `mergeMeUser`).
   factory AppUser.fromMeParts({
@@ -103,17 +106,18 @@ class AppUser extends Equatable {
     required Map<String, dynamic> profile,
     required Map<String, dynamic> plan,
     required Map<String, dynamic> connections,
-  }) =>
-      AppUser.fromJson({
-        ...session,
-        ...profile,
-        ...plan,
-        ...connections,
-      });
+  }) => AppUser.fromJson({...session, ...profile, ...plan, ...connections});
 
   @override
-  List<Object?> get props =>
-      [id, name, plan, slackConnected, acceptPolicy, policyVersion];
+  List<Object?> get props => [
+    id,
+    name,
+    plan,
+    slackConnected,
+    acceptPolicy,
+    policyVersion,
+    independentChat,
+  ];
 }
 
 class ProfileRepository {

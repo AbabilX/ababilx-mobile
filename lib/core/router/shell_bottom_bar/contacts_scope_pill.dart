@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'nav_tab_item.dart';
-import 'shell_pill_chrome.dart';
 import 'shell_pill_metrics.dart';
 
-/// Left pill for contacts: My | Add | All — height matches [ActionPill].
+/// Flat CRM scope actions: My | Add | All.
 class ContactsScopePill extends StatelessWidget {
   const ContactsScopePill({
     super.key,
@@ -32,37 +31,32 @@ class ContactsScopePill extends StatelessWidget {
   Widget build(BuildContext context) {
     const h = ShellPillMetrics.height;
 
-    return ShellPillChrome(
-      child: SizedBox(
-        height: h,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            children: [
-              NavTabItem(
-                icon: HugeIcons.strokeRoundedUser02,
-                selectedIcon: HugeIcons.strokeRoundedUser03,
-                label: mineLabel,
-                selected: selectedIsMine,
-                onTap: onSelectMine,
-              ),
-              NavTabItem(
-                icon: HugeIcons.strokeRoundedAdd01,
-                selectedIcon: HugeIcons.strokeRoundedAdd01,
-                label: addLabel,
-                selected: false,
-                onTap: canAdd ? onAdd : () {},
-              ),
-              NavTabItem(
-                icon: HugeIcons.strokeRoundedUserGroup,
-                selectedIcon: HugeIcons.strokeRoundedUserGroup,
-                label: allLabel,
-                selected: !selectedIsMine,
-                onTap: onSelectAll,
-              ),
-            ],
+    return SizedBox(
+      height: h,
+      child: Row(
+        children: [
+          NavTabItem(
+            icon: HugeIcons.strokeRoundedUser02,
+            selectedIcon: HugeIcons.strokeRoundedUser03,
+            label: mineLabel,
+            selected: selectedIsMine,
+            onTap: onSelectMine,
           ),
-        ),
+          NavTabItem(
+            icon: HugeIcons.strokeRoundedAdd01,
+            selectedIcon: HugeIcons.strokeRoundedAdd01,
+            label: addLabel,
+            selected: false,
+            onTap: canAdd ? onAdd : () {},
+          ),
+          NavTabItem(
+            icon: HugeIcons.strokeRoundedUserGroup,
+            selectedIcon: HugeIcons.strokeRoundedUserGroup,
+            label: allLabel,
+            selected: !selectedIsMine,
+            onTap: onSelectAll,
+          ),
+        ],
       ),
     );
   }

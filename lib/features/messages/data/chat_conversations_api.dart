@@ -1,14 +1,16 @@
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import 'models/chat_models.dart';
+import 'chat_endpoints.dart';
 
 class ChatConversationsApi {
-  const ChatConversationsApi(this._client);
+  const ChatConversationsApi(this._client, this._endpoints);
 
   final ApiClient _client;
+  final ChatEndpoints _endpoints;
 
   Future<ChatSidebar> listConversations() async {
-    final res = await _client.get(ApiConstants.chatConversations);
+    final res = await _client.get(_endpoints.conversations);
     final data = unwrapApiData<Map<String, dynamic>>(res);
     return ChatSidebar.fromJson(data);
   }
@@ -20,11 +22,7 @@ class ChatConversationsApi {
   }) async {
     final res = await _client.post(
       ApiConstants.chatChannels,
-      data: {
-        'name': name,
-        'slug': ?slug,
-        'is_private': isPrivate,
-      },
+      data: {'name': name, 'slug': ?slug, 'is_private': isPrivate},
     );
     return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
@@ -35,24 +33,21 @@ class ChatConversationsApi {
     bool? archive,
   }) async {
     final res = await _client.patch(
-      ApiConstants.chatChannel(id),
-      data: {
-        'name': ?name,
-        'archive': ?archive,
-      },
+      _endpoints.action(id, ''),
+      data: {'name': ?name, 'archive': ?archive},
     );
     return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
 
   Future<void> addChannelMember(String channelId, String userId) async {
     await _client.post(
-      ApiConstants.chatChannelMembers(channelId),
+      _endpoints.action(channelId, 'members'),
       data: {'user_id': userId},
     );
   }
 
   Future<List<ChatMember>> listChannelMembers(String channelId) async {
-    final res = await _client.get(ApiConstants.chatChannelMembers(channelId));
+    final res = await _client.get(_endpoints.action(channelId, 'members'));
     final data = unwrapApiData<List<dynamic>>(res);
     return data
         .map((e) => ChatMember.fromJson(e as Map<String, dynamic>))
@@ -60,18 +55,15 @@ class ChatConversationsApi {
   }
 
   Future<void> leaveChannel(String channelId) async {
-    await _client.post(ApiConstants.chatChannelLeave(channelId));
+    await _client.post(_endpoints.action(channelId, 'leave'));
   }
 
   Future<void> deleteChannel(String channelId) async {
-    await _client.delete(ApiConstants.chatChannel(channelId));
+    await _client.delete(_endpoints.action(channelId, ''));
   }
 
   Future<ChatConversation> startDm(String userId) async {
-    final res = await _client.post(
-      ApiConstants.chatDm,
-      data: {'user_id': userId},
-    );
+    final res = await _client.post(_endpoints.dm, data: {'user_id': userId});
     return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
 
@@ -82,7 +74,7 @@ class ChatConversationsApi {
     String? caption,
   }) async {
     final res = await _client.post(
-      ApiConstants.chatForward,
+      _endpoints.forward,
       data: {
         'message_id': messageId,
         'conversation_ids': ?conversationIds,
@@ -96,7 +88,7 @@ class ChatConversationsApi {
 
   Future<bool> muteConversation(String conversationId, bool muted) async {
     final res = await _client.post(
-      ApiConstants.chatConversationMute(conversationId),
+      _endpoints.action(conversationId, 'mute'),
       data: {'muted': muted},
     );
     final data = unwrapApiData<Map<String, dynamic>>(res);
@@ -104,6 +96,17 @@ class ChatConversationsApi {
   }
 
   Future<void> hideDm(String conversationId) async {
-    await _client.post(ApiConstants.chatConversationHide(conversationId));
+    await _client.post(_endpoints.action(conversationId, 'hide'));
+  }
+
+  Future<ChatConversation> createPersonalGroup(
+    String name,
+    List<String> memberIds,
+  ) async {
+    final res = await _client.post(
+      ApiConstants.independentChatGroups,
+      data: {'name': name, 'member_ids': memberIds},
+    );
+    return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
 }

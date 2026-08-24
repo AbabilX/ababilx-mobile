@@ -1,8 +1,7 @@
-/// Shared size for left capsule + right circle in [ShellBottomBar].
+/// Shared sizing for the flat app navigation bar.
 abstract final class ShellPillMetrics {
   static const double height = 64;
-  static const double gap = 10;
 
-  /// Bottom padding so list content can scroll under the floating pills.
-  static const double contentBottomInset = 120;
+  /// Bottom padding so list content is not covered by the fixed bar.
+  static const double contentBottomInset = 88;
 }

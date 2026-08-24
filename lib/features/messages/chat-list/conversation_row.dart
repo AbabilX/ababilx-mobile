@@ -376,7 +376,7 @@ class _ConversationAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    if (conversation.isChannel) {
+    if (conversation.isGroupConversation) {
       return GroupAvatarStack(
         avatars: conversation.memberAvatars,
         name: title,

@@ -98,8 +98,7 @@ class MessageVault {
       var key = await _loadKey(message.conversationId, currentUserId);
       // A newer key version means the other side rotated (usually after a PIN
       // reset), so the cached key is stale and worth one refetch.
-      if (key != null &&
-          (message.encryptionKeyVersion ?? 0) > key.version) {
+      if (key != null && (message.encryptionKeyVersion ?? 0) > key.version) {
         key = await _loadKey(
           message.conversationId,
           currentUserId,

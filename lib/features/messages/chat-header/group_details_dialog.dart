@@ -8,7 +8,7 @@ import '../../profile/widgets/user_status_badge.dart';
 import '../chat-timeline/user_profile_sheet.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
-import '../providers/team_gate_provider.dart';
+import 'group_member_picker.dart';
 
 Future<void> showGroupDetailsDialog(
   BuildContext context,
@@ -24,6 +24,9 @@ Future<void> showGroupDetailsDialog(
   } catch (_) {}
 
   if (!context.mounted) return;
+  final currentUserId = ref.read(chatProvider).currentUserId;
+  final canManage =
+      !conversation.isPersonal || conversation.createdBy == currentUserId;
 
   await showModalBottomSheet<void>(
     context: context,
@@ -44,18 +47,21 @@ Future<void> showGroupDetailsDialog(
               const SizedBox(height: 12),
               TextField(
                 controller: nameCtrl,
+                enabled: canManage,
                 decoration: const InputDecoration(labelText: 'Group name'),
               ),
               const SizedBox(height: 8),
               FilledButton(
-                onPressed: () async {
-                  final name = nameCtrl.text.trim();
-                  if (name.isEmpty) return;
-                  await ref
-                      .read(chatProvider.notifier)
-                      .renameChannel(conversation.id, name);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
+                onPressed: canManage
+                    ? () async {
+                        final name = nameCtrl.text.trim();
+                        if (name.isEmpty) return;
+                        await ref
+                            .read(chatProvider.notifier)
+                            .renameChannel(conversation.id, name);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      }
+                    : null,
                 child: const Text('Save name'),
               ),
               const SizedBox(height: 16),
@@ -102,29 +108,20 @@ Future<void> showGroupDetailsDialog(
                   },
                 ),
               ),
-              const SizedBox(height: 8),
-              Text('Add member', style: Theme.of(ctx).textTheme.titleSmall),
-              ...ref.watch(teamMembersProvider).map((tm) {
-                if (members.any((m) => m.userId == tm.userId)) {
-                  return const SizedBox.shrink();
-                }
-                return ListTile(
-                  dense: true,
-                  title: Text(tm.displayName),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.person_add_alt_1_outlined),
-                    onPressed: () async {
-                      await ref
-                          .read(chatProvider.notifier)
-                          .addChannelMember(conversation.id, tm.userId);
-                      final updated = await ref
-                          .read(chatProvider.notifier)
-                          .listChannelMembers(conversation.id);
-                      setState(() => members = updated);
-                    },
-                  ),
-                );
-              }),
+              if (canManage) ...[
+                const SizedBox(height: 8),
+                Text('Add member', style: Theme.of(ctx).textTheme.titleSmall),
+                GroupMemberPicker(
+                  conversation: conversation,
+                  memberIds: members.map((member) => member.userId).toSet(),
+                  onAdded: () async {
+                    final updated = await ref
+                        .read(chatProvider.notifier)
+                        .listChannelMembers(conversation.id);
+                    setState(() => members = updated);
+                  },
+                ),
+              ],
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: () async {
@@ -138,46 +135,47 @@ Future<void> showGroupDetailsDialog(
                 },
                 child: const Text('Leave group'),
               ),
-              TextButton(
-                onPressed: () async {
-                  final ok = await showDialog<bool>(
-                    context: ctx,
-                    builder: (d) => AlertDialog(
-                      title: const Text('Delete group?'),
-                      content: const Text(
-                        'Are you sure you want to delete this group? All messages, attachments, and members will be removed automatically from this group. This action cannot be undone.',
-                        style: TextStyle(fontSize: 14, height: 1.4),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(d, false),
-                          child: const Text('Cancel'),
+              if (canManage)
+                TextButton(
+                  onPressed: () async {
+                    final ok = await showDialog<bool>(
+                      context: ctx,
+                      builder: (d) => AlertDialog(
+                        title: const Text('Delete group?'),
+                        content: const Text(
+                          'Are you sure you want to delete this group? All messages, attachments, and members will be removed automatically from this group. This action cannot be undone.',
+                          style: TextStyle(fontSize: 14, height: 1.4),
                         ),
-                        FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.red,
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(d, false),
+                            child: const Text('Cancel'),
                           ),
-                          onPressed: () => Navigator.pop(d, true),
-                          child: const Text('Delete group'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (ok == true) {
-                    await ref
-                        .read(chatProvider.notifier)
-                        .deleteChannel(conversation.id);
-                    if (ctx.mounted) {
-                      Navigator.pop(ctx);
-                      Navigator.pop(context);
+                          FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.red,
+                            ),
+                            onPressed: () => Navigator.pop(d, true),
+                            child: const Text('Delete group'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (ok == true) {
+                      await ref
+                          .read(chatProvider.notifier)
+                          .deleteChannel(conversation.id);
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx);
+                        Navigator.pop(context);
+                      }
                     }
-                  }
-                },
-                child: const Text(
-                  'Delete group',
-                  style: TextStyle(color: Colors.red),
+                  },
+                  child: const Text(
+                    'Delete group',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ),
-              ),
             ],
           ),
         ),

@@ -36,6 +36,7 @@ class ChatConversation extends Equatable {
   const ChatConversation({
     required this.id,
     required this.teamId,
+    this.scope = 'workspace',
     required this.type,
     this.name,
     this.slug,
@@ -59,6 +60,7 @@ class ChatConversation extends Equatable {
     this.peerUserAvatar,
     this.peerUserEmail,
     this.peerLeft = false,
+    this.canMessage = true,
     this.muted = false,
     this.memberAvatars = const [],
     this.memberCount,
@@ -66,7 +68,8 @@ class ChatConversation extends Equatable {
 
   final String id;
   final String teamId;
-  final String type; // channel | dm
+  final String scope; // personal | workspace
+  final String type; // channel | dm | group
   final String? name;
   final String? slug;
   final bool isPrivate;
@@ -89,12 +92,16 @@ class ChatConversation extends Equatable {
   final String? peerUserAvatar;
   final String? peerUserEmail;
   final bool peerLeft;
+  final bool canMessage;
   final bool muted;
   final List<String> memberAvatars;
   final int? memberCount;
 
   bool get isChannel => type == 'channel';
   bool get isDm => type == 'dm';
+  bool get isGroup => type == 'group';
+  bool get isPersonal => scope == 'personal';
+  bool get isGroupConversation => isChannel || isGroup;
 
   /// Resolved file chips for list preview (API list or legacy single fields).
   List<ChatLastAttachment> get previewAttachments {
@@ -106,7 +113,7 @@ class ChatConversation extends Equatable {
   }
 
   String displayTitle(String? currentUserId) {
-    if (isChannel) return name ?? slug ?? 'Channel';
+    if (isGroupConversation) return name ?? slug ?? 'Group';
     return peerUserName ?? 'Direct message';
   }
 
@@ -129,6 +136,7 @@ class ChatConversation extends Equatable {
     return ChatConversation(
       id: _jsonString(json['id']) ?? '',
       teamId: _jsonString(json['team_id']) ?? '',
+      scope: _jsonString(json['scope']) ?? 'workspace',
       type: _jsonString(json['type']) ?? 'channel',
       name: _jsonString(json['name']),
       slug: _jsonString(json['slug']),
@@ -166,6 +174,7 @@ class ChatConversation extends Equatable {
         json['peer_user_email'] ?? json['peerUserEmail'],
       ),
       peerLeft: json['peer_left'] as bool? ?? false,
+      canMessage: json['can_message'] as bool? ?? true,
       muted: json['muted'] as bool? ?? false,
       memberAvatars: (json['member_avatars'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
@@ -188,6 +197,7 @@ class ChatConversation extends Equatable {
   }) => ChatConversation(
     id: id,
     teamId: teamId,
+    scope: scope,
     type: type,
     name: name ?? this.name,
     slug: slug,
@@ -216,6 +226,7 @@ class ChatConversation extends Equatable {
     peerUserName: peerUserName,
     peerUserAvatar: peerUserAvatar,
     peerLeft: peerLeft,
+    canMessage: canMessage,
     muted: muted ?? this.muted,
     memberAvatars: memberAvatars,
     memberCount: memberCount,
@@ -234,6 +245,8 @@ class ChatConversation extends Equatable {
     muted,
     name,
     peerUserName,
+    scope,
+    canMessage,
   ];
 }
 

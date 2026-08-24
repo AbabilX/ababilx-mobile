@@ -8,6 +8,7 @@ import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/message_vault_gate.dart';
 import '../providers/chat_provider.dart';
 import '../providers/team_gate_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -64,6 +65,8 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   Widget build(BuildContext context) {
     final teamAsync = ref.watch(teamGateProvider);
     final chatState = ref.watch(chatProvider);
+    final independent =
+        ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
     final hasCachedChats =
         chatState.dms.isNotEmpty || chatState.channels.isNotEmpty;
 
@@ -71,7 +74,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     // not the network, not the E2EE vault. DM previews already show a safe
     // "Encrypted message" placeholder until unlocked; the vault only gates
     // an individual DM's actual content, in ConversationScreen.
-    if (hasCachedChats) {
+    if (hasCachedChats || independent) {
       return _MessagesBody(
         vaultUnlocked: _vaultUnlocked,
         onUnlockTap: _openUnlockSheet,
@@ -120,17 +123,8 @@ class _MessagesBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        const ChatList(),
-        if (!vaultUnlocked)
-          Positioned(
-            top: MediaQuery.paddingOf(context).top + 8,
-            left: 12,
-            right: 12,
-            child: _UnlockBanner(onTap: onUnlockTap),
-          ),
-      ],
+    return ChatList(
+      banner: vaultUnlocked ? null : _UnlockBanner(onTap: onUnlockTap),
     );
   }
 }
@@ -143,14 +137,11 @@ class _UnlockBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Material(
-      color: colors.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(12),
-      elevation: 2,
+      color: colors.surfaceContainerLow,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           child: Row(
             children: [
               Icon(Icons.lock_rounded, size: 18, color: colors.primary),

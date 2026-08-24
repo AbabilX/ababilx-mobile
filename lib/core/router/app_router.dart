@@ -12,6 +12,8 @@ import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
 import '../../features/messages/screens/messages_screen.dart';
 import '../../features/messages/screens/conversation_screen.dart';
+import '../../features/messages/screens/people_screen.dart';
+import '../../features/messages/screens/new_message_screen.dart';
 import '../../features/wall/screens/wall_screen.dart';
 import '../../features/wall/screens/wall_post_screen.dart';
 import '../../features/crm/screens/crm_hub_screen.dart';
@@ -106,12 +108,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/call', builder: (_, _) => const VoiceCallScreen()),
+      GoRoute(path: '/group-call', builder: (_, _) => const GroupCallScreen()),
       GoRoute(
-        path: '/group-call',
-        builder: (_, _) => const GroupCallScreen(),
+        path: '/local-share',
+        builder: (_, _) => const LocalShareScreen(),
       ),
-      GoRoute(path: '/local-share', builder: (_, _) => const LocalShareScreen()),
-      GoRoute(path: '/profile/devices', builder: (_, _) => const SessionsScreen()),
+      GoRoute(
+        path: '/profile/devices',
+        builder: (_, _) => const SessionsScreen(),
+      ),
+      GoRoute(
+        path: '/messages/people',
+        builder: (_, _) => const PeopleScreen(),
+      ),
+      GoRoute(
+        path: '/messages/new',
+        builder: (_, _) => const NewMessageScreen(),
+      ),
       GoRoute(
         path: '/messages/:id',
         builder: (_, state) => ConversationScreen(

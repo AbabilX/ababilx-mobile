@@ -1,11 +1,12 @@
-import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import 'models/chat_models.dart';
+import 'chat_endpoints.dart';
 
 class ChatMessagesApi {
-  const ChatMessagesApi(this._client);
+  const ChatMessagesApi(this._client, this._endpoints);
 
   final ApiClient _client;
+  final ChatEndpoints _endpoints;
 
   Future<ChatMessagesPage> listMessages(
     String conversationId, {
@@ -19,7 +20,7 @@ class ChatMessagesApi {
     if (thread != null) params['thread'] = thread;
 
     final res = await _client.get(
-      ApiConstants.chatMessages(conversationId),
+      _endpoints.messages(conversationId),
       queryParameters: params.isEmpty ? null : params,
     );
     return ChatMessagesPage.fromJson(unwrapApiData<Map<String, dynamic>>(res));
@@ -37,7 +38,7 @@ class ChatMessagesApi {
     List<String> mentionedUserIds = const [],
   }) async {
     final res = await _client.post(
-      ApiConstants.chatMessages(conversationId),
+      _endpoints.messages(conversationId),
       data: {
         'body': body,
         'encrypted_body': ?encryptedBody,
@@ -62,7 +63,7 @@ class ChatMessagesApi {
     int? encryptionKeyVersion,
   }) async {
     final res = await _client.patch(
-      ApiConstants.chatMessage(messageId),
+      _endpoints.message(messageId),
       data: {
         'body': body,
         'encrypted_body': ?encryptedBody,
@@ -75,7 +76,7 @@ class ChatMessagesApi {
   }
 
   Future<void> deleteMessage(String messageId) async {
-    await _client.delete(ApiConstants.chatMessage(messageId));
+    await _client.delete(_endpoints.message(messageId));
   }
 
   Future<List<ChatReactionGroup>> toggleReaction(
@@ -83,7 +84,7 @@ class ChatMessagesApi {
     String emoji,
   ) async {
     final res = await _client.post(
-      ApiConstants.chatMessageReactions(messageId),
+      _endpoints.reactions(messageId),
       data: {'emoji': emoji},
     );
     final data = unwrapApiData<List<dynamic>>(res);
@@ -93,12 +94,12 @@ class ChatMessagesApi {
   }
 
   Future<void> markRead(String conversationId) async {
-    await _client.post(ApiConstants.chatConversationRead(conversationId));
+    await _client.post(_endpoints.action(conversationId, 'read'));
   }
 
   Future<List<ChatMessage>> searchMessages(String q, {int limit = 20}) async {
     final res = await _client.get(
-      ApiConstants.chatSearch,
+      _endpoints.search,
       queryParameters: {'q': q, 'limit': limit},
     );
     final data = unwrapApiData<List<dynamic>>(res);

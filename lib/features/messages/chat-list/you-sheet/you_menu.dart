@@ -122,6 +122,11 @@ class YouMenu extends ConsumerWidget {
           },
         ),
         YouMenuItem(
+          icon: HugeIcons.strokeRoundedFolderTransfer,
+          label: 'Local Share',
+          onTap: () => Navigator.pop(context, YouSheetAction.localShare),
+        ),
+        YouMenuItem(
           icon: HugeIcons.strokeRoundedLogout01,
           label: 'Sign out from workspace',
           onTap: () => _signOut(context, ref),

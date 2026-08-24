@@ -4,6 +4,7 @@ extension ChatConversationJson on ChatConversation {
   Map<String, dynamic> toJson() => {
     'id': id,
     'team_id': teamId,
+    'scope': scope,
     'type': type,
     'name': name,
     'slug': slug,
@@ -28,6 +29,7 @@ extension ChatConversationJson on ChatConversation {
     'peer_user_name': peerUserName,
     'peer_user_avatar': peerUserAvatar,
     'peer_left': peerLeft,
+    'can_message': canMessage,
     'muted': muted,
     'member_avatars': memberAvatars,
     'member_count': memberCount,

@@ -20,7 +20,8 @@ class ShellPillChrome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final radius = borderRadius ??
+    final radius =
+        borderRadius ??
         (shape == BoxShape.circle
             ? null
             : BorderRadius.circular(ShellPillMetrics.height / 2));
@@ -59,11 +60,11 @@ class ShellPillChrome extends StatelessWidget {
 }
 
 List<BoxShadow> shellPillShadow(ColorScheme scheme) => [
-      BoxShadow(
-        color: Colors.black.withValues(
-          alpha: scheme.brightness == Brightness.dark ? 0.4 : 0.14,
-        ),
-        blurRadius: 20,
-        offset: const Offset(0, 8),
-      ),
-    ];
+  BoxShadow(
+    color: Colors.black.withValues(
+      alpha: scheme.brightness == Brightness.dark ? 0.4 : 0.14,
+    ),
+    blurRadius: 20,
+    offset: const Offset(0, 8),
+  ),
+];

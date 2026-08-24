@@ -10,7 +10,7 @@ Future<void> showStartCallSheet(
   WidgetRef ref,
   ChatConversation conversation,
 ) async {
-  if (!conversation.isDm || conversation.peerLeft) return;
+  if (!conversation.isDm || !conversation.canMessage) return;
 
   final colors = Theme.of(context).colorScheme;
   final textTheme = Theme.of(context).textTheme;

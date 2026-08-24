@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
-import '../../team/data/models/team_models.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
-import '../providers/team_gate_provider.dart';
+import '../providers/messageable_people_provider.dart';
 
 Future<ChatConversation?> showNewDmDialog(BuildContext context, WidgetRef ref) {
   return showModalBottomSheet<ChatConversation>(
@@ -20,8 +19,7 @@ class NewDmSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final members = ref.watch(teamMembersProvider);
-    final me = ref.watch(chatProvider).currentUserId;
+    final members = ref.watch(messageablePeopleProvider);
 
     return DraggableScrollableSheet(
       expand: false,
@@ -54,7 +52,6 @@ class NewDmSheet extends ConsumerWidget {
               itemCount: members.length,
               itemBuilder: (_, i) {
                 final m = members[i];
-                if (m.userId == me) return const SizedBox.shrink();
                 return _MemberTile(
                   member: m,
                   onTap: () async {
@@ -75,19 +72,15 @@ class NewDmSheet extends ConsumerWidget {
 
 class _MemberTile extends StatelessWidget {
   const _MemberTile({required this.member, required this.onTap});
-  final TeamMember member;
+  final ChatUserSummary member;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: AppAvatar(
-        size: 40,
-        url: member.avatarUrl,
-        name: member.displayName,
-      ),
-      title: Text(member.displayName),
-      subtitle: member.email != null ? Text(member.email!) : null,
+      leading: AppAvatar(size: 40, url: member.avatarUrl, name: member.name),
+      title: Text(member.name),
+      subtitle: member.username.isEmpty ? null : Text('@${member.username}'),
       onTap: onTap,
     );
   }

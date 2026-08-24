@@ -3,20 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
-import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
-import '../chat-sidebar/new_dm_dialog.dart';
 import '../chat_list_filters.dart';
 import '../providers/chat_provider.dart';
-import 'compose_sheet.dart';
+import '../providers/chat_scope_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 import 'conversation_rows.dart';
-import 'create_channel_dialog.dart';
-import 'filter_chips_row.dart';
 import 'list_fab.dart';
 import 'list_header.dart';
-import 'recent_contacts_strip.dart';
+import 'list_empty.dart';
 
 class ChatList extends ConsumerStatefulWidget {
-  const ChatList({super.key});
+  const ChatList({super.key, this.banner});
+
+  final Widget? banner;
 
   @override
   ConsumerState<ChatList> createState() => _ChatListState();
@@ -28,33 +27,43 @@ class _ChatListState extends ConsumerState<ChatList> {
   @override
   Widget build(BuildContext context) {
     final chat = ref.watch(chatProvider);
-    final rows = unifiedConversations(
+    final independent =
+        ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
+    final scope = ref.watch(chatScopeProvider);
+    final unscopedRows = unifiedConversations(
       dms: chat.dms,
       channels: chat.channels,
       filter: _filter,
     );
-    final recent = recentDmsForStrip(chat.dms);
-
+    final rows = !independent || scope == ChatScopeFilter.all
+        ? unscopedRows
+        : unscopedRows.where((conversation) {
+            return scope == ChatScopeFilter.personal
+                ? conversation.isPersonal
+                : !conversation.isPersonal;
+          }).toList();
     return Scaffold(
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const ChatListHeader(),
-            if (recent.isNotEmpty)
-              RecentContactsStrip(
-                conversations: recent,
-                currentUserId: chat.currentUserId,
-                onTap: (c) => context.push('/messages/${c.id}'),
-              ),
-            FilterChipsRow(
-              filter: _filter,
-              onChanged: (f) => setState(() => _filter = f),
+            ChatListHeader(
+              unreadOnly: _filter == ChatListFilter.unread,
+              onToggleUnread: () => setState(() {
+                _filter = _filter == ChatListFilter.unread
+                    ? ChatListFilter.all
+                    : ChatListFilter.unread;
+              }),
             ),
+            if (widget.banner != null) widget.banner!,
             Expanded(
               child: chat.sidebarLoading && rows.isEmpty
                   ? const Center(
                       child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : rows.isEmpty
+                  ? ConversationListEmpty(
+                      onStart: () => context.push('/messages/new'),
                     )
                   : ConversationRows(
                       conversations: rows,
@@ -78,26 +87,8 @@ class _ChatListState extends ConsumerState<ChatList> {
         padding: const EdgeInsets.only(
           bottom: ShellPillMetrics.contentBottomInset - 24,
         ),
-        child: ChatListFab(onPressed: () => _compose(context)),
+        child: ChatListFab(onPressed: () => context.push('/messages/new')),
       ),
     );
-  }
-
-  Future<void> _compose(BuildContext context) async {
-    final shellChrome = ref.read(shellBottomBarHiddenProvider.notifier);
-    shellChrome.state = true;
-    try {
-      final action = await showComposeSheet(context);
-      if (!context.mounted || action == null) return;
-      if (action == 'dm') {
-        final dm = await showNewDmDialog(context, ref);
-        if (dm != null && context.mounted) context.push('/messages/${dm.id}');
-      } else if (action == 'channel' || action == 'group') {
-        final ch = await showCreateChannelDialog(context, ref);
-        if (ch != null && context.mounted) context.push('/messages/${ch.id}');
-      }
-    } finally {
-      shellChrome.state = false;
-    }
   }
 }

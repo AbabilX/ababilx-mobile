@@ -3,9 +3,10 @@ import '../../../core/network/api_client.dart';
 import 'models/voice_call_session.dart';
 
 class VoiceCallApi {
-  const VoiceCallApi(this._client);
+  const VoiceCallApi(this._client, {required this.independent});
 
   final ApiClient _client;
+  final bool independent;
 
   // Older deployed servers still validate these fields. The simple WebRTC
   // client does not use them, but sending a valid placeholder keeps rollout
@@ -15,7 +16,9 @@ class VoiceCallApi {
 
   Future<VoiceCallSession> start(String conversationId) async {
     final response = await _client.post(
-      ApiConstants.chatVoiceCalls(conversationId),
+      independent
+          ? ApiConstants.independentChatVoiceCalls(conversationId)
+          : ApiConstants.chatVoiceCalls(conversationId),
       data: const {'caller_public_key': _legacyPublicKey},
     );
     return VoiceCallSession.fromJson(

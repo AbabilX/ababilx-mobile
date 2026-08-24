@@ -22,6 +22,7 @@ class ApiConstants {
   static const String meAcceptPolicy = '/api/me/accept-policy';
   static const String meSessions = '/api/me/sessions';
   static const String meSessionsRevokeOthers = '/api/me/sessions/revoke-others';
+  static const String meDiscovery = '/api/me/discovery';
 
   // Team
   static const String teamsMe = '/api/teams/me';
@@ -134,6 +135,45 @@ class ApiConstants {
   static String chatConversationDiscard(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/attachments/discard';
   static const String chatSearch = '/api/teams/chat/search';
+
+  // Independent chat. Keep all dynamic endpoint construction centralized here.
+  static const String independentChatRoot = '/api/chat';
+  static const String independentChatConversations =
+      '$independentChatRoot/conversations';
+  static const String independentChatDm = '$independentChatRoot/dm';
+  static const String independentChatGroups = '$independentChatRoot/groups';
+  static const String independentChatConnections =
+      '$independentChatRoot/connections';
+  static const String independentChatConnectionRequests =
+      '$independentChatConnections/requests';
+  static const String independentChatBlocked =
+      '$independentChatConnections/blocked';
+  static const String independentChatUsersSearch =
+      '$independentChatRoot/users/search';
+  static const String independentChatForward = '$independentChatRoot/forward';
+  static const String independentChatSearch = '$independentChatRoot/search';
+  static String independentChatMessages(String conversationId) =>
+      '$independentChatConversations/$conversationId/messages';
+  static String independentChatConversation(String conversationId) =>
+      '$independentChatConversations/$conversationId';
+  static String independentChatConversationAction(
+    String conversationId,
+    String action,
+  ) => '$independentChatConversations/$conversationId/$action';
+  static String independentChatVoiceCalls(String conversationId) =>
+      '$independentChatConversations/$conversationId/calls';
+  static String independentChatMessage(String messageId) =>
+      '$independentChatRoot/messages/$messageId';
+  static String independentChatMessageReactions(String messageId) =>
+      '${independentChatMessage(messageId)}/reactions';
+  static String independentChatE2eePublicKey(String userId) =>
+      '$independentChatRoot/e2ee/users/$userId/public-key';
+  static String independentChatConnectionRequestAction(
+    String requestId,
+    String action,
+  ) => '$independentChatConnectionRequests/$requestId/$action';
+  static String independentChatConnectionUser(String userId) =>
+      '$independentChatConnections/$userId';
 
   // Wall
   static const String wallPosts = '/api/teams/wall/posts';
