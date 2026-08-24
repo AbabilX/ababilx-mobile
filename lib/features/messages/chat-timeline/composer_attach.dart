@@ -234,22 +234,25 @@ Future<void> pickAndUploadAttachment(
   required String conversationId,
   required ValueChanged<ChatAttachmentInput> onAdded,
   ImageSource? source,
+  ComposerAttachKind? kind,
 }) async {
-  ComposerAttachKind? kind;
-  if (source == ImageSource.gallery) {
-    kind = ComposerAttachKind.gallery;
-  } else if (source == ImageSource.camera) {
-    kind = ComposerAttachKind.camera;
-  } else {
-    kind = await showComposerAttachSheet(context);
+  var selectedKind = kind;
+  if (selectedKind == null) {
+    if (source == ImageSource.gallery) {
+      selectedKind = ComposerAttachKind.gallery;
+    } else if (source == ImageSource.camera) {
+      selectedKind = ComposerAttachKind.camera;
+    } else {
+      selectedKind = await showComposerAttachSheet(context);
+    }
   }
-  if (kind == null) return;
+  if (selectedKind == null) return;
 
   // Native pickers fail on some Android builds if opened while the sheet
   // is still animating closed.
   await Future<void>.delayed(const Duration(milliseconds: 280));
 
-  final picked = switch (kind) {
+  final picked = switch (selectedKind) {
     ComposerAttachKind.gallery => await pickGalleryImageFile(),
     ComposerAttachKind.camera => await pickLiveCameraFile(),
     ComposerAttachKind.file => await pickDeviceFile(),
@@ -286,10 +289,12 @@ Future<void> pickAndUploadImage(
   required String conversationId,
   required ValueChanged<ChatAttachmentInput> onAdded,
   ImageSource? source,
+  ComposerAttachKind? kind,
 }) => pickAndUploadAttachment(
   context,
   ref,
   conversationId: conversationId,
   onAdded: onAdded,
   source: source,
+  kind: kind,
 );

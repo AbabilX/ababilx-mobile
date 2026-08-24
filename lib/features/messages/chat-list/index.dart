@@ -7,6 +7,7 @@ import '../chat_list_filters.dart';
 import '../providers/chat_provider.dart';
 import '../providers/chat_scope_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import 'camera_send_flow.dart';
 import 'conversation_rows.dart';
 import 'list_fab.dart';
 import 'list_header.dart';
@@ -87,7 +88,10 @@ class _ChatListState extends ConsumerState<ChatList> {
         padding: const EdgeInsets.only(
           bottom: ShellPillMetrics.contentBottomInset - 24,
         ),
-        child: ChatListFab(onPressed: () => context.push('/messages/new')),
+        child: ChatListFab(
+          onCamera: () => captureAndSendChatPhoto(context, ref),
+          onNewMessage: () => context.push('/messages/new'),
+        ),
       ),
     );
   }

@@ -12,6 +12,7 @@ import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 import '../providers/team_gate_provider.dart';
 import 'composer_attach.dart';
+import 'composer_attachment_panel.dart';
 import 'composer_collapsed.dart';
 import 'composer_expanded_shell.dart';
 import 'composer_mention_picker.dart';
@@ -61,6 +62,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   bool _uploadingVoice = false;
   bool _paused = false;
   bool _viewOnce = false;
+  bool _attachmentPanelOpen = false;
 
   List<MentionCandidate> _mentionCandidates = [];
   final Set<String> _mentionedUserIds = {};
@@ -305,7 +307,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
   }
 
-  Future<void> _attach({ImageSource? source}) async {
+  Future<void> _attach({ImageSource? source, ComposerAttachKind? kind}) async {
     if (!mounted) return;
     try {
       await pickAndUploadAttachment(
@@ -313,6 +315,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         ref,
         conversationId: widget.conversationId,
         source: source,
+        kind: kind,
         onAdded: (a) {
           if (!mounted) return;
           setState(() {
@@ -326,6 +329,25 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       if (!mounted) return;
       _showMessage('Could not attach this file.', 'ফাইল সংযুক্ত করা যায়নি।');
     }
+  }
+
+  void _toggleAttachmentPanel() {
+    _focus.unfocus();
+    setState(() => _attachmentPanelOpen = !_attachmentPanelOpen);
+  }
+
+  void _closeAttachmentPanel() {
+    if (_attachmentPanelOpen) setState(() => _attachmentPanelOpen = false);
+  }
+
+  void _selectAttachment(ComposerAttachKind kind) {
+    _closeAttachmentPanel();
+    unawaited(_attach(kind: kind));
+  }
+
+  void _selectContact() {
+    _closeAttachmentPanel();
+    unawaited(_shareContact());
   }
 
   Future<void> _startVoiceRecording() async {
@@ -573,54 +595,86 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       );
     }
 
-    if (!_expanded) {
-      return ComposerCollapsed(
-        hint: _hint,
-        onFocusTap: _openExpanded,
-        onPlus: () => _attach(),
-        onMic: () => unawaited(_startVoiceRecording()),
-        voiceTooltip: tr('chat_tap_to_record'),
-        preparingVoice: _recordPreparing,
-      );
-    }
+    final composer = !_expanded
+        ? ComposerCollapsed(
+            hint: _hint,
+            onFocusTap: () {
+              _closeAttachmentPanel();
+              _openExpanded();
+            },
+            onPlus: _toggleAttachmentPanel,
+            onMic: () => unawaited(_startVoiceRecording()),
+            voiceTooltip: tr('chat_tap_to_record'),
+            preparingVoice: _recordPreparing,
+          )
+        : ComposerExpandedShell(
+            pending: _pending,
+            onRemove: (i) => setState(() => _pending.removeAt(i)),
+            onAddPhoto: () => _attach(kind: ComposerAttachKind.gallery),
+            mentionPicker: _showMentions
+                ? ComposerMentionPicker(
+                    candidates: _mentionCandidates,
+                    onSelect: _selectMention,
+                  )
+                : null,
+            replyBanner: replyToMsg != null
+                ? ComposerReplyBanner(
+                    message: replyToMsg,
+                    onCancel: () =>
+                        ref.read(chatProvider.notifier).setReplyToMessage(null),
+                  )
+                : null,
+            field: ComposerSlackField(
+              controller: _ctrl,
+              focusNode: _focus,
+              hint: _hint,
+              sending: sending,
+              canSend: _hasDraft,
+              expanded: _tall,
+              isGroup: widget.isGroup,
+              onAttach: _toggleAttachmentPanel,
+              onVoice: () => unawaited(_startVoiceRecording()),
+              onShareContact: () => unawaited(_shareContact()),
+              onMention: _triggerMention,
+              onExpand: () => setState(() => _tall = !_tall),
+              onSend: _send,
+              attachTooltip: tr('chat_attach'),
+              voiceTooltip: tr('chat_tap_to_record'),
+              shareContactTooltip: tr('chat_share_contact'),
+              mentionTooltip: tr('chat_mention'),
+              expandTooltip: tr('chat_expand'),
+              sendLabel: tr('chat_send'),
+            ),
+          );
 
-    return ComposerExpandedShell(
-      pending: _pending,
-      onRemove: (i) => setState(() => _pending.removeAt(i)),
-      onAddPhoto: () => _attach(),
-      mentionPicker: _showMentions
-          ? ComposerMentionPicker(
-              candidates: _mentionCandidates,
-              onSelect: _selectMention,
-            )
-          : null,
-      replyBanner: replyToMsg != null
-          ? ComposerReplyBanner(
-              message: replyToMsg,
-              onCancel: () =>
-                  ref.read(chatProvider.notifier).setReplyToMessage(null),
-            )
-          : null,
-      field: ComposerSlackField(
-        controller: _ctrl,
-        focusNode: _focus,
-        hint: _hint,
-        sending: sending,
-        canSend: _hasDraft,
-        expanded: _tall,
-        isGroup: widget.isGroup,
-        onAttach: () => _attach(),
-        onVoice: () => unawaited(_startVoiceRecording()),
-        onShareContact: () => unawaited(_shareContact()),
-        onMention: _triggerMention,
-        onExpand: () => setState(() => _tall = !_tall),
-        onSend: _send,
-        attachTooltip: tr('chat_attach'),
-        voiceTooltip: tr('chat_tap_to_record'),
-        shareContactTooltip: tr('chat_share_contact'),
-        mentionTooltip: tr('chat_mention'),
-        expandTooltip: tr('chat_expand'),
-        sendLabel: tr('chat_send'),
+    return PopScope(
+      canPop: !_attachmentPanelOpen,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeAttachmentPanel();
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          composer,
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            child: _attachmentPanelOpen
+                ? ComposerAttachmentPanel(
+                    galleryLabel: tr('chat_gallery'),
+                    cameraLabel: tr('chat_camera'),
+                    fileLabel: tr('chat_file'),
+                    contactLabel: tr('chat_contact'),
+                    onGallery: () =>
+                        _selectAttachment(ComposerAttachKind.gallery),
+                    onCamera: () =>
+                        _selectAttachment(ComposerAttachKind.camera),
+                    onFile: () => _selectAttachment(ComposerAttachKind.file),
+                    onContact: _selectContact,
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
       ),
     );
   }
