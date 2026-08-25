@@ -4,9 +4,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../shared/widgets/pdf_preview.dart';
 import '../data/models/wall_models.dart';
 
-Future<void> openWallPdfPreview(BuildContext context, WallAttachment pdf) {
-  return showPdfPreview(context, fileUrl: pdf.fileUrl, fileName: pdf.fileName);
-}
+Future<void> openWallPdfPreview(BuildContext context, WallAttachment pdf) =>
+    showPdfPreview(
+      context,
+      source: PdfDocumentSource.url(pdf.fileUrl),
+      fileName: pdf.fileName,
+    );
 
 Future<void> openWallFile(BuildContext context, WallAttachment file) async {
   if (file.locked || file.fileUrl.isEmpty) {

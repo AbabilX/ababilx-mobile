@@ -43,7 +43,11 @@ class LockedFilePlaceholder extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.lock_outline_rounded, size: 15, color: colors.onSurfaceVariant),
+                Icon(
+                  Icons.lock_outline_rounded,
+                  size: 15,
+                  color: colors.onSurfaceVariant,
+                ),
                 const SizedBox(width: 6),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 140),
@@ -51,7 +55,10 @@ class LockedFilePlaceholder extends StatelessWidget {
                     fileName.isEmpty ? 'Locked file' : fileName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colors.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -70,14 +77,21 @@ class LockedFilePlaceholder extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
             children: [
-              Icon(Icons.lock_outline_rounded, size: 18, color: colors.onSurfaceVariant),
+              Icon(
+                Icons.lock_outline_rounded,
+                size: 18,
+                color: colors.onSurfaceVariant,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   fileName.isEmpty ? 'Locked file' : fileName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant,
+                    fontSize: 14,
+                  ),
                 ),
               ),
               Text(

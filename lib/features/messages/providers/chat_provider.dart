@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/first_load_timeout.dart';
 import '../../../core/network/ws_client.dart';
+import '../../attachments/providers/attachment_providers.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat_utils.dart';
@@ -13,7 +14,6 @@ import '../data/chat_repository.dart';
 import '../data/local/chat_message_row.dart';
 import '../data/local/chat_message_store.dart';
 import '../data/local/chat_outbox_cache.dart';
-import '../data/local/attachment_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
 import '../message_e2ee/message_vault.dart';
@@ -118,6 +118,7 @@ class ChatNotifier extends Notifier<ChatState>
     // so a cold open offline shows the last known chat list instantly
     // instead of waiting on any request to fail or time out.
     final hadCache = await hydrateSidebarFromCache();
+    unawaited(ref.read(attachmentSweeperProvider).sweepIfDue());
     try {
       await hydrateOutboxMessages();
     } catch (_) {}

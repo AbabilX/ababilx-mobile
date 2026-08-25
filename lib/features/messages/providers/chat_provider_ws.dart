@@ -120,7 +120,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
             msg,
             parentId: msg.parentId,
           );
-          prefetchImageAttachments(msg.attachments);
+          unawaited(ref.read(attachmentIntakeProvider).onMessage(msg));
           (this as _ChatCacheMixin).persistMessageAsync(msg);
           return;
         }
@@ -144,7 +144,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     } else {
       appendFeedMessage(convId, msg);
     }
-    prefetchImageAttachments(msg.attachments);
+    unawaited(ref.read(attachmentIntakeProvider).onMessage(msg));
     (this as _ChatCacheMixin).persistMessageAsync(msg);
   }
 
@@ -166,7 +166,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     if (msg.parentId != null) {
       patchThreadReply(msg.parentId!, msg);
     }
-    prefetchImageAttachments(msg.attachments);
+    unawaited(ref.read(attachmentIntakeProvider).onMessage(msg));
     (this as _ChatCacheMixin).persistMessageAsync(msg);
   }
 

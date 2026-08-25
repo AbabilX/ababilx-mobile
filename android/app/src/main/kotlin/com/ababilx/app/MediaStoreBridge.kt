@@ -11,11 +11,18 @@ import java.io.File
 import java.io.FileInputStream
 
 /**
- * Copies a private temp file into the public Downloads/[subfolder] collection.
- * Uses MediaStore on API 29+ (no permission needed) and a direct file write
- * below that (requires WRITE_EXTERNAL_STORAGE, maxSdkVersion 28 in the
- * manifest). Deletes [sourcePath] once copied. Returns the resulting
- * absolute path, or null on failure.
+ * Copies a private file into a public MediaStore collection — Pictures,
+ * Movies or Downloads, under [subfolder]. Uses MediaStore on API 29+ (no
+ * permission needed) and a direct file write below that (requires
+ * WRITE_EXTERNAL_STORAGE, maxSdkVersion 28 in the manifest).
+ *
+ * [deleteSource] defaults to true for the local-share receive path, which has
+ * no other copy. Chat attachments pass false: the canonical bytes live in the
+ * app sandbox and are what playback reads, and the path returned from here is
+ * not readable back on API 29+ under scoped storage — so moving instead of
+ * copying would leave the app with no usable file at all.
+ *
+ * Returns the resulting absolute path, or null on failure.
  */
 object MediaStoreBridge {
     fun saveToDownloads(
@@ -25,22 +32,34 @@ object MediaStoreBridge {
         subfolder: String,
         mimeType: String?,
         collection: String = "downloads",
+        deleteSource: Boolean = true,
     ): String? {
         val source = File(sourcePath)
         if (!source.exists()) return null
-        val isImages = collection == "images"
 
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                saveViaMediaStore(context, source, fileName, subfolder, mimeType, isImages)
+                saveViaMediaStore(context, source, fileName, subfolder, mimeType, collection)
             } else {
-                saveLegacy(source, fileName, subfolder, isImages)
+                saveLegacy(source, fileName, subfolder, collection)
             }
         } catch (e: Exception) {
             null
         } finally {
-            source.delete()
+            if (deleteSource) source.delete()
         }
+    }
+
+    private fun baseDirFor(collection: String): String = when (collection) {
+        "images" -> Environment.DIRECTORY_PICTURES
+        "video" -> Environment.DIRECTORY_MOVIES
+        else -> Environment.DIRECTORY_DOWNLOADS
+    }
+
+    private fun collectionUriFor(collection: String): Uri = when (collection) {
+        "images" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        else -> MediaStore.Downloads.EXTERNAL_CONTENT_URI
     }
 
     private fun saveViaMediaStore(
@@ -49,18 +68,16 @@ object MediaStoreBridge {
         fileName: String,
         subfolder: String,
         mimeType: String?,
-        isImages: Boolean,
+        collection: String,
     ): String? {
         val resolver = context.contentResolver
-        val baseDir = if (isImages) Environment.DIRECTORY_PICTURES else Environment.DIRECTORY_DOWNLOADS
+        val baseDir = baseDirFor(collection)
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType ?: "application/octet-stream")
             put(MediaStore.MediaColumns.RELATIVE_PATH, "$baseDir/$subfolder")
         }
-        val collectionUri =
-            if (isImages) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Downloads.EXTERNAL_CONTENT_URI
-        val uri = resolver.insert(collectionUri, values) ?: return null
+        val uri = resolver.insert(collectionUriFor(collection), values) ?: return null
 
         val copied = resolver.openOutputStream(uri)?.use { out ->
             FileInputStream(source).use { input -> input.copyTo(out) }
@@ -83,8 +100,8 @@ object MediaStoreBridge {
         return uri.toString()
     }
 
-    private fun saveLegacy(source: File, fileName: String, subfolder: String, isImages: Boolean): String {
-        val baseDir = if (isImages) Environment.DIRECTORY_PICTURES else Environment.DIRECTORY_DOWNLOADS
+    private fun saveLegacy(source: File, fileName: String, subfolder: String, collection: String): String {
+        val baseDir = baseDirFor(collection)
         val dir = File(Environment.getExternalStoragePublicDirectory(baseDir), subfolder)
         if (!dir.exists()) dir.mkdirs()
 

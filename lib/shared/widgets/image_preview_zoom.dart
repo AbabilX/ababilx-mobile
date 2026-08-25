@@ -1,0 +1,85 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+
+import 'preview_image.dart';
+
+class ZoomablePreviewImage extends StatefulWidget {
+  const ZoomablePreviewImage({
+    super.key,
+    required this.image,
+    required this.allowRemoteFallback,
+  });
+
+  final PreviewImage image;
+  final bool allowRemoteFallback;
+
+  @override
+  State<ZoomablePreviewImage> createState() => _ZoomablePreviewImageState();
+}
+
+class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
+    with AutomaticKeepAliveClientMixin {
+  final _transform = TransformationController();
+  TapDownDetails? _doubleTapDetails;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _transform.dispose();
+    super.dispose();
+  }
+
+  void _onDoubleTap() {
+    final pos = _doubleTapDetails?.localPosition;
+    if (pos == null) return;
+    if (_transform.value.getMaxScaleOnAxis() > 1.05) {
+      _transform.value = Matrix4.identity();
+      return;
+    }
+    const scale = 2.5;
+    _transform.value = Matrix4.identity()
+      ..translateByDouble(-pos.dx * (scale - 1), -pos.dy * (scale - 1), 0, 1)
+      ..scaleByDouble(scale, scale, 1, 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return GestureDetector(
+      onDoubleTapDown: (details) => _doubleTapDetails = details,
+      onDoubleTap: _onDoubleTap,
+      child: InteractiveViewer(
+        transformationController: _transform,
+        minScale: 1,
+        maxScale: 5,
+        clipBehavior: Clip.none,
+        child: SizedBox.expand(child: _image()),
+      ),
+    );
+  }
+
+  Widget _image() {
+    final path = widget.image.localPath;
+    if (path != null && path.isNotEmpty) {
+      return Image.file(
+        File(path),
+        fit: BoxFit.contain,
+        alignment: Alignment.center,
+        errorBuilder: (_, _, _) => _error(),
+      );
+    }
+    if (!widget.allowRemoteFallback) return _error();
+    return Image.network(
+      widget.image.fileUrl,
+      fit: BoxFit.contain,
+      alignment: Alignment.center,
+      errorBuilder: (_, _, _) => _error(),
+    );
+  }
+
+  Widget _error() =>
+      const Icon(Icons.broken_image_outlined, color: Colors.white54, size: 48);
+}

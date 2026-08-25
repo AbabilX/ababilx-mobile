@@ -98,6 +98,7 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
         oldestMs,
       );
       messages = await decryptIfNeeded(messages);
+      unawaited(ref.read(attachmentIntakeProvider).onMessages(messages));
       setFeed(
         feedKey(conversationId),
         ChatFeed(
@@ -154,5 +155,6 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
 
   void deleteCachedMessageAsync(String messageId) {
     messageStore.remove(messageId).ignore();
+    ref.read(attachmentSweeperProvider).onMessageDeleted(messageId).ignore();
   }
 }

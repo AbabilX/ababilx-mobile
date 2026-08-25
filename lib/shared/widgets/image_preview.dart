@@ -1,33 +1,39 @@
 import 'package:flutter/material.dart';
 
-/// Minimal image payload for fullscreen preview (wall + chat).
-class PreviewImage {
-  const PreviewImage({required this.fileUrl, required this.fileName});
+import 'image_preview_zoom.dart';
+import 'preview_image.dart';
 
-  final String fileUrl;
-  final String fileName;
-}
+export 'preview_image.dart';
 
 /// Fullscreen pinch-zoom gallery — same UX as wall image preview.
 Future<void> showImagePreview(
   BuildContext context, {
   required List<PreviewImage> images,
   required int initialIndex,
+  bool allowRemoteFallback = true,
 }) {
   if (images.isEmpty) return Future.value();
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.92),
-    builder: (ctx) =>
-        _ImagePreviewDialog(images: images, initialIndex: initialIndex),
+    builder: (ctx) => _ImagePreviewDialog(
+      images: images,
+      initialIndex: initialIndex,
+      allowRemoteFallback: allowRemoteFallback,
+    ),
   );
 }
 
 class _ImagePreviewDialog extends StatefulWidget {
-  const _ImagePreviewDialog({required this.images, required this.initialIndex});
+  const _ImagePreviewDialog({
+    required this.images,
+    required this.initialIndex,
+    required this.allowRemoteFallback,
+  });
 
   final List<PreviewImage> images;
   final int initialIndex;
+  final bool allowRemoteFallback;
 
   @override
   State<_ImagePreviewDialog> createState() => _ImagePreviewDialogState();
@@ -64,7 +70,10 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
               onPageChanged: (i) => setState(() => _index = i),
               itemBuilder: (_, i) {
                 final a = widget.images[i];
-                return _ZoomableImage(url: a.fileUrl);
+                return ZoomablePreviewImage(
+                  image: a,
+                  allowRemoteFallback: widget.allowRemoteFallback,
+                );
               },
             ),
             Positioned(
@@ -127,76 +136,6 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ZoomableImage extends StatefulWidget {
-  const _ZoomableImage({required this.url});
-
-  final String url;
-
-  @override
-  State<_ZoomableImage> createState() => _ZoomableImageState();
-}
-
-class _ZoomableImageState extends State<_ZoomableImage>
-    with AutomaticKeepAliveClientMixin {
-  final _transform = TransformationController();
-  TapDownDetails? _doubleTapDetails;
-
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  void dispose() {
-    _transform.dispose();
-    super.dispose();
-  }
-
-  void _onDoubleTap() {
-    final pos = _doubleTapDetails?.localPosition;
-    if (pos == null) return;
-    final current = _transform.value.getMaxScaleOnAxis();
-    if (current > 1.05) {
-      _transform.value = Matrix4.identity();
-      return;
-    }
-    const scale = 2.5;
-    final x = -pos.dx * (scale - 1);
-    final y = -pos.dy * (scale - 1);
-    _transform.value = Matrix4.identity()
-      ..translateByDouble(x, y, 0, 1)
-      ..scaleByDouble(scale, scale, 1, 1);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return GestureDetector(
-      onDoubleTapDown: (d) => _doubleTapDetails = d,
-      onDoubleTap: _onDoubleTap,
-      child: InteractiveViewer(
-        transformationController: _transform,
-        minScale: 1,
-        maxScale: 5,
-        clipBehavior: Clip.none,
-        panEnabled: true,
-        scaleEnabled: true,
-        // Fill the viewport; keep aspect (no tiny strip / no stretch).
-        child: SizedBox.expand(
-          child: Image.network(
-            widget.url,
-            fit: BoxFit.contain,
-            alignment: Alignment.center,
-            errorBuilder: (_, _, _) => const Icon(
-              Icons.broken_image_outlined,
-              color: Colors.white54,
-              size: 48,
-            ),
-          ),
         ),
       ),
     );

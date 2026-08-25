@@ -3,17 +3,21 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
+import 'audio_source_ref.dart';
+
+export 'audio_source_ref.dart';
+
 final _voicePlayback = _VoicePlaybackController();
 
 class VoiceUrlPlayer extends StatelessWidget {
   const VoiceUrlPlayer({
     super.key,
-    required this.url,
+    required this.source,
     required this.fileName,
     this.compact = false,
   });
 
-  final String url;
+  final AudioSourceRef source;
   final String fileName;
   final bool compact;
 
@@ -30,7 +34,7 @@ class VoiceUrlPlayer extends StatelessWidget {
 
   Future<void> _toggle(BuildContext context) async {
     try {
-      await _voicePlayback.toggle(url);
+      await _voicePlayback.toggle(source);
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -45,7 +49,7 @@ class VoiceUrlPlayer extends StatelessWidget {
     return AnimatedBuilder(
       animation: _voicePlayback,
       builder: (context, _) {
-        final selected = _voicePlayback.url == url;
+        final selected = _voicePlayback.sourceId == source.id;
         final playing = selected && _voicePlayback.playing;
         final position = selected ? _voicePlayback.position : Duration.zero;
         final duration = selected && _voicePlayback.duration > Duration.zero
@@ -138,19 +142,19 @@ class _VoicePlaybackController extends ChangeNotifier {
 
   final AudioPlayer _player = AudioPlayer();
   final List<StreamSubscription<dynamic>> _subscriptions = [];
-  String? url;
+  String? sourceId;
   bool playing = false;
   bool completed = false;
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
 
-  Future<void> toggle(String nextUrl) async {
-    if (url == nextUrl) {
+  Future<void> toggle(AudioSourceRef next) async {
+    if (sourceId == next.id) {
       if (playing) {
         await _player.pause();
       } else if (completed) {
         completed = false;
-        await _player.play(UrlSource(nextUrl));
+        await _player.play(next.source);
       } else {
         await _player.resume();
       }
@@ -158,11 +162,11 @@ class _VoicePlaybackController extends ChangeNotifier {
     }
 
     await _player.stop();
-    url = nextUrl;
+    sourceId = next.id;
     completed = false;
     duration = Duration.zero;
     position = Duration.zero;
     notifyListeners();
-    await _player.play(UrlSource(nextUrl));
+    await _player.play(next.source);
   }
 }

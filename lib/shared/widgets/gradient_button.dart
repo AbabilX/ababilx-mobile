@@ -98,9 +98,7 @@ class OutlineButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: color ?? fallbackColor,
         side: BorderSide(color: colors.outline, width: 1.2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       ),
       child: Row(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/voice_url_player.dart';
+import '../../attachments/widgets/attachment_gate.dart';
 import '../data/models/chat_models.dart';
 
 class VoiceAttachmentPlayer extends StatelessWidget {
@@ -12,9 +13,14 @@ class VoiceAttachmentPlayer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 7),
-      child: VoiceUrlPlayer(
-        url: attachment.fileUrl,
-        fileName: attachment.fileName,
+      child: AttachmentGate(
+        attachment: attachment,
+        height: 58,
+        showSize: false,
+        ready: (_, handle) => VoiceUrlPlayer(
+          source: AudioSourceRef.file(handle.localPath!),
+          fileName: attachment.fileName,
+        ),
       ),
     );
   }

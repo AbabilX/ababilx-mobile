@@ -40,10 +40,7 @@ class PlanExpiredDialog extends StatelessWidget {
         style: Theme.of(context).textTheme.bodyMedium,
       ),
       actions: [
-        FilledButton(
-          onPressed: onDismiss,
-          child: const Text('Got it'),
-        ),
+        FilledButton(onPressed: onDismiss, child: const Text('Got it')),
       ],
     );
   }

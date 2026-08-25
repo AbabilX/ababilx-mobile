@@ -84,6 +84,10 @@ class AppTranslations {
       'chat_no_chats': 'Start a conversation before sending a photo.',
       'chat_photo_sending': 'Sending photo…',
       'chat_camera_send_failed': 'Could not send this photo.',
+      'chat_attachment_download': 'Download',
+      'chat_attachment_cancel': 'Cancel download',
+      'chat_attachment_retry': 'Retry download',
+      'chat_attachment_unavailable': 'This file is no longer available',
 
       'crm_section_customer': 'Customer',
       'crm_section_overview': 'Overview',
@@ -269,6 +273,10 @@ class AppTranslations {
       'chat_no_chats': 'ছবি পাঠানোর আগে একটি কথোপকথন শুরু করুন।',
       'chat_photo_sending': 'ছবি পাঠানো হচ্ছে…',
       'chat_camera_send_failed': 'ছবিটি পাঠানো যায়নি।',
+      'chat_attachment_download': 'ডাউনলোড করুন',
+      'chat_attachment_cancel': 'ডাউনলোড বাতিল করুন',
+      'chat_attachment_retry': 'আবার ডাউনলোড করুন',
+      'chat_attachment_unavailable': 'ফাইলটি আর পাওয়া যাচ্ছে না',
 
       'crm_section_customer': 'কাস্টমার',
       'crm_section_overview': 'ওভারভিউ',

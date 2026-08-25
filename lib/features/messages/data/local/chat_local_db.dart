@@ -5,19 +5,28 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../../../attachments/data/local/attachment_tables.dart';
 import 'chat_local_migrations.dart';
 import 'chat_local_tables.dart';
 
 part 'chat_local_db.g.dart';
 
-@DriftDatabase(tables: [CachedSidebars, CachedMessages, PendingOutboxMessages])
+@DriftDatabase(
+  tables: [
+    CachedSidebars,
+    CachedMessages,
+    PendingOutboxMessages,
+    AttachmentBlobs,
+    AttachmentRefs,
+  ],
+)
 class ChatLocalDb extends _$ChatLocalDb {
   ChatLocalDb() : super(_openConnection());
 
   ChatLocalDb.forTesting(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -36,6 +45,25 @@ class ChatLocalDb extends _$ChatLocalDb {
           'ON cached_messages (conversation_id, created_at_ms)',
         );
         await backfillMessageRowsFromFeedBlobs(this);
+      }
+      // V4 → V5: the local attachment store. Additive only — no backfill and
+      // no data read, so every pre-existing attachment simply starts life as
+      // "not downloaded" and is fetched on demand.
+      if (from < 5) {
+        await m.createTable(attachmentBlobs);
+        await m.createTable(attachmentRefs);
+        await m.database.customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_attachment_blobs_lru '
+          'ON attachment_blobs (transfer_state, last_access_ms)',
+        );
+        await m.database.customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_attachment_refs_url '
+          'ON attachment_refs (url_key)',
+        );
+        await m.database.customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_attachment_refs_message '
+          'ON attachment_refs (message_id)',
+        );
       }
     },
   );

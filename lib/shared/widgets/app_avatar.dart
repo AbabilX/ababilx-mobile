@@ -44,13 +44,16 @@ class AppAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final letter =
-        (name != null && name!.isNotEmpty) ? name![0].toUpperCase() : '?';
+    final letter = (name != null && name!.isNotEmpty)
+        ? name![0].toUpperCase()
+        : '?';
     final bg = backgroundColor ?? colors.surfaceContainerHighest;
-    final letterWidget = fallback ??
+    final letterWidget =
+        fallback ??
         Text(
           letter,
-          style: letterStyle ??
+          style:
+              letterStyle ??
               TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: size * 0.38,

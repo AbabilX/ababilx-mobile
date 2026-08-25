@@ -106,7 +106,7 @@ class WallAttachmentGrid extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: NetworkVideoPlayer(
-                  url: video.fileUrl,
+                  source: VideoSource.url(video.fileUrl),
                   maxHeight: soloMaxH,
                   borderRadius: 12,
                 ),
@@ -115,7 +115,7 @@ class WallAttachmentGrid extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 6, bottom: 2),
                 child: VoiceUrlPlayer(
-                  url: recording.fileUrl,
+                  source: AudioSourceRef.url(recording.fileUrl),
                   fileName: recording.fileName,
                   compact: true,
                 ),
@@ -125,7 +125,7 @@ class WallAttachmentGrid extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: PdfPreviewCard(
-                  fileUrl: pdf.fileUrl,
+                  source: PdfDocumentSource.url(pdf.fileUrl),
                   fileName: pdf.fileName,
                   hideFileName: true,
                   height: 360,

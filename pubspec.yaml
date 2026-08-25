@@ -21,6 +21,9 @@ dependencies:
   # HTTP client
   dio: ^5.7.0
 
+  # SHA-256 for attachment cache keys (already resolved transitively)
+  crypto: ^3.0.7
+
   # State management
   flutter_riverpod: ^2.5.1
 

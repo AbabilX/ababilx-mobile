@@ -1,29 +1,27 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
-import '../../../shared/widgets/image_preview.dart';
 import '../../../shared/widgets/locked_file_placeholder.dart';
-import '../../../shared/widgets/network_video_player.dart';
-import '../../../shared/widgets/pdf_preview.dart';
-import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
-import 'chat_file_preview.dart';
+import 'attachment_file_row.dart';
+import 'attachment_image_tile.dart';
+import 'attachment_pdf_tile.dart';
+import 'attachment_video_tile.dart';
 import 'voice_attachment_player.dart';
 
-/// Web parity: solo max-h-72 (288), multi max-h-40 (160) + contain.
+/// Local-first attachment assembly. Transfer progress is watched only by the
+/// leaf tiles, so the message row does not rebuild for every downloaded chunk.
 class MessageAttachments extends StatelessWidget {
   const MessageAttachments({super.key, required this.attachments});
 
   final List<ChatMessageAttachment> attachments;
 
-  static const double _soloMaxH = 288;
-  static const double _multiMaxH = 160;
-  static const double _multiMaxW = 200;
+  static const _soloMaxHeight = 288.0;
+  static const _multiMaxHeight = 160.0;
+  static const _multiMaxWidth = 200.0;
 
   @override
   Widget build(BuildContext context) {
-    final lockedFiles = attachments.where((a) => a.locked).toList();
+    final locked = attachments.where((a) => a.locked).toList();
     final open = attachments.where((a) => !a.locked).toList();
     final images = open.where((a) => a.isImage).toList();
     final videos = open.where((a) => a.isVideo).toList();
@@ -31,193 +29,54 @@ class MessageAttachments extends StatelessWidget {
     final files = open
         .where((a) => !a.isImage && !a.isVideo && !a.isAudio)
         .toList();
-    final colors = Theme.of(context).colorScheme;
-    final solo = images.length == 1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (images.isNotEmpty)
-          solo
-              ? _ImageAttachment(
-                  attachment: images.first,
-                  maxHeight: _soloMaxH,
-                  maxWidth: double.infinity,
-                  placeholderColor: colors.surfaceContainerHighest,
-                  onTap: () => showImagePreview(
-                    context,
-                    images: [
-                      for (final a in images)
-                        PreviewImage(fileUrl: a.fileUrl, fileName: a.fileName),
-                    ],
-                    initialIndex: 0,
-                  ),
-                )
-              : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (var i = 0; i < images.length; i++)
-                      _ImageAttachment(
-                        attachment: images[i],
-                        maxHeight: _multiMaxH,
-                        maxWidth: _multiMaxW,
-                        placeholderColor: colors.surfaceContainerHighest,
-                        onTap: () => showImagePreview(
-                          context,
-                          images: [
-                            for (final a in images)
-                              PreviewImage(
-                                fileUrl: a.fileUrl,
-                                fileName: a.fileName,
-                              ),
-                          ],
-                          initialIndex: i,
-                        ),
-                      ),
-                  ],
+        if (images.length == 1)
+          AttachmentImageTile(
+            attachment: images.first,
+            gallery: images,
+            index: 0,
+            maxHeight: _soloMaxHeight,
+            maxWidth: double.infinity,
+          )
+        else if (images.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var i = 0; i < images.length; i++)
+                AttachmentImageTile(
+                  attachment: images[i],
+                  gallery: images,
+                  index: i,
+                  maxHeight: _multiMaxHeight,
+                  maxWidth: _multiMaxWidth,
                 ),
-        for (final v in videos)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: NetworkVideoPlayer(url: v.fileUrl, maxHeight: _soloMaxH),
+            ],
           ),
-        for (final a in audio) VoiceAttachmentPlayer(attachment: a),
-        for (final a in files)
-          a.isPdf
-              ? Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: PdfPreviewCard(
-                    fileUrl: a.fileUrl,
-                    fileName: a.fileName,
-                    hideFileName: false,
-                    height: 200,
-                  ),
-                )
-              : _FileAttachment(
-                  attachment: a,
-                  onTap: () => openChatAttachment(context, a),
-                ),
-        if (lockedFiles.isNotEmpty)
+        for (final attachment in videos)
+          AttachmentVideoTile(attachment: attachment),
+        for (final attachment in audio)
+          VoiceAttachmentPlayer(attachment: attachment),
+        for (final attachment in files)
+          attachment.isPdf
+              ? AttachmentPdfTile(attachment: attachment)
+              : AttachmentFileRow(attachment: attachment),
+        if (locked.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Wrap(
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final f in lockedFiles)
-                  LockedFilePlaceholder(fileName: f.fileName),
+                for (final attachment in locked)
+                  LockedFilePlaceholder(fileName: attachment.fileName),
               ],
             ),
           ),
       ],
-    );
-  }
-}
-
-class _ImageAttachment extends StatelessWidget {
-  const _ImageAttachment({
-    required this.attachment,
-    required this.onTap,
-    required this.placeholderColor,
-    required this.maxHeight,
-    required this.maxWidth,
-  });
-
-  final ChatMessageAttachment attachment;
-  final VoidCallback onTap;
-  final Color placeholderColor;
-  final double maxHeight;
-  final double maxWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    final isSolo = maxWidth == double.infinity;
-
-    return Padding(
-      padding: EdgeInsets.only(top: isSolo ? 8 : 0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: maxHeight,
-                maxWidth: maxWidth,
-                minHeight: 80,
-              ),
-              child: CachedNetworkImage(
-                imageUrl: attachment.fileUrl,
-                width: isSolo ? double.infinity : null,
-                fit: BoxFit.contain,
-                alignment: Alignment.centerLeft,
-                placeholder: (_, _) => Container(
-                  height: maxHeight * 0.55,
-                  width: isSolo ? double.infinity : maxWidth,
-                  color: placeholderColor,
-                ),
-                errorWidget: (_, _, _) => Container(
-                  height: 120,
-                  width: isSolo ? double.infinity : maxWidth,
-                  color: placeholderColor,
-                  alignment: Alignment.center,
-                  child: const Icon(Icons.broken_image_outlined),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FileAttachment extends StatelessWidget {
-  const _FileAttachment({required this.attachment, required this.onTap});
-
-  final ChatMessageAttachment attachment;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              ChatIcon(
-                attachment.isPdf
-                    ? HugeIcons.strokeRoundedPdf02
-                    : HugeIcons.strokeRoundedFile01,
-                size: 18,
-                color: colors.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  attachment.fileName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: colors.primary, fontSize: 14),
-                ),
-              ),
-              Icon(
-                Icons.open_in_new_rounded,
-                size: 16,
-                color: colors.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

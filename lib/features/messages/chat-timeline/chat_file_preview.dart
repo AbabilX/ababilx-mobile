@@ -1,36 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart';
 
-import '../../../shared/widgets/pdf_preview.dart';
 import '../data/models/chat_models.dart';
 
 Future<void> openChatAttachment(
   BuildContext context,
-  ChatMessageAttachment file,
-) async {
-  if (file.locked || file.fileUrl.isEmpty) {
-    _toast(context, 'This file is locked');
+  ChatMessageAttachment file, {
+  required String localPath,
+}) async {
+  if (file.locked || localPath.isEmpty) {
+    _toast(context, 'This file is not available');
     return;
   }
-  if (file.isPdf) {
-    await showPdfPreview(
+  final result = await OpenFilex.open(localPath, type: file.contentType);
+  if (result.type != ResultType.done && context.mounted) {
+    _toast(
       context,
-      fileUrl: file.fileUrl,
-      fileName: file.fileName,
+      result.message.isEmpty ? 'Could not open file' : result.message,
     );
-    return;
   }
-
-  final uri = Uri.tryParse(file.fileUrl);
-  if (uri == null) {
-    _toast(context, 'Invalid file URL');
-    return;
-  }
-
-  final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-  if (!ok && context.mounted) _toast(context, 'Could not open file');
 }
 
-void _toast(BuildContext context, String msg) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+void _toast(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }

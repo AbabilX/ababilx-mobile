@@ -94,7 +94,7 @@ class _OrganizationDocumentsState extends ConsumerState<OrganizationDocuments> {
     if (document.isPdf) {
       await showPdfPreview(
         context,
-        fileUrl: document.url,
+        source: PdfDocumentSource.url(document.url),
         fileName: document.fileName.isNotEmpty
             ? document.fileName
             : document.title,
@@ -230,7 +230,7 @@ class _OrganizationDocumentsState extends ConsumerState<OrganizationDocuments> {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                             child: VoiceUrlPlayer(
-                              url: document.url,
+                              source: AudioSourceRef.url(document.url),
                               fileName: document.fileName,
                               compact: true,
                             ),

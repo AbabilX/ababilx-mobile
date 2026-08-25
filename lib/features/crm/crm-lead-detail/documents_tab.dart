@@ -98,7 +98,7 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
     if (d.isPdf) {
       await showPdfPreview(
         context,
-        fileUrl: d.fileUrl,
+        source: PdfDocumentSource.url(d.fileUrl),
         fileName: d.fileName,
       );
       return;
@@ -183,7 +183,9 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                           : d.isAudio
                           ? Icons.graphic_eq_rounded
                           : Icons.insert_drive_file_outlined,
-                      color: d.locked ? colors.onSurfaceVariant : colors.primary,
+                      color: d.locked
+                          ? colors.onSurfaceVariant
+                          : colors.primary,
                     ),
                     title: Text(
                       d.label.isNotEmpty ? d.label : d.fileName,
@@ -220,7 +222,7 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       child: VoiceUrlPlayer(
-                        url: d.fileUrl,
+                        source: AudioSourceRef.url(d.fileUrl),
                         fileName: d.fileName,
                         compact: true,
                       ),

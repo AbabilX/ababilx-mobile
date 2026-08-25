@@ -18,7 +18,10 @@ class LoadingOverlay extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 message!,
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 14,
+                ),
               ),
             ],
           ],
@@ -65,14 +68,14 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 subtitle!,
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 14,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
-            if (action != null) ...[
-              const SizedBox(height: 24),
-              action!,
-            ],
+            if (action != null) ...[const SizedBox(height: 24), action!],
           ],
         ),
       ),

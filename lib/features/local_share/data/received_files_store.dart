@@ -26,12 +26,25 @@ class ReceivedFilesStore {
   /// Moves the finished temp file into the public/visible location, handling
   /// filename collisions, and returns the final user-visible path.
   static Future<String> publish(String tempFilePath, String fileName) async {
+    final saved = await publishCopy(tempFilePath, fileName);
+    try {
+      final source = File(tempFilePath);
+      if (await source.exists()) await source.delete();
+    } catch (_) {}
+    return saved;
+  }
+
+  /// Same destination, but the source file survives — used when the caller
+  /// keeps its own canonical copy (chat attachments) and only wants the user
+  /// to be able to find the file in their gallery or file manager.
+  static Future<String> publishCopy(String sourcePath, String fileName) async {
     if (Platform.isAndroid) {
       final savedPath = await _channel.invokeMethod<String>('saveToDownloads', {
-        'sourcePath': tempFilePath,
+        'sourcePath': sourcePath,
         'fileName': fileName,
         'subfolder': folderName,
         'mimeType': lookupMimeType(fileName),
+        'deleteSource': false,
       });
       if (savedPath == null) {
         throw StateError('Could not save $fileName to Downloads/$folderName');
@@ -43,8 +56,7 @@ class ReceivedFilesStore {
     final destDir = Directory(p.join(docsDir.path, folderName));
     await destDir.create(recursive: true);
     final destPath = await _uniquePath(destDir.path, fileName);
-    await File(tempFilePath).copy(destPath);
-    await File(tempFilePath).delete();
+    await File(sourcePath).copy(destPath);
     return destPath;
   }
 
