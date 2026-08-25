@@ -509,6 +509,17 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     if (flutterOwnsRingingUi && !force) {
+      // App lifecycle can flip resumed/inactive several times a second while
+      // ringing (system dialogs, notification shade, OEM quirks) and each
+      // flip re-enters here. Only a native call record actually showing means
+      // there is something to hand off from — otherwise this is a redundant
+      // re-confirmation, and forcing the handoff dance anyway used to replay
+      // the tone from position 0 on every tick, which sounded like the ring
+      // stopping every couple of seconds.
+      if (!await AndroidCallUi.isShowing(call.id)) {
+        await IncomingCallRingtone.start();
+        return;
+      }
       voiceCallLog(
         'incoming.callkit.skip',
         callId: call.id,

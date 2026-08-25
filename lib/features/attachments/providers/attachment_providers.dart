@@ -5,6 +5,7 @@ import '../../messages/data/local/chat_sidebar_cache.dart'
     show chatLocalDbProvider;
 import '../../messages/data/models/chat_attachment.dart';
 import '../data/local/attachment_blob_store.dart';
+import '../data/local/attachment_dedupe_store.dart';
 import '../data/local/attachment_ref_store.dart';
 import '../data/models/attachment_handle.dart';
 import '../services/attachment_authority.dart';
@@ -22,6 +23,10 @@ final attachmentBlobStoreProvider = Provider<AttachmentBlobStore>(
 
 final attachmentRefStoreProvider = Provider<AttachmentRefStore>(
   (ref) => AttachmentRefStore(ref.watch(chatLocalDbProvider)),
+);
+
+final attachmentDedupeStoreProvider = Provider<AttachmentDedupeStore>(
+  (ref) => AttachmentDedupeStore(ref.watch(chatLocalDbProvider)),
 );
 
 final attachmentPathsProvider = Provider<AttachmentPaths>(
@@ -68,6 +73,7 @@ final attachmentQueueProvider = Provider<AttachmentQueue>((ref) {
   final exporter = ref.watch(attachmentExporterProvider);
   final queue = AttachmentQueue(
     ref.watch(attachmentBlobStoreProvider),
+    ref.watch(attachmentDedupeStoreProvider),
     ref.watch(attachmentPathsProvider),
     ref.watch(attachmentDownloaderProvider),
     onReady: exporter.export,
@@ -96,6 +102,7 @@ final attachmentIntakeProvider = Provider<AttachmentIntake>(
 final attachmentSweeperProvider = Provider<AttachmentSweeper>(
   (ref) => AttachmentSweeper(
     ref.watch(attachmentBlobStoreProvider),
+    ref.watch(attachmentDedupeStoreProvider),
     ref.watch(attachmentRefStoreProvider),
     ref.watch(attachmentPathsProvider),
   ),

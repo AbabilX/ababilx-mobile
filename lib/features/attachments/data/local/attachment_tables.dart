@@ -16,6 +16,7 @@ import 'package:drift/drift.dart';
   name: 'idx_attachment_blobs_lru',
   columns: {#transferState, #lastAccessMs},
 )
+@TableIndex(name: 'idx_attachment_blobs_content_hash', columns: {#contentHash})
 class AttachmentBlobs extends Table {
   TextColumn get urlKey => text()();
   TextColumn get remoteUrl => text()();
@@ -44,6 +45,12 @@ class AttachmentBlobs extends Table {
 
   IntColumn get exportedAtMs => integer().nullable()();
   TextColumn get exportedPath => text().nullable()();
+
+  /// sha256 of the finished file's bytes, set alongside [localPath] on
+  /// [AttachmentTransferState.ready]. Two rows with the same hash share one
+  /// physical file — the same photo uploaded under two different R2 keys
+  /// (sent by two people, or re-uploaded) costs one copy on disk, not two.
+  TextColumn get contentHash => text().nullable()();
 
   // ─── Reserved for asset encryption. Nothing writes these today. ──────────
   /// Cipher used for the bytes on the wire, '' when stored in the clear.

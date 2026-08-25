@@ -56,3 +56,10 @@ const Duration sweepInterval = Duration(hours: 24);
 /// `lastAccessMs` is only rewritten this often per blob — a scrolling timeline
 /// resolves the same attachment many times a second.
 const Duration touchInterval = Duration(hours: 1);
+
+/// A silently-failed auto-download is retried at most this often. Cold start
+/// (app relaunch, this process's first intake pass) always retries — the map
+/// backing this cooldown is empty then. Without it, a burst of incoming
+/// messages on a flaky connection would re-enqueue the same failed transfer
+/// on every one of them.
+const Duration autoRetryCooldown = Duration(seconds: 45);

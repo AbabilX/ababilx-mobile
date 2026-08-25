@@ -95,7 +95,12 @@ class AttachmentBlobStore {
     );
   }
 
-  Future<void> markReady(String urlKey, String localPath, int bytes) async {
+  Future<void> markReady(
+    String urlKey,
+    String localPath,
+    int bytes, {
+    String contentHash = '',
+  }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     await _update(
       urlKey,
@@ -108,6 +113,9 @@ class AttachmentBlobStore {
         lastAccessMs: Value(now),
         lastError: const Value(''),
         attempts: const Value(0),
+        contentHash: contentHash.isEmpty
+            ? const Value.absent()
+            : Value(contentHash),
       ),
     );
   }

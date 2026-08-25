@@ -45,7 +45,7 @@ class AttachmentAuthority {
     // simply fetched on demand.
     if (row == null) return base;
 
-    final state = _stateOf(row.transferState);
+    final state = attachmentTransferStateFromIndex(row.transferState);
     final path = row.localPath ?? '';
 
     if (state == AttachmentTransferState.ready) {
@@ -131,13 +131,6 @@ class AttachmentAuthority {
 
   void cancel(ChatMessageAttachment attachment) {
     _queue.cancel(attachmentUrlKey(attachment.fileUrl));
-  }
-
-  AttachmentTransferState _stateOf(int index) {
-    if (index < 0 || index >= AttachmentTransferState.values.length) {
-      return AttachmentTransferState.absent;
-    }
-    return AttachmentTransferState.values[index];
   }
 
   /// LRU bookkeeping, throttled: a scrolling timeline resolves the same

@@ -158,6 +158,19 @@ class AndroidCallUi {
     }
   }
 
+  /// Whether CallKit currently has a native call record for [callId] — the
+  /// real signal for "is there a native ringer to hand off from", instead of
+  /// assuming one on every lifecycle tick.
+  static Future<bool> isShowing(String callId) async {
+    if (callId.isEmpty) return false;
+    try {
+      final active = await FlutterCallkitIncoming.activeCalls();
+      return active.any((call) => call.id == callId);
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<void> _showOnce(CallKitParams params) async {
     final active = await FlutterCallkitIncoming.activeCalls();
     if (active.any((call) => call.id == params.id)) return;

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:ababilx/features/attachments/data/local/attachment_blob_store.dart';
+import 'package:ababilx/features/attachments/data/local/attachment_dedupe_store.dart';
 import 'package:ababilx/features/attachments/data/models/attachment_handle.dart';
 import 'package:ababilx/features/attachments/services/attachment_cipher.dart';
 import 'package:ababilx/features/attachments/services/attachment_downloader.dart';
@@ -38,6 +39,7 @@ void main() {
     );
     final queue = AttachmentQueue(
       AttachmentBlobStore(db),
+      AttachmentDedupeStore(db),
       AttachmentPaths(rootDirectory: () async => temp),
       AttachmentDownloader(Dio(), const PassthroughAttachmentCipher()),
     );

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:ababilx/features/attachments/data/local/attachment_blob_store.dart';
+import 'package:ababilx/features/attachments/data/local/attachment_dedupe_store.dart';
 import 'package:ababilx/features/attachments/data/local/attachment_ref_store.dart';
 import 'package:ababilx/features/attachments/data/models/attachment_handle.dart';
 import 'package:ababilx/features/attachments/data/models/attachment_url_key.dart';
@@ -47,6 +48,7 @@ void main() {
     });
     queue = AttachmentQueue(
       blobs,
+      AttachmentDedupeStore(db),
       paths,
       AttachmentDownloader(Dio(), const PassthroughAttachmentCipher()),
     );
@@ -129,6 +131,66 @@ void main() {
     await queue.enqueue(attachment, userInitiated: true);
     expect(requests, 2, reason: 'the missing file is fetched again');
     expect((await authority.resolve(attachment)).isReady, isTrue);
+  });
+
+  test(
+    'a transfer stuck mid-download after a process death is retried',
+    () async {
+      final attachment = imageAt(
+        'http://${server.address.host}:${server.port}/photo.jpg',
+      );
+      final urlKey = attachmentUrlKey(attachment.fileUrl);
+      // No job is running for this urlKey in this (fresh) queue instance —
+      // exactly what a relaunch looks like: the in-memory job map starts
+      // empty, but the DB row was left `downloading` by the process that died.
+      await blobs.ensure(
+        urlKey: urlKey,
+        remoteUrl: attachment.fileUrl,
+        fileName: attachment.fileName,
+        contentType: attachment.contentType,
+        expectedBytes: attachment.sizeBytes,
+      );
+      await blobs.setState(
+        urlKey,
+        AttachmentTransferState.downloading,
+        receivedBytes: 1,
+      );
+
+      await AttachmentIntake(
+        blobs,
+        refs,
+        queue,
+      ).onMessage(messageWith(attachment));
+      await queue.enqueue(attachment);
+
+      expect(requests, 1, reason: 'the stalled transfer restarts on its own');
+      expect(await blobs.isReady(urlKey), isTrue);
+    },
+  );
+
+  test('a permanently failed attachment is never retried', () async {
+    final attachment = imageAt('http://${server.address.host}:1/gone.jpg');
+    final urlKey = attachmentUrlKey(attachment.fileUrl);
+    await blobs.ensure(
+      urlKey: urlKey,
+      remoteUrl: attachment.fileUrl,
+      fileName: attachment.fileName,
+      contentType: attachment.contentType,
+      expectedBytes: attachment.sizeBytes,
+    );
+    // Stands in for the outcome of an earlier 404/410 — the object is gone
+    // for good, so intake must not keep spending network on it.
+    await blobs.setState(
+      urlKey,
+      AttachmentTransferState.permanentlyFailed,
+      lastError: 'This file is no longer available',
+    );
+
+    final intake = AttachmentIntake(blobs, refs, queue);
+    await intake.onMessage(messageWith(attachment));
+    await intake.onMessage(messageWith(attachment));
+
+    expect(requests, 0, reason: 'a permanent failure is never re-enqueued');
   });
 
   test('a locked attachment never touches the network or the store', () async {

@@ -6,7 +6,10 @@ import 'package:dio/dio.dart';
 import '../../messages/data/models/chat_attachment.dart';
 import '../attachment_config.dart';
 import '../data/local/attachment_blob_store.dart';
+import '../data/local/attachment_dedupe_store.dart';
 import '../data/models/attachment_handle.dart';
+import 'attachment_content_dedupe.dart';
+import 'attachment_content_hash.dart';
 import 'attachment_downloader.dart';
 import 'attachment_failure.dart';
 import 'attachment_paths.dart';
@@ -20,6 +23,7 @@ import 'attachment_policy.dart';
 class AttachmentJobRunner {
   AttachmentJobRunner(
     this._blobs,
+    this._dedupe,
     this._paths,
     this._downloader,
     this._emit,
@@ -27,6 +31,7 @@ class AttachmentJobRunner {
   );
 
   final AttachmentBlobStore _blobs;
+  final AttachmentDedupeStore _dedupe;
   final AttachmentPaths _paths;
   final AttachmentDownloader _downloader;
   final void Function(AttachmentHandle handle) _emit;
@@ -120,10 +125,34 @@ class AttachmentJobRunner {
       },
     );
 
-    await _blobs.markReady(urlKey, outcome.file.path, outcome.bytes);
+    final hash = await hashFileContents(outcome.file);
+    final resolution = await resolveDedupedStoragePath(
+      _dedupe,
+      urlKey,
+      hash,
+      outcome.file,
+    );
+
+    // The database write is the commit point — it must land before the
+    // redundant file is touched. A crash between them leaves an orphan file
+    // the sweeper can find and reclaim; the reverse order could leave this
+    // row pointing at bytes that no longer exist.
+    await _blobs.markReady(
+      urlKey,
+      resolution.path,
+      outcome.bytes,
+      contentHash: hash,
+    );
+    final redundant = resolution.redundantFile;
+    if (redundant != null) {
+      try {
+        await redundant.delete();
+      } catch (_) {}
+    }
+
     final ready = current.copyWith(
       state: AttachmentTransferState.ready,
-      localPath: outcome.file.path,
+      localPath: resolution.path,
       receivedBytes: outcome.bytes,
       totalBytes: outcome.bytes,
       errorMessage: '',

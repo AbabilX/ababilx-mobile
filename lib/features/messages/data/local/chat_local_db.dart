@@ -26,7 +26,7 @@ class ChatLocalDb extends _$ChatLocalDb {
   ChatLocalDb.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,6 +63,22 @@ class ChatLocalDb extends _$ChatLocalDb {
         await m.database.customStatement(
           'CREATE INDEX IF NOT EXISTS idx_attachment_refs_message '
           'ON attachment_refs (message_id)',
+        );
+      }
+      // V5 → V6: content-hash dedupe. Additive — every pre-existing row
+      // simply has no hash until it is next downloaded.
+      if (from < 6) {
+        // `createTable` above builds from the *current* Dart schema, which
+        // already includes `contentHash` — a device jumping straight from V4
+        // (or earlier) gets the column for free out of the `from < 5`
+        // branch, so adding it again here would be a duplicate-column error.
+        // The index still needs creating either way.
+        if (from >= 5) {
+          await m.addColumn(attachmentBlobs, attachmentBlobs.contentHash);
+        }
+        await m.database.customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_attachment_blobs_content_hash '
+          'ON attachment_blobs (content_hash)',
         );
       }
     },

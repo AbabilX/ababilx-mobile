@@ -26,6 +26,13 @@ void main() {
         await request.response.close();
         return;
       }
+      if (path == '/stall') {
+        // Headers, then silence — stands in for a transfer the user cancels
+        // before it finishes.
+        request.response.contentLength = bytes.length;
+        await request.response.flush();
+        return;
+      }
       if (path == '/ignore' || range == null) {
         request.response.statusCode = HttpStatus.ok;
         request.response.contentLength = bytes.length;
@@ -126,5 +133,49 @@ void main() {
     );
     expect(await target.exists(), isFalse);
     expect(await part.exists(), isFalse);
+  });
+
+  test('cancelling never discards already-transferred bytes', () async {
+    final target = File('${temp.path}/cancelled.bin');
+    final part = File('${target.path}.part');
+    // Stands in for a transfer that got this far before the user tapped stop.
+    await part.writeAsBytes(bytes.sublist(0, 1000));
+    final token = CancelToken();
+
+    final inFlight = downloader().fetch(
+      remoteUrl: url('/stall'),
+      target: target,
+      partFile: part,
+      expectedBytes: bytes.length,
+      cancelToken: token,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    token.cancel('user tapped stop');
+
+    await expectLater(inFlight, throwsA(isA<DioException>()));
+    // The sticky part file is the whole point: a cancel must cost nothing
+    // already transferred, and must never leave a finished-looking target.
+    expect(await part.exists(), isTrue);
+    expect(await part.length(), 1000);
+    expect(await target.exists(), isFalse);
+
+    ranges.clear();
+    final resumed = await downloader().fetch(
+      remoteUrl: url('/range'),
+      target: target,
+      partFile: part,
+      expectedBytes: bytes.length,
+    );
+    expect(ranges, ['bytes=1000-'], reason: 'the retry resumes, not restarts');
+    expect(await resumed.file.readAsBytes(), bytes);
+  });
+
+  test('a cancelled transfer is not counted as a failure', () {
+    final cancelled = DioException.requestCancelled(
+      requestOptions: RequestOptions(path: '/stall'),
+      reason: 'user tapped stop',
+    );
+    expect(isCancellation(cancelled), isTrue);
+    expect(classifyDownloadError(cancelled).code, 'cancelled');
   });
 }

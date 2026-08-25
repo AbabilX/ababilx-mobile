@@ -1551,6 +1551,17 @@ class $AttachmentBlobsTable extends AttachmentBlobs
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _contentHashMeta = const VerificationMeta(
+    'contentHash',
+  );
+  @override
+  late final GeneratedColumn<String> contentHash = GeneratedColumn<String>(
+    'content_hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _cipherAlgoMeta = const VerificationMeta(
     'cipherAlgo',
   );
@@ -1601,6 +1612,7 @@ class $AttachmentBlobsTable extends AttachmentBlobs
     lastAccessMs,
     exportedAtMs,
     exportedPath,
+    contentHash,
     cipherAlgo,
     cipherKeyRef,
     plainBytes,
@@ -1729,6 +1741,15 @@ class $AttachmentBlobsTable extends AttachmentBlobs
         ),
       );
     }
+    if (data.containsKey('content_hash')) {
+      context.handle(
+        _contentHashMeta,
+        contentHash.isAcceptableOrUnknown(
+          data['content_hash']!,
+          _contentHashMeta,
+        ),
+      );
+    }
     if (data.containsKey('cipher_algo')) {
       context.handle(
         _cipherAlgoMeta,
@@ -1815,6 +1836,10 @@ class $AttachmentBlobsTable extends AttachmentBlobs
         DriftSqlType.string,
         data['${effectivePrefix}exported_path'],
       ),
+      contentHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_hash'],
+      ),
       cipherAlgo: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}cipher_algo'],
@@ -1863,6 +1888,12 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
   final int? exportedAtMs;
   final String? exportedPath;
 
+  /// sha256 of the finished file's bytes, set alongside [localPath] on
+  /// [AttachmentTransferState.ready]. Two rows with the same hash share one
+  /// physical file — the same photo uploaded under two different R2 keys
+  /// (sent by two people, or re-uploaded) costs one copy on disk, not two.
+  final String? contentHash;
+
   /// Cipher used for the bytes on the wire, '' when stored in the clear.
   final String cipherAlgo;
 
@@ -1886,6 +1917,7 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
     required this.lastAccessMs,
     this.exportedAtMs,
     this.exportedPath,
+    this.contentHash,
     required this.cipherAlgo,
     this.cipherKeyRef,
     this.plainBytes,
@@ -1914,6 +1946,9 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
     }
     if (!nullToAbsent || exportedPath != null) {
       map['exported_path'] = Variable<String>(exportedPath);
+    }
+    if (!nullToAbsent || contentHash != null) {
+      map['content_hash'] = Variable<String>(contentHash);
     }
     map['cipher_algo'] = Variable<String>(cipherAlgo);
     if (!nullToAbsent || cipherKeyRef != null) {
@@ -1949,6 +1984,9 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
       exportedPath: exportedPath == null && nullToAbsent
           ? const Value.absent()
           : Value(exportedPath),
+      contentHash: contentHash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentHash),
       cipherAlgo: Value(cipherAlgo),
       cipherKeyRef: cipherKeyRef == null && nullToAbsent
           ? const Value.absent()
@@ -1979,6 +2017,7 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
       lastAccessMs: serializer.fromJson<int>(json['lastAccessMs']),
       exportedAtMs: serializer.fromJson<int?>(json['exportedAtMs']),
       exportedPath: serializer.fromJson<String?>(json['exportedPath']),
+      contentHash: serializer.fromJson<String?>(json['contentHash']),
       cipherAlgo: serializer.fromJson<String>(json['cipherAlgo']),
       cipherKeyRef: serializer.fromJson<String?>(json['cipherKeyRef']),
       plainBytes: serializer.fromJson<int?>(json['plainBytes']),
@@ -2002,6 +2041,7 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
       'lastAccessMs': serializer.toJson<int>(lastAccessMs),
       'exportedAtMs': serializer.toJson<int?>(exportedAtMs),
       'exportedPath': serializer.toJson<String?>(exportedPath),
+      'contentHash': serializer.toJson<String?>(contentHash),
       'cipherAlgo': serializer.toJson<String>(cipherAlgo),
       'cipherKeyRef': serializer.toJson<String?>(cipherKeyRef),
       'plainBytes': serializer.toJson<int?>(plainBytes),
@@ -2023,6 +2063,7 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
     int? lastAccessMs,
     Value<int?> exportedAtMs = const Value.absent(),
     Value<String?> exportedPath = const Value.absent(),
+    Value<String?> contentHash = const Value.absent(),
     String? cipherAlgo,
     Value<String?> cipherKeyRef = const Value.absent(),
     Value<int?> plainBytes = const Value.absent(),
@@ -2043,6 +2084,7 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
     lastAccessMs: lastAccessMs ?? this.lastAccessMs,
     exportedAtMs: exportedAtMs.present ? exportedAtMs.value : this.exportedAtMs,
     exportedPath: exportedPath.present ? exportedPath.value : this.exportedPath,
+    contentHash: contentHash.present ? contentHash.value : this.contentHash,
     cipherAlgo: cipherAlgo ?? this.cipherAlgo,
     cipherKeyRef: cipherKeyRef.present ? cipherKeyRef.value : this.cipherKeyRef,
     plainBytes: plainBytes.present ? plainBytes.value : this.plainBytes,
@@ -2079,6 +2121,9 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
       exportedPath: data.exportedPath.present
           ? data.exportedPath.value
           : this.exportedPath,
+      contentHash: data.contentHash.present
+          ? data.contentHash.value
+          : this.contentHash,
       cipherAlgo: data.cipherAlgo.present
           ? data.cipherAlgo.value
           : this.cipherAlgo,
@@ -2108,6 +2153,7 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
           ..write('lastAccessMs: $lastAccessMs, ')
           ..write('exportedAtMs: $exportedAtMs, ')
           ..write('exportedPath: $exportedPath, ')
+          ..write('contentHash: $contentHash, ')
           ..write('cipherAlgo: $cipherAlgo, ')
           ..write('cipherKeyRef: $cipherKeyRef, ')
           ..write('plainBytes: $plainBytes')
@@ -2131,6 +2177,7 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
     lastAccessMs,
     exportedAtMs,
     exportedPath,
+    contentHash,
     cipherAlgo,
     cipherKeyRef,
     plainBytes,
@@ -2153,6 +2200,7 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
           other.lastAccessMs == this.lastAccessMs &&
           other.exportedAtMs == this.exportedAtMs &&
           other.exportedPath == this.exportedPath &&
+          other.contentHash == this.contentHash &&
           other.cipherAlgo == this.cipherAlgo &&
           other.cipherKeyRef == this.cipherKeyRef &&
           other.plainBytes == this.plainBytes);
@@ -2173,6 +2221,7 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
   final Value<int> lastAccessMs;
   final Value<int?> exportedAtMs;
   final Value<String?> exportedPath;
+  final Value<String?> contentHash;
   final Value<String> cipherAlgo;
   final Value<String?> cipherKeyRef;
   final Value<int?> plainBytes;
@@ -2192,6 +2241,7 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
     this.lastAccessMs = const Value.absent(),
     this.exportedAtMs = const Value.absent(),
     this.exportedPath = const Value.absent(),
+    this.contentHash = const Value.absent(),
     this.cipherAlgo = const Value.absent(),
     this.cipherKeyRef = const Value.absent(),
     this.plainBytes = const Value.absent(),
@@ -2212,6 +2262,7 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
     this.lastAccessMs = const Value.absent(),
     this.exportedAtMs = const Value.absent(),
     this.exportedPath = const Value.absent(),
+    this.contentHash = const Value.absent(),
     this.cipherAlgo = const Value.absent(),
     this.cipherKeyRef = const Value.absent(),
     this.plainBytes = const Value.absent(),
@@ -2233,6 +2284,7 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
     Expression<int>? lastAccessMs,
     Expression<int>? exportedAtMs,
     Expression<String>? exportedPath,
+    Expression<String>? contentHash,
     Expression<String>? cipherAlgo,
     Expression<String>? cipherKeyRef,
     Expression<int>? plainBytes,
@@ -2253,6 +2305,7 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
       if (lastAccessMs != null) 'last_access_ms': lastAccessMs,
       if (exportedAtMs != null) 'exported_at_ms': exportedAtMs,
       if (exportedPath != null) 'exported_path': exportedPath,
+      if (contentHash != null) 'content_hash': contentHash,
       if (cipherAlgo != null) 'cipher_algo': cipherAlgo,
       if (cipherKeyRef != null) 'cipher_key_ref': cipherKeyRef,
       if (plainBytes != null) 'plain_bytes': plainBytes,
@@ -2275,6 +2328,7 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
     Value<int>? lastAccessMs,
     Value<int?>? exportedAtMs,
     Value<String?>? exportedPath,
+    Value<String?>? contentHash,
     Value<String>? cipherAlgo,
     Value<String?>? cipherKeyRef,
     Value<int?>? plainBytes,
@@ -2295,6 +2349,7 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
       lastAccessMs: lastAccessMs ?? this.lastAccessMs,
       exportedAtMs: exportedAtMs ?? this.exportedAtMs,
       exportedPath: exportedPath ?? this.exportedPath,
+      contentHash: contentHash ?? this.contentHash,
       cipherAlgo: cipherAlgo ?? this.cipherAlgo,
       cipherKeyRef: cipherKeyRef ?? this.cipherKeyRef,
       plainBytes: plainBytes ?? this.plainBytes,
@@ -2347,6 +2402,9 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
     if (exportedPath.present) {
       map['exported_path'] = Variable<String>(exportedPath.value);
     }
+    if (contentHash.present) {
+      map['content_hash'] = Variable<String>(contentHash.value);
+    }
     if (cipherAlgo.present) {
       map['cipher_algo'] = Variable<String>(cipherAlgo.value);
     }
@@ -2379,6 +2437,7 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
           ..write('lastAccessMs: $lastAccessMs, ')
           ..write('exportedAtMs: $exportedAtMs, ')
           ..write('exportedPath: $exportedPath, ')
+          ..write('contentHash: $contentHash, ')
           ..write('cipherAlgo: $cipherAlgo, ')
           ..write('cipherKeyRef: $cipherKeyRef, ')
           ..write('plainBytes: $plainBytes, ')
@@ -2734,6 +2793,10 @@ abstract class _$ChatLocalDb extends GeneratedDatabase {
     'idx_attachment_blobs_lru',
     'CREATE INDEX idx_attachment_blobs_lru ON attachment_blobs (transfer_state, last_access_ms)',
   );
+  late final Index idxAttachmentBlobsContentHash = Index(
+    'idx_attachment_blobs_content_hash',
+    'CREATE INDEX idx_attachment_blobs_content_hash ON attachment_blobs (content_hash)',
+  );
   late final Index idxAttachmentRefsUrl = Index(
     'idx_attachment_refs_url',
     'CREATE INDEX idx_attachment_refs_url ON attachment_refs (url_key)',
@@ -2754,6 +2817,7 @@ abstract class _$ChatLocalDb extends GeneratedDatabase {
     attachmentRefs,
     idxCachedMessagesConvTime,
     idxAttachmentBlobsLru,
+    idxAttachmentBlobsContentHash,
     idxAttachmentRefsUrl,
     idxAttachmentRefsMessage,
   ];
@@ -3502,6 +3566,7 @@ typedef $$AttachmentBlobsTableCreateCompanionBuilder =
       Value<int> lastAccessMs,
       Value<int?> exportedAtMs,
       Value<String?> exportedPath,
+      Value<String?> contentHash,
       Value<String> cipherAlgo,
       Value<String?> cipherKeyRef,
       Value<int?> plainBytes,
@@ -3523,6 +3588,7 @@ typedef $$AttachmentBlobsTableUpdateCompanionBuilder =
       Value<int> lastAccessMs,
       Value<int?> exportedAtMs,
       Value<String?> exportedPath,
+      Value<String?> contentHash,
       Value<String> cipherAlgo,
       Value<String?> cipherKeyRef,
       Value<int?> plainBytes,
@@ -3605,6 +3671,11 @@ class $$AttachmentBlobsTableFilterComposer
 
   ColumnFilters<String> get exportedPath => $composableBuilder(
     column: $table.exportedPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3703,6 +3774,11 @@ class $$AttachmentBlobsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get cipherAlgo => $composableBuilder(
     column: $table.cipherAlgo,
     builder: (column) => ColumnOrderings(column),
@@ -3786,6 +3862,11 @@ class $$AttachmentBlobsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get cipherAlgo => $composableBuilder(
     column: $table.cipherAlgo,
     builder: (column) => column,
@@ -3853,6 +3934,7 @@ class $$AttachmentBlobsTableTableManager
                 Value<int> lastAccessMs = const Value.absent(),
                 Value<int?> exportedAtMs = const Value.absent(),
                 Value<String?> exportedPath = const Value.absent(),
+                Value<String?> contentHash = const Value.absent(),
                 Value<String> cipherAlgo = const Value.absent(),
                 Value<String?> cipherKeyRef = const Value.absent(),
                 Value<int?> plainBytes = const Value.absent(),
@@ -3872,6 +3954,7 @@ class $$AttachmentBlobsTableTableManager
                 lastAccessMs: lastAccessMs,
                 exportedAtMs: exportedAtMs,
                 exportedPath: exportedPath,
+                contentHash: contentHash,
                 cipherAlgo: cipherAlgo,
                 cipherKeyRef: cipherKeyRef,
                 plainBytes: plainBytes,
@@ -3893,6 +3976,7 @@ class $$AttachmentBlobsTableTableManager
                 Value<int> lastAccessMs = const Value.absent(),
                 Value<int?> exportedAtMs = const Value.absent(),
                 Value<String?> exportedPath = const Value.absent(),
+                Value<String?> contentHash = const Value.absent(),
                 Value<String> cipherAlgo = const Value.absent(),
                 Value<String?> cipherKeyRef = const Value.absent(),
                 Value<int?> plainBytes = const Value.absent(),
@@ -3912,6 +3996,7 @@ class $$AttachmentBlobsTableTableManager
                 lastAccessMs: lastAccessMs,
                 exportedAtMs: exportedAtMs,
                 exportedPath: exportedPath,
+                contentHash: contentHash,
                 cipherAlgo: cipherAlgo,
                 cipherKeyRef: cipherKeyRef,
                 plainBytes: plainBytes,

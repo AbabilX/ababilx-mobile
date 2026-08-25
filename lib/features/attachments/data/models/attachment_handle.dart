@@ -30,6 +30,16 @@ enum AttachmentTransferState {
   locked,
 }
 
+/// Safe decode of the persisted int — an out-of-range value (a row written by
+/// a future version, or corruption) falls back to [AttachmentTransferState.absent]
+/// rather than throwing.
+AttachmentTransferState attachmentTransferStateFromIndex(int index) {
+  if (index < 0 || index >= AttachmentTransferState.values.length) {
+    return AttachmentTransferState.absent;
+  }
+  return AttachmentTransferState.values[index];
+}
+
 /// The one thing every renderer is handed. It answers "can I draw this yet,
 /// and from where" without any caller ever seeing a remote URL.
 class AttachmentHandle extends Equatable {

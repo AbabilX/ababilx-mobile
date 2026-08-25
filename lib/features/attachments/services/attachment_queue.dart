@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import '../../messages/data/models/chat_attachment.dart';
 import '../attachment_config.dart';
 import '../data/local/attachment_blob_store.dart';
+import '../data/local/attachment_dedupe_store.dart';
 import '../data/models/attachment_handle.dart';
 import '../data/models/attachment_url_key.dart';
 import 'attachment_downloader.dart';
@@ -24,12 +25,20 @@ import 'attachment_semaphore.dart';
 class AttachmentQueue {
   AttachmentQueue(
     this._blobs,
+    AttachmentDedupeStore dedupe,
     AttachmentPaths paths,
     AttachmentDownloader downloader, {
     Future<void> Function(AttachmentHandle handle)? onReady,
     AttachmentSemaphore? semaphore,
   }) : _gate = semaphore ?? AttachmentSemaphore(maxConcurrentDownloads) {
-    _runner = AttachmentJobRunner(_blobs, paths, downloader, _emit, onReady);
+    _runner = AttachmentJobRunner(
+      _blobs,
+      dedupe,
+      paths,
+      downloader,
+      _emit,
+      onReady,
+    );
   }
 
   final AttachmentBlobStore _blobs;
