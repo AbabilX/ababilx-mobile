@@ -19,7 +19,25 @@ import 'features/notifications/local_notifications.dart';
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final data = Map<String, dynamic>.from(message.data);
-  switch (data['type']) {
+  final type = data['type'];
+  if (type == 'voice_call' || type == 'group_call') {
+    // This isolate is not `main()`, so the CallKit background executor has
+    // never been started in this process — and the plugin only delivers a
+    // call event to it when it is already running. Without this, Decline on
+    // the full-screen CallKit screen (or in its notification) of a phone whose
+    // app was killed went nowhere: the tone kept playing and the call was
+    // never declined. Registering here starts that executor before the ringing
+    // UI is raised. `CallEventBridge.kt` is the native backstop for the same
+    // failure.
+    try {
+      await FlutterCallkitIncoming.onBackgroundMessage(
+        androidCallkitBackgroundHandler,
+      );
+    } catch (_) {
+      // Best effort — a failure here must not stop the call from ringing.
+    }
+  }
+  switch (type) {
     case 'voice_call':
       final callId = data['call_id']?.toString() ?? '';
       // The "ended" push for this same call can land first — NATS/FCM gives

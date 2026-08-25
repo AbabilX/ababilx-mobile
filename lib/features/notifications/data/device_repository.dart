@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../fcm_log.dart';
+import 'device_identity.dart';
 
 /// Registers / deregisters FCM device tokens with the API.
 class DeviceRepository {
@@ -10,23 +11,21 @@ class DeviceRepository {
 
   final ApiClient _client;
 
-  /// Push shapes this build understands. `e2ee_push` tells the server this app
-  /// has the background handler that decrypts a data-only encrypted DM — a
-  /// build without it must keep receiving normal tray notifications, or the
-  /// message would arrive with nothing shown at all.
+  /// Push shapes this build understands, recorded with the token.
   ///
-  /// Declaring it is the only way an encrypted DM can ever show its text: the
-  /// server holds ciphertext alone, so a server-rendered tray entry can never
-  /// say more than "🔒 Encrypted message". An earlier build declared this and
-  /// showed nothing at all, because the entry was posted only after the
-  /// decrypt finished; the tray entry now goes up first with the placeholder
-  /// and is rewritten in place once the text is available, so the worst case
-  /// is the placeholder rather than silence. `CHAT_E2EE_PUSH_DECRYPT=off` on
-  /// the server remains the kill switch.
+  /// Diagnostics only now: the server shapes an encrypted DM push from the
+  /// platform alone, because gating on this capability meant a phone with a
+  /// stale token row (a reinstall gets a new FCM token, the old row lingers)
+  /// received both shapes and showed every DM twice — once as the system-drawn
+  /// "🔒 Encrypted message", once as this app's decrypted entry. Android now
+  /// always gets the data-only shape and decrypts it here;
+  /// `CHAT_E2EE_PUSH_DECRYPT=off` on the server is the way back to
+  /// server-rendered placeholders.
   static const pushCaps = <String>['e2ee_push'];
 
   Future<void> register(String fcmToken, {String platform = 'android'}) async {
     final url = '${ApiConstants.baseUrl}${ApiConstants.devices}';
+    final deviceId = await DeviceIdentity.get();
     fcmLog(
       'api.register.start',
       'POST $url platform=$platform token=${fcmTokenPreview(fcmToken)}',
@@ -38,6 +37,9 @@ class DeviceRepository {
           'fcm_token': fcmToken,
           'platform': platform,
           'push_caps': pushCaps,
+          // Lets the server drop the rows this handset left behind under
+          // earlier tokens, so one phone is never pushed to twice.
+          'device_id': deviceId,
         },
       );
       fcmLog('api.register.ok', 'status=${res.statusCode} body=${res.data}');

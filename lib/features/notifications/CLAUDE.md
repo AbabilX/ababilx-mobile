@@ -11,11 +11,11 @@ preview. The only device that can is the recipient's, in its FCM background
 isolate, which needs the push to arrive **data-only** — a `notification` block
 makes Android draw the tray entry itself and never wake Dart.
 
-The server only sends that shape to a device whose `push_caps` include
-`e2ee_push` (`services/notify/fcm_chat_message.go` → `DataOnlyChatPush`).
-`DeviceRepository.pushCaps` had been emptied after an earlier attempt showed
-*no* notification at all, so every DM fell back to the server-rendered
-placeholder. The cap is declared again, with the failure mode designed out:
+The server sends that shape to **every Android device** for an encrypted DM
+(`services/notify/fcm_chat_message.go` → `DataOnlyChatPush`, mirrored in
+`ababilx-notification/internal/fcm/chat_message.go`). `DeviceRepository.pushCaps`
+had been emptied after an earlier attempt showed *no* notification at all, so
+every DM fell back to the server-rendered placeholder. Both halves are fixed:
 
 **The tray entry is posted before the decrypt, then rewritten in place.**
 `ChatNotificationPresenter.show` posts the placeholder line first and re-posts
@@ -23,6 +23,16 @@ the same notification id with the real text once `decryptChatPushBody` returns.
 A slow vault, no network, or a background isolate killed mid-flight now costs
 the *preview*, never the notification. Server kill switch if it ever regresses:
 `CHAT_E2EE_PUSH_DECRYPT=off`.
+
+**One shape per platform — the `e2ee_push` capability no longer gates it.**
+Gating on the capability meant a phone with a stale `device_tokens` row (a
+reinstall mints a new FCM token; the old row lingers and keeps delivering) was
+sent *both* shapes and showed every DM **twice**: the system drew
+"🔒 Encrypted message" from the row without the cap while the app drew the
+decrypted entry from the row with it. The capability is still registered, for
+diagnostics only. Cost of the trade: an Android build too old to decrypt shows
+nothing for DMs until it is updated. Duplicate *delivery* is now harmless —
+both copies upsert the same `message_id` into the same conversation thread.
 
 ## Shape of a chat notification
 

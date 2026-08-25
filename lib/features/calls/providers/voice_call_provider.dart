@@ -325,7 +325,19 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     if (id == null || id.isEmpty) return;
     // Already leaving the call UI — ignore duplicate Decline taps.
     if (!state.active && callId == null) return;
-    if (_transitioning) return;
+    // A CallKit decline — from its full-screen UI or from the notification
+    // action — usually names a call this provider never loaded, because the
+    // push was handled while the app sat in the background. Everything below
+    // therefore works from `id`, never from `state.call`: with the state path
+    // alone the native record survived the decline, so the ringtone kept its
+    // `native` holder and resuming the app recovered the call and rang again.
+    _rememberFinished(id);
+    if (_transitioning) {
+      // Some other transition owns the state machine; the native surface still
+      // has to go, or the user is left with a ringing screen they declined.
+      await _endNative(id, source: 'decline.transitioning');
+      return;
+    }
     _transitioning = true;
     voiceCallLog('decline.begin', callId: id, phase: _phaseName);
     // End local UI/ringtone first so Decline feels instant (no second tap).
@@ -333,7 +345,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     if (declined != null) {
       state = state.copyWith(call: declined);
     }
-    await _finishLocal(VoiceCallPhase.ended, reason: 'decline.local');
+    await _finishLocal(
+      VoiceCallPhase.ended,
+      reason: 'decline.local',
+      callId: id,
+    );
     try {
       await _repository.action(id, 'decline');
     } catch (_) {
@@ -756,15 +772,14 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     VoiceCallPhase phase, {
     required String reason,
     bool preserveError = false,
+    String? callId,
   }) async {
-    final callId = state.call?.id;
-    _rememberFinished(callId);
-    voiceCallLog(
-      'finishLocal',
-      callId: callId,
-      phase: phase.name,
-      reason: reason,
-    );
+    // `callId` is passed when the call being finished is not the one in state
+    // — a CallKit decline for a call this isolate never loaded. Falling back
+    // to state alone skipped the native dismissal entirely.
+    final id = callId ?? state.call?.id;
+    _rememberFinished(id);
+    voiceCallLog('finishLocal', callId: id, phase: phase.name, reason: reason);
     _ringTimer?.cancel();
     _connectWatchdog?.cancel();
     _renegotiateTimer?.cancel();
@@ -773,8 +788,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _engine = null;
     _pendingSignals.clear();
     _offerResent = false;
-    if (callId != null) {
-      await _endNative(callId, source: 'finishLocal.$reason');
+    if (id != null) {
+      await _endNative(id, source: 'finishLocal.$reason');
     }
     state = state.copyWith(
       phase: phase,
@@ -842,6 +857,12 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         if (suppressed || alreadyFinished) return;
         if (state.call?.id == id && state.active) {
           unawaited(hangUp(source: 'callkit.ended'));
+        } else if (id.isNotEmpty) {
+          // Native UI dismissed for a call this isolate never loaded. Nothing
+          // local to tear down, but the server still has it ringing and the
+          // caller would hear tone until the sweeper expires it.
+          _rememberFinished(id);
+          unawaited(_declineUnknownNative(id));
         }
       case CallEventActionCallTimeout(:final id):
         if (state.call?.id == id) {
@@ -855,6 +876,16 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         }
       default:
         break;
+    }
+  }
+
+  /// Declines a call that only exists natively — no local state to finish.
+  Future<void> _declineUnknownNative(String callId) async {
+    await _endNative(callId, source: 'callkit.ended.unknown');
+    try {
+      await _repository.action(callId, 'decline');
+    } catch (_) {
+      // The server's ring sweeper stays the fallback.
     }
   }
 

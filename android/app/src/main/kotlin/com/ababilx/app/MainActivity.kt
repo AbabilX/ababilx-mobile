@@ -1,5 +1,7 @@
 package com.ababilx.app
 
+import android.annotation.SuppressLint
+import android.provider.Settings
 import com.ababilx.call_ringer.CallRinger
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -9,6 +11,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        configureDeviceChannel(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.ababilx.app/media_store",
@@ -44,6 +47,28 @@ class MainActivity : FlutterActivity() {
                         }
                     }.start()
                 }
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    /**
+     * Identity of this handset for push registration.
+     *
+     * ANDROID_ID survives a reinstall for the same signing key, so the server
+     * can drop the `device_tokens` rows this phone left behind under earlier
+     * FCM tokens — those stale rows are what delivered every push twice.
+     */
+    @SuppressLint("HardwareIds")
+    private fun configureDeviceChannel(flutterEngine: FlutterEngine) {
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.ababilx.app/device",
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "deviceId" -> result.success(
+                    Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: "",
+                )
                 else -> result.notImplemented()
             }
         }

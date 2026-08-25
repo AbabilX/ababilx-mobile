@@ -27,6 +27,7 @@ class ConversationScreen extends ConsumerStatefulWidget {
 
 class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   bool _ready = false;
+  bool _vaultChecked = false;
 
   @override
   void initState() {
@@ -46,6 +47,20 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   }
 
   Future<void> _prepare() async {
+    // Opened straight from a notification, this screen is the first thing to
+    // mount, so it has to restore the E2EE identity itself — MessagesScreen
+    // does it for the list route. Without this a DM opened from a push showed
+    // the PIN gate every single time, even though the identity was sitting in
+    // this device's secure storage. Local read only, no server round-trip.
+    final vault = ref.read(messageVaultProvider);
+    if (!vault.isUnlocked) {
+      try {
+        await vault.restoreTrustedIdentityOffline();
+      } catch (_) {
+        // Still locked — the gate below asks for the PIN, as before.
+      }
+    }
+    if (mounted) setState(() => _vaultChecked = true);
     try {
       await ref.read(chatProvider.notifier).ensureReady();
     } catch (_) {
@@ -96,14 +111,20 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
         children: [
           ChatHeader(conversation: conversation),
           Expanded(
-            child: MessageVaultGate(
-              onUnlocked: () {
-                ref
-                    .read(chatProvider.notifier)
-                    .loadFeed(widget.conversationId, force: true);
-                setState(() {});
-              },
-            ),
+            // The restore is a secure-storage read; showing the PIN gate
+            // before it answers would flash a prompt the user never needs.
+            child: !_vaultChecked
+                ? const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  )
+                : MessageVaultGate(
+                    onUnlocked: () {
+                      ref
+                          .read(chatProvider.notifier)
+                          .loadFeed(widget.conversationId, force: true);
+                      setState(() {});
+                    },
+                  ),
           ),
         ],
       );

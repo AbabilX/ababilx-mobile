@@ -40,7 +40,7 @@
 
     <application
         android:label="AbabilX"
-        android:name="${applicationName}"
+        android:name=".AbabilXApplication"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

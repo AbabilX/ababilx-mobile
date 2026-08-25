@@ -123,6 +123,9 @@ Touch one, re-check all: `packages/call_ringer/**`, `ringtone/**`,
 `call_ringtone.dart`, `native/android_call_ui.dart`,
 `native/android_group_call_ui.dart`, `native/android_group_call_params.dart`,
 `native/android_call_background.dart`, `providers/voice_call_provider.dart`,
+`main.dart` (registers the CallKit background handler from the FCM isolate),
+`android/app/src/main/kotlin/com/ababilx/app/CallEventBridge.kt` +
+`AbabilXApplication.kt` (+ the manifest `android:name`),
 `group/providers/group_call_callkit.dart`,
 `android/app/src/main/kotlin/com/ababilx/app/MainActivity.kt` (releases the
 `flutter` holder in `onDestroy`), `res/raw/keep.xml`, `gradle.properties`.
@@ -141,6 +144,60 @@ precisely so the resulting CallKit event is ignored, so nothing else stops the
 tone either. That is what left the ringtone playing after a decline while every
 screen had already closed (fixed 2026-08-26 in `_endNative`). Route every
 dismissal through the `AndroidCallUi` / `AndroidGroupCallUi` wrappers.
+
+## A CallKit decline names a call the provider may not know
+
+`declineIncoming` / `_finishLocal` work from the **passed call id**, never from
+`state.call` alone. A Decline pressed on the CallKit full-screen UI or in the
+notification shade usually arrives for a call `VoiceCallNotifier` never loaded:
+the push was handled while the app sat in the background, so the ringing state
+lives only in CallKit. Reading `state.call?.id` there yielded `null`, which
+skipped `_endNative` entirely — the native record survived, the `native` ring
+holder was never released, **the tone kept playing**, and resuming the app let
+`_recoverNativeCall` find the record and ring all over again on the in-app
+screen (fixed 2026-08-26). `_rememberFinished(id)` runs before anything else
+for the same reason, and a decline that lands while `_transitioning` still
+dismisses the native surface.
+
+`CallEventActionCallEnded` for an unknown call is treated as a decline
+(`_declineUnknownNative`) — otherwise the caller hears ringing until the
+server's sweeper expires it.
+
+## A killed app drops CallKit events unless the executor is booted
+
+`FlutterCallkitIncomingPlugin.send` delivers a call event to a listening
+Flutter UI engine, else to `CallkitBackgroundExecutor` — **but only if that
+executor is already running**, and the only thing that starts it is
+`FlutterCallkitIncoming.onBackgroundMessage`, called from `main()`.
+
+A phone whose app is killed rings from the **FCM background isolate**, where
+`main()` never ran. So Decline on the CallKit full-screen screen (or its
+notification action) reached nothing at all: the tone played until the 70 s
+backstop, the decline was never POSTed, and opening the app found the call
+still ringing server-side. Two fixes, both required:
+
+- `main.dart` registers the CallKit background handler **inside** the FCM
+  background handler, before raising the ringing UI, so the executor is up
+  before any event can arrive.
+- `CallEventBridge.kt` (installed by `AbabilXApplication`, so it exists in
+  every process however it started) releases the ring natively and boots the
+  executor from the handle stored in the plugin's prefs, as the backstop for a
+  process that reached the broadcast some other way.
+
+Symptom to recognise: Decline does nothing, ring continues, and the in-app
+screen is ringing when the app is opened — while Decline from inside the app
+works fine.
+
+## Native ring stopper (belt and braces)
+
+`CallEventBridge` (a Kotlin `object`, installed from `AbabilXApplication`)
+registers a `CallkitEventCallback` with `FlutterCallkitIncomingPlugin`;
+`CallkitIncomingBroadcastReceiver` invokes it straight from the broadcast on
+ACCEPT / DECLINE / END, so the `native` hold is released without waiting for
+the event to reach Dart. It only releases the ring — Dart still owns ending the
+call. It lives in the Application, not the Activity, because the processes that
+need it most have no Activity; the plugin keeps a `WeakReference`, which is why
+it is a static `object` rather than a field.
 
 ## Call audio routing — speaker vs earpiece
 
