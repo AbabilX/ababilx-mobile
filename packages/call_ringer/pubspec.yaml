@@ -1,0 +1,21 @@
+name: call_ringer
+description: >-
+  Android incoming-call ringtone owned by the app process, shared by CallKit
+  ringing and the in-app call screen.
+version: 1.0.0
+publish_to: "none"
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.3.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.ababilx.call_ringer
+        pluginClass: CallRingerPlugin

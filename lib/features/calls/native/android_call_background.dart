@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../ringtone/callkit_ring_events.dart';
 
 const _acceptGracePrefix = 'voice_call_accept_grace_';
 
@@ -17,6 +18,10 @@ const _acceptGracePrefix = 'voice_call_accept_grace_';
 @pragma('vm:entry-point')
 Future<void> androidCallkitBackgroundHandler(CallEvent event) async {
   DartPluginRegistrant.ensureInitialized();
+  // Killed app: this isolate is the only Dart alive when the user answers or
+  // declines from the CallKit screen, so it owns stopping the ringtone. Runs
+  // before the group-call filter below — the ringer is shared.
+  await releaseNativeRingOnCallKitEvent(event);
 
   final raw = const FlutterSecureStorage();
 

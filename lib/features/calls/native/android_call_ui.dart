@@ -1,9 +1,11 @@
+import 'package:call_ringer/call_ringer.dart';
 import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/entities/notification_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
 import '../data/models/voice_call.dart';
+import '../ringtone/ring_holders.dart';
 
 class AndroidCallUi {
   AndroidCallUi._();
@@ -40,9 +42,9 @@ class AndroidCallUi {
       isCustomNotification: true,
       isShowLogo: false,
       isShowCallID: false,
-      // Use Android's configured phone ringtone. This is the plugin's
-      // documented fallback and avoids device-specific raw MP3 decoding.
-      ringtonePath: 'system_ringtone_default',
+      // Outgoing calls never ring on this device; the silent file keeps the
+      // plugin's sound player out of the way. See the incoming params below.
+      ringtonePath: 'silent_ring',
       incomingCallNotificationChannelName: 'Voice calls',
       missedCallNotificationChannelName: 'Missed voice calls',
       isImportant: true,
@@ -101,9 +103,13 @@ class AndroidCallUi {
         // caller identity plus the two call actions, without a second logo.
         isShowLogo: false,
         isShowCallID: false,
-        // Native background/killed-app calls must always have an OS ringtone;
-        // the Flutter in-app surface keeps using its own foreground tone.
-        ringtonePath: 'system_ringtone_default',
+        // Deliberately silent: `CallkitSoundPlayerManager` stops its ringtone
+        // on ACTION_SCREEN_OFF and on any VOLUME_CHANGED_ACTION broadcast, so
+        // an OEM ring-volume ramp or a screen blink killed the tone seconds
+        // into a call. The `call_ringer` plugin plays the real tone for every
+        // path instead, held for as long as this surface is up. Vibration and
+        // the notification still come from this plugin.
+        ringtonePath: 'silent_ring',
         incomingCallNotificationChannelName: 'Voice calls',
         missedCallNotificationChannelName: 'Missed voice calls',
         isShowFullLockedScreen: true,
@@ -141,6 +147,7 @@ class AndroidCallUi {
     } catch (_) {
       // The native call may already have been cleared by a local action.
     }
+    await CallRinger.release(callRingHolderNative);
   }
 
   /// Clears the native incoming UI + its ringtone without ending the call and
@@ -156,6 +163,9 @@ class AndroidCallUi {
     } catch (_) {
       // Nothing native was showing — the Flutter screen is already alone.
     }
+    // Hiding emits no call event, so the native ringer has to be told that
+    // CallKit no longer wants the tone; the Flutter screen keeps its own hold.
+    await CallRinger.release(callRingHolderNative);
   }
 
   /// Whether CallKit currently has a native call record for [callId] — the
@@ -171,7 +181,15 @@ class AndroidCallUi {
     }
   }
 
+  /// Shows the native incoming UI and starts the ringtone that goes with it.
+  /// CallKit's own player is silent by design (see [_params]), so the tone
+  /// comes from `call_ringer`, held until the call is answered, declined,
+  /// ended, or handed to the Flutter call screen.
   static Future<void> _showOnce(CallKitParams params) async {
+    // Hold first, then dedupe the UI: CallKit keeps its call record across a
+    // process death, so a restarted process can find the screen already up
+    // with nothing ringing behind it.
+    await CallRinger.hold(callRingHolderNative, requireNotificationUi: true);
     final active = await FlutterCallkitIncoming.activeCalls();
     if (active.any((call) => call.id == params.id)) return;
     await FlutterCallkitIncoming.showCallkitIncoming(params);

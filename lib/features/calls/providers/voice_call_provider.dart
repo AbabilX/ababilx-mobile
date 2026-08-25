@@ -19,6 +19,7 @@ import '../data/voice_call_repository.dart';
 import '../incoming_call_ringtone.dart';
 import '../native/android_call_ui.dart';
 import '../native/android_group_call_ui.dart';
+import '../ringtone/callkit_ring_events.dart';
 import '../voice_call_log.dart';
 import '../webrtc/voice_peer_engine.dart';
 import 'voice_call_state.dart';
@@ -528,14 +529,14 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       );
       // A push may have raised CallKit a moment before Flutter came forward.
       // Take the ringing UI back so the user sees one screen, not a native
-      // overlay on top of `/call` with the in-app tone muted underneath it.
-      // Dismissing it is not a hang-up, so the ENDED echo must be swallowed.
+      // overlay on top of `/call`. Dismissing it is not a hang-up, so the
+      // ENDED echo must be swallowed.
+      // Take the in-app hold on the ringer *before* dismissing CallKit: both
+      // surfaces share one native player, and releasing its last holder would
+      // stop the tone and replay it from the top mid-ring.
+      await IncomingCallRingtone.start();
       _suppressCallKitEnded.arm(call.id, source: 'incoming.callkit.hide');
       await AndroidCallUi.hideIncoming(call.id);
-      // Flutter now owns the ringing, so the in-app tone has to take over from
-      // the native ringer — started *after* the dismiss, because that teardown
-      // drops CallKit's audio focus and would cut a stream begun before it.
-      await IncomingCallRingtone.restart();
       return;
     }
 
@@ -798,6 +799,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
   void _handleNativeEvent(CallEvent? event) {
     if (event == null) return;
+    // Shared by both call systems, so this runs before the group filter below.
+    unawaited(releaseNativeRingOnCallKitEvent(event));
     // Both call systems share one CallKit event stream. Group calls carry
     // `extra.type = group_call` and belong to GroupCallNotifier — accepting one
     // here would POST a DM action for a call id the DM API has never seen.

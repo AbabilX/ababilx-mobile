@@ -76,8 +76,10 @@ CallKitParams _params({
       // Match the deliberately minimal 1:1 native caller surface.
       isShowLogo: false,
       isShowCallID: false,
-      // Same reliable OS-level fallback as an incoming 1:1 call.
-      ringtonePath: 'system_ringtone_default',
+      // Silent for the same reason as an incoming 1:1 call: `call_ringer`
+      // owns the tone, because this plugin's own player stops itself on
+      // screen-off and volume-change broadcasts.
+      ringtonePath: 'silent_ring',
       incomingCallNotificationChannelName: 'Group calls',
       missedCallNotificationChannelName: 'Missed group calls',
       isShowFullLockedScreen: true,

@@ -24,6 +24,10 @@ dependencies:
   # SHA-256 for attachment cache keys (already resolved transitively)
   crypto: ^3.0.7
 
+  # Native incoming-call ringtone shared by CallKit and the in-app call screen
+  call_ringer:
+    path: packages/call_ringer
+
   # State management
   flutter_riverpod: ^2.5.1
 

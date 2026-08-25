@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ringtone resources are resolved by NAME at runtime, never referenced from
+  code: flutter_callkit_incoming looks up `AndroidParams.ringtonePath`
+  ("silent_ring") with Resources.getIdentifier. The release shrinker removes
+  and renames resources nothing references statically, which would hand the
+  plugin its default *audible* ringtone on top of CallRinger's — a double
+  ring. Keeping these entries (and their names, see
+  android.enableResourceOptimizations in gradle.properties) is what makes the
+  release build behave like debug.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/silent_ring,@raw/clear_agenda,@raw/ringtone_default"
+    tools:shrinkMode="safe" />

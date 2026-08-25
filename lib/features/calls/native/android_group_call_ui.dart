@@ -1,9 +1,11 @@
 import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/entities/notification_params.dart';
+import 'package:call_ringer/call_ringer.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
 import '../group/data/models/group_call.dart';
+import '../ringtone/ring_holders.dart';
 
 part 'android_group_call_params.dart';
 
@@ -108,6 +110,9 @@ class AndroidGroupCallUi {
     } catch (_) {
       // Nothing native was showing.
     }
+    // Hiding emits no call event: release CallKit's hold on the native ringer
+    // explicitly, or it would keep ringing into the joined call.
+    await CallRinger.release(callRingHolderNative);
   }
 
   /// Promotes the call to "connected", which is what starts the foreground
@@ -134,9 +139,16 @@ class AndroidGroupCallUi {
     try {
       await FlutterCallkitIncoming.endCall(callId);
     } catch (_) {}
+    await CallRinger.release(callRingHolderNative);
   }
 
+  /// Shows the native ringing UI and starts the tone that belongs to it —
+  /// CallKit's own player is silent by design (see `_params`), so the sound
+  /// comes from `call_ringer` and is held until the call is joined, ignored,
+  /// ended, or handed over to the Flutter UI.
   static Future<void> _showOnce(CallKitParams params) async {
+    // Hold first, then dedupe the UI — see [AndroidCallUi].
+    await CallRinger.hold(callRingHolderNative, requireNotificationUi: true);
     final active = await FlutterCallkitIncoming.activeCalls();
     if (active.any((call) => call.id == params.id)) return;
     await FlutterCallkitIncoming.showCallkitIncoming(params);

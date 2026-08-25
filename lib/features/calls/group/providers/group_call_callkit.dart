@@ -32,11 +32,12 @@ mixin GroupCallCallkit on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
       return;
     }
     if (flutterOwnsRingingUi) {
-      // Dismiss first: tearing the native screen down drops its audio focus,
-      // which would cut an in-app tone that had already started underneath it.
-      await AndroidGroupCallUi.hideIncoming(invite.id);
+      // Ring in-app first, then dismiss: both surfaces share one native
+      // ringer, so dropping CallKit's hold before the in-app one exists would
+      // stop the tone and replay it from the top mid-ring.
       _invites?.setLocalRing(true);
       await CallRingtone.handoff();
+      await AndroidGroupCallUi.hideIncoming(invite.id);
       return;
     }
     _invites?.setLocalRing(false);
@@ -94,6 +95,9 @@ mixin GroupCallCallkit on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
 
   void _handleNativeEvent(CallEvent? event) {
     if (event == null) return;
+    // Shared ringer: released for DM and group calls alike, before the
+    // per-event `isGroupCall` filters below.
+    unawaited(releaseNativeRingOnCallKitEvent(event));
     switch (event) {
       case CallEventActionCallAccept(:final callKitParams):
         if (!AndroidGroupCallUi.isGroupCall(callKitParams)) return;
