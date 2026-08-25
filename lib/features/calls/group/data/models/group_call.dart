@@ -38,8 +38,7 @@ class GroupCall {
 
   bool get active => status == 'starting' || status == 'live';
 
-  String get title =>
-      (conversationName?.trim().isNotEmpty ?? false)
+  String get title => (conversationName?.trim().isNotEmpty ?? false)
       ? conversationName!
       : 'Group call';
 

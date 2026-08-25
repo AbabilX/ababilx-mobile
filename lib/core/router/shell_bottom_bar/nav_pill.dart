@@ -4,7 +4,7 @@ import 'nav_tab_item.dart';
 import 'shell_pill_metrics.dart';
 import 'shell_tabs.dart';
 
-/// Flat navigation destinations, rendered from whatever [tabs] the account
+/// Capsule navigation destinations, rendered from whatever [tabs] the account
 /// actually has — Messages alone, up to Messages | Wall | CRM | Board.
 class NavPill extends StatelessWidget {
   const NavPill({

@@ -32,10 +32,8 @@ class KanbanColumnView extends StatelessWidget {
     final accent = columnAccent(column);
 
     return DragTarget<KanbanTask>(
-      onWillAcceptWithDetails: (details) =>
-          details.data.status != column.key,
-      onAcceptWithDetails: (details) =>
-          onMoveTask(details.data, column.key),
+      onWillAcceptWithDetails: (details) => details.data.status != column.key,
+      onAcceptWithDetails: (details) => onMoveTask(details.data, column.key),
       builder: (context, candidate, rejected) {
         final highlight = candidate.isNotEmpty;
         return AnimatedContainer(

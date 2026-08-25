@@ -74,7 +74,9 @@ VideoTrack? _screenTrack(Participant participant) {
 }
 
 String _displayName(Participant participant) =>
-    participant.name.trim().isNotEmpty ? participant.name : participant.identity;
+    participant.name.trim().isNotEmpty
+    ? participant.name
+    : participant.identity;
 
 /// The server packs `{"avatar_url": …}` into the participant token metadata.
 String? participantAvatarUrl(String? metadata) {

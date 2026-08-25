@@ -28,7 +28,10 @@ class WorkspaceSearchApi {
     final raw = unwrapApiData<dynamic>(res);
     if (raw is! List) return const [];
     return raw
-        .map((e) => WorkspaceSearchHit.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map(
+          (e) =>
+              WorkspaceSearchHit.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
         .toList();
   }
 }

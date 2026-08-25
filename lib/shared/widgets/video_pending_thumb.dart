@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Compact square thumb for pending-attachment strips (composer previews).
+/// No controller, no bytes — just a placeholder while a video uploads.
 class VideoPendingThumb extends StatelessWidget {
   const VideoPendingThumb({
     super.key,

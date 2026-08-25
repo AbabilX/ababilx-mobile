@@ -43,8 +43,11 @@ class SessionTile extends ConsumerWidget {
               color: colors.surfaceContainer,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(_clientIcon(session.client),
-                size: 19, color: colors.primary),
+            child: Icon(
+              _clientIcon(session.client),
+              size: 19,
+              color: colors.primary,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -65,13 +68,19 @@ class SessionTile extends ConsumerWidget {
                     if (session.current)
                       _Chip(
                         text: AppTranslations.translate(
-                            context, ref, 'devices_this_device'),
+                          context,
+                          ref,
+                          'devices_this_device',
+                        ),
                         color: colors.primary,
                       ),
                     if (session.origin == 'qr')
                       _Chip(
                         text: AppTranslations.translate(
-                            context, ref, 'devices_qr'),
+                          context,
+                          ref,
+                          'devices_qr',
+                        ),
                         color: colors.onSurfaceVariant,
                       ),
                   ],
@@ -90,7 +99,11 @@ class SessionTile extends ConsumerWidget {
                       onPressed: busy ? null : onRename,
                       icon: const Icon(Icons.edit_rounded, size: 16),
                       label: Text(
-                        AppTranslations.translate(context, ref, 'devices_rename'),
+                        AppTranslations.translate(
+                          context,
+                          ref,
+                          'devices_rename',
+                        ),
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: colors.onSurfaceVariant,
@@ -104,7 +117,10 @@ class SessionTile extends ConsumerWidget {
                         icon: const Icon(Icons.logout_rounded, size: 16),
                         label: Text(
                           AppTranslations.translate(
-                              context, ref, 'devices_sign_out'),
+                            context,
+                            ref,
+                            'devices_sign_out',
+                          ),
                         ),
                         style: TextButton.styleFrom(
                           foregroundColor: colors.error,
@@ -166,7 +182,11 @@ class _Chip extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }

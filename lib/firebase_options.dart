@@ -13,7 +13,8 @@ class DefaultFirebaseOptions {
         return android;
       default:
         throw UnsupportedError(
-            'DefaultFirebaseOptions not configured for ${defaultTargetPlatform.name}');
+          'DefaultFirebaseOptions not configured for ${defaultTargetPlatform.name}',
+        );
     }
   }
 
@@ -23,7 +24,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '327297150133',
     projectId: 'ababilx',
     storageBucket: 'ababilx.firebasestorage.app',
-    androidClientId: '327297150133-ehoak4sd8o7582j14cgg6c7ftvefmvko.apps.googleusercontent.com',
+    androidClientId:
+        '327297150133-ehoak4sd8o7582j14cgg6c7ftvefmvko.apps.googleusercontent.com',
   );
 
   /// Web OAuth client (client_type 3) — required as serverClientId for idToken on Android.

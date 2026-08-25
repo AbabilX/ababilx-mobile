@@ -41,7 +41,10 @@ Future<String?> showSessionRenameDialog(
               onSubmitted: (v) => Navigator.pop(dialogCtx, v),
               decoration: InputDecoration(
                 hintText: AppTranslations.translate(
-                    dialogCtx, ref, 'devices_rename_hint'),
+                  dialogCtx,
+                  ref,
+                  'devices_rename_hint',
+                ),
                 border: const OutlineInputBorder(),
               ),
             ),

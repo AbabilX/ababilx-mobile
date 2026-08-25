@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../features/messages/chat_icon.dart';
 
-/// One flat navigation destination with a top selection indicator.
+/// One navigation destination inside the shared capsule.
 class NavTabItem extends StatelessWidget {
   const NavTabItem({
     super.key,

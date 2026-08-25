@@ -74,7 +74,9 @@ class _Tile extends StatelessWidget {
         color: colors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: participant.isSpeaking ? colors.primary : colors.outlineVariant,
+          color: participant.isSpeaking
+              ? colors.primary
+              : colors.outlineVariant,
           width: participant.isSpeaking ? 2 : 1,
         ),
       ),

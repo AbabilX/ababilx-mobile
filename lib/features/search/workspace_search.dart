@@ -12,32 +12,29 @@ import 'data/search_api.dart';
 
 /// Web Cmd+K — team-wide realtime search (DM / channel / wall / task).
 void openWorkspaceSearch(BuildContext context, WidgetRef ref) {
-  showSearch<void>(
-    context: context,
-    delegate: WorkspaceSearchDelegate(ref),
-  );
+  showSearch<void>(context: context, delegate: WorkspaceSearchDelegate(ref));
 }
 
 class WorkspaceSearchDelegate extends SearchDelegate<void> {
   WorkspaceSearchDelegate(this.ref)
-      : super(searchFieldLabel: 'Search messages, wall, tasks…');
+    : super(searchFieldLabel: 'Search messages, wall, tasks…');
 
   final WidgetRef ref;
 
   @override
   List<Widget>? buildActions(BuildContext context) => [
-        if (query.isNotEmpty)
-          IconButton(
-            icon: const ChatIcon(HugeIcons.strokeRoundedCancel01),
-            onPressed: () => query = '',
-          ),
-      ];
+    if (query.isNotEmpty)
+      IconButton(
+        icon: const ChatIcon(HugeIcons.strokeRoundedCancel01),
+        onPressed: () => query = '',
+      ),
+  ];
 
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-        icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
-        onPressed: () => close(context, null),
-      );
+    icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+    onPressed: () => close(context, null),
+  );
 
   @override
   Widget buildResults(BuildContext context) =>
@@ -216,9 +213,9 @@ class _WorkspaceSearchBodyState extends State<_WorkspaceSearchBody> {
           trailing: Text(
             hit.typeBadge,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colors.primary,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: colors.primary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           onTap: () => widget.onOpen(context, hit),
         );

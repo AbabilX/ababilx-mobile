@@ -44,8 +44,9 @@ class _CrmContactDetailPageState extends ConsumerState<CrmContactDetailPage> {
 
   Future<void> _editContact(CrmContact contact) async {
     final config = await ref.read(crmConfigProvider.future);
-    final organizations =
-        await ref.read(crmRepositoryProvider).listOrganizationsOptional();
+    final organizations = await ref
+        .read(crmRepositoryProvider)
+        .listOrganizationsOptional();
     final detail = ref.read(teamGateProvider).valueOrNull;
     if (!mounted || detail == null) return;
 

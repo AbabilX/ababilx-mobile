@@ -4,7 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'nav_tab_item.dart';
 import 'shell_pill_metrics.dart';
 
-/// Flat CRM scope actions: My | Add | All.
+/// CRM scope actions inside the shared capsule: My | Add | All.
 class ContactsScopePill extends StatelessWidget {
   const ContactsScopePill({
     super.key,

@@ -22,7 +22,7 @@ Future<void> captureAndSendChatPhoto(
     await ref.read(chatConnectionsProvider.notifier).refresh();
     if (!context.mounted) return;
 
-    final selected = await _chooseRecipient(
+    final selected = await showCameraRecipientPicker(
       context,
       ref.read(messageablePeopleProvider),
       picked.bytes,
@@ -69,12 +69,15 @@ Future<void> captureAndSendChatPhoto(
   }
 }
 
-Future<ChatUserSummary?> _chooseRecipient(
+@visibleForTesting
+Future<ChatUserSummary?> showCameraRecipientPicker(
   BuildContext context,
   List<ChatUserSummary> people,
   Uint8List photoBytes,
 ) {
-  return Navigator.of(context).push<ChatUserSummary>(
+  // The camera starts inside HomeShell's nested navigator. Present the
+  // recipient picker on the root so the shell bar cannot cover its send bar.
+  return Navigator.of(context, rootNavigator: true).push<ChatUserSummary>(
     MaterialPageRoute(
       builder: (_) =>
           CameraRecipientScreen(photoBytes: photoBytes, people: people),

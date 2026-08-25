@@ -12,32 +12,28 @@ import 'data/search_api.dart';
 
 /// CRM deep search — contacts / follow-ups / notes / activities / timeline.
 void openCrmDeepSearch(BuildContext context, WidgetRef ref) {
-  showSearch<void>(
-    context: context,
-    delegate: CrmDeepSearchDelegate(ref),
-  );
+  showSearch<void>(context: context, delegate: CrmDeepSearchDelegate(ref));
 }
 
 class CrmDeepSearchDelegate extends SearchDelegate<void> {
-  CrmDeepSearchDelegate(this.ref)
-      : super(searchFieldLabel: 'Search CRM…');
+  CrmDeepSearchDelegate(this.ref) : super(searchFieldLabel: 'Search CRM…');
 
   final WidgetRef ref;
 
   @override
   List<Widget>? buildActions(BuildContext context) => [
-        if (query.isNotEmpty)
-          IconButton(
-            icon: const ChatIcon(HugeIcons.strokeRoundedCancel01),
-            onPressed: () => query = '',
-          ),
-      ];
+    if (query.isNotEmpty)
+      IconButton(
+        icon: const ChatIcon(HugeIcons.strokeRoundedCancel01),
+        onPressed: () => query = '',
+      ),
+  ];
 
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-        icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
-        onPressed: () => close(context, null),
-      );
+    icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+    onPressed: () => close(context, null),
+  );
 
   @override
   Widget buildResults(BuildContext context) =>
@@ -190,9 +186,9 @@ class _CrmDeepSearchBodyState extends State<_CrmDeepSearchBody> {
           trailing: Text(
             hit.typeBadge,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colors.primary,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: colors.primary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           onTap: () => widget.onOpen(context, hit),
         );

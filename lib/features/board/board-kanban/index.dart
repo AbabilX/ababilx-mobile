@@ -8,11 +8,7 @@ import '../shared/kanban_utils.dart';
 import 'kanban_column.dart';
 
 class BoardKanbanView extends ConsumerStatefulWidget {
-  const BoardKanbanView({
-    super.key,
-    required this.boardId,
-    this.initialTaskId,
-  });
+  const BoardKanbanView({super.key, required this.boardId, this.initialTaskId});
 
   final String boardId;
   final String? initialTaskId;
@@ -73,7 +69,10 @@ class _BoardKanbanViewState extends ConsumerState<BoardKanbanView> {
           children: [
             Text(state.error!),
             const SizedBox(height: 12),
-            FilledButton(onPressed: notifier.refresh, child: const Text('Retry')),
+            FilledButton(
+              onPressed: notifier.refresh,
+              child: const Text('Retry'),
+            ),
           ],
         ),
       );
@@ -144,8 +143,9 @@ class _BoardKanbanViewState extends ConsumerState<BoardKanbanView> {
                       onOpenTask: _openTask,
                       onMoveTask: (task, status) =>
                           notifier.moveTask(task, status),
-                      onCreateTask:
-                          todo?.key == column.key ? _createTask : null,
+                      onCreateTask: todo?.key == column.key
+                          ? _createTask
+                          : null,
                       createDisabled: state.moving,
                     ),
                   ),

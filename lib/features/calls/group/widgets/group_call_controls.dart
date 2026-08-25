@@ -22,7 +22,10 @@ class GroupCallControls extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (state.microphoneUnavailable)
-          _Hint('Listening only — no microphone was detected.', colors.tertiary),
+          _Hint(
+            'Listening only — no microphone was detected.',
+            colors.tertiary,
+          ),
         if (otherSharing)
           _Hint(
             '${state.call?.screenSharerName ?? "Another participant"} is '

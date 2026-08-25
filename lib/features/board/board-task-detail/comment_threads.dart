@@ -46,8 +46,7 @@ CommentThreads buildCommentThreads(List<KanbanTaskComment> messages) {
 
   int desc(String a, String b) =>
       DateTime.parse(b).compareTo(DateTime.parse(a));
-  int asc(String a, String b) =>
-      DateTime.parse(a).compareTo(DateTime.parse(b));
+  int asc(String a, String b) => DateTime.parse(a).compareTo(DateTime.parse(b));
 
   roots.sort((a, b) => desc(a.createdAt, b.createdAt));
   for (final replies in repliesByParent.values) {

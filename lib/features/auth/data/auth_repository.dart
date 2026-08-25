@@ -65,7 +65,8 @@ class AuthRepository {
       throw Exception(body['error']?.toString() ?? 'Login failed');
     }
 
-    final jwt = body['access_token'] as String? ??
+    final jwt =
+        body['access_token'] as String? ??
         body['token'] as String? ??
         body['data']?['token'] as String?;
     if (jwt == null) throw Exception('No token in server response');

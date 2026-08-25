@@ -22,7 +22,8 @@ class BoardDetailState extends Equatable {
   final String searchQuery;
   final bool moving;
 
-  List<KanbanColumn> get columns => resolveBoardColumns(board?.columns ?? const []);
+  List<KanbanColumn> get columns =>
+      resolveBoardColumns(board?.columns ?? const []);
 
   Map<String, List<KanbanTask>> get groupedTasks =>
       groupTasksByColumn(tasks, columns);
@@ -47,7 +48,14 @@ class BoardDetailState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [board, tasks, loading, error, searchQuery, moving];
+  List<Object?> get props => [
+    board,
+    tasks,
+    loading,
+    error,
+    searchQuery,
+    moving,
+  ];
 }
 
 class BoardDetailNotifier extends FamilyNotifier<BoardDetailState, String> {
@@ -74,7 +82,9 @@ class BoardDetailNotifier extends FamilyNotifier<BoardDetailState, String> {
       }
       final tasks = await _repo.listTasks(
         boardId,
-        query: state.searchQuery.trim().isEmpty ? null : state.searchQuery.trim(),
+        query: state.searchQuery.trim().isEmpty
+            ? null
+            : state.searchQuery.trim(),
       );
       state = state.copyWith(
         board: board,
@@ -109,8 +119,7 @@ class BoardDetailNotifier extends FamilyNotifier<BoardDetailState, String> {
     String toStatus, {
     int? position,
   }) async {
-    final targetPos = position ??
-        (state.groupedTasks[toStatus]?.length ?? 0);
+    final targetPos = position ?? (state.groupedTasks[toStatus]?.length ?? 0);
     final previous = state.tasks;
     state = state.copyWith(moving: true, clearError: true);
     state = state.copyWith(
@@ -123,14 +132,16 @@ class BoardDetailNotifier extends FamilyNotifier<BoardDetailState, String> {
         position: targetPos,
       );
       state = state.copyWith(
-        tasks: previous
-            .map((t) => t.id == updated.id ? updated : t)
-            .toList(),
+        tasks: previous.map((t) => t.id == updated.id ? updated : t).toList(),
         moving: false,
       );
       return true;
     } catch (e) {
-      state = state.copyWith(tasks: previous, moving: false, error: e.toString());
+      state = state.copyWith(
+        tasks: previous,
+        moving: false,
+        error: e.toString(),
+      );
       return false;
     }
   }
@@ -172,9 +183,8 @@ class BoardDetailNotifier extends FamilyNotifier<BoardDetailState, String> {
   ) {
     final without = tasks.where((t) => t.id != task.id).toList();
     final moved = task.copyWith(status: toStatus, position: position);
-    final inColumn =
-        without.where((t) => t.status == toStatus).toList()
-          ..sort((a, b) => a.position.compareTo(b.position));
+    final inColumn = without.where((t) => t.status == toStatus).toList()
+      ..sort((a, b) => a.position.compareTo(b.position));
     final clamped = position.clamp(0, inColumn.length);
     inColumn.insert(clamped, moved);
     final reindexed = <KanbanTask>[];
@@ -188,10 +198,12 @@ class BoardDetailNotifier extends FamilyNotifier<BoardDetailState, String> {
 
 final boardDetailProvider =
     NotifierProvider.family<BoardDetailNotifier, BoardDetailState, String>(
-  BoardDetailNotifier.new,
-);
+      BoardDetailNotifier.new,
+    );
 
-final kanbanTaskProvider =
-    FutureProvider.family<KanbanTaskDetail, String>((ref, taskId) {
+final kanbanTaskProvider = FutureProvider.family<KanbanTaskDetail, String>((
+  ref,
+  taskId,
+) {
   return ref.watch(boardRepositoryProvider).getTask(taskId);
 });

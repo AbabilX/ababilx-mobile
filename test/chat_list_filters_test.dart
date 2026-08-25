@@ -47,26 +47,21 @@ void main() {
 
   test('empty user ids do not get You prefix', () {
     final preview = previewWithYou(
-      conversation(
-        body: 'plain hi',
-        lastMessageUserId: '',
-      ),
+      conversation(body: 'plain hi', lastMessageUserId: ''),
       '',
     );
     expect(preview, 'plain hi');
   });
 
   test('conversation copy can clear previous attachment preview', () {
-    final updated = conversation(
-      body: '',
-      attachmentType: 'image/jpeg',
-    ).copyWith(
-      lastMessageBody: 'plain text',
-      lastMessageAttachments: const [
-        ChatLastAttachment(fileName: 'a.jpg', contentType: 'image/jpeg'),
-      ],
-      clearLastMessageAttachment: true,
-    );
+    final updated = conversation(body: '', attachmentType: 'image/jpeg')
+        .copyWith(
+          lastMessageBody: 'plain text',
+          lastMessageAttachments: const [
+            ChatLastAttachment(fileName: 'a.jpg', contentType: 'image/jpeg'),
+          ],
+          clearLastMessageAttachment: true,
+        );
 
     expect(updated.lastMessageAttachmentType, isNull);
     expect(updated.lastMessageAttachmentName, isNull);
@@ -88,10 +83,7 @@ void main() {
             fileName: 'report.pdf',
             contentType: 'application/pdf',
           ),
-          ChatLastAttachment(
-            fileName: 'shot.png',
-            contentType: 'image/png',
-          ),
+          ChatLastAttachment(fileName: 'shot.png', contentType: 'image/png'),
         ],
       ),
       'me',

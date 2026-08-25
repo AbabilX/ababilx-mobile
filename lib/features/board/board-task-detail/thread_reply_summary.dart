@@ -131,10 +131,7 @@ class _ParticipantStack extends StatelessWidget {
 }
 
 class _Participant {
-  const _Participant({
-    required this.initial,
-    this.avatarUrl,
-  });
+  const _Participant({required this.initial, this.avatarUrl});
 
   final String initial;
   final String? avatarUrl;

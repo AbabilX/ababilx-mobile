@@ -63,7 +63,10 @@ class GroupScreenShare {
 
   /// LiveKit dropped the capture (user hit the system "Stop sharing"), so the
   /// server-side claim has to be handed back or nobody else could ever share.
-  Future<GroupCall?> handleUnpublished(TrackSource source, GroupCall? call) async {
+  Future<GroupCall?> handleUnpublished(
+    TrackSource source,
+    GroupCall? call,
+  ) async {
     if (source != TrackSource.screenShareVideo || call == null) return null;
     await AndroidScreenShare.stop();
     return _release(call.id);

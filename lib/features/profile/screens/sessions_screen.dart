@@ -49,7 +49,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       ),
       body: sessionsAsync.when(
         loading: () => Center(
-          child: CircularProgressIndicator(color: colors.primary, strokeWidth: 2.5),
+          child: CircularProgressIndicator(
+            color: colors.primary,
+            strokeWidth: 2.5,
+          ),
         ),
         error: (_, _) => Center(
           child: Padding(
@@ -66,8 +69,9 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
           children: [
             Text(
               AppTranslations.translate(context, ref, 'devices_subtitle'),
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: colors.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
             if (sessions.isEmpty)
@@ -89,7 +93,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
                 icon: const Icon(Icons.logout_rounded, size: 18),
                 label: Text(
                   AppTranslations.translate(
-                      context, ref, 'devices_sign_out_others'),
+                    context,
+                    ref,
+                    'devices_sign_out_others',
+                  ),
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: colors.error,
@@ -136,9 +143,9 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
     if (confirmed != true || !mounted) return;
     final revoked = await ref.read(sessionsProvider.notifier).revokeOthers();
     if (!mounted) return;
-    _toast(revoked == null
-        ? 'devices_sign_out_failed'
-        : 'devices_signed_out_others');
+    _toast(
+      revoked == null ? 'devices_sign_out_failed' : 'devices_signed_out_others',
+    );
   }
 
   Future<bool?> _confirm(String messageKey) {
@@ -146,9 +153,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       context: context,
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: Theme.of(dialogCtx).colorScheme.surfaceContainer,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         content: Text(AppTranslations.translate(dialogCtx, ref, messageKey)),
         actions: [
           TextButton(

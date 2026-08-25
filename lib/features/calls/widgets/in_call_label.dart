@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Slack-style "In a call" chip — theme tokens only.
 class InCallLabel extends StatelessWidget {
-  const InCallLabel({
-    super.key,
-    this.compact = false,
-  });
+  const InCallLabel({super.key, this.compact = false});
 
   /// Smaller text for list rows / dense tiles.
   final bool compact;

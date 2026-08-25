@@ -160,10 +160,12 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
       }
       // Leave /call when idle (normal) or shortly after ended/failed so Decline
       // does not strand the user on a "Done" button for 5s.
-      final terminal = next.phase == VoiceCallPhase.ended ||
+      final terminal =
+          next.phase == VoiceCallPhase.ended ||
           next.phase == VoiceCallPhase.failed;
       final wasLive = previous?.shouldOpenCallScreen == true;
-      final shouldLeave = _currentPath == '/call' &&
+      final shouldLeave =
+          _currentPath == '/call' &&
           (next.phase == VoiceCallPhase.idle || terminal) &&
           (wasLive ||
               previous?.phase == VoiceCallPhase.ended ||

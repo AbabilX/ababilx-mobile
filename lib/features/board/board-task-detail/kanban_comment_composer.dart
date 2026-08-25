@@ -17,10 +17,11 @@ import '../../messages/tiptap_plain_text.dart';
 import '../data/board_repository.dart';
 import '../data/models/board_models.dart';
 
-typedef KanbanCommentSubmit = Future<void> Function({
-  required String bodyJson,
-  required List<KanbanCommentAttachmentInput> attachments,
-});
+typedef KanbanCommentSubmit =
+    Future<void> Function({
+      required String bodyJson,
+      required List<KanbanCommentAttachmentInput> attachments,
+    });
 
 /// Same Slack-style input zone as chat [`MessageComposer`], wired to kanban APIs.
 class KanbanCommentComposer extends ConsumerStatefulWidget {
@@ -106,8 +107,9 @@ class _KanbanCommentComposerState extends ConsumerState<KanbanCommentComposer> {
     if ((plain.isEmpty && _pending.isEmpty) || _sending) return;
     setState(() => _sending = true);
     try {
-      final bodyJson =
-          plain.isEmpty ? textToTiptapJson('') : textToTiptapJson(plain);
+      final bodyJson = plain.isEmpty
+          ? textToTiptapJson('')
+          : textToTiptapJson(plain);
       await widget.onSubmit(
         bodyJson: bodyJson,
         attachments: _toKanbanAttachments(),
@@ -122,9 +124,9 @@ class _KanbanCommentComposerState extends ConsumerState<KanbanCommentComposer> {
       _focus.unfocus();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not send: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not send: $e')));
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -179,14 +181,14 @@ class _KanbanCommentComposerState extends ConsumerState<KanbanCommentComposer> {
       _focus.requestFocus();
     } on FileSystemException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not attach: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not attach: $e')));
     }
   }
 

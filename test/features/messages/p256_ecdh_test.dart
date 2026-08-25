@@ -4,10 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 /// NIST CAVP ECCCDH P-256 (KAS_ECC_CDH_PrimitiveTest), COUNT 0. The web client
 /// derives the same Z via `crypto.subtle.deriveBits({name:"ECDH"}, …, 256)`, so
 /// matching this vector is what keeps mobile and web reading the same DMs.
-const _peerX = '700c48f77f56584c5cc632ca65640db91b6bacce3a4df6b42ce7cc838833d287';
-const _peerY = 'db71e509e3fd9b060ddb20ba5c51dcc5948d46fbf640dfe0441782cab85fa4ac';
-const _selfD = '7d7dc5f71eb29ddaf80d6214632eeae03d9058af1fb6d22ed80badb62bc1a534';
-const _sharedZ = '46fc62106420ff012e54a434fbdd2d25ccc5852060561e68040dd7778997bd7b';
+const _peerX =
+    '700c48f77f56584c5cc632ca65640db91b6bacce3a4df6b42ce7cc838833d287';
+const _peerY =
+    'db71e509e3fd9b060ddb20ba5c51dcc5948d46fbf640dfe0441782cab85fa4ac';
+const _selfD =
+    '7d7dc5f71eb29ddaf80d6214632eeae03d9058af1fb6d22ed80badb62bc1a534';
+const _sharedZ =
+    '46fc62106420ff012e54a434fbdd2d25ccc5852060561e68040dd7778997bd7b';
 
 List<int> _hex(String value) => [
   for (var i = 0; i < value.length; i += 2)

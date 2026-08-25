@@ -1,4 +1,4 @@
-/// Shared sizing for the flat app navigation bar.
+/// Shared sizing for the floating app navigation capsules.
 abstract final class ShellPillMetrics {
   static const double height = 64;
 

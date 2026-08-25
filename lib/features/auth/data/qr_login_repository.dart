@@ -34,7 +34,8 @@ class QrLoginRepository {
     }
   }
 
-  Future<void> approve(String payload) => _send(ApiConstants.qrLoginApprove, payload);
+  Future<void> approve(String payload) =>
+      _send(ApiConstants.qrLoginApprove, payload);
 
   Future<void> deny(String payload) => _send(ApiConstants.qrLoginDeny, payload);
 

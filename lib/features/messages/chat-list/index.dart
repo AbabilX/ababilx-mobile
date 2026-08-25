@@ -12,6 +12,7 @@ import 'conversation_rows.dart';
 import 'list_fab.dart';
 import 'list_header.dart';
 import 'list_empty.dart';
+import 'recent_contacts_strip.dart';
 
 class ChatList extends ConsumerStatefulWidget {
   const ChatList({super.key, this.banner});
@@ -43,6 +44,14 @@ class _ChatListState extends ConsumerState<ChatList> {
                 ? conversation.isPersonal
                 : !conversation.isPersonal;
           }).toList();
+    final scopedDms = !independent || scope == ChatScopeFilter.all
+        ? chat.dms
+        : chat.dms.where((conversation) {
+            return scope == ChatScopeFilter.personal
+                ? conversation.isPersonal
+                : !conversation.isPersonal;
+          }).toList();
+    final recentDms = recentDmsForStrip(scopedDms);
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -57,6 +66,13 @@ class _ChatListState extends ConsumerState<ChatList> {
               }),
             ),
             if (widget.banner != null) widget.banner!,
+            if (recentDms.isNotEmpty)
+              RecentContactsStrip(
+                conversations: recentDms,
+                currentUserId: chat.currentUserId,
+                onTap: (conversation) =>
+                    context.push('/messages/${conversation.id}'),
+              ),
             Expanded(
               child: chat.sidebarLoading && rows.isEmpty
                   ? const Center(

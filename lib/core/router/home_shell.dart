@@ -10,8 +10,6 @@ import '../../features/messages/providers/chat_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
 import '../../features/notifications/widgets/battery_optimization_bootstrap.dart';
 import '../../features/policy/widgets/policy_gate_overlay.dart';
-import '../../features/search/crm_deep_search.dart';
-import '../../features/search/workspace_search.dart';
 import '../../features/wall/providers/wall_ui_provider.dart';
 import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/crm_list_bar.dart';
@@ -19,7 +17,7 @@ import 'shell_bottom_bar/index.dart';
 import 'shell_bottom_bar/shell_chrome_provider.dart';
 import 'shell_bottom_bar/shell_tabs.dart';
 
-/// Flat bottom nav, or CRM list [My|Add|All] + search actions.
+/// Floating capsule nav, or CRM list [My|Add|All] + search action.
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
@@ -85,15 +83,6 @@ class HomeShell extends ConsumerWidget {
             labelOf: (tab) =>
                 AppTranslations.translate(context, ref, tab.labelKey),
             onSelect: (i) => context.go(tabs[i].route),
-            onSearch: () {
-              // CRM hub (and any /crm* on home bar) → CRM deep search.
-              // Messages / Wall / Board → web Cmd+K workspace search.
-              if (location.startsWith('/crm')) {
-                openCrmDeepSearch(context, ref);
-              } else {
-                openWorkspaceSearch(context, ref);
-              }
-            },
           );
 
     return Scaffold(

@@ -18,20 +18,20 @@ class Team extends Equatable {
   final String createdAt;
 
   factory Team.fromJson(Map<String, dynamic> json) => Team(
-        id: json['id'] as String? ?? '',
-        ownerUserId: json['owner_user_id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        avatarUrl: json['avatar_url'] as String?,
-        createdAt: json['created_at'] as String? ?? '',
-      );
+    id: json['id'] as String? ?? '',
+    ownerUserId: json['owner_user_id'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    avatarUrl: json['avatar_url'] as String?,
+    createdAt: json['created_at'] as String? ?? '',
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'owner_user_id': ownerUserId,
-        'name': name,
-        'avatar_url': avatarUrl,
-        'created_at': createdAt,
-      };
+    'id': id,
+    'owner_user_id': ownerUserId,
+    'name': name,
+    'avatar_url': avatarUrl,
+    'created_at': createdAt,
+  };
 
   @override
   List<Object?> get props => [id, name];
@@ -65,30 +65,30 @@ class TeamMember extends Equatable {
   String get displayName => name ?? username ?? email ?? userId;
 
   factory TeamMember.fromJson(Map<String, dynamic> json) => TeamMember(
-        id: json['id'] as String? ?? '',
-        teamId: json['team_id'] as String? ?? '',
-        userId: json['user_id'] as String? ?? '',
-        role: json['role'] as String? ?? 'member',
-        status: json['status'] as String? ?? 'active',
-        joinedAt: json['joined_at'] as String? ?? '',
-        name: json['name'] as String?,
-        username: json['username'] as String?,
-        avatarUrl: json['avatar_url'] as String?,
-        email: json['email'] as String?,
-      );
+    id: json['id'] as String? ?? '',
+    teamId: json['team_id'] as String? ?? '',
+    userId: json['user_id'] as String? ?? '',
+    role: json['role'] as String? ?? 'member',
+    status: json['status'] as String? ?? 'active',
+    joinedAt: json['joined_at'] as String? ?? '',
+    name: json['name'] as String?,
+    username: json['username'] as String?,
+    avatarUrl: json['avatar_url'] as String?,
+    email: json['email'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'team_id': teamId,
-        'user_id': userId,
-        'role': role,
-        'status': status,
-        'joined_at': joinedAt,
-        'name': name,
-        'username': username,
-        'avatar_url': avatarUrl,
-        'email': email,
-      };
+    'id': id,
+    'team_id': teamId,
+    'user_id': userId,
+    'role': role,
+    'status': status,
+    'joined_at': joinedAt,
+    'name': name,
+    'username': username,
+    'avatar_url': avatarUrl,
+    'email': email,
+  };
 
   @override
   List<Object?> get props => [userId, name, role];
@@ -121,9 +121,9 @@ class TeamDetail extends Equatable {
   bool get canViewCrm => hasTeam && teamIsPremium && crmAccess;
 
   CrmPerms get crmPerms => CrmPerms.resolve(
-        canViewCrm: canViewCrm,
-        grants: modulePermissions['crm'],
-      );
+    canViewCrm: canViewCrm,
+    grants: modulePermissions['crm'],
+  );
 
   bool get isLeader => myRole == 'leader';
   bool get isManager => myRole == 'manager';
@@ -137,8 +137,9 @@ class TeamDetail extends Equatable {
       for (final e in rawPerms.entries) {
         final v = e.value;
         if (v is Map) {
-          perms[e.key.toString()] =
-              ModuleActions.fromJson(Map<String, dynamic>.from(v));
+          perms[e.key.toString()] = ModuleActions.fromJson(
+            Map<String, dynamic>.from(v),
+          );
         }
       }
     }
@@ -157,17 +158,22 @@ class TeamDetail extends Equatable {
   }
 
   Map<String, dynamic> toJson() => {
-        'team': team?.toJson(),
-        'members': members.map((m) => m.toJson()).toList(),
-        'my_role': myRole,
-        'team_is_premium': teamIsPremium,
-        'crm_access': crmAccess,
-        'module_permissions': modulePermissions.map(
-          (k, v) => MapEntry(k, v.toJson()),
-        ),
-      };
+    'team': team?.toJson(),
+    'members': members.map((m) => m.toJson()).toList(),
+    'my_role': myRole,
+    'team_is_premium': teamIsPremium,
+    'crm_access': crmAccess,
+    'module_permissions': modulePermissions.map(
+      (k, v) => MapEntry(k, v.toJson()),
+    ),
+  };
 
   @override
-  List<Object?> get props =>
-      [team, members.length, myRole, teamIsPremium, crmAccess];
+  List<Object?> get props => [
+    team,
+    members.length,
+    myRole,
+    teamIsPremium,
+    crmAccess,
+  ];
 }

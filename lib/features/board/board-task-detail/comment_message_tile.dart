@@ -88,10 +88,7 @@ class CommentMessageTile extends StatelessWidget {
             ),
             child: content,
           )
-        : Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: content,
-          );
+        : Padding(padding: const EdgeInsets.only(bottom: 8), child: content);
 
     return GestureDetector(
       onTap: onTap,

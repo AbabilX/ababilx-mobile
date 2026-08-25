@@ -6,11 +6,7 @@ import '../board-kanban/index.dart';
 import '../providers/board_detail_provider.dart';
 
 class BoardDetailScreen extends ConsumerWidget {
-  const BoardDetailScreen({
-    super.key,
-    required this.boardId,
-    this.taskId,
-  });
+  const BoardDetailScreen({super.key, required this.boardId, this.taskId});
 
   final String boardId;
   final String? taskId;
@@ -48,10 +44,7 @@ class BoardDetailScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: BoardKanbanView(
-        boardId: boardId,
-        initialTaskId: taskId,
-      ),
+      body: BoardKanbanView(boardId: boardId, initialTaskId: taskId),
     );
   }
 }

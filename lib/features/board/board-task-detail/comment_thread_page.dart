@@ -92,10 +92,7 @@ class CommentThreadPage extends ConsumerWidget {
                       )
                     else
                       for (final reply in replies)
-                        CommentMessageTile(
-                          comment: reply,
-                          isReply: true,
-                        ),
+                        CommentMessageTile(comment: reply, isReply: true),
                   ],
                 ),
               ),
@@ -104,7 +101,9 @@ class CommentThreadPage extends ConsumerWidget {
                 hintName: 'thread',
                 sendLabelKey: 'Reply',
                 onSubmit: ({required bodyJson, required attachments}) async {
-                  await ref.read(boardRepositoryProvider).createComment(
+                  await ref
+                      .read(boardRepositoryProvider)
+                      .createComment(
                         task.id,
                         bodyJson,
                         parentId: root.id,

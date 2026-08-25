@@ -18,7 +18,8 @@ class UserStatusRepository {
       ApiConstants.meStatus,
       data: {'emoji': emoji, 'text': text, 'duration_hours': durationHours},
     );
-    final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    final data =
+        (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
     return UserStatus(
       emoji: data['emoji'] as String? ?? '',
       text: data['text'] as String? ?? '',

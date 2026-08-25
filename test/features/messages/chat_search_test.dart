@@ -62,8 +62,8 @@ void main() {
     await tester.enterText(find.byType(TextField), 'deploy');
     await tester.pump();
 
-    final notifier = container.read(chatProvider.notifier)
-        as _DelayedSearchNotifier;
+    final notifier =
+        container.read(chatProvider.notifier) as _DelayedSearchNotifier;
     notifier.ready.complete();
     await tester.pumpAndSettle();
 

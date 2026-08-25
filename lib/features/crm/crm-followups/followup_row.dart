@@ -71,7 +71,12 @@ class FollowupRow extends StatelessWidget {
             ),
           ),
           child: Padding(
-            padding: EdgeInsets.fromLTRB(12, 12, showMenu && !selecting ? 4 : 12, 12),
+            padding: EdgeInsets.fromLTRB(
+              12,
+              12,
+              showMenu && !selecting ? 4 : 12,
+              12,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

@@ -37,8 +37,9 @@ class _CrmContactsPageState extends ConsumerState<CrmContactsPage> {
     ui.setFormSheetOpen(true);
 
     final config = await ref.read(crmConfigProvider.future);
-    final organizations =
-        await ref.read(crmRepositoryProvider).listOrganizationsOptional();
+    final organizations = await ref
+        .read(crmRepositoryProvider)
+        .listOrganizationsOptional();
     final detail = ref.read(teamGateProvider).valueOrNull;
     if (!mounted || detail == null) {
       ui.setFormSheetOpen(false);

@@ -63,9 +63,9 @@ class _CameraRecipientScreenState extends ConsumerState<CameraRecipientScreen> {
                     itemBuilder: (_, index) => _personRow(people[index]),
                   ),
           ),
-          if (_selected != null) _sendBar(_selected!),
         ],
       ),
+      bottomNavigationBar: _selected == null ? null : _sendBar(_selected!),
     );
   }
 
@@ -73,7 +73,10 @@ class _CameraRecipientScreenState extends ConsumerState<CameraRecipientScreen> {
     final selected = _selected?.userId == user.userId;
     final colors = Theme.of(context).colorScheme;
     return InkWell(
-      onTap: () => setState(() => _selected = user),
+      onTap: () {
+        setState(() => _selected = user);
+        _focus.unfocus();
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
         child: Row(
@@ -113,6 +116,7 @@ class _CameraRecipientScreenState extends ConsumerState<CameraRecipientScreen> {
     return SafeArea(
       top: false,
       child: Material(
+        key: const Key('camera-recipient-send-bar'),
         color: colors.surfaceContainerLow,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),

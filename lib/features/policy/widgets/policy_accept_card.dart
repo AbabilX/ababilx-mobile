@@ -67,15 +67,20 @@ class _PolicyAcceptCardState extends ConsumerState<PolicyAcceptCard> {
                   children: [
                     Text(
                       AppTranslations.translate(context, ref, 'policy_title'),
-                      style: theme.textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w800),
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       AppTranslations.translate(
-                          context, ref, 'policy_subtitle'),
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: colors.onSurfaceVariant),
+                        context,
+                        ref,
+                        'policy_subtitle',
+                      ),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     for (final key in [
@@ -89,8 +94,7 @@ class _PolicyAcceptCardState extends ConsumerState<PolicyAcceptCard> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.circle,
-                                size: 6, color: colors.primary),
+                            Icon(Icons.circle, size: 6, color: colors.primary),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -109,7 +113,10 @@ class _PolicyAcceptCardState extends ConsumerState<PolicyAcceptCard> {
                       ),
                       child: Text(
                         AppTranslations.translate(
-                            context, ref, 'policy_read_full'),
+                          context,
+                          ref,
+                          'policy_read_full',
+                        ),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: colors.primary,
                           decoration: TextDecoration.underline,
@@ -133,10 +140,16 @@ class _PolicyAcceptCardState extends ConsumerState<PolicyAcceptCard> {
                                 height: 18,
                                 width: 18,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2),
+                                  strokeWidth: 2,
+                                ),
                               )
-                            : Text(AppTranslations.translate(
-                                context, ref, 'policy_accept')),
+                            : Text(
+                                AppTranslations.translate(
+                                  context,
+                                  ref,
+                                  'policy_accept',
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -146,7 +159,10 @@ class _PolicyAcceptCardState extends ConsumerState<PolicyAcceptCard> {
                         onPressed: _busy ? null : _declineAndSignOut,
                         child: Text(
                           AppTranslations.translate(
-                              context, ref, 'policy_decline_signout'),
+                            context,
+                            ref,
+                            'policy_decline_signout',
+                          ),
                           style: TextStyle(color: colors.error),
                         ),
                       ),

@@ -59,8 +59,8 @@ class KanbanTaskCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: parseHexColor(label.color) ??
-                                  colors.primary,
+                              color:
+                                  parseHexColor(label.color) ?? colors.primary,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -117,8 +117,7 @@ class KanbanTaskCard extends StatelessWidget {
                           ),
                         ),
                       if (dueMeta != null) ...[
-                        if (priority.value != 'none')
-                          const SizedBox(width: 6),
+                        if (priority.value != 'none') const SizedBox(width: 6),
                         Icon(
                           Icons.calendar_today_outlined,
                           size: 12,

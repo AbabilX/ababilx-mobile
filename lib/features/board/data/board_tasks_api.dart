@@ -38,10 +38,7 @@ class BoardTasksApi {
     return KanbanTaskDetail.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
 
-  Future<KanbanTask> patchTask(
-    String taskId,
-    Map<String, dynamic> body,
-  ) async {
+  Future<KanbanTask> patchTask(String taskId, Map<String, dynamic> body) async {
     final res = await _client.patch(
       ApiConstants.kanbanTask(taskId),
       data: body,
@@ -85,8 +82,6 @@ class BoardTasksApi {
         if (alsoSendDM) 'also_send_dm': true,
       },
     );
-    return KanbanTaskComment.fromJson(
-      unwrapApiData<Map<String, dynamic>>(res),
-    );
+    return KanbanTaskComment.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
 }

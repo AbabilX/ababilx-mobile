@@ -44,14 +44,14 @@ class WorkspaceSearchHit extends Equatable {
       );
 
   String get typeBadge => switch (source) {
-        'dm' => 'DM',
-        'channel' => 'Channel',
-        'wall_post' => 'Wall',
-        'wall_comment' => 'Wall reply',
-        'task' => 'Task',
-        'task_comment' => 'Task comment',
-        _ => source,
-      };
+    'dm' => 'DM',
+    'channel' => 'Channel',
+    'wall_post' => 'Wall',
+    'wall_comment' => 'Wall reply',
+    'task' => 'Task',
+    'task_comment' => 'Task comment',
+    _ => source,
+  };
 
   String get title {
     if (source == 'channel' && label.isNotEmpty) return '#$label';
@@ -61,5 +61,11 @@ class WorkspaceSearchHit extends Equatable {
   }
 
   @override
-  List<Object?> get props => [source, conversationId, messageId, postId, taskId];
+  List<Object?> get props => [
+    source,
+    conversationId,
+    messageId,
+    postId,
+    taskId,
+  ];
 }

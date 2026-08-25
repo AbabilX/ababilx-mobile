@@ -7,8 +7,9 @@ AppBarTheme buildAppBarTheme(ColorScheme scheme) {
   return AppBarTheme(
     backgroundColor: Colors.transparent,
     elevation: 0,
-    systemOverlayStyle:
-        lightIcons ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+    systemOverlayStyle: lightIcons
+        ? SystemUiOverlayStyle.light
+        : SystemUiOverlayStyle.dark,
     centerTitle: false,
     titleTextStyle: TextStyle(
       fontSize: 20,
@@ -35,7 +36,11 @@ InputDecorationTheme buildInputTheme(ColorScheme scheme) {
   return InputDecorationTheme(
     filled: true,
     fillColor: scheme.surfaceContainerHighest,
-    labelStyle: TextStyle(color: muted, fontSize: 13, fontWeight: FontWeight.w500),
+    labelStyle: TextStyle(
+      color: muted,
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+    ),
     hintStyle: TextStyle(color: muted, fontSize: 13),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),

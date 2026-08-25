@@ -8,11 +8,7 @@ import 'board_tasks_api.dart';
 import 'models/board_models.dart';
 
 class BoardRepository {
-  const BoardRepository(
-    this._client,
-    this._tasksApi,
-    this._attachmentsApi,
-  );
+  const BoardRepository(this._client, this._tasksApi, this._attachmentsApi);
 
   final ApiClient _client;
   final BoardTasksApi _tasksApi;
@@ -38,8 +34,7 @@ class BoardRepository {
     String boardId, {
     String? query,
     String? assigneeId,
-  }) =>
-      _tasksApi.listTasks(boardId, query: query, assigneeId: assigneeId);
+  }) => _tasksApi.listTasks(boardId, query: query, assigneeId: assigneeId);
 
   Future<KanbanTask> createTask(String boardId, String title) =>
       _tasksApi.createTask(boardId, title);
@@ -53,8 +48,7 @@ class BoardRepository {
     String taskId, {
     required String status,
     required int position,
-  }) =>
-      _tasksApi.moveTask(taskId, status: status, position: position);
+  }) => _tasksApi.moveTask(taskId, status: status, position: position);
 
   Future<void> deleteTask(String taskId) => _tasksApi.deleteTask(taskId);
 
@@ -63,13 +57,12 @@ class BoardRepository {
     required String contentType,
     required String fileName,
     required int sizeBytes,
-  }) =>
-      _attachmentsApi.presign(
-        taskId,
-        contentType: contentType,
-        fileName: fileName,
-        sizeBytes: sizeBytes,
-      );
+  }) => _attachmentsApi.presign(
+    taskId,
+    contentType: contentType,
+    fileName: fileName,
+    sizeBytes: sizeBytes,
+  );
 
   Future<void> discardTaskUpload(String taskId, String fileUrl) =>
       _attachmentsApi.discard(taskId, fileUrl);
@@ -100,15 +93,14 @@ class BoardRepository {
     List<KanbanCommentAttachmentInput>? attachments,
     List<String>? mentionedUserIds,
     bool alsoSendDM = false,
-  }) =>
-      _tasksApi.createComment(
-        taskId,
-        body,
-        parentId: parentId,
-        attachments: attachments,
-        mentionedUserIds: mentionedUserIds,
-        alsoSendDM: alsoSendDM,
-      );
+  }) => _tasksApi.createComment(
+    taskId,
+    body,
+    parentId: parentId,
+    attachments: attachments,
+    mentionedUserIds: mentionedUserIds,
+    alsoSendDM: alsoSendDM,
+  );
 }
 
 final boardAttachmentsApiProvider = Provider<BoardAttachmentsApi>(

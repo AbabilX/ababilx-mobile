@@ -4,7 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../features/messages/chat_icon.dart';
 import 'shell_pill_metrics.dart';
 
-/// Flat trailing action in the bottom bar.
+/// Circular trailing action beside the navigation capsule.
 class ActionPill extends StatelessWidget {
   const ActionPill({
     super.key,

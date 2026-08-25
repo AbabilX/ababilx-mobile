@@ -20,20 +20,22 @@ class KanbanBoard extends Equatable {
   final List<KanbanColumn> columns;
 
   factory KanbanBoard.fromJson(Map<String, dynamic> json) => KanbanBoard(
-        id: json['id'] as String,
-        teamId: json['team_id'] as String,
-        name: json['name'] as String? ?? 'Board',
-        createdBy: json['created_by'] as String? ?? '',
-        createdAt: json['created_at'] as String? ?? '',
-        memberIds: (json['member_ids'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            const [],
-        columns: (json['columns'] as List<dynamic>?)
-                ?.map((e) => KanbanColumn.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            const [],
-      );
+    id: json['id'] as String,
+    teamId: json['team_id'] as String,
+    name: json['name'] as String? ?? 'Board',
+    createdBy: json['created_by'] as String? ?? '',
+    createdAt: json['created_at'] as String? ?? '',
+    memberIds:
+        (json['member_ids'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        const [],
+    columns:
+        (json['columns'] as List<dynamic>?)
+            ?.map((e) => KanbanColumn.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [],
+  );
 
   @override
   List<Object?> get props => [id, name, columns];
@@ -57,13 +59,13 @@ class KanbanColumn extends Equatable {
   final String role;
 
   factory KanbanColumn.fromJson(Map<String, dynamic> json) => KanbanColumn(
-        id: json['id'] as String? ?? json['key'] as String? ?? '',
-        key: json['key'] as String? ?? '',
-        label: json['label'] as String? ?? '',
-        position: json['position'] as int? ?? 0,
-        color: json['color'] as String? ?? '',
-        role: json['role'] as String? ?? 'custom',
-      );
+    id: json['id'] as String? ?? json['key'] as String? ?? '',
+    key: json['key'] as String? ?? '',
+    label: json['label'] as String? ?? '',
+    position: json['position'] as int? ?? 0,
+    color: json['color'] as String? ?? '',
+    role: json['role'] as String? ?? 'custom',
+  );
 
   @override
   List<Object?> get props => [id, key, label];
@@ -82,7 +84,8 @@ class KanbanTaskLabel extends Equatable {
   final String name;
   final String color;
 
-  factory KanbanTaskLabel.fromJson(Map<String, dynamic> json) => KanbanTaskLabel(
+  factory KanbanTaskLabel.fromJson(Map<String, dynamic> json) =>
+      KanbanTaskLabel(
         id: json['id'] as String? ?? '',
         taskId: json['task_id'] as String? ?? '',
         name: json['name'] as String? ?? '',
@@ -163,42 +166,43 @@ class KanbanTask extends Equatable {
   final String? parentTaskTitle;
 
   factory KanbanTask.fromJson(Map<String, dynamic> json) => KanbanTask(
-        id: json['id'] as String,
-        boardId: json['board_id'] as String,
-        teamId: json['team_id'] as String? ?? '',
-        taskNumber: json['task_number'] as int? ?? 0,
-        taskKey: json['task_key'] as String?,
-        title: json['title'] as String? ?? '',
-        description: json['description'] as String? ?? '',
-        status: json['status'] as String? ?? 'task',
-        position: json['position'] as int? ?? 0,
-        assigneeId: json['assignee_id'] as String?,
-        reporterId: json['reporter_id'] as String? ?? '',
-        startDate: json['start_date'] as String?,
-        dueDate: json['due_date'] as String?,
-        githubUrl: json['github_url'] as String? ?? '',
-        repoFullName: json['repo_full_name'] as String? ?? '',
-        branchName: json['branch_name'] as String? ?? '',
-        baseBranch: json['base_branch'] as String? ?? '',
-        prNumber: json['pr_number'] as int? ?? 0,
-        prUrl: json['pr_url'] as String? ?? '',
-        githubState: json['github_state'] as String? ?? 'none',
-        ciStatus: json['ci_status'] as String? ?? 'none',
-        githubIssueNumber: json['github_issue_number'] as int? ?? 0,
-        priority: json['priority'] as String? ?? 'none',
-        createdBy: json['created_by'] as String? ?? '',
-        createdAt: json['created_at'] as String? ?? '',
-        updatedAt: json['updated_at'] as String? ?? '',
-        assigneeName: json['assignee_name'] as String?,
-        assigneeAvatarUrl: json['assignee_avatar_url'] as String?,
-        labels: (json['labels'] as List<dynamic>?)
-                ?.map((e) => KanbanTaskLabel.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            const [],
-        parentTaskId: json['parent_task_id'] as String?,
-        parentTaskKey: json['parent_task_key'] as String?,
-        parentTaskTitle: json['parent_task_title'] as String?,
-      );
+    id: json['id'] as String,
+    boardId: json['board_id'] as String,
+    teamId: json['team_id'] as String? ?? '',
+    taskNumber: json['task_number'] as int? ?? 0,
+    taskKey: json['task_key'] as String?,
+    title: json['title'] as String? ?? '',
+    description: json['description'] as String? ?? '',
+    status: json['status'] as String? ?? 'task',
+    position: json['position'] as int? ?? 0,
+    assigneeId: json['assignee_id'] as String?,
+    reporterId: json['reporter_id'] as String? ?? '',
+    startDate: json['start_date'] as String?,
+    dueDate: json['due_date'] as String?,
+    githubUrl: json['github_url'] as String? ?? '',
+    repoFullName: json['repo_full_name'] as String? ?? '',
+    branchName: json['branch_name'] as String? ?? '',
+    baseBranch: json['base_branch'] as String? ?? '',
+    prNumber: json['pr_number'] as int? ?? 0,
+    prUrl: json['pr_url'] as String? ?? '',
+    githubState: json['github_state'] as String? ?? 'none',
+    ciStatus: json['ci_status'] as String? ?? 'none',
+    githubIssueNumber: json['github_issue_number'] as int? ?? 0,
+    priority: json['priority'] as String? ?? 'none',
+    createdBy: json['created_by'] as String? ?? '',
+    createdAt: json['created_at'] as String? ?? '',
+    updatedAt: json['updated_at'] as String? ?? '',
+    assigneeName: json['assignee_name'] as String?,
+    assigneeAvatarUrl: json['assignee_avatar_url'] as String?,
+    labels:
+        (json['labels'] as List<dynamic>?)
+            ?.map((e) => KanbanTaskLabel.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [],
+    parentTaskId: json['parent_task_id'] as String?,
+    parentTaskKey: json['parent_task_key'] as String?,
+    parentTaskTitle: json['parent_task_title'] as String?,
+  );
 
   KanbanTask copyWith({
     String? status,
@@ -239,8 +243,9 @@ class KanbanTask extends Equatable {
       createdAt: createdAt,
       updatedAt: updatedAt,
       assigneeName: clearAssignee ? null : (assigneeName ?? this.assigneeName),
-      assigneeAvatarUrl:
-          clearAssignee ? null : (assigneeAvatarUrl ?? this.assigneeAvatarUrl),
+      assigneeAvatarUrl: clearAssignee
+          ? null
+          : (assigneeAvatarUrl ?? this.assigneeAvatarUrl),
       labels: labels,
       parentTaskId: parentTaskId,
       parentTaskKey: parentTaskKey,
@@ -266,11 +271,11 @@ class KanbanCommentAttachmentInput {
   final int sizeBytes;
 
   Map<String, dynamic> toJson() => {
-        'file_url': fileUrl,
-        'file_name': fileName,
-        'content_type': contentType,
-        'size_bytes': sizeBytes,
-      };
+    'file_url': fileUrl,
+    'file_name': fileName,
+    'content_type': contentType,
+    'size_bytes': sizeBytes,
+  };
 }
 
 class KanbanPresignResult {
@@ -405,8 +410,11 @@ class KanbanTaskDetail extends KanbanTask {
       parentTaskId: base.parentTaskId,
       parentTaskKey: base.parentTaskKey,
       parentTaskTitle: base.parentTaskTitle,
-      comments: (json['comments'] as List<dynamic>?)
-              ?.map((e) => KanbanTaskComment.fromJson(e as Map<String, dynamic>))
+      comments:
+          (json['comments'] as List<dynamic>?)
+              ?.map(
+                (e) => KanbanTaskComment.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           const [],
     );

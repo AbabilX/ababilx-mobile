@@ -68,13 +68,19 @@ class QrLoginFlow {
           borderRadius: BorderRadius.circular(28),
           side: BorderSide(color: colors.outline),
         ),
-        title: Text(AppTranslations.translate(dialogCtx, ref, 'qr_login_confirm')),
+        title: Text(
+          AppTranslations.translate(dialogCtx, ref, 'qr_login_confirm'),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              AppTranslations.translate(dialogCtx, ref, 'qr_login_confirm_body'),
+              AppTranslations.translate(
+                dialogCtx,
+                ref,
+                'qr_login_confirm_body',
+              ),
             ),
             if (details.isNotEmpty) ...[
               const SizedBox(height: 12),
@@ -91,11 +97,15 @@ class QrLoginFlow {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx, false),
-            child: Text(AppTranslations.translate(dialogCtx, ref, 'qr_login_reject')),
+            child: Text(
+              AppTranslations.translate(dialogCtx, ref, 'qr_login_reject'),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogCtx, true),
-            child: Text(AppTranslations.translate(dialogCtx, ref, 'qr_login_approve')),
+            child: Text(
+              AppTranslations.translate(dialogCtx, ref, 'qr_login_approve'),
+            ),
           ),
         ],
       ),

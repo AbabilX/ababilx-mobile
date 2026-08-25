@@ -29,30 +29,36 @@ void main() {
     expect(isEncryptedChatPush(data), isFalse);
   });
 
-  test('incomplete payloads decrypt to null without touching storage', () async {
-    for (final missing in [
-      'enc_body',
-      'enc_nonce',
-      'recipient_id',
-      'sender_id',
-      'conversation_id',
-      'enc_key_version',
-    ]) {
-      final data = encryptedPush()..remove(missing);
-      expect(
-        await decryptChatPushBody(data),
-        isNull,
-        reason: 'missing $missing must fall back to the placeholder',
-      );
-    }
-  });
+  test(
+    'incomplete payloads decrypt to null without touching storage',
+    () async {
+      for (final missing in [
+        'enc_body',
+        'enc_nonce',
+        'recipient_id',
+        'sender_id',
+        'conversation_id',
+        'enc_key_version',
+      ]) {
+        final data = encryptedPush()..remove(missing);
+        expect(
+          await decryptChatPushBody(data),
+          isNull,
+          reason: 'missing $missing must fall back to the placeholder',
+        );
+      }
+    },
+  );
 
   test('notification id is stable per message and fits Android ids', () {
     final id = chatPushNotificationId(encryptedPush());
     expect(id, chatPushNotificationId(encryptedPush()));
     expect(id, greaterThanOrEqualTo(0));
     expect(id, lessThanOrEqualTo(0x7fffffff));
-    expect(id, isNot(chatPushNotificationId(encryptedPush()..['message_id'] = 'm2')));
+    expect(
+      id,
+      isNot(chatPushNotificationId(encryptedPush()..['message_id'] = 'm2')),
+    );
   });
 
   test('placeholder matches the server fallback copy', () {

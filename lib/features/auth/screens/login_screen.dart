@@ -30,24 +30,21 @@ class LoginScreen extends ConsumerWidget {
                 const SizedBox(height: 40),
                 // Brand Logo - Symmetrical Squircle with Clean Flat Border
                 Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: colors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: colors.outline,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(26),
-                    child: Image.asset(
-                      'assets/icon/icon.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                )
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        color: colors.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: colors.outline, width: 1.5),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(26),
+                        child: Image.asset(
+                          'assets/icon/icon.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    )
                     .animate(
                       onPlay: isLoading
                           ? (controller) => controller.repeat(reverse: true)
@@ -79,8 +76,10 @@ class LoginScreen extends ConsumerWidget {
                           duration: 1200.ms,
                           curve: Curves.easeOut,
                           builder: (context, value, _) {
-                            final safeLength =
-                                value.clamp(0, brandTitle.length);
+                            final safeLength = value.clamp(
+                              0,
+                              brandTitle.length,
+                            );
                             return Text(
                               brandTitle.substring(0, safeLength),
                               style: theme.textTheme.displayMedium?.copyWith(
@@ -116,81 +115,87 @@ class LoginScreen extends ConsumerWidget {
 
                 // Google Sign-In Button (Hidden while loading, reappears on failure)
                 AnimatedSwitcher(
-                  duration: 280.ms,
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SizeTransition(
-                        sizeFactor: animation,
-                        axis: Axis.vertical,
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: isLoading
-                      ? const SizedBox(
-                          key: ValueKey('login-hidden'),
-                          height: 0,
-                        )
-                      : SizedBox(
-                          key: const ValueKey('login-button'),
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: () => ref
-                                .read(authProvider.notifier)
-                                .signInWithGoogle(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colors.surfaceContainerLow,
-                              foregroundColor: colors.onSurface,
-                              elevation: 0,
-                              side:
-                                  BorderSide(color: colors.outline, width: 1.2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(28),
-                              ),
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 24),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Styled Google Icon Squircle with Lavender background and deep purple text
-                                Container(
-                                  width: 26,
-                                  height: 26,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE8DEF8),
-                                    borderRadius: BorderRadius.circular(8),
+                      duration: 280.ms,
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SizeTransition(
+                            sizeFactor: animation,
+                            axis: Axis.vertical,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: isLoading
+                          ? const SizedBox(
+                              key: ValueKey('login-hidden'),
+                              height: 0,
+                            )
+                          : SizedBox(
+                              key: const ValueKey('login-button'),
+                              width: double.infinity,
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: () => ref
+                                    .read(authProvider.notifier)
+                                    .signInWithGoogle(),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: colors.surfaceContainerLow,
+                                  foregroundColor: colors.onSurface,
+                                  elevation: 0,
+                                  side: BorderSide(
+                                    color: colors.outline,
+                                    width: 1.2,
                                   ),
-                                  child: const Center(
-                                    child: Text(
-                                      'G',
-                                      style: TextStyle(
-                                        color: Color(0xFF381E72),
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 14,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(28),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Styled Google Icon Squircle with Lavender background and deep purple text
+                                    Container(
+                                      width: 26,
+                                      height: 26,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE8DEF8),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Center(
+                                        child: Text(
+                                          'G',
+                                          style: TextStyle(
+                                            color: Color(0xFF381E72),
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 14,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                    const SizedBox(width: 14),
+                                    Text(
+                                      AppTranslations.translate(
+                                        context,
+                                        ref,
+                                        'continue_google',
+                                      ),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.1,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 14),
-                                Text(
-                                  AppTranslations.translate(
-                                      context, ref, 'continue_google'),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.1,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
-                )
+                    )
                     .animate()
                     .fadeIn(delay: 350.ms)
                     .slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
@@ -199,7 +204,9 @@ class LoginScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       color: colors.error.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(16),
@@ -211,9 +218,10 @@ class LoginScreen extends ConsumerWidget {
                     child: Text(
                       error.replaceAll('Exception: ', ''),
                       style: TextStyle(
-                          color: colors.error,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500),
+                        color: colors.error,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ).animate().shake(delay: 100.ms),
