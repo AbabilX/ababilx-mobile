@@ -6,9 +6,9 @@ import 'chat_local_db.dart';
 import 'chat_message_row.dart';
 import 'chat_sidebar_cache.dart' show chatLocalDbProvider;
 
-/// How many messages a single conversation keeps on disk. Old rows past this
-/// are pruned on write, so a years-old channel cannot grow the database
-/// without bound. Everything inside the window is browsable with no network.
+export 'local_message_search.dart';
+
+/// Per-conversation disk history cap.
 const int pruneKeepPerConversation = 2000;
 
 /// Default page size for a disk read — matches the server page size, so an
@@ -137,6 +137,32 @@ class ChatMessageStore {
     }
   }
 
+  /// Encrypted rows for vault-backed search; plaintext never reaches SQLite.
+  Future<List<ChatMessage>> encryptedPage({
+    int limit = 200,
+    int offset = 0,
+  }) async {
+    try {
+      final rows =
+          await (_db.select(_db.cachedMessages)
+                ..where((t) => t.searchText.equals(''))
+                ..where((t) => t.payloadJson.like('%"encryption_version":1%'))
+                ..orderBy([
+                  (t) => OrderingTerm(
+                    expression: t.createdAtMs,
+                    mode: OrderingMode.desc,
+                  ),
+                ])
+                ..limit(limit, offset: offset))
+              .get();
+      return messagesFromRows(
+        rows,
+      ).where((m) => m.isEncrypted && !m.isDeleted).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
   Future<void> clearConversation(String conversationId) async {
     if (conversationId.isEmpty) return;
     try {
@@ -169,6 +195,6 @@ class ChatMessageStore {
   }
 }
 
-final chatMessageStoreProvider = Provider<ChatMessageStore>((ref) {
-  return ChatMessageStore(ref.watch(chatLocalDbProvider));
-});
+final chatMessageStoreProvider = Provider<ChatMessageStore>(
+  (ref) => ChatMessageStore(ref.watch(chatLocalDbProvider)),
+);

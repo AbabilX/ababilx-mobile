@@ -17,6 +17,7 @@ import '../data/local/chat_outbox_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
 import '../message_e2ee/message_vault.dart';
+import 'team_gate_provider.dart';
 import 'chat_state.dart';
 
 export 'chat_state.dart';

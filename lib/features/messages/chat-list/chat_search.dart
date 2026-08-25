@@ -40,34 +40,36 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
     return _list(context);
   }
 
-  Widget _list(BuildContext context) {
-    final chat = ref.watch(chatProvider);
-    if (query.trim().length < 2) {
-      return const Center(child: Text('Type at least 2 characters'));
-    }
-    if (chat.searchLoading) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
-    }
-    if (chat.searchResults.isEmpty) {
-      return const Center(child: Text('No messages found'));
-    }
-    return ListView.builder(
-      itemCount: chat.searchResults.length,
-      itemBuilder: (_, i) {
-        final msg = chat.searchResults[i];
-        return ListTile(
-          title: Text(msg.userName ?? 'Unknown'),
-          subtitle: Text(
-            tiptapToPreviewText(msg.body),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          onTap: () {
-            close(context, msg.conversationId);
-            context.push('/messages/${msg.conversationId}');
-          },
-        );
-      },
-    );
-  }
+  Widget _list(BuildContext context) => Consumer(
+    builder: (_, ref, _) {
+      final chat = ref.watch(chatProvider);
+      if (query.trim().length < 2) {
+        return const Center(child: Text('Type at least 2 characters'));
+      }
+      if (chat.searchLoading) {
+        return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
+      }
+      if (chat.searchResults.isEmpty) {
+        return const Center(child: Text('No messages found'));
+      }
+      return ListView.builder(
+        itemCount: chat.searchResults.length,
+        itemBuilder: (_, i) {
+          final msg = chat.searchResults[i];
+          return ListTile(
+            title: Text(msg.userName ?? 'Unknown'),
+            subtitle: Text(
+              tiptapToPreviewText(msg.body),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onTap: () {
+              close(context, msg.conversationId);
+              context.push('/messages/${msg.conversationId}');
+            },
+          );
+        },
+      );
+    },
+  );
 }

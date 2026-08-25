@@ -62,6 +62,24 @@ void main() {
     expect(hits.map((m) => m.id), ['m1']);
   });
 
+  test('downloaded encrypted chat can be found after memory decrypt', () async {
+    await store.saveAll([
+      msg(
+        'm1',
+        '2026-08-23T00:00:00Z',
+        body: 'deploy secret',
+        encryptedBody: 'Y2lwaGVy',
+      ),
+    ]);
+
+    final hits = await LocalMessageSearch(store, (messages) async {
+      return messages
+          .map((message) => message.copyWith(body: 'deploy secret'))
+          .toList();
+    }).search('deploy');
+    expect(hits.map((m) => m.id), ['m1']);
+  });
+
   test('encrypted message is stored ciphertext-only', () async {
     await store.saveAll([
       msg(

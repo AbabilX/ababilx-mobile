@@ -78,15 +78,36 @@ mixin _ChatMutateMixin
   );
 
   /// Local history answers first so results appear with no round trip, then
-  /// the server result replaces them — it reaches further back than the disk
-  /// window and, unlike the local index, can match inside an E2EE DM.
+  /// an active workspace permits a server result to replace them. Personal-only
+  /// users search their device history only.
   Future<void> searchMessages(String q) async {
     state = state.copyWith(searchQuery: q, searchLoading: true);
     final store = (this as _ChatCacheMixin).messageStore;
-    final local = await store.search(q);
+    final vault = ref.read(messageVaultProvider);
+    var userId = state.currentUserId;
+    if (userId.isEmpty) userId = await (this as ChatNotifier).localUserId();
+    final local = await LocalMessageSearch(
+      store,
+      vault.isUnlocked && userId.isNotEmpty
+          ? (messages) async {
+              final clear = await vault.decryptMessages(messages, userId);
+              return clear
+                  .where(
+                    (message) =>
+                        message.body != 'Encrypted message' &&
+                        message.body != 'Unable to decrypt this message',
+                  )
+                  .toList();
+            }
+          : (_) async => const [],
+    ).search(q);
     if (state.searchQuery != q) return;
     if (local.isNotEmpty) {
       state = state.copyWith(searchResults: local, searchLoading: false);
+    }
+    if (!ref.read(hasTeamProvider)) {
+      state = state.copyWith(searchResults: local, searchLoading: false);
+      return;
     }
     try {
       final results = await repo.searchMessages(q);
