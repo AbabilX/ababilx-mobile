@@ -8,6 +8,7 @@ import 'package:livekit_client/livekit_client.dart';
 
 import '../../../../core/network/ws_client.dart';
 import '../../../profile/providers/profile_provider.dart';
+import '../../audio/call_audio_route.dart';
 import '../../call_lifecycle.dart';
 import '../../call_ringtone.dart';
 import '../../ringtone/callkit_ring_events.dart';
@@ -140,6 +141,9 @@ class GroupCallNotifier extends GroupCallBase
         await leaveOnce(call.id);
         return;
       }
+      // A DM call leaves LiveKit in manual audio mode (see [CallAudioRoute]);
+      // a Room only configures the session when it manages it.
+      await CallAudioRoute.restoreForRoom();
       final room = Room(
         roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
       );

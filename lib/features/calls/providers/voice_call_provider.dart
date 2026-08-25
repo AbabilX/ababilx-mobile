@@ -792,9 +792,13 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       source: source,
     );
     _suppressCallKitEnded.arm(callId, source: 'endNative.$source');
-    try {
-      await FlutterCallkitIncoming.endCall(callId);
-    } catch (_) {}
+    // AndroidCallUi.endCall, not the plugin directly: it also releases the
+    // CallKit ring holder. Declining from the in-app screen dismisses the
+    // native UI without any CallKit event being processed here (this very
+    // dismissal is what `_suppressCallKitEnded` was just armed to ignore), so
+    // ending it raw left the native ringer with nothing to stop it and the
+    // tone outlived the call.
+    await AndroidCallUi.endCall(callId);
   }
 
   void _handleNativeEvent(CallEvent? event) {

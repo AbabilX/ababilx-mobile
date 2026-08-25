@@ -1,9 +1,13 @@
-# Incoming-call ringtone (Android) — DO NOT REWORK
+# Calls on Android — ringtone, CallKit, audio routing
 
-> Shipped 2026-08-25 after a "ringtone dies ~2 s in" bug. Verified working on
-> device. Every line below exists because something broke without it. Read this
-> before editing anything under `ringtone/`, `native/`, or
+> Every line below exists because something broke without it. Read this before
+> editing anything under `ringtone/`, `native/`, `audio/`, or
 > `packages/call_ringer/`.
+
+## Incoming-call ringtone — DO NOT REWORK
+
+Shipped 2026-08-25 after a "ringtone dies ~2 s in" bug; verified working on
+device.
 
 ## The bug this design fixes
 
@@ -127,7 +131,45 @@ Upgrading `flutter_callkit_incoming` does not remove the need for any of this;
 re-read `CallkitSoundPlayerManager` / `CallkitNotificationManager` after a bump
 and confirm the two kill switches, then keep `silent_ring`.
 
-## Device test (emulators do not prove this)
+## Never end a CallKit call through the plugin directly
+
+`AndroidCallUi.endCall` / `hideIncoming` (and their group twins) release the
+`native` ring holder as part of ending the surface. Calling
+`FlutterCallkitIncoming.endCall` or `hideCallkitIncoming` straight from a
+provider skips that release — and terminal paths arm `_suppressCallKitEnded`
+precisely so the resulting CallKit event is ignored, so nothing else stops the
+tone either. That is what left the ringtone playing after a decline while every
+screen had already closed (fixed 2026-08-26 in `_endNative`). Route every
+dismissal through the `AndroidCallUi` / `AndroidGroupCallUi` wrappers.
+
+## Call audio routing — speaker vs earpiece
+
+`livekit_client`'s Android plugin runs
+`AudioSwitchManager.setAudioSessionManagementEnabled(false)` in
+`onAttachedToEngine` (`LiveKitPlugin.kt`), at app start, process-wide. Every
+flutter_webrtc audio call is a **no-op** from then on: `setSpeakerphoneOn`,
+`selectAudioOutput`, `setAndroidAudioConfiguration`, session start. That is why
+the Speaker button did nothing and DM calls always came out of the earpiece.
+
+`audio/call_audio_route.dart` is the fix and the only place a DM call may touch
+audio routing:
+
+- `activate(speaker:)` — before `getUserMedia` in `VoicePeerEngine.prepare`;
+  applies LiveKit's communication session (`MODE_IN_COMMUNICATION`, focus,
+  `STREAM_VOICE_CALL`, `forceAudioRouting: true`) and the starting route.
+- `setSpeaker(on)` — the Speaker button; `force: on` so an explicit press wins
+  over a connected headset.
+- `release()` — on engine dispose; drops focus and restores the normal mode.
+  Leaves LiveKit in **manual** mode, because handing management back would
+  re-activate the session that was just released.
+- `restoreForRoom()` — called before a group `Room` connects, the other half of
+  that contract.
+
+Group calls need none of this: a LiveKit `Room` configures the session itself.
+iOS still routes through `Helper.setSpeakerphoneOn` — LiveKit only disables
+flutter_webrtc's manager on Android and macOS.
+
+## Ringtone device test (emulators do not prove this)
 
 Background the app, call, let it ring 30 s+. Repeat locked, repeat with the app
 killed, repeat while changing volume and with an OEM increasing-ring ramp on.

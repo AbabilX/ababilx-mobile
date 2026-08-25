@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../data/models/ice_server.dart';
+import '../audio/call_audio_route.dart';
 import '../native/android_screen_share.dart';
 import '../voice_call_log.dart';
 import 'ice_candidate_stats.dart';
@@ -86,20 +87,11 @@ class VoicePeerEngine {
           : 'stun_only servers=${iceServers.length} (cellular may stall)',
     );
 
-    await Helper.setAndroidAudioConfiguration(
-      AndroidAudioConfiguration(
-        manageAudioFocus: true,
-        androidAudioMode: AndroidAudioMode.inCommunication,
-        androidAudioFocusMode: AndroidAudioFocusMode.gain,
-        androidAudioStreamType: AndroidAudioStreamType.voiceCall,
-        androidAudioAttributesUsageType:
-            AndroidAudioAttributesUsageType.voiceCommunication,
-        androidAudioAttributesContentType:
-            AndroidAudioAttributesContentType.speech,
-        // Some Android devices otherwise leave a WebRTC call on a stale route.
-        forceHandleAudioRouting: true,
-      ),
-    );
+    // Communication mode and audio focus before the microphone is opened, so
+    // capture and routing start in a call session rather than in media mode.
+    // Not `Helper.setAndroidAudioConfiguration`: that configures flutter_webrtc's
+    // audio manager, which LiveKit disables app-wide — see [CallAudioRoute].
+    await CallAudioRoute.activate(speaker: true);
     await _ensureAudioSessionIfNeeded();
     final stream = await navigator.mediaDevices.getUserMedia({
       'audio': {
@@ -188,9 +180,9 @@ class VoicePeerEngine {
     for (final track in stream.getAudioTracks()) {
       await peer.addTrack(track, stream);
     }
-    // Start on speaker so a newly connected call is audible immediately.
-    // The in-call Speaker button can still switch to the earpiece.
-    await Helper.setSpeakerphoneOn(true);
+    // Re-assert the route once media is attached: opening the microphone can
+    // move the phone off the speaker on its own.
+    await CallAudioRoute.setSpeaker(true);
   }
 
   Future<void> createAndSendOffer({bool renegotiate = false}) async {
@@ -391,7 +383,7 @@ class VoicePeerEngine {
     }
   }
 
-  Future<void> setSpeaker(bool enabled) => Helper.setSpeakerphoneOn(enabled);
+  Future<void> setSpeaker(bool enabled) => CallAudioRoute.setSpeaker(enabled);
 
   Future<void> startScreenShare() async {
     if (_screenStream != null) return;
@@ -500,5 +492,8 @@ class VoicePeerEngine {
     await _peer?.dispose();
     _peer = null;
     await Helper.clearAndroidCommunicationDevice();
+    // Give the phone its normal audio mode and focus back; the ringtone and
+    // media playback route through the earpiece until this happens.
+    await CallAudioRoute.release();
   }
 }

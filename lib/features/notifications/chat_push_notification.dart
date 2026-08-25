@@ -1,6 +1,12 @@
-import 'chat_push_decrypt.dart';
+import 'chat/chat_notification_presenter.dart';
 import 'local_notifications.dart';
-import 'notification_router.dart';
+
+/// Chat pushes this app renders itself, as opposed to letting the system draw
+/// the tray entry from the notification block.
+const chatPushTypes = {'chat_dm', 'chat_message', 'chat_mention'};
+
+bool isChatPush(Map<String, dynamic> data) =>
+    chatPushTypes.contains(data['type']?.toString());
 
 /// True when this push is an E2EE DM that arrived data-only, i.e. its text has
 /// to be decrypted here before anything can be shown.
@@ -8,28 +14,17 @@ bool isEncryptedChatPush(Map<String, dynamic> data) =>
     data['type'] == 'chat_dm' &&
     (data['enc_body']?.toString().isNotEmpty ?? false);
 
-/// Shows the tray entry for an encrypted DM. The body only exists on this
-/// device, so it is decrypted first and falls back to the placeholder when the
-/// vault, the network or the payload cannot provide it.
+/// Shows the tray entry for an encrypted DM: the placeholder first, rewritten
+/// with the real text once this device has decrypted it.
 Future<void> showEncryptedChatPush(
   LocalNotifications local,
   Map<String, dynamic> data,
-) async {
-  final body = await decryptChatPushBody(data) ?? encryptedPushPlaceholder;
-  final title = data['title']?.toString() ?? 'AbabilX';
-  await local.show(
-    title: title,
-    body: body,
-    channelId: 'chat',
-    payload: LocalNotifications.encodePayload(
-      NotificationRouter.pathForData(data),
-      data,
-    ),
-    // Same message → same tray entry, whichever isolate got there first.
-    id: chatPushNotificationId(data),
-  );
-}
+) => ChatNotificationPresenter.show(local, data);
 
-/// Android notification ids are 32-bit; keep the message-derived id in range.
-int chatPushNotificationId(Map<String, dynamic> data) =>
-    (data['message_id']?.toString() ?? '').hashCode & 0x7fffffff;
+/// Shows a chat push whose text the server could send in the clear (channel
+/// messages and mentions), in the same threaded entry an encrypted DM gets.
+Future<void> showPlainChatPush(
+  LocalNotifications local,
+  Map<String, dynamic> data,
+  String body,
+) => ChatNotificationPresenter.show(local, data, plainBody: body);

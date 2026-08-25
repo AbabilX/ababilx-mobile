@@ -98,6 +98,9 @@ dev_dependencies:
   build_runner: ^2.4.13
   drift_dev: ^2.34.2
   flutter_launcher_icons: ^0.14.3
+  # In-memory SharedPreferencesAsync backend, so the notification thread store
+  # can be tested without a device.
+  shared_preferences_platform_interface: ^2.4.1
 
 flutter_launcher_icons:
   android: "ic_launcher"

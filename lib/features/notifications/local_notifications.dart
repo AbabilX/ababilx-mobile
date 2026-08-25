@@ -3,60 +3,27 @@ import 'dart:ui' show Color;
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'chat/chat_notification_actions.dart';
+import 'notification_channels.dart';
+
 /// Shows local notifications while the app is in the foreground.
+///
+/// One instance per isolate, deliberately: the underlying plugin is a native
+/// singleton, so a second instance re-running `initialize` would replace the
+/// tap callback the app wired at startup. Notification actions construct this
+/// freely and get whatever is already initialised here.
 class LocalNotifications {
-  LocalNotifications();
+  factory LocalNotifications() => _instance;
+
+  LocalNotifications._();
+
+  static final LocalNotifications _instance = LocalNotifications._();
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
   bool _ready = false;
   void Function(String payload)? onTap;
-
-  static const _channels = <AndroidNotificationChannel>[
-    AndroidNotificationChannel(
-      'chat',
-      'Chat',
-      description: 'Direct messages and mentions',
-      importance: Importance.high,
-    ),
-    AndroidNotificationChannel(
-      'board',
-      'Board',
-      description: 'Task assignments, comments and board notes',
-      importance: Importance.high,
-    ),
-    AndroidNotificationChannel(
-      'wall',
-      'Wall',
-      description: 'Team wall mentions, comments and replies',
-      importance: Importance.high,
-    ),
-    AndroidNotificationChannel(
-      'general',
-      'General',
-      description: 'General AbabilX alerts',
-      importance: Importance.defaultImportance,
-    ),
-    AndroidNotificationChannel(
-      'standup_alerts',
-      'Standup alerts',
-      description: 'Standup pre-send reminders',
-      importance: Importance.high,
-    ),
-    AndroidNotificationChannel(
-      'team_updates',
-      'Team updates',
-      description: 'Team membership and activity',
-      importance: Importance.defaultImportance,
-    ),
-    AndroidNotificationChannel(
-      'ai_assistant',
-      'AI assistant',
-      description: 'AI assistant alerts',
-      importance: Importance.defaultImportance,
-    ),
-  ];
 
   Future<void> init({required void Function(String payload) onTap}) async {
     this.onTap = onTap;
@@ -66,12 +33,17 @@ class LocalNotifications {
     const androidInit = AndroidInitializationSettings('ic_stat_ababilx');
     await _plugin.initialize(
       settings: const InitializationSettings(android: androidInit),
-      onDidReceiveNotificationResponse: (response) {
+      onDidReceiveNotificationResponse: (response) async {
+        // A reply or mark-read press is not a tap: it must run the action and
+        // leave the user where they are, not open the conversation.
+        if (await handleChatNotificationAction(response)) return;
         final payload = response.payload;
         if (payload != null && payload.isNotEmpty) {
           this.onTap?.call(payload);
         }
       },
+      onDidReceiveBackgroundNotificationResponse:
+          chatNotificationBackgroundAction,
     );
 
     // App was terminated and opened via a local notification tap.
@@ -90,7 +62,7 @@ class LocalNotifications {
           AndroidFlutterLocalNotificationsPlugin
         >();
     if (android != null) {
-      for (final channel in _channels) {
+      for (final channel in notificationChannels) {
         await android.createNotificationChannel(channel);
       }
     }
@@ -106,13 +78,15 @@ class LocalNotifications {
     const androidInit = AndroidInitializationSettings('ic_stat_ababilx');
     await _plugin.initialize(
       settings: const InitializationSettings(android: androidInit),
+      onDidReceiveBackgroundNotificationResponse:
+          chatNotificationBackgroundAction,
     );
     final android = _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
     if (android != null) {
-      for (final channel in _channels) {
+      for (final channel in notificationChannels) {
         await android.createNotificationChannel(channel);
       }
     }
@@ -165,9 +139,50 @@ class LocalNotifications {
     );
   }
 
+  /// Shows a notification built by a caller that needs full control of the
+  /// Android details — chat uses it for the MessagingStyle thread and its
+  /// reply buttons.
+  Future<void> showDetails({
+    required int id,
+    required String title,
+    required String body,
+    required String payload,
+    required AndroidNotificationDetails android,
+  }) async {
+    if (!_ready) return;
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: NotificationDetails(android: android),
+      payload: payload,
+    );
+  }
+
+  Future<void> cancel(int id) async {
+    if (!_ready) return;
+    try {
+      await _plugin.cancel(id: id);
+    } catch (_) {
+      // Cancelling an entry that is already gone is not a failure.
+    }
+  }
+
   /// Encodes a navigation path (and optional data) as notification payload.
   static String encodePayload(String path, [Map<String, dynamic>? data]) {
     return jsonEncode({'path': path, 'data': data ?? {}});
+  }
+
+  /// The FCM data map a payload was built from — what a notification action
+  /// needs to know which conversation it is acting on.
+  static Map<String, dynamic> decodeData(String payload) {
+    try {
+      final map = jsonDecode(payload) as Map<String, dynamic>;
+      final data = map['data'];
+      return data is Map ? Map<String, dynamic>.from(data) : {};
+    } catch (_) {
+      return {};
+    }
   }
 
   static String? decodePath(String payload) {

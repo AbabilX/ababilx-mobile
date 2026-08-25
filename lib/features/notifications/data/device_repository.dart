@@ -15,10 +15,15 @@ class DeviceRepository {
   /// build without it must keep receiving normal tray notifications, or the
   /// message would arrive with nothing shown at all.
   ///
-  /// Left empty for now: a build that declared this stopped receiving any
-  /// notification at all for encrypted DMs on-device, cause not yet found.
-  /// Re-enable only after that is confirmed reliable via a device test.
-  static const pushCaps = <String>[];
+  /// Declaring it is the only way an encrypted DM can ever show its text: the
+  /// server holds ciphertext alone, so a server-rendered tray entry can never
+  /// say more than "🔒 Encrypted message". An earlier build declared this and
+  /// showed nothing at all, because the entry was posted only after the
+  /// decrypt finished; the tray entry now goes up first with the placeholder
+  /// and is rewritten in place once the text is available, so the worst case
+  /// is the placeholder rather than silence. `CHAT_E2EE_PUSH_DECRYPT=off` on
+  /// the server remains the kill switch.
+  static const pushCaps = <String>['e2ee_push'];
 
   Future<void> register(String fcmToken, {String platform = 'android'}) async {
     final url = '${ApiConstants.baseUrl}${ApiConstants.devices}';

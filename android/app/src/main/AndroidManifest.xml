@@ -97,6 +97,13 @@
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/notification_color" />
 
+        <!-- flutter_local_notifications: runs the Reply / Mark read buttons on
+             a chat notification. The plugin does not declare it: without this
+             receiver the buttons are drawn but pressing one does nothing. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"/>
+
         <!-- flutter_local_notifications: scheduled notification receivers -->
         <receiver
             android:exported="false"

@@ -39,6 +39,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     case 'group_call_ended':
       await AndroidGroupCallUi.endCall(data['call_id']?.toString() ?? '');
     case 'chat_dm':
+    case 'chat_message':
+    case 'chat_mention':
       await _handleChatPushInBackground(data);
   }
 }
@@ -47,8 +49,12 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// this isolate decrypts and raises the notification itself. Everything here is
 /// best-effort — an uncaught throw in the background isolate takes the process
 /// down, and a missed notification must never do that.
+///
+/// A plaintext chat push only reaches this handler when it arrived data-only
+/// too; one that carried a notification block is drawn by Android itself and
+/// never wakes Dart.
 Future<void> _handleChatPushInBackground(Map<String, dynamic> data) async {
-  if (!isEncryptedChatPush(data)) return;
+  if (!isChatPush(data)) return;
   try {
     // Fresh isolate: plugins (secure storage, local notifications) are not
     // registered until asked for.
@@ -56,10 +62,21 @@ Future<void> _handleChatPushInBackground(Map<String, dynamic> data) async {
     DartPluginRegistrant.ensureInitialized();
     final local = LocalNotifications();
     await local.initForBackground();
-    await showEncryptedChatPush(local, data);
+    if (isEncryptedChatPush(data)) {
+      await showEncryptedChatPush(local, data);
+    } else {
+      await showPlainChatPush(local, data, _plainPushBody(data));
+    }
   } catch (_) {
     // Nothing to show is better than a crash loop on every message.
   }
+}
+
+/// Data-only pushes carry no notification block, so the preview the server
+/// rendered travels in the data map.
+String _plainPushBody(Map<String, dynamic> data) {
+  final body = data['body']?.toString() ?? '';
+  return body.isEmpty ? 'Open AbabilX to read the message' : body;
 }
 
 void main() async {

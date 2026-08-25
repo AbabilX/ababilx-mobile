@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/widgets/app_avatar.dart';
-import '../../widgets/call_control_button.dart';
+import '../../widgets/call_ring_pulse.dart';
+import '../../widgets/incoming_call_actions.dart';
 import '../data/models/group_call.dart';
 import '../providers/group_call_provider.dart';
 
@@ -40,11 +41,14 @@ class GroupCallInviteDialog extends ConsumerWidget {
             child: Column(
               children: [
                 const Spacer(),
-                AppAvatar(
+                CallRingPulse(
                   size: 120,
-                  url: call.starterAvatarUrl,
-                  name: call.title,
-                  border: Border.all(color: colors.outlineVariant, width: 2),
+                  child: AppAvatar(
+                    size: 120,
+                    url: call.starterAvatarUrl,
+                    name: call.title,
+                    border: Border.all(color: colors.outlineVariant, width: 2),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -77,24 +81,12 @@ class GroupCallInviteDialog extends ConsumerWidget {
                   _ParticipantCount(count: call.participantCount),
                 ],
                 const Spacer(flex: 2),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    CallControlButton(
-                      label: 'Deny',
-                      icon: Icons.call_end_rounded,
-                      background: colors.error,
-                      foreground: colors.onError,
-                      onPressed: notifier.declineInvite,
-                    ),
-                    CallControlButton(
-                      label: 'Join',
-                      icon: Icons.headset_mic_rounded,
-                      background: colors.primary,
-                      foreground: colors.onPrimary,
-                      onPressed: notifier.acceptInvite,
-                    ),
-                  ],
+                IncomingCallActions(
+                  declineLabel: 'Deny',
+                  acceptLabel: 'Join',
+                  acceptIcon: Icons.headset_mic_rounded,
+                  onDecline: notifier.declineInvite,
+                  onAccept: notifier.acceptInvite,
                 ),
               ],
             ),

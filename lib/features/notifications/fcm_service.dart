@@ -9,6 +9,7 @@ import '../../../core/storage/secure_storage.dart';
 import '../calls/call_lifecycle.dart';
 import '../calls/native/android_call_ui.dart';
 import '../calls/native/android_group_call_ui.dart';
+import 'chat/chat_notification_presenter.dart';
 import 'chat_push_notification.dart';
 import 'data/device_repository.dart';
 import 'fcm_log.dart';
@@ -317,11 +318,17 @@ class FcmService {
       return;
     }
 
-    if (isEncryptedChatPush(data)) {
-      // Data-only DM: no notification block, the text lives in the ciphertext.
-      fcmLog('push.foreground.encrypted', 'decrypting chat_dm for tray');
+    if (isChatPush(data)) {
+      // Chat entries are drawn here even when the push carried a notification
+      // block, so the message lands in the threaded MessagingStyle entry with
+      // its reply button instead of a flat system tray line.
+      fcmLog('push.foreground.chat', 'type=${data['type']} path=$path');
       try {
-        await showEncryptedChatPush(_local, data);
+        if (isEncryptedChatPush(data)) {
+          await showEncryptedChatPush(_local, data);
+        } else {
+          await showPlainChatPush(_local, data, body);
+        }
         fcmLog('push.foreground.shown');
       } catch (e) {
         fcmLog('push.foreground.show.fail', e);
@@ -361,6 +368,17 @@ class FcmService {
   void _handlePayload(String payload) {
     final path = LocalNotifications.decodePath(payload);
     fcmLog('push.local_tap', 'payload=$payload path=$path');
+    // Opening the conversation reads it: the stacked thread in the shade would
+    // otherwise come back on the next message with messages already read.
+    final data = LocalNotifications.decodeData(payload);
+    if (isChatPush(data)) {
+      unawaited(
+        ChatNotificationPresenter.dismiss(
+          _local,
+          data['conversation_id']?.toString() ?? '',
+        ),
+      );
+    }
     if (path != null) _go(path);
   }
 

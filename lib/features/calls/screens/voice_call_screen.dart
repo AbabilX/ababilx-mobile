@@ -7,6 +7,7 @@ import '../../../core/router/root_back.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../incoming_call_ringtone.dart';
 import '../providers/voice_call_provider.dart';
+import 'incoming_call_view.dart';
 import '../widgets/call_control_button.dart';
 import '../widgets/remote_screen_view.dart';
 
@@ -92,11 +93,27 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    if (call.phase == VoiceCallPhase.incomingRinging) {
+      return Scaffold(
+        body: IncomingCallView(
+          peerName: call.peerName,
+          peerAvatar: call.peerAvatar,
+          onDecline: () {
+            unawaited(IncomingCallRingtone.stop());
+            notifier.declineIncoming();
+          },
+          onAccept: () {
+            unawaited(IncomingCallRingtone.stop());
+            notifier.acceptIncoming();
+          },
+        ),
+      );
+    }
+
     final live =
         call.phase == VoiceCallPhase.connected ||
         call.phase == VoiceCallPhase.connecting ||
         call.phase == VoiceCallPhase.outgoingRinging ||
-        call.phase == VoiceCallPhase.incomingRinging ||
         call.phase == VoiceCallPhase.starting;
 
     return Scaffold(
@@ -203,33 +220,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
                   const Spacer(flex: 2)
                 else
                   const SizedBox(height: 20),
-                if (call.phase == VoiceCallPhase.incomingRinging)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      CallControlButton(
-                        label: 'Decline',
-                        icon: Icons.call_end_rounded,
-                        background: colors.error,
-                        foreground: colors.onError,
-                        onPressed: () {
-                          unawaited(IncomingCallRingtone.stop());
-                          notifier.declineIncoming();
-                        },
-                      ),
-                      CallControlButton(
-                        label: 'Accept',
-                        icon: Icons.call_rounded,
-                        background: colors.primary,
-                        foreground: colors.onPrimary,
-                        onPressed: () {
-                          unawaited(IncomingCallRingtone.stop());
-                          notifier.acceptIncoming();
-                        },
-                      ),
-                    ],
-                  )
-                else if (call.phase == VoiceCallPhase.ended ||
+                if (call.phase == VoiceCallPhase.ended ||
                     call.phase == VoiceCallPhase.failed ||
                     call.phase == VoiceCallPhase.idle)
                   FilledButton.tonal(

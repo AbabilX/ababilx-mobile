@@ -331,6 +331,14 @@ mixin _ChatActionsMixin
       dms: patchList(state.dms, conversationId, unreadCount: 0),
       channels: patchList(state.channels, conversationId, unreadCount: 0),
     );
+    // Reading it here clears it there: a tray entry for messages the user is
+    // looking at right now is noise, and its stacked thread is stale.
+    unawaited(
+      ChatNotificationPresenter.dismiss(
+        ref.read(localNotificationsProvider),
+        conversationId,
+      ),
+    );
     try {
       await repo.markRead(conversationId);
     } catch (_) {}
