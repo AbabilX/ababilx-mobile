@@ -15,6 +15,8 @@ class AttachmentImageTile extends ConsumerWidget {
     required this.index,
     required this.maxHeight,
     required this.maxWidth,
+    this.grid = false,
+    this.overlayText,
   });
 
   final ChatMessageAttachment attachment;
@@ -22,16 +24,18 @@ class AttachmentImageTile extends ConsumerWidget {
   final int index;
   final double maxHeight;
   final double maxWidth;
+  final bool grid;
+  final String? overlayText;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final solo = maxWidth == double.infinity;
+    final solo = !grid;
     return Padding(
       padding: EdgeInsets.only(top: solo ? 8 : 0),
       child: AttachmentGate(
         attachment: attachment,
         height: solo ? maxHeight * 0.55 : maxHeight,
-        width: solo ? null : maxWidth,
+        width: grid ? maxWidth : null,
         ready: (context, handle) => _ready(context, ref, handle, solo),
       ),
     );
@@ -43,29 +47,57 @@ class AttachmentImageTile extends ConsumerWidget {
     AttachmentHandle handle,
     bool solo,
   ) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _open(context, ref),
-        borderRadius: BorderRadius.circular(8),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: maxHeight,
-              maxWidth: maxWidth,
-              minHeight: 80,
-            ),
-            child: Image.file(
-              handle.file!,
-              width: solo ? double.infinity : null,
-              fit: BoxFit.contain,
-              alignment: Alignment.centerLeft,
-              errorBuilder: (_, _, _) => _broken(context, solo),
+    return Stack(
+      fit: grid ? StackFit.expand : StackFit.loose,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _open(context, ref),
+            borderRadius: BorderRadius.circular(8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: maxHeight,
+                  maxWidth: maxWidth,
+                  minHeight: 80,
+                ),
+                child: Image.file(
+                  handle.file!,
+                  width: double.infinity,
+                  height: grid ? maxHeight : null,
+                  fit: grid ? BoxFit.cover : BoxFit.contain,
+                  alignment: Alignment.centerLeft,
+                  errorBuilder: (_, _, _) => _broken(context, solo),
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        if (overlayText != null)
+          Positioned.fill(
+            child: Material(
+              color: Theme.of(
+                context,
+              ).colorScheme.inverseSurface.withValues(alpha: .82),
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                onTap: () => _open(context, ref),
+                borderRadius: BorderRadius.circular(8),
+                child: Center(
+                  child: Text(
+                    overlayText!,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onInverseSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 

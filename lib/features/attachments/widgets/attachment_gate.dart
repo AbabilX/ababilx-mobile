@@ -26,6 +26,7 @@ class AttachmentGate extends ConsumerWidget {
     this.width,
     this.borderRadius = 8,
     this.showSize = true,
+    this.waiting,
   });
 
   final ChatMessageAttachment attachment;
@@ -34,6 +35,8 @@ class AttachmentGate extends ConsumerWidget {
   final double? width;
   final double borderRadius;
   final bool showSize;
+  final Widget Function(BuildContext context, AttachmentHandle? handle)?
+  waiting;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,9 +46,11 @@ class AttachmentGate extends ConsumerWidget {
     if (attachment.locked || handle?.isLocked == true) {
       return LockedFilePlaceholder(fileName: attachment.fileName);
     }
-    if (handle == null) return _placeholder(context, null);
+    if (handle == null) {
+      return waiting?.call(context, null) ?? _placeholder(context, null);
+    }
     if (handle.isReady) return ready(context, handle);
-    return _placeholder(context, handle);
+    return waiting?.call(context, handle) ?? _placeholder(context, handle);
   }
 
   Widget _placeholder(BuildContext context, AttachmentHandle? handle) {

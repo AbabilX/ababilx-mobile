@@ -1,18 +1,15 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/widgets/app_avatar.dart';
-import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'message_actions.dart';
-import 'message_body.dart';
-import 'quick_react_sheet.dart';
-import 'reaction_row.dart';
+import 'message_row_content.dart';
 import 'thread_sheet.dart';
-import 'thread_summary.dart';
-
-import 'user_profile_sheet.dart';
 
 class MessageRow extends ConsumerStatefulWidget {
   const MessageRow({
@@ -36,6 +33,8 @@ class _MessageRowState extends ConsumerState<MessageRow>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulseAnim;
+  final _messageKey = GlobalKey();
+  bool _actionsOpen = false;
 
   @override
   void initState() {
@@ -67,11 +66,44 @@ class _MessageRowState extends ConsumerState<MessageRow>
     );
   }
 
+  Future<void> _showActions() async {
+    if (widget.message.isDeleted || _actionsOpen) return;
+    HapticFeedback.mediumImpact();
+    setState(() => _actionsOpen = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    final boundary = _messageKey.currentContext?.findRenderObject();
+    if (boundary is! RenderRepaintBoundary) {
+      setState(() => _actionsOpen = false);
+      return;
+    }
+    final origin = boundary.localToGlobal(Offset.zero);
+    final anchor = origin & boundary.size;
+    ui.Image? snapshot;
+    try {
+      final ratio = MediaQuery.devicePixelRatioOf(context).clamp(1.0, 2.0);
+      snapshot = await boundary.toImage(pixelRatio: ratio);
+    } catch (_) {
+      snapshot = null;
+    }
+    if (!mounted) {
+      snapshot?.dispose();
+      return;
+    }
+    await showMessageActions(
+      context,
+      ref,
+      widget.message,
+      conversationId: widget.conversationId,
+      threadRootId: widget.threadRootId,
+      anchor: anchor,
+      snapshot: snapshot,
+    );
+    if (mounted) setState(() => _actionsOpen = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final name = widget.message.userName ?? 'Unknown';
-    final n = ref.read(chatProvider.notifier);
     final chat = ref.watch(chatProvider);
 
     final isOwnMessage = widget.message.userId == chat.currentUserId;
@@ -80,35 +112,9 @@ class _MessageRowState extends ConsumerState<MessageRow>
     final isFailed =
         isOwnMessage && widget.message.sendStatus == MessageSendStatus.failed;
 
-    Widget buildStatusIcon() {
-      if (isSending) {
-        return FadeTransition(
-          opacity: _pulseAnim,
-          child: Icon(
-            Icons.schedule_rounded,
-            size: 13,
-            color: colors.onSurfaceVariant,
-          ),
-        );
-      }
-      if (isFailed) {
-        return Icon(Icons.error_outline_rounded, size: 14, color: colors.error);
-      }
-      return const SizedBox.shrink();
-    }
-
-    // Tap opens the Thread screen, double-tap copies the message text,
-    // long-press opens the full action sheet (react/reply/forward/edit/
-    // delete) — Slack-style, same for DMs and channels.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onLongPress: () => showMessageActions(
-        context,
-        ref,
-        widget.message,
-        conversationId: widget.conversationId,
-        threadRootId: widget.threadRootId,
-      ),
+      onLongPress: _showActions,
       onTap: isFailed
           ? () => _onRetry(context)
           : widget.threadRootId == null && !widget.message.isDeleted
@@ -117,120 +123,17 @@ class _MessageRowState extends ConsumerState<MessageRow>
           : null,
       onDoubleTap:
           widget.threadRootId == null && !isFailed && !widget.message.isDeleted
-          ? () => copyMessageText(context, widget.message)
+          ? () => copyMessageText(context, ref, widget.message)
           : null,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: isSending ? 0.65 : 1.0,
-        child: Container(
-          // Subtle red tint on the row background for failed messages.
-          decoration: isFailed
-              ? BoxDecoration(
-                  color: colors.errorContainer.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                )
-              : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    showUserProfileSheet(
-                      context: context,
-                      ref: ref,
-                      userId: widget.message.userId,
-                      userName: name,
-                      userAvatarUrl: widget.message.userAvatarUrl,
-                    );
-                  },
-                  child: AppAvatar(
-                    size: 36,
-                    url: widget.message.userAvatarUrl,
-                    name: name,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: GestureDetector(
-                              onTap: () {
-                                showUserProfileSheet(
-                                  context: context,
-                                  ref: ref,
-                                  userId: widget.message.userId,
-                                  userName: name,
-                                  userAvatarUrl: widget.message.userAvatarUrl,
-                                );
-                              },
-                              child: Text(
-                                name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          buildStatusIcon(),
-                          const SizedBox(width: 4),
-                          if (!isSending)
-                            Text(
-                              isFailed
-                                  ? 'Tap to retry'
-                                  : formatChatTime(widget.message.createdAt),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isFailed
-                                    ? colors.error
-                                    : colors.onSurfaceVariant,
-                                fontWeight: isFailed
-                                    ? FontWeight.w500
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      MessageBody(message: widget.message),
-                      if (!widget.message.isDeleted &&
-                          widget.message.reactions.isNotEmpty)
-                        ReactionRow(
-                          reactions: widget.message.reactions,
-                          onToggle: (emoji) =>
-                              n.toggleReaction(widget.message.id, emoji),
-                          onAdd: () async {
-                            final emoji = await showQuickReactSheet(context);
-                            if (emoji != null) {
-                              await n.toggleReaction(widget.message.id, emoji);
-                            }
-                          },
-                        ),
-                      if (widget.onOpenThread != null)
-                        ThreadSummary(
-                          root: widget.message,
-                          replies:
-                              ref
-                                  .watch(chatProvider)
-                                  .threadRepliesByRoot[widget.message.id] ??
-                              const [],
-                          count: widget.message.threadCount,
-                          onTap: widget.onOpenThread!,
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+      child: RepaintBoundary(
+        key: _messageKey,
+        child: MessageRowContent(
+          message: widget.message,
+          pulse: _pulseAnim,
+          isSending: isSending,
+          isFailed: isFailed,
+          actionsOpen: _actionsOpen,
+          onOpenThread: widget.onOpenThread,
         ),
       ),
     );

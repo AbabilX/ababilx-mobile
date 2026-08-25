@@ -1,13 +1,16 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/media/picked_media_file.dart';
-import '../../../shared/widgets/app_avatar.dart';
-import '../chat_list_filters.dart';
 import '../data/models/chat_models.dart';
+import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
+import '../providers/messageable_people_provider.dart';
+import 'camera_recipient_screen.dart';
 
 Future<void> captureAndSendChatPhoto(
   BuildContext context,
@@ -16,24 +19,21 @@ Future<void> captureAndSendChatPhoto(
   try {
     final picked = await pickLiveCameraFile();
     if (picked == null || !context.mounted) return;
+    await ref.read(chatConnectionsProvider.notifier).refresh();
+    if (!context.mounted) return;
 
-    final chat = ref.read(chatProvider);
-    final conversations = unifiedConversations(
-      dms: chat.dms,
-      channels: chat.channels,
-    ).where((item) => item.canMessage).toList();
-    final selected = await _chooseConversation(
+    final selected = await _chooseRecipient(
       context,
-      ref,
-      conversations,
-      chat.currentUserId,
+      ref.read(messageablePeopleProvider),
+      picked.bytes,
     );
     if (selected == null || !context.mounted) return;
 
     _showSending(context, ref);
     final notifier = ref.read(chatProvider.notifier);
+    final conversation = await notifier.startDm(selected.userId);
     final presign = await notifier.presignAttachment(
-      selected.id,
+      conversation.id,
       contentType: picked.contentType,
       fileName: picked.fileName,
       sizeBytes: picked.sizeBytes,
@@ -45,7 +45,7 @@ Future<void> captureAndSendChatPhoto(
         picked.contentType,
       );
       await notifier.sendMessage(
-        conversationId: selected.id,
+        conversationId: conversation.id,
         body: '',
         attachments: [
           ChatAttachmentInput(
@@ -57,10 +57,10 @@ Future<void> captureAndSendChatPhoto(
         ],
       );
     } catch (_) {
-      await notifier.discardUpload(selected.id, presign.publicUrl);
+      await notifier.discardUpload(conversation.id, presign.publicUrl);
       rethrow;
     }
-    if (context.mounted) context.push('/messages/${selected.id}');
+    if (context.mounted) context.push('/messages/${conversation.id}');
   } catch (_) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -69,54 +69,15 @@ Future<void> captureAndSendChatPhoto(
   }
 }
 
-Future<ChatConversation?> _chooseConversation(
+Future<ChatUserSummary?> _chooseRecipient(
   BuildContext context,
-  WidgetRef ref,
-  List<ChatConversation> conversations,
-  String? currentUserId,
+  List<ChatUserSummary> people,
+  Uint8List photoBytes,
 ) {
-  return showModalBottomSheet<ChatConversation>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (sheetContext) => SafeArea(
-      child: SizedBox(
-        height: MediaQuery.sizeOf(sheetContext).height * .62,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  _tr(sheetContext, ref, 'chat_send_to'),
-                  style: Theme.of(sheetContext).textTheme.titleLarge,
-                ),
-              ),
-            ),
-            Expanded(
-              child: conversations.isEmpty
-                  ? Center(child: Text(_tr(sheetContext, ref, 'chat_no_chats')))
-                  : ListView.builder(
-                      itemCount: conversations.length,
-                      itemBuilder: (_, index) {
-                        final item = conversations[index];
-                        final title = item.displayTitle(currentUserId);
-                        return ListTile(
-                          leading: AppAvatar(
-                            size: 48,
-                            url: item.peerUserAvatar,
-                            name: title,
-                          ),
-                          title: Text(title),
-                          onTap: () => Navigator.pop(sheetContext, item),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
+  return Navigator.of(context).push<ChatUserSummary>(
+    MaterialPageRoute(
+      builder: (_) =>
+          CameraRecipientScreen(photoBytes: photoBytes, people: people),
     ),
   );
 }

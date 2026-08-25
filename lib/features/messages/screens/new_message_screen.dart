@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
-import '../../../shared/widgets/app_avatar.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat-list/create_channel_dialog.dart';
 import '../chat-people/personal_group_sheet.dart';
 import '../data/models/chat_connection.dart';
+import '../new-message/new_message_action.dart';
+import '../new-message/new_message_people_list.dart';
+import '../new-message/new_message_search.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/messageable_people_provider.dart';
@@ -23,6 +25,7 @@ class NewMessageScreen extends ConsumerStatefulWidget {
 
 class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
   final _search = TextEditingController();
+  final _focus = FocusNode();
   Timer? _debounce;
 
   @override
@@ -35,6 +38,7 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
   void dispose() {
     _debounce?.cancel();
     _search.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -55,53 +59,60 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
       ref.watch(messageablePeopleProvider),
       connectionState.searchResults,
     );
+    String tr(String key) => AppTranslations.translate(context, ref, key);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          AppTranslations.translate(context, ref, 'chat_new_message'),
-        ),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-            child: TextField(
+      appBar: AppBar(title: Text(tr('chat_new_message'))),
+      body: CustomScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        slivers: [
+          SliverToBoxAdapter(
+            child: NewMessageSearch(
               controller: _search,
-              autofocus: true,
+              focusNode: _focus,
+              hintText: tr('chat_search_people_full'),
               onChanged: _onSearch,
-              autocorrect: false,
-              decoration: InputDecoration(
-                hintText: AppTranslations.translate(
-                  context,
-                  ref,
-                  'chat_search_people',
-                ),
-                prefixIcon: const Icon(Icons.search_rounded),
-              ),
             ),
           ),
           if (connectionState.searching)
-            const LinearProgressIndicator(minHeight: 2),
-          ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.group_add_outlined)),
-            title: Text(
-              AppTranslations.translate(context, ref, 'chat_new_group'),
+            const SliverToBoxAdapter(
+              child: LinearProgressIndicator(minHeight: 2),
             ),
-            onTap: () => _newGroup(independent),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: ListView.separated(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              itemCount: people.length,
-              separatorBuilder: (_, _) => const Divider(height: 1, indent: 76),
-              itemBuilder: (_, index) => _personRow(people[index]),
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                NewMessageAction(
+                  icon: Icons.group_outlined,
+                  label: tr('chat_new_group'),
+                  onTap: () => _newGroup(independent),
+                ),
+                NewMessageAction(
+                  icon: Icons.alternate_email_rounded,
+                  label: tr('chat_find_by_username'),
+                  onTap: _focusSearch,
+                ),
+                NewMessageAction(
+                  icon: Icons.numbers_rounded,
+                  label: tr('chat_find_by_phone'),
+                  onTap: _focusSearch,
+                ),
+              ],
             ),
           ),
+          NewMessagePeopleList(
+            people: people,
+            pendingLabel: tr('chat_pending'),
+            onTap: _onPersonTap,
+          ),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
         ],
       ),
     );
+  }
+
+  void _focusSearch() {
+    _focus.requestFocus();
+    _search.selection = TextSelection.collapsed(offset: _search.text.length);
   }
 
   List<ChatUserSummary> _visiblePeople(
@@ -117,41 +128,25 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
           user.username.toLowerCase().contains(query);
       if (matches || discovered.contains(user)) users[user.userId] = user;
     }
-    return users.values.toList();
+    final result = users.values.toList();
+    result.sort((a, b) => a.name.compareTo(b.name));
+    return result;
   }
 
-  Widget _personRow(ChatUserSummary user) {
+  Future<void> _onPersonTap(ChatUserSummary user) async {
     final pending =
         user.connection == 'pending_in' || user.connection == 'pending_out';
-    return ListTile(
-      leading: AppAvatar(size: 48, url: user.avatarUrl, name: user.name),
-      title: Text(user.name),
-      subtitle: user.username.isEmpty ? null : Text('@${user.username}'),
-      trailing: pending
-          ? Text(AppTranslations.translate(context, ref, 'chat_pending'))
-          : user.canMessage
-          ? null
-          : const Icon(Icons.person_add_alt_1_rounded),
-      onTap: () => user.canMessage ? _startDm(user) : _connect(user, pending),
-    );
-  }
-
-  Future<void> _startDm(ChatUserSummary user) async {
-    final dm = await ref.read(chatProvider.notifier).startDm(user.userId);
-    if (mounted) context.pushReplacement('/messages/${dm.id}');
-  }
-
-  Future<void> _connect(ChatUserSummary user, bool pending) async {
-    if (pending) return;
-    await ref.read(chatConnectionsProvider.notifier).sendRequest(user.userId);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          AppTranslations.translate(context, ref, 'chat_request_sent'),
-        ),
-      ),
-    );
+    if (user.canMessage) {
+      final dm = await ref.read(chatProvider.notifier).startDm(user.userId);
+      if (mounted) context.pushReplacement('/messages/${dm.id}');
+    } else if (!pending) {
+      await ref.read(chatConnectionsProvider.notifier).sendRequest(user.userId);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_tr('chat_request_sent'))));
+      }
+    }
   }
 
   Future<void> _newGroup(bool independent) async {
@@ -162,4 +157,6 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
       context.pushReplacement('/messages/${group.id}');
     }
   }
+
+  String _tr(String key) => AppTranslations.translate(context, ref, key);
 }
