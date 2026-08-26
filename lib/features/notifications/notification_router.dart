@@ -30,7 +30,7 @@ class NotificationRouter {
         }
         return '/board/$boardId';
       case 'pre_send_review':
-        return '/profile';
+        return '/settings';
       case 'ai_assistant':
         // Proactive nudges carry the ids of whatever they are nudging about.
         // Open that item directly; fall back to the AI chat when the nudge is
@@ -47,7 +47,7 @@ class NotificationRouter {
         }
         return '/messages';
       case 'team_member_left':
-        return '/profile';
+        return '/settings';
       case 'chat_dm':
       case 'chat_mention':
       case 'chat_message':

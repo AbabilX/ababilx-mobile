@@ -8,6 +8,7 @@ import '../providers/chat_provider.dart';
 import '../providers/chat_scope_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import 'camera_send_flow.dart';
+import 'filter_chips_row.dart';
 import 'conversation_rows.dart';
 import 'list_fab.dart';
 import 'list_header.dart';
@@ -57,15 +58,10 @@ class _ChatListState extends ConsumerState<ChatList> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ChatListHeader(
-              unreadOnly: _filter == ChatListFilter.unread,
-              onToggleUnread: () => setState(() {
-                _filter = _filter == ChatListFilter.unread
-                    ? ChatListFilter.all
-                    : ChatListFilter.unread;
-              }),
-            ),
+            const ChatListHeader(),
             if (widget.banner != null) widget.banner!,
+            // Avatar rail first, pills under it — Slack's order. The pills
+            // filter the list below them, so they sit against it.
             if (recentDms.isNotEmpty)
               RecentContactsStrip(
                 conversations: recentDms,
@@ -73,6 +69,10 @@ class _ChatListState extends ConsumerState<ChatList> {
                 onTap: (conversation) =>
                     context.push('/messages/${conversation.id}'),
               ),
+            FilterChipsRow(
+              filter: _filter,
+              onChanged: (next) => setState(() => _filter = next),
+            ),
             Expanded(
               child: chat.sidebarLoading && rows.isEmpty
                   ? const Center(

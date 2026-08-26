@@ -6,7 +6,6 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/board/screens/board_screen.dart';
 import '../../features/board/screens/board_detail_screen.dart';
 import '../../features/board/screens/board_task_detail_screen.dart';
-import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/sessions_screen.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
@@ -29,6 +28,8 @@ import '../../features/calls/group/screens/group_call_screen.dart';
 import '../../features/calls/screens/calls_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
+import '../../features/settings/screens/notification_settings_screen.dart';
+import '../../features/settings/screens/settings_screen.dart';
 import 'home_shell.dart';
 
 /// Root navigator key — lets app-wide listeners (incoming call, incoming
@@ -106,7 +107,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(path: '/crm', builder: (_, _) => const CrmHubScreen()),
           GoRoute(path: '/board', builder: (_, _) => const BoardScreen()),
-          GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
         ],
       ),
       GoRoute(path: '/call', builder: (_, _) => const VoiceCallScreen()),
@@ -114,6 +114,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/local-share',
         builder: (_, _) => const LocalShareScreen(),
+      ),
+      GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+      GoRoute(
+        path: '/settings/notifications',
+        builder: (_, _) => const NotificationSettingsScreen(),
       ),
       GoRoute(
         path: '/profile/devices',

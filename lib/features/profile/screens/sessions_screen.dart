@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../core/router/root_back.dart';
 import '../data/session_repository.dart';
 import '../providers/sessions_provider.dart';
 import '../widgets/session_rename_dialog.dart';
@@ -33,6 +34,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => popOrGoHome(context),
+        ),
         title: Text(
           AppTranslations.translate(context, ref, 'devices_title'),
           style: theme.textTheme.titleLarge?.copyWith(

@@ -50,8 +50,7 @@ class HomeShell extends ConsumerWidget {
     final teamResolved = ref.watch(teamGateProvider).hasValue;
     final onHiddenRoute =
         teamResolved &&
-        !tabs.any((t) => location.startsWith(t.route)) &&
-        location != '/profile';
+        !tabs.any((t) => location.startsWith(t.route));
     if (onHiddenRoute) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) context.go('/messages');

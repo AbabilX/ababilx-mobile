@@ -104,11 +104,11 @@ class YouMenu extends ConsumerWidget {
     return Column(
       children: [
         YouMenuItem(
-          icon: HugeIcons.strokeRoundedUserCircle,
-          label: 'View profile',
+          icon: HugeIcons.strokeRoundedSettings02,
+          label: 'Settings',
           onTap: () {
             Navigator.pop(context);
-            context.go('/profile');
+            context.push('/settings');
           },
         ),
         YouMenuItem(

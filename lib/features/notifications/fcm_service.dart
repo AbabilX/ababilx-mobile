@@ -202,8 +202,7 @@ class FcmService {
         path == '/crm/leads' ||
         path == '/crm/followups' ||
         path == '/crm/organizations' ||
-        path == '/board' ||
-        path == '/profile';
+        path == '/board';
   }
 
   /// Peek without clearing — used by GoRouter login redirect.
