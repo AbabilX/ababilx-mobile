@@ -63,6 +63,43 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Share sheet: other apps (Gallery, Files, browsers) send content
+                 here with ACTION_SEND / ACTION_SEND_MULTIPLE. receive_sharing_intent
+                 copies each content:// URI into our cacheDir with the resolver, so
+                 none of this needs READ_MEDIA_* or READ_EXTERNAL_STORAGE — the note
+                 above about avoiding broad storage access still holds.
+
+                 launchMode stays singleTop (flutter_callkit_incoming's documented
+                 pairing with taskAffinity=""): this app has exactly one activity, so
+                 an incoming share always finds MainActivity at the top of the task
+                 and arrives through onNewIntent instead of building a second Flutter
+                 engine. Do not "fix" this to singleTask — the call UI depends on the
+                 pair as it stands. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/*"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <action android:name="android.intent.action.SEND_MULTIPLE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="image/*"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <action android:name="android.intent.action.SEND_MULTIPLE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="video/*"/>
+            </intent-filter>
+            <!-- Anything else: documents, audio, archives — the "share from the
+                 file manager" case. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <action android:name="android.intent.action.SEND_MULTIPLE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="*/*"/>
+            </intent-filter>
             <!-- FCM server sends click_action=FLUTTER_NOTIFICATION_CLICK -->
             <intent-filter>
                 <action android:name="FLUTTER_NOTIFICATION_CLICK"/>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/router/root_back.dart';
 import '../../auth/widgets/qr_login_flow.dart';
@@ -38,6 +39,7 @@ class SettingsScreen extends ConsumerWidget {
             SettingsBioRow(
               user: user,
               onQrTap: () => QrLoginFlow.start(context, ref),
+              onEditName: () => context.push('/settings/name'),
             ),
             const Divider(height: 8),
             SettingsSections(user: user),

@@ -49,6 +49,28 @@ String friendlyErrorMessage(Object error) {
   return '${copy.title}. ${copy.subtitle}';
 }
 
+/// The machine-readable code from a structured API failure
+/// (`{success: false, error: "...", ...}`), or null when the failure was a
+/// transport problem rather than a considered answer from the server.
+String? serverErrorCode(Object error) => _errorField(error, 'error');
+
+/// The human sentence the API deliberately attached to a failure.
+///
+/// Only `message` is read, never `error`: the code field is often a raw
+/// `err.Error()` and would leak internals, whereas `message` is only ever set
+/// by a handler that meant it for a person.
+String? serverErrorMessage(Object error) => _errorField(error, 'message');
+
+String? _errorField(Object error, String key) {
+  if (error is! DioException) return null;
+  final data = error.response?.data;
+  if (data is! Map) return null;
+  final value = data[key];
+  if (value is! String) return null;
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? null : trimmed;
+}
+
 /// [describeLoadError] as a ready-to-render widget, for the very common
 /// `error: (error, _) => LoadErrorState(error)` case.
 class LoadErrorState extends StatelessWidget {

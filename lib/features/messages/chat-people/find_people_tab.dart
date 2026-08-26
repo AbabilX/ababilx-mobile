@@ -50,10 +50,24 @@ class _FindPeopleTabState extends ConsumerState<FindPeopleTab> {
                 ref,
                 'chat_search_people',
               ),
+              // Email and phone are exact matches and phone needs the country
+              // code, so the field says so rather than letting people guess.
+              helperText: '@username, email, or +8801712345678',
+              helperMaxLines: 2,
             ),
           ),
         ),
         if (state.searching) const LinearProgressIndicator(minHeight: 2),
+        if (state.error.isNotEmpty && !state.searching)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: Text(
+              state.error,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
         Expanded(
           child: ListView.separated(
             itemCount: state.searchResults.length,

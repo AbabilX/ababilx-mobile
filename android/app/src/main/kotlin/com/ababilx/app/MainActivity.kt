@@ -1,6 +1,7 @@
 package com.ababilx.app
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.provider.Settings
 import com.ababilx.call_ringer.CallRinger
 import io.flutter.embedding.android.FlutterActivity
@@ -9,9 +10,16 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
 
+    /** Incoming ACTION_SEND from another app's share sheet. */
+    private val shareIntake by lazy { ShareIntakeChannel(this) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
+        shareIntake.attach(flutterEngine)
+        // The share that launched us is already on the Activity's intent by
+        // the time the engine is configured, and never arrives as onNewIntent.
+        shareIntake.handleIntent(intent, initial = true)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.ababilx.app/media_store",
@@ -74,10 +82,21 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    /**
+     * A share arriving while the app is already running. launchMode is
+     * singleTop and this app has exactly one Activity, so the share always
+     * lands here rather than building a second Flutter engine.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        shareIntake.handleIntent(intent, initial = false)
+    }
+
     override fun onDestroy() {
         // The in-app call screen died with the Activity; CallKit's own hold is
         // untouched, so a call ringing natively keeps ringing.
         CallRinger.release(FLUTTER_HOLDER)
+        shareIntake.dispose()
         super.onDestroy()
     }
 

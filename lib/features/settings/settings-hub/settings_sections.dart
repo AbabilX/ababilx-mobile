@@ -55,6 +55,12 @@ class SettingsSections extends ConsumerWidget {
           subtitle: 'Send files to devices on the same network',
           onTap: () => context.push('/local-share'),
         ),
+        SettingsRow(
+          icon: HugeIcons.strokeRoundedSearch01,
+          title: 'Discovery',
+          subtitle: 'Your phone number and who can find you',
+          onTap: () => context.push('/settings/discovery'),
+        ),
         if (user.independentChat)
           SettingsRow(
             icon: HugeIcons.strokeRoundedUserGroup,

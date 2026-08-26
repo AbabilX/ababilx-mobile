@@ -81,9 +81,10 @@ class AppUser extends Equatable {
     'independent_chat': independentChat,
   };
 
-  AppUser copyWith({bool? acceptPolicy, String? policyVersion}) => AppUser(
+  AppUser copyWith({String? name, bool? acceptPolicy, String? policyVersion}) =>
+      AppUser(
     id: id,
-    name: name,
+    name: name ?? this.name,
     email: email,
     provider: provider,
     avatarUrl: avatarUrl,
@@ -204,6 +205,28 @@ class ProfileRepository {
   Future<void> acceptPolicy() async {
     await _client.post(ApiConstants.meAcceptPolicy);
   }
+
+  /// Sets the name everyone else sees and returns the value the server
+  /// actually stored.
+  ///
+  /// The server normalizes (collapses whitespace runs, strips invisible
+  /// characters), so echoing the typed string back into local state would
+  /// leave the phone showing something the rest of the world does not see.
+  /// Falls back to the trimmed input only if an older server answers without
+  /// the profile body.
+  Future<String> updateName(String name) async {
+    final res = await _client.put(ApiConstants.meName, data: {'name': name});
+    final data = (res.data as Map<String, dynamic>)['data'];
+    if (data is Map<String, dynamic>) {
+      final stored = (data['name'] as String? ?? '').trim();
+      if (stored.isNotEmpty) return stored;
+    }
+    return name.trim();
+  }
+
+  /// Writes a locally-patched profile straight to the offline cache, so an
+  /// edit survives a cold restart without waiting for the next GET /me.
+  Future<void> cacheUser(AppUser user) => _cacheUser(user);
 }
 
 final profileRepositoryProvider = Provider<ProfileRepository>(

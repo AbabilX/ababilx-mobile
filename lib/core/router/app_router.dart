@@ -29,6 +29,9 @@ import '../../features/calls/screens/calls_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
 import '../../features/settings/screens/notification_settings_screen.dart';
+import '../../features/settings/screens/discovery_screen.dart';
+import '../../features/settings/screens/edit_name_screen.dart';
+import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import 'home_shell.dart';
 
@@ -116,6 +119,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const LocalShareScreen(),
       ),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+      // Where an incoming ACTION_SEND from another app lands.
+      GoRoute(path: '/share', builder: (_, _) => const ShareTargetScreen()),
+      GoRoute(path: '/settings/name', builder: (_, _) => const EditNameScreen()),
+      GoRoute(
+        path: '/settings/discovery',
+        builder: (_, _) => const DiscoveryScreen(),
+      ),
       GoRoute(
         path: '/settings/notifications',
         builder: (_, _) => const NotificationSettingsScreen(),

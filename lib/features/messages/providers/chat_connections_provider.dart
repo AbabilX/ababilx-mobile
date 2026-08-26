@@ -73,7 +73,11 @@ class ChatConnectionsNotifier extends Notifier<ChatConnectionsState> {
   Future<void> search(String query) async {
     final value = query.trim();
     if (value.length < 3) {
-      state = state.copyWith(searchResults: const [], searching: false);
+      state = state.copyWith(
+        searchResults: const [],
+        searching: false,
+        error: '',
+      );
       return;
     }
     state = state.copyWith(searching: true, error: '');
@@ -81,9 +85,13 @@ class ChatConnectionsNotifier extends Notifier<ChatConnectionsState> {
       final result = await _repo.searchUsers(value);
       state = state.copyWith(searchResults: result.users, searching: false);
     } catch (error) {
+      // A refusal the server explained in words — "add the country code to
+      // search by phone" — is worth far more than "Something went wrong",
+      // which is what friendlyErrorMessage collapses every 400 into.
       state = state.copyWith(
         searching: false,
-        error: friendlyErrorMessage(error),
+        searchResults: const [],
+        error: serverErrorMessage(error) ?? friendlyErrorMessage(error),
       );
     }
   }

@@ -58,6 +58,25 @@ class ProfileNotifier extends AsyncNotifier<AppUser> {
     );
   }
 
+  /// Renames the account. Optimistic: the value the server stored lands in
+  /// state and in the offline cache immediately, because this is the one field
+  /// the user is staring at while they save it.
+  ///
+  /// Throws on failure so the edit screen can keep the field open with the
+  /// server's reason instead of silently discarding what was typed.
+  Future<void> updateName(String name) async {
+    final repo = ref.read(profileRepositoryProvider);
+    final stored = await repo.updateName(name);
+    final current = state.valueOrNull;
+    if (current == null) {
+      await refresh();
+      return;
+    }
+    final updated = current.copyWith(name: stored);
+    state = AsyncData(updated);
+    await repo.cacheUser(updated);
+  }
+
   Future<void> acceptPolicy() async {
     final current = state.valueOrNull;
     await ref.read(profileRepositoryProvider).acceptPolicy();

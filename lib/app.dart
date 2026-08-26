@@ -9,6 +9,7 @@ import 'features/calls/call_store_sync.dart';
 import 'features/calls/group/group_call_invite_host.dart';
 import 'features/calls/group/group_call_sync.dart';
 import 'features/local_share/local_share_sync.dart';
+import 'features/share_intake/share_intake_sync.dart';
 
 class AbabilXApp extends ConsumerWidget {
   const AbabilXApp({super.key});
@@ -24,17 +25,20 @@ class AbabilXApp extends ConsumerWidget {
         child: GroupCallSync(
           router: router,
           child: LocalShareSync(
-            child: ChatStoreSync(
-              child: MaterialApp.router(
-                title: 'AbabilX',
-                debugShowCheckedModeBanner: false,
-                theme: AppTheme.light,
-                darkTheme: AppTheme.dark,
-                themeMode: ThemeMode.system,
-                routerConfig: router,
-                builder: (context, child) => RootBackScope(
-                  child: GroupCallInviteHost(
-                    child: child ?? const SizedBox.shrink(),
+            child: ShareIntakeSync(
+              router: router,
+              child: ChatStoreSync(
+                child: MaterialApp.router(
+                  title: 'AbabilX',
+                  debugShowCheckedModeBanner: false,
+                  theme: AppTheme.light,
+                  darkTheme: AppTheme.dark,
+                  themeMode: ThemeMode.system,
+                  routerConfig: router,
+                  builder: (context, child) => RootBackScope(
+                    child: GroupCallInviteHost(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),
