@@ -2,13 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../chat-empty-state/index.dart';
 import '../chat-list/index.dart';
 import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/message_vault_gate.dart';
 import '../providers/chat_provider.dart';
-import '../providers/team_gate_provider.dart';
-import '../../profile/providers/profile_provider.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -63,51 +60,16 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final teamAsync = ref.watch(teamGateProvider);
-    final chatState = ref.watch(chatProvider);
-    final independent =
-        ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
-    final hasCachedChats =
-        chatState.dms.isNotEmpty || chatState.channels.isNotEmpty;
-
-    // WhatsApp-style: the conversation list is never blocked by anything —
-    // not the network, not the E2EE vault. DM previews already show a safe
-    // "Encrypted message" placeholder until unlocked; the vault only gates
-    // an individual DM's actual content, in ConversationScreen.
-    if (hasCachedChats || independent) {
-      return _MessagesBody(
-        vaultUnlocked: _vaultUnlocked,
-        onUnlockTap: _openUnlockSheet,
-      );
-    }
-
-    return teamAsync.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
-      ),
-      error: (_, _) => const Scaffold(
-        body: ChatEmptyState(
-          title: 'Waiting for connection',
-          subtitle: 'Swipe down to refresh or check your internet.',
-          icon: Icons.wifi_off_rounded,
-        ),
-      ),
-      data: (detail) {
-        if (detail == null || !detail.hasTeam) {
-          return const Scaffold(
-            body: ChatEmptyState(
-              title: 'No team yet',
-              subtitle:
-                  'Join or create a team on the web to use workspace messages.',
-              icon: Icons.groups_outlined,
-            ),
-          );
-        }
-        return _MessagesBody(
-          vaultUnlocked: _vaultUnlocked,
-          onUnlockTap: _openUnlockSheet,
-        );
-      },
+    // The conversation list is the screen for every account — no team gate,
+    // no network gate, no E2EE gate. Chat is not a workspace feature any more,
+    // so a user with no workspace gets the same header, search and composer;
+    // the list under them is simply empty until they connect with someone.
+    // DM previews already carry a safe "Encrypted message" placeholder until
+    // the vault is unlocked, and the vault only gates an individual DM's
+    // content, in ConversationScreen.
+    return _MessagesBody(
+      vaultUnlocked: _vaultUnlocked,
+      onUnlockTap: _openUnlockSheet,
     );
   }
 }

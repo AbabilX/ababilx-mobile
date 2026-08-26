@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_provider.dart';
 import 'composer.dart';
 import 'composer_locked.dart';
+import 'message_request_bar.dart';
 import 'message_list.dart';
 
 class ChatTimeline extends ConsumerStatefulWidget {
@@ -168,8 +169,18 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
             onRetry: _load,
           ),
         ),
+        // Signal's order at the bottom of a thread: a block locks it outright,
+        // an unanswered request takes the composer's place until it is
+        // answered, and otherwise you type.
         if (chat.conversationById(widget.conversationId)?.canMessage == false)
           const ComposerLocked()
+        else if (chat
+                .conversationById(widget.conversationId)
+                ?.isIncomingRequest ==
+            true)
+          MessageRequestBar(
+            conversation: chat.conversationById(widget.conversationId)!,
+          )
         else
           MessageComposer(
             conversationId: widget.conversationId,

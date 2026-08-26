@@ -71,29 +71,16 @@ class _FindPeopleTabState extends ConsumerState<FindPeopleTab> {
     );
   }
 
+  /// One action for everyone. There is no "connect first" state left to
+  /// render: the server allows the DM, and the person on the other end
+  /// answers the message request inside the thread.
   Widget _action(BuildContext context, WidgetRef ref, ChatUserSummary user) {
-    if (user.canMessage == true) {
-      return TextButton(
-        onPressed: () async {
-          final dm = await ref.read(chatProvider.notifier).startDm(user.userId);
-          if (context.mounted) context.push('/messages/${dm.id}');
-        },
-        child: Text(AppTranslations.translate(context, ref, 'chat_message')),
-      );
-    }
-    if (user.connection == 'none' || user.connection == 'rejected') {
-      return TextButton(
-        onPressed: () =>
-            ref.read(chatConnectionsProvider.notifier).sendRequest(user.userId),
-        child: Text(AppTranslations.translate(context, ref, 'chat_connect')),
-      );
-    }
-    return Text(
-      AppTranslations.translate(
-        context,
-        ref,
-        user.connection == 'pending_in' ? 'chat_incoming' : 'chat_pending',
-      ),
+    return TextButton(
+      onPressed: () async {
+        final dm = await ref.read(chatProvider.notifier).startDm(user.userId);
+        if (context.mounted) context.push('/messages/${dm.id}');
+      },
+      child: Text(AppTranslations.translate(context, ref, 'chat_message')),
     );
   }
 }

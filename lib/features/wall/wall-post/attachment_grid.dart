@@ -107,6 +107,7 @@ class WallAttachmentGrid extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: NetworkVideoPlayer(
                   source: VideoSource.url(video.fileUrl),
+                  fileName: video.fileName,
                   maxHeight: soloMaxH,
                   borderRadius: 12,
                 ),

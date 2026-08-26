@@ -18,6 +18,7 @@ class AttachmentVideoTile extends StatelessWidget {
         height: 160,
         ready: (_, handle) => NetworkVideoPlayer(
           source: VideoSource.file(handle.localPath!),
+          fileName: attachment.fileName,
           maxHeight: 288,
         ),
       ),

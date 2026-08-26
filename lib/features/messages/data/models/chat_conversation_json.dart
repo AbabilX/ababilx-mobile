@@ -30,6 +30,7 @@ extension ChatConversationJson on ChatConversation {
     'peer_user_avatar': peerUserAvatar,
     'peer_left': peerLeft,
     'can_message': canMessage,
+    'request_state': requestState,
     'muted': muted,
     'member_avatars': memberAvatars,
     'member_count': memberCount,

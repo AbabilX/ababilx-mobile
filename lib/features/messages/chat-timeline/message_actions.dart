@@ -10,6 +10,7 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 import 'reaction_emoji_picker.dart';
+import 'save_message_attachments.dart';
 import 'signal_message_menu.dart';
 import 'thread_sheet.dart';
 
@@ -41,10 +42,12 @@ Future<void> showMessageActions(
     snapshot: snapshot,
     isMine: isMine,
     showThread: !isDm && threadRootId == null,
+    showSave: canSaveMessageAttachments(msg),
     labels: {
       'dismiss': tr('chat_dismiss_message_actions'),
       'reply': tr('chat_reply'),
       'forward': tr('chat_forward'),
+      'save': tr('chat_save_to_phone'),
       'copy': tr('chat_copy'),
       'thread': tr('chat_reply_thread'),
       'edit': tr('chat_edit'),
@@ -68,6 +71,8 @@ Future<void> showMessageActions(
       n.setReplyToMessage(msg);
     case SignalMessageAction.forward:
       await showForwardSheet(context, ref, msg);
+    case SignalMessageAction.save:
+      await saveMessageAttachments(context, ref, msg);
     case SignalMessageAction.copy:
       await copyMessageText(context, ref, msg);
     case SignalMessageAction.thread:

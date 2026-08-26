@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'image_preview_top_bar.dart';
 import 'image_preview_zoom.dart';
+import 'media_preview_actions.dart';
 import 'preview_image.dart';
 
 export 'preview_image.dart';
@@ -59,83 +61,73 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
   @override
   Widget build(BuildContext context) {
     final img = widget.images[_index];
+    final localPath = img.localPath;
+    final hasBytes =
+        (localPath != null && localPath.isNotEmpty) ||
+        (widget.allowRemoteFallback && img.fileUrl.isNotEmpty);
     return Dialog.fullscreen(
       backgroundColor: Colors.black,
-      child: SafeArea(
-        child: Stack(
-          children: [
-            PageView.builder(
-              controller: _page,
-              itemCount: widget.images.length,
-              onPageChanged: (i) => setState(() => _index = i),
-              itemBuilder: (_, i) {
-                final a = widget.images[i];
-                return ZoomablePreviewImage(
-                  image: a,
+      // A Scaffold so the save/share confirmation lands *inside* the viewer —
+      // a SnackBar addressed to the screen underneath would be drawn behind
+      // this dialog and never seen.
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: _page,
+                itemCount: widget.images.length,
+                onPageChanged: (i) => setState(() => _index = i),
+                itemBuilder: (_, i) {
+                  final a = widget.images[i];
+                  return ZoomablePreviewImage(
+                    image: a,
+                    allowRemoteFallback: widget.allowRemoteFallback,
+                  );
+                },
+              ),
+              Positioned(
+                top: 8,
+                left: 0,
+                right: 0,
+                child: ImagePreviewTopBar(
+                  image: img,
+                  index: _index,
+                  total: widget.images.length,
                   allowRemoteFallback: widget.allowRemoteFallback,
-                );
-              },
-            ),
-            Positioned(
-              top: 8,
-              left: 16,
-              right: 16,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      img.fileName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        shadows: [Shadow(blurRadius: 8, color: Colors.black87)],
-                      ),
+                ),
+              ),
+              if (hasBytes)
+                Positioned(
+                  left: 16,
+                  bottom: 16,
+                  child: MediaPreviewCircleButton(
+                    icon: Icons.ios_share_rounded,
+                    tooltip: 'Share',
+                    onTap: () => runMediaPreviewAction(
+                      context,
+                      MediaPreviewAction.share,
+                      localPath: localPath,
+                      remoteUrl: widget.allowRemoteFallback
+                          ? img.fileUrl
+                          : null,
+                      fileName: img.fileName,
                     ),
                   ),
-                  if (widget.images.length > 1) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_index + 1}/${widget.images.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        shadows: [Shadow(blurRadius: 8, color: Colors.black87)],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            // High-contrast B/W close — always bottom-right.
-            Positioned(
-              right: 16,
-              bottom: 16,
-              child: Material(
-                color: Colors.white,
-                shape: const CircleBorder(
-                  side: BorderSide(color: Colors.black, width: 1.5),
                 ),
-                elevation: 4,
-                shadowColor: Colors.black54,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
+              // High-contrast B/W close — always bottom-right.
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: MediaPreviewCircleButton(
+                  icon: Icons.close_rounded,
+                  tooltip: 'Close',
                   onTap: () => Navigator.pop(context),
-                  child: const SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: Icon(
-                      Icons.close_rounded,
-                      color: Colors.black,
-                      size: 26,
-                    ),
-                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

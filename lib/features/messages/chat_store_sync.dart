@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/providers/auth_provider.dart';
+import 'providers/chat_access_provider.dart';
 import 'providers/chat_provider.dart';
-import 'providers/team_gate_provider.dart';
 
-/// Bootstraps chat sidebar + WS when user has a team.
+/// Bootstraps the chat sidebar + WS for any account that can chat at all.
+///
+/// Not "has a team": a team-less account with independent chat on still needs
+/// the socket, or its personal DMs arrive only on a manual refresh.
 class ChatStoreSync extends ConsumerStatefulWidget {
   const ChatStoreSync({super.key, required this.child});
   final Widget child;
@@ -20,20 +23,20 @@ class _ChatStoreSyncState extends ConsumerState<ChatStoreSync> {
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = ref.watch(authProvider).valueOrNull ?? false;
-    final hasTeam = ref.watch(hasTeamProvider);
+    final canChat = ref.watch(chatEnabledProvider);
 
-    if (isLoggedIn && hasTeam && !_booted) {
+    if (isLoggedIn && canChat && !_booted) {
       _booted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(chatProvider.notifier).ensureReady();
       });
     }
 
-    if (!isLoggedIn || !hasTeam) {
+    if (!isLoggedIn || !canChat) {
       _booted = false;
     }
 
-    ref.listen(hasTeamProvider, (prev, next) {
+    ref.listen(chatEnabledProvider, (prev, next) {
       if (next && prev != next) {
         ref.read(chatProvider.notifier).ensureReady();
       }

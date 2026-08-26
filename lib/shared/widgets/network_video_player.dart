@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 import 'video_preview.dart';
+import 'video_thumb_states.dart';
 import 'video_source.dart';
 
 export 'video_source.dart';
@@ -11,11 +12,16 @@ class NetworkVideoPlayer extends StatefulWidget {
   const NetworkVideoPlayer({
     super.key,
     required this.source,
+    this.fileName = '',
     this.maxHeight = 288,
     this.borderRadius = 8,
   });
 
   final VideoSource source;
+
+  /// Passed to the fullscreen viewer so it can offer Save/Share. Empty when
+  /// the caller has no name for the file.
+  final String fileName;
   final double maxHeight;
   final double borderRadius;
 
@@ -78,39 +84,25 @@ class _NetworkVideoPlayerState extends State<NetworkVideoPlayer> {
   }
 
   Future<void> _openFullscreen() async {
-    await showVideoPreview(context, source: widget.source);
+    await showVideoPreview(
+      context,
+      source: widget.source,
+      fileName: widget.fileName,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final c = _controller;
 
     if (_failed) {
-      return Container(
-        height: 160,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-        ),
-        child: const Icon(Icons.videocam_off_outlined, size: 36),
-      );
+      return VideoThumbPlaceholder.failed(borderRadius: widget.borderRadius);
     }
 
     if (!_ready || c == null) {
-      return Container(
+      return VideoThumbPlaceholder.loading(
         height: widget.maxHeight * 0.55,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-        ),
-        child: const SizedBox(
-          width: 28,
-          height: 28,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
+        borderRadius: widget.borderRadius,
       );
     }
 
@@ -154,40 +146,10 @@ class _NetworkVideoPlayerState extends State<NetworkVideoPlayer> {
                       color: Colors.white,
                     ),
                   ),
-                  Positioned(
+                  const Positioned(
                     right: 8,
                     bottom: 8,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.fullscreen_rounded,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Tap for fullscreen',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    child: VideoFullscreenHint(),
                   ),
                 ],
               ),

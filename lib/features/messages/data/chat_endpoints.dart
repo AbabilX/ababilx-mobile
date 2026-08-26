@@ -34,6 +34,7 @@ class ChatEndpoints {
           'read' => ApiConstants.chatConversationRead(id),
           'mute' => ApiConstants.chatConversationMute(id),
           'hide' => ApiConstants.chatConversationHide(id),
+          'accept' => ApiConstants.chatConversationAccept(id),
           'attachments/presign' => ApiConstants.chatConversationPresign(id),
           'attachments/discard' => ApiConstants.chatConversationDiscard(id),
           'e2ee-key' => ApiConstants.chatE2eeConversationKey(id),

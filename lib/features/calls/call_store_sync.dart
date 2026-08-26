@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/providers/auth_provider.dart';
-import '../messages/providers/team_gate_provider.dart';
+import '../messages/providers/chat_access_provider.dart';
 import '../profile/providers/user_status_provider.dart';
 import 'providers/in_call_presence_provider.dart';
 import 'providers/voice_call_provider.dart';
@@ -123,9 +123,12 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
   @override
   Widget build(BuildContext context) {
     final loggedIn = ref.watch(authProvider).valueOrNull ?? false;
-    final hasTeam = ref.watch(hasTeamProvider);
+    // 1:1 calls ride personal DMs too (`voice_calls.team_id` is nullable), so
+    // this boots for any account that can chat — a team-less user's phone must
+    // still ring.
+    final canChat = ref.watch(chatEnabledProvider);
 
-    if (loggedIn && hasTeam && !_booted) {
+    if (loggedIn && canChat && !_booted) {
       _booted = true;
       _shutdownScheduled = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -135,7 +138,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
         unawaited(ref.read(userStatusProvider.notifier).bootstrap());
       });
     }
-    if ((!loggedIn || !hasTeam) && _booted && !_shutdownScheduled) {
+    if ((!loggedIn || !canChat) && _booted && !_shutdownScheduled) {
       _booted = false;
       _shutdownScheduled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) async {

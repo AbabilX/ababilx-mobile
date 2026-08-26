@@ -61,6 +61,7 @@ class ChatConversation extends Equatable {
     this.peerUserEmail,
     this.peerLeft = false,
     this.canMessage = true,
+    this.requestState = 'none',
     this.muted = false,
     this.memberAvatars = const [],
     this.memberCount,
@@ -93,6 +94,15 @@ class ChatConversation extends Equatable {
   final String? peerUserEmail;
   final bool peerLeft;
   final bool canMessage;
+
+  /// Signal-style message request, from this viewer's side:
+  /// `incoming` — the peer wrote first and I have not answered, so I get
+  /// Accept / Delete / Block over the thread; `outgoing` — I wrote first and
+  /// they have not answered; `none` — settled, or a workspace colleague, who
+  /// was never a request.
+  final String requestState;
+
+  bool get isIncomingRequest => requestState == 'incoming';
   final bool muted;
   final List<String> memberAvatars;
   final int? memberCount;
@@ -175,6 +185,7 @@ class ChatConversation extends Equatable {
       ),
       peerLeft: json['peer_left'] as bool? ?? false,
       canMessage: json['can_message'] as bool? ?? true,
+      requestState: json['request_state'] as String? ?? 'none',
       muted: json['muted'] as bool? ?? false,
       memberAvatars: (json['member_avatars'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
@@ -194,6 +205,7 @@ class ChatConversation extends Equatable {
     bool clearLastMessageAttachment = false,
     bool? muted,
     String? name,
+    String? requestState,
   }) => ChatConversation(
     id: id,
     teamId: teamId,
@@ -227,6 +239,7 @@ class ChatConversation extends Equatable {
     peerUserAvatar: peerUserAvatar,
     peerLeft: peerLeft,
     canMessage: canMessage,
+    requestState: requestState ?? this.requestState,
     muted: muted ?? this.muted,
     memberAvatars: memberAvatars,
     memberCount: memberCount,
@@ -247,6 +260,7 @@ class ChatConversation extends Equatable {
     peerUserName,
     scope,
     canMessage,
+    requestState,
   ];
 }
 

@@ -105,7 +105,7 @@ mixin _ChatMutateMixin
     if (local.isNotEmpty) {
       state = state.copyWith(searchResults: local, searchLoading: false);
     }
-    if (!ref.read(hasTeamProvider)) {
+    if (!ref.read(chatEnabledProvider)) {
       state = state.copyWith(searchResults: local, searchLoading: false);
       return;
     }

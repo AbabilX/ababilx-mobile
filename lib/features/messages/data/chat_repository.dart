@@ -173,6 +173,9 @@ class ChatRepository {
   Future<void> hideDm(String conversationId) =>
       _conversations.hideDm(conversationId);
 
+  Future<void> acceptMessageRequest(String conversationId) =>
+      _conversations.acceptMessageRequest(conversationId);
+
   Future<List<ChatMessage>> searchMessages(String q, {int limit = 20}) =>
       _messages.searchMessages(q, limit: limit);
 

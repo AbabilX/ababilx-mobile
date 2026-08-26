@@ -47,11 +47,13 @@ class SignalActionPanel extends StatelessWidget {
     super.key,
     required this.isMine,
     required this.showThread,
+    required this.showSave,
     required this.labels,
   });
 
   final bool isMine;
   final bool showThread;
+  final bool showSave;
   final Map<String, String> labels;
 
   @override
@@ -60,6 +62,9 @@ class SignalActionPanel extends StatelessWidget {
     final actions = <(SignalMessageAction, IconData, String)>[
       (SignalMessageAction.reply, Icons.reply_rounded, labels['reply']!),
       (SignalMessageAction.forward, Icons.forward_rounded, labels['forward']!),
+      // Signal's order: Save sits between Forward and Copy.
+      if (showSave)
+        (SignalMessageAction.save, Icons.save_alt_rounded, labels['save']!),
       (SignalMessageAction.copy, Icons.copy_rounded, labels['copy']!),
       if (showThread)
         (SignalMessageAction.thread, Icons.forum_outlined, labels['thread']!),

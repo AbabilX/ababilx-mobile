@@ -19,7 +19,7 @@ import '../data/local/chat_outbox_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
 import '../message_e2ee/message_vault.dart';
-import 'team_gate_provider.dart';
+import 'chat_access_provider.dart';
 import 'chat_state.dart';
 
 export 'chat_state.dart';
@@ -29,6 +29,7 @@ part 'chat_provider_feed.dart';
 part 'chat_provider_feed_edit.dart';
 part 'chat_provider_actions.dart';
 part 'chat_provider_mutate.dart';
+part 'chat_provider_requests.dart';
 part 'chat_provider_ws.dart';
 part 'chat_provider_cache.dart';
 part 'chat_provider_outbox.dart';
@@ -40,6 +41,7 @@ class ChatNotifier extends Notifier<ChatState>
         _ChatFeedEditMixin,
         _ChatActionsMixin,
         _ChatMutateMixin,
+        _ChatRequestsMixin,
         _ChatWsMixin,
         _ChatCacheMixin,
         _ChatOutboxMixin {

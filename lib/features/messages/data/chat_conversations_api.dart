@@ -99,6 +99,11 @@ class ChatConversationsApi {
     await _client.post(_endpoints.action(conversationId, 'hide'));
   }
 
+  /// Answers an incoming message request without having to reply first.
+  Future<void> acceptMessageRequest(String conversationId) async {
+    await _client.post(_endpoints.action(conversationId, 'accept'));
+  }
+
   Future<ChatConversation> createPersonalGroup(
     String name,
     List<String> memberIds,

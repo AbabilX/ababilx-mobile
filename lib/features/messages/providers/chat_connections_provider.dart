@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/friendly_error.dart';
 import '../data/chat_repository.dart';
 import '../data/models/chat_connection.dart';
 
@@ -62,7 +63,10 @@ class ChatConnectionsNotifier extends Notifier<ChatConnectionsState> {
         loading: false,
       );
     } catch (error) {
-      state = state.copyWith(loading: false, error: error.toString());
+      state = state.copyWith(
+        loading: false,
+        error: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -77,7 +81,10 @@ class ChatConnectionsNotifier extends Notifier<ChatConnectionsState> {
       final result = await _repo.searchUsers(value);
       state = state.copyWith(searchResults: result.users, searching: false);
     } catch (error) {
-      state = state.copyWith(searching: false, error: error.toString());
+      state = state.copyWith(
+        searching: false,
+        error: friendlyErrorMessage(error),
+      );
     }
   }
 

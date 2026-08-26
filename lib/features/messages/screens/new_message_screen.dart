@@ -101,7 +101,16 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
           ),
           NewMessagePeopleList(
             people: people,
-            pendingLabel: tr('chat_pending'),
+            // A failed lookup and a genuinely empty directory used to render
+            // identically — a blank list — which is how a 404 from an
+            // unregistered /api/chat/* route reads to the user as "nobody
+            // matched anything I type".
+            emptyTitle: connectionState.error.isEmpty
+                ? tr('chat_no_people')
+                : tr('chat_search_failed'),
+            emptyBody: connectionState.error.isEmpty
+                ? tr('chat_no_people_body')
+                : connectionState.error,
             onTap: _onPersonTap,
           ),
           const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
@@ -133,20 +142,12 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
     return result;
   }
 
+  /// One tap, one outcome. Nobody has to be "connected" first — the DM opens,
+  /// and if they are a stranger the first message you send becomes a request
+  /// they answer at their end.
   Future<void> _onPersonTap(ChatUserSummary user) async {
-    final pending =
-        user.connection == 'pending_in' || user.connection == 'pending_out';
-    if (user.canMessage) {
-      final dm = await ref.read(chatProvider.notifier).startDm(user.userId);
-      if (mounted) context.pushReplacement('/messages/${dm.id}');
-    } else if (!pending) {
-      await ref.read(chatConnectionsProvider.notifier).sendRequest(user.userId);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(_tr('chat_request_sent'))));
-      }
-    }
+    final dm = await ref.read(chatProvider.notifier).startDm(user.userId);
+    if (mounted) context.pushReplacement('/messages/${dm.id}');
   }
 
   Future<void> _newGroup(bool independent) async {
@@ -157,6 +158,4 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
       context.pushReplacement('/messages/${group.id}');
     }
   }
-
-  String _tr(String key) => AppTranslations.translate(context, ref, key);
 }

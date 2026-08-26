@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import '../../../shared/media/save_to_phone.dart';
 import '../../local_share/data/received_files_store.dart';
 import '../data/local/attachment_blob_store.dart';
 import '../data/models/attachment_handle.dart';
@@ -59,15 +60,12 @@ class AttachmentExporter {
     });
   }
 
-  String _collection(String contentType) {
-    if (contentType.startsWith('image/')) return 'images';
-    if (contentType.startsWith('video/')) return 'video';
-    return 'downloads';
-  }
+  // Collection and name rules are shared with the explicit "Save to phone"
+  // action — two copies of "which MediaStore bucket is this" is how a photo
+  // ends up saved into Downloads and never indexed by the gallery.
+  String _collection(String contentType) =>
+      mediaStoreCollectionFor(contentType);
 
-  String _safeName(AttachmentHandle handle) {
-    final name = handle.fileName.trim();
-    if (name.isEmpty) return handle.urlKey;
-    return name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-  }
+  String _safeName(AttachmentHandle handle) =>
+      safeSaveFileName(handle.fileName, fallback: handle.urlKey);
 }

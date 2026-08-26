@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'signal_message_menu_panels.dart';
 
-enum SignalMessageAction { reply, forward, copy, thread, edit, delete }
+enum SignalMessageAction { reply, forward, save, copy, thread, edit, delete }
 
 sealed class SignalMessageMenuResult {
   const SignalMessageMenuResult();
@@ -26,6 +26,7 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
   required ui.Image? snapshot,
   required bool isMine,
   required bool showThread,
+  required bool showSave,
   required Map<String, String> labels,
 }) {
   return showGeneralDialog<SignalMessageMenuResult>(
@@ -39,6 +40,7 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
       snapshot: snapshot,
       isMine: isMine,
       showThread: showThread,
+      showSave: showSave,
       labels: labels,
     ),
     transitionBuilder: (_, animation, _, child) => FadeTransition(
@@ -54,6 +56,7 @@ class _SignalMessageMenu extends StatelessWidget {
     required this.snapshot,
     required this.isMine,
     required this.showThread,
+    required this.showSave,
     required this.labels,
   });
 
@@ -61,6 +64,7 @@ class _SignalMessageMenu extends StatelessWidget {
   final ui.Image? snapshot;
   final bool isMine;
   final bool showThread;
+  final bool showSave;
   final Map<String, String> labels;
 
   @override
@@ -107,6 +111,7 @@ class _SignalMessageMenu extends StatelessWidget {
             child: SignalActionPanel(
               isMine: isMine,
               showThread: showThread,
+              showSave: showSave,
               labels: labels,
             ),
           ),
@@ -116,7 +121,8 @@ class _SignalMessageMenu extends StatelessWidget {
   }
 
   double get _menuHeight {
-    final count = 3 + (showThread ? 1 : 0) + (isMine ? 2 : 0);
+    final count =
+        3 + (showSave ? 1 : 0) + (showThread ? 1 : 0) + (isMine ? 2 : 0);
     return count * 48.0 + 16;
   }
 }
