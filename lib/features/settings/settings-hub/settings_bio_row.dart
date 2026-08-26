@@ -19,11 +19,16 @@ class SettingsBioRow extends StatelessWidget {
     required this.user,
     required this.onQrTap,
     required this.onEditName,
+    required this.onEditAvatar,
   });
 
   final AppUser user;
   final VoidCallback onQrTap;
   final VoidCallback onEditName;
+
+  /// Tapping the picture edits the picture; tapping the name edits the name.
+  /// Signal splits them the same way — one block, two targets.
+  final VoidCallback onEditAvatar;
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +43,7 @@ class SettingsBioRow extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 20, 8, 20),
               child: Row(
                 children: [
-                  AppAvatar(
-                    size: 72,
-                    url: user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
-                    name: user.name,
-                    backgroundColor: colors.surfaceContainerHigh,
-                  ),
+                  _AvatarButton(user: user, onTap: onEditAvatar),
                   const SizedBox(width: 20),
                   Expanded(child: _Identity(user: user)),
                 ],
@@ -133,6 +133,53 @@ class _Identity extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
       ],
+    );
+  }
+}
+
+/// The avatar with the camera badge that says it can be changed.
+class _AvatarButton extends StatelessWidget {
+  const _AvatarButton({required this.user, required this.onTap});
+
+  final AppUser user;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 78,
+        height: 78,
+        child: Stack(
+          children: [
+            AppAvatar(
+              size: 72,
+              url: user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
+              name: user.name,
+              backgroundColor: colors.surfaceContainerHigh,
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: colors.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colors.surface, width: 2),
+                ),
+                child: Icon(
+                  Icons.photo_camera_rounded,
+                  size: 13,
+                  color: colors.onPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

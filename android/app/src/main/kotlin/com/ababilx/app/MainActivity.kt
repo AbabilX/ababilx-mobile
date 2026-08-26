@@ -16,6 +16,15 @@ class MainActivity : FlutterActivity() {
     /** Ongoing-call notification: return to the call, or hang up from the shade. */
     private val ongoingCall by lazy { OngoingCallChannel(this) }
 
+    /** Shrinks a live call into a floating window, the way Signal does. */
+    private val pip by lazy { PipController(this) }
+
+    /** MediaStore behind the in-app photo grid (composer + avatar picker). */
+    private val mediaGallery by lazy { MediaGalleryChannel(this) }
+
+    /** Alternate launcher icons, switched via activity-alias. */
+    private val appIcon by lazy { AppIconChannel(applicationContext) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
@@ -28,6 +37,9 @@ class MainActivity : FlutterActivity() {
         // was dead: that intent is already on the Activity and never arrives
         // as onNewIntent, same as a cold-start share.
         ongoingCall.handleIntent(intent)
+        pip.attach(flutterEngine)
+        mediaGallery.attach(flutterEngine)
+        appIcon.attach(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.ababilx.app/media_store",
@@ -101,12 +113,32 @@ class MainActivity : FlutterActivity() {
         ongoingCall.handleIntent(intent)
     }
 
+    /**
+     * Home pressed. [PipController] shrinks the window only while a call is on
+     * screen; every other time this is a no-op and the app just backgrounds.
+     */
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        pip.onUserLeaveHint()
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: android.content.res.Configuration,
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        pip.onPipModeChanged(isInPictureInPictureMode)
+    }
+
     override fun onDestroy() {
         // The in-app call screen died with the Activity; CallKit's own hold is
         // untouched, so a call ringing natively keeps ringing.
         CallRinger.release(FLUTTER_HOLDER)
         shareIntake.dispose()
         ongoingCall.dispose()
+        pip.dispose()
+        mediaGallery.dispose()
+        appIcon.dispose()
         super.onDestroy()
     }
 

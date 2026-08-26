@@ -9,6 +9,7 @@ import '../nav_back.dart';
 import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/message_vault_gate.dart';
 import '../providers/chat_provider.dart';
+import '../wallpaper/chat_wallpaper_background.dart';
 import 'conversation_states.dart';
 
 class ConversationScreen extends ConsumerStatefulWidget {
@@ -96,7 +97,15 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) popOrGoMessages(context);
       },
-      child: Scaffold(body: _body(conversation, vault)),
+      // The wallpaper paints inside the body, on top of the Scaffold's own
+      // background and under the chat — so with no wallpaper set nothing
+      // changes, and the Scaffold keeps painting the theme colour.
+      child: Scaffold(
+        body: ChatWallpaperBackground(
+          conversationId: widget.conversationId,
+          child: _body(conversation, vault),
+        ),
+      ),
     );
   }
 

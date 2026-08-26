@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
+import '../widgets/call_backdrop.dart';
+import '../widgets/call_control_button.dart';
 import '../widgets/call_ring_pulse.dart';
-import '../widgets/incoming_call_actions.dart';
+import '../widgets/call_top_bar.dart' show callTextShadow;
 
 /// The screen a ringing call shows before it is answered.
 ///
-/// Deliberately not the in-call layout: while the phone is ringing there are
-/// exactly two things to do, so the caller fills the screen and Decline /
-/// Accept sit at the bottom edge under the thumbs, the way every phone dialler
-/// — and Signal — presents it. In-call controls only appear once the call is
-/// actually up.
+/// Laid out the way Signal's `IncomingCallScreen` is, because that layout is
+/// what a phone dialler has taught everyone to expect: the caller's own blurred
+/// photo fills the window, a call-type line names what is ringing, the person
+/// sits in the middle, and Decline / Answer sit apart at the bottom edge under
+/// the thumbs. In-call controls appear only once the call is actually up —
+/// while it rings there are exactly two things to do.
+///
+/// No top bar and no back affordance on purpose: on a ringing screen every
+/// exit is a decision, and both decisions already have a button.
 class IncomingCallView extends StatelessWidget {
   const IncomingCallView({
     super.key,
@@ -29,67 +35,106 @@ class IncomingCallView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            colors.primaryContainer,
-            colors.surface,
-            colors.surfaceContainerHighest,
-          ],
-          stops: const [0, 0.55, 1],
-        ),
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            const Spacer(flex: 2),
-            CallRingPulse(
-              size: 132,
-              child: AppAvatar(
-                size: 132,
-                url: peerAvatar,
-                name: peerName,
-                border: Border.all(color: colors.outlineVariant, width: 2),
-              ),
-            ),
-            const SizedBox(height: 28),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                peerName,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        CallBackdrop(avatarUrl: peerAvatar),
+        SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.only(
+                  top: landscape ? 0 : 22,
+                  bottom: landscape ? 20 : 30,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.phone_in_talk_rounded,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      subtitle,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        shadows: callTextShadow,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              subtitle,
-              style: textTheme.titleSmall?.copyWith(
-                color: colors.onSurfaceVariant,
+              CallRingPulse(
+                size: 96,
+                child: AppAvatar(
+                  size: 96,
+                  url: peerAvatar,
+                  name: peerName,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.35),
+                    width: 2,
+                  ),
+                ),
               ),
-            ),
-            const Spacer(flex: 3),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: IncomingCallActions(
-                onDecline: onDecline,
-                onAccept: onAccept,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Text(
+                  peerName,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      (landscape
+                              ? textTheme.titleLarge
+                              : textTheme.headlineMedium)
+                          ?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            shadows: callTextShadow,
+                          ),
+                ),
               ),
-            ),
-            const SizedBox(height: 40),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                'Incoming call…',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: Colors.white70,
+                  shadows: callTextShadow,
+                ),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(48, 0, 48, 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CallControlButton.large(
+                      icon: Icons.call_end_rounded,
+                      label: 'Decline',
+                      background: const Color(0xFFE04B4B),
+                      foreground: Colors.white,
+                      onPressed: onDecline,
+                    ),
+                    CallControlButton.large(
+                      icon: Icons.call_rounded,
+                      label: 'Answer',
+                      background: const Color(0xFF3AB55B),
+                      foreground: Colors.white,
+                      onPressed: onAccept,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

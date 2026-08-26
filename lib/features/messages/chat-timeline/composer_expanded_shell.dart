@@ -10,6 +10,7 @@ class ComposerExpandedShell extends StatelessWidget {
     required this.onRemove,
     required this.onAddPhoto,
     required this.field,
+    this.onReorder,
     this.replyBanner,
     this.mentionPicker,
   });
@@ -17,6 +18,9 @@ class ComposerExpandedShell extends StatelessWidget {
   final List<ChatAttachmentInput> pending;
   final ValueChanged<int> onRemove;
   final VoidCallback onAddPhoto;
+
+  /// Drag-to-reorder the pending strip. Null leaves the tiles fixed.
+  final void Function(int oldIndex, int newIndex)? onReorder;
   final Widget field;
   final Widget? replyBanner;
   final Widget? mentionPicker;
@@ -43,6 +47,7 @@ class ComposerExpandedShell extends StatelessWidget {
                   items: pending,
                   onRemove: onRemove,
                   onAddPhoto: onAddPhoto,
+                  onReorder: onReorder,
                 ),
               ),
             field,

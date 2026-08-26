@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/router/root_back.dart';
+import '../../native/android_pip.dart';
+import '../../widgets/pip_call_view.dart';
 import '../providers/group_call_provider.dart';
 import '../widgets/group_call_controls.dart';
 import '../widgets/group_participant_grid.dart';
@@ -9,16 +11,67 @@ import '../widgets/group_screen_stage.dart';
 
 /// Full-screen group call — participant grid, or the screen share on stage
 /// with the participants as a filmstrip. Mirrors web `group-call-overlay.tsx`.
-class GroupCallScreen extends ConsumerWidget {
+class GroupCallScreen extends ConsumerStatefulWidget {
   const GroupCallScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GroupCallScreen> createState() => _GroupCallScreenState();
+}
+
+class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AndroidPip.setActive(true);
+    });
+  }
+
+  @override
+  void dispose() {
+    AndroidPip.setActive(false);
+    super.dispose();
+  }
+
+  /// Back shrinks the call into a floating window rather than leaving it
+  /// running with nothing on screen; the ordinary pop is the fallback for
+  /// devices that refuse to shrink.
+  Future<void> _leave() async {
+    if (await AndroidPip.enter()) return;
+    if (mounted) popOrGoHome(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(groupCallProvider);
     final colors = Theme.of(context).colorScheme;
 
-    // Back minimizes rather than hangs up (same as the DM call screen): the
-    // call keeps running and the channel header offers the way back in.
+    return ValueListenableBuilder<bool>(
+      valueListenable: AndroidPip.inPip,
+      builder: (context, inPip, _) {
+        if (inPip) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: PipCallView(
+              name: state.title.isEmpty ? 'Group call' : state.title,
+              avatarUrl: null,
+              status: '${state.participants.length} in call',
+            ),
+          );
+        }
+        return PopScope(
+          canPop: state.phase != GroupCallPhase.connected,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            _leave();
+          },
+          child: _body(state, colors),
+        );
+      },
+    );
+  }
+
+  Widget _body(GroupCallState state, ColorScheme colors) {
     return Scaffold(
       backgroundColor: colors.surface,
       body: SafeArea(
@@ -26,7 +79,7 @@ class GroupCallScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
           child: Column(
             children: [
-              _Header(state: state),
+              _Header(state: state, onMinimize: _leave),
               const SizedBox(height: 12),
               Expanded(
                 child: state.phase == GroupCallPhase.joining
@@ -44,8 +97,9 @@ class GroupCallScreen extends ConsumerWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.state});
+  const _Header({required this.state, required this.onMinimize});
   final GroupCallState state;
+  final VoidCallback onMinimize;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +114,7 @@ class _Header extends StatelessWidget {
         IconButton(
           tooltip: 'Minimize call',
           icon: const Icon(Icons.keyboard_arrow_down_rounded),
-          onPressed: () => popOrGoHome(context),
+          onPressed: onMinimize,
         ),
         Expanded(
           child: Column(

@@ -9,6 +9,8 @@ import '../../features/board/screens/board_task_detail_screen.dart';
 import '../../features/profile/screens/sessions_screen.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
+import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
+import '../../features/settings/app-icon/app_icon_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
 import '../../features/messages/screens/conversation_screen.dart';
 import '../../features/messages/screens/people_screen.dart';
@@ -129,6 +131,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/notifications',
         builder: (_, _) => const NotificationSettingsScreen(),
+      ),
+      // The default background for every chat.
+      GoRoute(
+        path: '/settings/app-icon',
+        builder: (_, _) => const AppIconScreen(),
+      ),
+      GoRoute(
+        path: '/settings/wallpaper',
+        builder: (_, _) => const ChatWallpaperScreen(),
+      ),
+      // One chat's own background. Declared before '/messages/:id' would
+      // swallow it, since ':id' matches a single segment only.
+      GoRoute(
+        path: '/messages/:id/wallpaper',
+        builder: (_, state) =>
+            ChatWallpaperScreen(conversationId: state.pathParameters['id']),
       ),
       GoRoute(
         path: '/profile/devices',

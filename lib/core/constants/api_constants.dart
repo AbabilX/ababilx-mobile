@@ -24,6 +24,7 @@ class ApiConstants {
   static const String meSessionsRevokeOthers = '/api/me/sessions/revoke-others';
   static const String meDiscovery = '/api/me/discovery';
   static const String meName = '/api/me/name';
+  static const String meUploadPresign = '/api/me/upload/presign';
 
   // Team
   static const String teamsMe = '/api/teams/me';

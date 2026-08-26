@@ -27,7 +27,9 @@ void main() {
     expect(find.text('Rahim Uddin'), findsOneWidget);
     expect(find.text('AbabilX voice call'), findsOneWidget);
     expect(find.text('Decline'), findsOneWidget);
-    expect(find.text('Accept'), findsOneWidget);
+    // "Answer", not "Accept" — the word Signal's incoming screen uses, and
+    // the one every phone dialler uses.
+    expect(find.text('Answer'), findsOneWidget);
   });
 
   testWidgets('answering and declining reach their callbacks', (tester) async {

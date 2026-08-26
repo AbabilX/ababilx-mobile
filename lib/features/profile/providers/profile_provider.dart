@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/first_load_timeout.dart';
 import '../../../core/session/authenticated_fetch.dart';
+import '../data/profile_media_repository.dart';
 import '../data/profile_repository.dart';
 
 class ProfileNotifier extends AsyncNotifier<AppUser> {
@@ -75,6 +77,32 @@ class ProfileNotifier extends AsyncNotifier<AppUser> {
     final updated = current.copyWith(name: stored);
     state = AsyncData(updated);
     await repo.cacheUser(updated);
+  }
+
+  /// Uploads a new avatar and shows it immediately.
+  ///
+  /// Optimistic for the same reason [updateName] is: the user is looking
+  /// straight at the picture they just cropped, and waiting a round trip for
+  /// GET /api/me before it changes reads as a failed save.
+  ///
+  /// Throws on failure so the caller can surface the reason.
+  Future<void> updateAvatar(Uint8List bytes) async {
+    final media = ref.read(profileMediaRepositoryProvider);
+    final target = await media.presign(kind: 'avatar', contentType: 'image/png');
+    if (!target.isValid) {
+      throw StateError('Server did not return an upload URL');
+    }
+    await media.upload(target, bytes, 'image/png');
+    await media.saveAvatar(target.publicUrl);
+
+    final current = state.valueOrNull;
+    if (current == null) {
+      await refresh();
+      return;
+    }
+    final updated = current.copyWith(avatarUrl: target.publicUrl);
+    state = AsyncData(updated);
+    await ref.read(profileRepositoryProvider).cacheUser(updated);
   }
 
   Future<void> acceptPolicy() async {

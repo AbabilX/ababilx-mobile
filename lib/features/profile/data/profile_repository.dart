@@ -81,13 +81,17 @@ class AppUser extends Equatable {
     'independent_chat': independentChat,
   };
 
-  AppUser copyWith({String? name, bool? acceptPolicy, String? policyVersion}) =>
-      AppUser(
+  AppUser copyWith({
+    String? name,
+    String? avatarUrl,
+    bool? acceptPolicy,
+    String? policyVersion,
+  }) => AppUser(
     id: id,
     name: name ?? this.name,
     email: email,
     provider: provider,
-    avatarUrl: avatarUrl,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
     plan: plan,
     premiumUntil: premiumUntil,
     effectivePlan: effectivePlan,

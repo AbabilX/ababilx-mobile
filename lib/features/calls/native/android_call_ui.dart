@@ -10,6 +10,15 @@ import '../ringtone/ring_holders.dart';
 class AndroidCallUi {
   AndroidCallUi._();
 
+  // The native full-screen surface is drawn by flutter_callkit_incoming, so
+  // its layout is not ours to change — but its palette is. Signal's incoming
+  // screen is the caller's own photo behind a dark wash, with a green Answer
+  // and a red Decline, and these four values are as close as this plugin gets
+  // to that without replacing the Activity.
+  static const String _screenBackground = '#0B0B0F';
+  static const String _screenText = '#FFFFFF';
+  static const String _answerGreen = '#3AB55B';
+
   static CallKitParams paramsFromCall(VoiceCall call) => _params(
     callId: call.id,
     conversationId: call.conversationId,
@@ -38,10 +47,13 @@ class AndroidCallUi {
       'call_id': call.id,
       'conversation_id': call.conversationId,
     },
-    android: const AndroidParams(
+    android: AndroidParams(
       isCustomNotification: true,
       isShowLogo: false,
       isShowCallID: false,
+      backgroundColor: _screenBackground,
+      textColor: _screenText,
+      actionColor: _answerGreen,
       // Outgoing calls never ring on this device; the silent file keeps the
       // plugin's sound player out of the way. See the incoming params below.
       ringtonePath: 'silent_ring',
@@ -97,8 +109,17 @@ class AndroidCallUi {
         'caller_avatar_url': callerAvatarUrl ?? '',
         'expires_at': expiresAt.toUtc().toIso8601String(),
       },
-      android: const AndroidParams(
+      android: AndroidParams(
         isCustomNotification: true,
+        // The caller's own photo fills the screen behind the wash, the way
+        // Signal's `IncomingCallScreen` uses `callRecipient.contactPhoto`.
+        // With no photo the flat dark background stands in for it.
+        backgroundUrl: (callerAvatarUrl?.trim().isEmpty ?? true)
+            ? null
+            : callerAvatarUrl,
+        backgroundColor: _screenBackground,
+        textColor: _screenText,
+        actionColor: _answerGreen,
         // Keep the native caller surface as simple as the in-app receiver:
         // caller identity plus the two call actions, without a second logo.
         isShowLogo: false,

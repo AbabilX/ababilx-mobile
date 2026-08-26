@@ -40,6 +40,18 @@ class SettingsSections extends ConsumerWidget {
           onTap: () => context.push('/settings/notifications'),
         ),
         SettingsRow(
+          icon: HugeIcons.strokeRoundedMobileNavigator01,
+          title: 'App icon',
+          subtitle: 'How AbabilX looks on your home screen',
+          onTap: () => context.push('/settings/app-icon'),
+        ),
+        SettingsRow(
+          icon: HugeIcons.strokeRoundedPaintBoard,
+          title: 'Chat wallpaper',
+          subtitle: 'Background for every chat',
+          onTap: () => context.push('/settings/wallpaper'),
+        ),
+        SettingsRow(
           icon: HugeIcons.strokeRoundedLanguageSkill,
           title: 'App language',
           value: languageLabel(user.appLanguage),

@@ -119,6 +119,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon/icon.png
+    # Drawn in Settings → App icon as the mark on each alternate plate.
+    - assets/icon/icon_foreground.png
     - assets/ringtone/Clear_Agenda.mp3
 
 # `source: system` = package:sqlite3's FFI binding does a plain dlopen of

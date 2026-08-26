@@ -26,15 +26,22 @@
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS"/>
     <!-- Live CRM/Wall capture. Calls remain audio-only in Flutter UI. -->
     <uses-permission android:name="android.permission.CAMERA"/>
-    <!-- No READ_MEDIA_IMAGES / READ_MEDIA_VIDEO / READ_EXTERNAL_STORAGE:
-         gallery picks go through the Android Photo Picker (image_picker
-         pickMedia; ACTION_GET_CONTENT fallback on <13) and documents through
-         SAF. None of these need broad media-library or storage access. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" tools:node="remove"/>
     <!-- Local Share: writing received files into the public Downloads
          collection via MediaStore. Only needed below API 29 (scoped storage
          on 29+ needs nothing extra for MediaStore inserts). -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
+    <!-- In-app media grid (Signal's attachment keyboard model): the composer
+         and the avatar picker read MediaStore directly so thumbnails are on
+         screen before the system picker would even have opened. The system
+         picker remains available as the "Files" escape hatch, so a user who
+         denies these keeps a working way to attach.
+         READ_MEDIA_VISUAL_USER_SELECTED is what makes Android 14's "Select
+         photos" partial grant work rather than reading as a flat denial. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
     <!-- Keep FCM reliable in background (WhatsApp-style unrestricted) -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
@@ -47,6 +54,8 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
@@ -59,10 +68,6 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
             <!-- Share sheet: other apps (Gallery, Files, browsers) send content
                  here with ACTION_SEND / ACTION_SEND_MULTIPLE. receive_sharing_intent
                  copies each content:// URI into our cacheDir with the resolver, so
@@ -106,6 +111,70 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
+
+        <!-- Alternate launcher icons.
+             The MAIN/LAUNCHER filter deliberately lives on aliases rather than
+             on MainActivity: switching icons means disabling the component the
+             launcher currently points at, and you cannot disable the Activity
+             the app is running in. Exactly one alias is enabled at a time —
+             `AppIconChannel` enables the chosen one and disables the rest.
+             `.Launcher` is the default and must stay first.
+             taskAffinity is repeated on every alias on purpose: an alias does
+             NOT inherit it from its target activity, so leaving it off would
+             launch MainActivity into a differently-affined task than the
+             empty affinity the share intake and the call UI are built on. -->
+        <activity-alias
+            android:name=".Launcher"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherInk"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_ink"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherIndigo"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_indigo"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherForest"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_forest"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

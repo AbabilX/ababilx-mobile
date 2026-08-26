@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
@@ -168,6 +169,37 @@ Future<void> showDmActionsSheet(
                       if (ctx.mounted) Navigator.pop(ctx);
                     },
                   ),
+                ),
+
+                const SizedBox(height: 4),
+                // Per-chat wallpaper, the way Signal hangs it off the chat's
+                // own settings rather than only the global one.
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerHighest,
+                      shape: BoxShape.circle,
+                    ),
+                    child: ChatIcon(
+                      HugeIcons.strokeRoundedPaintBoard,
+                      size: 20,
+                      color: colors.onSurface,
+                    ),
+                  ),
+                  title: const Text(
+                    'Chat wallpaper',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: const Text(
+                    'Background for this chat only',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    context.push('/messages/${conversation.id}/wallpaper');
+                  },
                 ),
 
                 if (conversation.peerUserId != null) ...[

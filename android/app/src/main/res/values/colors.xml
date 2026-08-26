@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="notification_color">#6366F1</color>
+    <!-- Alternate launcher-icon backgrounds. The mark stays the same; only
+         the plate behind it changes, which is how most alternate-icon sets
+         (Signal's included) are actually built. -->
+    <color name="icon_bg_ink">#0F172A</color>
+    <color name="icon_bg_indigo">#6366F1</color>
+    <color name="icon_bg_forest">#065F46</color>
 </resources>

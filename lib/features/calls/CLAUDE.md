@@ -149,6 +149,21 @@ Upgrading `flutter_callkit_incoming` does not remove the need for any of this;
 re-read `CallkitSoundPlayerManager` / `CallkitNotificationManager` after a bump
 and confirm the two kill switches, then keep `silent_ring`.
 
+Picture-in-picture and the Signal call layout:
+
+- `android/app/src/main/kotlin/com/ababilx/app/PipController.kt`
+- `MainActivity.onUserLeaveHint` / `onPictureInPictureModeChanged`
+- `AndroidManifest.xml` — `supportsPictureInPicture`, `resizeableActivity`
+- `lib/features/calls/native/android_pip.dart`
+- `lib/features/calls/screens/voice_call_screen.dart`
+- `lib/features/calls/group/screens/group_call_screen.dart`
+- `lib/features/calls/widgets/pip_call_view.dart`
+- `lib/features/calls/widgets/call_backdrop.dart`, `call_top_bar.dart`,
+  `call_control_button.dart`, `call_controls_row.dart`,
+  `connected_call_body.dart`
+- `lib/features/calls/screens/incoming_call_view.dart`
+- `lib/features/calls/call_status_text.dart`
+
 ## Never end a CallKit call through the plugin directly
 
 `AndroidCallUi.endCall` / `hideIncoming` (and their group twins) release the
@@ -245,6 +260,56 @@ both somehow exist — it is the one whose audio is live.
 correct rather than an oversight: a connected call lives in the Flutter
 isolate, so an engine that is gone means a call that is already over. A
 ringtone has the opposite requirement — see the plugin-package section above.
+
+## Back on a live call shrinks it — it does not close it
+
+Added 2026-08-26, alongside the surfaces above.
+
+Signal's `WebRtcCallActivity` calls `enterPipModeIfPossible()` from its back
+handler and from `onUserLeaveHint`, so leaving a call screen produces a
+floating window rather than a call with nowhere to go. `PipController` does the
+same, with one difference that matters: Signal's call has its own Activity and
+ours does not, so PiP must be **armed and disarmed**. `AndroidPip.setActive` is
+called by `VoiceCallScreen` and `GroupCallScreen` while a shrinkable call is on
+screen, and native `enter()` refuses when it is off — otherwise Home on the
+chat list would shrink the whole app into a thumbnail.
+
+- Armed for connected / connecting / outgoing-ringing. **Never for an incoming
+  call**: a thumbnail has nowhere to put Answer, and Signal does not shrink one
+  either.
+- API 31+ gets `setAutoEnterEnabled(true)` so the system animates the Home
+  transition itself; older versions fall back to `onUserLeaveHint`.
+- `AndroidPip.inPip` drives a compact layout (`PipCallView`) — name, status,
+  and nothing else. No controls: the window is too small to hit them, and
+  tapping it restores the screen where they live.
+- Explicit "minimize" buttons route through `_leave()`, not `popOrGoHome`.
+  `Navigator.pop` does not consult `PopScope`, so a button wired straight to
+  the old helper would close a call the back gesture would have shrunk.
+- Manifest: `MainActivity` carries `supportsPictureInPicture` and
+  `resizeableActivity`. Its `configChanges` already lists the size/orientation
+  keys PiP needs, so the Activity is resized rather than recreated.
+
+## The call screens are Signal's layout
+
+`IncomingCallView` and `ConnectedCallBody` are built from
+`IncomingCallScreen.kt` / `CallScreen.kt`: the caller's own photo blurred
+across the window under a black scrim (0.4 while ringing, 0.35 once up), a
+call-type line, the avatar, the name, the status, and the actions at the
+bottom edge. Every string carries `callTextShadow`, because all of it sits on
+a photograph. The buttons are `CallControlButton`, whose colours are hardcoded
+rather than taken from `ColorScheme` — a call screen is always dark, and a
+light-theme surface colour would disappear into the blur. This is the one place
+in the app where the "use Theme.colorScheme" rule is deliberately not followed.
+
+The label is **Answer**, not "Accept" — Signal's word, and every dialler's.
+
+The native full-screen surface over the lock screen is still
+flutter_callkit_incoming's Activity and its layout is not ours to change. What
+we can set, we do: `backgroundUrl` is the caller's avatar, with a dark
+`backgroundColor` behind it and a green `actionColor` (see
+`AndroidCallUi._params`). Do not replace that Activity to chase pixel parity
+without re-reading the ringtone sections above first — the ring holder handoff
+is built on it.
 
 ## Screen sharing rides the call's own service — never a second one
 

@@ -610,6 +610,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         : ComposerExpandedShell(
             pending: _pending,
             onRemove: (i) => setState(() => _pending.removeAt(i)),
+            onReorder: (oldIndex, newIndex) => setState(() {
+              _pending.insert(newIndex, _pending.removeAt(oldIndex));
+            }),
             onAddPhoto: () => _attach(kind: ComposerAttachKind.gallery),
             mentionPicker: _showMentions
                 ? ComposerMentionPicker(

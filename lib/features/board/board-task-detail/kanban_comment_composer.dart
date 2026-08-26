@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../shared/media/pick_single_media.dart';
 import '../../../shared/media/picked_media_file.dart';
-import '../../messages/chat-timeline/composer_attach.dart';
 import '../../messages/chat-timeline/composer_collapsed.dart';
 import '../../messages/chat-timeline/composer_expanded_shell.dart';
 import '../../messages/chat-timeline/composer_slack_field.dart';
@@ -133,6 +133,11 @@ class _KanbanCommentComposerState extends ConsumerState<KanbanCommentComposer> {
     }
   }
 
+  Future<SingleMediaPick?> _cameraPick() async {
+    final shot = await pickLiveCameraFile();
+    return shot == null ? null : SingleMediaPick(file: shot);
+  }
+
   Future<void> _attach({ImageSource? source}) async {
     final isPremium =
         ref.read(teamGateProvider).valueOrNull?.teamIsPremium == true;
@@ -144,24 +149,15 @@ class _KanbanCommentComposerState extends ConsumerState<KanbanCommentComposer> {
       return;
     }
 
-    ComposerAttachKind? kind;
-    if (source == ImageSource.gallery) {
-      kind = ComposerAttachKind.gallery;
-    } else if (source == ImageSource.camera) {
-      kind = ComposerAttachKind.camera;
-    } else {
-      kind = await showComposerAttachSheet(context);
-    }
-    if (kind == null) return;
-
-    await Future<void>.delayed(const Duration(milliseconds: 280));
-
     try {
-      final picked = switch (kind) {
-        ComposerAttachKind.gallery => await pickGalleryImageFile(),
-        ComposerAttachKind.camera => await pickLiveCameraFile(),
-        ComposerAttachKind.file => await pickDeviceFile(),
-      };
+      // One sheet decides source and item together — the in-app grid, with
+      // Camera and Files inside it. Asking for a "kind" first and then opening
+      // a second picker is what the old flow did, and it meant two dialogs for
+      // one attachment.
+      final pick = source == ImageSource.camera
+          ? await _cameraPick()
+          : await pickSingleMedia(context);
+      final picked = pick?.file;
       if (picked == null || !mounted) return;
 
       final repo = ref.read(boardRepositoryProvider);
