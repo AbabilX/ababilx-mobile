@@ -34,6 +34,21 @@ diagnostics only. Cost of the trade: an Android build too old to decrypt shows
 nothing for DMs until it is updated. Duplicate *delivery* is now harmless —
 both copies upsert the same `message_id` into the same conversation thread.
 
+**One row per handset, enforced at fan-out.** `device_tokens` is keyed by
+`fcm_token`, and a token is not a device: it rotates on reinstall and leaves the
+old row live. Registration now sweeps this user's rows for the same `device_id`
+and rows with none at all (`db.UpsertDeviceTokenWithCaps`), and the fan-out
+query collapses rows sharing a `device_id` to the newest
+(`GetDeviceTokensWithPlatform`, mirrored in `ababilx-notification`
+`GetDevicesByUserID`). Platform is *not* part of the sweep predicate — a stale
+row not recognised as Android is sent a notification block, which Android draws
+itself on top of the entry the app draws from the data-only copy, which is the
+duplicate this whole section exists to prevent.
+
+**Both senders must be deployed together.** `ababilx-server` publishes to NATS
+and returns; `ababilx-notification` is what actually calls FCM. Shipping the
+server alone leaves the old shape logic running.
+
 ## Shape of a chat notification
 
 One entry **per conversation**, not per message (`chatNotificationId`), styled
