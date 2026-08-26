@@ -18,9 +18,10 @@ class DeviceRepository {
   /// stale token row (a reinstall gets a new FCM token, the old row lingers)
   /// received both shapes and showed every DM twice — once as the system-drawn
   /// "🔒 Encrypted message", once as this app's decrypted entry. Android now
-  /// always gets the data-only shape and decrypts it here;
-  /// `CHAT_E2EE_PUSH_DECRYPT=off` on the server is the way back to
-  /// server-rendered placeholders.
+  /// always gets the data-only shape and decrypts it here. The server picks
+  /// that shape in code alone — no capability, no environment variable — so
+  /// nothing outside the two Go senders can put a placeholder notification
+  /// back beside this app's entry.
   static const pushCaps = <String>['e2ee_push'];
 
   Future<void> register(String fcmToken, {String platform = 'android'}) async {
