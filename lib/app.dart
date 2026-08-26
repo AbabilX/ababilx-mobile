@@ -8,6 +8,8 @@ import 'features/notifications/fcm_bootstrap.dart';
 import 'features/calls/call_store_sync.dart';
 import 'features/calls/group/group_call_invite_host.dart';
 import 'features/calls/group/group_call_sync.dart';
+import 'features/calls/ongoing_call_sync.dart';
+import 'features/calls/widgets/active_call_banner.dart';
 import 'features/local_share/local_share_sync.dart';
 import 'features/share_intake/share_intake_sync.dart';
 
@@ -22,22 +24,28 @@ class AbabilXApp extends ConsumerWidget {
       router: router,
       child: CallStoreSync(
         router: router,
-        child: GroupCallSync(
+        child: OngoingCallSync(
           router: router,
-          child: LocalShareSync(
-            child: ShareIntakeSync(
-              router: router,
-              child: ChatStoreSync(
-                child: MaterialApp.router(
-                  title: 'AbabilX',
-                  debugShowCheckedModeBanner: false,
-                  theme: AppTheme.light,
-                  darkTheme: AppTheme.dark,
-                  themeMode: ThemeMode.system,
-                  routerConfig: router,
-                  builder: (context, child) => RootBackScope(
-                    child: GroupCallInviteHost(
-                      child: child ?? const SizedBox.shrink(),
+          child: GroupCallSync(
+            router: router,
+            child: LocalShareSync(
+              child: ShareIntakeSync(
+                router: router,
+                child: ChatStoreSync(
+                  child: MaterialApp.router(
+                    title: 'AbabilX',
+                    debugShowCheckedModeBanner: false,
+                    theme: AppTheme.light,
+                    darkTheme: AppTheme.dark,
+                    themeMode: ThemeMode.system,
+                    routerConfig: router,
+                    builder: (context, child) => RootBackScope(
+                      child: GroupCallInviteHost(
+                        child: ActiveCallBanner(
+                          router: router,
+                          child: child ?? const SizedBox.shrink(),
+                        ),
+                      ),
                     ),
                   ),
                 ),

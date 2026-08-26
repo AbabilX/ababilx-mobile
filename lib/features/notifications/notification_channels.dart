@@ -48,4 +48,16 @@ const notificationChannels = <AndroidNotificationChannel>[
     description: 'AI assistant alerts',
     importance: Importance.defaultImportance,
   ),
+  // Both Go senders' channelFor() can return this id. Ringing pushes are sent
+  // data-only today and short-circuit before that switch, so nothing reaches
+  // it in practice — but a channel id no channel answers to makes FCM quietly
+  // demote the notification to `general`, and that is not a trap worth
+  // leaving armed. The tone itself never comes from here: `call_ringer` owns
+  // it (see features/calls/CLAUDE.md).
+  AndroidNotificationChannel(
+    'voice_calls',
+    'Voice calls',
+    description: 'Incoming and ongoing voice calls',
+    importance: Importance.max,
+  ),
 ];

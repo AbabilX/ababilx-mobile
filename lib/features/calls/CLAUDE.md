@@ -105,10 +105,19 @@ aapt2 dump resources build/app/outputs/flutter-apk/app-release.apk | grep -i "ra
 
 ## Deliberate behaviour (not bugs — do not "fix")
 
-- Android plays the **user's system ringtone**; fallback order is system
-  ringtone → notification default → bundled `raw/clear_agenda`
-  (`RingtoneSource.ringtoneCandidates`). Flip that order there if a branded tone
-  is ever wanted.
+- Android plays the **user's system ringtone**; fallback order is
+  `getActualDefaultRingtoneUri` → `Settings.System.RINGTONE` read directly →
+  `getDefaultUri(TYPE_RINGTONE)` → bundled `raw/clear_agenda`
+  (`RingtoneSource.ringtoneCandidates`). Flip that order there if a branded
+  tone is ever wanted. **Every candidate is a ringtone, deliberately.** The
+  notification default used to sit second in that list, which is why an
+  incoming call chimed like a new message on some handsets: a phone whose
+  ringtone is "None", or an OEM ROM where the first lookup returns null or
+  throws, fell straight through to it (fixed 2026-08-26). Signal's
+  `IncomingRinger` rings with nothing and vibrates instead rather than reach
+  for the notification tone; the middle two candidates here are the same
+  hardening its `RingtoneUtil` does with reflection. Do not put the
+  notification tone back.
 - Silent / vibrate ringer mode stays silent **in-app too** (`audioAllowed`
   checks `RINGER_MODE_NORMAL` and `STREAM_RING` volume). The old Dart player
   ignored ringer mode and played anyway.
@@ -129,6 +138,12 @@ Touch one, re-check all: `packages/call_ringer/**`, `ringtone/**`,
 `group/providers/group_call_callkit.dart`,
 `android/app/src/main/kotlin/com/ababilx/app/MainActivity.kt` (releases the
 `flutter` holder in `onDestroy`), `res/raw/keep.xml`, `gradle.properties`.
+
+The connected-call surface is its own cluster: `ongoing_call_sync.dart`,
+`native/android_ongoing_call.dart`, `native/android_screen_share.dart`,
+`widgets/active_call_banner.dart`, `app.dart` (mounts both), and
+`android/app/src/main/kotlin/com/ababilx/app/OngoingCall{Service,Notification,Channel}.kt`
+plus the `.OngoingCallService` manifest entry.
 
 Upgrading `flutter_callkit_incoming` does not remove the need for any of this;
 re-read `CallkitSoundPlayerManager` / `CallkitNotificationManager` after a bump
@@ -198,6 +213,58 @@ the event to reach Dart. It only releases the ring — Dart still owns ending th
 call. It lives in the Application, not the Activity, because the processes that
 need it most have no Activity; the plugin keeps a `WeakReference`, which is why
 it is a static `object` rather than a field.
+
+## The connected call has a surface even when no screen is open
+
+Added 2026-08-26, after "someone calls me, I answer, I press back, and now I
+cannot get back to the call or end it".
+
+`AndroidCallUi.hideIncoming` deliberately tears the CallKit surface down the
+moment a call is answered, so the Flutter `/call` screen is the only ringing
+UI. Nothing then replaced it for the *connected* phase, and `/call` is an
+ordinary route with no `PopScope` — so back popped it and left a live WebRTC
+session with no way in and no way out. The call ran until the peer hung up or
+the server sweeper expired it.
+
+Two surfaces now cover that, both Signal's:
+
+- `OngoingCallService` + `OngoingCallNotification` (Kotlin) — an ongoing
+  `CallStyle.forOngoingCall` entry on its own low-importance `call_status`
+  channel. Tap the body to return, press Hang up to end it from the shade.
+  Shaped after `CallNotificationBuilder.TYPE_ESTABLISHED`; it never makes a
+  sound, because ringing is a different surface and belongs to CallKit +
+  `call_ringer`.
+- `ActiveCallBanner` — the in-app bar for the commoner case, where the user
+  pressed back but is still inside AbabilX.
+
+`OngoingCallSync` owns both: it mirrors `voiceCallProvider` / `groupCallProvider`
+onto the notification and routes the two presses back. The DM call wins when
+both somehow exist — it is the one whose audio is live.
+
+`OngoingCallChannel` is **Activity-scoped**, unlike `call_ringer`, and that is
+correct rather than an oversight: a connected call lives in the Flutter
+isolate, so an engine that is gone means a call that is already over. A
+ringtone has the opposite requirement — see the plugin-package section above.
+
+## Screen sharing rides the call's own service — never a second one
+
+`AndroidScreenShare` used to stand up its own foreground service, borrowing
+flutter_local_notifications' generic `ForegroundService` and pinning it in the
+manifest to `foregroundServiceType="mediaProjection"` app-wide. A shared call
+therefore ran two independent foreground services, with the MediaProjection's
+lifetime owned by flutter_webrtc and the service's lifetime owned by a
+notification plugin, and nothing sequencing their teardown. Ending a call while
+sharing raced them, and Android 14+ is strict about that pairing.
+
+Signal runs **one** service for the whole call and ORs the projection type in
+and out of the mask (`ActiveCallForegroundService.serviceType`). So does
+`OngoingCallService.serviceType()`: `MICROPHONE`, plus `MEDIA_PROJECTION` while
+`screenSharing`. `AndroidScreenShare.start/stop` is now a thin call into
+`AndroidOngoingCall.setScreenSharing`, which starts the service if a call never
+registered one — the projection type must be in place *before* capture begins.
+
+Do not add a second foreground service for capture. If a new capture surface
+needs a type, add it to that mask.
 
 ## Call audio routing — speaker vs earpiece
 

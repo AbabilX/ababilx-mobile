@@ -69,4 +69,8 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // NotificationCompat.CallStyle (androidx.core 1.8+) for the ongoing-call
+    // notification. Pinned rather than left to transitive resolution so a
+    // plugin bump cannot quietly drop below the version that has it.
+    implementation("androidx.core:core-ktx:1.13.1")
 }

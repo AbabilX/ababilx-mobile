@@ -117,11 +117,20 @@
             android:foregroundServiceType="phoneCall|microphone"
             tools:replace="android:foregroundServiceType" />
 
+        <!-- The one foreground service for a connected call: it owns the
+             ongoing-call notification and carries the mediaProjection type for
+             as long as a screen share lasts. Screen sharing used to run a
+             second, separate service (flutter_local_notifications'
+             generic ForegroundService, pinned here to
+             foregroundServiceType="mediaProjection"), which meant the
+             projection's lifetime and the service's lifetime were owned by
+             different components with nothing sequencing them. See
+             OngoingCallService.kt. -->
         <service
-            android:name="com.dexterous.flutterlocalnotifications.ForegroundService"
+            android:name=".OngoingCallService"
             android:exported="false"
             android:stopWithTask="true"
-            android:foregroundServiceType="mediaProjection" />
+            android:foregroundServiceType="microphone|mediaProjection" />
 
         <!-- FCM defaults: channel + white status-bar icon + brand tint -->
         <meta-data

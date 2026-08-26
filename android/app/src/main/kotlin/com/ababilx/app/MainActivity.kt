@@ -13,6 +13,9 @@ class MainActivity : FlutterActivity() {
     /** Incoming ACTION_SEND from another app's share sheet. */
     private val shareIntake by lazy { ShareIntakeChannel(this) }
 
+    /** Ongoing-call notification: return to the call, or hang up from the shade. */
+    private val ongoingCall by lazy { OngoingCallChannel(this) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
@@ -20,6 +23,11 @@ class MainActivity : FlutterActivity() {
         // The share that launched us is already on the Activity's intent by
         // the time the engine is configured, and never arrives as onNewIntent.
         shareIntake.handleIntent(intent, initial = true)
+        ongoingCall.attach(flutterEngine)
+        // Launched by a tap on the ongoing-call notification while the process
+        // was dead: that intent is already on the Activity and never arrives
+        // as onNewIntent, same as a cold-start share.
+        ongoingCall.handleIntent(intent)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.ababilx.app/media_store",
@@ -90,6 +98,7 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         shareIntake.handleIntent(intent, initial = false)
+        ongoingCall.handleIntent(intent)
     }
 
     override fun onDestroy() {
@@ -97,6 +106,7 @@ class MainActivity : FlutterActivity() {
         // untouched, so a call ringing natively keeps ringing.
         CallRinger.release(FLUTTER_HOLDER)
         shareIntake.dispose()
+        ongoingCall.dispose()
         super.onDestroy()
     }
 

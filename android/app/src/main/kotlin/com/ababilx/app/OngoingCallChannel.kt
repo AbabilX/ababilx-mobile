@@ -1,0 +1,134 @@
+package com.ababilx.app
+
+import android.app.Activity
+import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+
+/**
+ * Where the ongoing-call notification meets Dart.
+ *
+ * Dart drives the service (`start` / `update` / `stop`) and listens for the
+ * two things the user can do from outside the app: press Hang up in the shade,
+ * or tap the notification to come back to the call.
+ *
+ * Unlike `call_ringer`, this is an Activity-scoped channel and that is
+ * deliberate. A ringtone has to work in a process with no Activity — a killed
+ * app woken by an FCM push. A *connected* call cannot: the WebRTC session
+ * lives in the Flutter isolate, so if the engine is gone the call is already
+ * over and there is nothing for this channel to report.
+ */
+class OngoingCallChannel(private val activity: Activity) {
+
+    private var methods: MethodChannel? = null
+    private var events: EventChannel? = null
+
+    fun attach(engine: FlutterEngine) {
+        val messenger = engine.dartExecutor.binaryMessenger
+        methods = MethodChannel(messenger, METHOD_CHANNEL).also {
+            it.setMethodCallHandler(::onMethodCall)
+        }
+        events = EventChannel(messenger, EVENT_CHANNEL).also {
+            it.setStreamHandler(object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, sink: EventChannel.EventSink?) {
+                    OngoingCallBridge.attach(sink)
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    OngoingCallBridge.attach(null)
+                }
+            })
+        }
+    }
+
+    fun dispose() {
+        methods?.setMethodCallHandler(null)
+        events?.setStreamHandler(null)
+        methods = null
+        events = null
+        OngoingCallBridge.attach(null)
+    }
+
+    /**
+     * A tap on the ongoing-call notification. Reported rather than routed
+     * here: only Dart knows whether that call is still live, and opening a
+     * call screen for a call that has already ended is worse than doing
+     * nothing.
+     */
+    fun handleIntent(intent: Intent?) {
+        if (intent?.action != OngoingCallService.ACTION_RETURN_TO_CALL) return
+        OngoingCallBridge.notifyReturn(
+            intent.getStringExtra(OngoingCallService.EXTRA_CALL_ID) ?: "",
+        )
+    }
+
+    private fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        when (call.method) {
+            "start", "update" -> {
+                val callId = call.argument<String>("callId") ?: ""
+                val title = call.argument<String>("title") ?: "Voice call"
+                val subtitle = call.argument<String>("subtitle") ?: "Ongoing call"
+                val sharing = call.argument<Boolean>("screenSharing") ?: false
+                if (call.method == "start") {
+                    OngoingCallService.start(activity, callId, title, subtitle, sharing)
+                } else {
+                    OngoingCallService.update(activity, callId, title, subtitle, sharing)
+                }
+                result.success(true)
+            }
+
+            "stop" -> {
+                OngoingCallService.stop(activity)
+                result.success(true)
+            }
+
+            else -> result.notImplemented()
+        }
+    }
+
+    companion object {
+        private const val METHOD_CHANNEL = "com.ababilx.app/ongoing_call"
+        private const val EVENT_CHANNEL = "com.ababilx.app/ongoing_call/events"
+    }
+}
+
+/**
+ * The static seam between the service and whichever engine is currently
+ * listening. Static because the service has no reference to the Activity, and
+ * because a Hang up press can land in the gap between the Activity being
+ * recreated and Dart re-subscribing — those events are held rather than lost.
+ */
+object OngoingCallBridge {
+
+    private val main = Handler(Looper.getMainLooper())
+    private val pending = mutableListOf<Map<String, Any?>>()
+    private var sink: EventChannel.EventSink? = null
+
+    @Synchronized
+    fun attach(next: EventChannel.EventSink?) {
+        sink = next
+        if (next == null || pending.isEmpty()) return
+        val drained = pending.toList()
+        pending.clear()
+        drained.forEach { event -> main.post { next.success(event) } }
+    }
+
+    fun notifyHangUp(callId: String) = emit("hang_up", callId)
+
+    fun notifyReturn(callId: String) = emit("return_to_call", callId)
+
+    @Synchronized
+    private fun emit(action: String, callId: String) {
+        val event = mapOf("action" to action, "call_id" to callId)
+        val target = sink
+        if (target == null) {
+            pending.add(event)
+            return
+        }
+        main.post { target.success(event) }
+    }
+}
