@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/chat_models.dart';
+import '../chat_utils.dart';
 import '../providers/chat_provider.dart';
 import 'message_actions.dart';
 import 'message_row_content.dart';
@@ -16,12 +17,14 @@ class MessageRow extends ConsumerStatefulWidget {
     super.key,
     required this.message,
     required this.conversationId,
+    this.clusterPosition = MessageClusterPosition.single,
     this.threadRootId,
     this.onOpenThread,
   });
 
   final ChatMessage message;
   final String conversationId;
+  final MessageClusterPosition clusterPosition;
   final String? threadRootId;
   final VoidCallback? onOpenThread;
 
@@ -133,6 +136,7 @@ class _MessageRowState extends ConsumerState<MessageRow>
           isSending: isSending,
           isFailed: isFailed,
           actionsOpen: _actionsOpen,
+          clusterPosition: widget.clusterPosition,
           onOpenThread: widget.onOpenThread,
         ),
       ),

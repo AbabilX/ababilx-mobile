@@ -57,8 +57,10 @@ class MessageList extends ConsumerWidget {
         final idx = messages.length - 1 - i;
         final msg = messages[idx];
         final prev = idx > 0 ? messages[idx - 1] : null;
+        final next = idx + 1 < messages.length ? messages[idx + 1] : null;
         final showDate =
             prev == null || !isSameDay(prev.createdAt, msg.createdAt);
+        final clusterPosition = chatMessageClusterPosition(prev, msg, next);
         return Column(
           children: [
             if (showDate)
@@ -72,6 +74,7 @@ class MessageList extends ConsumerWidget {
                 message: msg,
                 conversationId: conversationId,
                 threadRootId: threadRootId,
+                clusterPosition: clusterPosition,
                 onOpenThread: threadRootId == null && msg.threadCount > 0
                     ? () => openThreadSheet(context, conversationId, msg)
                     : null,

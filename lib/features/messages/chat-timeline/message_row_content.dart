@@ -20,6 +20,7 @@ class MessageRowContent extends ConsumerWidget {
     required this.isSending,
     required this.isFailed,
     required this.actionsOpen,
+    this.clusterPosition = MessageClusterPosition.single,
     this.onOpenThread,
   });
 
@@ -28,6 +29,7 @@ class MessageRowContent extends ConsumerWidget {
   final bool isSending;
   final bool isFailed;
   final bool actionsOpen;
+  final MessageClusterPosition clusterPosition;
   final VoidCallback? onOpenThread;
 
   @override
@@ -36,6 +38,13 @@ class MessageRowContent extends ConsumerWidget {
     final name = message.userName ?? 'Unknown';
     final notifier = ref.read(chatProvider.notifier);
     final replies = ref.watch(chatProvider).threadRepliesByRoot[message.id];
+    final startsCluster =
+        clusterPosition == MessageClusterPosition.single ||
+        clusterPosition == MessageClusterPosition.start;
+    final endsCluster =
+        clusterPosition == MessageClusterPosition.single ||
+        clusterPosition == MessageClusterPosition.end;
+    final showFooter = endsCluster || isSending || isFailed;
 
     void showProfile() => showUserProfileSheet(
       context: context,
@@ -60,63 +69,76 @@ class MessageRowContent extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
               )
             : null,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        padding: EdgeInsets.fromLTRB(
+          4,
+          startsCluster ? 8 : 1,
+          4,
+          endsCluster ? 8 : 1,
+        ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            GestureDetector(
-              onTap: showProfile,
-              child: AppAvatar(
-                size: 36,
-                url: message.userAvatarUrl,
-                name: name,
-              ),
-            ),
+            if (endsCluster)
+              GestureDetector(
+                onTap: showProfile,
+                child: AppAvatar(
+                  size: 36,
+                  url: message.userAvatarUrl,
+                  name: name,
+                ),
+              )
+            else
+              const SizedBox(width: 36),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: GestureDetector(
-                          onTap: showProfile,
-                          child: Text(
-                            name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                  if (startsCluster) ...[
+                    GestureDetector(
+                      onTap: showProfile,
+                      child: Text(
+                        name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(width: 6),
-                      MessageDeliveryStatus(
-                        status: message.sendStatus,
-                        pulse: pulse,
-                      ),
-                      const SizedBox(width: 4),
-                      if (!isSending)
-                        Text(
-                          isFailed
-                              ? 'Tap to retry'
-                              : formatChatTime(message.createdAt),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isFailed
-                                ? colors.error
-                                : colors.onSurfaceVariant,
-                            fontWeight: isFailed
-                                ? FontWeight.w500
-                                : FontWeight.normal,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
+                    ),
+                    const SizedBox(height: 3),
+                  ],
                   MessageBody(message: message),
+                  if (showFooter)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          MessageDeliveryStatus(
+                            status: message.sendStatus,
+                            pulse: pulse,
+                          ),
+                          if (message.sendStatus != MessageSendStatus.sent)
+                            const SizedBox(width: 4),
+                          if (!isSending)
+                            Text(
+                              isFailed
+                                  ? 'Tap to retry'
+                                  : formatChatTime(message.createdAt),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isFailed
+                                    ? colors.error
+                                    : colors.onSurfaceVariant,
+                                fontWeight: isFailed
+                                    ? FontWeight.w500
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   if (!message.isDeleted && message.reactions.isNotEmpty)
                     ReactionRow(
                       reactions: message.reactions,

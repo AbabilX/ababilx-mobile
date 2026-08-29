@@ -3,6 +3,43 @@ import 'package:intl/intl.dart';
 import 'data/models/chat_models.dart';
 import 'tiptap_plain_text.dart';
 
+enum MessageClusterPosition { single, start, middle, end }
+
+MessageClusterPosition chatMessageClusterPosition(
+  ChatMessage? previous,
+  ChatMessage current,
+  ChatMessage? next,
+) {
+  final joinsPrevious = _canCluster(previous, current);
+  final joinsNext = _canCluster(current, next);
+  if (joinsPrevious && joinsNext) return MessageClusterPosition.middle;
+  if (joinsNext) return MessageClusterPosition.start;
+  if (joinsPrevious) return MessageClusterPosition.end;
+  return MessageClusterPosition.single;
+}
+
+bool _canCluster(ChatMessage? previous, ChatMessage? current) {
+  if (previous == null || current == null) return false;
+  if (previous.userId.isEmpty || previous.userId != current.userId) {
+    return false;
+  }
+  if (previous.conversationId != current.conversationId) return false;
+  if (previous.parentId != current.parentId) return false;
+  if (previous.messageType != 'text' || current.messageType != 'text') {
+    return false;
+  }
+  if (previous.reactions.isNotEmpty || previous.threadCount > 0) return false;
+
+  final previousTime = DateTime.tryParse(previous.createdAt)?.toLocal();
+  final currentTime = DateTime.tryParse(current.createdAt)?.toLocal();
+  if (previousTime == null || currentTime == null) return false;
+  return previousTime.year == currentTime.year &&
+      previousTime.month == currentTime.month &&
+      previousTime.day == currentTime.day &&
+      previousTime.hour == currentTime.hour &&
+      previousTime.minute == currentTime.minute;
+}
+
 String formatChatTime(String? iso) {
   if (iso == null || iso.isEmpty) return '';
   final dt = DateTime.tryParse(iso);
