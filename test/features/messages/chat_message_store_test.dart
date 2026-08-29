@@ -10,6 +10,7 @@ ChatMessage msg(
   String body = 'hello',
   String conversationId = 'c1',
   String? encryptedBody,
+  String? parentId,
 }) => ChatMessage(
   id: id,
   conversationId: conversationId,
@@ -18,6 +19,7 @@ ChatMessage msg(
   createdAt: createdAt,
   encryptedBody: encryptedBody,
   encryptionVersion: encryptedBody == null ? null : 1,
+  parentId: parentId,
 );
 
 void main() {
@@ -40,10 +42,59 @@ void main() {
     final newest = await store.page('c1', limit: 2);
     expect(newest.map((m) => m.id), ['m4', 'm5']);
 
-    final older = await store.page('c1', limit: 2, beforeMs: _ms(newest.first));
-    // The bound is inclusive, so the edge message comes back with the page.
-    expect(older.map((m) => m.id), ['m3', 'm4']);
-    expect(await store.hasOlderThan('c1', _ms(older.first)), isTrue);
+    final older = await store.page(
+      'c1',
+      limit: 2,
+      beforeMs: _ms(newest.first),
+      beforeId: newest.first.id,
+    );
+    expect(older.map((m) => m.id), ['m2', 'm3']);
+    expect(
+      await store.hasOlderThan(
+        'c1',
+        _ms(older.first),
+        beforeId: older.first.id,
+      ),
+      isTrue,
+    );
+  });
+
+  test(
+    'main timeline excludes replies and thread page contains only replies',
+    () async {
+      await store.saveAll([
+        msg('root', '2026-08-21T00:00:00Z'),
+        msg('reply', '2026-08-21T00:01:00Z', parentId: 'root'),
+      ]);
+
+      expect((await store.page('c1')).map((message) => message.id), ['root']);
+      expect(
+        (await store.page(
+          'c1',
+          threadRootId: 'root',
+        )).map((message) => message.id),
+        ['reply'],
+      );
+    },
+  );
+
+  test('equal timestamps use id as a deterministic secondary order', () async {
+    await store.saveAll([
+      msg('m4', '2026-08-21T00:00:00Z'),
+      msg('m3', '2026-08-21T00:00:00Z'),
+      msg('m2', '2026-08-21T00:00:00Z'),
+      msg('m1', '2026-08-21T00:00:00Z'),
+    ]);
+
+    final newest = await store.page('c1', limit: 2);
+    expect(newest.map((message) => message.id), ['m3', 'm4']);
+    final older = await store.page(
+      'c1',
+      limit: 2,
+      beforeMs: _ms(newest.first),
+      beforeId: newest.first.id,
+    );
+    expect(older.map((message) => message.id), ['m1', 'm2']);
   });
 
   test('offline search matches body, never an encrypted message', () async {

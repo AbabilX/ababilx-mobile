@@ -11,6 +11,8 @@ class AppIconOption {
     required this.id,
     required this.label,
     required this.background,
+    this.previewAsset,
+    this.previewIcon,
   });
 
   final String id;
@@ -19,14 +21,35 @@ class AppIconOption {
   /// The plate behind the mark, mirrored from the alias's adaptive icon so the
   /// picker shows what the launcher will show.
   final Color background;
+
+  /// Project asset for an original launcher mark, when one is available.
+  final String? previewAsset;
+
+  /// A lightweight Flutter preview of the matching Android adaptive icon.
+  final IconData? previewIcon;
 }
 
 /// Must stay in step with `AppIconChannel.ALIASES` on the Android side.
 const List<AppIconOption> appIconOptions = [
   AppIconOption(id: 'default', label: 'Default', background: Color(0xFF12121A)),
-  AppIconOption(id: 'ink', label: 'Ink', background: Color(0xFF0F172A)),
-  AppIconOption(id: 'indigo', label: 'Indigo', background: Color(0xFF6366F1)),
-  AppIconOption(id: 'forest', label: 'Forest', background: Color(0xFF065F46)),
+  AppIconOption(
+    id: 'calendar',
+    label: 'Calendar',
+    background: Color(0xFF2563EB),
+    previewAsset: 'assets/icon/alternates/calendar.png',
+  ),
+  AppIconOption(
+    id: 'notes',
+    label: 'Notes',
+    background: Color(0xFF7C3AED),
+    previewAsset: 'assets/icon/alternates/notes.png',
+  ),
+  AppIconOption(
+    id: 'weather',
+    label: 'Weather',
+    background: Color(0xFF0284C7),
+    previewAsset: 'assets/icon/alternates/weather.png',
+  ),
 ];
 
 /// Switches the launcher icon by enabling one `activity-alias` and disabling

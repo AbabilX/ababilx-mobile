@@ -101,12 +101,15 @@ class AppIconChannel(private val context: Context) {
         const val CHANNEL = "com.ababilx.app/app_icon"
         const val DEFAULT_ID = "default"
 
-        /** Must match the `activity-alias` names in the manifest. */
+        /** Visible icons plus hidden aliases retained for safe upgrades. */
         val ALIASES = linkedMapOf(
             DEFAULT_ID to ".Launcher",
-            "ink" to ".LauncherInk",
-            "indigo" to ".LauncherIndigo",
-            "forest" to ".LauncherForest",
+            "calendar" to ".LauncherCalendar",
+            "notes" to ".LauncherNotes",
+            "weather" to ".LauncherWeather",
+            "legacy_ink" to ".LauncherInk",
+            "legacy_indigo" to ".LauncherIndigo",
+            "legacy_forest" to ".LauncherForest",
         )
     }
 }

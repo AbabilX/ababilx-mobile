@@ -25,6 +25,9 @@ class MainActivity : FlutterActivity() {
     /** Alternate launcher icons, switched via activity-alias. */
     private val appIcon by lazy { AppIconChannel(applicationContext) }
 
+    /** Keystore-backed SQLCipher history; Android is the source of truth. */
+    private val chatStore by lazy { ChatMessageStoreChannel(applicationContext) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
@@ -40,6 +43,7 @@ class MainActivity : FlutterActivity() {
         pip.attach(flutterEngine)
         mediaGallery.attach(flutterEngine)
         appIcon.attach(flutterEngine)
+        chatStore.attach(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.ababilx.app/media_store",
@@ -139,6 +143,7 @@ class MainActivity : FlutterActivity() {
         pip.dispose()
         mediaGallery.dispose()
         appIcon.dispose()
+        chatStore.dispose()
         super.onDestroy()
     }
 

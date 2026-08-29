@@ -137,6 +137,48 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
+            android:name=".LauncherCalendar"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_calendar"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherNotes"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_notes"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherWeather"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_weather"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <!-- Kept out of the picker solely so users who selected a former
+             colour-only icon retain a launch entry after upgrading. The next
+             icon selection disables these aliases. -->
+        <activity-alias
             android:name=".LauncherInk"
             android:targetActivity=".MainActivity"
             android:taskAffinity=""

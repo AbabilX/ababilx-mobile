@@ -96,6 +96,7 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
       final hasOlder = await messageStore.hasOlderThan(
         conversationId,
         oldestMs,
+        beforeId: messages.first.id,
       );
       messages = await decryptIfNeeded(messages);
       unawaited(ref.read(attachmentIntakeProvider).onMessages(messages));
@@ -123,6 +124,7 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     final older = await messageStore.page(
       conversationId,
       beforeMs: messageTimeMs(feed.messages.first),
+      beforeId: feed.messages.first.id,
     );
     final known = feed.messages.map((m) => m.id).toSet();
     final fresh = older.where((m) => !known.contains(m.id)).toList();
@@ -141,11 +143,9 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     return true;
   }
 
-  /// Persists the confirmed messages for [conversationId] to local DB after a
-  /// successful server load. Runs fire-and-forget (non-blocking).
-  void persistFeedAsync(String conversationId, List<ChatMessage> messages) {
-    messageStore.saveAll(messages).ignore();
-  }
+  /// Persists a network page before it becomes the canonical in-memory feed.
+  Future<void> persistFeed(List<ChatMessage> messages) =>
+      messageStore.saveAll(messages);
 
   /// Persists a single message — the WS path, where re-writing the whole feed
   /// on every reaction would be wasted work.

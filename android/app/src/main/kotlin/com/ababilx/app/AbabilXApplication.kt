@@ -10,6 +10,7 @@ class AbabilXApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        SqlCipherLibraryLoader.load()
         CallEventBridge.install(this)
     }
 }

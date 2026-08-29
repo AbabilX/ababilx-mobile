@@ -73,4 +73,8 @@ dependencies {
     // notification. Pinned rather than left to transitive resolution so a
     // plugin bump cannot quietly drop below the version that has it.
     implementation("androidx.core:core-ktx:1.13.1")
+    // Signal's Android storage primitive: encrypted SQLite with a
+    // Keystore-sealed random passphrase supplied by ChatDatabaseSecret.
+    implementation("androidx.sqlite:sqlite:2.6.2")
+    implementation("net.zetetic:sqlcipher-android:4.17.0")
 }

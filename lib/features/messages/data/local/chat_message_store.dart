@@ -1,200 +1,160 @@
-import 'package:drift/drift.dart';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/chat_message.dart';
+import 'android_chat_message_store.dart';
 import 'chat_local_db.dart';
-import 'chat_message_row.dart';
 import 'chat_sidebar_cache.dart' show chatLocalDbProvider;
+import 'drift_chat_message_store.dart';
 
 export 'local_message_search.dart';
 
-/// Per-conversation disk history cap.
 const int pruneKeepPerConversation = 2000;
-
-/// Default page size for a disk read — matches the server page size, so an
-/// offline scroll-back feels the same as an online one.
 const int diskPageSize = 50;
 
-/// The durable local chat history: one row per message, paged and searched
-/// with indexed queries. Only server-confirmed messages land here — a pending
-/// or failed send lives in [PendingOutboxMessages] instead.
+/// Durable history facade.
+///
+/// Android reads SQLCipher first. Drift remains a temporary rollback copy and
+/// migration source, so an upgrade cannot make existing offline history vanish.
 class ChatMessageStore {
   ChatMessageStore(
-    this._db, {
+    ChatLocalDb db, {
     this.keepPerConversation = pruneKeepPerConversation,
-  });
+    AndroidChatMessageStore? androidStore,
+  }) : _drift = DriftChatMessageStore(
+         db,
+         keepPerConversation: keepPerConversation,
+       ),
+       _android = androidStore;
 
-  final ChatLocalDb _db;
-
-  /// Per-conversation retention. Overridable so a test can exercise pruning
-  /// without writing [pruneKeepPerConversation] rows.
   final int keepPerConversation;
+  final DriftChatMessageStore _drift;
+  final AndroidChatMessageStore? _android;
 
-  /// One page of [conversationId], oldest → newest (the order the timeline
-  /// renders). Pass [beforeMs] to page backwards from a known point; the
-  /// bound is inclusive, so a caller must drop ids it already holds — that is
-  /// cheaper than losing a message that shares a millisecond with the edge.
   Future<List<ChatMessage>> page(
     String conversationId, {
     int limit = diskPageSize,
     int? beforeMs,
+    String? beforeId,
+    String? threadRootId,
   }) async {
     if (conversationId.isEmpty) return const [];
+    final native = _android;
+    if (native == null) {
+      return _drift.page(
+        conversationId,
+        limit: limit,
+        beforeMs: beforeMs,
+        beforeId: beforeId,
+        threadRootId: threadRootId,
+      );
+    }
     try {
-      final q = _db.select(_db.cachedMessages)
-        ..where((t) => t.conversationId.equals(conversationId));
-      if (beforeMs != null) {
-        q.where((t) => t.createdAtMs.isSmallerOrEqualValue(beforeMs));
+      final scope = jsonEncode([conversationId, threadRootId]);
+      if (!await native.isLegacyMigrated(scope)) {
+        // Migrate the entire retained slice before marking this scope done.
+        // Re-running after a crash is harmless because id is the conflict key.
+        final legacy = await _drift.page(
+          conversationId,
+          limit: keepPerConversation,
+          threadRootId: threadRootId,
+        );
+        await native.migrateLegacy(scope, legacy);
       }
-      q
-        ..orderBy([
-          (t) =>
-              OrderingTerm(expression: t.createdAtMs, mode: OrderingMode.desc),
-        ])
-        ..limit(limit);
-      final rows = await q.get();
-      return messagesFromRows(rows.reversed);
+      return native.page(
+        conversationId,
+        limit: limit,
+        beforeMs: beforeMs,
+        beforeId: beforeId,
+        threadRootId: threadRootId,
+      );
     } catch (_) {
-      return const [];
+      return _drift.page(
+        conversationId,
+        limit: limit,
+        beforeMs: beforeMs,
+        beforeId: beforeId,
+        threadRootId: threadRootId,
+      );
     }
   }
 
-  /// True when older history than [beforeMs] is on disk — what tells the
-  /// timeline whether an offline "load more" has anything left to give.
-  Future<bool> hasOlderThan(String conversationId, int beforeMs) async {
-    if (conversationId.isEmpty) return false;
-    try {
-      final row =
-          await (_db.select(_db.cachedMessages)
-                ..where((t) => t.conversationId.equals(conversationId))
-                ..where((t) => t.createdAtMs.isSmallerThanValue(beforeMs))
-                ..limit(1))
-              .getSingleOrNull();
-      return row != null;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// Upserts every confirmed message in [messages], then prunes the
-  /// conversation back to [pruneKeepPerConversation].
-  Future<void> saveAll(List<ChatMessage> messages) async {
-    final confirmed = messages
-        .where((m) => m.sendStatus == MessageSendStatus.sent && m.id.isNotEmpty)
-        .toList();
-    if (confirmed.isEmpty) return;
-    try {
-      await _db.batch((batch) {
-        for (final m in confirmed) {
-          batch.insert(
-            _db.cachedMessages,
-            messageRow(m),
-            mode: InsertMode.insertOrReplace,
-          );
+  Future<bool> hasOlderThan(
+    String conversationId,
+    int beforeMs, {
+    String? beforeId,
+  }) async {
+    final native = _android;
+    if (native != null) {
+      try {
+        if (await native.hasOlderThan(
+          conversationId,
+          beforeMs,
+          beforeId: beforeId,
+        )) {
+          return true;
         }
-      });
-      for (final conversationId
-          in confirmed.map((m) => m.conversationId).toSet()) {
-        await _prune(conversationId);
-      }
-    } catch (_) {
-      // A cache write failure never breaks the live conversation.
+      } catch (_) {}
     }
+    return _drift.hasOlderThan(conversationId, beforeMs, beforeId: beforeId);
+  }
+
+  Future<void> saveAll(List<ChatMessage> messages) async {
+    final native = _android;
+    if (native != null) {
+      try {
+        await native.upsert(messages);
+      } catch (_) {
+        // Drift below remains a safe write path if the platform store fails.
+      }
+    }
+    await _drift.saveAll(messages);
   }
 
   Future<void> saveOne(ChatMessage message) => saveAll([message]);
 
   Future<void> remove(String messageId) async {
-    if (messageId.isEmpty) return;
-    try {
-      await (_db.delete(
-        _db.cachedMessages,
-      )..where((t) => t.id.equals(messageId))).go();
-    } catch (_) {}
+    final native = _android;
+    if (native != null) {
+      try {
+        await native.remove(messageId);
+      } catch (_) {}
+    }
+    await _drift.remove(messageId);
   }
 
-  /// Offline message search, newest first. E2EE DMs never match: their
-  /// plaintext is not on disk, so only channels, groups and unencrypted
-  /// messages are searchable without a server.
-  Future<List<ChatMessage>> search(String query, {int limit = 30}) async {
-    final q = query.trim().toLowerCase();
-    if (q.length < 2) return const [];
-    try {
-      final rows =
-          await (_db.select(_db.cachedMessages)
-                ..where((t) => t.searchText.like('%$q%'))
-                ..orderBy([
-                  (t) => OrderingTerm(
-                    expression: t.createdAtMs,
-                    mode: OrderingMode.desc,
-                  ),
-                ])
-                ..limit(limit))
-              .get();
-      return messagesFromRows(rows);
-    } catch (_) {
-      return const [];
-    }
-  }
+  Future<List<ChatMessage>> search(String query, {int limit = 30}) =>
+      _drift.search(query, limit: limit);
 
-  /// Encrypted rows for vault-backed search; plaintext never reaches SQLite.
-  Future<List<ChatMessage>> encryptedPage({
-    int limit = 200,
-    int offset = 0,
-  }) async {
-    try {
-      final rows =
-          await (_db.select(_db.cachedMessages)
-                ..where((t) => t.searchText.equals(''))
-                ..where((t) => t.payloadJson.like('%"encryption_version":1%'))
-                ..orderBy([
-                  (t) => OrderingTerm(
-                    expression: t.createdAtMs,
-                    mode: OrderingMode.desc,
-                  ),
-                ])
-                ..limit(limit, offset: offset))
-              .get();
-      return messagesFromRows(
-        rows,
-      ).where((m) => m.isEncrypted && !m.isDeleted).toList();
-    } catch (_) {
-      return const [];
-    }
-  }
+  Future<List<ChatMessage>> encryptedPage({int limit = 200, int offset = 0}) =>
+      _drift.encryptedPage(limit: limit, offset: offset);
 
   Future<void> clearConversation(String conversationId) async {
-    if (conversationId.isEmpty) return;
-    try {
-      await (_db.delete(
-        _db.cachedMessages,
-      )..where((t) => t.conversationId.equals(conversationId))).go();
-    } catch (_) {}
+    final native = _android;
+    if (native != null) {
+      try {
+        await native.clearConversation(conversationId);
+      } catch (_) {}
+    }
+    await _drift.clearConversation(conversationId);
   }
 
   Future<void> clearAll() async {
-    try {
-      await _db.delete(_db.cachedMessages).go();
-    } catch (_) {}
-  }
-
-  /// Drops everything older than the newest [keepPerConversation] rows. One
-  /// indexed statement — no count query first, since below the cap the
-  /// sub-select returns nothing and the delete matches nothing. The offset is
-  /// `keep - 1` so the row it finds is the oldest one worth keeping.
-  Future<void> _prune(String conversationId) async {
-    try {
-      await _db.customStatement(
-        'DELETE FROM cached_messages WHERE conversation_id = ? '
-        'AND created_at_ms < (SELECT created_at_ms FROM cached_messages '
-        'WHERE conversation_id = ? ORDER BY created_at_ms DESC '
-        'LIMIT 1 OFFSET ?)',
-        [conversationId, conversationId, keepPerConversation - 1],
-      );
-    } catch (_) {}
+    final native = _android;
+    if (native != null) {
+      try {
+        await native.clearAll();
+      } catch (_) {}
+    }
+    await _drift.clearAll();
   }
 }
 
 final chatMessageStoreProvider = Provider<ChatMessageStore>(
-  (ref) => ChatMessageStore(ref.watch(chatLocalDbProvider)),
+  (ref) => ChatMessageStore(
+    ref.watch(chatLocalDbProvider),
+    androidStore: Platform.isAndroid ? const AndroidChatMessageStore() : null,
+  ),
 );

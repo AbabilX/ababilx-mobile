@@ -1,14 +1,36 @@
 import '../../../core/network/api_client.dart';
 import 'models/chat_models.dart';
 import 'chat_endpoints.dart';
+import 'request_single_flight.dart';
 
 class ChatMessagesApi {
-  const ChatMessagesApi(this._client, this._endpoints);
+  ChatMessagesApi(this._client, this._endpoints);
 
   final ApiClient _client;
   final ChatEndpoints _endpoints;
+  final RequestSingleFlight<ChatMessagesPage> _pageRequests =
+      RequestSingleFlight<ChatMessagesPage>();
 
   Future<ChatMessagesPage> listMessages(
+    String conversationId, {
+    String? cursor,
+    int? limit,
+    String? thread,
+  }) {
+    final key =
+        '$conversationId|${cursor ?? ''}|${limit ?? ''}|${thread ?? ''}';
+    return _pageRequests.run(
+      key,
+      () => _listMessages(
+        conversationId,
+        cursor: cursor,
+        limit: limit,
+        thread: thread,
+      ),
+    );
+  }
+
+  Future<ChatMessagesPage> _listMessages(
     String conversationId, {
     String? cursor,
     int? limit,

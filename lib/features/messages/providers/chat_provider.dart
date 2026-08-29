@@ -12,6 +12,7 @@ import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat_utils.dart';
+import '../data/chat_message_merge.dart';
 import '../data/chat_repository.dart';
 import '../data/local/chat_message_row.dart';
 import '../data/local/chat_message_store.dart';

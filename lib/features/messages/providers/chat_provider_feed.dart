@@ -52,11 +52,14 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
           )
           .timeout(firstLoadNetworkTimeout);
       final messages = await decryptIfNeeded(page.messages);
-      final sorted = threadRootId != null
-          ? messages
-          : messages.reversed.toList();
+      final sorted = canonicalChatMessages(messages);
+      // A websocket event can arrive while this request is in flight. Merge
+      // against the latest state, not the stale snapshot from request start.
+      final latest = state.feeds[key] ?? existing;
+      final merged = canonicalChatMessages([...latest.messages, ...sorted]);
+      await (this as _ChatCacheMixin).persistFeed(sorted);
       final freshFeed = ChatFeed(
-        messages: sorted,
+        messages: merged,
         nextCursor: page.nextCursor,
         hasMore: page.hasMore,
         fetchedAt: DateTime.now().millisecondsSinceEpoch,
@@ -64,10 +67,7 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         error: '',
       );
       setFeed(key, freshFeed);
-      // Persist main conversation feed (not thread feeds) to local DB so the
-      // next open is instant (cache-first load). Fire-and-forget.
       if (threadRootId == null) {
-        (this as _ChatCacheMixin).persistFeedAsync(conversationId, sorted);
         unawaited(ref.read(attachmentIntakeProvider).onMessages(sorted));
       }
       if (threadRootId != null) {
@@ -131,22 +131,20 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
         thread: threadRootId,
       );
       final messages = await decryptIfNeeded(page.messages);
-      final sorted = threadRootId != null
-          ? messages
-          : messages.reversed.toList();
+      final sorted = canonicalChatMessages(messages);
+      final latest = state.feeds[key] ?? feed;
+      final merged = canonicalChatMessages([...latest.messages, ...sorted]);
+      await (this as _ChatCacheMixin).persistFeed(sorted);
       setFeed(
         key,
-        feed.copyWith(
-          messages: [...sorted, ...feed.messages],
+        latest.copyWith(
+          messages: merged,
           loadingMore: false,
           nextCursor: page.nextCursor,
           hasMore: page.hasMore,
           fetchedAt: DateTime.now().millisecondsSinceEpoch,
         ),
       );
-      if (threadRootId == null) {
-        (this as _ChatCacheMixin).persistFeedAsync(conversationId, sorted);
-      }
     } catch (_) {
       // Network gone mid-scroll: serve the older page from disk so the user
       // keeps reading instead of hitting a dead end.

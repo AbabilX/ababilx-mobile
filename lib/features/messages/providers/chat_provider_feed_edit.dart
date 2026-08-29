@@ -20,7 +20,7 @@ mixin _ChatFeedEditMixin on Notifier<ChatState>, _ChatFeedMixin {
     setFeed(
       key,
       existing.copyWith(
-        messages: [...existing.messages, msg],
+        messages: canonicalChatMessages([...existing.messages, msg]),
         fetchedAt: DateTime.now().millisecondsSinceEpoch,
       ),
     );

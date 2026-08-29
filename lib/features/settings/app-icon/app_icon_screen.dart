@@ -5,10 +5,8 @@ import 'app_icon.dart';
 
 /// Settings → App icon.
 ///
-/// Picking an icon takes effect immediately; the launcher decides when to
-/// redraw, which on some devices is a beat later than the tap. The note at the
-/// bottom says so, because an icon that has not changed yet otherwise reads as
-/// a failed setting.
+/// Mirrors Signal's safe selection flow: preview first, then confirm before
+/// Android swaps the enabled launcher alias.
 class AppIconScreen extends StatefulWidget {
   const AppIconScreen({super.key});
 
@@ -46,6 +44,32 @@ class _AppIconScreenState extends State<AppIconScreen> {
     }
   }
 
+  Future<void> _confirmChoice(AppIconOption option) async {
+    if (_busy || option.id == _selected) return;
+    final shouldChange = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: _AppIconMark(option: option, size: 64),
+        title: Text('Change app icon to ${option.label}?'),
+        content: const Text(
+          'Your Android launcher may take a moment to show the new icon.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Change'),
+          ),
+        ],
+      ),
+    );
+    if (shouldChange == true && mounted) await _choose(option);
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -66,7 +90,7 @@ class _AppIconScreenState extends State<AppIconScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
+              crossAxisCount: 4,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
               childAspectRatio: 0.8,
@@ -77,7 +101,7 @@ class _AppIconScreenState extends State<AppIconScreen> {
               return _IconTile(
                 option: option,
                 selected: option.id == _selected,
-                onTap: () => _choose(option),
+                onTap: () => _confirmChoice(option),
               );
             },
           ),
@@ -119,19 +143,13 @@ class _IconTile extends StatelessWidget {
             width: 68,
             height: 68,
             decoration: BoxDecoration(
-              color: option.background,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: selected ? colors.primary : colors.outlineVariant,
-                width: selected ? 3 : 1,
-              ),
+              shape: BoxShape.circle,
+              border: selected
+                  ? Border.all(color: colors.onSurface, width: 3)
+                  : null,
             ),
-            clipBehavior: Clip.antiAlias,
-            child: Image.asset(
-              'assets/icon/icon_foreground.png',
-              fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
-            ),
+            padding: EdgeInsets.all(selected ? 5 : 0),
+            child: _AppIconMark(option: option, size: selected ? 58 : 68),
           ),
           const SizedBox(height: 8),
           Text(
@@ -144,4 +162,24 @@ class _IconTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AppIconMark extends StatelessWidget {
+  const _AppIconMark({required this.option, required this.size});
+
+  final AppIconOption option;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(color: option.background, shape: BoxShape.circle),
+    clipBehavior: Clip.antiAlias,
+    child: Image.asset(
+      option.previewAsset ?? 'assets/icon/icon_foreground.png',
+      fit: BoxFit.contain,
+      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+    ),
+  );
 }
