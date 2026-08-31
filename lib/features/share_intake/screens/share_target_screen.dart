@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../messages/new-message/new_message_search.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../messages/chat-recipient-picker/chat_recipient_picker_screen.dart';
+import '../../messages/chat-recipient-picker/chat_recipient_target.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../data/shared_payload.dart';
 import '../providers/share_intake_provider.dart';
 import '../services/share_sender.dart';
-import '../share-target/share_compose_header.dart';
 import '../share-target/share_result_report.dart';
-import '../share-target/share_target_list.dart';
 
 /// Where an incoming share lands: pick one or more conversations, add a
 /// caption, send.
@@ -27,45 +27,23 @@ class ShareTargetScreen extends ConsumerStatefulWidget {
 }
 
 class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
-  final _search = TextEditingController();
-  final _searchFocus = FocusNode();
-  late final TextEditingController _caption;
-  final _selected = <String>{};
-  bool _sending = false;
-
   @override
   void initState() {
     super.initState();
-    final payload = ref.read(shareIntakeProvider);
-    // A text-only share *is* the message; a file share often arrives with a
-    // caption from the sending app. Either way it belongs in the field, where
-    // the user can still edit it.
-    _caption = TextEditingController(text: payload?.text ?? '');
     // Opened straight from another app, so nothing may have loaded the chat
     // list yet.
     unawaited(ref.read(chatProvider.notifier).ensureReady());
   }
 
-  @override
-  void dispose() {
-    _search.dispose();
-    _searchFocus.dispose();
-    _caption.dispose();
-    super.dispose();
-  }
-
-  void _cancel() {
-    ref.read(shareIntakeProvider.notifier).consume();
-    context.go('/messages');
-  }
-
-  Future<void> _send(SharedPayload payload) async {
-    final body = _caption.text.trim();
-    if (_selected.isEmpty || _sending) return;
+  Future<void> _send(
+    SharedPayload payload,
+    List<ChatRecipientTarget> targets,
+    String body,
+  ) async {
     if (!payload.hasFiles && body.isEmpty) return;
-
-    setState(() => _sending = true);
-    final targets = _selected.toList();
+    final conversationIds = await _resolveConversationIds(targets);
+    if (!mounted) return;
+    if (conversationIds.isEmpty) return;
     ShareSendResult result;
     try {
       result = await sendSharedPayload(
@@ -73,14 +51,12 @@ class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
         channel: ref.read(shareIntakeChannelProvider),
         payload: payload,
         body: body,
-        conversationIds: targets,
+        conversationIds: conversationIds,
       );
     } catch (_) {
-      result = ShareSendResult(sent: 0, failed: targets);
+      result = ShareSendResult(sent: 0, failed: conversationIds);
     }
     if (!mounted) return;
-    setState(() => _sending = false);
-
     if (result.noneSent) {
       ShareResultReport.failure(context);
       return;
@@ -88,12 +64,14 @@ class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
     ref.read(shareIntakeProvider.notifier).consume();
     // One recipient: drop the user into that thread, which is where they
     // expect to end up. Several: back to the list.
-    if (targets.length == 1 && result.allSent && result.skippedFiles == 0) {
-      context.go('/messages/${targets.first}');
+    if (conversationIds.length == 1 &&
+        result.allSent &&
+        result.skippedFiles == 0) {
+      context.go('/messages/${conversationIds.first}');
       return;
     }
     context.go('/messages');
-    ShareResultReport.partial(context, result, targets.length);
+    ShareResultReport.partial(context, result, conversationIds.length);
   }
 
   @override
@@ -104,81 +82,31 @@ class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
       return const Scaffold(body: SizedBox.shrink());
     }
 
-    final chat = ref.watch(chatProvider);
-    final query = _search.text.trim().toLowerCase();
-    final targets =
-        [...chat.dms, ...chat.channels]
-            .where((c) => c.canMessage && c.archivedAt == null)
-            .where(
-              (c) =>
-                  query.isEmpty ||
-                  c
-                      .displayTitle(chat.currentUserId)
-                      .toLowerCase()
-                      .contains(query),
-            )
-            .toList();
-
-    final canSend =
-        !_sending &&
-        _selected.isNotEmpty &&
-        (payload.hasFiles || _caption.text.trim().isNotEmpty);
-
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
-          onPressed: _sending ? null : _cancel,
-        ),
-        title: const Text('Share with'),
-      ),
-      body: Column(
-        children: [
-          ShareComposeHeader(
-            payload: payload,
-            caption: _caption,
-            enabled: !_sending,
-            onChanged: (_) => setState(() {}),
-          ),
-          NewMessageSearch(
-            controller: _search,
-            focusNode: _searchFocus,
-            hintText: 'Search conversations',
-            onChanged: (_) => setState(() {}),
-          ),
-          Expanded(
-            child: ShareTargetList(
-              conversations: targets,
-              currentUserId: chat.currentUserId,
-              selected: _selected,
-              enabled: !_sending,
-              onToggle: (id) => setState(() {
-                if (!_selected.remove(id)) _selected.add(id);
-              }),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-          child: FilledButton(
-            onPressed: canSend ? () => _send(payload) : null,
-            child: _sending
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(
-                    _selected.isEmpty
-                        ? 'Send'
-                        : 'Send to ${_selected.length}',
-                  ),
-          ),
-        ),
-      ),
+    return ChatRecipientPickerScreen(
+      actionLabel: AppTranslations.translate(context, ref, 'chat_send'),
+      initialCaption: payload.text,
+      showCaption: true,
+      onSubmit: (targets, body) => _send(payload, targets, body),
     );
+  }
+
+  Future<List<String>> _resolveConversationIds(
+    List<ChatRecipientTarget> targets,
+  ) async {
+    final chat = ref.read(chatProvider);
+    final ids = <String>{};
+    for (final target in targets) {
+      if (target.kind == ChatRecipientKind.conversation) {
+        ids.add(target.id);
+        continue;
+      }
+      final existing = chat.dms.where((dm) => dm.peerUserId == target.id);
+      ids.add(
+        existing.isNotEmpty
+            ? existing.first.id
+            : (await ref.read(chatProvider.notifier).startDm(target.id)).id,
+      );
+    }
+    return ids.toList();
   }
 }
