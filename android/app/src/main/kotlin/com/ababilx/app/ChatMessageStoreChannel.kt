@@ -56,6 +56,9 @@ class ChatMessageStoreChannel(context: android.content.Context) {
                         database.remove(requiredString(call.argument("messageId")))
                         null
                     }
+                    "unsent" -> background(result) {
+                        database.unsent()
+                    }
                     "clearConversation" -> background(result) {
                         database.clearConversation(
                             requiredString(call.argument("conversationId")),

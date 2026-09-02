@@ -32,4 +32,65 @@ void main() {
 
     expect(merged.map((message) => message.id), ['m1', 'm2']);
   });
+
+  test('canonical merge collapses a bubble and its server copy', () {
+    final pending = ChatMessage(
+      id: 'client-1',
+      conversationId: 'conversation-1',
+      userId: 'user-1',
+      body: 'hello',
+      createdAt: '2026-08-29T06:10:00Z',
+      sendStatus: MessageSendStatus.sending,
+      clientRef: 'client-1',
+    );
+    final confirmed = ChatMessage(
+      id: 'server-1',
+      conversationId: 'conversation-1',
+      userId: 'user-1',
+      body: 'hello',
+      createdAt: '2026-08-29T06:10:01Z',
+      clientRef: 'client-1',
+    );
+
+    final merged = canonicalChatMessages([pending, confirmed]);
+    expect(merged, hasLength(1));
+    expect(merged.single.id, 'server-1');
+    expect(merged.single.sendStatus, MessageSendStatus.sent);
+  });
+
+  test(
+    'canonical merge keeps one sent row when two copies share a clientRef',
+    () {
+      final first = ChatMessage(
+        id: 'server-1',
+        conversationId: 'conversation-1',
+        userId: 'user-1',
+        body: 'hello',
+        createdAt: '2026-08-29T06:10:01Z',
+        clientRef: 'client-1',
+      );
+      final second = ChatMessage(
+        id: 'server-1',
+        conversationId: 'conversation-1',
+        userId: 'user-1',
+        body: 'hello',
+        createdAt: '2026-08-29T06:10:01Z',
+        clientRef: 'client-1',
+      );
+
+      expect(canonicalChatMessages([first, second]), hasLength(1));
+    },
+  );
+
+  test('absent send_status decodes as sent', () {
+    final message = ChatMessage.fromJson({
+      'id': 'm1',
+      'conversation_id': 'c1',
+      'user_id': 'u1',
+      'body': 'hi',
+      'created_at': '2026-08-29T06:10:00Z',
+    });
+    expect(message.sendStatus, MessageSendStatus.sent);
+    expect(message.toJson().containsKey('send_status'), isFalse);
+  });
 }

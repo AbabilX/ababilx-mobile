@@ -76,13 +76,11 @@ class DriftChatMessageStore {
   }
 
   Future<void> saveAll(List<ChatMessage> messages) async {
-    final confirmed = messages
-        .where((m) => m.sendStatus == MessageSendStatus.sent && m.id.isNotEmpty)
-        .toList();
-    if (confirmed.isEmpty) return;
+    final writable = messages.where((m) => m.id.isNotEmpty).toList();
+    if (writable.isEmpty) return;
     try {
       await _db.batch((batch) {
-        for (final message in confirmed) {
+        for (final message in writable) {
           batch.insert(
             _db.cachedMessages,
             messageRow(message),
@@ -90,7 +88,7 @@ class DriftChatMessageStore {
           );
         }
       });
-      for (final id in confirmed.map((m) => m.conversationId).toSet()) {
+      for (final id in writable.map((m) => m.conversationId).toSet()) {
         await _prune(id);
       }
     } catch (_) {}
@@ -102,7 +100,26 @@ class DriftChatMessageStore {
       await (_db.delete(
         _db.cachedMessages,
       )..where((t) => t.id.equals(messageId))).go();
+      await _db.customStatement(
+        "DELETE FROM cached_messages WHERE json_extract(payload_json, '\$.id') = ?",
+        [messageId],
+      );
     } catch (_) {}
+  }
+
+  Future<List<ChatMessage>> listUnsent() async {
+    try {
+      final rows =
+          await (_db.select(_db.cachedMessages)..where(
+                (t) =>
+                    t.payloadJson.like('%"send_status":"sending"%') |
+                    t.payloadJson.like('%"send_status":"failed"%'),
+              ))
+              .get();
+      return messagesFromRows(rows).where((m) => m.isPending).toList();
+    } catch (_) {
+      return const [];
+    }
   }
 
   Future<List<ChatMessage>> search(String query, {required int limit}) async {

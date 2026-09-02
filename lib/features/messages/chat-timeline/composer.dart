@@ -31,6 +31,7 @@ class MessageComposer extends ConsumerStatefulWidget {
     this.hintName = 'someone',
     this.initialText = '',
     this.isGroup = false,
+    this.onMessageSubmitted,
   });
 
   final String conversationId;
@@ -40,6 +41,7 @@ class MessageComposer extends ConsumerStatefulWidget {
 
   /// Channel/group — show @ mention beside share-contact.
   final bool isGroup;
+  final VoidCallback? onMessageSubmitted;
 
   @override
   ConsumerState<MessageComposer> createState() => _MessageComposerState();
@@ -258,20 +260,26 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     setState(() {
       _pending.clear();
       _showMentions = false;
-      _forceExpanded = false;
-      _tall = false;
+      _forceExpanded = true;
     });
-    _focus.unfocus();
 
-    // Perform optimistic send
-    final sentMsg = await ref
+    // Start the optimistic insert before asking the timeline to reveal it.
+    // Keep this compose session focused, matching Signal's continuous-send UX.
+    // The conversation id must be the one on screen: sendMessage falls back to
+    // the shared activeConversationId, which a background fetchSidebar can
+    // null out, and a null id drops the send with no bubble and no error.
+    final sendFuture = ref
         .read(chatProvider.notifier)
         .sendMessage(
+          conversationId: widget.conversationId,
           body: body,
           attachments: attachments,
           mentionedUserIds: mentionedIds,
           parentId: effectiveParentId,
         );
+    widget.onMessageSubmitted?.call();
+    if (!_focus.hasFocus) _focus.requestFocus();
+    final sentMsg = await sendFuture;
 
     // Slack parity: Check if any mentioned users are not members of this channel/group
     if (widget.isGroup &&

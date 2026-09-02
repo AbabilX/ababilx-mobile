@@ -155,6 +155,9 @@ mixin _ChatActionsMixin
       // ── Step 3: Replace the pending bubble with the confirmed message ─────
       (this as _ChatOutboxMixin).removeFromOutboxAsync(clientRef);
       _replacePendingMessage(convId, clientRef, msg, parentId: parentId);
+      // Same local row as persistOutbox — clientRef is the history key, the
+      // server id rides in the payload. Never delete-and-reinsert.
+      (this as _ChatCacheMixin).persistMessageAsync(msg);
       return msg;
     } catch (_) {
       // ── Step 4: Mark the bubble as failed so user can retry ───────────────
@@ -237,49 +240,58 @@ mixin _ChatActionsMixin
         state.feeds[key] ??
         ChatFeed(fetchedAt: DateTime.now().millisecondsSinceEpoch);
     if (feed.messages.any((m) => m.id == msg.id)) return;
-    setFeed(key, feed.copyWith(messages: [...feed.messages, msg]));
+    setFeed(
+      key,
+      feed.copyWith(messages: canonicalChatMessages([...feed.messages, msg])),
+    );
   }
 
+  /// Settles the local bubble [pendingId] with the server's [confirmed] copy.
+  ///
+  /// Idempotent on purpose: the websocket event and the HTTP response both land
+  /// here, in either order, and the second call must be a no-op. The pending
+  /// bubble is identified by its **row id** — never by `clientRef`, because the
+  /// server echoes `client_message_id` back on the confirmed message, so a
+  /// clientRef match would delete the very message being confirmed.
   void _replacePendingMessage(
     String convId,
-    String clientRef,
+    String pendingId,
     ChatMessage confirmed, {
     String? parentId,
   }) {
     final key = feedKey(convId, threadRootId: parentId);
     final feed = state.feeds[key];
     if (feed != null) {
+      bool isPendingRow(ChatMessage m) =>
+          m.id == pendingId && m.id != confirmed.id;
       final alreadyInFeed = feed.messages.any((m) => m.id == confirmed.id);
-      final hasPending = feed.messages.any(
-        (m) => m.clientRef == clientRef || m.id == clientRef,
-      );
+      final hasPending = feed.messages.any(isPendingRow);
 
       if (alreadyInFeed) {
-        // If WS already added confirmed message, filter out the pending message
         setFeed(
           key,
           feed.copyWith(
-            messages: feed.messages
-                .where((m) => m.clientRef != clientRef && m.id != clientRef)
-                .toList(),
+            messages: canonicalChatMessages(
+              feed.messages.where((m) => !isPendingRow(m)),
+            ),
           ),
         );
       } else if (hasPending) {
-        // Replace pending with confirmed
         setFeed(
           key,
           feed.copyWith(
-            messages: feed.messages.map((m) {
-              if (m.clientRef == clientRef || m.id == clientRef) {
-                return confirmed;
-              }
-              return m;
-            }).toList(),
+            messages: canonicalChatMessages(
+              feed.messages.map((m) => isPendingRow(m) ? confirmed : m),
+            ),
           ),
         );
       } else {
-        // Feed is loaded but pending was lost, append confirmed
-        setFeed(key, feed.copyWith(messages: [...feed.messages, confirmed]));
+        setFeed(
+          key,
+          feed.copyWith(
+            messages: canonicalChatMessages([...feed.messages, confirmed]),
+          ),
+        );
       }
     }
 
@@ -290,10 +302,14 @@ mixin _ChatActionsMixin
     applyIncomingMessage(convId, confirmed, bumpUnread: false);
   }
 
-  void _markPendingFailed(String convId, String clientRef, {String? parentId}) {
+  /// Matches the pending bubble by row id for the same reason
+  /// [_replacePendingMessage] does: a request that fails after the websocket
+  /// already delivered the server copy must not flip that confirmed row to
+  /// failed just because it carries the same `client_message_id`.
+  void _markPendingFailed(String convId, String pendingId, {String? parentId}) {
     _patchInFeed(
       convId,
-      (m) => m.clientRef == clientRef
+      (m) => m.id == pendingId && m.isPending
           ? m.copyWith(sendStatus: MessageSendStatus.failed)
           : m,
       threadRootId: parentId,

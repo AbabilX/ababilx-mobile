@@ -37,7 +37,10 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _load();
+    });
     _scrollCtrl.addListener(_onScroll);
   }
 
@@ -54,11 +57,13 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
   }
 
   void _load() {
+    if (!mounted) return;
     final n = ref.read(chatProvider.notifier);
     // Cache-first: hydrate from SQLite immediately so messages show with 0
     // network latency. Then force a fresh network fetch in the background.
     // This is exactly how WhatsApp loads conversations.
     n.hydrateFeedFromCache(widget.conversationId).then((_) {
+      if (!mounted) return;
       n.loadFeed(
         widget.conversationId,
         threadRootId: widget.threadRootId,
@@ -73,11 +78,16 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
   /// Scroll to the bottom (newest message) in a reverse:true list.
   void _scrollToBottom() {
     if (!_scrollCtrl.hasClients) return;
-    _scrollCtrl.animateTo(
-      0,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-    );
+    _scrollCtrl.jumpTo(0);
+  }
+
+  void _revealSubmittedMessage() {
+    // The pending bubble is inserted asynchronously. Reveal once after that
+    // state update and once more after any IME/composer layout settles.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    });
   }
 
   bool get _isNearBottom {
@@ -173,6 +183,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
         TimelineComposer(
           conversationId: widget.conversationId,
           parentId: widget.threadRootId,
+          onMessageSubmitted: _revealSubmittedMessage,
         ),
       ],
     );

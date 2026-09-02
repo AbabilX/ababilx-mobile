@@ -149,6 +149,22 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
 
     fun remove(messageId: String) {
         writableDatabase.delete("messages", "id = ?", arrayOf(messageId))
+        writableDatabase.delete(
+            "messages",
+            "json_extract(payload_json, '\$.id') = ?",
+            arrayOf(messageId),
+        )
+    }
+
+    fun unsent(): List<String> {
+        val out = mutableListOf<String>()
+        readableDatabase.rawQuery(
+            "SELECT payload_json FROM messages WHERE json_extract(payload_json, '\$.send_status') IN ('sending', 'failed')",
+            null,
+        ).use { cursor ->
+            while (cursor.moveToNext()) out += cursor.getString(0)
+        }
+        return out
     }
 
     fun clearConversation(conversationId: String) {

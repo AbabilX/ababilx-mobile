@@ -11,17 +11,15 @@ mixin _ChatFeedEditMixin on Notifier<ChatState>, _ChatFeedMixin {
   }) {
     final key = feedKey(conversationId, threadRootId: threadRootId);
     final existing = state.feeds[key];
-    // Only update an already-loaded feed. If the feed has never been fetched,
-    // skip — it will be loaded fresh (with full history) when the user opens
-    // the conversation. Appending to an empty/unfetched feed would prevent the
-    // full-history load from replacing it and leave the feed with only 1 msg.
-    if (existing == null || existing.fetchedAt == 0) return;
+    if (existing == null) return;
     if (existing.messages.any((m) => m.id == msg.id)) return;
     setFeed(
       key,
       existing.copyWith(
         messages: canonicalChatMessages([...existing.messages, msg]),
-        fetchedAt: DateTime.now().millisecondsSinceEpoch,
+        fetchedAt: existing.fetchedAt == 0
+            ? 0
+            : DateTime.now().millisecondsSinceEpoch,
       ),
     );
   }

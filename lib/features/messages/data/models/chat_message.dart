@@ -72,7 +72,7 @@ class ChatMessage extends Equatable {
   /// and WebSocket event. New server-confirmed messages preserve it.
   final String? clientRef;
 
-  /// Pending data kept only until server confirms — not serialised to cache.
+  /// Retry payload kept on unsent local rows so a killed send can resume.
   final List<ChatAttachmentInput> pendingAttachments;
   final String? pendingParentId;
   final List<String> pendingMentionedUserIds;
@@ -118,7 +118,15 @@ class ChatMessage extends Equatable {
             Map<String, dynamic>.from(json['delivery'] as Map),
           )
         : null,
+    sendStatus: _sendStatusFromJson(json['send_status']),
     clientRef: json['client_message_id'] as String?,
+    pendingAttachments: (json['pending_attachments'] as List<dynamic>? ?? [])
+        .map((e) => ChatAttachmentInput.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    pendingParentId: json['pending_parent_id'] as String?,
+    pendingMentionedUserIds:
+        (json['pending_mentioned_user_ids'] as List<dynamic>? ?? [])
+            .cast<String>(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -148,7 +156,12 @@ class ChatMessage extends Equatable {
       'encryption_key_version': encryptionKeyVersion,
     if (delivery != null) 'delivery': delivery!.toJson(),
     if (clientRef != null) 'client_message_id': clientRef,
-    // Pending fields deliberately excluded from cache serialisation.
+    if (sendStatus != MessageSendStatus.sent) 'send_status': sendStatus.name,
+    if (pendingAttachments.isNotEmpty)
+      'pending_attachments': pendingAttachments.map((a) => a.toJson()).toList(),
+    if (pendingParentId != null) 'pending_parent_id': pendingParentId,
+    if (pendingMentionedUserIds.isNotEmpty)
+      'pending_mentioned_user_ids': pendingMentionedUserIds,
   };
 
   ChatMessage copyWith({
@@ -162,6 +175,10 @@ class ChatMessage extends Equatable {
     String? clientRef,
     bool clearClientRef = false,
     ChatDeliverySummary? delivery,
+    String? encryptedBody,
+    String? encryptionNonce,
+    int? encryptionVersion,
+    int? encryptionKeyVersion,
   }) => ChatMessage(
     id: id ?? this.id,
     conversationId: conversationId,
@@ -181,10 +198,10 @@ class ChatMessage extends Equatable {
     meta: meta,
     forwardedFromName: forwardedFromName,
     forwardedFromSource: forwardedFromSource,
-    encryptedBody: encryptedBody,
-    encryptionNonce: encryptionNonce,
-    encryptionVersion: encryptionVersion,
-    encryptionKeyVersion: encryptionKeyVersion,
+    encryptedBody: encryptedBody ?? this.encryptedBody,
+    encryptionNonce: encryptionNonce ?? this.encryptionNonce,
+    encryptionVersion: encryptionVersion ?? this.encryptionVersion,
+    encryptionKeyVersion: encryptionKeyVersion ?? this.encryptionKeyVersion,
     delivery: delivery ?? this.delivery,
     sendStatus: sendStatus ?? this.sendStatus,
     clientRef: clearClientRef ? null : (clientRef ?? this.clientRef),
@@ -228,4 +245,13 @@ class ChatMessagesPage extends Equatable {
 
   @override
   List<Object?> get props => [messages.length, nextCursor, hasMore];
+}
+
+MessageSendStatus _sendStatusFromJson(Object? raw) {
+  if (raw is! String) return MessageSendStatus.sent;
+  return switch (raw) {
+    'sending' => MessageSendStatus.sending,
+    'failed' => MessageSendStatus.failed,
+    _ => MessageSendStatus.sent,
+  };
 }

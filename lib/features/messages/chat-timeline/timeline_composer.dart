@@ -11,10 +11,12 @@ class TimelineComposer extends ConsumerWidget {
     super.key,
     required this.conversationId,
     this.parentId,
+    this.onMessageSubmitted,
   });
 
   final String conversationId;
   final String? parentId;
+  final VoidCallback? onMessageSubmitted;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,6 +31,7 @@ class TimelineComposer extends ConsumerWidget {
       parentId: parentId,
       hintName: conversation?.displayTitle(chat.currentUserId) ?? 'someone',
       isGroup: conversation?.isGroupConversation ?? false,
+      onMessageSubmitted: onMessageSubmitted,
     );
   }
 }

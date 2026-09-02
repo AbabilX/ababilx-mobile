@@ -146,19 +146,65 @@ void main() {
     expect(stored.encryptedBody, 'Y2lwaGVy');
   });
 
-  test('pending sends never reach the history table', () async {
+  test(
+    'an outgoing send is stored under its client ref and confirm updates that row',
+    () async {
+      const ref = 'client-1';
+      await store.saveAll([
+        ChatMessage(
+          id: ref,
+          conversationId: 'c1',
+          userId: 'u1',
+          body: 'in flight',
+          createdAt: '2026-08-21T00:00:00Z',
+          sendStatus: MessageSendStatus.sending,
+          clientRef: ref,
+        ),
+      ]);
+
+      final pending = (await store.page('c1')).single;
+      expect(pending.sendStatus, MessageSendStatus.sending);
+      expect(pending.id, ref);
+      expect((await store.listUnsent()).single.id, ref);
+
+      await store.saveAll([
+        ChatMessage(
+          id: 'server-1',
+          conversationId: 'c1',
+          userId: 'u1',
+          body: 'in flight',
+          createdAt: '2026-08-21T00:00:00Z',
+          clientRef: ref,
+        ),
+      ]);
+
+      final stored = await store.page('c1');
+      expect(stored, hasLength(1));
+      expect(stored.single.id, 'server-1');
+      expect(stored.single.sendStatus, MessageSendStatus.sent);
+      expect(await store.listUnsent(), isEmpty);
+    },
+  );
+
+  test('pending encrypted body is never searchable plaintext', () async {
     await store.saveAll([
       ChatMessage(
         id: 'p1',
         conversationId: 'c1',
         userId: 'u1',
-        body: 'in flight',
+        body: 'secret plaintext',
         createdAt: '2026-08-21T00:00:00Z',
         sendStatus: MessageSendStatus.sending,
+        clientRef: 'p1',
+        encryptedBody: 'Y2lwaGVy',
+        encryptionVersion: 1,
       ),
     ]);
 
-    expect(await store.page('c1'), isEmpty);
+    expect(await store.search('secret'), isEmpty);
+    final stored = (await store.page('c1')).single;
+    expect(stored.body, isEmpty);
+    expect(stored.encryptedBody, 'Y2lwaGVy');
   });
 
   test('prunes a conversation back to its retention window', () async {

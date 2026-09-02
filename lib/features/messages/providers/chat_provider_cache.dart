@@ -99,11 +99,15 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
         beforeId: messages.first.id,
       );
       messages = await decryptIfNeeded(messages);
-      unawaited(ref.read(attachmentIntakeProvider).onMessages(messages));
+      final merged = canonicalChatMessages([
+        ...messages,
+        ...?existing?.messages,
+      ]);
+      unawaited(ref.read(attachmentIntakeProvider).onMessages(merged));
       setFeed(
         feedKey(conversationId),
         ChatFeed(
-          messages: messages,
+          messages: merged,
           fetchedAt: 0, // 0 = from cache, triggers background network refresh
           loading: false,
           hasMore: hasOlder,

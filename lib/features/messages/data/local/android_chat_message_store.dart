@@ -29,14 +29,12 @@ class AndroidChatMessageStore {
 
   List<Map<String, Object?>> _encodedRows(List<ChatMessage> messages) =>
       messages
-          .where(
-            (m) => m.sendStatus == MessageSendStatus.sent && m.id.isNotEmpty,
-          )
+          .where((m) => m.id.isNotEmpty)
           .map((m) {
             final payload = m.toJson();
             if (m.isEncrypted) payload['body'] = '';
             return <String, Object?>{
-              'id': m.id,
+              'id': localMessageRowId(m),
               'conversationId': m.conversationId,
               'createdAtMs': messageTimeMs(m),
               'threadRootId': m.parentId,
@@ -86,6 +84,20 @@ class AndroidChatMessageStore {
 
   Future<void> remove(String messageId) =>
       _channel.invokeMethod<void>('remove', {'messageId': messageId});
+
+  Future<List<ChatMessage>> listUnsent() async {
+    final payloads = await _channel.invokeListMethod<String>('unsent');
+    final messages = <ChatMessage>[];
+    for (final payload in payloads ?? const <String>[]) {
+      try {
+        final message = ChatMessage.fromJson(
+          jsonDecode(payload) as Map<String, dynamic>,
+        );
+        if (message.isPending) messages.add(message);
+      } catch (_) {}
+    }
+    return messages;
+  }
 
   Future<void> clearConversation(String conversationId) =>
       _channel.invokeMethod<void>('clearConversation', {

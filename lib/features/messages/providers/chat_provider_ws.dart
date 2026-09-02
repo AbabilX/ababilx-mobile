@@ -165,22 +165,25 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       // 2. Match the sender-generated id when available. Falling back to the
       // first pending bubble is only for legacy server events.
       if (msg.userId == state.currentUserId) {
+        // Only an unsettled bubble can be the pending copy of this event. The
+        // server echoes client_message_id back, so without the isPending guard
+        // an already-confirmed row would match itself here.
         ChatMessage? pendingMsg;
         for (final m in feedForConv.messages) {
+          if (m.userId != state.currentUserId || !m.isPending) continue;
           final sameClientMessage =
               msg.clientRef != null && m.clientRef == msg.clientRef;
-          final legacyPending = msg.clientRef == null && m.isPending;
-          if (m.userId == state.currentUserId &&
-              (sameClientMessage || legacyPending)) {
+          final legacyPending = msg.clientRef == null;
+          if (sameClientMessage || legacyPending) {
             pendingMsg = m;
             break;
           }
         }
-        if (pendingMsg != null && pendingMsg.clientRef != null) {
+        if (pendingMsg != null) {
           // WS arrived before HTTP returned: replace pending bubble now
           _replacePendingMessage(
             convId,
-            pendingMsg.clientRef!,
+            pendingMsg.id,
             msg,
             parentId: msg.parentId,
           );

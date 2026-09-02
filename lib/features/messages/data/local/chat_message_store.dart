@@ -115,6 +115,17 @@ class ChatMessageStore {
 
   Future<void> saveOne(ChatMessage message) => saveAll([message]);
 
+  Future<List<ChatMessage>> listUnsent() async {
+    final native = _android;
+    if (native != null) {
+      try {
+        final rows = await native.listUnsent();
+        if (rows.isNotEmpty) return rows;
+      } catch (_) {}
+    }
+    return _drift.listUnsent();
+  }
+
   Future<void> remove(String messageId) async {
     final native = _android;
     if (native != null) {

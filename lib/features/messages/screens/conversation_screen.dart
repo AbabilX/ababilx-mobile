@@ -38,6 +38,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     // racing whatever ChatStoreSync is doing.
     _prepare();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref
           .read(chatProvider.notifier)
           .setActiveConversation(widget.conversationId);

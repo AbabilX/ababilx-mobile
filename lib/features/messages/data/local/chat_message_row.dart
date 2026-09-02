@@ -11,6 +11,15 @@ import 'chat_local_db.dart';
 int messageTimeMs(ChatMessage m) =>
     DateTime.tryParse(m.createdAt)?.millisecondsSinceEpoch ?? 0;
 
+/// Local history key. A send is inserted under its clientRef and confirmed
+/// under the same key (server id lives in the payload), matching Signal's
+/// insert-then-update. Messages without a client ref keep using server id.
+String localMessageRowId(ChatMessage m) {
+  final ref = m.clientRef;
+  if (ref != null && ref.isNotEmpty) return ref;
+  return m.id;
+}
+
 /// Message → row. An E2EE DM is written ciphertext-only: its plaintext body is
 /// blanked and it contributes nothing to [CachedMessages.searchText], so the
 /// decrypted text exists on this device only inside the vault and in memory.
@@ -18,7 +27,7 @@ CachedMessagesCompanion messageRow(ChatMessage m) {
   final json = m.toJson();
   if (m.isEncrypted) json['body'] = '';
   return CachedMessagesCompanion.insert(
-    id: m.id,
+    id: localMessageRowId(m),
     conversationId: m.conversationId,
     createdAtMs: messageTimeMs(m),
     threadRootId: Value(m.parentId),
@@ -49,7 +58,7 @@ List<ChatMessage> messagesFromRows(Iterable<CachedMessage> rows) {
 }
 
 String _searchText(ChatMessage m) {
-  if (m.isEncrypted || m.isDeleted) return '';
+  if (m.isEncrypted || m.isDeleted || m.isPending) return '';
   final body = tiptapToPreviewText(m.body);
   final names = m.attachments.map((a) => a.fileName).join(' ');
   return '$body $names'.trim().toLowerCase();
