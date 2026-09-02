@@ -42,10 +42,10 @@ class FilterChipsRow extends ConsumerWidget {
     }
 
     return SizedBox(
-      height: 48,
+      height: 36,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
         children: [
           _Chip(
             label: AppTranslations.translate(context, ref, 'chat_all'),
@@ -100,30 +100,31 @@ class _Chip extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     return Material(
       color: selected ? colors.surfaceContainerHighest : Colors.transparent,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: selected ? Colors.transparent : colors.outlineVariant,
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                ChatIcon(icon!, size: 16, color: colors.onSurfaceVariant),
-                const SizedBox(width: 6),
+                ChatIcon(icon!, size: 14, color: colors.onSurfaceVariant),
+                const SizedBox(width: 4),
               ],
               Text(
                 label,
                 style: TextStyle(
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  fontSize: 13,
+                  fontSize: 12,
+                  height: 1.1,
                 ),
               ),
             ],
