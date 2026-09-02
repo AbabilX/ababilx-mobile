@@ -32,5 +32,10 @@ class SecureStorage {
   Future<void> deleteMessageVaultIdentity() =>
       _storage.delete(key: StorageKeys.messageVaultIdentity);
 
+  Future<String?> readMessagingDeviceIdentity() =>
+      _storage.read(key: StorageKeys.messagingDeviceIdentity);
+  Future<void> writeMessagingDeviceIdentity(String value) =>
+      _storage.write(key: StorageKeys.messagingDeviceIdentity, value: value);
+
   Future<void> clearAll() => _storage.deleteAll();
 }

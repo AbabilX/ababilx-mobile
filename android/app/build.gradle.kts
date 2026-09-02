@@ -9,6 +9,14 @@ plugins {
 }
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
+val releaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+if (releaseBuildRequested && !keystorePropertiesFile.exists()) {
+    throw GradleException(
+        "Release signing requires android/key.properties; debug signing is forbidden.",
+    )
+}
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
@@ -43,12 +51,7 @@ android {
     }
     buildTypes {
         release {
-            // Use release keystore when key.properties exists; otherwise fall back to debug.
-            signingConfig = if (keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

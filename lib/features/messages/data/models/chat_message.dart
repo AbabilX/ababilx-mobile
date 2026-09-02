@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import 'chat_attachment.dart';
+import 'chat_delivery_summary.dart';
 import 'chat_reaction.dart';
 
 /// Send-state for optimistic messages. Server-confirmed messages are [sent].
@@ -31,6 +32,7 @@ class ChatMessage extends Equatable {
     this.encryptionNonce,
     this.encryptionVersion,
     this.encryptionKeyVersion,
+    this.delivery,
     // Optimistic-send fields — not present in server JSON.
     this.sendStatus = MessageSendStatus.sent,
     this.clientRef,
@@ -61,12 +63,13 @@ class ChatMessage extends Equatable {
   final String? encryptionNonce;
   final int? encryptionVersion;
   final int? encryptionKeyVersion;
+  final ChatDeliverySummary? delivery;
 
   /// Optimistic UI: current send state.
   final MessageSendStatus sendStatus;
 
-  /// Stable local ID used to match this pending message to the server reply.
-  /// Null for server-confirmed messages.
+  /// Stable sender-generated ID used to match a pending send, HTTP response,
+  /// and WebSocket event. New server-confirmed messages preserve it.
   final String? clientRef;
 
   /// Pending data kept only until server confirms — not serialised to cache.
@@ -110,7 +113,12 @@ class ChatMessage extends Equatable {
     encryptionNonce: json['encryption_nonce'] as String?,
     encryptionVersion: (json['encryption_version'] as num?)?.toInt(),
     encryptionKeyVersion: (json['encryption_key_version'] as num?)?.toInt(),
-    // sendStatus / clientRef not in server JSON → defaults to sent/null.
+    delivery: json['delivery'] is Map
+        ? ChatDeliverySummary.fromJson(
+            Map<String, dynamic>.from(json['delivery'] as Map),
+          )
+        : null,
+    clientRef: json['client_message_id'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -138,6 +146,8 @@ class ChatMessage extends Equatable {
     if (encryptionVersion != null) 'encryption_version': encryptionVersion,
     if (encryptionKeyVersion != null)
       'encryption_key_version': encryptionKeyVersion,
+    if (delivery != null) 'delivery': delivery!.toJson(),
+    if (clientRef != null) 'client_message_id': clientRef,
     // Pending fields deliberately excluded from cache serialisation.
   };
 
@@ -151,6 +161,7 @@ class ChatMessage extends Equatable {
     MessageSendStatus? sendStatus,
     String? clientRef,
     bool clearClientRef = false,
+    ChatDeliverySummary? delivery,
   }) => ChatMessage(
     id: id ?? this.id,
     conversationId: conversationId,
@@ -174,6 +185,7 @@ class ChatMessage extends Equatable {
     encryptionNonce: encryptionNonce,
     encryptionVersion: encryptionVersion,
     encryptionKeyVersion: encryptionKeyVersion,
+    delivery: delivery ?? this.delivery,
     sendStatus: sendStatus ?? this.sendStatus,
     clientRef: clearClientRef ? null : (clientRef ?? this.clientRef),
     pendingAttachments: pendingAttachments,
@@ -190,6 +202,7 @@ class ChatMessage extends Equatable {
     reactions,
     threadCount,
     sendStatus,
+    delivery,
   ];
 }
 

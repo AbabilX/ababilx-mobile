@@ -12,6 +12,7 @@ import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat_utils.dart';
+import '../data/chat_client_message_id.dart';
 import '../data/chat_message_merge.dart';
 import '../data/chat_repository.dart';
 import '../data/local/chat_message_row.dart';
@@ -133,6 +134,9 @@ class ChatNotifier extends Notifier<ChatState>
     // real user id, restore the E2EE vault, refresh the sidebar.
     try {
       await ensureCurrentUserId();
+    } catch (_) {}
+    try {
+      await _repo.ensureMessagingDevice();
     } catch (_) {}
     try {
       await ref.read(messageVaultProvider).restoreTrustedIdentity();

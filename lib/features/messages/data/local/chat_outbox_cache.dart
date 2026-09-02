@@ -42,9 +42,9 @@ class OutboxEntry {
 }
 
 /// Durable outbox for outbound sends — channel messages in plain text, DM
-/// messages as ciphertext only (see [PendingOutboxMessages]). Cache-first,
-/// best-effort: every method swallows its own errors, matching
-/// [ChatFeedCache] and [ChatSidebarCache].
+/// messages as ciphertext only (see [PendingOutboxMessages]). A save is a
+/// delivery prerequisite and therefore propagates storage errors. Reads and
+/// cleanup remain best-effort because server-confirmed state is recoverable.
 class ChatOutboxCache {
   ChatOutboxCache(this._db);
 
@@ -61,26 +61,24 @@ class ChatOutboxCache {
     String? encryptionNonce,
     int? encryptionKeyVersion,
   }) async {
-    try {
-      await _db
-          .into(_db.pendingOutboxMessages)
-          .insertOnConflictUpdate(
-            PendingOutboxMessagesCompanion.insert(
-              clientRef: clientRef,
-              conversationId: conversationId,
-              body: body,
-              parentId: Value(parentId),
-              attachmentsJson: jsonEncode(
-                attachments.map((a) => a.toJson()).toList(),
-              ),
-              mentionedUserIdsJson: jsonEncode(mentionedUserIds),
-              createdAtMs: DateTime.now().millisecondsSinceEpoch,
-              encryptedBody: Value(encryptedBody),
-              encryptionNonce: Value(encryptionNonce),
-              encryptionKeyVersion: Value(encryptionKeyVersion),
+    await _db
+        .into(_db.pendingOutboxMessages)
+        .insertOnConflictUpdate(
+          PendingOutboxMessagesCompanion.insert(
+            clientRef: clientRef,
+            conversationId: conversationId,
+            body: body,
+            parentId: Value(parentId),
+            attachmentsJson: jsonEncode(
+              attachments.map((a) => a.toJson()).toList(),
             ),
-          );
-    } catch (_) {}
+            mentionedUserIdsJson: jsonEncode(mentionedUserIds),
+            createdAtMs: DateTime.now().millisecondsSinceEpoch,
+            encryptedBody: Value(encryptedBody),
+            encryptionNonce: Value(encryptionNonce),
+            encryptionKeyVersion: Value(encryptionKeyVersion),
+          ),
+        );
   }
 
   Future<void> remove(String clientRef) async {

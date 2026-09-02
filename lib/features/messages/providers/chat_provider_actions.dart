@@ -73,12 +73,13 @@ mixin _ChatActionsMixin
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
     String? parentId,
+    String? clientMessageId,
   }) async {
     final convId = conversationId ?? state.activeConversationId;
     if (convId == null) return null;
 
     // ── Step 1: Build a pending message and show it instantly in the UI ──────
-    final clientRef = 'pending_${DateTime.now().microsecondsSinceEpoch}';
+    final clientRef = clientMessageId ?? newChatClientMessageId();
     // E2EE binds the sender UUID into the AAD, so an empty id here would seal a
     // message nobody — including this device — can ever open again.
     final String currentUser;
@@ -128,7 +129,7 @@ mixin _ChatActionsMixin
       }
       // Persist before the network call — even a send that never gets to
       // try (app killed offline) must survive as a retryable outbox row.
-      (this as _ChatOutboxMixin).persistOutboxAsync(
+      await (this as _ChatOutboxMixin).persistOutbox(
         convId,
         pendingMsg,
         encrypted: encrypted,
@@ -136,6 +137,7 @@ mixin _ChatActionsMixin
       // ── Step 2: Fire the actual network call ─────────────────────────────
       var msg = await repo.sendMessage(
         convId,
+        clientMessageId: clientRef,
         body: encrypted == null ? body : '',
         encryptedBody: encrypted?.encryptedBody,
         encryptionNonce: encrypted?.nonce,
@@ -156,7 +158,8 @@ mixin _ChatActionsMixin
       return msg;
     } catch (_) {
       // ── Step 4: Mark the bubble as failed so user can retry ───────────────
-      // The outbox row already written above stays — that's the retry record.
+      // When persistence succeeded, its outbox row stays as the retry record.
+      // A storage failure never reaches the network, so no duplicate is possible.
       _markPendingFailed(convId, clientRef, parentId: parentId);
       return null;
     }
@@ -175,14 +178,13 @@ mixin _ChatActionsMixin
     final convId = failedMsg.conversationId;
     if (convId.isEmpty) return;
 
-    // Remove the failed bubble first — sendMessage will create a fresh pending one.
+    // Keep the same client id: if the server committed but its response was
+    // lost, this retry returns the original row instead of duplicating it.
     _removePendingFromFeed(convId, failedMsg.id, parentId: failedMsg.parentId);
-    if (failedMsg.clientRef != null) {
-      (this as _ChatOutboxMixin).removeFromOutboxAsync(failedMsg.clientRef!);
-    }
 
     await sendMessage(
       conversationId: convId,
+      clientMessageId: failedMsg.clientRef,
       body: failedMsg.body,
       attachments: failedMsg.pendingAttachments,
       mentionedUserIds: failedMsg.pendingMentionedUserIds,
@@ -342,6 +344,18 @@ mixin _ChatActionsMixin
     try {
       await repo.markRead(conversationId);
     } catch (_) {}
+    final ids = <String>{};
+    for (final entry in state.feeds.entries) {
+      if (entry.key == conversationId ||
+          entry.key.startsWith('$conversationId:thread:')) {
+        ids.addAll(entry.value.messages.map((message) => message.id));
+      }
+    }
+    if (ids.isNotEmpty) {
+      unawaited(
+        repo.acknowledgeMessages('read', ids.toList()).catchError((_) {}),
+      );
+    }
   }
 
   Future<ChatConversation> createChannel({

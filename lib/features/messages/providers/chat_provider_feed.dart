@@ -53,6 +53,24 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
           .timeout(firstLoadNetworkTimeout);
       final messages = await decryptIfNeeded(page.messages);
       final sorted = canonicalChatMessages(messages);
+      unawaited(
+        repo
+            .acknowledgeMessages(
+              'delivered',
+              page.messages.map((message) => message.id).toList(),
+            )
+            .catchError((_) {}),
+      );
+      if (state.activeConversationId == conversationId) {
+        unawaited(
+          repo
+              .acknowledgeMessages(
+                'read',
+                page.messages.map((message) => message.id).toList(),
+              )
+              .catchError((_) {}),
+        );
+      }
       // A websocket event can arrive while this request is in flight. Merge
       // against the latest state, not the stale snapshot from request start.
       final latest = state.feeds[key] ?? existing;
@@ -132,6 +150,24 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       );
       final messages = await decryptIfNeeded(page.messages);
       final sorted = canonicalChatMessages(messages);
+      unawaited(
+        repo
+            .acknowledgeMessages(
+              'delivered',
+              page.messages.map((message) => message.id).toList(),
+            )
+            .catchError((_) {}),
+      );
+      if (state.activeConversationId == conversationId) {
+        unawaited(
+          repo
+              .acknowledgeMessages(
+                'read',
+                page.messages.map((message) => message.id).toList(),
+              )
+              .catchError((_) {}),
+        );
+      }
       final latest = state.feeds[key] ?? feed;
       final merged = canonicalChatMessages([...latest.messages, ...sorted]);
       await (this as _ChatCacheMixin).persistFeed(sorted);

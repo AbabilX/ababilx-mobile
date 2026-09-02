@@ -2,6 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../../messages/data/chat_client_message_id.dart';
 import '../../messages/data/chat_repository.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/tiptap_plain_text.dart';
@@ -35,6 +36,7 @@ Future<bool> sendChatNotificationReply(
 
     await repo.sendMessage(
       conversationId,
+      clientMessageId: newChatClientMessageId(),
       body: sealed == null ? body : '',
       encryptedBody: sealed?.encryptedBody,
       encryptionNonce: sealed?.nonce,

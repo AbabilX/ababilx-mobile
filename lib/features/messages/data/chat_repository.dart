@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import 'chat_attachments_api.dart';
 import 'chat_connections_api.dart';
+import 'chat_device_repository.dart';
 import 'chat_endpoints.dart';
 import 'chat_e2ee_api.dart';
 import 'chat_conversations_api.dart';
@@ -24,12 +25,14 @@ class ChatRepository {
         client,
         ChatEndpoints(independent: independent),
       ),
+      _devices = ChatDeviceRepository(client),
       _connections = ChatConnectionsApi(client);
 
   final ChatConversationsApi _conversations;
   final ChatMessagesApi _messages;
   final ChatE2eeApi _e2ee;
   final ChatAttachmentsApi _attachments;
+  final ChatDeviceRepository _devices;
   final ChatConnectionsApi _connections;
 
   Future<ChatSidebar> listConversations() => _conversations.listConversations();
@@ -109,6 +112,7 @@ class ChatRepository {
 
   Future<ChatMessage> sendMessage(
     String conversationId, {
+    required String clientMessageId,
     required String body,
     String? encryptedBody,
     String? encryptionNonce,
@@ -119,6 +123,7 @@ class ChatRepository {
     List<String> mentionedUserIds = const [],
   }) => _messages.sendMessage(
     conversationId,
+    clientMessageId: clientMessageId,
     body: body,
     encryptedBody: encryptedBody,
     encryptionNonce: encryptionNonce,
@@ -155,6 +160,13 @@ class ChatRepository {
 
   Future<void> markRead(String conversationId) =>
       _messages.markRead(conversationId);
+
+  Future<void> ensureMessagingDevice() async {
+    await _devices.ensureRegistered();
+  }
+
+  Future<void> acknowledgeMessages(String status, List<String> messageIds) =>
+      _devices.acknowledge(status, messageIds);
 
   Future<Map<String, dynamic>> getE2eeVault() => _e2ee.getVault();
   Future<void> putE2eeVault(Map<String, dynamic> data) => _e2ee.putVault(data);

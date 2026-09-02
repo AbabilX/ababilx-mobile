@@ -12,28 +12,23 @@ mixin _ChatOutboxMixin on Notifier<ChatState>, _ChatFeedMixin {
   /// Writes [pendingMsg] to the outbox before the network call is even made,
   /// so a send survives an app kill regardless of whether it ever gets to
   /// try. Pass [encrypted] for a DM send — its ciphertext is stored instead
-  /// of [pendingMsg.body], never the plaintext. Fire-and-forget: the
-  /// in-memory pending bubble is the source of truth for this session, the
-  /// outbox row is only for surviving a restart.
-  void persistOutboxAsync(
+  /// of [pendingMsg.body], never the plaintext. This future must complete
+  /// before the caller starts the network request.
+  Future<void> persistOutbox(
     String conversationId,
     ChatMessage pendingMsg, {
     EncryptedDmPayload? encrypted,
-  }) {
-    outboxCache
-        .save(
-          clientRef: pendingMsg.clientRef ?? pendingMsg.id,
-          conversationId: conversationId,
-          body: encrypted == null ? pendingMsg.body : '',
-          parentId: pendingMsg.pendingParentId,
-          attachments: pendingMsg.pendingAttachments,
-          mentionedUserIds: pendingMsg.pendingMentionedUserIds,
-          encryptedBody: encrypted?.encryptedBody,
-          encryptionNonce: encrypted?.nonce,
-          encryptionKeyVersion: encrypted?.keyVersion,
-        )
-        .ignore();
-  }
+  }) => outboxCache.save(
+    clientRef: pendingMsg.clientRef ?? pendingMsg.id,
+    conversationId: conversationId,
+    body: encrypted == null ? pendingMsg.body : '',
+    parentId: pendingMsg.pendingParentId,
+    attachments: pendingMsg.pendingAttachments,
+    mentionedUserIds: pendingMsg.pendingMentionedUserIds,
+    encryptedBody: encrypted?.encryptedBody,
+    encryptionNonce: encrypted?.nonce,
+    encryptionKeyVersion: encrypted?.keyVersion,
+  );
 
   void removeFromOutboxAsync(String clientRef) {
     outboxCache.remove(clientRef).ignore();

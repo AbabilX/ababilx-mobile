@@ -207,6 +207,12 @@ class ApiConstants {
   // Devices (FCM)
   static const String devices = '/api/devices';
 
+  // Per-device message delivery + key lifecycle.
+  static const String messagingDevices = '/api/messaging/devices';
+  static String messagingDeviceKey(String deviceId) =>
+      '$messagingDevices/${Uri.encodeComponent(deviceId)}/key';
+  static const String messagingReceipts = '/api/messaging/receipts';
+
   // Workspace Cmd+K search (team premium — all members)
   static const String aiSearchMessages = '/api/ai/search-messages';
 
@@ -227,4 +233,6 @@ class StorageKeys {
   static const String refreshToken = 'ababilx_refresh_token';
   static const String fcmToken = 'ababilx_fcm_token';
   static const String messageVaultIdentity = 'ababilx_message_vault_identity';
+  static const String messagingDeviceIdentity =
+      'ababilx_messaging_device_identity';
 }

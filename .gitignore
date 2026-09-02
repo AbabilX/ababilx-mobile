@@ -44,3 +44,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Release signing material must stay local/CI-secret only.
+/android/key.properties
+*.jks
+*.keystore

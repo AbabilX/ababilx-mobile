@@ -118,9 +118,9 @@ class MessageRowContent extends ConsumerWidget {
                           MessageDeliveryStatus(
                             status: message.sendStatus,
                             pulse: pulse,
+                            delivery: message.delivery,
                           ),
-                          if (message.sendStatus != MessageSendStatus.sent)
-                            const SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           if (!isSending)
                             Text(
                               isFailed

@@ -50,6 +50,7 @@ class ChatMessagesApi {
 
   Future<ChatMessage> sendMessage(
     String conversationId, {
+    required String clientMessageId,
     required String body,
     String? encryptedBody,
     String? encryptionNonce,
@@ -62,6 +63,7 @@ class ChatMessagesApi {
     final res = await _client.post(
       _endpoints.messages(conversationId),
       data: {
+        'client_message_id': clientMessageId,
         'body': body,
         'encrypted_body': ?encryptedBody,
         'encryption_nonce': ?encryptionNonce,

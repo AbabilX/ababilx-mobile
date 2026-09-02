@@ -1,6 +1,8 @@
 part of 'chat_provider.dart';
 
 mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
+  @override
+  ChatRepository get repo;
   WsClient get ws;
   bool get realtimeStarted;
   set realtimeStarted(bool v);
@@ -26,6 +28,14 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     // conversation. The feed map is keyed so only the right conv is affected.
     final convId = ev['conversation_id'] as String? ?? '';
     if (convId.isEmpty) return;
+
+    if (type == 'chat.receipts.updated') {
+      _applyReceiptUpdates(
+        convId,
+        ev['receipts'] as List<dynamic>? ?? const [],
+      );
+      return;
+    }
 
     if (type == 'chat.message.updated') {
       final msgJson = ev['message'] as Map<String, dynamic>?;
@@ -66,6 +76,49 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     }
   }
 
+  void _applyReceiptUpdates(String convId, List<dynamic> rawUpdates) {
+    final updates = <String, ChatDeliverySummary>{};
+    for (final raw in rawUpdates) {
+      if (raw is! Map) continue;
+      final update = Map<String, dynamic>.from(raw);
+      final id = update['message_id'] as String? ?? '';
+      final delivery = update['delivery'];
+      if (id.isNotEmpty && delivery is Map) {
+        updates[id] = ChatDeliverySummary.fromJson(
+          Map<String, dynamic>.from(delivery),
+        );
+      }
+    }
+    if (updates.isEmpty) return;
+    final feeds = <String, ChatFeed>{};
+    for (final entry in state.feeds.entries) {
+      final belongs =
+          entry.key == convId || entry.key.startsWith('$convId:thread:');
+      feeds[entry.key] = belongs
+          ? entry.value.copyWith(
+              messages: entry.value.messages
+                  .map(
+                    (message) => updates[message.id] == null
+                        ? message
+                        : message.copyWith(delivery: updates[message.id]),
+                  )
+                  .toList(),
+            )
+          : entry.value;
+    }
+    final replies = <String, List<ChatMessage>>{};
+    for (final entry in state.threadRepliesByRoot.entries) {
+      replies[entry.key] = entry.value
+          .map(
+            (message) => updates[message.id] == null
+                ? message
+                : message.copyWith(delivery: updates[message.id]),
+          )
+          .toList();
+    }
+    state = state.copyWith(feeds: feeds, threadRepliesByRoot: replies);
+  }
+
   /// Writes one already-patched message from the in-memory main feed back to
   /// SQLite — the reaction path, where the event itself carries no message.
   /// No-op if that feed was never loaded this session.
@@ -91,6 +144,12 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
           .decryptMessage(msg, state.currentUserId);
     }
     final isActive = convId == state.activeConversationId;
+    unawaited(
+      repo.acknowledgeMessages('delivered', [msg.id]).catchError((_) {}),
+    );
+    if (isActive) {
+      unawaited(repo.acknowledgeMessages('read', [msg.id]).catchError((_) {}));
+    }
     final known =
         state.dms.any((d) => d.id == convId) ||
         state.channels.any((c) => c.id == convId);
@@ -103,11 +162,16 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       // 1. If exact message ID is already in the feed, skip duplicate.
       if (feedForConv.messages.any((m) => m.id == msg.id)) return;
 
-      // 2. If message is sent by current user, check if there's a pending bubble
+      // 2. Match the sender-generated id when available. Falling back to the
+      // first pending bubble is only for legacy server events.
       if (msg.userId == state.currentUserId) {
         ChatMessage? pendingMsg;
         for (final m in feedForConv.messages) {
-          if (m.isPending && m.userId == state.currentUserId) {
+          final sameClientMessage =
+              msg.clientRef != null && m.clientRef == msg.clientRef;
+          final legacyPending = msg.clientRef == null && m.isPending;
+          if (m.userId == state.currentUserId &&
+              (sameClientMessage || legacyPending)) {
             pendingMsg = m;
             break;
           }

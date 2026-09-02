@@ -7,10 +7,12 @@ class MessageDeliveryStatus extends StatelessWidget {
     super.key,
     required this.status,
     required this.pulse,
+    this.delivery,
   });
 
   final MessageSendStatus status;
   final Animation<double> pulse;
+  final ChatDeliverySummary? delivery;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +31,16 @@ class MessageDeliveryStatus extends StatelessWidget {
         size: 14,
         color: colors.error,
       ),
-      MessageSendStatus.sent => const SizedBox.shrink(),
+      MessageSendStatus.sent => Icon(
+        (delivery?.deliveredDevices ?? 0) > 0 ||
+                (delivery?.readDevices ?? 0) > 0
+            ? Icons.done_all_rounded
+            : Icons.done_rounded,
+        size: 14,
+        color: (delivery?.readDevices ?? 0) > 0
+            ? colors.primary
+            : colors.onSurfaceVariant,
+      ),
     };
   }
 }
