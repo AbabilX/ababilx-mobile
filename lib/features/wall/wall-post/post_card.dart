@@ -52,20 +52,20 @@ class WallPostCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   WallPostHeader(post: post, isOwner: post.userId == me),
-                  const SizedBox(height: 10),
-                  TiptapViewer(
-                    content: post.body,
-                    emptyPlaceholder: '(empty post)',
-                    // Collapsed cards clip at roughly the eight lines the feed
-                    // showed before rich text.
-                    maxHeight: expanded ? null : 8 * 21.0,
-                    style: TextStyle(
-                      color: scheme.onSurface,
-                      height: 1.35,
-                      fontSize: 15,
+                  if (body.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    TiptapViewer(
+                      content: post.body,
+                      // Attachments-only posts stay quiet — no "(empty post)".
+                      maxHeight: expanded ? null : 8 * 21.0,
+                      style: TextStyle(
+                        color: scheme.onSurface,
+                        height: 1.35,
+                        fontSize: 15,
+                      ),
                     ),
-                  ),
-                  if (body.isNotEmpty) MessageLinkPreviews(text: body),
+                    MessageLinkPreviews(text: body),
+                  ],
                 ],
               ),
             ),

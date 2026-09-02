@@ -4,11 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../messages/chat_icon.dart';
-import '../../messages/chat-timeline/quick_react_sheet.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
 import '../providers/wall_ui_provider.dart';
 import '../wall-forward/forward_sheet.dart';
+import 'wall_react_sheet.dart';
+
+/// Web default for an unreacted post ([wall-post-card.tsx]).
+const kWallDefaultReaction = '👏';
 
 class WallPostActions extends ConsumerWidget {
   const WallPostActions({
@@ -30,22 +33,44 @@ class WallPostActions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final n = ref.read(wallProvider.notifier);
+    final myReaction = post.reactions.where((r) => r.reactedByMe).firstOrNull;
+    final hasReacted = myReaction != null;
+
+    Future<void> toggleDefault() async {
+      if (hasReacted) {
+        await n.react(post.id, myReaction.emoji);
+      } else {
+        await n.react(post.id, kWallDefaultReaction);
+      }
+    }
+
+    Future<void> openPicker() async {
+      final ui = ref.read(wallUiProvider.notifier);
+      ui.setReactionSheetOpen(true);
+      try {
+        final emoji = await showWallReactSheet(context);
+        if (emoji != null) await n.react(post.id, emoji);
+      } finally {
+        ui.setReactionSheetOpen(false);
+      }
+    }
 
     return Row(
       children: [
         _Action(
-          icon: HugeIcons.strokeRoundedSmile,
-          label: 'React',
-          onTap: () async {
-            final ui = ref.read(wallUiProvider.notifier);
-            ui.setReactionSheetOpen(true);
-            try {
-              final emoji = await showQuickReactSheet(context);
-              if (emoji != null) await n.react(post.id, emoji);
-            } finally {
-              ui.setReactionSheetOpen(false);
-            }
-          },
+          leading: Text(
+            hasReacted ? myReaction.emoji : kWallDefaultReaction,
+            style: TextStyle(
+              fontSize: 16,
+              color: hasReacted ? null : scheme.onSurfaceVariant,
+            ),
+          ),
+          label: hasReacted
+              ? _reactionLabel(myReaction.emoji, active: true)
+              : 'Clap',
+          color: hasReacted ? scheme.primary : null,
+          onTap: toggleDefault,
+          onLongPress: openPicker,
         ),
         if (showComment)
           _Action(
@@ -79,17 +104,40 @@ class WallPostActions extends ConsumerWidget {
   }
 }
 
+String _reactionLabel(String emoji, {required bool active}) {
+  switch (emoji) {
+    case '👏':
+      return active ? 'Clapped' : 'Clap';
+    case '👍':
+      return active ? 'Liked' : 'Like';
+    case '❤️':
+      return active ? 'Loved' : 'Love';
+    case '🎉':
+      return active ? 'Celebrated' : 'Celebrate';
+    case '💡':
+      return active ? 'Insightful' : 'Insight';
+    case '🚀':
+      return active ? 'Launched' : 'Launch';
+    default:
+      return active ? 'Reacted' : 'Clap';
+  }
+}
+
 class _Action extends StatelessWidget {
   const _Action({
-    required this.icon,
     required this.label,
     required this.onTap,
+    this.icon,
+    this.leading,
+    this.onLongPress,
     this.color,
-  });
+  }) : assert(icon != null || leading != null);
 
-  final List<List<dynamic>> icon;
+  final List<List<dynamic>>? icon;
+  final Widget? leading;
   final String label;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final Color? color;
 
   @override
@@ -99,13 +147,17 @@ class _Action extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ChatIcon(icon, size: 18, color: c),
+              if (leading != null)
+                leading!
+              else
+                ChatIcon(icon!, size: 18, color: c),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(

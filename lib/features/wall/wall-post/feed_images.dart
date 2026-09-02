@@ -284,38 +284,32 @@ class _PackedGallery extends StatelessWidget {
           final overflow = images.length - visible.length;
           final rowH = (height - gap * (rows - 1)) / rows;
 
-          return ClipRRect(
-            // Only round when the packed block fills the gallery width;
-            // otherwise the empty right side still gets clipped and the first
-            // image looks oddly rounded on the left only.
-            borderRadius: BorderRadius.zero,
-            child: OverflowBox(
-              alignment: Alignment.topLeft,
-              maxWidth: double.infinity,
-              child: SizedBox(
-                height: height,
-                child: Wrap(
-                  direction: Axis.vertical,
-                  spacing: gap,
-                  runSpacing: gap,
-                  children: [
-                    for (var i = 0; i < visible.length; i++)
-                      _RowThumb(
-                        url: visible[i].fileUrl,
-                        height: rowH,
-                        minWidth: minThumbW,
-                        fallbackAspect: portraitAspect,
-                        overflowLabel: overflow > 0 && i == visible.length - 1
-                            ? '+$overflow'
-                            : null,
-                        onTap: () => showWallImagePreview(
-                          context,
-                          images: images,
-                          initialIndex: i,
-                        ),
+          return OverflowBox(
+            alignment: Alignment.topLeft,
+            maxWidth: double.infinity,
+            child: SizedBox(
+              height: height,
+              child: Wrap(
+                direction: Axis.vertical,
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (var i = 0; i < visible.length; i++)
+                    _RowThumb(
+                      url: visible[i].fileUrl,
+                      height: rowH,
+                      minWidth: minThumbW,
+                      fallbackAspect: portraitAspect,
+                      overflowLabel: overflow > 0 && i == visible.length - 1
+                          ? '+$overflow'
+                          : null,
+                      onTap: () => showWallImagePreview(
+                        context,
+                        images: images,
+                        initialIndex: i,
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
           );
@@ -418,7 +412,7 @@ class _RowThumbState extends State<_RowThumb> {
       child: _FeedTile(
         url: widget.url,
         mode: _TileMode.fill,
-        borderRadius: 0,
+        borderRadius: 8,
         alignment: Alignment.topCenter,
         fit: BoxFit.cover,
         overflowLabel: widget.overflowLabel,
@@ -576,7 +570,9 @@ class _FeedTileState extends State<_FeedTile> {
     return GestureDetector(
       onTap: widget.onTap,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
+        borderRadius:
+            widget.borderRadiusGeometry ??
+            BorderRadius.circular(widget.borderRadius),
         child: Stack(
           fit: widget.mode == _TileMode.fill
               ? StackFit.expand
