@@ -19,6 +19,7 @@ class MessageRowContent extends ConsumerWidget {
     required this.pulse,
     required this.isSending,
     required this.isFailed,
+    required this.isOwnMessage,
     required this.actionsOpen,
     this.clusterPosition = MessageClusterPosition.single,
     this.onOpenThread,
@@ -28,6 +29,7 @@ class MessageRowContent extends ConsumerWidget {
   final Animation<double> pulse;
   final bool isSending;
   final bool isFailed;
+  final bool isOwnMessage;
   final bool actionsOpen;
   final MessageClusterPosition clusterPosition;
   final VoidCallback? onOpenThread;
@@ -110,33 +112,40 @@ class MessageRowContent extends ConsumerWidget {
                   ],
                   MessageBody(message: message),
                   if (showFooter)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          MessageDeliveryStatus(
-                            status: message.sendStatus,
-                            pulse: pulse,
-                            delivery: message.delivery,
-                          ),
-                          const SizedBox(width: 4),
-                          if (!isSending)
-                            Text(
-                              isFailed
-                                  ? 'Tap to retry'
-                                  : formatChatTime(message.createdAt),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isFailed
-                                    ? colors.error
-                                    : colors.onSurfaceVariant,
-                                fontWeight: isFailed
-                                    ? FontWeight.w500
-                                    : FontWeight.normal,
+                    Align(
+                      alignment: isOwnMessage
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!isSending)
+                              Text(
+                                isFailed
+                                    ? 'Tap to retry'
+                                    : formatChatTime(message.createdAt),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isFailed
+                                      ? colors.error
+                                      : colors.onSurfaceVariant,
+                                  fontWeight: isFailed
+                                      ? FontWeight.w500
+                                      : FontWeight.normal,
+                                ),
                               ),
-                            ),
-                        ],
+                            if (isOwnMessage) ...[
+                              const SizedBox(width: 4),
+                              MessageDeliveryStatus(
+                                status: message.sendStatus,
+                                pulse: pulse,
+                                delivery: message.delivery,
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     ),
                   if (!message.isDeleted && message.reactions.isNotEmpty)

@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/chat_provider.dart';
-import 'composer.dart';
-import 'composer_locked.dart';
-import 'message_request_bar.dart';
 import 'message_list.dart';
+import 'timeline_composer.dart';
+import 'timeline_reveal_policy.dart';
 
 class ChatTimeline extends ConsumerStatefulWidget {
   const ChatTimeline({
@@ -29,7 +28,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
   final _scrollCtrl = ScrollController();
   bool _headerVisible = true;
   double _lastPixels = 0;
-  int _prevMessageCount = 0;
+  String? _previousNewestMessageId;
 
   // Auto-scroll when new messages arrive if user is within this many pixels
   // of the bottom (pixel 0 in a reverse: true list).
@@ -47,7 +46,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.conversationId != widget.conversationId ||
         oldWidget.threadRootId != widget.threadRootId) {
-      _prevMessageCount = 0;
+      _previousNewestMessageId = null;
       _load();
       if (!_headerVisible) setState(() => _headerVisible = true);
       _lastPixels = 0;
@@ -135,14 +134,16 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
       threadRootId: widget.threadRootId,
     );
 
-    // Auto-scroll to bottom when a new message arrives and user is near bottom.
-    final currentCount = feed.messages.length;
-    if (currentCount > _prevMessageCount && _prevMessageCount > 0) {
-      if (_isNearBottom) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-      }
+    final newestMessageId = feed.messages.lastOrNull?.id;
+    if (shouldRevealNewestMessage(
+      previousNewestId: _previousNewestMessageId,
+      messages: feed.messages,
+      currentUserId: chat.currentUserId,
+      isNearBottom: _isNearBottom,
+    )) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     }
-    _prevMessageCount = currentCount;
+    _previousNewestMessageId = newestMessageId;
 
     return Column(
       children: [
@@ -169,33 +170,10 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
             onRetry: _load,
           ),
         ),
-        // Signal's order at the bottom of a thread: a block locks it outright,
-        // an unanswered request takes the composer's place until it is
-        // answered, and otherwise you type.
-        if (chat.conversationById(widget.conversationId)?.canMessage == false)
-          const ComposerLocked()
-        else if (chat
-                .conversationById(widget.conversationId)
-                ?.isIncomingRequest ==
-            true)
-          MessageRequestBar(
-            conversation: chat.conversationById(widget.conversationId)!,
-          )
-        else
-          MessageComposer(
-            conversationId: widget.conversationId,
-            parentId: widget.threadRootId,
-            hintName:
-                chat
-                    .conversationById(widget.conversationId)
-                    ?.displayTitle(chat.currentUserId) ??
-                'someone',
-            isGroup:
-                chat
-                    .conversationById(widget.conversationId)
-                    ?.isGroupConversation ??
-                false,
-          ),
+        TimelineComposer(
+          conversationId: widget.conversationId,
+          parentId: widget.threadRootId,
+        ),
       ],
     );
   }

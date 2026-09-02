@@ -135,6 +135,7 @@ class _MessageRowState extends ConsumerState<MessageRow>
           pulse: _pulseAnim,
           isSending: isSending,
           isFailed: isFailed,
+          isOwnMessage: isOwnMessage,
           actionsOpen: _actionsOpen,
           clusterPosition: widget.clusterPosition,
           onOpenThread: widget.onOpenThread,
