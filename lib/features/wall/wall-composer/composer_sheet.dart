@@ -136,12 +136,15 @@ class _WallComposerSheetState extends ConsumerState<WallComposerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final inset = MediaQuery.viewInsetsOf(context).bottom;
+    // Keyboard (viewInsets) + system nav / home indicator (viewPadding).
+    // Without the latter the Post toolbar sits under the Android nav bar.
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final navBar = MediaQuery.viewPaddingOf(context).bottom;
     final trigger = _trigger;
     final isAt = trigger?.isMention == true;
     final isHash = trigger?.isMention == false;
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + inset),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + keyboard + navBar),
       child: WallComposerForm(
         controller: _ctrl,
         focusNode: _focus,
