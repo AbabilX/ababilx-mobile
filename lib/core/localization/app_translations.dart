@@ -20,7 +20,7 @@ class AppTranslations {
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
       'login_subtitle':
-          'Automated standup updates & Slack daily syncs for modern engineering teams.',
+          'Stay close to friends and family—with privacy and end-to-end encryption built in.',
       'continue_google': 'Continue with Google',
       'messages': 'Messages',
       'calls': 'Calls',
@@ -241,7 +241,7 @@ class AppTranslations {
     },
     'bn': {
       'login_subtitle':
-          'আধুনিক প্রকৌশলীদের জন্য স্বয়ংক্রিয় স্ট্যান্ডআপ আপডেট এবং স্ল্যাক দৈনিক সমলয়করণ।',
+          'বন্ধু ও পরিবারের কাছাকাছি থাকুন—গোপনীয়তা ও এন্ড-টু-এন্ড এনক্রিপশনসহ।',
       'continue_google': 'গুগল অ্যাকাউন্ট দিয়ে এগিয়ে যান',
       'messages': 'বার্তা',
       'calls': 'কল',
