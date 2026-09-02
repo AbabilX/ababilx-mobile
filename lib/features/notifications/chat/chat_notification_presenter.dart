@@ -86,7 +86,7 @@ class ChatNotificationPresenter {
     final conversationId = data['conversation_id']?.toString() ?? '';
     final title = data['title']?.toString() ?? 'AbabilX';
     final isGroup = data['type']?.toString() != 'chat_dm';
-    final messages = await ChatNotificationStore.upsert(
+    final upsert = await ChatNotificationStore.upsertDetailed(
       conversationId,
       ChatNotificationMessage(
         messageId: messageId ?? data['message_id']?.toString() ?? '',
@@ -103,9 +103,11 @@ class ChatNotificationPresenter {
       body: text,
       payload: _payload(data),
       android: buildChatNotificationDetails(
-        messages: messages,
+        messages: upsert.messages,
         isGroup: isGroup,
-        alertOnce: alertOnce,
+        // JetStream/FCM is at-least-once. A repeated message ID rewrites the
+        // existing line, but must not vibrate or sound again.
+        alertOnce: alertOnce || !upsert.inserted,
         conversationTitle: chatConversationTitle(
           isGroup: isGroup,
           pushTitle: title,

@@ -19,6 +19,7 @@ import '../data/voice_call_repository.dart';
 import '../incoming_call_ringtone.dart';
 import '../native/android_call_ui.dart';
 import '../native/android_group_call_ui.dart';
+import '../native/voice_call_ended_guard.dart';
 import '../ringtone/callkit_ring_events.dart';
 import '../voice_call_log.dart';
 import '../webrtc/voice_peer_engine.dart';
@@ -476,6 +477,12 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       case 'call.ended':
       case 'call.failed':
       case 'call.missed':
+        // Remember and close terminal calls even if their incoming event has
+        // not arrived yet. Otherwise a later stale incoming event resurrects
+        // the accept/reject overlay with no future event left to dismiss it.
+        _rememberFinished(call.id);
+        unawaited(VoiceCallEndedGuard.markEnded(call.id));
+        unawaited(AndroidCallUi.endCall(call.id));
         if (state.call?.id == call.id) {
           voiceCallLog(
             'ws.$type',
@@ -900,6 +907,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
     if (type == 'voice_call_ended') {
       _rememberFinished(callId);
+      unawaited(VoiceCallEndedGuard.markEnded(callId));
       unawaited(AndroidCallUi.endCall(callId));
       if (state.call?.id == callId &&
           state.phase != VoiceCallPhase.idle &&

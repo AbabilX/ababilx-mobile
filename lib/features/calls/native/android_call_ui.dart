@@ -1,163 +1,31 @@
 import 'package:call_ringer/call_ringer.dart';
-import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
-import 'package:flutter_callkit_incoming/entities/notification_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
 import '../data/models/voice_call.dart';
 import '../ringtone/ring_holders.dart';
+import 'android_call_params.dart';
+import 'incoming_call_admission.dart';
 
 class AndroidCallUi {
   AndroidCallUi._();
 
-  // The native full-screen surface is drawn by flutter_callkit_incoming, so
-  // its layout is not ours to change — but its palette is. Signal's incoming
-  // screen is the caller's own photo behind a dark wash, with a green Answer
-  // and a red Decline, and these four values are as close as this plugin gets
-  // to that without replacing the Activity.
-  static const String _screenBackground = '#0B0B0F';
-  static const String _screenText = '#FFFFFF';
-  static const String _answerGreen = '#3AB55B';
-
-  static CallKitParams paramsFromCall(VoiceCall call) => _params(
-    callId: call.id,
-    conversationId: call.conversationId,
-    callerId: call.callerId,
-    callerName: call.callerName,
-    callerAvatarUrl: call.callerAvatarUrl,
-    expiresAt: call.expiresAt,
-  );
-
-  static CallKitParams paramsForOutgoing(
-    VoiceCall call,
-    String currentUserId,
-  ) => CallKitParams(
-    id: call.id,
-    nameCaller: call.peerName(currentUserId),
-    appName: 'AbabilX',
-    avatar: call.peerAvatar(currentUserId),
-    handle: 'Voice call',
-    type: 0,
-    callingNotification: const NotificationParams(
-      showNotification: true,
-      subtitle: 'Voice call',
-    ),
-    extra: {
-      'type': 'voice_call',
-      'call_id': call.id,
-      'conversation_id': call.conversationId,
-    },
-    android: AndroidParams(
-      isCustomNotification: true,
-      isShowLogo: false,
-      isShowCallID: false,
-      backgroundColor: _screenBackground,
-      textColor: _screenText,
-      actionColor: _answerGreen,
-      // Outgoing calls never ring on this device; the silent file keeps the
-      // plugin's sound player out of the way. See the incoming params below.
-      ringtonePath: 'silent_ring',
-      incomingCallNotificationChannelName: 'Voice calls',
-      missedCallNotificationChannelName: 'Missed voice calls',
-      isImportant: true,
-    ),
-  );
-
-  static CallKitParams paramsFromPush(Map<String, dynamic> data) {
-    final expiresAt =
-        DateTime.tryParse(data['expires_at']?.toString() ?? '')?.toLocal() ??
-        DateTime.now().add(const Duration(seconds: 60));
-    return _params(
-      callId: data['call_id']?.toString() ?? '',
-      conversationId: data['conversation_id']?.toString() ?? '',
-      callerId: data['caller_id']?.toString() ?? '',
-      callerName: data['caller_name']?.toString() ?? 'AbabilX call',
-      callerAvatarUrl: data['caller_avatar_url']?.toString(),
-      expiresAt: expiresAt,
-    );
-  }
-
-  static CallKitParams _params({
-    required String callId,
-    required String conversationId,
-    required String callerId,
-    required String callerName,
-    required String? callerAvatarUrl,
-    required DateTime expiresAt,
-  }) {
-    final remaining = expiresAt.difference(DateTime.now()).inMilliseconds;
-    return CallKitParams(
-      id: callId,
-      nameCaller: callerName,
-      appName: 'AbabilX',
-      avatar: callerAvatarUrl,
-      handle: 'Voice call',
-      type: 0,
-      duration: remaining.clamp(1000, 60000),
-      missedCallNotification: const NotificationParams(
-        showNotification: true,
-        subtitle: 'Missed voice call',
-        callbackText: 'Call back',
-        isShowCallback: true,
-      ),
-      extra: {
-        'type': 'voice_call',
-        'call_id': callId,
-        'conversation_id': conversationId,
-        'caller_id': callerId,
-        'caller_name': callerName,
-        'caller_avatar_url': callerAvatarUrl ?? '',
-        'expires_at': expiresAt.toUtc().toIso8601String(),
-      },
-      android: AndroidParams(
-        isCustomNotification: true,
-        // The caller's own photo fills the screen behind the wash, the way
-        // Signal's `IncomingCallScreen` uses `callRecipient.contactPhoto`.
-        // With no photo the flat dark background stands in for it.
-        backgroundUrl: (callerAvatarUrl?.trim().isEmpty ?? true)
-            ? null
-            : callerAvatarUrl,
-        backgroundColor: _screenBackground,
-        textColor: _screenText,
-        actionColor: _answerGreen,
-        // Keep the native caller surface as simple as the in-app receiver:
-        // caller identity plus the two call actions, without a second logo.
-        isShowLogo: false,
-        isShowCallID: false,
-        // Deliberately silent: `CallkitSoundPlayerManager` stops its ringtone
-        // on ACTION_SCREEN_OFF and on any VOLUME_CHANGED_ACTION broadcast, so
-        // an OEM ring-volume ramp or a screen blink killed the tone seconds
-        // into a call. The `call_ringer` plugin plays the real tone for every
-        // path instead, held for as long as this surface is up. Vibration and
-        // the notification still come from this plugin.
-        ringtonePath: 'silent_ring',
-        incomingCallNotificationChannelName: 'Voice calls',
-        missedCallNotificationChannelName: 'Missed voice calls',
-        isShowFullLockedScreen: true,
-        isImportant: true,
-        // Keep this false: the plugin's direct-Activity branch shows the
-        // caller screen but skips its ringtone player. The high-priority call
-        // notification still launches the same full-screen UI (including over
-        // the lock screen) and starts the configured system ringtone first.
-        isFullScreen: false,
-        textAccept: 'Accept',
-        textDecline: 'Decline',
-      ),
-    );
-  }
+  static final Set<String> _showingCallIds = <String>{};
 
   static Future<void> showIncomingFromCall(VoiceCall call) async {
-    await _showOnce(paramsFromCall(call));
+    await _showOnce(AndroidCallParams.fromCall(call));
   }
 
   static Future<void> showIncomingFromPush(Map<String, dynamic> data) async {
-    final params = paramsFromPush(data);
+    final params = AndroidCallParams.fromPush(data);
     if (params.id.isEmpty) return;
     await _showOnce(params);
   }
 
   static Future<void> startOutgoing(VoiceCall call, String currentUserId) =>
-      FlutterCallkitIncoming.startCall(paramsForOutgoing(call, currentUserId));
+      FlutterCallkitIncoming.startCall(
+        AndroidCallParams.forOutgoing(call, currentUserId),
+      );
 
   /// Terminal push / WebSocket fallback: close the full-screen Activity,
   /// ringtone, notification actions and persisted native call together.
@@ -207,12 +75,41 @@ class AndroidCallUi {
   /// comes from `call_ringer`, held until the call is answered, declined,
   /// ended, or handed to the Flutter call screen.
   static Future<void> _showOnce(CallKitParams params) async {
-    // Hold first, then dedupe the UI: CallKit keeps its call record across a
-    // process death, so a restarted process can find the screen already up
-    // with nothing ringing behind it.
-    await CallRinger.hold(callRingHolderNative, requireNotificationUi: true);
-    final active = await FlutterCallkitIncoming.activeCalls();
-    if (active.any((call) => call.id == params.id)) return;
-    await FlutterCallkitIncoming.showCallkitIncoming(params);
+    if (!_showingCallIds.add(params.id)) return;
+    try {
+      final active = await FlutterCallkitIncoming.activeCalls();
+      final decision = decideIncomingCallAdmission(
+        params.id,
+        active.map(
+          (call) =>
+              NativeCallSnapshot(id: call.id, isAccepted: call.isAccepted),
+        ),
+      );
+      switch (decision) {
+        case IncomingCallAdmission.ignoreAccepted:
+          // A redelivered incoming push must never re-arm the ringtone after
+          // the same call has already been accepted.
+          await CallRinger.release(callRingHolderNative);
+          return;
+        case IncomingCallAdmission.ignoreBusy:
+          return;
+        case IncomingCallAdmission.restoreRinging:
+          // CallKit persists across process death; restore only its lost tone.
+          await CallRinger.hold(
+            callRingHolderNative,
+            requireNotificationUi: true,
+          );
+          return;
+        case IncomingCallAdmission.show:
+          await CallRinger.hold(
+            callRingHolderNative,
+            requireNotificationUi: true,
+          );
+          await FlutterCallkitIncoming.showCallkitIncoming(params);
+          return;
+      }
+    } finally {
+      _showingCallIds.remove(params.id);
+    }
   }
 }

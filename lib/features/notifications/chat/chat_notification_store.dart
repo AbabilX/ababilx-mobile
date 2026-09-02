@@ -51,6 +51,16 @@ class ChatNotificationMessage {
   );
 }
 
+class ChatNotificationUpsert {
+  const ChatNotificationUpsert({
+    required this.messages,
+    required this.inserted,
+  });
+
+  final List<ChatNotificationMessage> messages;
+  final bool inserted;
+}
+
 /// The messages currently shown in one conversation's tray entry.
 ///
 /// Android's MessagingStyle needs the whole visible thread on every update, so
@@ -98,6 +108,13 @@ class ChatNotificationStore {
   static Future<List<ChatNotificationMessage>> upsert(
     String conversationId,
     ChatNotificationMessage message,
+  ) async => (await upsertDetailed(conversationId, message)).messages;
+
+  /// [inserted] is false for an at-least-once redelivery of the same message.
+  /// The presenter uses it to update content without buzzing again.
+  static Future<ChatNotificationUpsert> upsertDetailed(
+    String conversationId,
+    ChatNotificationMessage message,
   ) async {
     final messages = List<ChatNotificationMessage>.from(
       await read(conversationId),
@@ -120,7 +137,7 @@ class ChatNotificationStore {
     } catch (_) {
       // A history that cannot be persisted still shows this one message.
     }
-    return trimmed;
+    return ChatNotificationUpsert(messages: trimmed, inserted: at < 0);
   }
 
   static Future<void> clear(String conversationId) async {

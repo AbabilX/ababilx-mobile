@@ -11,12 +11,15 @@ import 'firebase_options.dart';
 import 'features/calls/native/android_call_background.dart';
 import 'features/calls/native/android_call_ui.dart';
 import 'features/calls/native/android_group_call_ui.dart';
+import 'features/calls/native/background_voice_call_gate.dart';
 import 'features/calls/native/voice_call_ended_guard.dart';
 import 'features/notifications/chat_push_notification.dart';
 import 'features/notifications/local_notifications.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final data = Map<String, dynamic>.from(message.data);
   final type = data['type'];
@@ -39,14 +42,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
   switch (type) {
     case 'voice_call':
-      final callId = data['call_id']?.toString() ?? '';
-      // The "ended" push for this same call can land first — NATS/FCM gives
-      // no ordering guarantee across the two hops. Showing the full-screen
-      // UI after that would leave it stuck ringing with no second "ended"
-      // push ever coming to close it.
-      if (callId.isNotEmpty && await VoiceCallEndedGuard.wasEnded(callId)) {
-        return;
-      }
+      if (!await BackgroundVoiceCallGate.shouldPresent(data)) return;
       await AndroidCallUi.showIncomingFromPush(data);
     case 'voice_call_ended':
       final callId = data['call_id']?.toString() ?? '';

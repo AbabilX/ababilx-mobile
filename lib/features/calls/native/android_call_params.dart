@@ -1,0 +1,121 @@
+import 'package:flutter_callkit_incoming/entities/android_params.dart';
+import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
+import 'package:flutter_callkit_incoming/entities/notification_params.dart';
+
+import '../data/models/voice_call.dart';
+
+class AndroidCallParams {
+  const AndroidCallParams._();
+
+  static const _background = '#0B0B0F';
+  static const _text = '#FFFFFF';
+  static const _answer = '#3AB55B';
+
+  static CallKitParams fromCall(VoiceCall call) => _incoming(
+    callId: call.id,
+    conversationId: call.conversationId,
+    callerId: call.callerId,
+    callerName: call.callerName,
+    callerAvatarUrl: call.callerAvatarUrl,
+    expiresAt: call.expiresAt,
+  );
+
+  static CallKitParams fromPush(Map<String, dynamic> data) {
+    final expiresAt =
+        DateTime.tryParse(data['expires_at']?.toString() ?? '')?.toLocal() ??
+        DateTime.now().add(const Duration(seconds: 60));
+    return _incoming(
+      callId: data['call_id']?.toString() ?? '',
+      conversationId: data['conversation_id']?.toString() ?? '',
+      callerId: data['caller_id']?.toString() ?? '',
+      callerName: data['caller_name']?.toString() ?? 'AbabilX call',
+      callerAvatarUrl: data['caller_avatar_url']?.toString(),
+      expiresAt: expiresAt,
+    );
+  }
+
+  static CallKitParams forOutgoing(VoiceCall call, String currentUserId) =>
+      CallKitParams(
+        id: call.id,
+        nameCaller: call.peerName(currentUserId),
+        appName: 'AbabilX',
+        avatar: call.peerAvatar(currentUserId),
+        handle: 'Voice call',
+        type: 0,
+        callingNotification: const NotificationParams(
+          showNotification: true,
+          subtitle: 'Voice call',
+        ),
+        extra: {
+          'type': 'voice_call',
+          'call_id': call.id,
+          'conversation_id': call.conversationId,
+        },
+        android: AndroidParams(
+          isCustomNotification: true,
+          isShowLogo: false,
+          isShowCallID: false,
+          backgroundColor: _background,
+          textColor: _text,
+          actionColor: _answer,
+          ringtonePath: 'silent_ring',
+          incomingCallNotificationChannelName: 'Voice calls',
+          missedCallNotificationChannelName: 'Missed voice calls',
+          isImportant: true,
+        ),
+      );
+
+  static CallKitParams _incoming({
+    required String callId,
+    required String conversationId,
+    required String callerId,
+    required String callerName,
+    required String? callerAvatarUrl,
+    required DateTime expiresAt,
+  }) {
+    final remaining = expiresAt.difference(DateTime.now()).inMilliseconds;
+    return CallKitParams(
+      id: callId,
+      nameCaller: callerName,
+      appName: 'AbabilX',
+      avatar: callerAvatarUrl,
+      handle: 'Voice call',
+      type: 0,
+      duration: remaining.clamp(1000, 60000),
+      missedCallNotification: const NotificationParams(
+        showNotification: true,
+        subtitle: 'Missed voice call',
+        callbackText: 'Call back',
+        isShowCallback: true,
+      ),
+      extra: {
+        'type': 'voice_call',
+        'call_id': callId,
+        'conversation_id': conversationId,
+        'caller_id': callerId,
+        'caller_name': callerName,
+        'caller_avatar_url': callerAvatarUrl ?? '',
+        'expires_at': expiresAt.toUtc().toIso8601String(),
+      },
+      android: AndroidParams(
+        isCustomNotification: true,
+        backgroundUrl: (callerAvatarUrl?.trim().isEmpty ?? true)
+            ? null
+            : callerAvatarUrl,
+        backgroundColor: _background,
+        textColor: _text,
+        actionColor: _answer,
+        isShowLogo: false,
+        isShowCallID: false,
+        ringtonePath: 'silent_ring',
+        incomingCallNotificationChannelName: 'Voice calls',
+        missedCallNotificationChannelName: 'Missed voice calls',
+        isShowFullLockedScreen: true,
+        isImportant: true,
+        isFullScreen: false,
+        textAccept: 'Accept',
+        textDecline: 'Decline',
+      ),
+    );
+  }
+}

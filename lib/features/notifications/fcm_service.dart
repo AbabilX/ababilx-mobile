@@ -9,6 +9,8 @@ import '../../../core/storage/secure_storage.dart';
 import '../calls/call_lifecycle.dart';
 import '../calls/native/android_call_ui.dart';
 import '../calls/native/android_group_call_ui.dart';
+import '../calls/native/background_voice_call_gate.dart';
+import '../calls/native/voice_call_ended_guard.dart';
 import 'chat/chat_notification_presenter.dart';
 import 'chat_push_notification.dart';
 import 'data/device_repository.dart';
@@ -291,7 +293,9 @@ class FcmService {
     final type = data['type'];
     if (type == 'voice_call_ended') {
       // Silent terminal push for a call whose WS cannot reach this process.
-      await AndroidCallUi.endCall(data['call_id']?.toString() ?? '');
+      final callId = data['call_id']?.toString() ?? '';
+      await VoiceCallEndedGuard.markEnded(callId);
+      await AndroidCallUi.endCall(callId);
       return;
     }
     if (type == 'group_call_ended') {
@@ -310,6 +314,7 @@ class FcmService {
         return;
       }
       if (type == 'voice_call') {
+        if (!await BackgroundVoiceCallGate.shouldPresent(data)) return;
         await AndroidCallUi.showIncomingFromPush(data);
       } else {
         await AndroidGroupCallUi.showIncomingFromPush(data);

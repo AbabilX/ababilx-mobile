@@ -49,6 +49,21 @@ void main() {
     expect(messages.single.text, 'the real text');
   });
 
+  test('reports whether an update is a new message or a redelivery', () async {
+    final first = await ChatNotificationStore.upsertDetailed(
+      'c1',
+      line('m1', 'first'),
+    );
+    final duplicate = await ChatNotificationStore.upsertDetailed(
+      'c1',
+      line('m1', 'first again'),
+    );
+
+    expect(first.inserted, isTrue);
+    expect(duplicate.inserted, isFalse);
+    expect(duplicate.messages, hasLength(1));
+  });
+
   test('an old thread is trimmed to what the shade can show', () async {
     var messages = <ChatNotificationMessage>[];
     for (var i = 0; i < 12; i++) {
@@ -115,5 +130,15 @@ void main() {
         'Rahim in #dev',
       );
     });
+  });
+
+  test('inline reply consumes the native notification immediately', () {
+    final details = buildChatNotificationDetails(
+      messages: [line('m1', 'hello')],
+      isGroup: false,
+      alertOnce: false,
+    );
+
+    expect(details.actions?.first.cancelNotification, isTrue);
   });
 }

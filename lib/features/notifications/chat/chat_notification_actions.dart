@@ -53,7 +53,13 @@ Future<bool> handleChatNotificationAction(NotificationResponse response) async {
 
   final sent = await sendChatNotificationReply(data, text);
   fcmLog('notif.action.reply', 'conversation=$conversationId sent=$sent');
-  if (!sent) await _reportFailedReply(local, conversationId, text);
+  if (sent) {
+    // Replying already marks the conversation read. Match Signal's remote
+    // reply behavior by removing the now-consumed tray thread immediately.
+    await ChatNotificationPresenter.dismiss(local, conversationId);
+  } else {
+    await _reportFailedReply(local, conversationId, text);
+  }
   return true;
 }
 

@@ -54,8 +54,10 @@ AndroidNotificationDetails buildChatNotificationDetails({
       // Direct reply: Android collects the text in the shade and hands it to
       // the background handler, which sends it without opening the app.
       inputs: [AndroidNotificationActionInput(label: 'Reply')],
-      // The entry stays up and is rewritten with the sent reply appended.
-      cancelNotification: false,
+      // Remove the consumed entry at the native boundary. The handler also
+      // clears its persisted thread after a successful send; on failure it
+      // raises a new "Reply not sent" entry containing the user's text.
+      cancelNotification: true,
       allowGeneratedReplies: true,
       semanticAction: SemanticAction.reply,
     ),
