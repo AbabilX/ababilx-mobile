@@ -216,4 +216,38 @@ void main() {
 
     expect(canonicalChatMessages([pending]).single.id, _clientRef);
   });
+
+  test('an incoming live event and a history clone stay one row', () async {
+    final notifier = container.read(chatProvider.notifier);
+    notifier.handleWsEvent({
+      'type': 'chat.message.created',
+      'conversation_id': _conversationId,
+      'message': ChatMessage(
+        id: 'server-peer',
+        conversationId: _conversationId,
+        userId: 'peer',
+        userName: 'Peer',
+        body: 'hello',
+        createdAt: '2026-09-03T10:00:01Z',
+        clientRef: 'peer-client',
+      ).toJson(),
+    });
+    await Future<void>.delayed(Duration.zero);
+    expect(feedMessages(), hasLength(1));
+
+    notifier.handleWsEvent({
+      'type': 'chat.message.created',
+      'conversation_id': _conversationId,
+      'message': ChatMessage(
+        id: 'server-peer',
+        conversationId: _conversationId,
+        userId: 'peer',
+        userName: 'Peer',
+        body: 'hello',
+        createdAt: '2026-09-03T10:00:01Z',
+      ).toJson(),
+    });
+    await Future<void>.delayed(Duration.zero);
+    expect(feedMessages(), hasLength(1));
+  });
 }

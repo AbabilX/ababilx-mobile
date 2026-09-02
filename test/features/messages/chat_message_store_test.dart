@@ -186,6 +186,36 @@ void main() {
     },
   );
 
+  test(
+    'a history page without clientRef does not leave a second row',
+    () async {
+      const ref = 'client-1';
+      await store.saveAll([
+        ChatMessage(
+          id: 'server-1',
+          conversationId: 'c1',
+          userId: 'u1',
+          body: 'ok',
+          createdAt: '2026-08-21T00:00:00Z',
+          clientRef: ref,
+        ),
+      ]);
+      await store.saveAll([
+        ChatMessage(
+          id: 'server-1',
+          conversationId: 'c1',
+          userId: 'u1',
+          body: 'ok',
+          createdAt: '2026-08-21T00:00:00Z',
+        ),
+      ]);
+
+      final stored = await store.page('c1');
+      expect(stored, hasLength(1));
+      expect(stored.single.id, 'server-1');
+    },
+  );
+
   test('pending encrypted body is never searchable plaintext', () async {
     await store.saveAll([
       ChatMessage(

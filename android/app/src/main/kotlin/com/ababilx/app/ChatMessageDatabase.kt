@@ -11,6 +11,7 @@ data class StoredChatMessage(
     val createdAtMs: Long,
     val threadRootId: String?,
     val payloadJson: String,
+    val payloadId: String,
 )
 
 /** Small encrypted database whose message id is the sole conflict key. */
@@ -65,6 +66,12 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
                     values,
                     SQLiteDatabase.CONFLICT_REPLACE,
                 )
+                if (row.payloadId.isNotEmpty()) {
+                    database.execSQL(
+                        "DELETE FROM messages WHERE json_extract(payload_json, '\$.id') = ? AND id != ?",
+                        arrayOf(row.payloadId, row.id),
+                    )
+                }
             }
             rows.map(StoredChatMessage::conversationId).toSet().forEach { id ->
                 prune(database, id)

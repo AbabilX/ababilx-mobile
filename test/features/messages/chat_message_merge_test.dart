@@ -93,4 +93,66 @@ void main() {
     expect(message.sendStatus, MessageSendStatus.sent);
     expect(message.toJson().containsKey('send_status'), isFalse);
   });
+
+  test(
+    'live copy with clientRef and history copy without it stay one message',
+    () {
+      final live = ChatMessage(
+        id: 'server-1',
+        conversationId: 'conversation-1',
+        userId: 'peer',
+        body: 'hello',
+        createdAt: '2026-08-29T06:10:01Z',
+        clientRef: 'client-1',
+      );
+      final history = ChatMessage(
+        id: 'server-1',
+        conversationId: 'conversation-1',
+        userId: 'peer',
+        body: 'hello',
+        createdAt: '2026-08-29T06:10:01Z',
+      );
+
+      final merged = canonicalChatMessages([live, history]);
+      expect(merged, hasLength(1));
+      expect(merged.single.id, 'server-1');
+      expect(merged.single.clientRef, 'client-1');
+    },
+  );
+
+  test(
+    'pending bubble and history page without clientRef stay one message',
+    () {
+      final pending = ChatMessage(
+        id: 'client-1',
+        conversationId: 'conversation-1',
+        userId: 'user-1',
+        body: 'ok',
+        createdAt: '2026-08-29T06:10:00Z',
+        sendStatus: MessageSendStatus.sending,
+        clientRef: 'client-1',
+      );
+      final live = ChatMessage(
+        id: 'server-1',
+        conversationId: 'conversation-1',
+        userId: 'user-1',
+        body: 'ok',
+        createdAt: '2026-08-29T06:10:01Z',
+        clientRef: 'client-1',
+      );
+      final history = ChatMessage(
+        id: 'server-1',
+        conversationId: 'conversation-1',
+        userId: 'user-1',
+        body: 'ok',
+        createdAt: '2026-08-29T06:10:01Z',
+      );
+
+      final merged = canonicalChatMessages([pending, live, history]);
+      expect(merged, hasLength(1));
+      expect(merged.single.id, 'server-1');
+      expect(merged.single.sendStatus, MessageSendStatus.sent);
+      expect(merged.single.clientRef, 'client-1');
+    },
+  );
 }

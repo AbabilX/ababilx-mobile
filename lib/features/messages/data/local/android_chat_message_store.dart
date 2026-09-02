@@ -39,6 +39,7 @@ class AndroidChatMessageStore {
               'createdAtMs': messageTimeMs(m),
               'threadRootId': m.parentId,
               'payloadJson': jsonEncode(payload),
+              'payloadId': m.id,
             };
           })
           .toList(growable: false);

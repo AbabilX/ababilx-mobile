@@ -78,9 +78,9 @@ class MessageRowContent extends ConsumerWidget {
           endsCluster ? 8 : 1,
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (endsCluster)
+            if (startsCluster)
               GestureDetector(
                 onTap: showProfile,
                 child: AppAvatar(

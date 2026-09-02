@@ -20,8 +20,10 @@ that row. Insert-then-update, never delete-and-reinsert.
 
 - `_replacePendingMessage` identifies the pending bubble by **row id**
   (`m.id == clientRef && m.id != confirmed.id`).
-- `canonicalChatMessages` collapses rows that share a non-empty `clientRef`;
-  the `sent` copy wins.
+- `canonicalChatMessages` treats same server id, same `clientRef`, and a
+  pending row id that equals the other copy's `clientRef` as **one** message.
+  A websocket copy that echoes `client_message_id` and a history-page copy
+  that omitted it must not both stay on screen.
 - History store accepts unsent rows. `persistOutbox` (after `encryptNew`)
   writes the ciphertext-only copy for a DM. `searchText` is empty while
   `isPending`.

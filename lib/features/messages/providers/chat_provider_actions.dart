@@ -239,7 +239,6 @@ mixin _ChatActionsMixin
     final feed =
         state.feeds[key] ??
         ChatFeed(fetchedAt: DateTime.now().millisecondsSinceEpoch);
-    if (feed.messages.any((m) => m.id == msg.id)) return;
     setFeed(
       key,
       feed.copyWith(messages: canonicalChatMessages([...feed.messages, msg])),

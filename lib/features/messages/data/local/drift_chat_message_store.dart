@@ -88,6 +88,14 @@ class DriftChatMessageStore {
           );
         }
       });
+      for (final message in writable) {
+        if (message.isPending) continue;
+        final rowId = localMessageRowId(message);
+        await _db.customStatement(
+          "DELETE FROM cached_messages WHERE json_extract(payload_json, '\$.id') = ? AND id != ?",
+          [message.id, rowId],
+        );
+      }
       for (final id in writable.map((m) => m.conversationId).toSet()) {
         await _prune(id);
       }

@@ -1,4 +1,5 @@
 import 'package:ababilx/features/messages/chat_utils.dart';
+import 'package:ababilx/features/messages/chat-timeline/message_body.dart';
 import 'package:ababilx/features/messages/chat-timeline/message_list.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/features/messages/providers/chat_provider.dart';
@@ -157,5 +158,45 @@ void main() {
     expect(find.text('one'), findsOneWidget);
     expect(find.text('two'), findsOneWidget);
     expect(find.text('three'), findsOneWidget);
+  });
+
+  testWidgets('avatar sits beside the sender name, not the last line of text', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [chatProvider.overrideWith(_ClusterChatNotifier.new)],
+        child: MaterialApp(
+          home: Scaffold(
+            body: MessageList(
+              messages: [
+                ChatMessage(
+                  id: 'm1',
+                  conversationId: 'conversation-1',
+                  userId: 'alice',
+                  userName: 'Alice',
+                  body: 'hi\nHey',
+                  createdAt: '2026-08-29T06:10:00Z',
+                ),
+              ],
+              loading: false,
+              loadingMore: false,
+              currentUserId: 'me',
+              scrollController: controller,
+              conversationId: 'conversation-1',
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final avatar = tester.getRect(find.byType(AppAvatar));
+    final name = tester.getRect(find.text('Alice'));
+    final body = tester.getRect(find.byType(MessageBody));
+
+    expect(avatar.top, closeTo(name.top, 6));
+    expect(avatar.bottom, lessThan(body.bottom - 8));
   });
 }

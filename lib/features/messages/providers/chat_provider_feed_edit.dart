@@ -12,7 +12,6 @@ mixin _ChatFeedEditMixin on Notifier<ChatState>, _ChatFeedMixin {
     final key = feedKey(conversationId, threadRootId: threadRootId);
     final existing = state.feeds[key];
     if (existing == null) return;
-    if (existing.messages.any((m) => m.id == msg.id)) return;
     setFeed(
       key,
       existing.copyWith(

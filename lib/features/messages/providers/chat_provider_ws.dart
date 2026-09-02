@@ -159,10 +159,15 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     final feedForConv = state.feeds[key];
 
     if (feedForConv != null) {
-      // 1. If exact message ID is already in the feed, skip duplicate.
-      if (feedForConv.messages.any((m) => m.id == msg.id)) return;
+      // Already settled (HTTP, a previous WS, or a history page) — do not
+      // append a second copy just because this event also carries clientRef.
+      if (feedForConv.messages.any(
+        (m) => !m.isPending && sameChatMessage(m, msg),
+      )) {
+        return;
+      }
 
-      // 2. Match the sender-generated id when available. Falling back to the
+      // Match the sender-generated id when available. Falling back to the
       // first pending bubble is only for legacy server events.
       if (msg.userId == state.currentUserId) {
         // Only an unsettled bubble can be the pending copy of this event. The
