@@ -100,18 +100,25 @@ class YouMenu extends ConsumerWidget {
     await ref.read(authProvider.notifier).signOut();
   }
 
+  static const _themeModeLabels = {
+    ThemeMode.system: 'System',
+    ThemeMode.light: 'Light',
+    ThemeMode.dark: 'Dark',
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    final themeMode = ref.watch(themeModeProvider);
+    final colors = Theme.of(context).colorScheme;
     return Column(
       children: [
         YouMenuItem(
           icon: HugeIcons.strokeRoundedDarkMode,
-          label: 'Dark mode',
-          onTap: () => ref.read(themeModeProvider.notifier).setDark(!isDark),
-          trailing: Switch(
-            value: isDark,
-            onChanged: (v) => ref.read(themeModeProvider.notifier).setDark(v),
+          label: 'Theme',
+          onTap: () => ref.read(themeModeProvider.notifier).cycle(),
+          trailing: Text(
+            _themeModeLabels[themeMode]!,
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
           ),
         ),
         YouMenuItem(

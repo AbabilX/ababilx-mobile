@@ -5,7 +5,8 @@ import 'theme_mode_store.dart';
 
 final themeModeStoreProvider = Provider((_) => const ThemeModeStore());
 
-/// No stored choice yet means follow the OS. Toggling picks one explicitly.
+/// No stored choice yet means follow the OS ([ThemeMode.system]). Setting one
+/// picks it explicitly; [setMode] with `ThemeMode.system` clears it back.
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   bool _disposed = false;
 
@@ -25,9 +26,18 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
     state = isDark ? ThemeMode.dark : ThemeMode.light;
   }
 
-  Future<void> setDark(bool isDark) async {
-    state = isDark ? ThemeMode.dark : ThemeMode.light;
-    await _store.write(isDark);
+  Future<void> setMode(ThemeMode mode) async {
+    state = mode;
+    await _store.write(
+      mode == ThemeMode.system ? null : mode == ThemeMode.dark,
+    );
+  }
+
+  /// System -> Light -> Dark -> System.
+  Future<void> cycle() {
+    const order = [ThemeMode.system, ThemeMode.light, ThemeMode.dark];
+    final next = order[(order.indexOf(state) + 1) % order.length];
+    return setMode(next);
   }
 }
 
