@@ -63,9 +63,21 @@ only when the request was ours.
   (`WindowCompat.setDecorFitsSystemWindows(window, false)` in
   `MediaSendActivity.onCreate`), so every chrome bar's own padding has to
   come from `MediaSendInsets.padTop`/`padBottom` — nothing pads it for free.
-  The three top bars are `wrap_content` + `minHeight="56dp"`, not a fixed
-  `56dp`: a fixed height plus the status-bar inset as top padding would clip
-  the 44-48dp buttons instead of growing the bar above them. Bottom chrome
+  Those two only **mark** a bar; the single listener that feeds them lives on
+  the Activity root (`MediaSendInsets.install`) and walks down to the marks.
+  Do not move it back to a listener per bar: a bar hears insets only if every
+  ancestor dispatches them down, and these bars are inside `<merge>` blocks in
+  sibling screens that are `GONE` most of the time and that mark themselves
+  during `setContentView`, i.e. before attach — so the `requestApplyInsets`
+  next to a mark never fires. The theme (`MediaSendThemeBase`, plus a
+  `values-v29` override) turns on `windowDrawsSystemBarBackgrounds` with
+  transparent bars and no contrast scrim, since the legacy parent theme would
+  otherwise ignore the bar colours and keep them opaque.
+  **No marked bar may have a fixed `layout_height`** — every one is
+  `wrap_content` + a `minHeight` (56dp top, 72dp gallery footer). The inset
+  arrives as padding, so on a fixed height it eats the interior and clips the
+  44-52dp buttons against the system bar instead of growing the bar clear of
+  it. That was the bug on the gallery footer after the top bars were fixed. Bottom chrome
   (gallery footer, review's rail+caption, editor's tool row) pads for the
   navigation bar and the IME together, so the caption field also rises clear
   of the keyboard.

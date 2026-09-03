@@ -18,10 +18,18 @@
 
     <!-- The media-send flow is black-on-black whatever the app theme is, the
          way every gallery-and-editor screen is. -->
-    <style name="MediaSendTheme" parent="@android:style/Theme.Black.NoTitleBar">
+    <style name="MediaSendThemeBase" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">@color/media_send_bg</item>
-        <item name="android:statusBarColor">@color/media_send_bg</item>
-        <item name="android:navigationBarColor">@color/media_send_bg</item>
+        <!-- Edge-to-edge: content runs under transparent bars and
+             MediaSendInsets pads the chrome back out from under them. The
+             legacy parent theme leaves windowDrawsSystemBarBackgrounds off,
+             which would ignore both colours below and keep the bars opaque. -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowAnimationStyle">@android:style/Animation.Activity</item>
     </style>
+
+    <!-- Split so values-v29 can turn off the system-bar contrast scrim. -->
+    <style name="MediaSendTheme" parent="@style/MediaSendThemeBase" />
 </resources>

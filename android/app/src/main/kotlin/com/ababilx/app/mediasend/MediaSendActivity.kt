@@ -53,6 +53,9 @@ class MediaSendActivity : Activity() {
         gallery = findViewById(R.id.gallery_view)
         review = findViewById(R.id.review_view)
         editor = findViewById(R.id.editor_view)
+        // The three screens marked their own bars while inflating above; this
+        // is the single listener that feeds all of them.
+        MediaSendInsets.install(findViewById(R.id.media_send_root))
 
         gallery.maxSelection = maxSelection
         gallery.allowVideo = allowVideo

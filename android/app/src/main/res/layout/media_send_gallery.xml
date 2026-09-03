@@ -71,7 +71,10 @@
     <FrameLayout
         android:id="@+id/gallery_footer"
         android:layout_width="match_parent"
-        android:layout_height="72dp"
+        android:layout_height="wrap_content"
+        android:minHeight="72dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
         android:background="@color/media_send_chrome"
         android:visibility="gone">
 
