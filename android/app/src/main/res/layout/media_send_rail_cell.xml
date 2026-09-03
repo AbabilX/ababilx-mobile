@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="52dp"
+    android:layout_height="52dp"
+    android:layout_marginEnd="6dp">
+
+    <com.ababilx.app.mediasend.editor.EditableImageView
+        android:id="@+id/rail_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/media_send_chrome" />
+
+    <ImageView
+        android:id="@+id/rail_add"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/media_send_surface"
+        android:contentDescription="@string/media_send_add_more"
+        android:padding="14dp"
+        android:src="@drawable/ic_ms_add"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/rail_selection"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/ms_rail_selected"
+        android:visibility="gone" />
+</FrameLayout>

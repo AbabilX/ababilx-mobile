@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import '../../../shared/media/picked_media_file.dart';
+import '../../attachments/services/attachment_adopter.dart';
 import '../../messages/data/models/chat_models.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../data/share_intake_channel.dart';
@@ -52,6 +53,7 @@ Future<ShareSendResult> sendSharedPayload({
   required SharedPayload payload,
   required String body,
   required List<String> conversationIds,
+  AttachmentAdopter? adopter,
 }) async {
   final ready = <_Materialized>[];
   var skipped = 0;
@@ -70,7 +72,7 @@ Future<ShareSendResult> sendSharedPayload({
     final failed = <String>[];
     for (final convId in conversationIds) {
       try {
-        final attachments = await _uploadInto(chat, convId, ready);
+        final attachments = await _uploadInto(chat, convId, ready, adopter);
         final message = await chat.sendMessage(
           conversationId: convId,
           body: body,
@@ -126,6 +128,7 @@ Future<List<ChatAttachmentInput>> _uploadInto(
   ChatNotifier chat,
   String conversationId,
   List<_Materialized> items,
+  AttachmentAdopter? adopter,
 ) async {
   final uploaded = <ChatAttachmentInput>[];
   for (final item in items) {
@@ -140,6 +143,14 @@ Future<List<ChatAttachmentInput>> _uploadInto(
         presign,
         item.bytes,
         item.file.contentType,
+      );
+      // The shared file is already on this device — file it under the URL it
+      // landed at so the sender never sees a download badge for it.
+      await adopter?.adoptFile(
+        fileUrl: presign.publicUrl,
+        fileName: item.file.fileName,
+        contentType: item.file.contentType,
+        source: item.temp,
       );
     } catch (_) {
       // Release the reservation before giving up, or the user's storage quota

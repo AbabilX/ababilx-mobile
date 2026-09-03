@@ -123,6 +123,32 @@
              NOT inherit it from its target activity, so leaving it off would
              launch MainActivity into a differently-affined task than the
              empty affinity the share intake and the call UI are built on. -->
+        <!-- Hands the camera app a writable URI for the shot the media-send
+             flow asked for. Scoped to that one cache directory: nothing else
+             the app stores is reachable through it. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.mediasend.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/ms_file_paths" />
+        </provider>
+
+        <!-- The native media-send flow: gallery grid, review pager, editor.
+             Same task as MainActivity (taskAffinity="" is not inherited, so it
+             is repeated here) — otherwise picking a photo would push a second
+             entry into the recents list and Back would leave the app. -->
+        <activity
+            android:name=".mediasend.MediaSendActivity"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/MediaSendTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity-alias
             android:name=".Launcher"
             android:targetActivity=".MainActivity"

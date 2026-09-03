@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/media/picked_media_file.dart';
+import '../../attachments/providers/attachment_providers.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
@@ -44,6 +45,14 @@ Future<void> captureAndSendChatPhoto(
         picked.bytes,
         picked.contentType,
       );
+      await ref
+          .read(attachmentAdopterProvider)
+          .adoptBytes(
+            fileUrl: presign.publicUrl,
+            fileName: picked.fileName,
+            contentType: picked.contentType,
+            bytes: picked.bytes,
+          );
       await notifier.sendMessage(
         conversationId: conversation.id,
         body: '',

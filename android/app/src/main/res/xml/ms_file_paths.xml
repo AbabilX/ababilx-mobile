@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Only the flow's own scratch directory is ever shared out, and only so
+         the camera app can write the shot it was asked for. -->
+    <cache-path name="mediasend" path="mediasend/" />
+</paths>

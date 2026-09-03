@@ -25,6 +25,7 @@ class AttachmentGate extends ConsumerWidget {
     this.height = 160,
     this.width,
     this.borderRadius = 8,
+    this.shape,
     this.showSize = true,
     this.waiting,
   });
@@ -34,6 +35,11 @@ class AttachmentGate extends ConsumerWidget {
   final double height;
   final double? width;
   final double borderRadius;
+
+  /// Album cells cut their corners individually; when set this wins over
+  /// [borderRadius] so a placeholder has the same silhouette as the image it
+  /// will be replaced by.
+  final BorderRadius? shape;
   final bool showSize;
   final Widget Function(BuildContext context, AttachmentHandle? handle)?
   waiting;
@@ -62,7 +68,7 @@ class AttachmentGate extends ConsumerWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(borderRadius),
+        borderRadius: shape ?? BorderRadius.circular(borderRadius),
       ),
       // No handle yet means the first frame before the local lookup returns —
       // showing a badge there would flash a download arrow on a file that is

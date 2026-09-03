@@ -1,0 +1,130 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import '../data/local/attachment_blob_store.dart';
+import '../data/local/attachment_dedupe_store.dart';
+import '../data/models/attachment_handle.dart';
+import '../data/models/attachment_url_key.dart';
+import 'attachment_content_dedupe.dart';
+import 'attachment_content_hash.dart';
+import 'attachment_paths.dart';
+import 'attachment_queue.dart';
+
+/// Files the sender already has, filed under the URL they were uploaded to.
+///
+/// Without this the composer uploads a photo, the message comes back, and the
+/// gate finds no local copy — so the person who *just picked the image* is
+/// shown a download button for their own file, and (on a metered plan) pays to
+/// fetch back the bytes still sitting in their gallery.
+///
+/// Signal does the same thing from the other end: an outgoing attachment is
+/// written into the attachment store at compose time and its transfer state is
+/// `DONE` before the message row is ever inserted. Nothing outgoing is ever
+/// downloaded.
+class AttachmentAdopter {
+  AttachmentAdopter(this._blobs, this._dedupe, this._paths, this._queue);
+
+  final AttachmentBlobStore _blobs;
+  final AttachmentDedupeStore _dedupe;
+  final AttachmentPaths _paths;
+  final AttachmentQueue _queue;
+
+  /// A file the picker gave us a real path to (gallery item, camera capture).
+  Future<void> adoptFile({
+    required String fileUrl,
+    required String fileName,
+    required String contentType,
+    required File source,
+  }) async {
+    if (!await source.exists()) return;
+    await _commit(
+      fileUrl: fileUrl,
+      fileName: fileName,
+      contentType: contentType,
+      write: (target) => source.copy(target.path),
+    );
+  }
+
+  /// Bytes with no path worth keeping — SAF documents, camera shots handed
+  /// back in memory, anything the composer re-encoded.
+  Future<void> adoptBytes({
+    required String fileUrl,
+    required String fileName,
+    required String contentType,
+    required Uint8List bytes,
+  }) async {
+    if (bytes.isEmpty) return;
+    await _commit(
+      fileUrl: fileUrl,
+      fileName: fileName,
+      contentType: contentType,
+      write: (target) => target.writeAsBytes(bytes, flush: true),
+    );
+  }
+
+  Future<void> _commit({
+    required String fileUrl,
+    required String fileName,
+    required String contentType,
+    required Future<File> Function(File target) write,
+  }) async {
+    final urlKey = attachmentUrlKey(fileUrl);
+    if (urlKey.isEmpty) return;
+    try {
+      // Already on disk under this key — a retry of the same send, or the
+      // object came back from a dedupe hit. Nothing to do.
+      if (await _blobs.isReady(urlKey)) return;
+
+      final target = await _paths.fileFor(urlKey, fileName, contentType);
+      final stored = await write(target);
+      final bytes = await stored.length();
+      final hash = await hashFileContents(stored);
+      final resolution = await resolveDedupedStoragePath(
+        _dedupe,
+        urlKey,
+        hash,
+        stored,
+      );
+
+      // Same ordering rule as a finished download: the row commits first, so a
+      // crash in between leaves an orphan file the sweeper reclaims rather
+      // than a row pointing at bytes that are gone.
+      await _blobs.ensure(
+        urlKey: urlKey,
+        remoteUrl: fileUrl,
+        fileName: fileName,
+        contentType: contentType,
+        expectedBytes: bytes,
+      );
+      await _blobs.markReady(
+        urlKey,
+        resolution.path,
+        bytes,
+        contentHash: hash,
+      );
+      final redundant = resolution.redundantFile;
+      if (redundant != null) {
+        try {
+          await redundant.delete();
+        } catch (_) {}
+      }
+
+      // Any gate already on screen for this object flips without a re-resolve.
+      _queue.announce(
+        AttachmentHandle(
+          urlKey: urlKey,
+          remoteUrl: fileUrl,
+          state: AttachmentTransferState.ready,
+          fileName: fileName,
+          contentType: contentType,
+          localPath: resolution.path,
+          receivedBytes: bytes,
+          totalBytes: bytes,
+        ),
+      );
+    } catch (_) {
+      // Adoption is an optimisation. A failure here costs one download later,
+      // never the send.
+    }
+  }
+}

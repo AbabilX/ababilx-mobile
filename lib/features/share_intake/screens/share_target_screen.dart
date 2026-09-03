@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../attachments/providers/attachment_providers.dart';
 import '../../messages/chat-recipient-picker/chat_recipient_picker_screen.dart';
 import '../../messages/chat-recipient-picker/chat_recipient_target.dart';
 import '../../messages/providers/chat_provider.dart';
@@ -52,6 +53,7 @@ class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
         payload: payload,
         body: body,
         conversationIds: conversationIds,
+        adopter: ref.read(attachmentAdopterProvider),
       );
     } catch (_) {
       result = ShareSendResult(sent: 0, failed: conversationIds);

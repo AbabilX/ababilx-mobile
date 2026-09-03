@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../shared/media/device_gallery.dart';
 import '../../../shared/media/media_grid_sheet.dart';
+import '../../../shared/media/native_media_send.dart';
 import '../../../shared/media/pick_single_media.dart';
 import '../../../shared/media/picked_media_file.dart';
+import '../../attachments/providers/attachment_providers.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'pending_preview_cache.dart';
@@ -13,6 +17,19 @@ import 'pending_preview_cache.dart';
 export 'composer_pending_previews.dart' show ComposerPendingPreviews;
 
 enum ComposerAttachKind { gallery, camera, file }
+
+/// What the attach run decided.
+///
+/// The native flow ends on its own Send button, so it does not just hand back
+/// attachments — it says "the user has finished, post this now", with the one
+/// message they typed under the album. The Dart sheet leaves both false/empty
+/// and the composer waits for the send button as it always has.
+class ComposerAttachResult {
+  const ComposerAttachResult({this.sendRequested = false, this.caption = ''});
+
+  final bool sendRequested;
+  final String caption;
+}
 
 /// Picks attachments and uploads them.
 ///
@@ -24,7 +41,7 @@ enum ComposerAttachKind { gallery, camera, file }
 /// fall through to the system picker, which needs no permission of ours.
 ///
 /// [onAdded] fires once per uploaded file, in the order they were chosen.
-Future<void> pickAndUploadAttachment(
+Future<ComposerAttachResult> pickAndUploadAttachment(
   BuildContext context,
   WidgetRef ref, {
   required String conversationId,
@@ -37,16 +54,30 @@ Future<void> pickAndUploadAttachment(
   if (requested == ComposerAttachKind.camera) {
     await _settle();
     await _uploadOne(ref, conversationId, await pickLiveCameraFile(), onAdded);
-    return;
+    return const ComposerAttachResult();
   }
   if (requested == ComposerAttachKind.file) {
     await _settle();
     await _uploadOne(ref, conversationId, await pickDeviceFile(), onAdded);
-    return;
+    return const ComposerAttachResult();
   }
 
+  // Android goes through the native picker + review + editor. Anything else —
+  // iOS, or a build without the channel — keeps the Dart sheet. Availability
+  // is asked first so backing out of the native screen ends the attach rather
+  // than falling through to the old sheet.
+  if (await NativeMediaSend.isAvailable()) {
+    final native = await NativeMediaSend.open();
+    if (native == null) return const ComposerAttachResult();
+    for (final file in native.files) {
+      await _uploadNative(ref, conversationId, file, onAdded);
+    }
+    return ComposerAttachResult(sendRequested: true, caption: native.caption);
+  }
+  if (!context.mounted) return const ComposerAttachResult();
+
   final result = await showMediaGridSheet(context);
-  if (result == null) return;
+  if (result == null) return const ComposerAttachResult();
 
   switch (result.action) {
     case MediaSheetAction.camera:
@@ -73,6 +104,30 @@ Future<void> pickAndUploadAttachment(
         );
       }
   }
+  return const ComposerAttachResult();
+}
+
+/// The native flow already wrote a real file, edits flattened in.
+Future<void> _uploadNative(
+  WidgetRef ref,
+  String conversationId,
+  NativeMediaFile file,
+  ValueChanged<ChatAttachmentInput> onAdded,
+) async {
+  final source = File(file.path);
+  if (!await source.exists()) return;
+  final bytes = await source.readAsBytes();
+  await _uploadOne(
+    ref,
+    conversationId,
+    PickedMediaFile(
+      bytes: bytes,
+      fileName: file.fileName,
+      contentType: file.contentType,
+    ),
+    onAdded,
+    localPath: file.path,
+  );
 }
 
 /// The system camera and document pickers are separate Activities, and some
@@ -118,6 +173,7 @@ Future<void> _uploadOne(
   } else {
     await _cacheBytesForPreview(presign.publicUrl, picked);
   }
+  await _adopt(ref, presign.publicUrl, picked, localPath);
   onAdded(
     ChatAttachmentInput(
       fileUrl: presign.publicUrl,
@@ -125,6 +181,33 @@ Future<void> _uploadOne(
       contentType: picked.contentType,
       sizeBytes: picked.sizeBytes,
     ),
+  );
+}
+
+/// The bytes we just uploaded are already on this device, so file them in the
+/// attachment store under the URL they landed at. Without this the sender is
+/// shown a download button for their own photo the moment the message renders.
+Future<void> _adopt(
+  WidgetRef ref,
+  String fileUrl,
+  PickedMediaFile picked,
+  String? localPath,
+) async {
+  final adopter = ref.read(attachmentAdopterProvider);
+  if (localPath != null && localPath.isNotEmpty) {
+    await adopter.adoptFile(
+      fileUrl: fileUrl,
+      fileName: picked.fileName,
+      contentType: picked.contentType,
+      source: File(localPath),
+    );
+    return;
+  }
+  await adopter.adoptBytes(
+    fileUrl: fileUrl,
+    fileName: picked.fileName,
+    contentType: picked.contentType,
+    bytes: picked.bytes,
   );
 }
 
@@ -137,7 +220,7 @@ Future<void> _cacheBytesForPreview(String url, PickedMediaFile picked) async {
 }
 
 /// Backwards-compatible alias used by older call sites.
-Future<void> pickAndUploadImage(
+Future<ComposerAttachResult> pickAndUploadImage(
   BuildContext context,
   WidgetRef ref, {
   required String conversationId,

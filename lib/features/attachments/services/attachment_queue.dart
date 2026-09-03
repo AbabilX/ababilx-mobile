@@ -121,6 +121,11 @@ class AttachmentQueue {
     }
   }
 
+  /// Publish a handle nobody downloaded — the sender adopting the file it
+  /// just uploaded. Same channel a finished download uses, so a gate already
+  /// on screen swaps in place instead of waiting for a re-resolve.
+  void announce(AttachmentHandle handle) => _emit(handle);
+
   void _emit(AttachmentHandle handle) {
     if (!_events.isClosed) _events.add(handle);
   }

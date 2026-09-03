@@ -15,4 +15,13 @@
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+
+    <!-- The media-send flow is black-on-black whatever the app theme is, the
+         way every gallery-and-editor screen is. -->
+    <style name="MediaSendTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/media_send_bg</item>
+        <item name="android:statusBarColor">@color/media_send_bg</item>
+        <item name="android:navigationBarColor">@color/media_send_bg</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Activity</item>
+    </style>
 </resources>

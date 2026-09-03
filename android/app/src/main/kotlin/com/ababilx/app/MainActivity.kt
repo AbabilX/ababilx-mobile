@@ -3,6 +3,7 @@ package com.ababilx.app
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.provider.Settings
+import com.ababilx.app.mediasend.MediaSendChannel
 import com.ababilx.call_ringer.CallRinger
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -21,6 +22,9 @@ class MainActivity : FlutterActivity() {
 
     /** MediaStore behind the in-app photo grid (composer + avatar picker). */
     private val mediaGallery by lazy { MediaGalleryChannel(this) }
+
+    /** Signal-style picker, review and editor, drawn natively. */
+    private val mediaSend by lazy { MediaSendChannel(this) }
 
     /** Alternate launcher icons, switched via activity-alias. */
     private val appIcon by lazy { AppIconChannel(applicationContext) }
@@ -42,6 +46,7 @@ class MainActivity : FlutterActivity() {
         ongoingCall.handleIntent(intent)
         pip.attach(flutterEngine)
         mediaGallery.attach(flutterEngine)
+        mediaSend.attach(flutterEngine)
         appIcon.attach(flutterEngine)
         chatStore.attach(flutterEngine)
         MethodChannel(
@@ -106,10 +111,18 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        // The media-send flow answers its own MethodChannel call; anything
+        // else belongs to a Flutter plugin and must keep going to super.
+        if (mediaSend.onActivityResult(requestCode, resultCode, data)) return
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
     /**
      * A share arriving while the app is already running. launchMode is
-     * singleTop and this app has exactly one Activity, so the share always
-     * lands here rather than building a second Flutter engine.
+     * singleTop and MainActivity is the only *launchable* Activity (the
+     * media-send flow is internal and never receives a share), so the share
+     * always lands here rather than building a second Flutter engine.
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -142,6 +155,7 @@ class MainActivity : FlutterActivity() {
         ongoingCall.dispose()
         pip.dispose()
         mediaGallery.dispose()
+        mediaSend.dispose()
         appIcon.dispose()
         chatStore.dispose()
         super.onDestroy()

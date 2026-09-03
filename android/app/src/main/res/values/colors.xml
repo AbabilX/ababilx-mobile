@@ -8,4 +8,13 @@
     <color name="icon_bg_ink">#0F172A</color>
     <color name="icon_bg_indigo">#6366F1</color>
     <color name="icon_bg_forest">#065F46</color>
+
+    <!-- Media-send flow. Signal's palette: black ground, one accent. -->
+    <color name="media_send_bg">#FF000000</color>
+    <color name="media_send_chrome">#FF1B1B1B</color>
+    <color name="media_send_surface">#FF2A2A2A</color>
+    <color name="media_send_accent">#FF6366F1</color>
+    <color name="media_send_on_dark">#FFFFFFFF</color>
+    <color name="media_send_muted">#FFB0B0B0</color>
+    <color name="media_send_scrim">#99000000</color>
 </resources>

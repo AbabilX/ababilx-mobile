@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Native media-send flow. Content descriptions and the few visible
+         labels; everything else on the screen is the user's own media. -->
+    <string name="media_send_close">Close</string>
+    <string name="media_send_back">Back</string>
+    <string name="media_send_recent">Recent</string>
+    <string name="media_send_camera">Camera</string>
+    <string name="media_send_files">Files</string>
+    <string name="media_send_next">Next</string>
+    <string name="media_send_send">Send</string>
+    <string name="media_send_edit">Edit</string>
+    <string name="media_send_remove">Remove</string>
+    <string name="media_send_add_more">Add more</string>
+    <string name="media_send_add_message">Add a message</string>
+    <string name="media_send_undo">Undo</string>
+    <string name="media_send_done">Done</string>
+    <string name="media_send_cancel">Cancel</string>
+    <string name="media_send_pen">Draw</string>
+    <string name="media_send_highlight">Highlight</string>
+    <string name="media_send_blur">Blur</string>
+    <string name="media_send_crop">Crop</string>
+    <string name="media_send_rotate">Rotate</string>
+    <string name="media_send_empty">No photos or videos</string>
+    <string name="media_send_limit">You can send %1$d items at a time</string>
+
+    <plurals name="media_send_selected">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+</resources>

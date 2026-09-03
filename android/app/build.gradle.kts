@@ -79,5 +79,12 @@ dependencies {
     // Signal's Android storage primitive: encrypted SQLite with a
     // Keystore-sealed random passphrase supplied by ChatDatabaseSecret.
     implementation("androidx.sqlite:sqlite:2.6.2")
+    // The native media-send flow (gallery grid, review pager, editor). No
+    // Material or AppCompat: the screen is fully custom-drawn, exactly like
+    // Signal's, and pulling a theme library in for two widgets would drag the
+    // whole app's styling with it.
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("net.zetetic:sqlcipher-android:4.17.0")
 }

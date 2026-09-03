@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.FrameLayout">
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/review_pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/review_topbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
+        android:layout_gravity="top"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <ImageButton
+            android:id="@+id/review_back"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/ms_circle_button"
+            android:contentDescription="@string/media_send_back"
+            android:src="@drawable/ic_ms_back" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/review_edit"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/ms_circle_button"
+            android:contentDescription="@string/media_send_edit"
+            android:src="@drawable/ic_ms_draw" />
+
+        <ImageButton
+            android:id="@+id/review_remove"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/ms_circle_button"
+            android:contentDescription="@string/media_send_remove"
+            android:src="@drawable/ic_ms_close" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/review_bottombar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/media_send_scrim"
+        android:orientation="vertical"
+        android:paddingBottom="8dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/review_rail"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginBottom="8dp"
+            android:clipToPadding="false"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:scrollbars="none" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <EditText
+                android:id="@+id/review_caption"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/ms_pill_surface"
+                android:hint="@string/media_send_add_message"
+                android:imeOptions="actionDone"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="4"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/media_send_on_dark"
+                android:textColorHint="@color/media_send_muted"
+                android:textSize="15sp" />
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp">
+
+                <ImageButton
+                    android:id="@+id/review_send"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/ms_circle_accent"
+                    android:contentDescription="@string/media_send_send"
+                    android:padding="14dp"
+                    android:src="@drawable/ic_ms_send" />
+
+                <TextView
+                    android:id="@+id/review_count"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="top|end"
+                    android:background="@drawable/ms_circle_button"
+                    android:gravity="center"
+                    android:textColor="@color/media_send_on_dark"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+</merge>

@@ -8,6 +8,7 @@ import '../data/local/attachment_blob_store.dart';
 import '../data/local/attachment_dedupe_store.dart';
 import '../data/local/attachment_ref_store.dart';
 import '../data/models/attachment_handle.dart';
+import '../services/attachment_adopter.dart';
 import '../services/attachment_authority.dart';
 import '../services/attachment_cipher.dart';
 import '../services/attachment_downloader.dart';
@@ -81,6 +82,17 @@ final attachmentQueueProvider = Provider<AttachmentQueue>((ref) {
   ref.onDispose(queue.dispose);
   return queue;
 });
+
+/// Files the sender already holds go straight into the store — see
+/// [AttachmentAdopter]. Not autoDispose: an adoption outlives the composer.
+final attachmentAdopterProvider = Provider<AttachmentAdopter>(
+  (ref) => AttachmentAdopter(
+    ref.watch(attachmentBlobStoreProvider),
+    ref.watch(attachmentDedupeStoreProvider),
+    ref.watch(attachmentPathsProvider),
+    ref.watch(attachmentQueueProvider),
+  ),
+);
 
 final attachmentAuthorityProvider = Provider<AttachmentAuthority>((ref) {
   final authority = AttachmentAuthority(

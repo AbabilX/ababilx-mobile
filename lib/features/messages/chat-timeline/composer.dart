@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../attachments/providers/attachment_providers.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
@@ -318,7 +319,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   Future<void> _attach({ImageSource? source, ComposerAttachKind? kind}) async {
     if (!mounted) return;
     try {
-      await pickAndUploadAttachment(
+      final outcome = await pickAndUploadAttachment(
         context,
         ref,
         conversationId: widget.conversationId,
@@ -333,6 +334,12 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           _focus.requestFocus();
         },
       );
+      // The native review screen ends on its own Send: the album and the one
+      // message typed under it go out without a second trip to the composer.
+      if (outcome.sendRequested && mounted) {
+        if (outcome.caption.isNotEmpty) _ctrl.text = outcome.caption;
+        await _send();
+      }
     } catch (_) {
       if (!mounted) return;
       _showMessage('Could not attach this file.', 'ফাইল সংযুক্ত করা যায়নি।');
@@ -487,6 +494,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           bytes,
           RecordedVoiceMessage.contentType,
         );
+        await ref
+            .read(attachmentAdopterProvider)
+            .adoptBytes(
+              fileUrl: presign.publicUrl,
+              fileName: recording.fileName,
+              contentType: RecordedVoiceMessage.contentType,
+              bytes: bytes,
+            );
         final replyTarget = ref.read(chatProvider).replyToMessage;
         final effectiveParentId = replyTarget?.id ?? widget.parentId;
         await notifier.sendMessage(

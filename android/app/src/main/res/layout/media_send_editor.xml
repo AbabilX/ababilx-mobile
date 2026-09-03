@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.FrameLayout">
+
+    <com.ababilx.app.mediasend.editor.EditableImageView
+        android:id="@+id/editor_canvas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/editor_topbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
+        android:layout_gravity="top"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <ImageButton
+            android:id="@+id/editor_cancel"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/ms_circle_button"
+            android:contentDescription="@string/media_send_cancel"
+            android:src="@drawable/ic_ms_close" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/editor_undo"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/ms_circle_button"
+            android:contentDescription="@string/media_send_undo"
+            android:src="@drawable/ic_ms_undo" />
+
+        <ImageButton
+            android:id="@+id/editor_done"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/ms_circle_accent"
+            android:contentDescription="@string/media_send_done"
+            android:src="@drawable/ic_ms_check" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/editor_bottombar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/media_send_scrim"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/editor_colors"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/tool_pen"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/ms_circle_button"
+                android:contentDescription="@string/media_send_pen"
+                android:src="@drawable/ic_ms_draw" />
+
+            <ImageButton
+                android:id="@+id/tool_highlight"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/ms_circle_button"
+                android:contentDescription="@string/media_send_highlight"
+                android:src="@drawable/ic_ms_highlight" />
+
+            <ImageButton
+                android:id="@+id/tool_blur"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/ms_circle_button"
+                android:contentDescription="@string/media_send_blur"
+                android:src="@drawable/ic_ms_blur" />
+
+            <ImageButton
+                android:id="@+id/tool_crop"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/ms_circle_button"
+                android:contentDescription="@string/media_send_crop"
+                android:src="@drawable/ic_ms_crop" />
+
+            <ImageButton
+                android:id="@+id/tool_rotate"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/ms_circle_button"
+                android:contentDescription="@string/media_send_rotate"
+                android:src="@drawable/ic_ms_rotate" />
+        </LinearLayout>
+    </LinearLayout>
+</merge>

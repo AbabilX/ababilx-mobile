@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/widgets/image_preview.dart';
 import '../../attachments/data/models/attachment_handle.dart';
-import '../../attachments/providers/attachment_providers.dart';
 import '../../attachments/widgets/attachment_gate.dart';
 import '../data/models/chat_models.dart';
+import 'attachment_gallery.dart';
 
-class AttachmentImageTile extends ConsumerWidget {
+class AttachmentImageTile extends StatelessWidget {
   const AttachmentImageTile({
     super.key,
     required this.attachment,
@@ -17,6 +15,7 @@ class AttachmentImageTile extends ConsumerWidget {
     required this.maxWidth,
     this.grid = false,
     this.overlayText,
+    this.radius,
   });
 
   final ChatMessageAttachment attachment;
@@ -27,8 +26,12 @@ class AttachmentImageTile extends ConsumerWidget {
   final bool grid;
   final String? overlayText;
 
+  /// Album cells share cut corners so the group reads as one rounded block.
+  /// Null means the standalone shape.
+  final BorderRadius? radius;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final solo = !grid;
     return Padding(
       padding: EdgeInsets.only(top: solo ? 8 : 0),
@@ -36,27 +39,25 @@ class AttachmentImageTile extends ConsumerWidget {
         attachment: attachment,
         height: solo ? maxHeight * 0.55 : maxHeight,
         width: grid ? maxWidth : null,
-        ready: (context, handle) => _ready(context, ref, handle, solo),
+        shape: _shape,
+        ready: (context, handle) => _ready(context, handle, solo),
       ),
     );
   }
 
-  Widget _ready(
-    BuildContext context,
-    WidgetRef ref,
-    AttachmentHandle handle,
-    bool solo,
-  ) {
+  BorderRadius get _shape => radius ?? BorderRadius.circular(8);
+
+  Widget _ready(BuildContext context, AttachmentHandle handle, bool solo) {
     return Stack(
       fit: grid ? StackFit.expand : StackFit.loose,
       children: [
         Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => _open(context, ref),
-            borderRadius: BorderRadius.circular(8),
+            onTap: () => _open(context),
+            borderRadius: _shape,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: _shape,
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   maxHeight: maxHeight,
@@ -81,10 +82,10 @@ class AttachmentImageTile extends ConsumerWidget {
               color: Theme.of(
                 context,
               ).colorScheme.inverseSurface.withValues(alpha: .82),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: _shape,
               child: InkWell(
-                onTap: () => _open(context, ref),
-                borderRadius: BorderRadius.circular(8),
+                onTap: () => _open(context),
+                borderRadius: _shape,
                 child: Center(
                   child: Text(
                     overlayText!,
@@ -101,25 +102,11 @@ class AttachmentImageTile extends ConsumerWidget {
     );
   }
 
-  Future<void> _open(BuildContext context, WidgetRef ref) async {
-    final handles = await ref
-        .read(attachmentAuthorityProvider)
-        .resolveAll(gallery);
-    if (!context.mounted) return;
-    await showImagePreview(
-      context,
-      images: [
-        for (var i = 0; i < gallery.length; i++)
-          PreviewImage(
-            fileUrl: gallery[i].fileUrl,
-            fileName: gallery[i].fileName,
-            localPath: handles[i].isReady ? handles[i].localPath : null,
-          ),
-      ],
-      initialIndex: index,
-      allowRemoteFallback: false,
-    );
-  }
+  Future<void> _open(BuildContext context) => showChatAttachmentGallery(
+    context,
+    images: gallery,
+    index: index,
+  );
 
   Widget _broken(BuildContext context, bool solo) => Container(
     height: 120,
