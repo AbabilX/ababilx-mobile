@@ -8,19 +8,20 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../attachments/providers/attachment_providers.dart';
+import '../../../shared/media/device_gallery.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 import '../providers/team_gate_provider.dart';
 import 'composer_attach.dart';
-import 'composer_attachment_panel.dart';
-import 'composer_collapsed.dart';
+import 'composer_attachment_keyboard.dart';
 import 'composer_expanded_shell.dart';
+import 'composer_input_bar.dart';
 import 'composer_mention_picker.dart';
 import 'composer_recording_bar.dart';
 import 'composer_reply_banner.dart';
+import 'reaction_emoji_picker.dart';
 import 'composer_share_contact.dart';
-import 'composer_slack_field.dart';
 import 'composer_text_actions.dart';
 import 'voice_message_recorder.dart';
 
@@ -56,9 +57,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   final _pending = <ChatAttachmentInput>[];
   Timer? _recordClock;
   Duration _recordElapsed = Duration.zero;
-  bool _focused = false;
-  bool _forceExpanded = false;
-  bool _tall = false;
   bool _recording = false;
   bool _recordPreparing = false;
   bool _recordFinishing = false;
@@ -75,11 +73,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   String get _hint =>
       widget.parentId != null ? 'Add a reply' : 'Message ${widget.hintName}';
   bool get _hasDraft => _ctrl.text.trim().isNotEmpty || _pending.isNotEmpty;
-  bool get _expanded =>
-      _forceExpanded ||
-      _focused ||
-      _hasDraft ||
-      ref.watch(chatProvider).replyToMessage != null;
   bool get _voiceSheetOpen => _recording || _recordPreparing || _uploadingVoice;
 
   List<MentionCandidate> _channelMembers = [];
@@ -214,26 +207,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     setState(() => _showMentions = false);
   }
 
-  void _triggerMention() {
-    insertComposerAt(_ctrl);
-    _onTextChanged();
-  }
-
   void _onFocus() {
-    setState(() {
-      _focused = _focus.hasFocus;
-      if (!_focus.hasFocus && !_hasDraft) {
-        _forceExpanded = false;
-        _tall = false;
-      }
-    });
-  }
-
-  void _openExpanded() {
-    setState(() => _forceExpanded = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _focus.requestFocus();
-    });
+    // The bar never changes shape on focus the way the old Slack composer
+    // did; this only closes the attachment keyboard when the text field wins
+    // focus back, so the two are never up at once.
+    if (_focus.hasFocus) _closeAttachmentPanel();
   }
 
   @override
@@ -261,7 +239,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     setState(() {
       _pending.clear();
       _showMentions = false;
-      _forceExpanded = true;
     });
 
     // Start the optimistic insert before asking the timeline to reveal it.
@@ -327,10 +304,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         kind: kind,
         onAdded: (a) {
           if (!mounted) return;
-          setState(() {
-            _pending.add(a);
-            _forceExpanded = true;
-          });
+          setState(() => _pending.add(a));
           _focus.requestFocus();
         },
       );
@@ -358,6 +332,28 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   void _selectAttachment(ComposerAttachKind kind) {
     _closeAttachmentPanel();
     unawaited(_attach(kind: kind));
+  }
+
+  /// Rail tap: straight into the pending strip, no picker screen.
+  void _pickFromRail(DeviceMediaItem item) {
+    _closeAttachmentPanel();
+    unawaited(
+      uploadDeviceMediaItem(
+        ref,
+        conversationId: widget.conversationId,
+        item: item,
+        onAdded: (a) {
+          if (mounted) setState(() => _pending.add(a));
+        },
+      ),
+    );
+  }
+
+  Future<void> _pickEmoji() async {
+    final emoji = await showReactionEmojiPicker(context);
+    if (emoji == null || !mounted) return;
+    insertComposerText(_ctrl, emoji);
+    _focus.requestFocus();
   }
 
   void _selectContact() {
@@ -549,7 +545,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     final member = await showShareContactSheet(context);
     if (member == null || !mounted) return;
     insertComposerText(_ctrl, formatSharedContact(member));
-    setState(() => _forceExpanded = true);
     _focus.requestFocus();
   }
 
@@ -587,7 +582,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       next,
     ) {
       if (next != null && mounted) {
-        setState(() => _forceExpanded = true);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _focus.requestFocus();
         });
@@ -618,60 +612,45 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       );
     }
 
-    final composer = !_expanded
-        ? ComposerCollapsed(
-            hint: _hint,
-            onFocusTap: () {
-              _closeAttachmentPanel();
-              _openExpanded();
-            },
-            onPlus: _toggleAttachmentPanel,
-            onMic: () => unawaited(_startVoiceRecording()),
-            voiceTooltip: tr('chat_tap_to_record'),
-            preparingVoice: _recordPreparing,
-          )
-        : ComposerExpandedShell(
-            pending: _pending,
-            onRemove: (i) => setState(() => _pending.removeAt(i)),
-            onReorder: (oldIndex, newIndex) => setState(() {
-              _pending.insert(newIndex, _pending.removeAt(oldIndex));
-            }),
-            onAddPhoto: () => _attach(kind: ComposerAttachKind.gallery),
-            mentionPicker: _showMentions
-                ? ComposerMentionPicker(
-                    candidates: _mentionCandidates,
-                    onSelect: _selectMention,
-                  )
-                : null,
-            replyBanner: replyToMsg != null
-                ? ComposerReplyBanner(
-                    message: replyToMsg,
-                    onCancel: () =>
-                        ref.read(chatProvider.notifier).setReplyToMessage(null),
-                  )
-                : null,
-            field: ComposerSlackField(
-              controller: _ctrl,
-              focusNode: _focus,
-              hint: _hint,
-              sending: sending,
-              canSend: _hasDraft,
-              expanded: _tall,
-              isGroup: widget.isGroup,
-              onAttach: _toggleAttachmentPanel,
-              onVoice: () => unawaited(_startVoiceRecording()),
-              onShareContact: () => unawaited(_shareContact()),
-              onMention: _triggerMention,
-              onExpand: () => setState(() => _tall = !_tall),
-              onSend: _send,
-              attachTooltip: tr('chat_attach'),
-              voiceTooltip: tr('chat_tap_to_record'),
-              shareContactTooltip: tr('chat_share_contact'),
-              mentionTooltip: tr('chat_mention'),
-              expandTooltip: tr('chat_expand'),
-              sendLabel: tr('chat_send'),
-            ),
-          );
+    final composer = ComposerExpandedShell(
+      pending: _pending,
+      onRemove: (i) => setState(() => _pending.removeAt(i)),
+      onReorder: (oldIndex, newIndex) => setState(() {
+        _pending.insert(newIndex, _pending.removeAt(oldIndex));
+      }),
+      onAddPhoto: () => _attach(kind: ComposerAttachKind.gallery),
+      mentionPicker: _showMentions
+          ? ComposerMentionPicker(
+              candidates: _mentionCandidates,
+              onSelect: _selectMention,
+            )
+          : null,
+      replyBanner: replyToMsg != null
+          ? ComposerReplyBanner(
+              message: replyToMsg,
+              onCancel: () =>
+                  ref.read(chatProvider.notifier).setReplyToMessage(null),
+            )
+          : null,
+      field: ComposerInputBar(
+        controller: _ctrl,
+        focusNode: _focus,
+        hint: _hint,
+        sending: sending,
+        canSend: _hasDraft,
+        attachmentOpen: _attachmentPanelOpen,
+        preparingVoice: _recordPreparing,
+        onEmoji: () => unawaited(_pickEmoji()),
+        onCamera: () => _selectAttachment(ComposerAttachKind.camera),
+        onVoice: () => unawaited(_startVoiceRecording()),
+        onPlus: _toggleAttachmentPanel,
+        onSend: _send,
+        cameraTooltip: tr('chat_camera'),
+        voiceTooltip: tr('chat_tap_to_record'),
+        attachTooltip: tr('chat_attach'),
+        sendLabel: tr('chat_send'),
+      ),
+    );
 
     return PopScope(
       canPop: !_attachmentPanelOpen,
@@ -686,7 +665,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOutCubic,
             child: _attachmentPanelOpen
-                ? ComposerAttachmentPanel(
+                ? ComposerAttachmentKeyboard(
                     galleryLabel: tr('chat_gallery'),
                     cameraLabel: tr('chat_camera'),
                     fileLabel: tr('chat_file'),
@@ -697,6 +676,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                         _selectAttachment(ComposerAttachKind.camera),
                     onFile: () => _selectAttachment(ComposerAttachKind.file),
                     onContact: _selectContact,
+                    onPickMedia: _pickFromRail,
                   )
                 : const SizedBox.shrink(),
           ),

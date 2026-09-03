@@ -1,6 +1,7 @@
 import 'package:ababilx/features/messages/chat-timeline/chat_timeline.dart';
 import 'package:ababilx/features/messages/chat-timeline/composer.dart';
-import 'package:ababilx/features/messages/chat-timeline/composer_slack_field.dart';
+import 'package:ababilx/features/messages/chat-timeline/composer_input_bar.dart';
+import 'package:ababilx/features/messages/chat-timeline/composer_input_bar_buttons.dart';
 import 'package:ababilx/features/messages/chat_utils.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/features/messages/providers/chat_provider.dart';
@@ -87,11 +88,10 @@ class _TimelineNotifier extends _ComposerNotifier {
 }
 
 Future<void> _typeAndSend(WidgetTester tester, String text) async {
-  await tester.tap(find.text('Message someone'));
-  await tester.pump();
   await tester.enterText(find.byType(TextField), text);
   await tester.pump();
-  await tester.tap(find.widgetWithText(TextButton, 'Send'));
+  // The one circle beside the pill: "+" until there is a draft, send after.
+  await tester.tap(find.byType(AccentCircle));
   await tester.pump();
 }
 
@@ -123,7 +123,7 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'second message');
     await tester.pump();
-    await tester.tap(find.widgetWithText(TextButton, 'Send'));
+    await tester.tap(find.byType(AccentCircle));
     await tester.pumpAndSettle();
     final continuedField = tester.widget<TextField>(find.byType(TextField));
     expect(continuedField.focusNode?.hasFocus, isTrue);
@@ -152,7 +152,7 @@ void main() {
     expect(field.focusNode?.hasFocus, isTrue);
     expect(
       tester.getBottomLeft(message).dy,
-      lessThan(tester.getTopLeft(find.byType(ComposerSlackField)).dy),
+      lessThan(tester.getTopLeft(find.byType(ComposerInputBar)).dy),
     );
   });
 }

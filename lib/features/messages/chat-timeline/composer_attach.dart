@@ -107,6 +107,31 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
   return const ComposerAttachResult();
 }
 
+/// A tap straight on the attachment keyboard's rail: one library item, no
+/// picker in between. The bytes are materialised first because a
+/// `content://` grant does not outlive the panel that handed it over.
+Future<void> uploadDeviceMediaItem(
+  WidgetRef ref, {
+  required String conversationId,
+  required DeviceMediaItem item,
+  required ValueChanged<ChatAttachmentInput> onAdded,
+}) async {
+  final file = await DeviceGallery.materialize(item);
+  if (file == null) return;
+  final bytes = await file.readAsBytes();
+  await _uploadOne(
+    ref,
+    conversationId,
+    PickedMediaFile(
+      bytes: bytes,
+      fileName: item.name,
+      contentType: item.mime,
+    ),
+    onAdded,
+    localPath: file.path,
+  );
+}
+
 /// The native flow already wrote a real file, edits flattened in.
 Future<void> _uploadNative(
   WidgetRef ref,
