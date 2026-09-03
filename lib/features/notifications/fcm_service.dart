@@ -107,22 +107,19 @@ class FcmService {
       permissionGranted = false;
     }
 
-    if (!permissionGranted) {
-      fcmLog('start.abort', 'permission denied — token will not register');
-      flushPendingNav();
-      return false;
-    }
-
-    try {
-      await _messaging.setForegroundNotificationPresentationOptions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-    } catch (e) {
-      fcmLog('foreground_options.fail', e);
-    }
-
+    // Register before the permission gate, and whatever it decided.
+    //
+    // A refused (or merely dismissed) notification prompt used to abort here,
+    // so the account got no `device_tokens` row at all — and nothing brings the
+    // user back through `start()` when they enable notifications later from
+    // system settings. The phone then received *nothing*, silently, until the
+    // next cold start happened to catch the permission already granted; a new
+    // account's first incoming call is exactly when that window is open. The
+    // server logs the other end of it as `[fcm] no devices user=…`.
+    //
+    // Registering anyway is also correct on its own terms: call and encrypted
+    // chat pushes are data-only, and Android delivers those to the app whether
+    // or not it may draw a notification.
     await _syncToken();
 
     _tokenRefreshSub?.cancel();
@@ -136,6 +133,22 @@ class FcmService {
         fcmLog('token.refresh.register.fail', e);
       }
     });
+
+    if (!permissionGranted) {
+      fcmLog('start.abort', 'permission denied — token registered, UI muted');
+      flushPendingNav();
+      return false;
+    }
+
+    try {
+      await _messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    } catch (e) {
+      fcmLog('foreground_options.fail', e);
+    }
 
     _foregroundSub?.cancel();
     _foregroundSub = FirebaseMessaging.onMessage.listen(_onForeground);

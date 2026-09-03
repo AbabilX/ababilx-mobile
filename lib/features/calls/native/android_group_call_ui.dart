@@ -2,6 +2,7 @@ import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/entities/notification_params.dart';
 import 'package:call_ringer/call_ringer.dart';
+import 'package:call_ringer/callkit_surface.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
 import '../group/data/models/group_call.dart';
@@ -110,6 +111,9 @@ class AndroidGroupCallUi {
     } catch (_) {
       // Nothing native was showing.
     }
+    // A locked screen raised the plugin's full-screen Activity, which its own
+    // teardown cannot close — see [CallkitSurface].
+    await CallkitSurface.dismissIncoming();
     // Hiding emits no call event: release CallKit's hold on the native ringer
     // explicitly, or it would keep ringing into the joined call.
     await CallRinger.release(callRingHolderNative);
@@ -139,6 +143,7 @@ class AndroidGroupCallUi {
     try {
       await FlutterCallkitIncoming.endCall(callId);
     } catch (_) {}
+    await CallkitSurface.dismissIncoming();
     await CallRinger.release(callRingHolderNative);
   }
 

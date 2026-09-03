@@ -22,6 +22,7 @@ import '../native/android_group_call_ui.dart';
 import '../native/voice_call_ended_guard.dart';
 import '../ringtone/callkit_ring_events.dart';
 import '../voice_call_log.dart';
+import '../voice_call_ringable.dart';
 import '../webrtc/voice_peer_engine.dart';
 import 'voice_call_state.dart';
 
@@ -193,6 +194,25 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       try {
         final session = await _repository.get(callId);
         call = session.call;
+        // A CallKit surface outlives the call it announced: the plugin's
+        // full-screen Activity cannot be closed by its own teardown (see
+        // `CallkitSurface`), so a locked phone could still be showing an offer
+        // the caller cancelled minutes ago. Answering that is not an accept.
+        // Publishing `incomingRinging` first — as this did — sent CallStoreSync
+        // to `/call` and started the in-app ringtone, and the not-ringing guard
+        // further down only tore the *native* surface away, leaving a second
+        // ringing screen with Accept and Decline that nothing could dismiss.
+        if (!isVoiceCallRingable(call)) {
+          voiceCallLog(
+            'accept.stale_native',
+            callId: call.id,
+            phase: _phaseName,
+            reason: 'status_${call.status}',
+          );
+          _rememberFinished(call.id);
+          await _endNative(call.id, source: 'accept.stale_native');
+          return;
+        }
         state = VoiceCallState(
           phase: VoiceCallPhase.incomingRinging,
           call: call,
@@ -228,7 +248,18 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         phase: _phaseName,
         reason: 'status_${call.status}',
       );
-      await _endNative(call.id, source: 'accept.not_ringing');
+      // Finish, not just dismiss: `_endNative` closes CallKit and leaves this
+      // notifier wherever it stood. Anything already showing `/call` for this
+      // call would sit there ringing with no event left to end it.
+      if (state.call?.id == call.id) {
+        await _finishLocal(
+          VoiceCallPhase.ended,
+          reason: 'accept.not_ringing',
+          callId: call.id,
+        );
+      } else {
+        await _endNative(call.id, source: 'accept.not_ringing');
+      }
       return;
     }
 

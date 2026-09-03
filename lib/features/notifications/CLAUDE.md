@@ -192,6 +192,24 @@ does not declare it; without it the buttons render and do nothing.
 - The background isolate must never throw: an uncaught error there takes the
   process down, so every step is best-effort.
 
+## The device token registers even when notifications are refused
+
+A refused — or merely swiped-away — POST_NOTIFICATIONS prompt used to abort
+`FcmService.start()` before `_syncToken()`, so the account had **no**
+`device_tokens` row at all. Nothing brings a user back through `start()` when
+they turn notifications on later from system settings, and Android shows that
+system prompt at most twice, so one dismissed dialog could mean a phone that
+silently receives nothing until the next cold start happens to catch the
+permission already granted. A brand-new account's first incoming call sits
+exactly in that window: the caller rings, the server logs
+`[fcm] no devices user=…`, and the callee's phone never makes a sound.
+
+Registration now happens before the gate and regardless of it. That is also
+right on its own terms — call pushes and encrypted DM pushes are data-only, and
+Android delivers those whether or not the app may draw a notification. What
+stays gated is everything that *draws*: foreground presentation options and the
+message listeners.
+
 ## Verifying
 
 `flutter test test/features/notifications/` covers the store, the thread

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import com.ababilx.call_ringer.CallRinger
+import com.ababilx.call_ringer.CallkitSurface
 import com.hiennv.flutter_callkit_incoming.CallkitBackgroundExecutor
 import com.hiennv.flutter_callkit_incoming.CallkitEventCallback
 import com.hiennv.flutter_callkit_incoming.FlutterCallkitIncomingPlugin
@@ -51,6 +52,14 @@ object CallEventBridge : CallkitEventCallback {
         val context = appContext ?: return
         // Answered, declined or ended — every one of them ends the ringing UI.
         CallRinger.release(NATIVE_HOLDER)
+        // ...and the full-screen Activity a locked phone is showing, which the
+        // plugin tries and fails to close on exactly these three events. See
+        // [CallkitSurface]. Doing it here rather than from Dart covers a
+        // killed app, and covers the ends we did not initiate.
+        CallkitSurface.dismissIncoming(
+            context,
+            event == CallkitEventCallback.CallEvent.ACCEPT,
+        )
         ensureBackgroundEngine(context)
     }
 

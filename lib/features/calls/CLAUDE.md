@@ -136,6 +136,8 @@ Touch one, re-check all: `packages/call_ringer/**`, `ringtone/**`,
 `android/app/src/main/kotlin/com/ababilx/app/CallEventBridge.kt` +
 `AbabilXApplication.kt` (+ the manifest `android:name`),
 `group/providers/group_call_callkit.dart`,
+`packages/call_ringer/android/.../CallkitSurface.kt` +
+`packages/call_ringer/lib/callkit_surface.dart`,
 `android/app/src/main/kotlin/com/ababilx/app/MainActivity.kt` (releases the
 `flutter` holder in `onDestroy`), `res/raw/keep.xml`, `gradle.properties`.
 
@@ -174,6 +176,63 @@ precisely so the resulting CallKit event is ignored, so nothing else stops the
 tone either. That is what left the ringtone playing after a decline while every
 screen had already closed (fixed 2026-08-26 in `_endNative`). Route every
 dismissal through the `AndroidCallUi` / `AndroidGroupCallUi` wrappers.
+
+## The plugin cannot close its own lock-screen call surface
+
+Found 2026-09-03, after "I cancelled the call and it is still ringing on his
+phone — he answered it and got a second ringing screen".
+
+`CallkitNotificationManager.clearIncomingNotification` broadcasts
+`CallkitIncomingActivity.getIntentEnded(...)`, and the Activity registers a
+runtime receiver for that action in `onCreate` which calls `finishTask()`. The
+broadcast is delivered to nobody, because the plugin builds it with
+
+```kotlin
+intent.setClassName(pkg, "…flutter_callkit_incoming.CallkitIncomingActivity")
+```
+
+and `ActivityManagerService.broadcastIntentLocked` only queries
+runtime-registered receivers `if (intent.getComponent() == null)`. The manifest
+pass that does run matches nothing either — the named component is an Activity,
+not a `<receiver>`. So **every** dismissal the plugin performs (END, DECLINE,
+TIMEOUT, `hideCallkitIncoming`) cancels the notification, stops its player, and
+leaves the full-screen Activity on screen until its own `duration` timer runs
+out, up to a minute later.
+
+Only a **locked** phone shows this. With no keyguard Android draws the heads-up
+notification instead of firing the full-screen intent, and cancelling the
+notification is the whole teardown — which is why a cancelled call closed
+cleanly in every screen-on test.
+
+`packages/call_ringer/.../CallkitSurface.kt` sends the same intent without the
+component, which matches. It is called from:
+
+- `CallEventBridge.onCallEvent` — native, in every process, on ACCEPT /
+  DECLINE / END however they were raised, so a killed app is covered too;
+- `AndroidCallUi.endCall` / `hideIncoming` and their group twins — `endCall`
+  broadcasts nothing at all when CallKit no longer holds a record for the id,
+  and `hideCallkitIncoming` raises no event for the bridge to see.
+
+It lives in the ringtone plugin package for the ringtone's reason: a plugin
+package is registered into every engine.
+
+## Answering a dead call must not raise a second ringing screen
+
+The other half of the same report, and the reason it looked like two incoming
+screens. A stale lock-screen surface can be answered by hand, and that Accept
+reaches Dart as an ordinary CallKit event. `acceptIncoming` used to publish
+`incomingRinging` the moment its `GET` returned — before checking the status —
+so `CallStoreSync` opened `/call` and `ensureNativeIncomingUi` started the
+in-app tone for a call that had ended minutes ago. The not-ringing guard below
+it then called `_endNative` and returned, which closes CallKit and leaves this
+notifier exactly where it stood: a ringing screen with Accept and Decline and
+no event left in the world to dismiss it.
+
+`isVoiceCallRingable` (`voice_call_ringable.dart`, unit-tested) now gates that
+state transition, and the guard finishes locally (`_finishLocal`) instead of
+only dismissing the native surface. The rule behind both: **the server row is
+the only authority on whether a ringing surface is allowed** — a push and a
+CallKit record both outlive the call they announce.
 
 ## A CallKit decline names a call the provider may not know
 

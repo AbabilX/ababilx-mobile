@@ -1,4 +1,5 @@
 import 'package:call_ringer/call_ringer.dart';
+import 'package:call_ringer/callkit_surface.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
@@ -36,6 +37,10 @@ class AndroidCallUi {
     } catch (_) {
       // The native call may already have been cleared by a local action.
     }
+    // `endCall` broadcasts nothing when CallKit no longer holds a record for
+    // this id — and its broadcast could not close the locked-screen Activity
+    // anyway (see [CallkitSurface]). Ask for that dismissal outright.
+    await CallkitSurface.dismissIncoming();
     await CallRinger.release(callRingHolderNative);
   }
 
@@ -52,6 +57,10 @@ class AndroidCallUi {
     } catch (_) {
       // Nothing native was showing — the Flutter screen is already alone.
     }
+    // `hideCallkitIncoming` clears the notification only; the full-screen
+    // Activity a locked phone raised needs its own dismissal, and this path
+    // emits no CallKit event for the native bridge to act on.
+    await CallkitSurface.dismissIncoming();
     // Hiding emits no call event, so the native ringer has to be told that
     // CallKit no longer wants the tone; the Flutter screen keeps its own hold.
     await CallRinger.release(callRingHolderNative);

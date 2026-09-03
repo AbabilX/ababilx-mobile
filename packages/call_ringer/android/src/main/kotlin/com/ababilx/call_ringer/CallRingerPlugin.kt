@@ -50,6 +50,17 @@ class CallRingerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 CallRinger.releaseAll()
                 result.success(null)
             }
+            // Same reason this package exists at all: the CallKit surface has
+            // to be closable from whichever engine is alive, background
+            // isolate included. See [CallkitSurface] for why the plugin's own
+            // dismissal never arrives.
+            "dismissCallkitIncoming" -> {
+                CallkitSurface.dismissIncoming(
+                    context,
+                    call.argument<Boolean>("accepted") == true,
+                )
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
     }
