@@ -23,6 +23,7 @@ class VoiceCallState {
     this.muted = false,
     this.speaker = false,
     this.screenSharing = false,
+    this.reconnecting = false,
     this.remoteScreenStream,
     this.screenShareError,
     this.pendingConversationId,
@@ -39,6 +40,12 @@ class VoiceCallState {
   final bool muted;
   final bool speaker;
   final bool screenSharing;
+
+  /// Media dropped and an ICE restart is in flight. The call is still
+  /// [VoiceCallPhase.connected] on purpose — the ongoing-call notification, the
+  /// audio route and the call screen must all survive a recovery, and only the
+  /// status line changes.
+  final bool reconnecting;
   final MediaStream? remoteScreenStream;
   final String? screenShareError;
   final String? pendingConversationId;
@@ -80,6 +87,7 @@ class VoiceCallState {
     bool? muted,
     bool? speaker,
     bool? screenSharing,
+    bool? reconnecting,
     MediaStream? remoteScreenStream,
     bool clearRemoteScreen = false,
     String? screenShareError,
@@ -99,6 +107,7 @@ class VoiceCallState {
     muted: muted ?? this.muted,
     speaker: speaker ?? this.speaker,
     screenSharing: screenSharing ?? this.screenSharing,
+    reconnecting: reconnecting ?? this.reconnecting,
     remoteScreenStream: clearRemoteScreen
         ? null
         : (remoteScreenStream ?? this.remoteScreenStream),

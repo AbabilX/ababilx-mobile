@@ -18,6 +18,10 @@ String voiceCallStatusText(VoiceCallState state) {
     case VoiceCallPhase.connecting:
       return 'Connecting…';
     case VoiceCallPhase.connected:
+      // Still "connected" during a recovery on purpose — the call has not
+      // ended, it is re-gathering candidates. Showing the frozen timer instead
+      // would read as a live call with dead audio.
+      if (state.reconnecting) return 'Reconnecting…';
       return formatCallDuration(state.connectedAt);
     case VoiceCallPhase.ended:
       final status = state.call?.status;

@@ -41,13 +41,30 @@ class VoicePeerEngine {
     required this.sendSignal,
     required this.onConnected,
     required this.onFailed,
+    required this.onTrouble,
+    required this.onHealthy,
+    required this.onRestartRequested,
     required this.onLocalScreenChanged,
     required this.onRemoteScreenChanged,
   });
 
   final VoiceSignalSender sendSignal;
   final void Function() onConnected;
+
+  /// Unrecoverable: signalling is gone, so no restart can be negotiated.
   final void Function(String reason) onFailed;
+
+  /// The media path dropped. Recoverable by an ICE restart — the owner decides
+  /// whether to retry or give up, this engine only reports the transition.
+  final void Function(String reason, {bool immediate}) onTrouble;
+
+  /// Media is flowing. Fires on every entry to `connected`, not just the first,
+  /// so a recovery in progress can be cleared.
+  final void Function() onHealthy;
+
+  /// The peer asked us to run the ICE restart (only the caller re-offers).
+  final void Function() onRestartRequested;
+
   final void Function(bool sharing) onLocalScreenChanged;
   final void Function(MediaStream? stream) onRemoteScreenChanged;
 
@@ -63,7 +80,6 @@ class VoicePeerEngine {
   bool _disposed = false;
   bool _connected = false;
   bool _answerReceived = false;
-  Timer? _disconnectTimer;
 
   bool get ready => _peer != null && _localStream != null;
 
@@ -149,7 +165,7 @@ class VoicePeerEngine {
       if (_disposed) return;
       voiceCallLog('ice.connection', reason: state.toString());
       if (state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
-        onFailed(_failureReason());
+        onTrouble(_failureReason(), immediate: true);
       }
     };
     peer.onConnectionState = _handleConnectionState;
@@ -246,6 +262,8 @@ class VoicePeerEngine {
         _remoteDescriptionSet = true;
         _answerReceived = true;
         await _flushCandidates();
+      case 'restart':
+        onRestartRequested();
       case 'ice':
         final candidate = signal['candidate'] as String? ?? '';
         if (candidate.isEmpty) return;
@@ -268,8 +286,8 @@ class VoicePeerEngine {
     voiceCallLog('pc.state', reason: state.toString());
     switch (state) {
       case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
-        _disconnectTimer?.cancel();
         unawaited(_ensureAudioSessionIfNeeded());
+        onHealthy();
         if (!_connected) {
           _connected = true;
           onConnected();
@@ -277,13 +295,15 @@ class VoicePeerEngine {
           unawaited(logSelectedPair());
           Timer(const Duration(seconds: 5), () => unawaited(logMediaFlow()));
         }
+      // Neither state recovers on its own — the candidate pair that was
+      // carrying media is gone. An ICE restart is the only cure, so both are
+      // reported as trouble rather than ending the call here. `failed` is
+      // terminal for this pair and skips the settle grace; `disconnected` is
+      // often a blip worth waiting out.
       case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
-        onFailed(_failureReason());
+        onTrouble(_failureReason(), immediate: true);
       case RTCPeerConnectionState.RTCPeerConnectionStateDisconnected:
-        _disconnectTimer?.cancel();
-        _disconnectTimer = Timer(const Duration(seconds: 12), () {
-          if (!_disposed) onFailed('peer_connection_disconnected');
-        });
+        onTrouble('peer_connection_disconnected', immediate: false);
       case RTCPeerConnectionState.RTCPeerConnectionStateClosed:
       case RTCPeerConnectionState.RTCPeerConnectionStateNew:
       case RTCPeerConnectionState.RTCPeerConnectionStateConnecting:
@@ -444,6 +464,46 @@ class VoicePeerEngine {
     if (renegotiate && peer != null && !_disposed) await _renegotiate();
   }
 
+  /// Swaps in freshly-issued ICE servers without tearing the call down.
+  ///
+  /// Matters on long calls: coturn REST credentials are timestamped, so a call
+  /// outliving its TURN credential loses the relay on the next allocation
+  /// refresh. Re-fetching before a restart means the new candidates are
+  /// gathered with credentials that are valid again.
+  Future<void> applyIceServers(List<IceServer> iceServers) async {
+    if (_disposed || iceServers.isEmpty) return;
+    await _requirePeer().setConfiguration({
+      'iceServers': iceServers.map((server) => server.toWebRtcJson()).toList(),
+      'sdpSemantics': 'unified-plan',
+      'bundlePolicy': 'max-bundle',
+      'rtcpMuxPolicy': 'require',
+      if (kForceRelayTransport) 'iceTransportPolicy': 'relay',
+    });
+  }
+
+  /// Gathers a new set of candidates over the existing connection and offers
+  /// them. Call only on the side that owns the offer (the original caller);
+  /// simultaneous offers collide and neither is applied.
+  Future<void> restartIce() async {
+    if (_disposed) return;
+    final peer = _requirePeer();
+    await peer.restartIce();
+    // restartIce() only arms the flag — the fresh ufrag/pwd appear in the next
+    // offer, so the renegotiation below is what actually moves the call.
+    await _renegotiate();
+  }
+
+  /// Asks the peer to run [restartIce]. Used by the callee, which must not
+  /// offer on its own.
+  Future<void> requestRestart() async {
+    if (_disposed) return;
+    final sent = await sendSignal({'kind': 'restart'});
+    voiceCallLog(
+      'signal.restart.send',
+      reason: sent ? 'ok' : 'ws_unavailable',
+    );
+  }
+
   Future<void> _renegotiate() async {
     final peer = _requirePeer();
     final offer = await peer.createOffer({
@@ -478,7 +538,6 @@ class VoicePeerEngine {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
-    _disconnectTimer?.cancel();
     await stopScreenShare(renegotiate: false);
     for (final track in _localStream?.getTracks() ?? const []) {
       await track.stop();

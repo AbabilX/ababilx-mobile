@@ -63,6 +63,9 @@ dependencies:
   shared_preferences: ^2.5.5
   web_socket_channel: ^3.0.3
   flutter_webrtc: ^1.5.2
+  # Promoted from transitive: call recovery restarts ICE the moment the
+  # network interface changes, instead of waiting for WebRTC to time out.
+  connectivity_plus: ^7.3.1
   # SFU client for channel group calls (DM calls stay on raw flutter_webrtc).
   livekit_client: ^2.9.0
   flutter_callkit_incoming: ^3.1.3

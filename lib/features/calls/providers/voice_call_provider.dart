@@ -24,6 +24,7 @@ import '../ringtone/callkit_ring_events.dart';
 import '../voice_call_log.dart';
 import '../voice_call_ringable.dart';
 import '../webrtc/voice_peer_engine.dart';
+import '../webrtc/voice_reconnect_controller.dart';
 import 'voice_call_state.dart';
 
 export 'voice_call_state.dart';
@@ -34,6 +35,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   StreamSubscription<CallEvent?>? _nativeSub;
   StreamSubscription<RemoteMessage>? _foregroundPushSub;
   VoicePeerEngine? _engine;
+  VoiceReconnectController? _reconnect;
   final List<Map<String, dynamic>> _pendingSignals = [];
   Timer? _ringTimer;
   Timer? _resetTimer;
@@ -699,6 +701,25 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         unawaited(FlutterCallkitIncoming.setCallConnected(callId));
       },
       onFailed: (reason) => unawaited(_failLocal(reason)),
+      onTrouble: (reason, {bool immediate = false}) {
+        if (state.call?.id != callId) return;
+        // Recovery is only meaningful once media has flowed at least once.
+        // Before that the connect watchdog owns the timeout, and a restart
+        // would race the very first offer/answer.
+        if (state.connectedAt == null) {
+          unawaited(_failLocal(reason));
+          return;
+        }
+        _reconnect?.noteTrouble(reason, immediate: immediate);
+      },
+      onHealthy: () {
+        if (state.call?.id != callId) return;
+        _reconnect?.noteHealthy();
+      },
+      onRestartRequested: () {
+        if (state.call?.id != callId) return;
+        _reconnect?.noteRestartRequested();
+      },
       onLocalScreenChanged: (sharing) {
         if (state.call?.id != callId) return;
         state = state.copyWith(
@@ -729,6 +750,18 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       return;
     }
     _engine = engine;
+    _reconnect = VoiceReconnectController(
+      // Only the original caller re-offers; the callee asks it to. Two
+      // simultaneous restart offers collide and neither is applied.
+      isOfferer: () => state.outgoing,
+      restart: () => _restartIce(callId),
+      requestPeerRestart: () async => _engine?.requestRestart(),
+      onGaveUp: (reason) => unawaited(_failLocal(reason)),
+      onReconnectingChanged: (value) {
+        if (state.call?.id != callId) return;
+        state = state.copyWith(reconnecting: value);
+      },
+    );
     if (state.muted) {
       await engine.setMuted(true);
     }
@@ -736,6 +769,53 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     state = state.copyWith(speaker: true);
     voiceCallLog('engine.prepare.ok', callId: callId, phase: _phaseName);
     _startConnectWatchdog(callId);
+  }
+
+  /// One recovery attempt: re-issue ICE servers, then offer fresh candidates
+  /// over the existing signalling channel.
+  Future<void> _restartIce(String callId) async {
+    final engine = _engine;
+    if (engine == null || state.call?.id != callId) return;
+    // The restart offer rides the notification WS — reconnect it first, since
+    // the same outage that killed the media usually dropped the socket too.
+    await _ws.connect();
+    try {
+      final session = await _repository.get(callId);
+      // The peer's app can die without ever sending call.ended — the WS event
+      // that would normally close this call is simply lost. Without this the
+      // recovery would spend its whole budget restarting onto a call the
+      // server already considers over.
+      if (session.call.isTerminal) {
+        voiceCallLog(
+          'reconnect.peer_gone',
+          callId: callId,
+          phase: _phaseName,
+          reason: 'status=${session.call.status}',
+        );
+        state = state.copyWith(call: session.call, reconnecting: false);
+        await _finishLocal(
+          VoiceCallPhase.ended,
+          reason: 'reconnect.call_already_${session.call.status}',
+        );
+        return;
+      }
+      if (session.iceServers.isNotEmpty) {
+        state = state.copyWith(iceServers: session.iceServers);
+        await engine.applyIceServers(session.iceServers);
+      }
+    } catch (error) {
+      // Best-effort: coturn credentials are timestamped and a long call can
+      // outlive them, but restarting with the old ones still beats not
+      // restarting at all.
+      voiceCallLog(
+        'reconnect.ice.refresh.failed',
+        callId: callId,
+        phase: _phaseName,
+        reason: _debugError(error),
+      );
+    }
+    if (state.call?.id != callId) return;
+    await engine.restartIce();
   }
 
   /// Never leave a call stuck on "Connecting…" when the peer never negotiates
@@ -822,6 +902,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _connectWatchdog?.cancel();
     _renegotiateTimer?.cancel();
     await IncomingCallRingtone.stop();
+    await _reconnect?.dispose();
+    _reconnect = null;
     await _engine?.dispose();
     _engine = null;
     _pendingSignals.clear();
