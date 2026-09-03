@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../core/localization/app_translations.dart';
+import '../../../../core/theme/theme_mode_provider.dart';
 import '../../../auth/providers/auth_provider.dart';
 import 'you_menu_item.dart';
 import 'you_sheet_action.dart';
@@ -101,8 +102,18 @@ class YouMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     return Column(
       children: [
+        YouMenuItem(
+          icon: HugeIcons.strokeRoundedDarkMode,
+          label: 'Dark mode',
+          onTap: () => ref.read(themeModeProvider.notifier).setDark(!isDark),
+          trailing: Switch(
+            value: isDark,
+            onChanged: (v) => ref.read(themeModeProvider.notifier).setDark(v),
+          ),
+        ),
         YouMenuItem(
           icon: HugeIcons.strokeRoundedSettings02,
           label: 'Settings',

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/router/root_back.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_mode_provider.dart';
 import 'features/messages/chat_store_sync.dart';
 import 'features/notifications/fcm_bootstrap.dart';
 import 'features/calls/call_store_sync.dart';
@@ -19,6 +20,7 @@ class AbabilXApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return FcmBootstrap(
       router: router,
@@ -37,7 +39,7 @@ class AbabilXApp extends ConsumerWidget {
                     debugShowCheckedModeBanner: false,
                     theme: AppTheme.light,
                     darkTheme: AppTheme.dark,
-                    themeMode: ThemeMode.system,
+                    themeMode: themeMode,
                     routerConfig: router,
                     builder: (context, child) => RootBackScope(
                       child: GroupCallInviteHost(

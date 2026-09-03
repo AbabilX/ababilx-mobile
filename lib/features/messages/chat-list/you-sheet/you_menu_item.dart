@@ -8,11 +8,13 @@ class YouMenuItem extends StatelessWidget {
     required this.icon,
     required this.label,
     this.onTap,
+    this.trailing,
   });
 
   final List<List<dynamic>> icon;
   final String label;
   final VoidCallback? onTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +36,7 @@ class YouMenuItem extends StatelessWidget {
                 ),
               ),
             ),
+            ?trailing,
           ],
         ),
       ),
