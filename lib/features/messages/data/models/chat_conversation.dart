@@ -65,6 +65,11 @@ class ChatConversation extends Equatable {
     this.muted = false,
     this.memberAvatars = const [],
     this.memberCount,
+    this.avatarUrl,
+    this.description,
+    this.editInfoRole = 'admin',
+    this.addMembersRole = 'admin',
+    this.myRole = 'member',
   });
 
   final String id;
@@ -106,6 +111,28 @@ class ChatConversation extends Equatable {
   final bool muted;
   final List<String> memberAvatars;
   final int? memberCount;
+
+  /// Personal-group identity and permission switches, straight from the
+  /// server. `myRole` is the viewer's own role, so the details screen never
+  /// re-derives a permission the server already decided.
+  final String? avatarUrl;
+  final String? description;
+  final String editInfoRole; // admin | member
+  final String addMembersRole; // admin | member
+  final String myRole; // admin | member
+
+  bool get iAmAdmin => myRole == 'admin';
+
+  /// Workspace channels take management from the team, which the old details
+  /// dialog approximated as "anyone but a personal non-creator".
+  bool get canEditGroupInfo =>
+      !isPersonal || iAmAdmin || editInfoRole == 'member';
+  bool get canAddGroupMembers =>
+      !isPersonal || iAmAdmin || addMembersRole == 'member';
+
+  /// Configuring a personal group — roles, removal, deletion — is always
+  /// admin-only and deliberately not itself a switch.
+  bool get canConfigureGroup => !isPersonal || iAmAdmin;
 
   bool get isChannel => type == 'channel';
   bool get isDm => type == 'dm';
@@ -191,6 +218,11 @@ class ChatConversation extends Equatable {
           .map((e) => e.toString())
           .toList(),
       memberCount: (json['member_count'] as num?)?.toInt(),
+      avatarUrl: _jsonString(json['avatar_url']),
+      description: _jsonString(json['description']),
+      editInfoRole: _jsonString(json['edit_info_role']) ?? 'admin',
+      addMembersRole: _jsonString(json['add_members_role']) ?? 'admin',
+      myRole: _jsonString(json['my_role']) ?? 'member',
     );
   }
 
@@ -206,6 +238,11 @@ class ChatConversation extends Equatable {
     bool? muted,
     String? name,
     String? requestState,
+    String? description,
+    String? avatarUrl,
+    String? editInfoRole,
+    String? addMembersRole,
+    String? myRole,
   }) => ChatConversation(
     id: id,
     teamId: teamId,
@@ -243,6 +280,11 @@ class ChatConversation extends Equatable {
     muted: muted ?? this.muted,
     memberAvatars: memberAvatars,
     memberCount: memberCount,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
+    description: description ?? this.description,
+    editInfoRole: editInfoRole ?? this.editInfoRole,
+    addMembersRole: addMembersRole ?? this.addMembersRole,
+    myRole: myRole ?? this.myRole,
   );
 
   @override
@@ -261,6 +303,9 @@ class ChatConversation extends Equatable {
     scope,
     canMessage,
     requestState,
+    description,
+    avatarUrl,
+    myRole,
   ];
 }
 

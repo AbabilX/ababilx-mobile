@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
@@ -14,8 +15,6 @@ import '../nav_back.dart';
 import '../providers/chat_provider.dart';
 import '../providers/chat_connections_provider.dart';
 import 'call_action_pill.dart';
-import 'dm_actions_sheet.dart';
-import 'group_details_dialog.dart';
 import 'group_call_action.dart';
 import 'start_call_sheet.dart';
 
@@ -55,15 +54,17 @@ class ChatHeader extends ConsumerWidget {
               onPressed: () => popOrGoMessages(context),
             ),
             middle: InkWell(
+              // Signal: the name is a link to the conversation's own settings
+              // screen, not a sheet over the thread.
               onTap: () async {
-                if (conversation.isGroupConversation) {
-                  if (conversation.isPersonal) {
-                    await ref.read(chatConnectionsProvider.notifier).refresh();
-                    if (!context.mounted) return;
-                  }
-                  await showGroupDetailsDialog(context, ref, conversation);
-                } else {
-                  await showDmActionsSheet(context, ref, conversation);
+                if (conversation.isGroupConversation &&
+                    conversation.isPersonal) {
+                  // The Add-members picker on that screen reads this list.
+                  await ref.read(chatConnectionsProvider.notifier).refresh();
+                  if (!context.mounted) return;
+                }
+                if (context.mounted) {
+                  context.push('/messages/${conversation.id}/details');
                 }
               },
               borderRadius: BorderRadius.circular(8),

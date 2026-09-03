@@ -1,39 +1,73 @@
 import 'package:flutter/material.dart';
 
 import 'signal_message_menu.dart';
+import 'signal_message_menu_geometry.dart';
+import 'signal_message_menu_items.dart';
 
+/// The scrubber: 320 wide, one action-bar tall, 30dp corner, seven equal slots
+/// — six emoji and the "more" circle. Each emoji rises 25dp into place, one
+/// after the next, which is the whole character of Signal's reveal.
 class SignalReactionBar extends StatelessWidget {
-  const SignalReactionBar({super.key, required this.moreLabel});
+  const SignalReactionBar({
+    super.key,
+    required this.moreLabel,
+    required this.animation,
+  });
 
   final String moreLabel;
+  final Animation<double> animation;
 
-  static const _emojis = ['👍', '❤️', '😂', '😮', '😢', '🎉'];
+  /// Signal's default six, in Signal's order.
+  static const emojis = ['❤️', '👍', '👎', '😂', '😮', '😢'];
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Material(
       color: colors.surfaceContainerHigh,
-      elevation: 8,
-      borderRadius: BorderRadius.circular(28),
+      elevation: 4,
+      borderRadius: BorderRadius.circular(SignalMenuMetrics.barRadius),
       child: SizedBox(
-        height: 52,
+        height: SignalMenuMetrics.barHeight,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            for (final emoji in _emojis)
-              InkResponse(
-                radius: 24,
-                onTap: () =>
-                    Navigator.pop(context, SignalMessageReaction(emoji)),
-                child: Text(emoji, style: const TextStyle(fontSize: 25)),
+            for (var i = 0; i < emojis.length; i++)
+              Expanded(
+                child: _Slot(
+                  animation: animation,
+                  index: i,
+                  onTap: () => Navigator.pop(
+                    context,
+                    SignalMessageReaction(emojis[i]),
+                  ),
+                  child: Text(
+                    emojis[i],
+                    style: const TextStyle(fontSize: 30),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
-            IconButton(
-              tooltip: moreLabel,
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.add_circle_outline_rounded),
-              onPressed: () =>
-                  Navigator.pop(context, const SignalMessageReaction('')),
+            Expanded(
+              child: _Slot(
+                animation: animation,
+                index: emojis.length,
+                onTap: () => Navigator.pop(
+                  context,
+                  const SignalMessageReaction(''),
+                ),
+                child: Tooltip(
+                  message: moreLabel,
+                  child: CircleAvatar(
+                    radius: 17,
+                    backgroundColor: colors.surfaceContainerHighest,
+                    child: Icon(
+                      Icons.more_horiz_rounded,
+                      size: 20,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -42,48 +76,64 @@ class SignalReactionBar extends StatelessWidget {
   }
 }
 
-class SignalActionPanel extends StatelessWidget {
-  const SignalActionPanel({
-    super.key,
-    required this.isMine,
-    required this.showThread,
-    required this.showSave,
-    required this.labels,
+class _Slot extends StatelessWidget {
+  const _Slot({
+    required this.animation,
+    required this.index,
+    required this.onTap,
+    required this.child,
   });
 
-  final bool isMine;
-  final bool showThread;
-  final bool showSave;
-  final Map<String, String> labels;
+  final Animation<double> animation;
+  final int index;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    // Signal staggers by duration / 10 per slot; as a fraction of one reveal
+    // that is the same tenth per emoji.
+    final start = (index * 0.1).clamp(0.0, 0.6);
+    final curve = CurvedAnimation(
+      parent: animation,
+      curve: Interval(start, (start + 0.4).clamp(0.0, 1.0)),
+    );
+    return AnimatedBuilder(
+      animation: curve,
+      builder: (context, inner) => Opacity(
+        opacity: curve.value,
+        child: Transform.translate(
+          offset: Offset(
+            0,
+            SignalMenuMetrics.emojiRiseFrom * (1 - curve.value),
+          ),
+          child: inner,
+        ),
+      ),
+      child: InkResponse(radius: 26, onTap: onTap, child: Center(child: child)),
+    );
+  }
+}
+
+/// The context menu: 18dp corner, rows of a 24dp icon and BodyLarge with 16dp
+/// side padding and 13dp above and below.
+class SignalActionPanel extends StatelessWidget {
+  const SignalActionPanel({super.key, required this.items});
+
+  final List<SignalMenuItem> items;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final actions = <(SignalMessageAction, IconData, String)>[
-      (SignalMessageAction.reply, Icons.reply_rounded, labels['reply']!),
-      (SignalMessageAction.forward, Icons.forward_rounded, labels['forward']!),
-      // Signal's order: Save sits between Forward and Copy.
-      if (showSave)
-        (SignalMessageAction.save, Icons.save_alt_rounded, labels['save']!),
-      (SignalMessageAction.copy, Icons.copy_rounded, labels['copy']!),
-      if (showThread)
-        (SignalMessageAction.thread, Icons.forum_outlined, labels['thread']!),
-      if (isMine)
-        (SignalMessageAction.edit, Icons.edit_outlined, labels['edit']!),
-      if (isMine)
-        (SignalMessageAction.delete, Icons.delete_outline, labels['delete']!),
-    ];
     return Material(
       color: colors.surfaceContainerHigh,
-      elevation: 8,
-      borderRadius: BorderRadius.circular(16),
+      elevation: 20,
+      shadowColor: Colors.black45,
+      borderRadius: BorderRadius.circular(SignalMenuMetrics.menuRadius),
       clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [for (final item in actions) _ActionRow(item: item)],
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [for (final item in items) _ActionRow(item: item)],
       ),
     );
   }
@@ -92,27 +142,31 @@ class SignalActionPanel extends StatelessWidget {
 class _ActionRow extends StatelessWidget {
   const _ActionRow({required this.item});
 
-  final (SignalMessageAction, IconData, String) item;
+  final SignalMenuItem item;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final destructive = item.$1 == SignalMessageAction.delete;
+    final destructive = item.action == SignalMessageAction.delete;
     final color = destructive ? colors.error : colors.onSurface;
     return InkWell(
-      onTap: () => Navigator.pop(context, SignalMessageCommand(item.$1)),
-      child: SizedBox(
-        height: 48,
+      onTap: () => Navigator.pop(context, SignalMessageCommand(item.action)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SignalMenuMetrics.menuRowPadding,
+          vertical: 13,
+        ),
         child: Row(
           children: [
-            const SizedBox(width: 18),
-            Icon(item.$2, size: 22, color: color),
-            const SizedBox(width: 18),
-            Text(
-              item.$3,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: color),
+            Icon(item.icon, size: SignalMenuMetrics.menuIconSize, color: color),
+            const SizedBox(width: SignalMenuMetrics.menuIconGap),
+            Expanded(
+              child: Text(
+                item.label,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: color),
+              ),
             ),
           ],
         ),

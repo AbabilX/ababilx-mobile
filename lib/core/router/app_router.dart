@@ -12,6 +12,7 @@ import '../../features/messages/providers/team_gate_provider.dart';
 import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
 import '../../features/settings/app-icon/app_icon_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
+import '../../features/messages/chat-details/conversation_details_screen.dart';
 import '../../features/messages/screens/conversation_screen.dart';
 import '../../features/messages/screens/people_screen.dart';
 import '../../features/messages/screens/new_message_screen.dart';
@@ -143,6 +144,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       // One chat's own background. Declared before '/messages/:id' would
       // swallow it, since ':id' matches a single segment only.
+      // Signal's conversation settings. Declared before '/messages/:id' for
+      // the same reason as the wallpaper route: ':id' matches one segment.
+      GoRoute(
+        path: '/messages/:id/details',
+        builder: (_, state) => ConversationDetailsScreen(
+          conversationId: state.pathParameters['id']!,
+        ),
+      ),
       GoRoute(
         path: '/messages/:id/wallpaper',
         builder: (_, state) =>

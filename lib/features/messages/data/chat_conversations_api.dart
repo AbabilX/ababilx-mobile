@@ -54,6 +54,49 @@ class ChatConversationsApi {
         .toList();
   }
 
+  /// Personal-group management. These three hang off `/api/chat/*` on
+  /// purpose, not off [ChatEndpoints]: they exist for personal groups only, so
+  /// there is no workspace twin to route to.
+  ///
+  /// Personal-group identity: name, description, picture. Workspace channels
+  /// keep [patchChannel] — a channel takes management from its team, so there
+  /// is nothing here for it to set.
+  Future<ChatConversation> updateGroupInfo(
+    String conversationId, {
+    String? name,
+    String? description,
+    String? avatarUrl,
+  }) async {
+    final res = await _client.patch(
+      ApiConstants.independentChatConversationAction(conversationId, 'info'),
+      data: {'name': ?name, 'description': ?description, 'avatar_url': ?avatarUrl},
+    );
+    return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));
+  }
+
+  Future<void> setGroupMemberRole(
+    String conversationId,
+    String userId,
+    String role,
+  ) async {
+    await _client.put(
+      ApiConstants.independentChatConversationAction(
+        conversationId,
+        'members/$userId/role',
+      ),
+      data: {'role': role},
+    );
+  }
+
+  Future<void> removeGroupMember(String conversationId, String userId) async {
+    await _client.delete(
+      ApiConstants.independentChatConversationAction(
+        conversationId,
+        'members/$userId',
+      ),
+    );
+  }
+
   Future<void> leaveChannel(String channelId) async {
     await _client.post(_endpoints.action(channelId, 'leave'));
   }

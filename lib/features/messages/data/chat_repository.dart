@@ -59,6 +59,24 @@ class ChatRepository {
   Future<List<ChatMember>> listChannelMembers(String channelId) =>
       _conversations.listChannelMembers(channelId);
 
+  Future<ChatConversation> updateGroupInfo(
+    String id, {
+    String? name,
+    String? description,
+    String? avatarUrl,
+  }) => _conversations.updateGroupInfo(
+    id,
+    name: name,
+    description: description,
+    avatarUrl: avatarUrl,
+  );
+
+  Future<void> setGroupMemberRole(String id, String userId, String role) =>
+      _conversations.setGroupMemberRole(id, userId, role);
+
+  Future<void> removeGroupMember(String id, String userId) =>
+      _conversations.removeGroupMember(id, userId);
+
   Future<void> leaveChannel(String channelId) =>
       _conversations.leaveChannel(channelId);
 

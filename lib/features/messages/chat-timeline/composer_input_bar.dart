@@ -85,6 +85,10 @@ class ComposerInputBar extends StatelessWidget {
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
                         hintText: hint,
+                        // A long peer name ("Message Junayed Ahamed") wrapped
+                        // and opened the composer two lines tall before a
+                        // single character was typed.
+                        hintMaxLines: 1,
                         hintStyle: TextStyle(
                           fontSize: 16,
                           color: colors.onSurfaceVariant,
@@ -93,7 +97,16 @@ class ComposerInputBar extends StatelessWidget {
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        // With camera and mic hidden there is nothing but a
+                        // 4px gap on the right, so long lines ran into the
+                        // pill's edge while the left stayed inset by the
+                        // emoji button. This puts the text back in the middle.
+                        contentPadding: EdgeInsets.fromLTRB(
+                          0,
+                          14,
+                          canSend ? 12 : 0,
+                          14,
+                        ),
                       ),
                     ),
                   ),

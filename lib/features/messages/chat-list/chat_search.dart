@@ -7,13 +7,35 @@ import '../chat_icon.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 
-void openChatSearch(BuildContext context, WidgetRef ref) {
-  showSearch<String?>(context: context, delegate: ChatSearchDelegate(ref));
+void openChatSearch(
+  BuildContext context,
+  WidgetRef ref, {
+  String? conversationId,
+  String? conversationTitle,
+}) {
+  showSearch<String?>(
+    context: context,
+    delegate: ChatSearchDelegate(
+      ref,
+      conversationId: conversationId,
+      conversationTitle: conversationTitle,
+    ),
+  );
 }
 
 class ChatSearchDelegate extends SearchDelegate<String?> {
-  ChatSearchDelegate(this.ref);
+  ChatSearchDelegate(this.ref, {this.conversationId, this.conversationTitle});
   final WidgetRef ref;
+
+  /// Opened from one chat's details screen: the server search is account-wide,
+  /// so the results are narrowed here rather than pretending to be global.
+  final String? conversationId;
+  final String? conversationTitle;
+
+  @override
+  String get searchFieldLabel => conversationTitle == null
+      ? super.searchFieldLabel ?? 'Search'
+      : 'Search in $conversationTitle';
 
   @override
   List<Widget>? buildActions(BuildContext context) => [
@@ -49,13 +71,18 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
       if (chat.searchLoading) {
         return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
       }
-      if (chat.searchResults.isEmpty) {
+      final results = conversationId == null
+          ? chat.searchResults
+          : chat.searchResults
+                .where((m) => m.conversationId == conversationId)
+                .toList();
+      if (results.isEmpty) {
         return const Center(child: Text('No messages found'));
       }
       return ListView.builder(
-        itemCount: chat.searchResults.length,
+        itemCount: results.length,
         itemBuilder: (_, i) {
-          final msg = chat.searchResults[i];
+          final msg = results[i];
           return ListTile(
             title: Text(msg.userName ?? 'Unknown'),
             subtitle: Text(

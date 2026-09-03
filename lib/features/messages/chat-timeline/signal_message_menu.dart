@@ -2,6 +2,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import 'signal_message_menu_geometry.dart';
+import 'signal_message_menu_items.dart';
 import 'signal_message_menu_panels.dart';
 
 enum SignalMessageAction { reply, forward, save, copy, thread, edit, delete }
@@ -34,54 +36,59 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
     barrierDismissible: true,
     barrierLabel: labels['dismiss'],
     barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.56),
-    transitionDuration: const Duration(milliseconds: 180),
-    pageBuilder: (ctx, _, _) => _SignalMessageMenu(
+    transitionDuration: SignalMenuMetrics.revealDuration,
+    pageBuilder: (ctx, animation, _) => _SignalMessageMenu(
+      animation: animation,
       anchor: anchor,
       snapshot: snapshot,
       isMine: isMine,
-      showThread: showThread,
-      showSave: showSave,
-      labels: labels,
-    ),
-    transitionBuilder: (_, animation, _, child) => FadeTransition(
-      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-      child: child,
+      items: signalMenuItems(
+        isMine: isMine,
+        showThread: showThread,
+        showSave: showSave,
+        labels: labels,
+      ),
+      moreLabel: labels['moreReactions']!,
     ),
   );
 }
 
 class _SignalMessageMenu extends StatelessWidget {
   const _SignalMessageMenu({
+    required this.animation,
     required this.anchor,
     required this.snapshot,
     required this.isMine,
-    required this.showThread,
-    required this.showSave,
-    required this.labels,
+    required this.items,
+    required this.moreLabel,
   });
 
+  final Animation<double> animation;
   final Rect anchor;
   final ui.Image? snapshot;
   final bool isMine;
-  final bool showThread;
-  final bool showSave;
-  final Map<String, String> labels;
+  final List<SignalMenuItem> items;
+  final String moreLabel;
 
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final safeTop = media.padding.top + 8;
-    final safeBottom = media.size.height - media.padding.bottom - 8;
-    final menuWidth = media.size.width.clamp(280.0, 340.0);
-    final left = isMine
-        ? (media.size.width - menuWidth - 12)
-        : anchor.left.clamp(12.0, media.size.width - menuWidth - 12);
-    final reactionTop = (anchor.top - 58).clamp(safeTop, safeBottom - 52);
-    final desiredMenuTop = anchor.bottom + 8;
-    final menuHeight = _menuHeight;
-    final menuTop = desiredMenuTop + menuHeight <= safeBottom
-        ? desiredMenuTop
-        : (anchor.top - menuHeight - 66).clamp(safeTop + 56, safeBottom);
+    final theme = Theme.of(context);
+    final menuSize = signalMenuSize(
+      items,
+      theme.textTheme.bodyLarge ?? const TextStyle(fontSize: 16),
+      media.textScaler.scale(1),
+      media.size.width - SignalMenuMetrics.horizontalMargin * 2,
+    );
+    final layout = resolveSignalMenuLayout(
+      screen: media.size,
+      safeArea: media.padding,
+      anchor: anchor,
+      menuSize: menuSize,
+      isMine: isMine,
+    );
+    final ordered = layout.reversed ? items.reversed.toList() : items;
+    final move = CurvedAnimation(parent: animation, curve: Curves.decelerate);
 
     return Material(
       type: MaterialType.transparency,
@@ -94,36 +101,42 @@ class _SignalMessageMenu extends StatelessWidget {
             ),
           ),
           if (snapshot != null)
-            Positioned.fromRect(
-              rect: anchor,
-              child: IgnorePointer(child: _FocusedMessage(snapshot: snapshot!)),
+            AnimatedBuilder(
+              animation: move,
+              builder: (context, _) => Positioned.fromRect(
+                // The bubble slides from where it sits in the thread to where
+                // the overlay needs it, exactly as Signal animates x/y/scale.
+                rect: Rect.lerp(anchor, layout.bubble, move.value)!,
+                child: IgnorePointer(
+                  child: _FocusedMessage(snapshot: snapshot!),
+                ),
+              ),
             ),
-          Positioned(
-            left: left,
-            top: reactionTop,
-            width: menuWidth,
-            child: SignalReactionBar(moreLabel: labels['moreReactions']!),
+          Positioned.fromRect(
+            rect: layout.bar,
+            child: SignalReactionBar(
+              moreLabel: moreLabel,
+              animation: animation,
+            ),
           ),
-          Positioned(
-            left: left,
-            top: menuTop,
-            width: menuWidth,
-            child: SignalActionPanel(
-              isMine: isMine,
-              showThread: showThread,
-              showSave: showSave,
-              labels: labels,
+          Positioned.fromRect(
+            rect: layout.menu,
+            child: FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(
+                scale: Tween(begin: 0.9, end: 1.0).animate(move),
+                alignment: layout.reversed
+                    ? (isMine ? Alignment.bottomRight : Alignment.bottomLeft)
+                    : (isMine ? Alignment.topRight : Alignment.topLeft),
+                child: SingleChildScrollView(
+                  child: SignalActionPanel(items: ordered),
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  double get _menuHeight {
-    final count =
-        3 + (showSave ? 1 : 0) + (showThread ? 1 : 0) + (isMine ? 2 : 0);
-    return count * 48.0 + 16;
   }
 }
 
@@ -133,17 +146,9 @@ class _FocusedMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(blurRadius: 14, color: Colors.black26)],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: RawImage(image: snapshot, fit: BoxFit.fill),
-      ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: RawImage(image: snapshot, fit: BoxFit.fill),
     );
   }
 }
