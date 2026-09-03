@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +9,7 @@ import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 import 'reaction_emoji_picker.dart';
 import 'save_message_attachments.dart';
+import 'signal_menu_pointer.dart';
 import 'signal_message_menu.dart';
 import 'thread_sheet.dart';
 
@@ -21,7 +20,8 @@ Future<void> showMessageActions(
   required String conversationId,
   String? threadRootId,
   Rect? anchor,
-  ui.Image? snapshot,
+  Widget? focused,
+  SignalMenuPointer? pointer,
 }) async {
   if (msg.isDeleted) return;
   final isMine = msg.userId == ref.read(chatProvider).currentUserId;
@@ -39,7 +39,8 @@ Future<void> showMessageActions(
           MediaQuery.sizeOf(context).width - 32,
           1,
         ),
-    snapshot: snapshot,
+    focused: focused ?? const SizedBox.shrink(),
+    pointer: pointer,
     isMine: isMine,
     showThread: !isDm && threadRootId == null,
     showSave: canSaveMessageAttachments(msg),
@@ -55,7 +56,6 @@ Future<void> showMessageActions(
       'moreReactions': tr('chat_more_reactions'),
     },
   );
-  snapshot?.dispose();
   if (!context.mounted || result == null) return;
   final n = ref.read(chatProvider.notifier);
   if (result case SignalMessageReaction(:final emoji)) {

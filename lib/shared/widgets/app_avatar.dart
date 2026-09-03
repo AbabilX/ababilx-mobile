@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../text/display_name.dart';
+
 /// Homepage-style rounded-square avatar (radius 8 — not circle).
 class AppAvatar extends StatelessWidget {
   const AppAvatar({
@@ -44,9 +46,10 @@ class AppAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final letter = (name != null && name!.isNotEmpty)
-        ? name![0].toUpperCase()
-        : '?';
+    // `name[0]` splits a surrogate pair, so a name opening with an emoji drew
+    // a tofu box. [displayNameInitial] finds the first readable letter instead,
+    // and returns null when a name has none at all.
+    final letter = displayNameInitial(name) ?? '?';
     final bg = backgroundColor ?? colors.surfaceContainerHighest;
     final letterWidget =
         fallback ??

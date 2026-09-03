@@ -56,10 +56,7 @@ class _ImageCropEditorState extends State<ImageCropEditor> {
   }
 
   CropTransform _transform(double viewport) => CropTransform(
-    imageSize: Size(
-      _image!.width.toDouble(),
-      _image!.height.toDouble(),
-    ),
+    imageSize: Size(_image!.width.toDouble(), _image!.height.toDouble()),
     viewport: viewport,
     scale: _scale,
     offset: _offset,

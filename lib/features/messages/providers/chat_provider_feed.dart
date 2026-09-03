@@ -3,7 +3,11 @@ part of 'chat_provider.dart';
 mixin _ChatFeedMixin on Notifier<ChatState> {
   ChatRepository get repo;
 
+  /// See [ChatNotifier.isDisposed] — guards every write that follows an await.
+  bool get isDisposed;
+
   void setFeed(String key, ChatFeed feed) {
+    if (isDisposed) return;
     state = state.copyWith(feeds: {...state.feeds, key: feed});
   }
 
@@ -88,7 +92,7 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       if (threadRootId == null) {
         unawaited(ref.read(attachmentIntakeProvider).onMessages(sorted));
       }
-      if (threadRootId != null) {
+      if (threadRootId != null && !isDisposed) {
         final replies = sorted
             .where((m) => m.id != threadRootId)
             .toList(growable: false);

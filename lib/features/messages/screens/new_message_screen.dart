@@ -15,6 +15,8 @@ import '../new-message/new_message_search.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/messageable_people_provider.dart';
+import '../../../shared/text/name_search.dart';
+import '../nickname/contact_nickname_provider.dart';
 
 class NewMessageScreen extends ConsumerStatefulWidget {
   const NewMessageScreen({super.key});
@@ -128,13 +130,18 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
     List<ChatUserSummary> messageable,
     List<ChatUserSummary> discovered,
   ) {
-    final query = _search.text.trim().toLowerCase();
+    final query = _search.text.trim();
     if (query.isEmpty) return messageable;
+    final nicknames = ref.read(contactNicknamesProvider);
     final users = <String, ChatUserSummary>{};
     for (final user in [...messageable, ...discovered]) {
-      final matches =
-          user.name.toLowerCase().contains(query) ||
-          user.username.toLowerCase().contains(query);
+      // The nickname is searched too: once you have renamed someone whose own
+      // name you cannot read, that rename has to be how you find them.
+      final matches = matchesNameQuery(query, [
+        nicknames.forUser(user.userId),
+        user.name,
+        user.username,
+      ]);
       if (matches || discovered.contains(user)) users[user.userId] = user;
     }
     final result = users.values.toList();

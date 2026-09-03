@@ -25,7 +25,10 @@ void main() {
   });
 
   test('dimming defaults on, because a bright photo at night is glaring', () {
-    expect(ChatWallpaper.decode('{"kind":"preset","preset":"ink"}').dimInDark, isTrue);
+    expect(
+      ChatWallpaper.decode('{"kind":"preset","preset":"ink"}').dimInDark,
+      isTrue,
+    );
   });
 
   test('every preset id resolves and paints something', () {

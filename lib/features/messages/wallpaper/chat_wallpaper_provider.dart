@@ -64,7 +64,10 @@ class ChatWallpaperNotifier extends Notifier<ChatWallpaperState> {
     await _store.writeGlobal(wallpaper);
   }
 
-  Future<void> setForChat(String conversationId, ChatWallpaper wallpaper) async {
+  Future<void> setForChat(
+    String conversationId,
+    ChatWallpaper wallpaper,
+  ) async {
     state = state.copyWith(
       overrides: {...state.overrides, conversationId: wallpaper},
     );

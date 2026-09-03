@@ -5,6 +5,8 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
+import '../nickname/contact_nickname_provider.dart';
+import '../nickname/nickname_sheet.dart';
 import '../providers/chat_provider.dart';
 import 'details_danger_actions.dart';
 import 'details_header.dart';
@@ -114,6 +116,24 @@ class _ConversationDetailsScreenState
   }
 
   List<Widget> _settingsTiles(ChatConversation conversation) => [
+    // DM only: a nickname renames a person, and a group is not one. It sits
+    // first because it is the fix for a name you cannot read.
+    if (conversation.isDm && (conversation.peerUserId ?? '').isNotEmpty)
+      DetailsTile(
+        icon: const ChatIcon(HugeIcons.strokeRoundedUserEdit01),
+        title: 'Nickname',
+        value:
+            ref
+                .watch(contactNicknamesProvider)
+                .forUser(conversation.peerUserId) ??
+            'None',
+        onTap: () => showNicknameSheet(
+          context,
+          ref,
+          userId: conversation.peerUserId!,
+          profileName: conversation.peerUserName,
+        ),
+      ),
     DetailsTile(
       icon: const ChatIcon(HugeIcons.strokeRoundedPaintBoard),
       title: 'Chat color & wallpaper',

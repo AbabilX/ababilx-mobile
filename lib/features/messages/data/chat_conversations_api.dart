@@ -69,7 +69,11 @@ class ChatConversationsApi {
   }) async {
     final res = await _client.patch(
       ApiConstants.independentChatConversationAction(conversationId, 'info'),
-      data: {'name': ?name, 'description': ?description, 'avatar_url': ?avatarUrl},
+      data: {
+        'name': ?name,
+        'description': ?description,
+        'avatar_url': ?avatarUrl,
+      },
     );
     return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }

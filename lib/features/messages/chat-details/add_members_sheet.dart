@@ -8,6 +8,7 @@ import '../providers/chat_provider.dart';
 import '../providers/messageable_people_provider.dart';
 import '../providers/team_gate_provider.dart';
 import 'add_members_empty.dart';
+import '../../../shared/text/name_search.dart';
 
 /// Who can still be added to this group, with a reason when that is nobody.
 ///
@@ -69,12 +70,10 @@ class _AddMembersSheetState extends ConsumerState<AddMembersSheet> {
                 ),
               )
               .toList();
-    final query = _query.trim().toLowerCase();
+    final query = _query.trim();
     return all
         .where((user) => !widget.memberIds.contains(user.userId))
-        .where(
-          (user) => query.isEmpty || user.name.toLowerCase().contains(query),
-        )
+        .where((user) => matchesNameQuery(query, [user.name]))
         .toList();
   }
 

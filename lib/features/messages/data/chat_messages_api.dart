@@ -57,6 +57,7 @@ class ChatMessagesApi {
     int? encryptionVersion,
     int? encryptionKeyVersion,
     String? parentId,
+    String? quotedMessageId,
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
   }) async {
@@ -70,6 +71,7 @@ class ChatMessagesApi {
         'encryption_version': ?encryptionVersion,
         'encryption_key_version': ?encryptionKeyVersion,
         'parent_id': ?parentId,
+        'quoted_message_id': ?quotedMessageId,
         if (attachments.isNotEmpty)
           'attachments': attachments.map((a) => a.toJson()).toList(),
         if (mentionedUserIds.isNotEmpty) 'mentioned_user_ids': mentionedUserIds,

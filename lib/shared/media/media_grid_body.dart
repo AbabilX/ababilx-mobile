@@ -133,12 +133,11 @@ class _MediaGridBodyState extends State<MediaGridBody> {
               : GridView.builder(
                   controller: widget.scrollController,
                   padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 3,
-                        crossAxisSpacing: 3,
-                      ),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 3,
+                    crossAxisSpacing: 3,
+                  ),
                   itemCount: _items.length,
                   itemBuilder: (_, index) {
                     final item = _items[index];
@@ -159,10 +158,7 @@ class _MediaGridBodyState extends State<MediaGridBody> {
               child: FilledButton.icon(
                 onPressed: () => Navigator.pop(
                   context,
-                  MediaSheetResult(
-                    MediaSheetAction.picked,
-                    List.of(_selected),
-                  ),
+                  MediaSheetResult(MediaSheetAction.picked, List.of(_selected)),
                 ),
                 icon: const Icon(Icons.check_rounded),
                 label: Text('Add ${_selected.length}'),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/chat_provider.dart';
-import 'message_list.dart';
-import 'timeline_composer.dart';
+import 'chat_timeline_load.dart';
+import 'chat_timeline_view.dart';
 import 'timeline_reveal_policy.dart';
 
 class ChatTimeline extends ConsumerStatefulWidget {
@@ -24,22 +24,35 @@ class ChatTimeline extends ConsumerStatefulWidget {
   ConsumerState<ChatTimeline> createState() => _ChatTimelineState();
 }
 
-class _ChatTimelineState extends ConsumerState<ChatTimeline> {
+class _ChatTimelineState extends ConsumerState<ChatTimeline>
+    with ChatTimelineLoad {
   final _scrollCtrl = ScrollController();
   bool _headerVisible = true;
+  bool _showJumpPill = false;
   double _lastPixels = 0;
   String? _previousNewestMessageId;
+
+  /// Unread count as the chat opened. `loadFeed` marks the conversation read a
+  /// frame later, so the divider has to be pinned before that lands.
+  int _unreadAnchor = 0;
+
+  /// Same number, but cleared once the jump button has been used.
+  int _unreadPillCount = 0;
 
   // Auto-scroll when new messages arrive if user is within this many pixels
   // of the bottom (pixel 0 in a reverse: true list).
   static const _autoScrollThreshold = 200.0;
 
+  /// How far up the history the jump-to-bottom button waits for.
+  static const _jumpPillThreshold = 400.0;
+
   @override
   void initState() {
     super.initState();
+    _unreadAnchor = _unreadPillCount = currentUnread();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _load();
+      loadFeed();
     });
     _scrollCtrl.addListener(_onScroll);
   }
@@ -50,28 +63,10 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
     if (oldWidget.conversationId != widget.conversationId ||
         oldWidget.threadRootId != widget.threadRootId) {
       _previousNewestMessageId = null;
-      _load();
+      _unreadAnchor = _unreadPillCount = currentUnread();
+      loadFeed();
       if (!_headerVisible) setState(() => _headerVisible = true);
       _lastPixels = 0;
-    }
-  }
-
-  void _load() {
-    if (!mounted) return;
-    final n = ref.read(chatProvider.notifier);
-    // Cache-first: hydrate from SQLite immediately so messages show with 0
-    // network latency. Then force a fresh network fetch in the background.
-    // This is exactly how WhatsApp loads conversations.
-    n.hydrateFeedFromCache(widget.conversationId).then((_) {
-      if (!mounted) return;
-      n.loadFeed(
-        widget.conversationId,
-        threadRootId: widget.threadRootId,
-        force: true,
-      );
-    });
-    if (widget.threadRootId == null) {
-      n.markConversationRead(widget.conversationId);
     }
   }
 
@@ -79,6 +74,13 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
   void _scrollToBottom() {
     if (!_scrollCtrl.hasClients) return;
     _scrollCtrl.jumpTo(0);
+  }
+
+  /// Jumping down answers the unread count, so the pill stops carrying it —
+  /// the divider itself stays where it is until the chat is reopened.
+  void _jumpToBottom() {
+    _scrollToBottom();
+    if (_unreadPillCount != 0) setState(() => _unreadPillCount = 0);
   }
 
   void _revealSubmittedMessage() {
@@ -100,6 +102,9 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
     final pos = _scrollCtrl.position;
     final pixels = pos.pixels;
 
+    final wantPill = pixels > _jumpPillThreshold;
+    if (wantPill != _showJumpPill) setState(() => _showJumpPill = wantPill);
+
     if (pixels >= pos.maxScrollExtent - 120) {
       ref
           .read(chatProvider.notifier)
@@ -114,19 +119,15 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
       return;
     }
 
-    // reverse:true list — scrolling into older history increases [pixels].
     final delta = pixels - _lastPixels;
     _lastPixels = pixels;
-
-    if (pixels < 24) {
-      if (!_headerVisible) setState(() => _headerVisible = true);
-      return;
-    }
-    if (delta.abs() < 8) return;
-    if (delta > 0 && _headerVisible) {
-      setState(() => _headerVisible = false);
-    } else if (delta < 0 && !_headerVisible) {
-      setState(() => _headerVisible = true);
+    final wantHeader = resolveHeaderVisibility(
+      pixels: pixels,
+      delta: delta,
+      visible: _headerVisible,
+    );
+    if (wantHeader != _headerVisible) {
+      setState(() => _headerVisible = wantHeader);
     }
   }
 
@@ -155,37 +156,23 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline> {
     }
     _previousNewestMessageId = newestMessageId;
 
-    return Column(
-      children: [
-        if (widget.header != null)
-          ClipRect(
-            child: AnimatedAlign(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              alignment: Alignment.topCenter,
-              heightFactor: _headerVisible ? 1 : 0,
-              child: widget.header,
-            ),
-          ),
-        Expanded(
-          child: MessageList(
-            messages: feed.messages,
-            loading: feed.loading,
-            loadingMore: feed.loadingMore,
-            currentUserId: chat.currentUserId,
-            scrollController: _scrollCtrl,
-            conversationId: widget.conversationId,
-            threadRootId: widget.threadRootId,
-            error: feed.error,
-            onRetry: _load,
-          ),
-        ),
-        TimelineComposer(
-          conversationId: widget.conversationId,
-          parentId: widget.threadRootId,
-          onMessageSubmitted: _revealSubmittedMessage,
-        ),
-      ],
+    return ChatTimelineView(
+      conversationId: widget.conversationId,
+      threadRootId: widget.threadRootId,
+      header: widget.header,
+      headerVisible: _headerVisible,
+      messages: feed.messages,
+      loading: feed.loading,
+      loadingMore: feed.loadingMore,
+      currentUserId: chat.currentUserId,
+      error: feed.error,
+      scrollController: _scrollCtrl,
+      unreadAnchor: _unreadAnchor,
+      unreadPillCount: _unreadPillCount,
+      showJumpPill: _showJumpPill,
+      onJumpToBottom: _jumpToBottom,
+      onRetry: loadFeed,
+      onMessageSubmitted: _revealSubmittedMessage,
     );
   }
 }

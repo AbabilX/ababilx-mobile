@@ -1,5 +1,5 @@
 import 'package:ababilx/features/messages/chat_utils.dart';
-import 'package:ababilx/features/messages/chat-timeline/message_body.dart';
+import 'package:ababilx/features/messages/chat-timeline/message_bubble.dart';
 import 'package:ababilx/features/messages/chat-timeline/message_list.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/features/messages/providers/chat_provider.dart';
@@ -8,9 +8,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// A group, so the layout shows what only a group shows: the sender's name
+/// over the first bubble of a run and their avatar under the last. A DM draws
+/// neither.
 class _ClusterChatNotifier extends ChatNotifier {
   @override
-  ChatState build() => const ChatState(currentUserId: 'me');
+  ChatState build() => ChatState(
+    currentUserId: 'me',
+    channels: const [
+      ChatConversation(
+        id: 'conversation-1',
+        teamId: 'team-1',
+        createdAt: '2026-08-29T06:00:00Z',
+        type: 'channel',
+        name: 'general',
+      ),
+    ],
+  );
 }
 
 ChatMessage _message({
@@ -108,7 +122,7 @@ void main() {
     });
   });
 
-  testWidgets('renders one sender header for one visual cluster', (
+  testWidgets('one run of messages shows one name and one avatar', (
     tester,
   ) async {
     final messages = [
@@ -160,7 +174,9 @@ void main() {
     expect(find.text('three'), findsOneWidget);
   });
 
-  testWidgets('avatar sits beside the sender name, not the last line of text', (
+  // Signal hangs the avatar off the *bottom* of a run — the opposite of the
+  // Slack layout this replaced, where it sat beside the sender name on top.
+  testWidgets('avatar sits at the foot of the bubble, not beside the name', (
     tester,
   ) async {
     final controller = ScrollController();
@@ -194,9 +210,50 @@ void main() {
 
     final avatar = tester.getRect(find.byType(AppAvatar));
     final name = tester.getRect(find.text('Alice'));
-    final body = tester.getRect(find.byType(MessageBody));
+    final bubble = tester.getRect(find.byType(MessageBubble));
 
-    expect(avatar.top, closeTo(name.top, 6));
-    expect(avatar.bottom, lessThan(body.bottom - 8));
+    expect(avatar.top, greaterThan(name.bottom));
+    expect(avatar.bottom, closeTo(bubble.bottom, 2));
+    // And it is on the left of the bubble, because the message is incoming.
+    expect(avatar.right, lessThanOrEqualTo(bubble.left));
+  });
+
+  testWidgets('an outgoing bubble is right-aligned and carries no avatar', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [chatProvider.overrideWith(_ClusterChatNotifier.new)],
+        child: MaterialApp(
+          home: Scaffold(
+            body: MessageList(
+              messages: [
+                _message(
+                  id: 'mine',
+                  userId: 'me',
+                  createdAt: '2026-08-29T06:10:00Z',
+                  userName: 'Me',
+                ),
+              ],
+              loading: false,
+              loadingMore: false,
+              currentUserId: 'me',
+              scrollController: controller,
+              conversationId: 'conversation-1',
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(AppAvatar), findsNothing);
+    expect(find.text('Me'), findsNothing);
+
+    final bubble = tester.getRect(find.byType(MessageBubble));
+    final screen = tester.getRect(find.byType(MessageList));
+    expect(bubble.right, closeTo(screen.right - 16, 1));
+    expect(bubble.left, greaterThan(screen.center.dx));
   });
 }

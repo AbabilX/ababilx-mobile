@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/text/display_name.dart';
+
 import '../crm-contacts/contact_badge.dart';
 import '../data/models/crm_models.dart';
 import '../shared/crm_money.dart';
@@ -38,15 +40,10 @@ class LeadRow extends StatelessWidget {
     return null;
   }
 
-  String get _initial {
-    final n = lead.title.trim();
-    if (n.isEmpty) {
-      final c = (lead.contactName ?? '').trim();
-      if (c.isEmpty) return '?';
-      return c.substring(0, 1).toUpperCase();
-    }
-    return n.substring(0, 1).toUpperCase();
-  }
+  String get _initial =>
+      displayNameInitial(lead.title) ??
+      displayNameInitial(lead.contactName) ??
+      '?';
 
   @override
   Widget build(BuildContext context) {

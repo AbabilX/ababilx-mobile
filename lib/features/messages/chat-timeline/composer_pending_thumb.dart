@@ -117,10 +117,7 @@ class PendingThumb extends StatelessWidget {
     placeholder: (_, _) => ColoredBox(color: placeholderColor),
     errorWidget: (_, _, _) => ColoredBox(
       color: placeholderColor,
-      child: Icon(
-        Icons.broken_image_outlined,
-        color: colors.onSurfaceVariant,
-      ),
+      child: Icon(Icons.broken_image_outlined, color: colors.onSurfaceVariant),
     ),
   );
 }

@@ -98,14 +98,7 @@ AlbumLayout albumLayout({
         _cell(1, half + albumGap, 0, half, top, _r(0, c, 0, 0)),
         _cell(2, 0, bottomY, small, small, _r(0, 0, 0, c)),
         _cell(3, small + albumGap, bottomY, small, small, _r(0, 0, 0, 0)),
-        _cell(
-          4,
-          (small + albumGap) * 2,
-          bottomY,
-          small,
-          small,
-          _r(0, 0, c, 0),
-        ),
+        _cell(4, (small + albumGap) * 2, bottomY, small, small, _r(0, 0, c, 0)),
       ];
   }
 
@@ -119,11 +112,7 @@ AlbumCell _cell(
   double w,
   double h,
   BorderRadius radius,
-) => AlbumCell(
-  index: index,
-  rect: Rect.fromLTWH(x, y, w, h),
-  radius: radius,
-);
+) => AlbumCell(index: index, rect: Rect.fromLTWH(x, y, w, h), radius: radius);
 
 BorderRadius _r(double tl, double tr, double br, double bl) =>
     BorderRadius.only(

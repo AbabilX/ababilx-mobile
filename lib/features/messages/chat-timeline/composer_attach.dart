@@ -82,7 +82,12 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
   switch (result.action) {
     case MediaSheetAction.camera:
       await _settle();
-      await _uploadOne(ref, conversationId, await pickLiveCameraFile(), onAdded);
+      await _uploadOne(
+        ref,
+        conversationId,
+        await pickLiveCameraFile(),
+        onAdded,
+      );
     case MediaSheetAction.files:
       await _settle();
       await _uploadOne(ref, conversationId, await pickDeviceFile(), onAdded);
@@ -122,11 +127,7 @@ Future<void> uploadDeviceMediaItem(
   await _uploadOne(
     ref,
     conversationId,
-    PickedMediaFile(
-      bytes: bytes,
-      fileName: item.name,
-      contentType: item.mime,
-    ),
+    PickedMediaFile(bytes: bytes, fileName: item.name, contentType: item.mime),
     onAdded,
     localPath: file.path,
   );
@@ -260,4 +261,3 @@ Future<ComposerAttachResult> pickAndUploadImage(
   source: source,
   kind: kind,
 );
-

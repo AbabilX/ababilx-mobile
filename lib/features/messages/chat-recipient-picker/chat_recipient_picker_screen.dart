@@ -8,6 +8,7 @@ import '../providers/messageable_people_provider.dart';
 import 'chat_recipient_list.dart';
 import 'chat_recipient_search_field.dart';
 import 'chat_recipient_target.dart';
+import '../../../shared/text/name_search.dart';
 
 typedef ChatRecipientSubmit =
     Future<void> Function(List<ChatRecipientTarget> recipients, String caption);
@@ -71,7 +72,7 @@ class _ChatRecipientPickerScreenState
                   c.id != widget.excludedConversationId,
             )
             .toList();
-    final query = _search.text.trim().toLowerCase();
+    final query = _search.text.trim();
     final recent = conversations
         .take(7)
         .map((c) => ChatRecipientTarget.conversation(c, chat.currentUserId))
@@ -122,10 +123,9 @@ class _ChatRecipientPickerScreenState
     String query,
   ) {
     if (query.isEmpty) return items;
-    return items.where((item) {
-      return item.name.toLowerCase().contains(query) ||
-          item.subtitle.toLowerCase().contains(query);
-    }).toList();
+    return items
+        .where((item) => matchesNameQuery(query, [item.name, item.subtitle]))
+        .toList();
   }
 
   Widget _sendBar() => SafeArea(

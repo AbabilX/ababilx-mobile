@@ -5,5 +5,6 @@ export 'chat_connection.dart';
 export 'chat_delivery_summary.dart';
 export 'chat_member.dart';
 export 'chat_message.dart';
+export 'chat_message_quote.dart';
 export 'chat_reaction.dart';
 export 'chat_sidebar_model.dart';

@@ -5,19 +5,25 @@ import '../data/models/chat_models.dart';
 import '../tiptap_plain_text.dart';
 import '../tiptap_viewer.dart';
 import 'message_attachments.dart';
+import 'message_bubble.dart';
+import 'signal_bubble_metrics.dart';
 
 class MessageBody extends StatelessWidget {
-  const MessageBody({super.key, required this.message});
+  const MessageBody({super.key, required this.message, required this.colors});
+
   final ChatMessage message;
+
+  /// Text sits on the bubble's fill, so every colour here comes from the
+  /// bubble rather than straight off the scheme.
+  final SignalBubbleColors colors;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     if (message.isDeleted) {
       return Text(
         'This message was deleted',
         style: TextStyle(
-          color: colors.onSurfaceVariant,
+          color: colors.muted,
           fontStyle: FontStyle.italic,
           fontSize: 15,
         ),
@@ -32,25 +38,22 @@ class MessageBody extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
               'Forwarded from ${message.forwardedFromName}',
-              style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+              style: TextStyle(fontSize: 12, color: colors.muted),
             ),
           ),
         if (plain.isNotEmpty)
           TiptapViewer(
             content: message.body,
             style: TextStyle(
-              color: colors.onSurface,
-              fontSize: 15,
-              height: 1.4,
+              color: colors.foreground,
+              fontSize: SignalBubbleMetrics.bodyTextSize,
+              height: 1.35,
             ),
             trailing: message.editedAt == null
                 ? null
                 : TextSpan(
                     text: ' (edited)',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colors.onSurfaceVariant,
-                    ),
+                    style: TextStyle(fontSize: 12, color: colors.muted),
                   ),
           ),
         if (plain.isNotEmpty) MessageLinkPreviews(text: plain),

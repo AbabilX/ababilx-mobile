@@ -18,8 +18,7 @@ ChatConversation _group() => const ChatConversation(
 
 class _Notifier extends ChatNotifier {
   @override
-  ChatState build() =>
-      ChatState(currentUserId: 'me', channels: [_group()]);
+  ChatState build() => ChatState(currentUserId: 'me', channels: [_group()]);
 
   @override
   Future<List<ChatMember>> listChannelMembers(String channelId) async => [

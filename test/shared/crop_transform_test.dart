@@ -50,13 +50,22 @@ void main() {
   });
 
   test('panning right moves the source rect left', () {
-    final t = transform(image: const Size(1000, 600), offset: const Offset(50, 0));
+    final t = transform(
+      image: const Size(1000, 600),
+      offset: const Offset(50, 0),
+    );
     // 50 logical px at 0.5 scale is 100 image px.
     expect(t.sourceRect.center.dx, 400);
   });
 
   test('scale is clamped to the allowed range', () {
-    expect(transform(scale: 99).effectiveScale, transform(scale: 6).effectiveScale);
-    expect(transform(scale: 0.1).effectiveScale, transform(scale: 1).effectiveScale);
+    expect(
+      transform(scale: 99).effectiveScale,
+      transform(scale: 6).effectiveScale,
+    );
+    expect(
+      transform(scale: 0.1).effectiveScale,
+      transform(scale: 1).effectiveScale,
+    );
   });
 }

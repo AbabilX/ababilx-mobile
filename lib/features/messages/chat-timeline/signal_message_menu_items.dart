@@ -18,7 +18,11 @@ List<SignalMenuItem> signalMenuItems({
   required bool showSave,
   required Map<String, String> labels,
 }) => [
-  SignalMenuItem(SignalMessageAction.reply, Icons.reply_rounded, labels['reply']!),
+  SignalMenuItem(
+    SignalMessageAction.reply,
+    Icons.reply_rounded,
+    labels['reply']!,
+  ),
   SignalMenuItem(
     SignalMessageAction.forward,
     Icons.shortcut_rounded,
@@ -42,7 +46,11 @@ List<SignalMenuItem> signalMenuItems({
       labels['thread']!,
     ),
   if (isMine)
-    SignalMenuItem(SignalMessageAction.edit, Icons.edit_outlined, labels['edit']!),
+    SignalMenuItem(
+      SignalMessageAction.edit,
+      Icons.edit_outlined,
+      labels['edit']!,
+    ),
   if (isMine)
     SignalMenuItem(
       SignalMessageAction.delete,
@@ -69,8 +77,13 @@ Size signalMenuSize(
     )..layout();
     widest = widest > painter.width ? widest : painter.width;
   }
-  final width = (widest + SignalMenuMetrics.menuRowPadding * 2 + SignalMenuMetrics.menuIconSize + SignalMenuMetrics.menuIconGap)
-      .clamp(SignalMenuMetrics.menuMinWidth, maxWidth);
-  final rowHeight = SignalMenuMetrics.menuRowHeight * (textScale > 1 ? textScale : 1);
+  final width =
+      (widest +
+              SignalMenuMetrics.menuRowPadding * 2 +
+              SignalMenuMetrics.menuIconSize +
+              SignalMenuMetrics.menuIconGap)
+          .clamp(SignalMenuMetrics.menuMinWidth, maxWidth);
+  final rowHeight =
+      SignalMenuMetrics.menuRowHeight * (textScale > 1 ? textScale : 1);
   return Size(width, rowHeight * items.length);
 }

@@ -8,7 +8,7 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'message_actions.dart';
 import 'message_body.dart';
-import 'quick_react_sheet.dart';
+import 'message_bubble.dart';
 import 'reaction_row.dart';
 import 'user_profile_sheet.dart';
 
@@ -96,16 +96,16 @@ class ThreadRootCard extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 3),
-                    MessageBody(message: message),
+                    MessageBody(
+                      message: message,
+                      colors: SignalBubbleColors.of(
+                        colors,
+                        hasWallpaper: false,
+                      ),
+                    ),
                     ReactionRow(
                       reactions: message.reactions,
                       onToggle: (emoji) => n.toggleReaction(message.id, emoji),
-                      onAdd: () async {
-                        final emoji = await showQuickReactSheet(context);
-                        if (emoji != null) {
-                          await n.toggleReaction(message.id, emoji);
-                        }
-                      },
                     ),
                   ],
                 ),

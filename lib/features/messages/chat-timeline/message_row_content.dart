@@ -5,13 +5,18 @@ import '../../../shared/widgets/app_avatar.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
-import 'message_body.dart';
-import 'message_delivery_status.dart';
-import 'quick_react_sheet.dart';
+import 'message_bubble.dart';
+import 'message_bubble_content.dart';
 import 'reaction_row.dart';
+import 'sender_name_color.dart';
+import 'signal_bubble_metrics.dart';
 import 'thread_summary.dart';
 import 'user_profile_sheet.dart';
+import '../nickname/contact_nickname_provider.dart';
 
+/// Signal's conversation item: your messages right, theirs left, avatars only
+/// in groups and only under the last bubble of a run, the sender's name only
+/// above the first.
 class MessageRowContent extends ConsumerWidget {
   const MessageRowContent({
     super.key,
@@ -20,8 +25,9 @@ class MessageRowContent extends ConsumerWidget {
     required this.isSending,
     required this.isFailed,
     required this.isOwnMessage,
-    required this.actionsOpen,
     this.clusterPosition = MessageClusterPosition.single,
+    this.isGroup = false,
+    this.hasWallpaper = false,
     this.onOpenThread,
   });
 
@@ -30,23 +36,31 @@ class MessageRowContent extends ConsumerWidget {
   final bool isSending;
   final bool isFailed;
   final bool isOwnMessage;
-  final bool actionsOpen;
   final MessageClusterPosition clusterPosition;
+  final bool isGroup;
+  final bool hasWallpaper;
   final VoidCallback? onOpenThread;
+
+  bool get _startsCluster =>
+      clusterPosition == MessageClusterPosition.single ||
+      clusterPosition == MessageClusterPosition.start;
+
+  bool get _endsCluster =>
+      clusterPosition == MessageClusterPosition.single ||
+      clusterPosition == MessageClusterPosition.end;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = Theme.of(context).colorScheme;
-    final name = message.userName ?? 'Unknown';
+    final scheme = Theme.of(context).colorScheme;
+    final name = ref
+        .watch(contactNicknamesProvider)
+        .resolve(userId: message.userId, name: message.userName);
     final notifier = ref.read(chatProvider.notifier);
     final replies = ref.watch(chatProvider).threadRepliesByRoot[message.id];
-    final startsCluster =
-        clusterPosition == MessageClusterPosition.single ||
-        clusterPosition == MessageClusterPosition.start;
-    final endsCluster =
-        clusterPosition == MessageClusterPosition.single ||
-        clusterPosition == MessageClusterPosition.end;
-    final showFooter = endsCluster || isSending || isFailed;
+    final colors = SignalBubbleColors.of(scheme, hasWallpaper: hasWallpaper);
+    // A name over an incoming bubble in a group, an avatar under the last one.
+    final showName = isGroup && !isOwnMessage && _startsCluster;
+    final showAvatar = isGroup && !isOwnMessage;
 
     void showProfile() => showUserProfileSheet(
       context: context,
@@ -56,122 +70,91 @@ class MessageRowContent extends ConsumerWidget {
       userAvatarUrl: message.userAvatarUrl,
     );
 
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 200),
-      opacity: isSending ? 0.65 : 1,
-      child: Container(
-        decoration: actionsOpen
-            ? BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(12),
-              )
-            : isFailed
-            ? BoxDecoration(
-                color: colors.errorContainer.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              )
-            : null,
-        padding: EdgeInsets.fromLTRB(
-          4,
-          startsCluster ? 8 : 1,
-          4,
-          endsCluster ? 8 : 1,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (startsCluster)
-              GestureDetector(
-                onTap: showProfile,
-                child: AppAvatar(
-                  size: 36,
-                  url: message.userAvatarUrl,
-                  name: name,
+    final column = Column(
+      crossAxisAlignment: isOwnMessage
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showName)
+          Padding(
+            padding: const EdgeInsets.only(left: 12, bottom: 2),
+            child: GestureDetector(
+              onTap: showProfile,
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: senderNameColor(message.userId),
                 ),
-              )
-            else
-              const SizedBox(width: 36),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (startsCluster) ...[
-                    GestureDetector(
-                      onTap: showProfile,
-                      child: Text(
-                        name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                  ],
-                  MessageBody(message: message),
-                  if (showFooter)
-                    Align(
-                      alignment: isOwnMessage
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (!isSending)
-                              Text(
-                                isFailed
-                                    ? 'Tap to retry'
-                                    : formatChatTime(message.createdAt),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isFailed
-                                      ? colors.error
-                                      : colors.onSurfaceVariant,
-                                  fontWeight: isFailed
-                                      ? FontWeight.w500
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                            if (isOwnMessage) ...[
-                              const SizedBox(width: 4),
-                              MessageDeliveryStatus(
-                                status: message.sendStatus,
-                                pulse: pulse,
-                                delivery: message.delivery,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (!message.isDeleted && message.reactions.isNotEmpty)
-                    ReactionRow(
-                      reactions: message.reactions,
-                      onToggle: (emoji) =>
-                          notifier.toggleReaction(message.id, emoji),
-                      onAdd: () async {
-                        final emoji = await showQuickReactSheet(context);
-                        if (emoji != null) {
-                          await notifier.toggleReaction(message.id, emoji);
-                        }
-                      },
-                    ),
-                  if (onOpenThread != null)
-                    ThreadSummary(
-                      root: message,
-                      replies: replies ?? const [],
-                      count: message.threadCount,
-                      onTap: onOpenThread!,
-                    ),
-                ],
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ],
+          ),
+        MessageBubble(
+          isOwn: isOwnMessage,
+          clusterPosition: clusterPosition,
+          colors: colors,
+          dimmed: isSending,
+          child: MessageBubbleContent(
+            message: message,
+            colors: colors,
+            isOwn: isOwnMessage,
+            isSending: isSending,
+            isFailed: isFailed,
+            pulse: pulse,
+            showFooter: _endsCluster || isSending || isFailed,
+          ),
         ),
+        if (!message.isDeleted && message.reactions.isNotEmpty)
+          ReactionRow(
+            reactions: message.reactions,
+            hasWallpaper: hasWallpaper,
+            onToggle: (emoji) => notifier.toggleReaction(message.id, emoji),
+          ),
+        if (onOpenThread != null)
+          ThreadSummary(
+            root: message,
+            replies: replies ?? const [],
+            count: message.threadCount,
+            onTap: onOpenThread!,
+          ),
+      ],
+    );
+
+    return Padding(
+      // The long-press overlay hides this row and floats its own copy, so
+      // there is nothing to highlight in place.
+      padding: EdgeInsets.only(top: signalBubbleTopSpacing(clusterPosition)),
+      child: Row(
+        mainAxisAlignment: isOwnMessage
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (showAvatar) ...[
+            // The slot is held for every message of the run so the bubbles
+            // stay in one column; only the last one draws a face.
+            SizedBox(
+              width: SignalBubbleMetrics.avatarSize,
+              child: _endsCluster
+                  ? GestureDetector(
+                      onTap: showProfile,
+                      child: ClipOval(
+                        child: AppAvatar(
+                          size: SignalBubbleMetrics.avatarSize,
+                          url: message.userAvatarUrl,
+                          name: name,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(child: column),
+        ],
       ),
     );
   }

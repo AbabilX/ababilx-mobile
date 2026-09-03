@@ -17,6 +17,8 @@ import '../providers/chat_connections_provider.dart';
 import 'call_action_pill.dart';
 import 'group_call_action.dart';
 import 'start_call_sheet.dart';
+import '../nickname/contact_nickname_provider.dart';
+import '../nickname/nickname_title.dart';
 
 /// Conversation top bar — used inside the scroll shell (auto-hides on scroll).
 class ChatHeader extends ConsumerWidget {
@@ -25,9 +27,9 @@ class ChatHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final title = conversation.displayTitle(
-      ref.watch(chatProvider).currentUserId,
-    );
+    final title = ref
+        .watch(contactNicknamesProvider)
+        .titleFor(conversation, ref.watch(chatProvider).currentUserId);
     final colors = Theme.of(context).colorScheme;
     final surface =
         Theme.of(context).appBarTheme.backgroundColor ?? colors.surface;

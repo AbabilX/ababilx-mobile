@@ -13,6 +13,8 @@ import '../chat_list_filters.dart';
 import '../chat_unread_badge.dart';
 import '../data/models/chat_models.dart';
 import 'group_avatar_stack.dart';
+import '../nickname/contact_nickname_provider.dart';
+import '../nickname/nickname_title.dart';
 
 class ConversationRow extends ConsumerWidget {
   const ConversationRow({
@@ -30,7 +32,9 @@ class ConversationRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final title = conversation.displayTitle(currentUserId);
+    final title = ref
+        .watch(contactNicknamesProvider)
+        .titleFor(conversation, currentUserId);
     final preview = chatListPreview(conversation, currentUserId);
     final time = relativeChatTime(conversation.lastMessageAt);
     final unread = conversation.unreadCount > 0;

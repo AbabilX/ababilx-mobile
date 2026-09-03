@@ -101,9 +101,22 @@ class ChatNotifier extends Notifier<ChatState>
   @override
   Future<void> fetchSidebarSilent() => fetchSidebar(silent: true);
 
+  /// True once Riverpod has torn this notifier down. Every write that lands
+  /// after an `await` has to check it: a conversation can be closed (or the
+  /// user signed out) while a feed request is still in flight, and writing
+  /// `state` then throws "Cannot use a Notifier after it has been disposed".
+  bool _disposed = false;
+
+  @override
+  bool get isDisposed => _disposed;
+
   @override
   ChatState build() {
-    ref.onDispose(disposeRealtime);
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+      disposeRealtime();
+    });
     ref.listen(profileProvider, (prev, next) {
       final id = next.valueOrNull?.id;
       if (id != null && id.isNotEmpty) {

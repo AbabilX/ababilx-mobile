@@ -26,6 +26,12 @@ String localMessageRowId(ChatMessage m) {
 CachedMessagesCompanion messageRow(ChatMessage m) {
   final json = m.toJson();
   if (m.isEncrypted) json['body'] = '';
+  // Same rule for the quote: its plaintext was decrypted into memory, and the
+  // ciphertext beside it is what belongs on disk.
+  final quote = m.quote;
+  if (quote != null && quote.isEncrypted && json['quote'] is Map) {
+    (json['quote'] as Map)['body'] = '';
+  }
   return CachedMessagesCompanion.insert(
     id: localMessageRowId(m),
     conversationId: m.conversationId,

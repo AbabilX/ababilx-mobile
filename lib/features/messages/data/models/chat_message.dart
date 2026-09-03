@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import 'chat_attachment.dart';
 import 'chat_delivery_summary.dart';
+import 'chat_message_quote.dart';
 import 'chat_reaction.dart';
 
 /// Send-state for optimistic messages. Server-confirmed messages are [sent].
@@ -33,11 +34,13 @@ class ChatMessage extends Equatable {
     this.encryptionVersion,
     this.encryptionKeyVersion,
     this.delivery,
+    this.quote,
     // Optimistic-send fields — not present in server JSON.
     this.sendStatus = MessageSendStatus.sent,
     this.clientRef,
     this.pendingAttachments = const [],
     this.pendingParentId,
+    this.pendingQuotedMessageId,
     this.pendingMentionedUserIds = const [],
   });
 
@@ -65,6 +68,10 @@ class ChatMessage extends Equatable {
   final int? encryptionKeyVersion;
   final ChatDeliverySummary? delivery;
 
+  /// The message this one quotes, if any. A quoted reply stays in the main
+  /// timeline; [parentId] is the separate, Slack-style thread reply.
+  final ChatMessageQuote? quote;
+
   /// Optimistic UI: current send state.
   final MessageSendStatus sendStatus;
 
@@ -75,6 +82,7 @@ class ChatMessage extends Equatable {
   /// Retry payload kept on unsent local rows so a killed send can resume.
   final List<ChatAttachmentInput> pendingAttachments;
   final String? pendingParentId;
+  final String? pendingQuotedMessageId;
   final List<String> pendingMentionedUserIds;
 
   bool get isDeleted => deletedAt != null;
@@ -118,12 +126,18 @@ class ChatMessage extends Equatable {
             Map<String, dynamic>.from(json['delivery'] as Map),
           )
         : null,
+    quote: json['quote'] is Map
+        ? ChatMessageQuote.fromJson(
+            Map<String, dynamic>.from(json['quote'] as Map),
+          )
+        : null,
     sendStatus: _sendStatusFromJson(json['send_status']),
     clientRef: json['client_message_id'] as String?,
     pendingAttachments: (json['pending_attachments'] as List<dynamic>? ?? [])
         .map((e) => ChatAttachmentInput.fromJson(e as Map<String, dynamic>))
         .toList(),
     pendingParentId: json['pending_parent_id'] as String?,
+    pendingQuotedMessageId: json['pending_quoted_message_id'] as String?,
     pendingMentionedUserIds:
         (json['pending_mentioned_user_ids'] as List<dynamic>? ?? [])
             .cast<String>(),
@@ -155,11 +169,14 @@ class ChatMessage extends Equatable {
     if (encryptionKeyVersion != null)
       'encryption_key_version': encryptionKeyVersion,
     if (delivery != null) 'delivery': delivery!.toJson(),
+    if (quote != null) 'quote': quote!.toJson(),
     if (clientRef != null) 'client_message_id': clientRef,
     if (sendStatus != MessageSendStatus.sent) 'send_status': sendStatus.name,
     if (pendingAttachments.isNotEmpty)
       'pending_attachments': pendingAttachments.map((a) => a.toJson()).toList(),
     if (pendingParentId != null) 'pending_parent_id': pendingParentId,
+    if (pendingQuotedMessageId != null)
+      'pending_quoted_message_id': pendingQuotedMessageId,
     if (pendingMentionedUserIds.isNotEmpty)
       'pending_mentioned_user_ids': pendingMentionedUserIds,
   };
@@ -179,6 +196,7 @@ class ChatMessage extends Equatable {
     String? encryptionNonce,
     int? encryptionVersion,
     int? encryptionKeyVersion,
+    ChatMessageQuote? quote,
   }) => ChatMessage(
     id: id ?? this.id,
     conversationId: conversationId,
@@ -203,10 +221,12 @@ class ChatMessage extends Equatable {
     encryptionVersion: encryptionVersion ?? this.encryptionVersion,
     encryptionKeyVersion: encryptionKeyVersion ?? this.encryptionKeyVersion,
     delivery: delivery ?? this.delivery,
+    quote: quote ?? this.quote,
     sendStatus: sendStatus ?? this.sendStatus,
     clientRef: clearClientRef ? null : (clientRef ?? this.clientRef),
     pendingAttachments: pendingAttachments,
     pendingParentId: pendingParentId,
+    pendingQuotedMessageId: pendingQuotedMessageId,
     pendingMentionedUserIds: pendingMentionedUserIds,
   );
 
@@ -220,6 +240,7 @@ class ChatMessage extends Equatable {
     threadCount,
     sendStatus,
     delivery,
+    quote,
   ];
 }
 

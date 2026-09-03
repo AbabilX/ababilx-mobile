@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../shared/text/display_name.dart';
+
 class ChatLastAttachment extends Equatable {
   const ChatLastAttachment({required this.fileName, required this.contentType});
 
@@ -149,9 +151,16 @@ class ChatConversation extends Equatable {
     return [ChatLastAttachment(fileName: name, contentType: type)];
   }
 
+  /// The name shown in the list row, the chat header and every notification.
+  ///
+  /// Sanitised, because it is whatever the other side typed: a name may carry
+  /// bidi overrides that flip the rest of the row, newlines that break its
+  /// layout, or a stack of combining marks that draws outside it.
   String displayTitle(String? currentUserId) {
-    if (isGroupConversation) return name ?? slug ?? 'Group';
-    return peerUserName ?? 'Direct message';
+    if (isGroupConversation) {
+      return safeDisplayName(name ?? slug, fallback: 'Group');
+    }
+    return safeDisplayName(peerUserName, fallback: 'Direct message');
   }
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) {

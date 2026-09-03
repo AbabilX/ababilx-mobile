@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../chat-date-divider/index.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
+import '../wallpaper/chat_wallpaper_provider.dart';
 import 'message_list_error.dart';
+import 'signal_bubble_metrics.dart';
+import 'unread_divider.dart';
 import 'message_row.dart';
 import 'thread_sheet.dart';
 import 'group_call_event_row.dart';
@@ -22,6 +25,7 @@ class MessageList extends ConsumerWidget {
     this.threadRootId,
     this.error = '',
     this.onRetry,
+    this.unreadAnchor = 0,
   });
 
   final List<ChatMessage> messages;
@@ -34,6 +38,11 @@ class MessageList extends ConsumerWidget {
   final String error;
   final VoidCallback? onRetry;
 
+  /// Unread count as it stood when the chat opened, before it was marked read.
+  /// The divider sits above that many messages from the end — the conversation
+  /// carries no last-read timestamp to place it by.
+  final int unreadAnchor;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (loading && messages.isEmpty) {
@@ -42,10 +51,19 @@ class MessageList extends ConsumerWidget {
     if (messages.isEmpty && error.isNotEmpty) {
       return MessageListError(message: error, onRetry: onRetry);
     }
+    final unreadFrom = unreadAnchor > 0 && unreadAnchor < messages.length
+        ? messages.length - unreadAnchor
+        : -1;
+
     return ListView.builder(
       controller: scrollController,
       reverse: true,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      padding: const EdgeInsets.fromLTRB(
+        SignalBubbleMetrics.listSideGutter,
+        8,
+        SignalBubbleMetrics.listSideGutter,
+        12,
+      ),
       itemCount: messages.length + (loadingMore ? 1 : 0),
       itemBuilder: (_, i) {
         if (loadingMore && i == messages.length) {
@@ -61,10 +79,18 @@ class MessageList extends ConsumerWidget {
         final showDate =
             prev == null || !isSameDay(prev.createdAt, msg.createdAt);
         final clusterPosition = chatMessageClusterPosition(prev, msg, next);
+        final hasWallpaper = ref
+            .watch(chatWallpaperProvider)
+            .forChat(conversationId)
+            .isSet;
         return Column(
           children: [
             if (showDate)
-              ChatDateDivider(label: formatDateDivider(msg.createdAt)),
+              ChatDateDivider(
+                label: formatDateDivider(msg.createdAt),
+                hasWallpaper: hasWallpaper,
+              ),
+            if (idx == unreadFrom) UnreadDivider(count: unreadAnchor),
             if (msg.isVoiceCall)
               VoiceCallEventRow(message: msg, currentUserId: currentUserId)
             else if (msg.isGroupCall)

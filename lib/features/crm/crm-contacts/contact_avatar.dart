@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/text/display_name.dart';
+
 /// Web `ContactAvatar` — image or initials.
 class ContactAvatar extends StatelessWidget {
   const ContactAvatar({
@@ -14,11 +16,7 @@ class ContactAvatar extends StatelessWidget {
   final String? imageUrl;
   final double radius;
 
-  String get _initial {
-    final n = name.trim();
-    if (n.isEmpty) return '?';
-    return n.substring(0, 1).toUpperCase();
-  }
+  String get _initial => displayNameInitial(name) ?? '?';
 
   @override
   Widget build(BuildContext context) {

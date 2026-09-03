@@ -29,6 +29,8 @@ class _ComposerNotifier extends ChatNotifier {
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
     String? parentId,
+    String? quotedMessageId,
+    ChatMessageQuote? quotePreview,
     String? clientMessageId,
   }) async => _message('sent', 'me', body: body);
 }
@@ -71,6 +73,8 @@ class _TimelineNotifier extends _ComposerNotifier {
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
     String? parentId,
+    String? quotedMessageId,
+    ChatMessageQuote? quotePreview,
     String? clientMessageId,
   }) async {
     final id = conversationId ?? state.activeConversationId!;

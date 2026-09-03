@@ -137,6 +137,7 @@ class ChatRepository {
     int? encryptionVersion,
     int? encryptionKeyVersion,
     String? parentId,
+    String? quotedMessageId,
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
   }) => _messages.sendMessage(
@@ -148,6 +149,7 @@ class ChatRepository {
     encryptionVersion: encryptionVersion,
     encryptionKeyVersion: encryptionKeyVersion,
     parentId: parentId,
+    quotedMessageId: quotedMessageId,
     attachments: attachments,
     mentionedUserIds: mentionedUserIds,
   );

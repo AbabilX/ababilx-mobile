@@ -20,10 +20,12 @@ import 'composer_input_bar.dart';
 import 'composer_mention_picker.dart';
 import 'composer_recording_bar.dart';
 import 'composer_reply_banner.dart';
+import 'composer_reply_target.dart';
 import 'reaction_emoji_picker.dart';
 import 'composer_share_contact.dart';
 import 'composer_text_actions.dart';
 import 'voice_message_recorder.dart';
+import '../../../shared/text/name_search.dart';
 
 class MessageComposer extends ConsumerStatefulWidget {
   const MessageComposer({
@@ -174,9 +176,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       }
     }
 
-    final q = query.toLowerCase();
     final candidates = map.values
-        .where((c) => q.isEmpty || c.displayName.toLowerCase().contains(q))
+        .where((c) => matchesNameQuery(query, [c.displayName]))
         .toList();
 
     setState(() {
@@ -226,8 +227,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   Future<void> _send() async {
     final plain = _ctrl.text.trim();
     if (plain.isEmpty && _pending.isEmpty) return;
-    final replyTarget = ref.read(chatProvider).replyToMessage;
-    final effectiveParentId = replyTarget?.id ?? widget.parentId;
+    final reply = ComposerReplyTarget.resolve(
+      replyTo: ref.read(chatProvider).replyToMessage,
+      threadRootId: widget.parentId,
+    );
     ref.read(chatProvider.notifier).setReplyToMessage(null);
     final body = plain.isEmpty ? '' : textToTiptapJson(plain);
     final attachments = List<ChatAttachmentInput>.of(_pending);
@@ -253,7 +256,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           body: body,
           attachments: attachments,
           mentionedUserIds: mentionedIds,
-          parentId: effectiveParentId,
+          parentId: reply.parentId,
+          quotedMessageId: reply.quotedMessageId,
+          quotePreview: reply.preview,
         );
     widget.onMessageSubmitted?.call();
     if (!_focus.hasFocus) _focus.requestFocus();
@@ -498,12 +503,16 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
               contentType: RecordedVoiceMessage.contentType,
               bytes: bytes,
             );
-        final replyTarget = ref.read(chatProvider).replyToMessage;
-        final effectiveParentId = replyTarget?.id ?? widget.parentId;
+        final reply = ComposerReplyTarget.resolve(
+          replyTo: ref.read(chatProvider).replyToMessage,
+          threadRootId: widget.parentId,
+        );
         await notifier.sendMessage(
           conversationId: widget.conversationId,
           body: '',
-          parentId: effectiveParentId,
+          parentId: reply.parentId,
+          quotedMessageId: reply.quotedMessageId,
+          quotePreview: reply.preview,
           attachments: [
             ChatAttachmentInput(
               fileUrl: presign.publicUrl,

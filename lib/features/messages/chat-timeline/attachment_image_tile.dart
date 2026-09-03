@@ -102,11 +102,8 @@ class AttachmentImageTile extends StatelessWidget {
     );
   }
 
-  Future<void> _open(BuildContext context) => showChatAttachmentGallery(
-    context,
-    images: gallery,
-    index: index,
-  );
+  Future<void> _open(BuildContext context) =>
+      showChatAttachmentGallery(context, images: gallery, index: index);
 
   Widget _broken(BuildContext context, bool solo) => Container(
     height: 120,

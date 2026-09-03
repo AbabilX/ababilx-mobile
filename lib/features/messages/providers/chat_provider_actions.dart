@@ -73,6 +73,8 @@ mixin _ChatActionsMixin
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
     String? parentId,
+    String? quotedMessageId,
+    ChatMessageQuote? quotePreview,
     String? clientMessageId,
   }) async {
     final convId = conversationId ?? state.activeConversationId;
@@ -101,7 +103,11 @@ mixin _ChatActionsMixin
       clientRef: clientRef,
       pendingAttachments: List.unmodifiable(attachments),
       pendingParentId: parentId,
+      pendingQuotedMessageId: quotedMessageId,
       pendingMentionedUserIds: List.unmodifiable(mentionedUserIds),
+      // The quote is shown on the pending bubble straight away; the server
+      // resolves the real one and the confirmed message replaces this.
+      quote: quotePreview,
       // Show the sender's own name if we can resolve it from the DM peer info.
       userName: conv?.peerUserName,
     );
@@ -144,6 +150,7 @@ mixin _ChatActionsMixin
         encryptionVersion: encrypted == null ? null : 1,
         encryptionKeyVersion: encrypted?.keyVersion,
         parentId: parentId,
+        quotedMessageId: quotedMessageId,
         attachments: attachments,
         mentionedUserIds: mentionedUserIds,
       );
@@ -192,6 +199,8 @@ mixin _ChatActionsMixin
       attachments: failedMsg.pendingAttachments,
       mentionedUserIds: failedMsg.pendingMentionedUserIds,
       parentId: failedMsg.pendingParentId,
+      quotedMessageId: failedMsg.pendingQuotedMessageId,
+      quotePreview: failedMsg.quote,
     );
   }
 

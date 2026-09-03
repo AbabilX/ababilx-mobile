@@ -1,0 +1,98 @@
+import 'package:flutter/material.dart';
+
+import '../data/models/chat_models.dart';
+import 'message_list.dart';
+import 'scroll_to_bottom_pill.dart';
+import 'timeline_composer.dart';
+
+/// The chat's layout: collapsing header, message list with the jump-to-bottom
+/// button floating over it, composer underneath. All state lives in
+/// [ChatTimeline]; this only arranges it.
+class ChatTimelineView extends StatelessWidget {
+  const ChatTimelineView({
+    super.key,
+    required this.conversationId,
+    required this.threadRootId,
+    required this.header,
+    required this.headerVisible,
+    required this.messages,
+    required this.loading,
+    required this.loadingMore,
+    required this.currentUserId,
+    required this.error,
+    required this.scrollController,
+    required this.unreadAnchor,
+    required this.unreadPillCount,
+    required this.showJumpPill,
+    required this.onJumpToBottom,
+    required this.onRetry,
+    required this.onMessageSubmitted,
+  });
+
+  final String conversationId;
+  final String? threadRootId;
+  final Widget? header;
+  final bool headerVisible;
+  final List<ChatMessage> messages;
+  final bool loading;
+  final bool loadingMore;
+  final String currentUserId;
+  final String error;
+  final ScrollController scrollController;
+  final int unreadAnchor;
+  final int unreadPillCount;
+  final bool showJumpPill;
+  final VoidCallback onJumpToBottom;
+  final VoidCallback onRetry;
+  final VoidCallback onMessageSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (header != null)
+          ClipRect(
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              heightFactor: headerVisible ? 1 : 0,
+              child: header,
+            ),
+          ),
+        Expanded(
+          child: Stack(
+            children: [
+              MessageList(
+                messages: messages,
+                loading: loading,
+                loadingMore: loadingMore,
+                currentUserId: currentUserId,
+                scrollController: scrollController,
+                conversationId: conversationId,
+                threadRootId: threadRootId,
+                error: error,
+                onRetry: onRetry,
+                unreadAnchor: unreadAnchor,
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: ScrollToBottomPill(
+                  visible: showJumpPill,
+                  unreadCount: unreadPillCount,
+                  onTap: onJumpToBottom,
+                ),
+              ),
+            ],
+          ),
+        ),
+        TimelineComposer(
+          conversationId: conversationId,
+          parentId: threadRootId,
+          onMessageSubmitted: onMessageSubmitted,
+        ),
+      ],
+    );
+  }
+}

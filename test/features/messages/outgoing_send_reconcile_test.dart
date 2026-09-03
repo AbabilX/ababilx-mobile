@@ -45,6 +45,7 @@ class _FakeRepo extends ChatRepository {
     int? encryptionVersion,
     int? encryptionKeyVersion,
     String? parentId,
+    String? quotedMessageId,
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
   }) => sendCall.future;

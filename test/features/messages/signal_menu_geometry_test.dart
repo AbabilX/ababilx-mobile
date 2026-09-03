@@ -16,21 +16,27 @@ SignalMenuLayout _layout(Rect anchor, {bool isMine = true, Size? screen}) =>
     );
 
 void main() {
-  test('menu sits under the bubble and the bar above it when there is room', () {
-    final layout = _layout(const Rect.fromLTWH(200, 300, 180, 44));
+  test(
+    'menu sits under the bubble and the bar above it when there is room',
+    () {
+      final layout = _layout(const Rect.fromLTWH(200, 300, 180, 44));
 
-    expect(layout.reversed, isFalse);
-    expect(layout.scale, 1);
-    expect(layout.menu.top, layout.bubble.bottom + 12);
-    expect(layout.bar.bottom, lessThanOrEqualTo(layout.bubble.top));
-    // Outgoing: the bar hugs the right margin, the menu the bubble's end.
-    expect(layout.bar.right, _phone.width - 16);
-    expect(layout.bar.width, 320);
-    expect(layout.menu.right, closeTo(380, 0.01));
-  });
+      expect(layout.reversed, isFalse);
+      expect(layout.scale, 1);
+      expect(layout.menu.top, layout.bubble.bottom + 12);
+      expect(layout.bar.bottom, lessThanOrEqualTo(layout.bubble.top));
+      // Outgoing: the bar hugs the right margin, the menu the bubble's end.
+      expect(layout.bar.right, _phone.width - 16);
+      expect(layout.bar.width, 320);
+      expect(layout.menu.right, closeTo(380, 0.01));
+    },
+  );
 
   test('an incoming bubble anchors both pieces to the left margin', () {
-    final layout = _layout(const Rect.fromLTWH(16, 300, 180, 44), isMine: false);
+    final layout = _layout(
+      const Rect.fromLTWH(16, 300, 180, 44),
+      isMine: false,
+    );
 
     expect(layout.bar.left, 16);
     expect(layout.menu.left, 16);

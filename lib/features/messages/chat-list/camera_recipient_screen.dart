@@ -7,6 +7,7 @@ import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../data/models/chat_connection.dart';
 import '../new-message/new_message_search.dart';
+import '../../../shared/text/name_search.dart';
 
 class CameraRecipientScreen extends ConsumerStatefulWidget {
   const CameraRecipientScreen({
@@ -37,12 +38,10 @@ class _CameraRecipientScreenState extends ConsumerState<CameraRecipientScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final query = _search.text.trim().toLowerCase();
-    final people = widget.people.where((user) {
-      return query.isEmpty ||
-          user.name.toLowerCase().contains(query) ||
-          user.username.toLowerCase().contains(query);
-    }).toList();
+    final query = _search.text.trim();
+    final people = widget.people
+        .where((user) => matchesNameQuery(query, [user.name, user.username]))
+        .toList();
     return Scaffold(
       appBar: AppBar(title: Text(_tr('chat_send_to'))),
       body: Column(

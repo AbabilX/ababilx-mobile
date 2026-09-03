@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
 import '../data/models/chat_models.dart';
+import '../nickname/contact_nickname_provider.dart';
+import '../nickname/nickname_title.dart';
 
 class RecentContactsStrip extends StatelessWidget {
   const RecentContactsStrip({
@@ -37,7 +40,7 @@ class RecentContactsStrip extends StatelessWidget {
   }
 }
 
-class RecentContactTile extends StatelessWidget {
+class RecentContactTile extends ConsumerWidget {
   const RecentContactTile({
     super.key,
     required this.conversation,
@@ -50,8 +53,10 @@ class RecentContactTile extends StatelessWidget {
   final String? currentUserId;
 
   @override
-  Widget build(BuildContext context) {
-    final title = conversation.displayTitle(currentUserId);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final title = ref
+        .watch(contactNicknamesProvider)
+        .titleFor(conversation, currentUserId);
     final avatar = conversation.peerUserAvatar;
     return InkWell(
       onTap: onTap,

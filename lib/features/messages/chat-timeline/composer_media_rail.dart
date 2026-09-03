@@ -13,11 +13,7 @@ import '../../../shared/media/device_gallery.dart';
 /// be read: on iOS, or with media permission denied, the shortcut row below
 /// is the whole panel and the system picker is one tap away inside it.
 class ComposerMediaRail extends StatefulWidget {
-  const ComposerMediaRail({
-    super.key,
-    required this.onPick,
-    this.height = 132,
-  });
+  const ComposerMediaRail({super.key, required this.onPick, this.height = 132});
 
   final ValueChanged<DeviceMediaItem> onPick;
   final double height;
