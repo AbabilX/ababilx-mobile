@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/models/chat_models.dart';
+import '../tiptap_plain_text.dart';
 import 'message_bubble.dart';
 import 'sender_name_color.dart';
 import 'signal_bubble_metrics.dart';
@@ -24,7 +25,10 @@ class MessageQuoteBlock extends StatelessWidget {
 
   String get _preview {
     if (quote.deleted) return 'Original message not found';
-    if (quote.body.trim().isNotEmpty) return quote.body.trim();
+    // The body is TipTap JSON, and a quote is a one-or-two-line preview, not a
+    // rendered body — without this the block showed the raw `{"type":"doc"…`.
+    final preview = tiptapToPreviewText(quote.body);
+    if (preview.isNotEmpty) return preview;
     if (quote.isImage) return 'Photo';
     if (quote.isVideo) return 'Video';
     if (quote.isAudio) return 'Voice message';

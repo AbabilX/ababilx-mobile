@@ -6,6 +6,7 @@ import '../tiptap_plain_text.dart';
 import '../tiptap_viewer.dart';
 import 'message_attachments.dart';
 import 'message_bubble.dart';
+import 'message_long_body.dart';
 import 'signal_bubble_metrics.dart';
 
 class MessageBody extends StatelessWidget {
@@ -30,6 +31,7 @@ class MessageBody extends StatelessWidget {
       );
     }
     final plain = tiptapToPlainText(message.body);
+    final long = MessageLongBody.isLong(plain);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -41,20 +43,12 @@ class MessageBody extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: colors.muted),
             ),
           ),
-        if (plain.isNotEmpty)
-          TiptapViewer(
-            content: message.body,
-            style: TextStyle(
-              color: colors.foreground,
-              fontSize: SignalBubbleMetrics.bodyTextSize,
-              height: 1.35,
-            ),
-            trailing: message.editedAt == null
-                ? null
-                : TextSpan(
-                    text: ' (edited)',
-                    style: TextStyle(fontSize: 12, color: colors.muted),
-                  ),
+        if (plain.isNotEmpty) _text(collapsed: long),
+        if (long)
+          ReadMoreRow(
+            body: message.body,
+            colors: colors,
+            editedAt: message.editedAt,
           ),
         if (plain.isNotEmpty) MessageLinkPreviews(text: plain),
         if (message.attachments.isNotEmpty)
@@ -64,5 +58,27 @@ class MessageBody extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  /// The body itself. A collapsed one is clipped and faded out, and drops the
+  /// "(edited)" marker with it — the marker trails the last block, which is
+  /// exactly the part being cut off, and the full-screen view carries it.
+  Widget _text({required bool collapsed}) {
+    final viewer = TiptapViewer(
+      content: message.body,
+      maxHeight: collapsed ? MessageLongBody.collapsedHeight : null,
+      style: TextStyle(
+        color: colors.foreground,
+        fontSize: SignalBubbleMetrics.bodyTextSize,
+        height: 1.35,
+      ),
+      trailing: collapsed || message.editedAt == null
+          ? null
+          : TextSpan(
+              text: ' (edited)',
+              style: TextStyle(fontSize: 12, color: colors.muted),
+            ),
+    );
+    return collapsed ? CollapsedBodyFade(child: viewer) : viewer;
   }
 }

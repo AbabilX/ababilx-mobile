@@ -122,20 +122,46 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
           ),
           AnimatedBuilder(
             animation: move,
-            builder: (context, child) => Positioned.fromRect(
+            builder: (context, child) {
+              final scale = lerpDouble(
+                SignalMenuMetrics.pressScale,
+                layout.scale,
+                move.value,
+              )!;
               // The message slides from where it sits in the list to where the
               // overlay needs it, unpinching from Signal's 0.95 press scale on
-              // the way — exactly how it animates x/y/scale.
-              rect: Rect.lerp(widget.anchor, layout.bubble, move.value)!,
-              child: Transform.scale(
-                scale: lerpDouble(
-                  SignalMenuMetrics.pressScale,
-                  layout.scale,
-                  move.value,
-                )!,
-                child: IgnorePointer(child: child),
-              ),
-            ),
+              // the way — exactly how it animates x/y/scale. It pinches in from
+              // the side it hangs on, so both ends of the lerp are the painted
+              // top-left corner and `Alignment.topLeft` makes the transform
+              // land on it exactly.
+              final pressLeft = widget.isMine
+                  ? widget.anchor.right -
+                        widget.anchor.width * SignalMenuMetrics.pressScale
+                  : widget.anchor.left;
+              final corner = Offset.lerp(
+                Offset(pressLeft, widget.anchor.top),
+                layout.bubble.topLeft,
+                move.value,
+              )!;
+              // The box keeps the message's own size at every frame and only
+              // the transform shrinks it. Sizing the box to the scaled rect
+              // instead — which `Positioned.fromRect(layout.bubble)` did —
+              // hands the message a tight height smaller than it needs, and a
+              // long one answers with a render overflow stripe across the
+              // bubble. Android has the same split: `setScaleY` is a paint
+              // property and leaves the view's layout height alone.
+              return Positioned(
+                left: corner.dx,
+                top: corner.dy,
+                width: widget.anchor.width,
+                height: widget.anchor.height,
+                child: Transform.scale(
+                  scale: scale,
+                  alignment: Alignment.topLeft,
+                  child: IgnorePointer(child: child),
+                ),
+              );
+            },
             child: widget.focused,
           ),
           Positioned.fromRect(
