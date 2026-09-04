@@ -15,12 +15,20 @@ import 'features/calls/native/background_voice_call_gate.dart';
 import 'features/calls/native/voice_call_ended_guard.dart';
 import 'features/notifications/chat_push_notification.dart';
 import 'features/notifications/local_notifications.dart';
+import 'features/notifications/vitals/push_latency_store.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   WidgetsFlutterBinding.ensureInitialized();
   DartPluginRegistrant.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // How late this push was, recorded before anything is drawn. Only pushes
+  // that wake this isolate are measured — one landing in the foreground app is
+  // fast by construction and would only flatter the numbers. This is the sole
+  // evidence behind the battery-optimization prompt; see
+  // `vitals/slow_notification_heuristics.dart`.
+  final sentTime = message.sentTime;
+  if (sentTime != null) await PushLatencyStore.record(sentTime);
   final data = Map<String, dynamic>.from(message.data);
   final type = data['type'];
   if (type == 'voice_call' || type == 'group_call') {

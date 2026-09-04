@@ -210,10 +210,85 @@ Android delivers those whether or not the app may draw a notification. What
 stays gated is everything that *draws*: foreground presentation options and the
 message listeners.
 
+## The battery prompt has to be earned
+
+The app used to open the system battery-optimization dialog on the first frame
+after login. Everyone got it, before a single push had been delivered, so the
+scariest dialog Android has was justified by nothing the app had observed —
+and a user who says no to a system dialog twice never sees it again, which
+spends the one ask on a moment where there was no evidence to show them.
+
+Signal's rule is the opposite, and it is the one implemented here
+(`VitalsViewModel` + `SlowNotificationHeuristics`): **prompt only when this
+phone has demonstrably been holding notifications back, and only when the
+exemption would change the outcome.**
+
+The evidence is push latency. Every push that wakes the FCM background isolate
+records `now - RemoteMessage.sentTime` into `PushLatencyStore` (main.dart, the
+first thing after `Firebase.initializeApp`). Foreground pushes are deliberately
+not recorded — one arriving while the app is open is fast by construction, and
+counting those only flatters the percentiles. The verdict is
+`isHavingDelayedNotifications`: at least 50 samples, oldest at least 3 days
+old, and either p50 > 30 min or p90 > 2 h. Those are Signal's numbers, kept as
+they are; the known false positive is a phone that is switched off overnight,
+whose queued pushes look identical to a phone that is throttling. The cost of
+being wrong is one dismissible sheet, which is why the thresholds are not
+loosened to catch more.
+
+**The manual path is always open.** Settings → Notifications carries
+`BatteryOptimizationTile` whatever the vitals check decided and whatever the
+user answered to the sheet — the automatic prompt is rare by design, so this is
+where anyone who wants the exemption on day one goes. Beside it,
+`DataSaverTile` appears only while Data Saver is actually applied to this app,
+because a user who grants the battery exemption and still gets nothing
+otherwise has no way to find out why. Both rows are answered in a system
+settings screen, so the screen invalidates `batteryRestrictionsProvider` on
+resume; without that it keeps showing what was true before the user left.
+
+`decideBatteryPrompt` is the only place the rules live — notifications off,
+already dismissed, inside the 7-day backoff, no evidence, already exempt, or
+Data Saver holding the network. That last gate is why the Kotlin exists.
+
+## Kotlin reads the restrictions; permission_handler still asks
+
+`permission_handler` answers exactly one question — is this app exempt from
+battery optimization — and that bit alone cannot tell you whether asking would
+help. `BatteryState.kt` (behind `com.ababilx.app/battery`) adds the two that
+can:
+
+- **Data Saver** (`ConnectivityManager.restrictBackgroundStatus`). On and
+  applied to this app, the OS withholds background network whatever the battery
+  bucket says, so the exemption fixes nothing and the prompt would be a lie.
+  `WHITELISTED` is not that — traffic flows there, so it does not block.
+- **Background restricted** (`ActivityManager.isBackgroundRestricted`, API
+  28+). Gates nothing, because such an app is not exempt either and is already
+  caught. It only picks harder copy for the sheet.
+
+The *request* deliberately stays on `permission_handler`: it runs the system
+dialog as an activity result and can report what the user chose, which a
+`startActivity` from the method channel cannot. `openSettings` sends a user who
+answered "don't ask again" to the battery-optimization list, falling back to
+app details — and never to an OEM autostart Activity by name, because those
+names move between ROM builds and a stale one throws
+`ActivityNotFoundException` in the user's face.
+
+Granting the exemption clears `PushLatencyStore`: the samples describe a phone
+configured the way it no longer is, and left alone they would keep the verdict
+alive for a week after the cause was fixed.
+
+**Files that change together**: `vitals/slow_notification_heuristics.dart`,
+`vitals/battery_prompt_decision.dart`, `vitals/push_latency_store.dart`,
+`vitals/notification_vitals.dart`, `native/android_battery.dart`,
+`widgets/notification_vitals_watcher.dart`,
+`widgets/battery_optimization_prompt.dart`, `widgets/battery_optimization_tile.dart`,
+`widgets/data_saver_tile.dart`, `BatteryState.kt`,
+`BatteryOptimizationChannel.kt`.
+
 ## Verifying
 
 `flutter test test/features/notifications/` covers the store, the thread
-rewrite, id stability and the sender fallbacks. The rest needs a device:
+rewrite, id stability, the sender fallbacks, the latency heuristic and every
+gate on the battery prompt. The rest needs a device:
 
 ```bash
 adb logcat -s flutter:V | grep -i "\[fcm\]"
@@ -222,3 +297,15 @@ adb logcat -s flutter:V | grep -i "\[fcm\]"
 Send a DM with the app backgrounded, then killed; check the entry shows the
 text, reply from the shade without opening the app, and confirm the message
 appears in the conversation.
+
+The battery prompt cannot be triggered on demand — by design, it needs three
+days of samples. To exercise the sheet, construct `SlowNotificationConfig` with
+`minimumSamples: 1, minimumWindow: Duration.zero` in a debug run and send
+yourself one push with the app backgrounded. The OS side is readable without
+the app:
+
+```bash
+adb shell dumpsys deviceidle whitelist | grep ababilx
+```
+
+An app on that list is exempt, and the prompt must then stay silent.

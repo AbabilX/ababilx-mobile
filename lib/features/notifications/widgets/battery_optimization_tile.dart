@@ -4,8 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/localization/app_translations.dart';
 import '../battery_optimization.dart';
 import '../providers/battery_optimization_provider.dart';
+import 'restriction_tile.dart';
 
-/// Profile preference: Android battery unrestricted status + tap to enable.
+/// The manual way to grant the battery-optimization exemption.
+///
+/// Always here, whatever the vitals check decided and whatever the user
+/// answered to the prompt. That is deliberate: the automatic prompt is
+/// evidence-gated and most users will never see it, so this is where anyone who
+/// wants it on day one — or who dismissed the sheet and changed their mind —
+/// comes to turn it on.
 class BatteryOptimizationTile extends ConsumerWidget {
   const BatteryOptimizationTile({super.key});
 
@@ -13,105 +20,64 @@ class BatteryOptimizationTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (!BatteryOptimization.isAndroid) return const SizedBox.shrink();
 
-    final ignoredAsync = ref.watch(batteryOptimizationIgnoredProvider);
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    return ref
+        .watch(batteryRestrictionsProvider)
+        .when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
+          data: (restrictions) {
+            final ignored = restrictions.ignoringBatteryOptimizations;
+            // "Restricted" is a harsher bucket than plain optimization, and the
+            // copy for optimization understates what the phone is doing.
+            final bodyKey = ignored
+                ? 'battery_opt_ok_body'
+                : restrictions.backgroundRestricted
+                ? 'battery_opt_restricted_tile_body'
+                : 'battery_opt_need_body';
 
-    return ignoredAsync.when(
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
-      data: (ignored) {
-        final title = AppTranslations.translate(
-          context,
-          ref,
-          'battery_opt_title',
-        );
-        final body = AppTranslations.translate(
-          context,
-          ref,
-          ignored ? 'battery_opt_ok_body' : 'battery_opt_need_body',
-        );
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Material(
-            color: colors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(20),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: ignored
-                  ? null
-                  : () async {
-                      final ok = await BatteryOptimization.requestIgnore();
-                      ref.invalidate(batteryOptimizationIgnoredProvider);
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            AppTranslations.translate(
-                              context,
-                              ref,
-                              ok
-                                  ? 'battery_opt_enabled'
-                                  : 'battery_opt_still_denied',
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      ignored
-                          ? Icons.battery_charging_full_rounded
-                          : Icons.battery_alert_rounded,
-                      color: ignored ? colors.primary : colors.error,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            body,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!ignored)
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: colors.onSurfaceVariant,
-                      )
-                    else
-                      Icon(
-                        Icons.check_circle_rounded,
-                        color: colors.primary,
-                        size: 20,
-                      ),
-                  ],
-                ),
+            return RestrictionTile(
+              title: AppTranslations.translate(
+                context,
+                ref,
+                'battery_opt_title',
               ),
-            ),
-          ),
+              body: AppTranslations.translate(context, ref, bodyKey),
+              solved: ignored,
+              icon: ignored
+                  ? Icons.battery_charging_full_rounded
+                  : Icons.battery_alert_rounded,
+              onTap: ignored ? null : () => _request(context, ref),
+            );
+          },
         );
-      },
+  }
+
+  /// A system dialog answered with "don't ask again" never appears again, so a
+  /// refusal hands the user the settings screen rather than the same tile.
+  Future<void> _request(BuildContext context, WidgetRef ref) async {
+    final ok = await BatteryOptimization.requestIgnore();
+    ref.invalidate(batteryRestrictionsProvider);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppTranslations.translate(
+            context,
+            ref,
+            ok ? 'battery_opt_enabled' : 'battery_opt_still_denied',
+          ),
+        ),
+        action: ok
+            ? null
+            : SnackBarAction(
+                label: AppTranslations.translate(
+                  context,
+                  ref,
+                  'battery_opt_open_settings',
+                ),
+                onPressed: BatteryOptimization.openBatterySettings,
+              ),
+      ),
     );
   }
 }

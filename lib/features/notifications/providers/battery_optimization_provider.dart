@@ -1,8 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../battery_optimization.dart';
+import '../native/android_battery.dart';
 
-/// `true` when Android battery optimization is already ignored (unrestricted).
-final batteryOptimizationIgnoredProvider = FutureProvider<bool>((ref) {
-  return BatteryOptimization.isIgnoring();
-});
+/// Every background restriction the OS has this app under.
+///
+/// Invalidated when the user comes back from a system settings screen — the
+/// answer changes outside the app, so a value read once at build time goes
+/// stale the moment the tile is used.
+final batteryRestrictionsProvider = FutureProvider<BatteryRestrictions>(
+  (ref) => BatteryOptimization.restrictions(),
+);

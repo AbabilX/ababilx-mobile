@@ -5,7 +5,9 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/router/root_back.dart';
 import '../../notifications/providers/fcm_provider.dart';
+import '../../notifications/providers/battery_optimization_provider.dart';
 import '../../notifications/widgets/battery_optimization_tile.dart';
+import '../../notifications/widgets/data_saver_tile.dart';
 import '../../notifications/widgets/notification_permission_tile.dart';
 import '../settings-hub/settings_row.dart';
 
@@ -16,11 +18,40 @@ import '../settings-hub/settings_row.dart';
 /// sound and importance from that point on. Duplicating them in-app would show
 /// a switch that the OS can silently disagree with, so this screen states
 /// permission status and hands off.
-class NotificationSettingsScreen extends ConsumerWidget {
+class NotificationSettingsScreen extends ConsumerStatefulWidget {
   const NotificationSettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
+}
+
+class _NotificationSettingsScreenState
+    extends ConsumerState<NotificationSettingsScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Every row on this screen is answered in a system settings screen, so
+  /// coming back is exactly when what it says goes stale.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(batteryRestrictionsProvider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final granted = ref.watch(notificationPermissionProvider);
     final colors = Theme.of(context).colorScheme;
 
@@ -41,6 +72,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
               children: const [
                 NotificationPermissionTile(),
                 BatteryOptimizationTile(),
+                DataSaverTile(),
               ],
             ),
           ),

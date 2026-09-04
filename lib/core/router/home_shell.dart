@@ -8,7 +8,7 @@ import '../../features/crm/providers/crm_leads_ui_provider.dart';
 import '../../features/crm/providers/crm_organizations_ui_provider.dart';
 import '../../features/messages/providers/chat_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
-import '../../features/notifications/widgets/battery_optimization_bootstrap.dart';
+import '../../features/notifications/widgets/notification_vitals_watcher.dart';
 import '../../features/policy/widgets/policy_gate_overlay.dart';
 import '../../features/wall/providers/wall_ui_provider.dart';
 import '../../core/localization/app_translations.dart';
@@ -88,7 +88,7 @@ class HomeShell extends ConsumerWidget {
         fit: StackFit.expand,
         children: [
           Positioned.fill(child: child),
-          const BatteryOptimizationBootstrap(),
+          const NotificationVitalsWatcher(),
           const PolicyGateOverlay(),
           if (bar != null)
             Positioned(

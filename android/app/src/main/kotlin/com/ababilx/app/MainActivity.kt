@@ -35,6 +35,9 @@ class MainActivity : FlutterActivity() {
     /** Keystore-backed SQLCipher history; Android is the source of truth. */
     private val chatStore by lazy { ChatMessageStoreChannel(applicationContext) }
 
+    /** Doze, Data Saver and background-restricted state behind the vitals check. */
+    private val battery by lazy { BatteryOptimizationChannel(this) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
@@ -53,6 +56,7 @@ class MainActivity : FlutterActivity() {
         mediaSend.attach(flutterEngine)
         appIcon.attach(flutterEngine)
         chatStore.attach(flutterEngine)
+        battery.attach(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.ababilx.app/media_store",
@@ -165,6 +169,7 @@ class MainActivity : FlutterActivity() {
         mediaSend.dispose()
         appIcon.dispose()
         chatStore.dispose()
+        battery.dispose()
         super.onDestroy()
     }
 
