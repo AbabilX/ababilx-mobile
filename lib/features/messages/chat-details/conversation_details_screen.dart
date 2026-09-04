@@ -8,6 +8,7 @@ import '../data/models/chat_models.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_sheet.dart';
 import '../providers/chat_provider.dart';
+import '../safety_number/safety_number_tile.dart';
 import 'details_danger_actions.dart';
 import 'details_header.dart';
 import 'details_members_section.dart';
@@ -132,6 +133,15 @@ class _ConversationDetailsScreenState
           ref,
           userId: conversation.peerUserId!,
           profileName: conversation.peerUserName,
+        ),
+      ),
+    // DM only: a safety number is a comparison between two identities, and a
+    // group has no single peer identity to compare against.
+    if (conversation.isDm && (conversation.peerUserId ?? '').isNotEmpty)
+      SafetyNumberTile(
+        peerUserId: conversation.peerUserId!,
+        peerName: conversation.displayTitle(
+          ref.read(chatProvider).currentUserId,
         ),
       ),
     DetailsTile(

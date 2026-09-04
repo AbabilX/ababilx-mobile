@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/models/chat_models.dart';
+import '../safety_number/safety_number_banner.dart';
 import 'message_list.dart';
 import 'scroll_to_bottom_pill.dart';
 import 'timeline_composer.dart';
@@ -90,6 +91,10 @@ class ChatTimelineView extends StatelessWidget {
             ],
           ),
         ),
+        // Renders only when the peer's identity key has changed under us. It
+        // sits above the composer, not in the collapsing header, because a
+        // warning that scrolls away is a warning nobody reads.
+        SafetyNumberBanner(conversationId: conversationId),
         TimelineComposer(
           conversationId: conversationId,
           parentId: threadRootId,

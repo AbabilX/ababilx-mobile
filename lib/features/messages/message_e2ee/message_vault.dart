@@ -49,6 +49,11 @@ class MessageVault {
 
   bool get isUnlocked => _identity != null;
 
+  /// This account's public identity, for deriving a safety number against a
+  /// peer's. Public by construction — it is what the server hands out to
+  /// anyone who may message us — so exposing it costs nothing.
+  Map<String, dynamic>? get publicIdentity => _publicJwk;
+
   Future<EncryptedDmPayload> encryptNew({
     required String conversationId,
     required String text,

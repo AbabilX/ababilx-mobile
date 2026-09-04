@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../attachments/providers/attachment_providers.dart';
 import '../../messages/data/local/chat_message_store.dart';
+import '../../messages/safety_number/safety_number_store.dart';
 import '../../messages/data/local/chat_outbox_cache.dart';
 import '../../messages/data/local/chat_sidebar_cache.dart';
 import '../../messages/message_e2ee/message_vault.dart';
@@ -47,6 +48,10 @@ class AuthNotifier extends AsyncNotifier<bool> {
       // for channels, plain text) — it must not survive into a different
       // account signed in on this device, same as the caches above.
       await ref.read(chatOutboxCacheProvider).clearAll();
+      // Remembered peer fingerprints belong to the account that signed out.
+      // Left behind, the next account on this device would be told a key
+      // "changed" when this device had simply never seen it.
+      await ref.read(safetyNumberStoreProvider).forgetAll();
     } catch (_) {}
     // Same reason: the offline profile/team cache must not leak into the next
     // account signed in on this device.
