@@ -913,6 +913,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
     state = state.copyWith(
       phase: phase,
+      reconnecting: false,
       clearConnectedAt: false,
       clearError: !preserveError,
     );
@@ -1280,6 +1281,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _resetTimer?.cancel();
     _connectWatchdog?.cancel();
     _renegotiateTimer?.cancel();
+    await _reconnect?.dispose();
+    _reconnect = null;
     await _engine?.dispose();
     _engine = null;
     _pendingSignals.clear();

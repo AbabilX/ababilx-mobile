@@ -31,11 +31,7 @@ class VoiceReconnectController {
     // The stream replays the current network to a new subscriber on Android,
     // which would otherwise read as "the interface changed" the instant a call
     // connects and restart a perfectly healthy connection.
-    unawaited(
-      Connectivity().checkConnectivity().then((results) {
-        _lastResults ??= results;
-      }).catchError((_) => <ConnectivityResult>[]),
-    );
+    unawaited(_seedNetwork());
   }
 
   /// True when this device is the one that must create restart offers.
@@ -79,10 +75,7 @@ class VoiceReconnectController {
   void noteTrouble(String reason, {bool immediate = false}) {
     if (_disposed) return;
     if (_unhealthySince != null) return; // recovery already running
-    voiceCallLog(
-      'reconnect.begin',
-      reason: '$reason immediate=$immediate',
-    );
+    voiceCallLog('reconnect.begin', reason: '$reason immediate=$immediate');
     _unhealthySince = DateTime.now();
     _attempt = 0;
     onReconnectingChanged(true);
@@ -105,6 +98,16 @@ class VoiceReconnectController {
     _schedule(Duration.zero);
   }
 
+  Future<void> _seedNetwork() async {
+    try {
+      final results = await Connectivity().checkConnectivity();
+      if (_disposed) return;
+      _lastResults ??= results;
+    } catch (_) {
+      // No baseline: the first stream event becomes the baseline instead.
+    }
+  }
+
   void _onConnectivityChanged(List<ConnectivityResult> results) {
     if (_disposed) return;
     final previous = _lastResults;
@@ -124,6 +127,13 @@ class VoiceReconnectController {
     // back, or switching WiFi <-> mobile, is exactly when a restart works.
     if (offline) return;
     if (_unhealthySince != null) {
+      // A route exists again, so the recovery budget restarts here. Otherwise
+      // an outage longer than giveUpAfter would kill the call at the very
+      // moment it became recoverable — the opposite of what it is for.
+      _unhealthySince = DateTime.now();
+      _attempt = 0;
+      _deadline?.cancel();
+      _deadline = Timer(policy.giveUpAfter, () => _giveUp('deadline'));
       _schedule(Duration.zero);
     } else {
       noteTrouble('network_changed', immediate: true);

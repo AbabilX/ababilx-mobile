@@ -390,6 +390,64 @@ registered one — the projection type must be in place *before* capture begins.
 Do not add a second foreground service for capture. If a new capture surface
 needs a type, add it to that mask.
 
+## A dropped media path is restarted, not hung up
+
+Added 2026-09-04, for "long calls die when I walk around".
+
+`VoicePeerEngine` used to end the call 12 s after `RTCPeerConnectionState
+Disconnected`, and immediately on `Failed`. Neither state recovers on its own —
+the candidate pair carrying media is gone — so every WiFi-to-mobile handover,
+lift, tunnel and carrier IP reassignment killed a live call. The longer the
+call, the likelier one of them fires.
+
+The engine now only *reports* those transitions (`onTrouble`), and
+`VoiceReconnectController` decides what to do: run an ICE restart, back off,
+and keep trying for `VoiceReconnectPolicy.giveUpAfter` (120 s) before failing.
+`onHealthy` fires on every entry to `connected`, not just the first, and is
+what cancels a recovery.
+
+Rules that are load-bearing:
+
+- **Only the original caller re-offers.** `restartIce()` arms libwebrtc's flag;
+  the next `createOffer` carries the new ufrag/pwd. Two simultaneous restart
+  offers are glare and neither applies, so a callee that notices first sends
+  the payload-less `{"kind":"restart"}` signal and lets the caller do it.
+  `services/voicecall/signal.go` whitelists that kind — an older server rejects
+  it, which degrades to today's behaviour rather than breaking.
+- **Recovery starts only after the call has connected once**
+  (`state.connectedAt != null`). Before that `_startConnectWatchdog` owns the
+  timeout and a restart would race the first offer/answer.
+- **The phase stays `connected` during recovery**; only `state.reconnecting`
+  flips. A new phase would tear down the ongoing-call notification, the audio
+  route and the call screen — all of which must survive. `voiceCallStatusText`
+  shows "Reconnecting…" instead of a frozen timer.
+- **`connectivity_plus`'s first event is the current network, not a change.**
+  Acting on it restarts a healthy call the instant it connects, so the
+  controller seeds a baseline (`_seedNetwork`) and ignores no-op transitions.
+  Going *offline* is deliberately not actionable: there is nothing to restart
+  onto. Coming back resets the recovery budget, or an outage longer than
+  `giveUpAfter` would kill the call exactly when it became recoverable.
+- **A hard deadline runs beside the attempt chain.** An attempt that hangs (a
+  socket connect that never returns on a dead network) would otherwise leave
+  "Reconnecting…" on screen with nothing left to end it.
+- **Each attempt re-fetches ICE servers** and calls `applyIceServers`
+  (`setConfiguration`). coturn REST credentials are timestamped, so a call
+  outliving its credential loses the relay on the next allocation refresh —
+  which is also why `turnCredentialTTL` defaults to 12 h server-side, not 60 m.
+  The re-fetch doubles as the "peer's app died without sending call.ended"
+  check: a terminal status ends the call instead of burning the whole budget.
+- **Dispose the controller wherever the engine is disposed** — it holds a live
+  connectivity subscription and two timers. Both `_finishLocal` and
+  `_resetResources` do.
+
+Group calls need none of this: LiveKit reconnects its own `Room`.
+
+Files that change together: `webrtc/voice_reconnect_controller.dart`,
+`webrtc/voice_reconnect_policy.dart`, `webrtc/voice_peer_engine.dart`,
+`providers/voice_call_provider.dart`, `providers/voice_call_state.dart`,
+`call_status_text.dart`, and server-side `services/voicecall/signal.go` +
+`ice.go`.
+
 ## Call audio routing — speaker vs earpiece
 
 `livekit_client`'s Android plugin runs

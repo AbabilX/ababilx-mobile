@@ -498,10 +498,7 @@ class VoicePeerEngine {
   Future<void> requestRestart() async {
     if (_disposed) return;
     final sent = await sendSignal({'kind': 'restart'});
-    voiceCallLog(
-      'signal.restart.send',
-      reason: sent ? 'ok' : 'ws_unavailable',
-    );
+    voiceCallLog('signal.restart.send', reason: sent ? 'ok' : 'ws_unavailable');
   }
 
   Future<void> _renegotiate() async {
