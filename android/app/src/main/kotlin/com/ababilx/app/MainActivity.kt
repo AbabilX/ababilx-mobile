@@ -38,6 +38,9 @@ class MainActivity : FlutterActivity() {
     /** Doze, Data Saver and background-restricted state behind the vitals check. */
     private val battery by lazy { BatteryOptimizationChannel(this) }
 
+    /** Video poster frames, and no screen timeout while one is playing. */
+    private val video by lazy { VideoPlaybackChannel(this) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
@@ -57,6 +60,7 @@ class MainActivity : FlutterActivity() {
         appIcon.attach(flutterEngine)
         chatStore.attach(flutterEngine)
         battery.attach(flutterEngine)
+        video.attach(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.ababilx.app/media_store",

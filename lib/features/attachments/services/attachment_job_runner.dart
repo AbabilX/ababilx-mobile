@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
@@ -27,7 +26,6 @@ class AttachmentJobRunner {
     this._paths,
     this._downloader,
     this._emit,
-    this._onReady,
   );
 
   final AttachmentBlobStore _blobs;
@@ -35,7 +33,6 @@ class AttachmentJobRunner {
   final AttachmentPaths _paths;
   final AttachmentDownloader _downloader;
   final void Function(AttachmentHandle handle) _emit;
-  final Future<void> Function(AttachmentHandle handle)? _onReady;
   final _random = Random();
 
   /// [registerToken] hands each attempt's cancel token back to the queue, so a
@@ -158,8 +155,6 @@ class AttachmentJobRunner {
       errorMessage: '',
     );
     _emit(ready);
-    // Publishing a user-visible copy is a courtesy, never a gate on playback.
-    unawaited(Future(() => _onReady?.call(ready)).catchError((_) {}));
     return ready;
   }
 

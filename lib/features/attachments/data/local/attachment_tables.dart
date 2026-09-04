@@ -43,6 +43,10 @@ class AttachmentBlobs extends Table {
   /// Drives LRU eviction once the disk budget is exceeded.
   IntColumn get lastAccessMs => integer().withDefault(const Constant(0))();
 
+  /// Legacy, never written any more. A finished download used to be copied
+  /// straight into the public gallery and these recorded that copy; nothing
+  /// auto-publishes now, so they stay null. Kept only so the stored schema
+  /// does not need a migration to lose two unread columns.
   IntColumn get exportedAtMs => integer().nullable()();
   TextColumn get exportedPath => text().nullable()();
 

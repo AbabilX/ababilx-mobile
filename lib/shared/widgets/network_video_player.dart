@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
 
+import '../media/video_thumbnail.dart';
+import 'video_live_poster.dart';
+import 'video_poster_frame.dart';
 import 'video_preview.dart';
-import 'video_thumb_states.dart';
 import 'video_source.dart';
+import 'video_thumb_states.dart';
 
 export 'video_source.dart';
 export 'video_pending_thumb.dart';
 
+/// An inline video: poster now, player only once tapped.
+///
+/// Picks how to draw the poster. A downloaded file on Android gets a frame the
+/// platform extracted once and cached — no decoder held, so a timeline of
+/// videos costs nothing to scroll. Anything else (a remote URL on the wall,
+/// any non-Android build) falls back to a live paused controller.
 class NetworkVideoPlayer extends StatefulWidget {
   const NetworkVideoPlayer({
     super.key,
@@ -30,133 +38,62 @@ class NetworkVideoPlayer extends StatefulWidget {
 }
 
 class _NetworkVideoPlayerState extends State<NetworkVideoPlayer> {
-  VideoPlayerController? _controller;
-  bool _ready = false;
-  bool _failed = false;
+  late Future<VideoThumb?> _thumb;
 
   @override
   void initState() {
     super.initState();
-    _init();
+    _thumb = _resolve();
   }
 
   @override
   void didUpdateWidget(covariant NetworkVideoPlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // A download finishing under a mounted player swaps a URL for a path.
     if (oldWidget.source.key != widget.source.key) {
-      _disposeController();
-      _ready = false;
-      _failed = false;
-      _init();
+      setState(() => _thumb = _resolve());
     }
   }
 
-  Future<void> _init() async {
-    final controller = widget.source.controller();
-    _controller = controller;
-    try {
-      await controller.initialize();
-      await controller.setPlaybackSpeed(1.0);
-      await controller.setVolume(0);
-      await controller.setLooping(true);
-      await controller.pause();
-      // Seek a tiny bit so first frame paints as poster.
-      if (controller.value.duration > Duration.zero) {
-        await controller.seekTo(Duration.zero);
-      }
-      if (!mounted) return;
-      setState(() => _ready = true);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _failed = true);
-    }
+  Future<VideoThumb?> _resolve() {
+    final path = widget.source.path;
+    if (!widget.source.isLocal || path == null) return Future.value(null);
+    return VideoThumbnails.forFile(path);
   }
 
-  void _disposeController() {
-    _controller?.dispose();
-    _controller = null;
-  }
-
-  @override
-  void dispose() {
-    _disposeController();
-    super.dispose();
-  }
-
-  Future<void> _openFullscreen() async {
-    await showVideoPreview(
-      context,
-      source: widget.source,
-      fileName: widget.fileName,
-    );
-  }
+  Future<void> _openFullscreen() => showVideoPreview(
+    context,
+    source: widget.source,
+    fileName: widget.fileName,
+  );
 
   @override
   Widget build(BuildContext context) {
-    final c = _controller;
-
-    if (_failed) {
-      return VideoThumbPlaceholder.failed(borderRadius: widget.borderRadius);
-    }
-
-    if (!_ready || c == null) {
-      return VideoThumbPlaceholder.loading(
-        height: widget.maxHeight * 0.55,
-        borderRadius: widget.borderRadius,
-      );
-    }
-
-    final size = c.value.size;
-    final aspect = size.width <= 0 || size.height <= 0
-        ? 16 / 9
-        : size.width / size.height;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(widget.borderRadius),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: widget.maxHeight),
-        child: AspectRatio(
-          aspectRatio: aspect,
-          child: Material(
-            color: Colors.black,
-            child: InkWell(
-              onTap: _openFullscreen,
-              child: Stack(
-                alignment: Alignment.center,
-                fit: StackFit.expand,
-                children: [
-                  FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width: size.width,
-                      height: size.height,
-                      child: VideoPlayer(c),
-                    ),
-                  ),
-                  const ColoredBox(color: Color(0x33000000)),
-                  IconButton(
-                    onPressed: _openFullscreen,
-                    iconSize: 52,
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                    ),
-                    icon: const Icon(
-                      Icons.play_arrow_rounded,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const Positioned(
-                    right: 8,
-                    bottom: 8,
-                    child: VideoFullscreenHint(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+    return FutureBuilder<VideoThumb?>(
+      future: _thumb,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return VideoThumbPlaceholder.loading(
+            height: widget.maxHeight * 0.55,
+            borderRadius: widget.borderRadius,
+          );
+        }
+        final thumb = snapshot.data;
+        if (thumb == null) {
+          return LiveVideoPoster(
+            source: widget.source,
+            onTap: _openFullscreen,
+            maxHeight: widget.maxHeight,
+            borderRadius: widget.borderRadius,
+          );
+        }
+        return VideoPosterFrame(
+          thumb: thumb,
+          onTap: _openFullscreen,
+          maxHeight: widget.maxHeight,
+          borderRadius: widget.borderRadius,
+        );
+      },
     );
   }
 }

@@ -12,7 +12,6 @@ import '../services/attachment_adopter.dart';
 import '../services/attachment_authority.dart';
 import '../services/attachment_cipher.dart';
 import '../services/attachment_downloader.dart';
-import '../services/attachment_exporter.dart';
 import '../services/attachment_intake.dart';
 import '../services/attachment_paths.dart';
 import '../services/attachment_queue.dart';
@@ -64,20 +63,18 @@ final attachmentDownloaderProvider = Provider<AttachmentDownloader>(
   ),
 );
 
-final attachmentExporterProvider = Provider<AttachmentExporter>(
-  (ref) => AttachmentExporter(ref.watch(attachmentBlobStoreProvider)),
-);
-
 /// Owns every in-flight transfer for the life of the app — never autoDispose,
 /// so scrolling away from a bubble does not cancel its download.
+///
+/// A finished download stops in the app-private store and goes no further.
+/// Nothing here publishes to the gallery: the only copy the user's other apps
+/// can see is the one an explicit "Save" writes. See `save_to_phone.dart`.
 final attachmentQueueProvider = Provider<AttachmentQueue>((ref) {
-  final exporter = ref.watch(attachmentExporterProvider);
   final queue = AttachmentQueue(
     ref.watch(attachmentBlobStoreProvider),
     ref.watch(attachmentDedupeStoreProvider),
     ref.watch(attachmentPathsProvider),
     ref.watch(attachmentDownloaderProvider),
-    onReady: exporter.export,
   );
   ref.onDispose(queue.dispose);
   return queue;

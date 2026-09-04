@@ -43,9 +43,37 @@ class VideoThumbPlaceholder extends StatelessWidget {
   }
 }
 
-/// The "Tap for fullscreen" hint pinned to the corner of an inline video.
-class VideoFullscreenHint extends StatelessWidget {
-  const VideoFullscreenHint({super.key});
+/// Signal's play affordance: a light disc over the frame, big enough to read
+/// as the tap target for the whole tile.
+class VideoPlayBadge extends StatelessWidget {
+  const VideoPlayBadge({super.key, this.size = 48});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.play_arrow_rounded,
+        color: Colors.black87,
+        size: size * 0.62,
+      ),
+    );
+  }
+}
+
+/// Running time, bottom-left of a video tile. Signal shows it before you open
+/// anything, which is how you decide whether to open it at all.
+class VideoDurationBadge extends StatelessWidget {
+  const VideoDurationBadge({super.key, required this.duration});
+
+  final Duration duration;
 
   @override
   Widget build(BuildContext context) {
@@ -54,24 +82,28 @@ class VideoFullscreenHint extends StatelessWidget {
         color: Colors.black54,
         borderRadius: BorderRadius.circular(6),
       ),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.fullscreen_rounded, color: Colors.white, size: 16),
-            SizedBox(width: 4),
-            Text(
-              'Tap for fullscreen',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        child: Text(
+          formatVideoDuration(duration),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
   }
+}
+
+/// `m:ss`, or `h:mm:ss` once there is an hour to show. Minutes are never
+/// zero-padded on their own — `0:07`, not `00:07`.
+String formatVideoDuration(Duration duration) {
+  final seconds = duration.inSeconds.clamp(0, 359999);
+  final hours = seconds ~/ 3600;
+  final minutes = (seconds % 3600) ~/ 60;
+  final rest = (seconds % 60).toString().padLeft(2, '0');
+  if (hours > 0) return '$hours:${minutes.toString().padLeft(2, '0')}:$rest';
+  return '$minutes:$rest';
 }

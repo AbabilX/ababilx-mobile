@@ -134,16 +134,6 @@ class AttachmentBlobStore {
     );
   }
 
-  Future<void> markExported(String urlKey, String exportedPath) async {
-    await _update(
-      urlKey,
-      AttachmentBlobsCompanion(
-        exportedAtMs: Value(DateTime.now().millisecondsSinceEpoch),
-        exportedPath: Value(exportedPath),
-      ),
-    );
-  }
-
   /// Bumps the LRU timestamp. Callers throttle this — a scrolling timeline
   /// resolves the same attachment many times a second.
   Future<void> touch(String urlKey) => _update(

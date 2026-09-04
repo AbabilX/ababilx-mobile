@@ -242,3 +242,90 @@ the person it describes. `ContactNicknames.titleFor` is the single decision
 point — a DM takes the nickname, a group or channel never does, because nobody
 has a private name for a room. Edited from Nickname on the chat details screen,
 and searched in the people list, since a rename has to be how you find someone.
+
+
+# Received media stays in the sandbox
+
+`features/attachments/`. A finished download stops at
+`AttachmentPaths` — application **Support**, app-private — and goes no further.
+Nothing publishes to MediaStore on its own. The only copy the phone's gallery
+and file manager can see is one an explicit **Save** wrote, through
+`shared/media/save_to_phone.dart` (confirmation dialog, then a MediaStore
+insert under `Pictures|Movies|Downloads/AbabilXStorage`).
+
+## Why the auto-export was removed
+
+`AttachmentExporter` used to run off the download queue's `onReady` hook and
+copy every received file into the public gallery, in the name of WhatsApp
+parity. Two things were wrong with it:
+
+- The phone's photo app filled with the entire chat history. That is a privacy
+  surface — anything anyone sends you is suddenly in the roll you scroll past
+  people, and in whatever backs it up.
+- It duplicated. The "already exported" flag (`attachment_blobs.exported_at_ms`)
+  lived in the app database, and the MediaStore rows did not: reinstall or clear
+  data and the ledger was gone while the public copies survived, so every file
+  downloaded again and landed a second time. MediaStore does not dedupe —
+  API 29+ silently renames the collision to `photo (1).jpg`, and the legacy path
+  appends `(1)`, `(2)` by hand. Dedupe on content hash did not save it either:
+  the same photo arriving under two R2 keys is two rows sharing one file on
+  disk, and the export ran per row.
+
+Signal's rule, which is the one we follow now: attachments live only in the
+app's private store, and `AttachmentSaver` writes to MediaStore only after the
+user taps Save and accepts the "other apps can read this" warning. Duplicate
+*names* are then handled honestly — Signal appends `-1`, `-2` — because saving
+the same file twice is a thing the user asked for.
+
+`exported_at_ms` / `exported_path` are still on the table, never written, so
+the stored schema does not need a migration to drop two unread columns.
+`test/features/attachments/attachment_no_gallery_export_test.dart` fails if
+anything starts calling the `media_store` channel off a download again.
+
+Copies exported by older builds are still in the user's gallery. They are the
+user's files now; nothing deletes them.
+
+
+# A video bubble holds no decoder
+
+Rebuilt 2026-09-04. Every video in the timeline used to be drawn by its own
+`VideoPlayerController`, initialised, muted and paused on frame zero. Each one
+of those holds a **MediaCodec decoder**, and a device has a small global pool of
+them — a handful of videos in view emptied it, which is black tiles here and a
+broken decode in whatever app asked next.
+
+A downloaded video now draws as a JPEG the platform extracted once
+(`VideoThumbnails`, Kotlin, cached in `cacheDir/videothumbs/`), with a play
+badge and the running time over it. A decoder is created only when the video is
+actually opened.
+
+- The cache file's **name** carries the duration and frame size
+  (`<stamp>.<durationMs>.<w>x<h>.jpg`) so a hit answers without opening the
+  video again. The stamp hashes path + length + mtime, so a re-download
+  re-decodes.
+- A portrait video is stored landscape with a 90°/270° rotation flag and the
+  retriever hands back the **rotated** frame — the target size has to be
+  swapped too, or the poster comes out squashed.
+- `VideoThumbnails.forFile` memoises the *future*, so two bubbles on the same
+  file share one decode.
+- Android only. A remote URL (wall, CRM) and every non-Android build fall back
+  to `LiveVideoPoster`, which is the old controller-per-tile behaviour, scoped
+  to the places that cannot avoid it. `NetworkVideoPlayer` is only the chooser.
+- The bubble is bounded by the same `SignalBubbleMetrics.media*` values a photo
+  uses, so a mixed album does not step in and out.
+
+## The viewer
+
+`video_fullscreen_dialog.dart` + `video_fullscreen_controls.dart`. It used to
+`setState` the entire dialog on every controller tick; the position now reaches
+the scrubber through a `ValueListenableBuilder` and the video surface is not
+rebuilt. Chrome auto-hides after 3 s of playback and returns on a tap anywhere,
+including the letterbox (`HitTestBehavior.opaque` — the tap target is the
+screen, not the video rect). It does **not** loop any more: a finished video
+stops and shows its play badge.
+
+`FLAG_KEEP_SCREEN_ON` is held only while the video is actually playing
+(`VideoThumbnails.keepScreenOn`, same `com.ababilx.app/video` channel) and
+released on pause and on dispose. A paused video has no claim on the screen.
+Mute is state on the viewer, not read back off the controller — nothing rebuilds
+on volume now.

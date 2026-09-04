@@ -28,17 +28,9 @@ class AttachmentQueue {
     AttachmentDedupeStore dedupe,
     AttachmentPaths paths,
     AttachmentDownloader downloader, {
-    Future<void> Function(AttachmentHandle handle)? onReady,
     AttachmentSemaphore? semaphore,
   }) : _gate = semaphore ?? AttachmentSemaphore(maxConcurrentDownloads) {
-    _runner = AttachmentJobRunner(
-      _blobs,
-      dedupe,
-      paths,
-      downloader,
-      _emit,
-      onReady,
-    );
+    _runner = AttachmentJobRunner(_blobs, dedupe, paths, downloader, _emit);
   }
 
   final AttachmentBlobStore _blobs;
