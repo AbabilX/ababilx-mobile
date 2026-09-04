@@ -16,13 +16,21 @@ object MediaSendResult {
     const val MIMES = "mimes"
     const val SIZES = "sizes"
     const val CAPTION = "caption"
+    const val QUALITY = "quality"
 
-    fun intent(exported: List<MediaSendExport.Output>, caption: String): Intent = Intent()
+    fun intent(
+        exported: List<MediaSendExport.Output>,
+        caption: String,
+        qualityCode: Int,
+    ): Intent = Intent()
         .putStringArrayListExtra(PATHS, ArrayList(exported.map { it.path }))
         .putStringArrayListExtra(NAMES, ArrayList(exported.map { it.name }))
         .putStringArrayListExtra(MIMES, ArrayList(exported.map { it.mime }))
         .putExtra(SIZES, exported.map { it.sizeBytes }.toLongArray())
         .putExtra(CAPTION, caption)
+        // Echoed so Dart can remember the level the user last chose; the
+        // setting lives there, not in this Activity's process.
+        .putExtra(QUALITY, qualityCode)
 
     /** Channel payload: one map per file, plus the caption. */
     fun toChannelPayload(data: Intent?): Map<String, Any?>? {
@@ -33,6 +41,7 @@ object MediaSendResult {
         val sizes = data.getLongArrayExtra(SIZES) ?: LongArray(paths.size)
         return mapOf(
             "caption" to (data.getStringExtra(CAPTION) ?: ""),
+            "quality" to data.getIntExtra(QUALITY, MediaQuality.STANDARD.code),
             "items" to paths.mapIndexed { index, path ->
                 mapOf(
                     "path" to path,

@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../shared/media/media_quality.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../../messages/chat-recipient-picker/chat_recipient_picker_screen.dart';
 import '../../messages/chat-recipient-picker/chat_recipient_target.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../data/shared_payload.dart';
 import '../providers/share_intake_provider.dart';
+import '../services/share_review.dart';
 import '../services/share_sender.dart';
 import '../share-target/share_result_report.dart';
 
@@ -28,12 +30,44 @@ class ShareTargetScreen extends ConsumerStatefulWidget {
 }
 
 class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
+  /// Null until the review screen has had its turn. The recipient picker waits
+  /// for it, so a shared photo is not offered for sending before the user has
+  /// had the chance to crop it.
+  SharedPayload? _reviewed;
+  bool _reviewing = true;
+
   @override
   void initState() {
     super.initState();
     // Opened straight from another app, so nothing may have loaded the chat
     // list yet.
     unawaited(ref.read(chatProvider.notifier).ensureReady());
+    unawaited(_review());
+  }
+
+  Future<void> _review() async {
+    final payload = ref.read(shareIntakeProvider);
+    if (payload == null) {
+      if (mounted) setState(() => _reviewing = false);
+      return;
+    }
+    final result = await reviewSharedPayload(
+      payload,
+      ref.read(mediaQualityProvider),
+    );
+    await ref.read(mediaQualityProvider.notifier).set(result.quality);
+    if (!mounted) return;
+    if (result.cancelled) {
+      // Backing out of the review screen abandons the share; sending the
+      // originals anyway would be the opposite of what Cancel means.
+      ref.read(shareIntakeProvider.notifier).consume();
+      context.go('/messages');
+      return;
+    }
+    setState(() {
+      _reviewed = result.payload;
+      _reviewing = false;
+    });
   }
 
   Future<void> _send(
@@ -78,11 +112,17 @@ class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final payload = ref.watch(shareIntakeProvider);
-    if (payload == null) {
+    final pending = ref.watch(shareIntakeProvider);
+    if (pending == null) {
       // Consumed already (a second frame after send, or a stale route).
       return const Scaffold(body: SizedBox.shrink());
     }
+    if (_reviewing) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+      );
+    }
+    final payload = _reviewed ?? pending;
 
     return ChatRecipientPickerScreen(
       actionLabel: AppTranslations.translate(context, ref, 'chat_send'),

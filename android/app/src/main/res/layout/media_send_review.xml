@@ -33,15 +33,6 @@
             android:layout_weight="1" />
 
         <ImageButton
-            android:id="@+id/review_edit"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/ms_circle_button"
-            android:contentDescription="@string/media_send_edit"
-            android:src="@drawable/ic_ms_draw" />
-
-        <ImageButton
             android:id="@+id/review_remove"
             android:layout_width="44dp"
             android:layout_height="44dp"
@@ -77,6 +68,15 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp">
 
+            <ImageButton
+                android:id="@+id/review_edit"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/ms_circle_button"
+                android:contentDescription="@string/media_send_edit"
+                android:src="@drawable/ic_ms_draw" />
+
             <EditText
                 android:id="@+id/review_caption"
                 android:layout_width="0dp"
@@ -92,6 +92,20 @@
                 android:textColor="@color/media_send_on_dark"
                 android:textColorHint="@color/media_send_muted"
                 android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/review_quality"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/ms_circle_button"
+                android:clickable="true"
+                android:contentDescription="@string/media_send_quality"
+                android:focusable="true"
+                android:gravity="center"
+                android:textColor="@color/media_send_on_dark"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
             <FrameLayout
                 android:layout_width="wrap_content"
@@ -120,4 +134,16 @@
             </FrameLayout>
         </LinearLayout>
     </LinearLayout>
+
+    <com.ababilx.app.mediasend.review.QualitySheetView
+        android:id="@+id/review_quality_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <com.ababilx.app.mediasend.review.AddMoreSheetView
+        android:id="@+id/review_add_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
 </merge>

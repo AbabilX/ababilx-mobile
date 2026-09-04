@@ -85,6 +85,11 @@ class _ChatRecipientPickerScreenState
     final shownContacts = _filter(contacts, query);
     final shownRecent = _filter(recent, query);
     final shownGroups = _filter(remainingGroups, query);
+    // The send bar sits in the body, not in `bottomNavigationBar`: Scaffold
+    // lays that slot out against the full screen height and never lifts it for
+    // the keyboard, so the caption field ended up behind the IME with no way
+    // to see what was being typed. The body *is* inset by `viewInsets`, so a
+    // bar at the end of this column rides above the keyboard.
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -111,10 +116,10 @@ class _ChatRecipientPickerScreenState
                 emptyLabel: _tr('chat_no_recipients'),
               ),
             ),
+            if (_selected.isNotEmpty) _sendBar(),
           ],
         ),
       ),
-      bottomNavigationBar: _selected.isEmpty ? null : _sendBar(),
     );
   }
 
@@ -128,39 +133,38 @@ class _ChatRecipientPickerScreenState
         .toList();
   }
 
-  Widget _sendBar() => SafeArea(
-    top: false,
-    child: Material(
-      color: Theme.of(context).colorScheme.surface,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.showCaption)
-              TextField(
-                controller: _caption,
-                enabled: !_sending,
-                onChanged: (_) => setState(() {}),
-                maxLines: 2,
-                decoration: InputDecoration(hintText: _tr('chat_add_message')),
-              ),
-            if (widget.showCaption) const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _sending ? null : _submit,
-                child: _sending
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text('${widget.actionLabel} (${_selected.length})'),
-              ),
+  // The enclosing SafeArea already holds the gesture inset, so this only
+  // needs its own surface and padding.
+  Widget _sendBar() => Material(
+    color: Theme.of(context).colorScheme.surface,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.showCaption)
+            TextField(
+              controller: _caption,
+              enabled: !_sending,
+              onChanged: (_) => setState(() {}),
+              maxLines: 2,
+              decoration: InputDecoration(hintText: _tr('chat_add_message')),
             ),
-          ],
-        ),
+          if (widget.showCaption) const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _sending ? null : _submit,
+              child: _sending
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text('${widget.actionLabel} (${_selected.length})'),
+            ),
+          ),
+        ],
       ),
     ),
   );

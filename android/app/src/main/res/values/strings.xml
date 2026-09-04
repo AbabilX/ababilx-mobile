@@ -12,7 +12,16 @@
     <string name="media_send_edit">Edit</string>
     <string name="media_send_remove">Remove</string>
     <string name="media_send_add_more">Add more</string>
+    <string name="media_send_gallery">Gallery</string>
     <string name="media_send_add_message">Add a message</string>
+    <string name="media_send_camera_denied">Camera access is needed to take a photo</string>
+    <string name="media_send_quality">Media quality</string>
+    <string name="media_send_quality_standard">Standard</string>
+    <string name="media_send_quality_standard_hint">Faster, less data</string>
+    <string name="media_send_quality_high">High</string>
+    <string name="media_send_quality_high_hint">Slower, more data</string>
+    <string name="media_send_quality_standard_short">SD</string>
+    <string name="media_send_quality_high_short">HD</string>
     <string name="media_send_undo">Undo</string>
     <string name="media_send_done">Done</string>
     <string name="media_send_cancel">Cancel</string>

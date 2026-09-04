@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/chat_provider.dart';
 import 'chat_timeline_load.dart';
+import 'chat_timeline_unread.dart';
 import 'chat_timeline_view.dart';
 import 'timeline_reveal_policy.dart';
 
@@ -25,19 +26,12 @@ class ChatTimeline extends ConsumerStatefulWidget {
 }
 
 class _ChatTimelineState extends ConsumerState<ChatTimeline>
-    with ChatTimelineLoad {
+    with ChatTimelineLoad, ChatTimelineUnread {
   final _scrollCtrl = ScrollController();
   bool _headerVisible = true;
   bool _showJumpPill = false;
   double _lastPixels = 0;
   String? _previousNewestMessageId;
-
-  /// Unread count as the chat opened. `loadFeed` marks the conversation read a
-  /// frame later, so the divider has to be pinned before that lands.
-  int _unreadAnchor = 0;
-
-  /// Same number, but cleared once the jump button has been used.
-  int _unreadPillCount = 0;
 
   // Auto-scroll when new messages arrive if user is within this many pixels
   // of the bottom (pixel 0 in a reverse: true list).
@@ -49,7 +43,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
   @override
   void initState() {
     super.initState();
-    _unreadAnchor = _unreadPillCount = currentUnread();
+    resetUnreadAnchor();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       loadFeed();
@@ -63,7 +57,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
     if (oldWidget.conversationId != widget.conversationId ||
         oldWidget.threadRootId != widget.threadRootId) {
       _previousNewestMessageId = null;
-      _unreadAnchor = _unreadPillCount = currentUnread();
+      resetUnreadAnchor();
       loadFeed();
       if (!_headerVisible) setState(() => _headerVisible = true);
       _lastPixels = 0;
@@ -76,14 +70,13 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
     _scrollCtrl.jumpTo(0);
   }
 
-  /// Jumping down answers the unread count, so the pill stops carrying it —
-  /// the divider itself stays where it is until the chat is reopened.
   void _jumpToBottom() {
     _scrollToBottom();
-    if (_unreadPillCount != 0) setState(() => _unreadPillCount = 0);
+    clearUnreadPill();
   }
 
   void _revealSubmittedMessage() {
+    clearUnreadAnchor();
     // The pending bubble is inserted asynchronously. Reveal once after that
     // state update and once more after any IME/composer layout settles.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -145,6 +138,8 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
       threadRootId: widget.threadRootId,
     );
 
+    pinUnreadAnchor(feed.messages);
+
     final newestMessageId = feed.messages.lastOrNull?.id;
     if (shouldRevealNewestMessage(
       previousNewestId: _previousNewestMessageId,
@@ -167,8 +162,9 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
       currentUserId: chat.currentUserId,
       error: feed.error,
       scrollController: _scrollCtrl,
-      unreadAnchor: _unreadAnchor,
-      unreadPillCount: _unreadPillCount,
+      unreadAnchorId: unreadAnchorId,
+      unreadCount: unreadCount,
+      unreadPillCount: unreadPillCount,
       showJumpPill: _showJumpPill,
       onJumpToBottom: _jumpToBottom,
       onRetry: loadFeed,

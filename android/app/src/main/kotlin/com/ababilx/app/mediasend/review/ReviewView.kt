@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.ababilx.app.R
+import com.ababilx.app.mediasend.MediaQuality
 import com.ababilx.app.mediasend.MediaSendInsets
 import com.ababilx.app.mediasend.PickedItem
 import com.ababilx.app.mediasend.ThumbnailLoader
@@ -30,15 +31,30 @@ class ReviewView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs) {
 
     var onBack: (() -> Unit)? = null
-    var onAddMore: (() -> Unit)? = null
+
+    /** The three ways "+ Add more" can go. The sheet decides which. */
+    var onAddCamera: (() -> Unit)? = null
+    var onAddGallery: (() -> Unit)? = null
+    var onAddFiles: (() -> Unit)? = null
     var onEditRequested: ((PickedItem) -> Unit)? = null
-    var onSend: ((List<PickedItem>, String) -> Unit)? = null
+    var onSend: ((List<PickedItem>, String, MediaQuality) -> Unit)? = null
     var onEmptied: (() -> Unit)? = null
+
+    /** Level the next send will use. Handed back so Dart can remember it. */
+    var quality: MediaQuality = MediaQuality.STANDARD
+        set(value) {
+            field = value
+            refreshQuality()
+        }
 
     private val pager: ViewPager2
     private val rail: RecyclerView
     private val caption: EditText
     private val count: TextView
+    private val qualityButton: TextView
+    private val qualitySheet: QualitySheetView
+    private val addSheet: AddMoreSheetView
+    private val editButton: ImageButton
 
     private val items = mutableListOf<PickedItem>()
     private lateinit var pagerAdapter: ReviewPagerAdapter
@@ -50,20 +66,34 @@ class ReviewView @JvmOverloads constructor(
         rail = findViewById(R.id.review_rail)
         caption = findViewById(R.id.review_caption)
         count = findViewById(R.id.review_count)
+        qualityButton = findViewById(R.id.review_quality)
+        qualitySheet = findViewById(R.id.review_quality_sheet)
+        qualityButton.setOnClickListener { qualitySheet.show(quality) }
+        qualitySheet.onPicked = { quality = it }
+        refreshQuality()
+
+        addSheet = findViewById(R.id.review_add_sheet)
+        addSheet.onCamera = { onAddCamera?.invoke() }
+        addSheet.onGallery = { onAddGallery?.invoke() }
+        addSheet.onFiles = { onAddFiles?.invoke() }
 
         findViewById<ImageButton>(R.id.review_back).setOnClickListener { onBack?.invoke() }
-        findViewById<ImageButton>(R.id.review_edit).setOnClickListener {
+        editButton = findViewById(R.id.review_edit)
+        editButton.setOnClickListener {
             current()?.let { onEditRequested?.invoke(it) }
         }
         findViewById<ImageButton>(R.id.review_remove).setOnClickListener { removeCurrent() }
         findViewById<ImageButton>(R.id.review_send).setOnClickListener {
-            if (items.isNotEmpty()) onSend?.invoke(items.toList(), caption.text.toString().trim())
+            if (items.isNotEmpty()) {
+                onSend?.invoke(items.toList(), caption.text.toString().trim(), quality)
+            }
         }
 
         pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 if (::railAdapter.isInitialized) railAdapter.selected = position
                 rail.smoothScrollToPosition(position)
+                refreshEditable()
             }
         })
 
@@ -78,7 +108,7 @@ class ReviewView @JvmOverloads constructor(
             items,
             loader,
             onSelect = { pager.setCurrentItem(it, true) },
-            onAddMore = { onAddMore?.invoke() },
+            onAddMore = { addSheet.show() },
         )
         pager.adapter = pagerAdapter
         rail.layoutManager = LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
@@ -95,6 +125,7 @@ class ReviewView @JvmOverloads constructor(
         pager.setCurrentItem(target, false)
         railAdapter.selected = target
         refreshCount()
+        refreshEditable()
     }
 
     /** After the editor commits: redraw the page and its thumbnail. */
@@ -102,6 +133,19 @@ class ReviewView @JvmOverloads constructor(
         val position = pager.currentItem
         pagerAdapter.notifyItemChanged(position)
         railAdapter.notifyItemChanged(position)
+    }
+
+    /** @return true when a sheet was open and this press closed it. */
+    fun dismissSheet(): Boolean {
+        if (addSheet.isShowing) {
+            addSheet.hide()
+            return true
+        }
+        if (qualitySheet.isShowing) {
+            qualitySheet.hide()
+            return true
+        }
+        return false
     }
 
     fun current(): PickedItem? = items.getOrNull(pager.currentItem)
@@ -122,6 +166,27 @@ class ReviewView @JvmOverloads constructor(
         pager.setCurrentItem(next, false)
         railAdapter.selected = next
         refreshCount()
+        refreshEditable()
+    }
+
+    /**
+     * The editor draws on a decoded bitmap and exports a JPEG, and
+     * `MediaSendExport` copies a video untouched — so an edit made on a video
+     * frame is silently thrown away. Hide the button rather than offer it.
+     */
+    private fun refreshEditable() {
+        val editable = current()?.isVideo == false
+        editButton.visibility = if (editable) View.VISIBLE else View.GONE
+    }
+
+    private fun refreshQuality() {
+        qualityButton.text = context.getString(
+            if (quality == MediaQuality.HIGH) {
+                R.string.media_send_quality_high_short
+            } else {
+                R.string.media_send_quality_standard_short
+            },
+        )
     }
 
     private fun refreshCount() {

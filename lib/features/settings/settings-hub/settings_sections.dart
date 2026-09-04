@@ -52,6 +52,12 @@ class SettingsSections extends ConsumerWidget {
           onTap: () => context.push('/settings/wallpaper'),
         ),
         SettingsRow(
+          icon: HugeIcons.strokeRoundedImage01,
+          title: 'Media quality',
+          subtitle: 'How much photos are compressed before sending',
+          onTap: () => context.push('/settings/media-quality'),
+        ),
+        SettingsRow(
           icon: HugeIcons.strokeRoundedLanguageSkill,
           title: 'App language',
           value: languageLabel(user.appLanguage),

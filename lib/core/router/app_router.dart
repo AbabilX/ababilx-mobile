@@ -31,6 +31,7 @@ import '../../features/calls/group/screens/group_call_screen.dart';
 import '../../features/calls/screens/calls_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
+import '../../features/settings/screens/media_quality_screen.dart';
 import '../../features/settings/screens/notification_settings_screen.dart';
 import '../../features/settings/screens/discovery_screen.dart';
 import '../../features/settings/screens/edit_name_screen.dart';
@@ -132,6 +133,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/notifications',
         builder: (_, _) => const NotificationSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/media-quality',
+        builder: (_, _) => const MediaQualityScreen(),
       ),
       // The default background for every chat.
       GoRoute(

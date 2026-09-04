@@ -43,6 +43,24 @@ class SignalBubbleMetrics {
   static const bodyTextSize = 16.0;
   static const footerTextSize = 12.0;
 
+  /// Media inside a bubble (`media_bubble_max_width` 240,
+  /// `media_bubble_max_height` 320, `media_bubble_min_width_solo` 150,
+  /// `media_bubble_min_width_with_content` 240, `media_bubble_min_height` 100,
+  /// `media_bubble_default_dimens` 210).
+  ///
+  /// A picture is scaled to fit inside max, then floored at min — so a normal
+  /// photo hugs its own aspect ratio and the bubble hugs the photo. Never give
+  /// the image an infinite width: it then takes the bubble's full width cap and
+  /// `BoxFit.contain` leaves the rest of the bubble empty beside it.
+  static const mediaMaxWidth = 240.0;
+  static const mediaMaxHeight = 320.0;
+  static const mediaMinWidthSolo = 150.0;
+  static const mediaMinWidthWithCaption = 240.0;
+  static const mediaMinHeight = 100.0;
+
+  /// Placeholder square held while the file is still downloading.
+  static const mediaDefaultSize = 210.0;
+
   /// Quote block (`quote_corner_radius_large` 10, `..._bottom` 4,
   /// `quote_thumb_size` 60).
   static const quoteRadius = 10.0;

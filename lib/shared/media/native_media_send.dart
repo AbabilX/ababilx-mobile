@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import 'media_quality.dart';
+
 /// One file the native flow produced: already local, already edited.
 class NativeMediaFile {
   const NativeMediaFile({
@@ -17,13 +19,49 @@ class NativeMediaFile {
   final int sizeBytes;
 }
 
-/// What came back from the review screen: the album, and the one message
-/// typed under it.
+/// What came back from the review screen: the album, the one message typed
+/// under it, and the quality level it was sent at.
 class NativeMediaSendResult {
-  const NativeMediaSendResult({required this.files, required this.caption});
+  const NativeMediaSendResult({
+    required this.files,
+    required this.caption,
+    required this.quality,
+  });
 
   final List<NativeMediaFile> files;
   final String caption;
+
+  /// Echoed back so the caller can remember a change made in the review
+  /// screen's own Media quality sheet. The setting lives in Dart.
+  final MediaQuality quality;
+}
+
+/// One item handed to the review screen by a caller that already has it.
+class NativeMediaInput {
+  const NativeMediaInput({
+    required this.uri,
+    required this.fileName,
+    required this.contentType,
+  });
+
+  final String uri;
+  final String fileName;
+  final String contentType;
+}
+
+/// Which door the native flow opens at.
+enum NativeMediaStart {
+  gallery('gallery'),
+  camera('camera'),
+  files('files'),
+
+  /// Straight to the review screen over items the caller supplies — how a
+  /// share from another app gets the same edit tools and quality choice.
+  review('review');
+
+  const NativeMediaStart(this.wire);
+
+  final String wire;
 }
 
 /// Signal's picker, review screen and editor, drawn in Kotlin.
@@ -68,12 +106,20 @@ class NativeMediaSend {
   static Future<NativeMediaSendResult?> open({
     int maxSelection = 10,
     bool allowVideo = true,
+    NativeMediaStart start = NativeMediaStart.gallery,
+    MediaQuality quality = MediaQuality.standard,
+    List<NativeMediaInput> inputs = const [],
   }) async {
     if (!supported) return null;
     try {
       final raw = await _channel.invokeMapMethod<String, dynamic>('open', {
         'maxSelection': maxSelection,
         'allowVideo': allowVideo,
+        'start': start.wire,
+        'quality': quality.code,
+        'uris': [for (final input in inputs) input.uri],
+        'names': [for (final input in inputs) input.fileName],
+        'mimes': [for (final input in inputs) input.contentType],
       });
       if (raw == null) return null;
       final items = (raw['items'] as List<dynamic>? ?? const []);
@@ -95,6 +141,7 @@ class NativeMediaSend {
       return NativeMediaSendResult(
         files: files,
         caption: raw['caption'] as String? ?? '',
+        quality: MediaQuality.fromCode((raw['quality'] as num?)?.toInt()),
       );
     } on MissingPluginException {
       return null;

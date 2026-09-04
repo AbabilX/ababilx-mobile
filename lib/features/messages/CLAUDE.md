@@ -77,7 +77,11 @@ not in a widget.
   survive a restart.
 - The unread divider is placed by *count*, not timestamp: the conversation
   carries no last-read marker, so `ChatTimeline` snapshots `unreadCount` before
-  `loadFeed` marks it read and the divider sits that many messages from the end.
+  `loadFeed` marks it read. That count is turned into a **message id** once
+  (`unreadDividerAnchorId`, `chat_timeline_unread.dart`) and the bar is pinned
+  to it. Never place it by offset from the end on every build — it then slides
+  one row down per new message and comes to rest above the reader's own reply.
+  Sending clears it, since a reply answers what it was marking.
 
 ## Reply means two different things, and they must never both be set
 

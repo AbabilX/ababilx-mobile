@@ -58,7 +58,10 @@ class MessageBody extends StatelessWidget {
           ),
         if (plain.isNotEmpty) MessageLinkPreviews(text: plain),
         if (message.attachments.isNotEmpty)
-          MessageAttachments(attachments: message.attachments),
+          MessageAttachments(
+            attachments: message.attachments,
+            withCaption: plain.isNotEmpty,
+          ),
       ],
     );
   }

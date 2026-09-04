@@ -21,7 +21,8 @@ class ChatTimelineView extends StatelessWidget {
     required this.currentUserId,
     required this.error,
     required this.scrollController,
-    required this.unreadAnchor,
+    required this.unreadAnchorId,
+    required this.unreadCount,
     required this.unreadPillCount,
     required this.showJumpPill,
     required this.onJumpToBottom,
@@ -39,7 +40,8 @@ class ChatTimelineView extends StatelessWidget {
   final String currentUserId;
   final String error;
   final ScrollController scrollController;
-  final int unreadAnchor;
+  final String? unreadAnchorId;
+  final int unreadCount;
   final int unreadPillCount;
   final bool showJumpPill;
   final VoidCallback onJumpToBottom;
@@ -73,7 +75,8 @@ class ChatTimelineView extends StatelessWidget {
                 threadRootId: threadRootId,
                 error: error,
                 onRetry: onRetry,
-                unreadAnchor: unreadAnchor,
+                unreadAnchorId: unreadAnchorId,
+                unreadCount: unreadCount,
               ),
               Positioned(
                 right: 0,

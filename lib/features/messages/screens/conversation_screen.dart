@@ -79,6 +79,15 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
 
   @override
   void dispose() {
+    // Arrivals over the socket move the read marker as they land; this catches
+    // the ones that came in with the socket down, so backing out of a chat
+    // never leaves it showing unread messages the reader has just seen.
+    if (widget.threadRootId == null) {
+      ref
+          .read(chatProvider.notifier)
+          .markConversationRead(widget.conversationId)
+          .ignore();
+    }
     ref.read(chatProvider.notifier).setActiveConversation(null);
     ref.read(chatProvider.notifier).setThreadRootId(null);
     super.dispose();

@@ -17,4 +17,5 @@
     <color name="media_send_on_dark">#FFFFFFFF</color>
     <color name="media_send_muted">#FFB0B0B0</color>
     <color name="media_send_scrim">#99000000</color>
+    <color name="media_send_quality_selected">#FF4A4E69</color>
 </resources>

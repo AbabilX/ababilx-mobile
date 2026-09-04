@@ -32,4 +32,27 @@
 
     <!-- Split so values-v29 can turn off the system-bar contrast scrim. -->
     <style name="MediaSendTheme" parent="@style/MediaSendThemeBase" />
+
+    <style name="MediaSendSheetRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:background">@drawable/ms_sheet_row</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:layout_marginEnd">8dp</item>
+    </style>
+
+    <style name="MediaSendSheetRowLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/media_send_on_dark</item>
+        <item name="android:textSize">16sp</item>
+    </style>
 </resources>

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../shared/media/device_gallery.dart';
 import '../../../shared/media/media_grid_sheet.dart';
+import '../../../shared/media/media_quality.dart';
 import '../../../shared/media/native_media_send.dart';
 import '../../../shared/media/pick_single_media.dart';
 import '../../../shared/media/picked_media_file.dart';
@@ -51,6 +52,16 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
 }) async {
   final requested = kind ?? _kindFor(source);
 
+  // Android goes through the native picker + review + editor, whichever button
+  // was pressed: a shot and a picked file get the same review screen the
+  // gallery does, rather than being uploaded behind the user's back. Anything
+  // else — iOS, or a build without the channel — keeps the Dart pickers.
+  // Availability is asked first so backing out of the native screen ends the
+  // attach rather than falling through to the old sheet.
+  if (await NativeMediaSend.isAvailable()) {
+    return _nativeAttach(ref, conversationId, requested, onAdded);
+  }
+
   if (requested == ComposerAttachKind.camera) {
     await _settle();
     await _uploadOne(ref, conversationId, await pickLiveCameraFile(), onAdded);
@@ -60,19 +71,6 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
     await _settle();
     await _uploadOne(ref, conversationId, await pickDeviceFile(), onAdded);
     return const ComposerAttachResult();
-  }
-
-  // Android goes through the native picker + review + editor. Anything else —
-  // iOS, or a build without the channel — keeps the Dart sheet. Availability
-  // is asked first so backing out of the native screen ends the attach rather
-  // than falling through to the old sheet.
-  if (await NativeMediaSend.isAvailable()) {
-    final native = await NativeMediaSend.open();
-    if (native == null) return const ComposerAttachResult();
-    for (final file in native.files) {
-      await _uploadNative(ref, conversationId, file, onAdded);
-    }
-    return ComposerAttachResult(sendRequested: true, caption: native.caption);
   }
   if (!context.mounted) return const ComposerAttachResult();
 
@@ -110,6 +108,33 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
       }
   }
   return const ComposerAttachResult();
+}
+
+/// The native flow, opened at whichever door the pressed button names.
+///
+/// The level it was sent at comes back with the files: the review screen has
+/// its own Media quality sheet, and a change made there is the user changing
+/// the setting, so it is written straight back.
+Future<ComposerAttachResult> _nativeAttach(
+  WidgetRef ref,
+  String conversationId,
+  ComposerAttachKind kind,
+  ValueChanged<ChatAttachmentInput> onAdded,
+) async {
+  final native = await NativeMediaSend.open(
+    start: switch (kind) {
+      ComposerAttachKind.camera => NativeMediaStart.camera,
+      ComposerAttachKind.file => NativeMediaStart.files,
+      ComposerAttachKind.gallery => NativeMediaStart.gallery,
+    },
+    quality: ref.read(mediaQualityProvider),
+  );
+  if (native == null) return const ComposerAttachResult();
+  await ref.read(mediaQualityProvider.notifier).set(native.quality);
+  for (final file in native.files) {
+    await _uploadNative(ref, conversationId, file, onAdded);
+  }
+  return ComposerAttachResult(sendRequested: true, caption: native.caption);
 }
 
 /// A tap straight on the attachment keyboard's rail: one library item, no

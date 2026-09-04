@@ -11,9 +11,16 @@ import 'voice_attachment_player.dart';
 /// Local-first attachment assembly. Transfer progress is watched only by the
 /// leaf tiles, so the message row does not rebuild for every downloaded chunk.
 class MessageAttachments extends StatelessWidget {
-  const MessageAttachments({super.key, required this.attachments});
+  const MessageAttachments({
+    super.key,
+    required this.attachments,
+    this.withCaption = false,
+  });
 
   final List<ChatMessageAttachment> attachments;
+
+  /// Whether the message also carries body text, which widens a solo picture.
+  final bool withCaption;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +36,8 @@ class MessageAttachments extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (images.isNotEmpty) AttachmentImageGrid(images: images),
+        if (images.isNotEmpty)
+          AttachmentImageGrid(images: images, withCaption: withCaption),
         for (final attachment in videos)
           AttachmentVideoTile(attachment: attachment),
         for (final attachment in audio)

@@ -5,12 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
-import '../../../shared/media/picked_media_file.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/messageable_people_provider.dart';
+import 'camera_capture.dart';
 import 'camera_recipient_screen.dart';
 
 Future<void> captureAndSendChatPhoto(
@@ -18,28 +18,51 @@ Future<void> captureAndSendChatPhoto(
   WidgetRef ref,
 ) async {
   try {
-    final picked = await pickLiveCameraFile();
-    if (picked == null || !context.mounted) return;
+    final capture = await captureForChat(ref);
+    if (capture == null || capture.isEmpty || !context.mounted) return;
     await ref.read(chatConnectionsProvider.notifier).refresh();
     if (!context.mounted) return;
 
     final selected = await showCameraRecipientPicker(
       context,
       ref.read(messageablePeopleProvider),
-      picked.bytes,
+      capture.files.first.bytes,
     );
     if (selected == null || !context.mounted) return;
 
     _showSending(context, ref);
     final notifier = ref.read(chatProvider.notifier);
     final conversation = await notifier.startDm(selected.userId);
-    final presign = await notifier.presignAttachment(
-      conversation.id,
-      contentType: picked.contentType,
-      fileName: picked.fileName,
-      sizeBytes: picked.sizeBytes,
+    await _uploadAndSend(ref, notifier, conversation.id, capture);
+    if (context.mounted) context.push('/messages/${conversation.id}');
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_tr(context, ref, 'chat_camera_send_failed'))),
     );
-    try {
+  }
+}
+
+/// One message carrying everything the camera flow produced. A failed upload
+/// gives back the object it reserved, so an abandoned send is not charged to
+/// the conversation's storage.
+Future<void> _uploadAndSend(
+  WidgetRef ref,
+  ChatNotifier notifier,
+  String conversationId,
+  ChatCameraCapture capture,
+) async {
+  final attachments = <ChatAttachmentInput>[];
+  final reserved = <String>[];
+  try {
+    for (final picked in capture.files) {
+      final presign = await notifier.presignAttachment(
+        conversationId,
+        contentType: picked.contentType,
+        fileName: picked.fileName,
+        sizeBytes: picked.sizeBytes,
+      );
+      reserved.add(presign.publicUrl);
       await notifier.uploadAttachmentBytes(
         presign,
         picked.bytes,
@@ -53,28 +76,25 @@ Future<void> captureAndSendChatPhoto(
             contentType: picked.contentType,
             bytes: picked.bytes,
           );
-      await notifier.sendMessage(
-        conversationId: conversation.id,
-        body: '',
-        attachments: [
-          ChatAttachmentInput(
-            fileUrl: presign.publicUrl,
-            fileName: picked.fileName,
-            contentType: picked.contentType,
-            sizeBytes: picked.sizeBytes,
-          ),
-        ],
+      attachments.add(
+        ChatAttachmentInput(
+          fileUrl: presign.publicUrl,
+          fileName: picked.fileName,
+          contentType: picked.contentType,
+          sizeBytes: picked.sizeBytes,
+        ),
       );
-    } catch (_) {
-      await notifier.discardUpload(conversation.id, presign.publicUrl);
-      rethrow;
     }
-    if (context.mounted) context.push('/messages/${conversation.id}');
-  } catch (_) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_tr(context, ref, 'chat_camera_send_failed'))),
+    await notifier.sendMessage(
+      conversationId: conversationId,
+      body: capture.caption,
+      attachments: attachments,
     );
+  } catch (_) {
+    for (final url in reserved) {
+      await notifier.discardUpload(conversationId, url);
+    }
+    rethrow;
   }
 }
 

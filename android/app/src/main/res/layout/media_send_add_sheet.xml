@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What "+ Add more" opens: Camera, Gallery or Files.
+
+  Drawn in the layout rather than as a BottomSheetDialog for the same reason
+  the quality sheet is — MediaSendActivity is a plain android.app.Activity with
+  no Material theme, so a dialog would arrive unthemed and fighting its own
+  window insets.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.FrameLayout">
+
+    <View
+        android:id="@+id/add_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/media_send_scrim" />
+
+    <LinearLayout
+        android:id="@+id/add_panel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/ms_sheet_surface"
+        android:orientation="vertical"
+        android:paddingBottom="16dp">
+
+        <View
+            android:layout_width="36dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/ms_sheet_grabber" />
+
+        <LinearLayout
+            android:id="@+id/add_camera"
+            style="@style/MediaSendSheetRow">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_ms_camera" />
+
+            <TextView
+                style="@style/MediaSendSheetRowLabel"
+                android:text="@string/media_send_camera" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/add_gallery"
+            style="@style/MediaSendSheetRow">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_ms_gallery" />
+
+            <TextView
+                style="@style/MediaSendSheetRowLabel"
+                android:text="@string/media_send_gallery" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/add_files"
+            style="@style/MediaSendSheetRow">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_ms_file" />
+
+            <TextView
+                style="@style/MediaSendSheetRowLabel"
+                android:text="@string/media_send_files" />
+        </LinearLayout>
+    </LinearLayout>
+</merge>

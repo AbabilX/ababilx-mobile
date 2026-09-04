@@ -149,6 +149,20 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     );
     if (isActive) {
       unawaited(repo.acknowledgeMessages('read', [msg.id]).catchError((_) {}));
+      if (msg.userId != state.currentUserId) {
+        // A receipt is per message; the sidebar badge counts against the
+        // conversation's own read marker, and that only moved when the chat
+        // opened. Without pushing it forward here, every message that arrives
+        // while the reader is looking at the thread comes back as unread the
+        // moment the sidebar is refetched.
+        unawaited(repo.markRead(convId).catchError((_) {}));
+        unawaited(
+          ChatNotificationPresenter.dismiss(
+            ref.read(localNotificationsProvider),
+            convId,
+          ),
+        );
+      }
     }
     final known =
         state.dms.any((d) => d.id == convId) ||

@@ -33,6 +33,10 @@ class PickedItem(
     val edited: Boolean
         get() = rotationQuarters != 0 || crop != null || ops.isNotEmpty()
 
+    /** A picture or a video — the only things the review screen can show. */
+    val isMedia: Boolean
+        get() = isVideo || mime.startsWith("image/") || mime.startsWith("video/")
+
     fun copyEditsFrom(other: PickedItem) {
         rotationQuarters = other.rotationQuarters
         crop = other.crop?.let { RectF(it) }
