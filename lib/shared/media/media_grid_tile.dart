@@ -14,11 +14,16 @@ class MediaGridTile extends StatelessWidget {
     required this.item,
     required this.onTap,
     this.selectionIndex,
+    this.showSelectionChrome = true,
   });
 
   final DeviceMediaItem item;
   final VoidCallback onTap;
   final int? selectionIndex;
+
+  /// Numbered ring for multi-select sheets. Wallpaper's single-tap grid turns
+  /// this off so every cell does not look like an unticked checkbox.
+  final bool showSelectionChrome;
 
   String get _duration {
     final total = item.durationMs ~/ 1000;
@@ -68,26 +73,28 @@ class MediaGridTile extends StatelessWidget {
           Positioned(
             top: 6,
             right: 6,
-            child: Container(
-              width: 22,
-              height: 22,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selected ? colors.primary : Colors.black26,
-                border: Border.all(color: Colors.white, width: 1.5),
-              ),
-              child: selected
-                  ? Text(
-                      '$selectionIndex',
-                      style: TextStyle(
-                        color: colors.onPrimary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    )
-                  : null,
-            ),
+            child: showSelectionChrome
+                ? Container(
+                    width: 22,
+                    height: 22,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: selected ? colors.primary : Colors.black26,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: selected
+                        ? Text(
+                            '$selectionIndex',
+                            style: TextStyle(
+                              color: colors.onPrimary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          )
+                        : null,
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
       ),

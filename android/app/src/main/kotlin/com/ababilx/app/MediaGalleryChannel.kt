@@ -31,12 +31,19 @@ class MediaGalleryChannel(private val activity: Activity) {
             it.setMethodCallHandler { call, result ->
                 when (call.method) {
                     "hasAccess" -> result.success(hasAccess())
+                    "folders" -> background(result) {
+                        MediaGalleryQuery.folders(
+                            activity,
+                            call.argument<String>("kind") ?: "image",
+                        )
+                    }
                     "list" -> background(result) {
                         MediaGalleryQuery.page(
                             activity,
                             call.argument<Int>("offset") ?: 0,
                             call.argument<Int>("limit") ?: 60,
                             call.argument<String>("kind") ?: "all",
+                            call.argument<String>("bucketId"),
                         )
                     }
                     "thumbnail" -> background(result) {

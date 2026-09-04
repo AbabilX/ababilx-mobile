@@ -46,6 +46,48 @@ class DeviceMediaItem {
   int get hashCode => uri.hashCode;
 }
 
+/// One MediaStore album — Camera, All media, Downloads, …
+///
+/// Signal's wallpaper picker opens onto this list rather than a flat "Recent"
+/// grid. [bucketId] is either a real `BUCKET_ID` or the synthetic All-media id.
+@immutable
+class DeviceMediaFolder {
+  const DeviceMediaFolder({
+    required this.bucketId,
+    required this.title,
+    required this.count,
+    required this.thumbnailUri,
+    required this.isCamera,
+  });
+
+  factory DeviceMediaFolder.fromMap(Map<Object?, Object?> map) =>
+      DeviceMediaFolder(
+        bucketId: map['bucketId'] as String? ?? '',
+        title: map['title'] as String? ?? 'Folder',
+        count: (map['count'] as num?)?.toInt() ?? 0,
+        thumbnailUri: map['thumbnailUri'] as String? ?? '',
+        isCamera: map['isCamera'] == true,
+      );
+
+  final String bucketId;
+  final String title;
+  final int count;
+  final String thumbnailUri;
+  final bool isCamera;
+
+  /// Stand-in [DeviceMediaItem] so folder tiles reuse [MediaThumbnail].
+  DeviceMediaItem get thumbnailItem => DeviceMediaItem(
+    uri: thumbnailUri,
+    name: title,
+    mime: 'image/jpeg',
+    sizeBytes: 0,
+    width: 0,
+    height: 0,
+    isVideo: false,
+    durationMs: 0,
+  );
+}
+
 /// Reads the device library directly, the way Signal's attachment keyboard
 /// does, instead of launching the system picker for every attachment.
 ///
@@ -58,6 +100,9 @@ class DeviceGallery {
   static const MethodChannel _channel = MethodChannel(
     'com.ababilx.app/media_gallery',
   );
+
+  /// Matches Kotlin [MediaGalleryQuery.ALL_MEDIA_BUCKET_ID].
+  static const String allMediaBucketId = 'ababilx.ALL_MEDIA';
 
   static bool get _android => !kIsWeb && Platform.isAndroid;
 
@@ -84,16 +129,30 @@ class DeviceGallery {
     return available();
   }
 
+  /// Album list (Camera → All media → A–Z). Used by the wallpaper gallery.
+  static Future<List<DeviceMediaFolder>> folders({String kind = 'image'}) async {
+    if (!_android) return const [];
+    final raw = await _invoke<List<Object?>>('folders', {'kind': kind});
+    if (raw == null) return const [];
+    return raw
+        .whereType<Map<Object?, Object?>>()
+        .map(DeviceMediaFolder.fromMap)
+        .where((folder) => folder.bucketId.isNotEmpty)
+        .toList(growable: false);
+  }
+
   static Future<List<DeviceMediaItem>> page({
     int offset = 0,
     int limit = 60,
     String kind = 'all',
+    String? bucketId,
   }) async {
     if (!_android) return const [];
     final raw = await _invoke<List<Object?>>('list', {
       'offset': offset,
       'limit': limit,
       'kind': kind,
+      'bucketId': ?bucketId,
     });
     if (raw == null) return const [];
     return raw

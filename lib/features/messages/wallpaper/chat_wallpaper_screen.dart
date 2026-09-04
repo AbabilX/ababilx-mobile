@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/router/root_back.dart';
-import '../../../shared/media/pick_single_media.dart';
+import '../../../shared/media/pick_wallpaper_photo.dart';
 import 'chat_wallpaper.dart';
 import 'chat_wallpaper_grid.dart';
 import 'chat_wallpaper_preview.dart';
@@ -44,16 +44,7 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
   }
 
   Future<void> _pickPhoto() async {
-    final pick = await pickSingleMedia(
-      context,
-      allowVideo: false,
-      allowFiles: false,
-    );
-    final path =
-        pick?.localPath ??
-        (pick == null
-            ? null
-            : await writePreviewCopy(pick.file.fileName, pick.file.bytes));
+    final path = await pickWallpaperPhoto(context);
     if (path == null) return;
     await _apply(ChatWallpaper.photo(path));
   }
