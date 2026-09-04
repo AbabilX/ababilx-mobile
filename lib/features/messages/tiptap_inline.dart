@@ -95,17 +95,36 @@ class TiptapInline {
     return _textSpans(node);
   }
 
+  /// A mention or a category, drawn as a chip the way the web client draws it.
+  ///
+  /// It is a [WidgetSpan] rather than a [TextSpan] with a background colour,
+  /// for the same reason the web rule carries `whitespace-nowrap`: a display
+  /// name contains a space, Flutter's line breaker treats that space as a break
+  /// opportunity like any other, and a background painted per line box then
+  /// comes out as two ragged halves of one name. A widget is one unbreakable
+  /// unit, and it is also the only way to get the padding and the corner radius
+  /// that make a chip read as a chip instead of a highlighter swipe. The
+  /// conversation-list preview already draws mentions this way, so this keeps
+  /// the two surfaces telling the same story.
   InlineSpan _tagSpan(Map<String, dynamic> node, {required bool mention}) {
     final colors = Theme.of(context).colorScheme;
+    final tint = mention ? colors.primary : colors.tertiary;
     final attrs = node['attrs'];
     final label = attrs is Map
         ? (attrs['label'] ?? attrs['id'] ?? '').toString()
         : '';
-    return TextSpan(
-      text: '${mention ? '@' : '#'}$label',
-      style: baseStyle.copyWith(
-        color: mention ? colors.primary : colors.tertiary,
-        fontWeight: FontWeight.w700,
+    return WidgetSpan(
+      alignment: PlaceholderAlignment.middle,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+        decoration: BoxDecoration(
+          color: tint.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          '${mention ? '@' : '#'}$label',
+          style: baseStyle.copyWith(color: tint, fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }

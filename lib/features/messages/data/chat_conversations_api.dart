@@ -58,14 +58,18 @@ class ChatConversationsApi {
   /// purpose, not off [ChatEndpoints]: they exist for personal groups only, so
   /// there is no workspace twin to route to.
   ///
-  /// Personal-group identity: name, description, picture. Workspace channels
-  /// keep [patchChannel] — a channel takes management from its team, so there
-  /// is nothing here for it to set.
+  /// Personal-group identity: name, description, picture, banner. Workspace
+  /// channels keep [patchChannel] — a channel takes management from its team,
+  /// so there is nothing here for it to set.
+  ///
+  /// An omitted field is left alone and an empty string clears it, which is why
+  /// every argument is nullable rather than defaulted.
   Future<ChatConversation> updateGroupInfo(
     String conversationId, {
     String? name,
     String? description,
     String? avatarUrl,
+    String? bannerUrl,
   }) async {
     final res = await _client.patch(
       ApiConstants.independentChatConversationAction(conversationId, 'info'),
@@ -73,6 +77,7 @@ class ChatConversationsApi {
         'name': ?name,
         'description': ?description,
         'avatar_url': ?avatarUrl,
+        'banner_url': ?bannerUrl,
       },
     );
     return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));

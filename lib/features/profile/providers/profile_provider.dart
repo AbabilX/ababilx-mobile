@@ -88,11 +88,11 @@ class ProfileNotifier extends AsyncNotifier<AppUser> {
   /// Throws on failure so the caller can surface the reason.
   Future<void> updateAvatar(Uint8List bytes) async {
     final media = ref.read(profileMediaRepositoryProvider);
-    final target = await media.presign(kind: 'avatar', contentType: 'image/png');
+    final target = await media.presign(kind: 'avatar', contentType: 'image/jpeg');
     if (!target.isValid) {
       throw StateError('Server did not return an upload URL');
     }
-    await media.upload(target, bytes, 'image/png');
+    await media.upload(target, bytes, 'image/jpeg');
     await media.saveAvatar(target.publicUrl);
 
     final current = state.valueOrNull;

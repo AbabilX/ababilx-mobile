@@ -100,6 +100,18 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
     state = state.copyWith(dms: sortDms(merged));
   }
 
+  /// Folds a freshly fetched channel or group into the list.
+  ///
+  /// It is a merge rather than a replacement because the row this arrives from
+  /// — a rename, a group-info PATCH — carries the conversation alone, without
+  /// the sidebar-only fields (unread count, last message, member avatars) that
+  /// only the sidebar query computes. Overwriting wholesale would blank the
+  /// row's preview every time somebody changed the name.
+  ///
+  /// Everything a group's identity is made of has to be listed here, though:
+  /// a field left out silently keeps its old value, which is how a newly
+  /// uploaded photo could be saved on the server and still not appear until
+  /// the app was restarted.
   void upsertChannel(ChatConversation channel) {
     final exists = state.channels.any((c) => c.id == channel.id);
     final merged = exists
@@ -109,6 +121,12 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
                     ? c.copyWith(
                         name: channel.name,
                         unreadCount: channel.unreadCount,
+                        avatarUrl: channel.avatarUrl,
+                        bannerUrl: channel.bannerUrl,
+                        description: channel.description,
+                        editInfoRole: channel.editInfoRole,
+                        addMembersRole: channel.addMembersRole,
+                        myRole: channel.myRole,
                       )
                     : c,
               )

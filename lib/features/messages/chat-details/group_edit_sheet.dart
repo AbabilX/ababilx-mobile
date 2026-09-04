@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
+import 'group_edit_images.dart';
 
-/// The pencil in the details app bar: name and description in one sheet.
+/// The pencil in the details app bar: banner, photo, name and description in
+/// one sheet.
 ///
-/// A workspace channel has no description of its own — it takes its identity
-/// from the team — so it only gets the name field, saved through the channel
-/// rename endpoint rather than the personal-group info one.
+/// A workspace channel has no identity of its own — it takes one from the team
+/// — so it only gets the name field, saved through the channel rename endpoint
+/// rather than the personal-group info one.
 Future<bool> showGroupEditSheet(
   BuildContext context,
   WidgetRef ref,
@@ -38,6 +40,16 @@ Future<bool> showGroupEditSheet(
             24,
       ),
       child: _EditForm(
+        // The pictures save themselves the moment they are cropped, so they
+        // are handed the conversation rather than the form's draft state:
+        // there is nothing about them for Save to commit.
+        //
+        // The permission is re-checked here rather than trusted from the one
+        // caller: a member of an admins-only group would otherwise pick and
+        // crop a photo and only then be told no, by a 403 from the server.
+        images: personal && conversation.canEditGroupInfo
+            ? GroupEditImages(conversation: conversation)
+            : null,
         initialName: conversation.name ?? '',
         initialDescription: conversation.description ?? '',
         showDescription: personal,
@@ -64,12 +76,14 @@ Future<bool> showGroupEditSheet(
 
 class _EditForm extends StatefulWidget {
   const _EditForm({
+    required this.images,
     required this.initialName,
     required this.initialDescription,
     required this.showDescription,
     required this.onSave,
   });
 
+  final Widget? images;
   final String initialName;
   final String initialDescription;
   final bool showDescription;
@@ -127,9 +141,15 @@ class _EditFormState extends State<_EditForm> {
         style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
       ),
       const SizedBox(height: 16),
+      if (widget.images != null) ...[
+        widget.images!,
+        const SizedBox(height: 16),
+      ],
       TextField(
         controller: _nameCtrl,
-        autofocus: true,
+        // The pictures are above the fields, so opening the keyboard on top of
+        // them would hide the thing the sheet just offered.
+        autofocus: widget.images == null,
         decoration: const InputDecoration(labelText: 'Group name'),
         textCapitalization: TextCapitalization.sentences,
       ),

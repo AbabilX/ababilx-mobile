@@ -18,6 +18,7 @@ import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'details_action_button.dart';
+import 'group_banner_header.dart';
 
 /// The top of the details screen: picture, name, what this chat is, and the
 /// row of square actions. Signal puts the name itself on a chevron for a 1:1
@@ -39,12 +40,20 @@ class DetailsHeader extends ConsumerWidget {
       voiceCallProvider.select((state) => state.active),
     );
 
+    final banner = isDm ? null : conversation.bannerUrl;
+
     return Column(
       children: [
-        const SizedBox(height: 8),
-        ClipOval(
-          child: AppAvatar(size: 96, url: avatar, name: title),
-        ),
+        if ((banner ?? '').isEmpty) const SizedBox(height: 8),
+        // A group with a banner wears it behind the avatar, the way a profile
+        // cover works everywhere else. Without one the header keeps its plain
+        // spacing rather than reserving an empty band.
+        if ((banner ?? '').isNotEmpty)
+          GroupBannerHeader(url: banner!, title: title, avatarUrl: avatar)
+        else
+          ClipOval(
+            child: AppAvatar(size: 96, url: avatar, name: title),
+          ),
         const SizedBox(height: 14),
         InkWell(
           borderRadius: BorderRadius.circular(10),

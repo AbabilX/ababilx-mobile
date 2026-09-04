@@ -11,7 +11,7 @@ import '../../attachments/providers/attachment_providers.dart';
 import '../../../shared/media/device_gallery.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
-import '../tiptap_plain_text.dart';
+import '../tiptap_encode.dart';
 import '../providers/team_gate_provider.dart';
 import 'composer_attach.dart';
 import 'composer_attachment_keyboard.dart';
@@ -69,6 +69,12 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   List<MentionCandidate> _mentionCandidates = [];
   final Set<String> _mentionedUserIds = {};
+
+  /// Display name -> user id for everyone picked from the popover this compose
+  /// session. The field itself is plain text, so this is the only record of
+  /// which run of characters was a person; the encoder turns it back into
+  /// mention nodes at send time.
+  final Map<String, String> _mentionByLabel = {};
   bool _showMentions = false;
   int _mentionStartIndex = -1;
 
@@ -205,6 +211,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     );
 
     _mentionedUserIds.add(candidate.userId);
+    _mentionByLabel[candidate.displayName] = candidate.userId;
     setState(() => _showMentions = false);
   }
 
@@ -232,11 +239,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       threadRootId: widget.parentId,
     );
     ref.read(chatProvider.notifier).setReplyToMessage(null);
-    final body = plain.isEmpty ? '' : textToTiptapJson(plain);
+    final body = plain.isEmpty
+        ? ''
+        : encodeTiptapBody(plain: plain, mentionByLabel: _mentionByLabel);
     final attachments = List<ChatAttachmentInput>.of(_pending);
     final mentionedIds = _mentionedUserIds.toList();
 
     _mentionedUserIds.clear();
+    _mentionByLabel.clear();
     if (!mounted) return;
     _ctrl.clear();
     setState(() {

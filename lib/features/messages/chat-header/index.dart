@@ -15,6 +15,7 @@ import '../nav_back.dart';
 import '../providers/chat_provider.dart';
 import '../providers/chat_connections_provider.dart';
 import 'call_action_pill.dart';
+import 'header_avatar.dart';
 import 'group_call_action.dart';
 import 'start_call_sheet.dart';
 import '../nickname/contact_nickname_provider.dart';
@@ -72,43 +73,53 @@ class ChatHeader extends ConsumerWidget {
               borderRadius: BorderRadius.circular(8),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+                    // The picture the group chose belongs where the group is
+                    // named, not only on the settings screen you set it from.
+                    ChatHeaderAvatar(conversation: conversation, title: title),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                          if (peerInCall)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 2),
+                              child: InCallLabel(compact: true),
+                            )
+                          else if (peerStatus != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: UserStatusBadge(
+                                status: peerStatus,
+                                compact: true,
+                              ),
+                            )
+                          else if (conversation.isGroupConversation &&
+                              conversation.memberCount != null)
+                            Text(
+                              '${conversation.memberCount} members',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                        ],
                       ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
                     ),
-                    if (peerInCall)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 2),
-                        child: InCallLabel(compact: true),
-                      )
-                    else if (peerStatus != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: UserStatusBadge(
-                          status: peerStatus,
-                          compact: true,
-                        ),
-                      )
-                    else if (conversation.isGroupConversation &&
-                        conversation.memberCount != null)
-                      Text(
-                        '${conversation.memberCount} members',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
                   ],
                 ),
               ),

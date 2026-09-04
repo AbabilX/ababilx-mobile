@@ -383,6 +383,7 @@ class _ConversationAvatar extends StatelessWidget {
     if (conversation.isGroupConversation) {
       return GroupAvatarStack(
         avatars: conversation.memberAvatars,
+        avatarUrl: conversation.avatarUrl,
         name: title,
         size: 52,
       );

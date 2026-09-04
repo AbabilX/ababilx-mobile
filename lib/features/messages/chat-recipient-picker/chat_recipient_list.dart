@@ -168,10 +168,10 @@ class _RecipientAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (target.kind == ChatRecipientKind.conversation &&
-        target.memberAvatars.isNotEmpty) {
+    if (target.isGroup) {
       return GroupAvatarStack(
         avatars: target.memberAvatars,
+        avatarUrl: target.avatarUrl,
         name: target.name,
         size: 56,
       );

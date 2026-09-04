@@ -64,11 +64,13 @@ class ChatRepository {
     String? name,
     String? description,
     String? avatarUrl,
+    String? bannerUrl,
   }) => _conversations.updateGroupInfo(
     id,
     name: name,
     description: description,
     avatarUrl: avatarUrl,
+    bannerUrl: bannerUrl,
   );
 
   Future<void> setGroupMemberRole(String id, String userId, String role) =>

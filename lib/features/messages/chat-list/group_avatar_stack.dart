@@ -4,22 +4,34 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../chat_icon.dart';
 
-/// WhatsApp-style stacked member avatars — marks a channel/group in the list.
+/// The picture beside a channel or group in the list.
+///
+/// A group that has chosen its own photo shows it. The stacked member avatars
+/// are the fallback for a group that has not — not the other way round: a set
+/// photo losing to a montage of faces reads as the photo having failed to save.
 class GroupAvatarStack extends StatelessWidget {
   const GroupAvatarStack({
     super.key,
     required this.avatars,
+    this.avatarUrl,
     this.name,
     this.size = 48,
   });
 
   final List<String> avatars;
+
+  /// The group's own photo, which wins over the member montage.
+  final String? avatarUrl;
   final String? name;
   final double size;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final own = avatarUrl?.trim() ?? '';
+    if (own.isNotEmpty) {
+      return ClipOval(child: AppAvatar(size: size, url: own, name: name));
+    }
     final pics = avatars.where((u) => u.trim().isNotEmpty).take(3).toList();
 
     if (pics.isEmpty) {

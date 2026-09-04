@@ -10,7 +10,7 @@ void main() {
     Offset offset = Offset.zero,
   }) => CropTransform(
     imageSize: image,
-    viewport: 300,
+    viewport: const Size(300, 300),
     scale: scale,
     offset: offset,
   );
@@ -56,6 +56,38 @@ void main() {
     );
     // 50 logical px at 0.5 scale is 100 image px.
     expect(t.sourceRect.center.dx, 400);
+  });
+
+  CropTransform wide({
+    Size image = const Size(1200, 1200),
+    double scale = 1,
+    Offset offset = Offset.zero,
+  }) => CropTransform(
+    imageSize: image,
+    // 3:1, the banner strip.
+    viewport: const Size(300, 100),
+    scale: scale,
+    offset: offset,
+  );
+
+  test('a wide window covers rather than fits', () {
+    // Fitting a square image into a 3:1 window by its height would leave the
+    // sides empty; covering scales by the width instead.
+    expect(wide().baseScale, 300 / 1200);
+    expect(wide().drawnSize, const Size(300, 300));
+  });
+
+  test('a wide window can be panned vertically but not horizontally', () {
+    final t = wide();
+    expect(t.clamp(const Offset(999, 0)).dx, 0);
+    // 300 tall over a 100 window leaves 100 of slack each way.
+    expect(t.clamp(const Offset(0, 999)).dy, 100);
+  });
+
+  test('a wide source rect keeps the window aspect ratio', () {
+    final source = wide().sourceRect;
+    expect(source.width / source.height, closeTo(3, 1e-9));
+    expect(source.center, const Offset(600, 600));
   });
 
   test('scale is clamped to the allowed range', () {

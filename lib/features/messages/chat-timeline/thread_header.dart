@@ -24,7 +24,9 @@ class ThreadHeader extends ConsumerWidget {
         : convo.isDm
         ? 'Direct message'
         : (convo.name != null ? '#${convo.name}' : 'Channel');
-    final avatarUrl = convo?.isDm == true ? convo?.peerUserAvatar : null;
+    final avatarUrl = convo?.isDm == true
+        ? convo?.peerUserAvatar
+        : convo?.avatarUrl;
     final avatarName = convo?.isDm == true
         ? (convo?.peerUserName ?? '?')
         : (convo?.name ?? '?');

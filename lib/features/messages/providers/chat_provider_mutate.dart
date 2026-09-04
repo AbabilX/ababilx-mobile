@@ -162,19 +162,21 @@ mixin _ChatMutateMixin
     );
   }
 
-  /// Personal groups only — name, description, picture in one call. A
+  /// Personal groups only — name, description, picture, banner in one call. A
   /// workspace channel renames through [renameChannel].
   Future<ChatConversation> updateGroupInfo(
     String id, {
     String? name,
     String? description,
     String? avatarUrl,
+    String? bannerUrl,
   }) async {
     final updated = await repo.updateGroupInfo(
       id,
       name: name,
       description: description,
       avatarUrl: avatarUrl,
+      bannerUrl: bannerUrl,
     );
     upsertChannel(updated);
     return updated;

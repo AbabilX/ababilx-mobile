@@ -16,6 +16,7 @@ class ChatRecipientTarget extends Equatable {
     required this.id,
     required this.name,
     this.avatarUrl = '',
+    this.isGroup = false,
     this.memberAvatars = const [],
     this.subtitle = '',
   });
@@ -23,7 +24,15 @@ class ChatRecipientTarget extends Equatable {
   final ChatRecipientKind kind;
   final String id;
   final String name;
+
+  /// The picture to draw: a person's avatar, a DM peer's, or a group's own
+  /// photo. Empty means fall back — to the member montage for a group, to
+  /// initials for anyone else.
   final String avatarUrl;
+
+  /// A conversation may be a DM or a group, and they fall back differently, so
+  /// the row cannot tell them apart from an empty member list alone.
+  final bool isGroup;
   final List<String> memberAvatars;
   final String subtitle;
 
@@ -38,8 +47,9 @@ class ChatRecipientTarget extends Equatable {
       id: conversation.id,
       name: conversation.displayTitle(currentUserId),
       avatarUrl: conversation.isGroupConversation
-          ? ''
+          ? (conversation.avatarUrl ?? '')
           : (conversation.peerUserAvatar ?? ''),
+      isGroup: conversation.isGroupConversation,
       memberAvatars: conversation.memberAvatars,
       // Group member names are intentionally not present in the sidebar API.
       // Do not invent a localized count here; the row stays visually clean.
@@ -62,6 +72,7 @@ class ChatRecipientTarget extends Equatable {
     id,
     name,
     avatarUrl,
+    isGroup,
     memberAvatars,
     subtitle,
   ];

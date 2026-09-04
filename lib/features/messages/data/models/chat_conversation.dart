@@ -68,6 +68,7 @@ class ChatConversation extends Equatable {
     this.memberAvatars = const [],
     this.memberCount,
     this.avatarUrl,
+    this.bannerUrl,
     this.description,
     this.editInfoRole = 'admin',
     this.addMembersRole = 'admin',
@@ -118,6 +119,10 @@ class ChatConversation extends Equatable {
   /// server. `myRole` is the viewer's own role, so the details screen never
   /// re-derives a permission the server already decided.
   final String? avatarUrl;
+
+  /// The wide image behind the details header. Separate from [avatarUrl]: a
+  /// circle and a cover photo are never the same crop of the same picture.
+  final String? bannerUrl;
   final String? description;
   final String editInfoRole; // admin | member
   final String addMembersRole; // admin | member
@@ -228,6 +233,7 @@ class ChatConversation extends Equatable {
           .toList(),
       memberCount: (json['member_count'] as num?)?.toInt(),
       avatarUrl: _jsonString(json['avatar_url']),
+      bannerUrl: _jsonString(json['banner_url']),
       description: _jsonString(json['description']),
       editInfoRole: _jsonString(json['edit_info_role']) ?? 'admin',
       addMembersRole: _jsonString(json['add_members_role']) ?? 'admin',
@@ -249,6 +255,7 @@ class ChatConversation extends Equatable {
     String? requestState,
     String? description,
     String? avatarUrl,
+    String? bannerUrl,
     String? editInfoRole,
     String? addMembersRole,
     String? myRole,
@@ -290,6 +297,7 @@ class ChatConversation extends Equatable {
     memberAvatars: memberAvatars,
     memberCount: memberCount,
     avatarUrl: avatarUrl ?? this.avatarUrl,
+    bannerUrl: bannerUrl ?? this.bannerUrl,
     description: description ?? this.description,
     editInfoRole: editInfoRole ?? this.editInfoRole,
     addMembersRole: addMembersRole ?? this.addMembersRole,
@@ -314,6 +322,7 @@ class ChatConversation extends Equatable {
     requestState,
     description,
     avatarUrl,
+    bannerUrl,
     myRole,
   ];
 }
