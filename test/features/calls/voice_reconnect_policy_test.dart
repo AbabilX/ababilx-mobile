@@ -33,9 +33,22 @@ void main() {
       final state = VoiceCallState(
         phase: VoiceCallPhase.connected,
         connectedAt: DateTime.now(),
-        reconnecting: true,
+        reconnectingSince: DateTime.now(),
       );
+      expect(state.reconnecting, isTrue);
       expect(voiceCallStatusText(state), 'Reconnecting…');
+    });
+
+    test('the wording softens as the recovery drags on', () {
+      final since = DateTime(2026, 9, 4, 12);
+      String at(int seconds) =>
+          voiceReconnectText(since, now: since.add(Duration(seconds: seconds)));
+      expect(at(0), 'Reconnecting…');
+      expect(at(14), 'Reconnecting…');
+      expect(at(15), 'Poor connection. Still trying…');
+      expect(at(44), 'Poor connection. Still trying…');
+      expect(at(45), 'Connection lost. Trying to restore…');
+      expect(at(119), 'Connection lost. Trying to restore…');
     });
 
     test('a healthy connected call still shows the duration', () {

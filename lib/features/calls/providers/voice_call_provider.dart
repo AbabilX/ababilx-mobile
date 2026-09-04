@@ -759,14 +759,19 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       onGaveUp: (reason) => unawaited(_failLocal(reason)),
       onReconnectingChanged: (value) {
         if (state.call?.id != callId) return;
-        state = state.copyWith(reconnecting: value);
+        state = state.copyWith(
+          reconnectingSince: value ? DateTime.now() : null,
+          clearReconnectingSince: !value,
+        );
       },
     );
     if (state.muted) {
       await engine.setMuted(true);
     }
-    // VoicePeerEngine starts Android calls on speaker for an audible default.
-    state = state.copyWith(speaker: true);
+    // Mirrors the route VoicePeerEngine just applied. Explicit rather than
+    // relying on the default, because a previous call in this session may have
+    // left the flag on.
+    state = state.copyWith(speaker: false);
     voiceCallLog('engine.prepare.ok', callId: callId, phase: _phaseName);
     _startConnectWatchdog(callId);
   }
@@ -775,12 +780,17 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   /// over the existing signalling channel.
   Future<void> _restartIce(String callId) async {
     final engine = _engine;
-    if (engine == null || state.call?.id != callId) return;
+    if (engine == null || !_restartStillWanted(engine, callId)) return;
     // The restart offer rides the notification WS — reconnect it first, since
     // the same outage that killed the media usually dropped the socket too.
     await _ws.connect();
+    if (!_restartStillWanted(engine, callId)) return;
     try {
       final session = await _repository.get(callId);
+      // Identity, not just the id: the call can end and a new one start on the
+      // same notifier while this fetch was in flight, and applying a stale ICE
+      // config to a fresh engine is worse than not restarting at all.
+      if (!_restartStillWanted(engine, callId)) return;
       // The peer's app can die without ever sending call.ended — the WS event
       // that would normally close this call is simply lost. Without this the
       // recovery would spend its whole budget restarting onto a call the
@@ -792,7 +802,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
           phase: _phaseName,
           reason: 'status=${session.call.status}',
         );
-        state = state.copyWith(call: session.call, reconnecting: false);
+        state = state.copyWith(
+          call: session.call,
+          clearReconnectingSince: true,
+        );
         await _finishLocal(
           VoiceCallPhase.ended,
           reason: 'reconnect.call_already_${session.call.status}',
@@ -814,9 +827,13 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         reason: _debugError(error),
       );
     }
-    if (state.call?.id != callId) return;
+    if (!_restartStillWanted(engine, callId)) return;
     await engine.restartIce();
   }
+
+  /// The engine this restart began on is still the live one for this call.
+  bool _restartStillWanted(VoicePeerEngine engine, String callId) =>
+      identical(_engine, engine) && state.call?.id == callId;
 
   /// Never leave a call stuck on "Connecting…" when the peer never negotiates
   /// (lost signalling, no offer, ICE blocked by a restrictive network).
@@ -913,7 +930,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
     state = state.copyWith(
       phase: phase,
-      reconnecting: false,
+      clearReconnectingSince: true,
       clearConnectedAt: false,
       clearError: !preserveError,
     );

@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'group/providers/group_call_provider.dart';
+import 'native/android_call_screen_lock.dart';
 import 'native/android_ongoing_call.dart';
 import 'providers/voice_call_provider.dart';
 import 'voice_call_log.dart';
 
-/// Mirrors call state onto the Android ongoing-call notification, and routes
-/// the two presses it can produce back into the app.
+/// Mirrors call state onto the pieces of Android that outlive the call
+/// screen: the ongoing-call notification (and the two presses it can produce),
+/// and the proximity lock that blanks the display at the ear.
 ///
 /// This is what makes a call survive leaving its screen. Before it existed,
 /// popping `/call` (the back gesture, a deep link, anything) left a live
@@ -49,6 +51,7 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
   void dispose() {
     unawaited(_actions?.cancel());
     unawaited(AndroidOngoingCall.stop());
+    unawaited(AndroidCallScreenLock.setEarpieceCall(false));
     super.dispose();
   }
 
@@ -81,6 +84,7 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
   /// The DM call wins when both somehow exist: it is the one whose audio is
   /// live on the earpiece.
   void _sync(VoiceCallState dm, GroupCallState group) {
+    _syncProximity(dm, group);
     if (dm.phase == VoiceCallPhase.connected && dm.call != null) {
       _show(dm.call!.id, dm.call!.peerName(dm.currentUserId), 'Ongoing call');
       return;
@@ -99,6 +103,21 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
     if (_shownCallId.isEmpty) return;
     _shownCallId = '';
     unawaited(AndroidOngoingCall.stop());
+  }
+
+  /// The screen blanks at the ear only for a call that is actually up and
+  /// actually on the earpiece — Signal's `LockManager` engages proximity in
+  /// `IN_CALL` and nowhere else. A ringing call is one the user is looking at,
+  /// and a call on speaker is one the phone is nowhere near.
+  ///
+  /// Headsets are not checked here: the native side watches the audio devices
+  /// itself, so a headset plugged in mid-call gives the screen back without
+  /// Dart having to notice.
+  void _syncProximity(VoiceCallState dm, GroupCallState group) {
+    final earpiece =
+        (dm.phase == VoiceCallPhase.connected && !dm.speaker) ||
+        (group.phase == GroupCallPhase.connected && !group.speaker);
+    unawaited(AndroidCallScreenLock.setEarpieceCall(earpiece));
   }
 
   void _show(String callId, String title, String subtitle) {

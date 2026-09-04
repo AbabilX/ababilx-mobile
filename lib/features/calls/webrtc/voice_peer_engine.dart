@@ -107,7 +107,10 @@ class VoicePeerEngine {
     // capture and routing start in a call session rather than in media mode.
     // Not `Helper.setAndroidAudioConfiguration`: that configures flutter_webrtc's
     // audio manager, which LiveKit disables app-wide — see [CallAudioRoute].
-    await CallAudioRoute.activate(speaker: true);
+    // Earpiece, like every dialler: a call answered and lifted to the ear must
+    // not come out of the loudspeaker. The Speaker button is the way up from
+    // here, and `CallScreenLock`'s proximity blanking keys off this same route.
+    await CallAudioRoute.activate(speaker: false);
     await _ensureAudioSessionIfNeeded();
     final stream = await navigator.mediaDevices.getUserMedia({
       'audio': {
@@ -197,8 +200,9 @@ class VoicePeerEngine {
       await peer.addTrack(track, stream);
     }
     // Re-assert the route once media is attached: opening the microphone can
-    // move the phone off the speaker on its own.
-    await CallAudioRoute.setSpeaker(true);
+    // move the phone off its route on its own. `force` is false for the
+    // earpiece on purpose, so a connected headset still wins.
+    await CallAudioRoute.setSpeaker(false);
   }
 
   Future<void> createAndSendOffer({bool renegotiate = false}) async {

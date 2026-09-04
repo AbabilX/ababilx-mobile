@@ -4,22 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/router/root_back.dart';
-import '../call_status_text.dart';
 import '../incoming_call_ringtone.dart';
-import '../native/android_pip.dart';
+import '../native/android_call_screen_lock.dart';
 import '../providers/voice_call_provider.dart';
 import '../widgets/call_controls_row.dart';
 import '../widgets/connected_call_body.dart';
-import '../widgets/pip_call_view.dart';
-import '../widgets/remote_screen_view.dart';
 import 'incoming_call_view.dart';
 
 /// The 1:1 call screen.
 ///
-/// Back does not leave a running call. Signal shrinks its call Activity into a
-/// floating window instead of finishing it, so a live call always has a
-/// surface; we do the same through [AndroidPip], and fall back to the ordinary
-/// pop only when the device refuses to shrink (or the call is already over).
+/// Back — and the minimise chevron — leave this screen and drop the user back
+/// where they were, with `ActiveCallBanner` across the top: WhatsApp's model,
+/// and what was asked for. It deliberately does **not** shrink into a
+/// picture-in-picture window any more. Signal can do that because its call
+/// owns an Activity; ours is the one FlutterActivity for the whole app, so
+/// "minimise the call" shrank the entire app into a thumbnail and the return
+/// bar never got a chance to show.
 class VoiceCallScreen extends ConsumerStatefulWidget {
   const VoiceCallScreen({super.key});
 
@@ -39,11 +39,13 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+    // A call screen that sleeps on the system timeout leaves the user
+    // unlocking the phone to hang up. Proximity blanking is separate and
+    // tracks the call, not this screen — see AndroidCallScreenLock.
+    unawaited(AndroidCallScreenLock.setKeepScreenOn(true));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final phase = ref.read(voiceCallProvider).phase;
-      _syncRingtone(phase);
-      _syncPip(phase);
+      _syncRingtone(ref.read(voiceCallProvider).phase);
     });
   }
 
@@ -52,7 +54,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     _clock?.cancel();
     _autoClose?.cancel();
     unawaited(IncomingCallRingtone.stop());
-    unawaited(AndroidPip.setActive(false));
+    unawaited(AndroidCallScreenLock.setKeepScreenOn(false));
     super.dispose();
   }
 
@@ -66,16 +68,6 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     if (!_ringtoneOn) return;
     _ringtoneOn = false;
     unawaited(IncomingCallRingtone.stop());
-  }
-
-  /// Arm PiP for everything except a ringing call: Signal never shrinks an
-  /// incoming call either, because a thumbnail has nowhere to put Answer.
-  void _syncPip(VoiceCallPhase phase) {
-    final shrinkable =
-        phase == VoiceCallPhase.connected ||
-        phase == VoiceCallPhase.connecting ||
-        phase == VoiceCallPhase.outgoingRinging;
-    unawaited(AndroidPip.setActive(shrinkable));
   }
 
   void _scheduleAutoClose(VoiceCallPhase phase) {
@@ -104,81 +96,63 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     });
   }
 
-  Future<void> _leave() async {
-    if (await AndroidPip.enter()) return;
-    if (mounted) popOrGoHome(context);
-  }
+  /// Leave the screen, not the call. `popOrGoHome` is what handles a call
+  /// opened straight from a push, where there is no history to pop back into.
+  void _leave() => popOrGoHome(context);
 
   @override
   Widget build(BuildContext context) {
     ref.listen(voiceCallProvider.select((s) => s.phase), (prev, next) {
       _syncRingtone(next);
-      _syncPip(next);
       _scheduleAutoClose(next);
     });
     final call = ref.watch(voiceCallProvider);
     final notifier = ref.read(voiceCallProvider.notifier);
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: AndroidPip.inPip,
-      builder: (context, inPip, _) {
-        if (inPip) {
-          return Scaffold(
-            backgroundColor: Colors.black,
-            body: PipCallView(
-              name: call.peerName,
-              avatarUrl: call.peerAvatar,
-              status: voiceCallStatusText(call),
-              screenShare: call.remoteScreenStream == null
-                  ? null
-                  : RemoteScreenView(stream: call.remoteScreenStream!),
-            ),
-          );
-        }
-
-        if (call.phase == VoiceCallPhase.incomingRinging) {
-          return Scaffold(
-            backgroundColor: Colors.black,
-            body: IncomingCallView(
-              peerName: call.peerName,
-              peerAvatar: call.peerAvatar,
-              onDecline: () {
-                unawaited(IncomingCallRingtone.stop());
-                notifier.declineIncoming();
-              },
-              onAccept: () {
-                unawaited(IncomingCallRingtone.stop());
-                notifier.acceptIncoming();
-              },
-            ),
-          );
-        }
-
-        return PopScope(
-          canPop: !call.active,
-          onPopInvokedWithResult: (didPop, _) {
-            if (didPop) return;
-            unawaited(_leave());
+    if (call.phase == VoiceCallPhase.incomingRinging) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: IncomingCallView(
+          peerName: call.peerName,
+          peerAvatar: call.peerAvatar,
+          onDecline: () {
+            unawaited(IncomingCallRingtone.stop());
+            notifier.declineIncoming();
           },
-          child: Scaffold(
-            backgroundColor: Colors.black,
-            body: ConnectedCallBody(
-              call: call,
-              onMinimize: _leave,
-              controls: CallControlsRow(
-                call: call,
-                onToggleMute: notifier.toggleMute,
-                onToggleScreenShare: notifier.toggleScreenShare,
-                onToggleSpeaker: notifier.toggleSpeaker,
-                onHangUp: () {
-                  unawaited(IncomingCallRingtone.stop());
-                  notifier.hangUp();
-                },
-              ),
-            ),
-          ),
-        );
+          onAccept: () {
+            unawaited(IncomingCallRingtone.stop());
+            notifier.acceptIncoming();
+          },
+        ),
+      );
+    }
+
+    // canPop stays false while the call is live so the pop runs through
+    // [_leave] — a plain pop from a route with no history would strand the
+    // user on a blank screen with a call still running.
+    return PopScope(
+      canPop: !call.active,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _leave();
       },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: ConnectedCallBody(
+          call: call,
+          onMinimize: _leave,
+          controls: CallControlsRow(
+            call: call,
+            onToggleMute: notifier.toggleMute,
+            onToggleScreenShare: notifier.toggleScreenShare,
+            onToggleSpeaker: notifier.toggleSpeaker,
+            onHangUp: () {
+              unawaited(IncomingCallRingtone.stop());
+              notifier.hangUp();
+            },
+          ),
+        ),
+      ),
     );
   }
 }

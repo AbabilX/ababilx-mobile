@@ -143,9 +143,18 @@ Touch one, re-check all: `packages/call_ringer/**`, `ringtone/**`,
 
 The connected-call surface is its own cluster: `ongoing_call_sync.dart`,
 `native/android_ongoing_call.dart`, `native/android_screen_share.dart`,
-`widgets/active_call_banner.dart`, `app.dart` (mounts both), and
+`widgets/active_call_banner.dart` + `widgets/call_return_bar.dart`,
+`call_status_text.dart` (the bar shows the same line as the call screen),
+`app.dart` (mounts both), and
 `android/app/src/main/kotlin/com/ababilx/app/OngoingCall{Service,Notification,Channel}.kt`
 plus the `.OngoingCallService` manifest entry.
+
+The display locks are a small cluster of their own:
+`native/android_call_screen_lock.dart`,
+`android/app/src/main/kotlin/com/ababilx/app/CallScreenLock.kt`,
+`MainActivity` (attach + `onDestroy` release), `ongoing_call_sync.dart`
+(`_syncProximity`), and the two call screens (keep-screen-on). The manifest
+needs nothing new — `WAKE_LOCK` was already there.
 
 Upgrading `flutter_callkit_incoming` does not remove the need for any of this;
 re-read `CallkitSoundPlayerManager` / `CallkitNotificationManager` after a bump
@@ -308,8 +317,22 @@ Two surfaces now cover that, both Signal's:
   Shaped after `CallNotificationBuilder.TYPE_ESTABLISHED`; it never makes a
   sound, because ringing is a different surface and belongs to CallKit +
   `call_ringer`.
-- `ActiveCallBanner` — the in-app bar for the commoner case, where the user
-  pressed back but is still inside AbabilX.
+- `ActiveCallBanner` + `CallReturnBar` — the in-app bar for the commoner case,
+  where the user minimised the call but is still inside AbabilX. It carries the
+  peer's name and the **live** status, not a fixed "tap to return": the same
+  `voiceCallStatusText` the call screen and the PiP window show, so the three
+  can never disagree. The bar ticks its own one-second clock (a running
+  duration is not a state change, so the parent would not rebuild for it) and
+  turns `colorScheme.error` while a recovery is in progress. A group call shows
+  the participant count instead of a duration — `GroupCall.startedAt` is when
+  *someone* started the call, not when this device joined, and a wrong timer is
+  worse than a right count.
+  **`MediaQuery.removePadding(removeTop: true)` on the screen under the bar is
+  load-bearing.** The bar's own `SafeArea` takes the status-bar inset so it
+  tints that strip the way WhatsApp does; the screen below sits in the same
+  MediaQuery and would otherwise apply the inset a second time, pushing every
+  header down by a whole status bar. That was the "too much space at the top"
+  report.
 
 `OngoingCallSync` owns both: it mirrors `voiceCallProvider` / `groupCallProvider`
 onto the notification and routes the two presses back. The DM call wins when
@@ -320,33 +343,83 @@ correct rather than an oversight: a connected call lives in the Flutter
 isolate, so an engine that is gone means a call that is already over. A
 ringtone has the opposite requirement — see the plugin-package section above.
 
-## Back on a live call shrinks it — it does not close it
+## Back on a DM call goes to the chat list — PiP is for group calls only
 
-Added 2026-08-26, alongside the surfaces above.
+Rewritten 2026-09-04. The DM call screen used to shrink into a floating window
+on back and on the minimise chevron. That is Signal's move, and it is wrong
+here: Signal's call owns its own Activity, ours is the one FlutterActivity for
+the whole app, so "minimise the call" shrank **the entire app** into a
+thumbnail — and `ActiveCallBanner` never got a chance to show, because the
+route was still `/call`.
 
-Signal's `WebRtcCallActivity` calls `enterPipModeIfPossible()` from its back
-handler and from `onUserLeaveHint`, so leaving a call screen produces a
-floating window rather than a call with nowhere to go. `PipController` does the
-same, with one difference that matters: Signal's call has its own Activity and
-ours does not, so PiP must be **armed and disarmed**. `AndroidPip.setActive` is
-called by `VoiceCallScreen` and `GroupCallScreen` while a shrinkable call is on
-screen, and native `enter()` refuses when it is off — otherwise Home on the
-chat list would shrink the whole app into a thumbnail.
+WhatsApp's split is the one we follow now, and it matches what each call
+actually needs:
 
-- Armed for connected / connecting / outgoing-ringing. **Never for an incoming
-  call**: a thumbnail has nowhere to put Answer, and Signal does not shrink one
-  either.
+- **DM voice call** — back and the chevron both run `popOrGoHome`, so the user
+  lands back where they were with the return bar across the top. No PiP is
+  armed at all, which also means Home just backgrounds the app (the ongoing
+  notification is the surface there) instead of shrinking it.
+- **Group call** — still shrinks. There are video tiles and a screen share to
+  keep watching, which is the case a thumbnail is actually for.
+
+`AndroidPip.setActive` is therefore called by `GroupCallScreen` only, and
+native `enter()` refuses when it is off — otherwise Home on the chat list would
+shrink the whole app.
+
+- Armed by the group call screen only. **Never for an incoming call**: a
+  thumbnail has nowhere to put Answer, and Signal does not shrink one either.
 - API 31+ gets `setAutoEnterEnabled(true)` so the system animates the Home
   transition itself; older versions fall back to `onUserLeaveHint`.
 - `AndroidPip.inPip` drives a compact layout (`PipCallView`) — name, status,
   and nothing else. No controls: the window is too small to hit them, and
   tapping it restores the screen where they live.
-- Explicit "minimize" buttons route through `_leave()`, not `popOrGoHome`.
-  `Navigator.pop` does not consult `PopScope`, so a button wired straight to
-  the old helper would close a call the back gesture would have shrunk.
+- Both screens keep `canPop: false` while the call is live and act in
+  `onPopInvokedWithResult`, so the DM screen's pop runs through `popOrGoHome`
+  — a plain `Navigator.pop` on a route reached straight from a push has no
+  history to return to and would strand the user on a blank screen.
 - Manifest: `MainActivity` carries `supportsPictureInPicture` and
   `resizeableActivity`. Its `configChanges` already lists the size/orientation
   keys PiP needs, so the Activity is resized rather than recreated.
+
+## The display belongs to the call
+
+Added 2026-09-04, for "the screen stays lit against my ear".
+
+Nothing turned the panel off when the phone was held to the face: the display
+burned battery and took Mute / Speaker / Hang up presses from a cheek. Two
+separate locks fix it, both from Signal's `LockManager`, both in
+`CallScreenLock.kt` behind `com.ababilx.app/call_screen_lock`:
+
+- **`PROXIMITY_SCREEN_OFF_WAKE_LOCK`** — the system's own answer, so the sensor
+  decides when the panel is off and nothing here has to poll. Held only while
+  a call is **connected** and **on the earpiece**: a ringing call is one the
+  user is looking at, and speakerphone means the phone is nowhere near a face.
+  Signal engages proximity in `IN_CALL` and nowhere else; `_syncProximity` in
+  `OngoingCallSync` is the same rule.
+- **`FLAG_KEEP_SCREEN_ON`** — otherwise the display sleeps on the system
+  timeout mid-call and the user has to unlock the phone to hang up.
+
+Two calls, not one flag, because the lifetimes differ: proximity follows the
+**call** (the phone is still at the ear after backing out to the chat list),
+keep-screen-on follows the **call screen** (`VoiceCallScreen` /
+`GroupCallScreen` init/dispose), because keeping the display awake while
+someone reads messages is a battery bug.
+
+Traps:
+
+- **Headsets are checked natively, not in Dart.** `speaker == false` does not
+  mean earpiece — a wired or Bluetooth headset is also "not speaker", and the
+  phone is then in a pocket. `CallScreenLock` registers an `AudioDeviceCallback`
+  while the lock is wanted and drops it the moment a headset appears, so this
+  corrects itself mid-call without Dart noticing.
+- **Release with `RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY`.** A plain release when
+  the call ends while the phone is still at the ear flashes the screen on
+  inside a pocket. The flag holds it dark until the phone comes away.
+- The wake lock is acquired with no timeout on purpose (a call has no bounded
+  length) and released explicitly — including from `MainActivity.onDestroy`,
+  or a lock would outlive the call that justified it.
+- Activity-scoped, like `OngoingCallChannel` and for the same reason: a
+  connected call lives in the Flutter isolate.
 
 ## The call screens are Signal's layout
 
@@ -430,6 +503,21 @@ Rules that are load-bearing:
 - **A hard deadline runs beside the attempt chain.** An attempt that hangs (a
   socket connect that never returns on a dead network) would otherwise leave
   "Reconnecting…" on screen with nothing left to end it.
+- **Attempts never overlap, and carry a generation.** `_schedule` cancels the
+  pending *timer*, not an attempt already awaiting a TURN fetch — so a
+  connectivity event mid-fetch used to start a second attempt whose older
+  credentials could land *after* the newer ones. `_attemptInFlight` queues
+  instead, `_generation` invalidates a late completion, and the provider's
+  `_restartStillWanted` re-checks engine **identity** (not just the call id)
+  after every await. Stale async completion is the classic failure of a
+  reconnect loop; both sides of the boundary guard against it.
+- **The wording softens, the deadline does not.** Two minutes of an unchanging
+  "Reconnecting…" reads as a hung app, so `voiceReconnectText` moves through
+  "Reconnecting…" → "Poor connection. Still trying…" → "Connection lost.
+  Trying to restore…" at 15 s and 45 s. Text only — the audio route, the
+  notification and the recovery budget are untouched. `state.reconnectingSince`
+  is the instant, and `state.reconnecting` derives from it, so the two can
+  never disagree.
 - **Each attempt re-fetches ICE servers** and calls `applyIceServers`
   (`setConfiguration`). coturn REST credentials are timestamped, so a call
   outliving its credential loses the relay on the next allocation refresh —
@@ -462,7 +550,12 @@ audio routing:
 
 - `activate(speaker:)` — before `getUserMedia` in `VoicePeerEngine.prepare`;
   applies LiveKit's communication session (`MODE_IN_COMMUNICATION`, focus,
-  `STREAM_VOICE_CALL`, `forceAudioRouting: true`) and the starting route.
+  `STREAM_VOICE_CALL`, `forceAudioRouting: true`) and the starting route. That
+  route is the **earpiece** (changed 2026-09-04 from an "audible default" of
+  speaker): a call answered and lifted to the ear must not come out of the
+  loudspeaker, and proximity blanking keys off the same flag. `prepare` mirrors
+  it into `state.speaker` explicitly rather than trusting the default, because
+  an earlier call in the same session may have left it on.
 - `setSpeaker(on)` — the Speaker button; `force: on` so an explicit press wins
   over a connected headset.
 - `release()` — on engine dispose; drops focus and restores the normal mode.

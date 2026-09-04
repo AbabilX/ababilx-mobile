@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/router/root_back.dart';
+import '../../native/android_call_screen_lock.dart';
 import '../../native/android_pip.dart';
 import '../../widgets/pip_call_view.dart';
 import '../providers/group_call_provider.dart';
@@ -25,11 +26,13 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) AndroidPip.setActive(true);
     });
+    AndroidCallScreenLock.setKeepScreenOn(true);
   }
 
   @override
   void dispose() {
     AndroidPip.setActive(false);
+    AndroidCallScreenLock.setKeepScreenOn(false);
     super.dispose();
   }
 

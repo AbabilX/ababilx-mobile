@@ -21,7 +21,8 @@ String voiceCallStatusText(VoiceCallState state) {
       // Still "connected" during a recovery on purpose — the call has not
       // ended, it is re-gathering candidates. Showing the frozen timer instead
       // would read as a live call with dead audio.
-      if (state.reconnecting) return 'Reconnecting…';
+      final since = state.reconnectingSince;
+      if (since != null) return voiceReconnectText(since);
       return formatCallDuration(state.connectedAt);
     case VoiceCallPhase.ended:
       final status = state.call?.status;
@@ -37,6 +38,21 @@ String voiceCallStatusText(VoiceCallState state) {
     case VoiceCallPhase.failed:
       return 'Call failed';
   }
+}
+
+/// What a recovery says as it drags on.
+///
+/// Two minutes of an unchanging "Reconnecting…" and then a dead call reads as
+/// the app hanging. Softening the wording twice tells the truth — it is still
+/// trying, and it is going badly — without ending the call early or touching
+/// the audio route.
+String voiceReconnectText(DateTime since, {DateTime? now}) {
+  final elapsed = (now ?? DateTime.now()).difference(since);
+  if (elapsed < const Duration(seconds: 15)) return 'Reconnecting…';
+  if (elapsed < const Duration(seconds: 45)) {
+    return 'Poor connection. Still trying…';
+  }
+  return 'Connection lost. Trying to restore…';
 }
 
 /// mm:ss, or hh:mm:ss once a call passes an hour.

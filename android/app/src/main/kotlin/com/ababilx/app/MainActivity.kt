@@ -20,6 +20,9 @@ class MainActivity : FlutterActivity() {
     /** Shrinks a live call into a floating window, the way Signal does. */
     private val pip by lazy { PipController(this) }
 
+    /** Proximity blanking at the ear, and no screen timeout on a call screen. */
+    private val callScreenLock by lazy { CallScreenLock(this) }
+
     /** MediaStore behind the in-app photo grid (composer + avatar picker). */
     private val mediaGallery by lazy { MediaGalleryChannel(this) }
 
@@ -45,6 +48,7 @@ class MainActivity : FlutterActivity() {
         // as onNewIntent, same as a cold-start share.
         ongoingCall.handleIntent(intent)
         pip.attach(flutterEngine)
+        callScreenLock.attach(flutterEngine)
         mediaGallery.attach(flutterEngine)
         mediaSend.attach(flutterEngine)
         appIcon.attach(flutterEngine)
@@ -154,6 +158,9 @@ class MainActivity : FlutterActivity() {
         shareIntake.dispose()
         ongoingCall.dispose()
         pip.dispose()
+        // Releases the proximity lock: a wake lock outliving the Activity would
+        // keep the panel dark with no call left to justify it.
+        callScreenLock.dispose()
         mediaGallery.dispose()
         mediaSend.dispose()
         appIcon.dispose()

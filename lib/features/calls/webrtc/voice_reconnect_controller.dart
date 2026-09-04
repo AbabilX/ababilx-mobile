@@ -53,6 +53,13 @@ class VoiceReconnectController {
   Timer? _deadline;
   DateTime? _unhealthySince;
   int _attempt = 0;
+
+  /// Bumped whenever a recovery episode starts or is re-based. An attempt that
+  /// was awaiting a slow TURN fetch when the generation moved must not apply
+  /// what it fetched — those ICE servers are older than what has since landed.
+  int _generation = 0;
+  bool _attemptInFlight = false;
+  bool _retryQueued = false;
   bool _disposed = false;
 
   bool get reconnecting => _unhealthySince != null;
@@ -67,6 +74,8 @@ class VoiceReconnectController {
     _deadline = null;
     _unhealthySince = null;
     _attempt = 0;
+    _generation++;
+    _retryQueued = false;
     onReconnectingChanged(false);
   }
 
@@ -78,6 +87,8 @@ class VoiceReconnectController {
     voiceCallLog('reconnect.begin', reason: '$reason immediate=$immediate');
     _unhealthySince = DateTime.now();
     _attempt = 0;
+    _generation++;
+    _retryQueued = false;
     onReconnectingChanged(true);
     // Independent of the attempt chain on purpose: an attempt that hangs (a
     // socket connect that never returns on a dead network) would otherwise
@@ -132,6 +143,7 @@ class VoiceReconnectController {
       // moment it became recoverable — the opposite of what it is for.
       _unhealthySince = DateTime.now();
       _attempt = 0;
+      _generation++;
       _deadline?.cancel();
       _deadline = Timer(policy.giveUpAfter, () => _giveUp('deadline'));
       _schedule(Duration.zero);
@@ -149,11 +161,21 @@ class VoiceReconnectController {
     if (_disposed) return;
     final since = _unhealthySince;
     if (since == null) return;
+    // Never run two attempts at once. A restart awaits a network round trip
+    // (fresh TURN credentials), and a second attempt starting underneath it
+    // would race: whichever fetch returns last wins, which is not necessarily
+    // the newest. Queue instead, and run it when this one lands.
+    if (_attemptInFlight) {
+      _retryQueued = true;
+      return;
+    }
     if (policy.exhausted(DateTime.now().difference(since))) {
       _giveUp('attempts');
       return;
     }
+    final generation = _generation;
     final attempt = _attempt++;
+    _attemptInFlight = true;
     try {
       if (isOfferer()) {
         voiceCallLog('reconnect.restart', reason: 'attempt=$attempt');
@@ -164,8 +186,18 @@ class VoiceReconnectController {
       }
     } catch (error) {
       voiceCallLog('reconnect.attempt.failed', reason: error.toString());
+    } finally {
+      _attemptInFlight = false;
     }
     if (_disposed || _unhealthySince == null) return;
+    // A queued retry, or a generation that moved while this attempt was in
+    // flight, both mean "the situation changed" — go again now rather than
+    // sitting out this attempt's backoff.
+    if (_retryQueued || generation != _generation) {
+      _retryQueued = false;
+      _schedule(Duration.zero);
+      return;
+    }
     // Keep a retry queued: a restart offer can itself be lost, and the peer
     // may still be offline. noteHealthy() cancels this the moment media flows.
     _schedule(policy.delayFor(_attempt));
@@ -185,6 +217,8 @@ class VoiceReconnectController {
     _deadline?.cancel();
     _deadline = null;
     _unhealthySince = null;
+    _generation++;
+    _retryQueued = false;
     onGaveUp('peer_connection_disconnected');
   }
 
@@ -207,6 +241,8 @@ class VoiceReconnectController {
     _deadline?.cancel();
     _deadline = null;
     _unhealthySince = null;
+    _generation++;
+    _retryQueued = false;
     await _connectivitySub?.cancel();
     _connectivitySub = null;
   }
