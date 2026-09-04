@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'group/providers/group_call_provider.dart';
 import 'native/android_call_screen_lock.dart';
 import 'native/android_ongoing_call.dart';
+import 'ongoing_call_notice.dart';
 import 'providers/voice_call_provider.dart';
 import 'voice_call_log.dart';
 
@@ -37,14 +38,26 @@ class OngoingCallSync extends ConsumerStatefulWidget {
 class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
   StreamSubscription<OngoingCallAction>? _actions;
 
-  /// Which call the notification is currently describing, so a state rebuild
-  /// that changes nothing relevant does not re-post it.
-  String _shownCallId = '';
+  /// What the notification is currently saying — call id and subtitle — so a
+  /// state change that alters neither does not re-post it.
+  String _shownKey = '';
 
   @override
   void initState() {
     super.initState();
     _actions = AndroidOngoingCall.actions.listen(_onAction);
+    // Deliberately `listenManual` and not `ref.watch` in `build`: this sync
+    // has to run while the app is in the background, and a backgrounded
+    // Flutter app schedules no frames. Driven from `build` + a post-frame
+    // callback, hanging up from the shade tore the call down but left its
+    // notification sitting there until the user opened the app again — which
+    // reads exactly like the hang up having done nothing.
+    _watch(voiceCallProvider);
+    _watch(groupCallProvider);
+  }
+
+  void _watch<T>(ProviderListenable<T> provider) {
+    ref.listenManual<T>(provider, (_, _) => _sync(), fireImmediately: true);
   }
 
   @override
@@ -83,10 +96,20 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
 
   /// The DM call wins when both somehow exist: it is the one whose audio is
   /// live on the earpiece.
-  void _sync(VoiceCallState dm, GroupCallState group) {
+  void _sync() {
+    if (!mounted) return;
+    final dm = ref.read(voiceCallProvider);
+    final group = ref.read(groupCallProvider);
     _syncProximity(dm, group);
-    if (dm.phase == VoiceCallPhase.connected && dm.call != null) {
-      _show(dm.call!.id, dm.call!.peerName(dm.currentUserId), 'Ongoing call');
+    final dmCall = dm.call;
+    final dmSubtitle = ongoingCallSubtitle(dm.phase);
+    if (dmCall != null && dmSubtitle != null) {
+      _show(
+        dmCall.id,
+        dmCall.peerName(dm.currentUserId),
+        dmSubtitle,
+        connected: ongoingCallUsesChronometer(dm.phase),
+      );
       return;
     }
     if (group.phase == GroupCallPhase.connected && group.call != null) {
@@ -97,11 +120,12 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
             ? call.conversationName!
             : 'Group call',
         'Ongoing group call',
+        connected: true,
       );
       return;
     }
-    if (_shownCallId.isEmpty) return;
-    _shownCallId = '';
+    if (_shownKey.isEmpty) return;
+    _shownKey = '';
     unawaited(AndroidOngoingCall.stop());
   }
 
@@ -120,25 +144,25 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
     unawaited(AndroidCallScreenLock.setEarpieceCall(earpiece));
   }
 
-  void _show(String callId, String title, String subtitle) {
-    if (_shownCallId == callId) return;
-    _shownCallId = callId;
+  void _show(
+    String callId,
+    String title,
+    String subtitle, {
+    required bool connected,
+  }) {
+    final key = '$callId|$subtitle';
+    if (_shownKey == key) return;
+    _shownKey = key;
     unawaited(
       AndroidOngoingCall.start(
         callId: callId,
         title: title,
         subtitle: subtitle,
+        connected: connected,
       ),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    final dm = ref.watch(voiceCallProvider);
-    final group = ref.watch(groupCallProvider);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _sync(dm, group);
-    });
-    return widget.child;
-  }
+  Widget build(BuildContext context) => widget.child;
 }

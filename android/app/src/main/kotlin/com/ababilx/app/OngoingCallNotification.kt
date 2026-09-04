@@ -10,7 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 
 /**
- * The tray entry for a call that is already connected.
+ * The tray entry for a call in progress — ringing out, or connected.
  *
  * Shaped after Signal's `CallNotificationBuilder.TYPE_ESTABLISHED`: an ongoing
  * `CallStyle.forOngoingCall` notification whose body taps back into the call
@@ -51,6 +51,7 @@ object OngoingCallNotification {
         callId: String,
         title: String,
         subtitle: String,
+        connected: Boolean,
     ): android.app.Notification {
         ensureChannel(context)
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -59,8 +60,10 @@ object OngoingCallNotification {
             .setContentText(subtitle)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setShowWhen(true)
-            .setUsesChronometer(true)
+            .setShowWhen(connected)
+            // A call that has not been answered yet has nothing to count, and
+            // a timer beside "Calling…" reads as a call already in progress.
+            .setUsesChronometer(connected)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(returnToCallIntent(context, callId))

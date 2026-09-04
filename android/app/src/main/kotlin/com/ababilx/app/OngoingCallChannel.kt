@@ -73,10 +73,11 @@ class OngoingCallChannel(private val activity: Activity) {
                 val title = call.argument<String>("title") ?: "Voice call"
                 val subtitle = call.argument<String>("subtitle") ?: "Ongoing call"
                 val sharing = call.argument<Boolean>("screenSharing") ?: false
+                val connected = call.argument<Boolean>("connected") ?: true
                 if (call.method == "start") {
-                    OngoingCallService.start(activity, callId, title, subtitle, sharing)
+                    OngoingCallService.start(activity, callId, title, subtitle, sharing, connected)
                 } else {
-                    OngoingCallService.update(activity, callId, title, subtitle, sharing)
+                    OngoingCallService.update(activity, callId, title, subtitle, sharing, connected)
                 }
                 result.success(true)
             }

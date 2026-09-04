@@ -7,6 +7,19 @@ import '../data/models/voice_call.dart';
 class AndroidCallParams {
   const AndroidCallParams._();
 
+  /// Suppresses the plugin's own "on a call" notification and the foreground
+  /// service behind it.
+  ///
+  /// It defaults to on, and it is not the notification this app wants: the
+  /// shade ended up with two ongoing-call entries for one call, each with its
+  /// own Hang up button, and the one the user reached for was as likely to be
+  /// the plugin's as ours. `OngoingCallService` posts the single entry now —
+  /// Signal's `CallStyle` shape, a chronometer, and a Hang up wired straight
+  /// into `VoiceCallNotifier`.
+  static const _noOngoingNotification = NotificationParams(
+    showNotification: false,
+  );
+
   static const _background = '#0B0B0F';
   static const _text = '#FFFFFF';
   static const _answer = '#3AB55B';
@@ -42,10 +55,7 @@ class AndroidCallParams {
         avatar: call.peerAvatar(currentUserId),
         handle: 'Voice call',
         type: 0,
-        callingNotification: const NotificationParams(
-          showNotification: true,
-          subtitle: 'Voice call',
-        ),
+        callingNotification: _noOngoingNotification,
         extra: {
           'type': 'voice_call',
           'call_id': call.id,
@@ -82,6 +92,7 @@ class AndroidCallParams {
       handle: 'Voice call',
       type: 0,
       duration: remaining.clamp(1000, 60000),
+      callingNotification: _noOngoingNotification,
       missedCallNotification: const NotificationParams(
         showNotification: true,
         subtitle: 'Missed voice call',

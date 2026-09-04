@@ -43,6 +43,7 @@ class OngoingCallService : Service() {
     private var title: String = ""
     private var subtitle: String = ""
     private var screenSharing: Boolean = false
+    private var connected: Boolean = true
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -53,6 +54,7 @@ class OngoingCallService : Service() {
                 title = intent.getStringExtra(EXTRA_TITLE) ?: title
                 subtitle = intent.getStringExtra(EXTRA_SUBTITLE) ?: subtitle
                 screenSharing = intent.getBooleanExtra(EXTRA_SCREEN_SHARING, screenSharing)
+                connected = intent.getBooleanExtra(EXTRA_CONNECTED, connected)
                 if (!enterForeground()) {
                     stopSelf()
                     return START_NOT_STICKY
@@ -83,7 +85,8 @@ class OngoingCallService : Service() {
      * honest type left to start with.
      */
     private fun enterForeground(): Boolean {
-        val notification = OngoingCallNotification.build(this, callId, title, subtitle)
+        val notification =
+            OngoingCallNotification.build(this, callId, title, subtitle, connected)
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val type = serviceType() ?: return false
@@ -146,6 +149,7 @@ class OngoingCallService : Service() {
         const val EXTRA_TITLE = "title"
         const val EXTRA_SUBTITLE = "subtitle"
         const val EXTRA_SCREEN_SHARING = "screen_sharing"
+        const val EXTRA_CONNECTED = "connected"
 
         fun start(
             context: Context,
@@ -153,7 +157,8 @@ class OngoingCallService : Service() {
             title: String,
             subtitle: String,
             screenSharing: Boolean,
-        ) = send(context, ACTION_START, callId, title, subtitle, screenSharing)
+            connected: Boolean,
+        ) = send(context, ACTION_START, callId, title, subtitle, screenSharing, connected)
 
         fun update(
             context: Context,
@@ -161,7 +166,8 @@ class OngoingCallService : Service() {
             title: String,
             subtitle: String,
             screenSharing: Boolean,
-        ) = send(context, ACTION_UPDATE, callId, title, subtitle, screenSharing)
+            connected: Boolean,
+        ) = send(context, ACTION_UPDATE, callId, title, subtitle, screenSharing, connected)
 
         fun stop(context: Context) {
             val intent = Intent(context, OngoingCallService::class.java)
@@ -180,6 +186,7 @@ class OngoingCallService : Service() {
             title: String,
             subtitle: String,
             screenSharing: Boolean,
+            connected: Boolean,
         ) {
             val intent = Intent(context, OngoingCallService::class.java)
                 .setAction(action)
@@ -187,6 +194,7 @@ class OngoingCallService : Service() {
                 .putExtra(EXTRA_TITLE, title)
                 .putExtra(EXTRA_SUBTITLE, subtitle)
                 .putExtra(EXTRA_SCREEN_SHARING, screenSharing)
+                .putExtra(EXTRA_CONNECTED, connected)
             try {
                 ContextCompat.startForegroundService(context, intent)
             } catch (error: Exception) {

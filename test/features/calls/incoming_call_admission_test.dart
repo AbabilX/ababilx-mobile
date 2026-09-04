@@ -35,4 +35,46 @@ void main() {
       IncomingCallAdmission.ignoreBusy,
     );
   });
+
+  group('nativeCallWasAccepted', () {
+    test(
+      'reports the Accept CallKit recorded while Flutter was backgrounded',
+      () {
+        expect(
+          nativeCallWasAccepted('call-1', const [
+            NativeCallSnapshot(id: 'call-1', isAccepted: true),
+          ]),
+          isTrue,
+        );
+      },
+    );
+
+    test('a still-ringing record is not an accept', () {
+      expect(
+        nativeCallWasAccepted('call-1', const [
+          NativeCallSnapshot(id: 'call-1', isAccepted: false),
+        ]),
+        isFalse,
+      );
+    });
+
+    test('another call being accepted says nothing about this one', () {
+      expect(
+        nativeCallWasAccepted('call-1', const [
+          NativeCallSnapshot(id: 'call-2', isAccepted: true),
+        ]),
+        isFalse,
+      );
+    });
+
+    test('no id and no records are both false, never a stray adopt', () {
+      expect(
+        nativeCallWasAccepted('', const [
+          NativeCallSnapshot(id: '', isAccepted: true),
+        ]),
+        isFalse,
+      );
+      expect(nativeCallWasAccepted('call-1', const []), isFalse);
+    });
+  });
 }

@@ -25,3 +25,20 @@ IncomingCallAdmission decideIncomingCallAdmission(
       ? IncomingCallAdmission.show
       : IncomingCallAdmission.ignoreBusy;
 }
+
+/// Whether CallKit already holds [callId] as accepted.
+///
+/// The plugin does not replay an Accept it emitted while this isolate was in
+/// the background, so this persisted flag is the only record of that press
+/// once the app comes forward. Missing it left the app ringing at a call the
+/// user had already answered, asking for a second Accept.
+bool nativeCallWasAccepted(
+  String callId,
+  Iterable<NativeCallSnapshot> activeCalls,
+) {
+  if (callId.isEmpty) return false;
+  for (final call in activeCalls) {
+    if (call.id == callId) return call.isAccepted;
+  }
+  return false;
+}

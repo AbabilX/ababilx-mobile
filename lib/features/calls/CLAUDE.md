@@ -142,7 +142,10 @@ Touch one, re-check all: `packages/call_ringer/**`, `ringtone/**`,
 `flutter` holder in `onDestroy`), `res/raw/keep.xml`, `gradle.properties`.
 
 The connected-call surface is its own cluster: `ongoing_call_sync.dart`,
-`native/android_ongoing_call.dart`, `native/android_screen_share.dart`,
+`ongoing_call_notice.dart` (what the tray entry says, per phase),
+`native/android_ongoing_call.dart`, `native/android_call_params.dart` +
+`native/android_group_call_params.dart` (the `showNotification: false` that
+keeps the plugin from posting a second entry), `native/android_screen_share.dart`,
 `widgets/active_call_banner.dart` + `widgets/call_return_bar.dart`,
 `call_status_text.dart` (the bar shows the same line as the call screen),
 `app.dart` (mounts both), and
@@ -342,6 +345,65 @@ both somehow exist — it is the one whose audio is live.
 correct rather than an oversight: a connected call lives in the Flutter
 isolate, so an engine that is gone means a call that is already over. A
 ringtone has the opposite requirement — see the plugin-package section above.
+
+## There is exactly one ongoing-call notification, and it is ours
+
+Fixed 2026-09-04, from "I press hang up in the notification panel and the call
+does not close".
+
+`flutter_callkit_incoming` posts its **own** ongoing-call notification, with its
+own Hang up button, and it does so by default — `isShowCallingNotification`
+starts `true`, and `ACTION_CALL_ACCEPT` / `ACTION_CALL_CONNECTED` both raise it
+(via a second foreground service, `CallkitNotificationService`). So a connected
+call put two "on a call" entries in the shade, and the one the user reached for
+was as likely to be the plugin's as ours.
+
+`AndroidCallParams` (both incoming and outgoing) and `_ongoingParams` for group
+calls now pass `callingNotification: NotificationParams(showNotification: false)`.
+That kills the notification *and* the plugin's foreground service — CallKit
+still keeps its call record, which `_recoverNativeCall` and `_adoptNativeAccept`
+depend on. `OngoingCallService` is the single entry.
+
+Because the plugin's "Calling…" entry went with it, `OngoingCallSync` now covers
+`outgoingRinging` and `connecting` as well as `connected`
+(`ongoingCallSubtitle`, unit-tested). `connected` is threaded down to
+`setUsesChronometer` — a timer beside "Calling…" reads as a call already in
+progress.
+
+**`OngoingCallSync` drives off `ref.listenManual`, not `ref.watch` in `build`.**
+This is the other half of the same report. The sync used to run from a
+post-frame callback, and **a backgrounded Flutter app schedules no frames** — so
+hanging up from the shade tore the call down correctly and then left its
+notification sitting in the tray until the user next opened the app, which
+reads exactly like the press having done nothing. Anything that has to react
+while the app is in the background belongs on a listener, never on a frame.
+
+## A CallKit Accept can arrive as a fact, not as an event
+
+Fixed 2026-09-04, from "I accept from the full-screen call notification and the
+app opens another full-screen caller screen where I have to accept again".
+
+The app was already holding `incomingRinging` (from the `call.incoming`
+websocket event) while backgrounded. Accept on the CallKit surface brings the
+Activity forward, but the plugin does not replay the event it emitted to a
+paused engine. `CallStoreSync` then ran its resume path:
+
+```
+syncFromNativeIncoming()   // state.active is TRUE for a ringing call,
+  -> resyncActiveCall()    // ...which only fixes outgoingRinging -> accepted
+ensureNativeIncomingUi()   // Flutter is focused now: take the ringing UI back
+```
+
+— so the CallKit surface was dismissed and replaced with the in-app one, still
+asking to be answered. The `isAccepted` check that would have caught it lived
+in `_recoverNativeCall`, which that first branch skips.
+
+`syncFromNativeIncoming` now tries `_adoptNativeAccept` first: if CallKit's
+persisted record for the call in state says `isAccepted`, apply the accept
+instead of re-showing the ring. The predicate is `nativeCallWasAccepted`
+(`native/incoming_call_admission.dart`, unit-tested). It returns true when an
+accept is merely *in flight* too — the point of the return value is "do not put
+the ringing UI back up", not "the call is connected".
 
 ## Back on a DM call goes to the chat list — PiP is for group calls only
 

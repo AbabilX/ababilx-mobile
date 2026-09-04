@@ -19,6 +19,7 @@ import '../data/voice_call_repository.dart';
 import '../incoming_call_ringtone.dart';
 import '../native/android_call_ui.dart';
 import '../native/android_group_call_ui.dart';
+import '../native/incoming_call_admission.dart';
 import '../native/voice_call_ended_guard.dart';
 import '../ringtone/callkit_ring_events.dart';
 import '../voice_call_log.dart';
@@ -1130,11 +1131,58 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
   /// Re-attach Flutter state when the app returns and CallKit is already ringing.
   Future<void> syncFromNativeIncoming() async {
+    // Accept pressed on the CallKit surface while this isolate was in the
+    // background. The plugin's event stream does not replay what it emitted
+    // then, so the durable record of that press is `isAccepted` on the native
+    // call — and `resyncActiveCall` below never looked at it, because a
+    // ringing call already counts as `active`. The app therefore came forward
+    // still in `incomingRinging`, took the ringing UI back off CallKit
+    // (`ensureNativeIncomingUi`), and asked for a second Accept.
+    if (state.phase == VoiceCallPhase.incomingRinging &&
+        await _adoptNativeAccept()) {
+      return;
+    }
     if (state.active) {
       await resyncActiveCall();
       return;
     }
     await _recoverNativeCall();
+  }
+
+  /// Applies an Accept that CallKit already recorded for the call in state.
+  ///
+  /// Returns true when the accept was adopted — including when another accept
+  /// is already in flight, since the point of the return value is "do not put
+  /// the ringing UI back up", not "the call is connected".
+  Future<bool> _adoptNativeAccept() async {
+    final call = state.call;
+    if (call == null) return false;
+    try {
+      final active = await FlutterCallkitIncoming.activeCalls();
+      final accepted = nativeCallWasAccepted(
+        call.id,
+        active.map<NativeCallSnapshot>(
+          (native) => NativeCallSnapshot(
+            id: native.id,
+            isAccepted: native.isAccepted == true,
+          ),
+        ),
+      );
+      if (!accepted) return false;
+    } catch (_) {
+      return false;
+    }
+    voiceCallLog(
+      'accept.adopt_native',
+      callId: call.id,
+      phase: _phaseName,
+      source: 'callkit',
+    );
+    // Same reason as the live `callkit.accept` path: the plugin's own UI
+    // teardown after Accept arrives as ENDED and is not a hang-up.
+    _suppressCallKitEnded.arm(call.id, source: 'accept.adopt_native');
+    await acceptIncoming(call.id);
+    return true;
   }
 
   /// Reconcile with the server after a WS gap or app resume.

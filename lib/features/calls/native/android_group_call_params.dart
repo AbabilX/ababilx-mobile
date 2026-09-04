@@ -11,10 +11,10 @@ CallKitParams _ongoingParams(GroupCall call) => CallKitParams(
   avatar: call.starterAvatarUrl,
   handle: 'Group call',
   type: 0,
-  callingNotification: const NotificationParams(
-    showNotification: true,
-    subtitle: 'Group call',
-  ),
+  // Off for the same reason as a 1:1 call (see `AndroidCallParams`): this
+  // still promotes the call to "connected" so CallKit keeps a record of it,
+  // but `OngoingCallService` owns the one tray entry the user sees.
+  callingNotification: const NotificationParams(showNotification: false),
   extra: {
     'type': AndroidGroupCallUi.callType,
     'call_id': call.id,

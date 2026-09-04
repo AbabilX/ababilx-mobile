@@ -30,6 +30,7 @@ class AndroidOngoingCall {
   static String _title = 'Voice call';
   static String _subtitle = 'Ongoing call';
   static bool _screenSharing = false;
+  static bool _connected = true;
   static bool _running = false;
 
   /// Notification presses. Nothing is routed natively — only Dart knows
@@ -56,18 +57,28 @@ class AndroidOngoingCall {
     }
   }
 
-  /// Raise the notification for a call that has just connected.
+  /// Raise — or restate — the notification for a call in progress.
+  ///
+  /// [connected] drives the chronometer: an outgoing call that is still
+  /// ringing has nothing to count. The CallKit plugin used to post its own
+  /// "calling" entry for that phase and no longer does (see
+  /// `AndroidCallParams`), so this covers it.
   static Future<void> start({
     required String callId,
     required String title,
     String subtitle = 'Ongoing call',
+    bool connected = true,
   }) async {
     if (!_supported) return;
+    final sameCall = _running && callId == _callId;
     _callId = callId;
     _title = title;
     _subtitle = subtitle;
-    _screenSharing = false;
-    await _send('start');
+    _connected = connected;
+    // Only a different call resets the share flag; a phase change on the same
+    // call must not drop the media-projection type mid-share.
+    if (!sameCall) _screenSharing = false;
+    await _send(sameCall ? 'update' : 'start');
   }
 
   /// Add or drop the media-projection service type as a screen share starts
@@ -85,6 +96,7 @@ class AndroidOngoingCall {
     if (!_supported || !_running) return;
     _running = false;
     _screenSharing = false;
+    _connected = true;
     _callId = '';
     try {
       await _methods.invokeMethod<bool>('stop');
@@ -102,6 +114,7 @@ class AndroidOngoingCall {
         'title': _title,
         'subtitle': _screenSharing ? 'Sharing your screen' : _subtitle,
         'screenSharing': _screenSharing,
+        'connected': _connected,
       });
       _running = true;
     } on PlatformException {
