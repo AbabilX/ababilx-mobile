@@ -95,6 +95,16 @@ class ApiConstants {
   // Chat
   static const String chatConversations = '/api/teams/chat/conversations';
   static const String chatE2eeVault = '/api/teams/chat/e2ee/vault';
+  // Sheds the retired PIN-wrapped copy of the identity once a device holds it.
+  static const String chatE2eeWrappedKey =
+      '/api/teams/chat/e2ee/vault/wrapped';
+  // Device linking: identity, not chat, so it lives outside the independent
+  // chat flag and has no /api/teams twin.
+  static const String chatE2eeLink = '/api/chat/e2ee/link';
+  static const String chatE2eeLinkInfo = '/api/chat/e2ee/link/info';
+  static const String chatE2eeLinkApprove = '/api/chat/e2ee/link/approve';
+  static const String chatE2eeLinkDeny = '/api/chat/e2ee/link/deny';
+  static const String chatE2eeLinkPoll = '/api/chat/e2ee/link/poll';
   static String chatE2eePublicKey(String userId) =>
       '/api/teams/chat/e2ee/users/$userId/public-key';
   static String chatE2eeConversationKey(String conversationId) =>

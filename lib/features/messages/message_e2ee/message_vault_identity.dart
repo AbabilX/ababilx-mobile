@@ -1,13 +1,12 @@
 part of 'message_vault.dart';
 
-/// Vault identity: creating it behind a PIN, unlocking it, and restoring it
-/// from this device's OS secure storage. The private key never leaves memory
-/// except as the PIN-wrapped blob the server stores and the trusted-device
-/// record, both of which this extension owns.
+/// Vault identity: creating it on this device and restoring it from the OS
+/// secure storage. The private key is generated here and never leaves — the
+/// server is told the public half and nothing else — so bringing secure
+/// messages up asks the user for nothing at all.
+///
+/// The retired PIN paths live in `message_vault_legacy.dart`.
 extension MessageVaultIdentity on MessageVault {
-  Future<bool> hasVault() async =>
-      (await _repo.getE2eeVault())['exists'] == true;
-
   /// Restores the identity protected by this device's OS secure storage.
   /// It is intentionally erased on logout and by an app uninstall.
   Future<bool> restoreTrustedIdentity() async {
@@ -66,65 +65,84 @@ extension MessageVaultIdentity on MessageVault {
     }
   }
 
-  Future<void> setup(String pin) async {
-    _validatePin(pin);
-    final identity = P256Ecdh.newKeyPair();
-    final publicJwk = _publicJwkFromIdentity(identity);
-    final privateJwk = {...publicJwk, 'd': _b64(identity.d)};
-    final salt = _random(16);
-    final nonce = _random(12);
-    final key = await _pinKey(pin, salt, _iterations);
-    final box = await _aes.encrypt(
-      utf8.encode(jsonEncode(privateJwk)),
-      secretKey: key,
-      nonce: nonce,
-      aad: utf8.encode(_vaultAad),
-    );
-    await _repo.putE2eeVault({
-      'public_key': publicJwk,
-      'wrapped_private_key': {
-        'ciphertext': _b64(_boxBytes(box)),
-        'nonce': _b64(nonce),
-      },
-      'kdf_salt': _b64(salt),
-      'kdf_iterations': _iterations,
-    });
-    _identity = identity;
-    _publicJwk = publicJwk;
-    _keys.clear();
-    await _saveTrustedIdentity(privateJwk, publicJwk);
-  }
-
-  Future<void> unlock(String pin) async {
-    _validatePin(pin);
+  /// Brings secure messages up without asking the user anything.
+  ///
+  /// A first device mints its own identity and publishes only the public half,
+  /// so there is no PIN to choose and nothing on the server worth stealing. A
+  /// device that already holds the identity simply loads it. Anything else
+  /// needs a human: a link from another device, or the one-time legacy unlock.
+  Future<VaultIdentityState> ensureIdentity() async {
     final status = await _repo.getE2eeVault();
     if (status['exists'] != true) {
-      throw StateError('Set up your message PIN first');
-    }
-    final vault = Map<String, dynamic>.from(status['vault'] as Map);
-    final wrapped = Map<String, dynamic>.from(
-      vault['wrapped_private_key'] as Map,
-    );
-    try {
-      final key = await _pinKey(
-        pin,
-        _bytes(vault['kdf_salt'] as String),
-        (vault['kdf_iterations'] as num).toInt(),
-      );
-      final clear = await _aes.decrypt(
-        _box(wrapped['ciphertext'] as String, wrapped['nonce'] as String),
-        secretKey: key,
-        aad: utf8.encode(_vaultAad),
-      );
-      final jwk = Map<String, dynamic>.from(
-        jsonDecode(utf8.decode(clear)) as Map,
-      );
-      _identity = _identityFromJwk(jwk);
-      _publicJwk = Map<String, dynamic>.from(vault['public_key'] as Map);
+      final identity = P256Ecdh.newKeyPair();
+      final publicJwk = _publicJwkFromIdentity(identity);
+      try {
+        await _repo.putE2eeIdentity(publicJwk);
+      } catch (error) {
+        // Two devices setting up at once both see an empty account and both
+        // mint; the server keeps whichever landed first and rejects the other.
+        // Losing that race is normal, not an error — but only if what is there
+        // now is genuinely somebody else's key, so re-read before deciding.
+        final settled = await _repo.getE2eeVault();
+        if (settled['exists'] != true) rethrow;
+        final theirs = Map<String, dynamic>.from(
+          (settled['vault'] as Map)['public_key'] as Map,
+        );
+        if (theirs['x'] != publicJwk['x'] || theirs['y'] != publicJwk['y']) {
+          return (settled['vault'] as Map)['wrapped_private_key'] != null
+              ? VaultIdentityState.legacy
+              : VaultIdentityState.link;
+        }
+      }
+      _identity = identity;
+      _publicJwk = publicJwk;
       _keys.clear();
-      await _saveTrustedIdentity(jwk, _publicJwk!);
+      await _saveTrustedIdentity(_privateJwkFromIdentity(identity), publicJwk);
+      return VaultIdentityState.ready;
+    }
+
+    final vault = Map<String, dynamic>.from(status['vault'] as Map);
+    final publicJwk = Map<String, dynamic>.from(vault['public_key'] as Map);
+    final hasWrapped = vault['wrapped_private_key'] != null;
+
+    if (await _adoptStoredIdentity(publicJwk)) {
+      // A device that holds the key makes the server's wrapped copy pure risk.
+      if (hasWrapped) {
+        try {
+          await _repo.deleteE2eeWrappedKey();
+        } catch (_) {
+          // Best effort; the next launch tries again.
+        }
+      }
+      return VaultIdentityState.ready;
+    }
+    return hasWrapped ? VaultIdentityState.legacy : VaultIdentityState.link;
+  }
+
+  /// Loads the identity this device stored, but only if it is still the one the
+  /// account uses. A mismatch means the identity was replaced elsewhere, so the
+  /// stale copy is dropped rather than left to fail every decryption.
+  Future<bool> _adoptStoredIdentity(Map<String, dynamic> publicJwk) async {
+    final saved = await _storage.readMessageVaultIdentity();
+    if (saved == null) return false;
+    try {
+      final data = Map<String, dynamic>.from(jsonDecode(saved) as Map);
+      final localPublic = Map<String, dynamic>.from(data['public_key'] as Map);
+      if (publicJwk['x'] != localPublic['x'] ||
+          publicJwk['y'] != localPublic['y']) {
+        lock();
+        await _storage.deleteMessageVaultIdentity();
+        return false;
+      }
+      _identity = _identityFromJwk(
+        Map<String, dynamic>.from(data['private_key'] as Map),
+      );
+      _publicJwk = localPublic;
+      _keys.clear();
+      return true;
     } catch (_) {
-      throw StateError('Incorrect message PIN');
+      lock();
+      return false;
     }
   }
 

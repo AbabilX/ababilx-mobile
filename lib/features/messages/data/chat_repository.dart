@@ -190,6 +190,18 @@ class ChatRepository {
 
   Future<Map<String, dynamic>> getE2eeVault() => _e2ee.getVault();
   Future<void> putE2eeVault(Map<String, dynamic> data) => _e2ee.putVault(data);
+  Future<void> putE2eeIdentity(Map<String, dynamic> publicJwk) =>
+      _e2ee.putIdentity(publicJwk);
+  Future<void> deleteE2eeWrappedKey() => _e2ee.deleteWrappedKey();
+  Future<Map<String, dynamic>> createE2eeLink(String deviceName) =>
+      _e2ee.createLink(deviceName);
+  Future<Map<String, dynamic>> inspectE2eeLink(String token) =>
+      _e2ee.inspectLink(token);
+  Future<void> approveE2eeLink(String token, Map<String, dynamic> envelope) =>
+      _e2ee.approveLink(token, envelope);
+  Future<void> denyE2eeLink(String token) => _e2ee.denyLink(token);
+  Future<Map<String, dynamic>> pollE2eeLink(String token) =>
+      _e2ee.pollLink(token);
   Future<Map<String, dynamic>> getE2eePublicKey(String userId) =>
       _e2ee.getPublicKey(userId);
   Future<Map<String, dynamic>> getE2eeConversationKey(String conversationId) =>

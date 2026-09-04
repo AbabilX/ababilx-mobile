@@ -329,3 +329,48 @@ stops and shows its play badge.
 released on pause and on dispose. A paused video has no claim on the screen.
 Mute is state on the viewer, not read back off the controller — nothing rebuilds
 on volume now.
+
+# There is no message PIN
+
+A device mints its own P-256 message identity on first launch
+(`MessageVaultIdentity.ensureIdentity`) and publishes only the public half.
+`MessageVaultGate` asks the user for nothing; it renders a spinner and gets out
+of the way. The private key lives in `flutter_secure_storage` and nowhere else —
+**the server has no copy and must never be given one again.**
+
+What it replaced: the key used to be uploaded wrapped by six digits. That is a
+keyspace of 10^6 behind PBKDF2, about 100 seconds of one GPU, so all of E2EE
+rested on nobody reading `chat_e2ee_user_vaults`.
+
+## Linking a second device
+
+The device *without* the key shows the QR; the device *with* it scans.
+
+- New device — `DeviceLinkController` + `VaultGateLink`: mints an ephemeral
+  P-256 pair, `POST /api/chat/e2ee/link` for a token, draws
+  `ababilx://link-messages?t=<token>&k=<ephemeral pub>`, polls. The ephemeral
+  private key is held in the controller and never written to disk: leaving the
+  screen means starting over, which is cheaper than storing a key that opens an
+  identity.
+- Approving device — `DeviceLinkApproval`, reached from the same scanner as QR
+  sign-in (`QrLoginFlow.start` dispatches on the scheme). `k` comes off the
+  **camera**, never from the server; that is the entire security argument, so do
+  not "helpfully" fetch it from the link session.
+- Both screens show six digits from `SHA-256("<crv>.<x>.<y>")[0..3] % 1e6`,
+  byte-identical to the web client. Pinned in
+  `test/features/messages/device_link_test.dart` — change one side alone and the
+  check silently becomes two unrelated numbers.
+
+## Traps
+
+- `_privateJwkFromIdentity` exists because `_publicJwkFromIdentity` emits
+  `key_ops: []`. That is correct for a public key and makes WebCrypto **reject**
+  the private import, so a phone→browser link would fail while phone→phone
+  worked. The one case a phone cannot test on its own.
+- Mobile only scans, so the supported direction is phone → web/desktop. A
+  web-only user with a new phone has no link path.
+- **Logging out erases the key on that device** (`SecureStorage.clearAll`).
+  With no server copy, a user whose only device logs out loses their history.
+- Legacy accounts get one last PIN prompt (`MessageVaultLegacy.unlock` +
+  `VaultGateLegacyPin`), which unlocks, writes the key to the device and
+  `DELETE`s the server's wrapped copy. Nothing creates a PIN vault any more.

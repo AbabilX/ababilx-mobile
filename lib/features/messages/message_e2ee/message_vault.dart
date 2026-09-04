@@ -14,9 +14,18 @@ import 'p256_ecdh.dart';
 part 'message_vault_codec.dart';
 part 'message_vault_identity.dart';
 part 'message_vault_keys.dart';
+part 'message_vault_legacy.dart';
+part 'message_vault_link.dart';
 
 const _vaultAad = 'ababilx-message-vault-v1';
-const _iterations = 600000;
+
+/// What this device can do about secure messages right now.
+///
+/// [ready] is the resting state and, after the first launch, the only one a
+/// user ever sees. [link] means the key has to be handed over from a device
+/// that holds it, and [legacy] is the single remaining PIN prompt for accounts
+/// that still carry a server-side wrapped key to shed.
+enum VaultIdentityState { ready, link, legacy }
 
 class EncryptedDmPayload {
   const EncryptedDmPayload({

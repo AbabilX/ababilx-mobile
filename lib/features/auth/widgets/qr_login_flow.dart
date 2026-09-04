@@ -3,10 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../local_share/widgets/qr_scan_sheet.dart';
+import '../../messages/message_e2ee/device_link_approval.dart';
 import '../data/qr_login_repository.dart';
 
-/// Scan a desktop/web sign-in QR, confirm it is really the user, then approve.
-/// Declining calls the deny endpoint so the waiting device stops immediately.
+/// Scan a QR from another device and act on it.
+///
+/// Two things can come off the camera. A sign-in code hands that device a
+/// session; a device-link code hands it this account's message key, which is
+/// the only way a new device can read messages at all — the server has no copy
+/// to give it. Either way the user sees what they are approving first, and
+/// declining calls the matching deny endpoint so the waiting device stops
+/// immediately rather than sitting on a dead code.
 class QrLoginFlow {
   QrLoginFlow._();
 
@@ -15,6 +22,10 @@ class QrLoginFlow {
     final payload = await QrScanSheet.show(context);
     if (payload == null || !context.mounted) return;
 
+    if (isDeviceLinkPayload(payload)) {
+      await DeviceLinkApproval.start(context, ref, payload);
+      return;
+    }
     if (!repo.isLoginPayload(payload)) {
       _toast(context, ref, 'qr_login_invalid');
       return;

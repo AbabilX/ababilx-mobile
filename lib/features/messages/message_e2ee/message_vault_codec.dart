@@ -31,6 +31,23 @@ extension MessageVaultCodec on MessageVault {
     'key_ops': <String>[],
   };
 
+  /// The private JWK as WebCrypto will accept it back.
+  ///
+  /// This deliberately does not reuse the public JWK's `key_ops`: a public ECDH
+  /// key declares no usages, and importing a *private* key that says
+  /// `key_ops: []` while asking for `deriveBits` is rejected outright by
+  /// WebCrypto. Getting this wrong breaks phone-to-browser linking only, which
+  /// is exactly the case a phone can never test on its own.
+  Map<String, dynamic> _privateJwkFromIdentity(P256KeyPair key) => {
+    'kty': 'EC',
+    'crv': 'P-256',
+    'x': _b64(key.x),
+    'y': _b64(key.y),
+    'd': _b64(key.d),
+    'ext': true,
+    'key_ops': <String>['deriveBits'],
+  };
+
   SecretBox _box(String cipherText, String nonce) {
     final all = _bytes(cipherText);
     return SecretBox(
