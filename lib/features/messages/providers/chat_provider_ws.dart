@@ -16,6 +16,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
 
   Future<void> _onConversationDeleted(String conversationId) async {
     if (conversationId.isNotEmpty) {
+      _forgetConversationInMemory(conversationId);
       await wipeConversationLocally(ref, conversationId);
     }
     await fetchSidebarSilent();

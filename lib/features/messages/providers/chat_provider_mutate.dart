@@ -194,8 +194,40 @@ mixin _ChatMutateMixin
   Future<void> addChannelMember(String channelId, String userId) =>
       repo.addChannelMember(channelId, userId);
 
+  /// Drops every in-memory trace of a conversation that was just deleted.
+  ///
+  /// The wipe on disk is not enough on its own: feeds live in state keyed by
+  /// conversation id, so reopening the same chat in the same session — which is
+  /// exactly what happens when you delete it and then message the person again
+  /// — re-rendered the whole history straight out of memory, with nothing left
+  /// on the server or the disk to explain where it came from.
+  ///
+  /// Thread feeds are keyed `<conversationId>:thread:<rootId>`, so both maps
+  /// are filtered by prefix rather than by an exact key.
+  void _forgetConversationInMemory(String conversationId) {
+    if (conversationId.isEmpty) return;
+    bool belongs(String key) =>
+        key == conversationId || key.startsWith('$conversationId:');
+    state = state.copyWith(
+      dms: state.dms.where((c) => c.id != conversationId).toList(),
+      channels: state.channels.where((c) => c.id != conversationId).toList(),
+      feeds: {
+        for (final entry in state.feeds.entries)
+          if (!belongs(entry.key)) entry.key: entry.value,
+      },
+      threadRepliesByRoot: {
+        for (final entry in state.threadRepliesByRoot.entries)
+          if (!belongs(entry.key)) entry.key: entry.value,
+      },
+      searchResults: state.searchResults
+          .where((m) => m.conversationId != conversationId)
+          .toList(),
+    );
+  }
+
   Future<void> leaveChannel(String channelId) async {
     await repo.leaveChannel(channelId);
+    _forgetConversationInMemory(channelId);
     await wipeConversationLocally(ref, channelId);
     await (this as ChatNotifier).fetchSidebar(silent: true);
   }
@@ -221,11 +253,13 @@ mixin _ChatMutateMixin
       await (this as ChatNotifier).fetchSidebar(silent: true);
       return;
     }
+    _forgetConversationInMemory(conversationId);
     await wipeConversationLocally(ref, conversationId);
   }
 
   Future<void> deleteChannel(String channelId) async {
     await repo.deleteChannel(channelId);
+    _forgetConversationInMemory(channelId);
     await wipeConversationLocally(ref, channelId);
     await (this as ChatNotifier).fetchSidebar(silent: true);
   }

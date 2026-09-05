@@ -76,8 +76,12 @@ class AppTranslations {
       'chat_new_personal_group': 'New personal group',
       'chat_group_name': 'Group name',
       'chat_create': 'Create',
-      'chat_connection_required':
-          'Connect again or share a workspace to send messages.',
+      // The composer locks on one thing only: a block. It used to also
+      // require an accepted connection or a shared workspace, and this
+      // string still described that retired rule — so the one case that
+      // does lock read as an invitation to reconnect rather than as what
+      // it is.
+      'chat_connection_required': 'You cannot send messages in this chat.',
       'chat_no_requests': 'No requests',
       'chat_no_connections': 'No connections yet',
       'chat_pending': 'Pending',
@@ -308,8 +312,7 @@ class AppTranslations {
       'chat_new_personal_group': 'নতুন ব্যক্তিগত গ্রুপ',
       'chat_group_name': 'গ্রুপের নাম',
       'chat_create': 'তৈরি করুন',
-      'chat_connection_required':
-          'বার্তা পাঠাতে আবার সংযুক্ত হন বা একই ওয়ার্কস্পেসে থাকুন।',
+      'chat_connection_required': 'এই চ্যাটে আপনি বার্তা পাঠাতে পারবেন না।',
       'chat_no_requests': 'কোনো অনুরোধ নেই',
       'chat_no_connections': 'এখনো কোনো সংযোগ নেই',
       'chat_pending': 'অপেক্ষমাণ',
