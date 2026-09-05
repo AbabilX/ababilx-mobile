@@ -49,8 +49,10 @@ class DetailsDangerActions extends ConsumerWidget {
               ref,
               title: 'Delete chat?',
               body:
-                  'This removes the conversation from this account only. It '
-                  'comes back if they message you again.',
+                  'The messages and files are deleted from this device and '
+                  'from your account, and cannot be restored. The other '
+                  'person keeps their own copy. If they message you again the '
+                  'chat returns empty.',
               action: 'Delete',
               run: () =>
                   ref.read(chatProvider.notifier).hideDm(conversation.id),

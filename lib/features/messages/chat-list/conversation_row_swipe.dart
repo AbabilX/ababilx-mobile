@@ -24,12 +24,13 @@ class ConversationRowSwipe extends StatelessWidget {
 
   Future<void> _confirmEndAction(BuildContext context) async {
     final isChannel = conversation.isGroupConversation;
-    final title = isChannel ? 'Leave group?' : 'Remove conversation?';
+    final title = isChannel ? 'Leave group?' : 'Delete chat?';
     final message = isChannel
         ? 'You will stop receiving messages from "${conversation.displayTitle(null)}".'
-        : 'This removes "${conversation.displayTitle(null)}" from your list. '
-              'It comes back if they message you again.';
-    final actionLabel = isChannel ? 'Leave' : 'Remove';
+        : 'The messages and files in "${conversation.displayTitle(null)}" are '
+              'deleted from this device and from your account, and cannot be '
+              'restored. The other person keeps their own copy.';
+    final actionLabel = isChannel ? 'Leave' : 'Delete';
 
     final ok = await showDialog<bool>(
       context: context,

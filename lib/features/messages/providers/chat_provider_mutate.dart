@@ -196,12 +196,21 @@ mixin _ChatMutateMixin
 
   Future<void> leaveChannel(String channelId) async {
     await repo.leaveChannel(channelId);
+    await wipeConversationLocally(ref, channelId);
     await (this as ChatNotifier).fetchSidebar(silent: true);
   }
 
-  /// Removes a DM from just this device's list ("delete for me") — it
-  /// reappears once the peer sends a new message. Removed optimistically;
-  /// on failure the next silent sidebar refresh brings it back.
+  /// Deletes a DM for this account, everywhere it is stored.
+  ///
+  /// The server stops serving those messages to this user permanently and
+  /// physically deletes whatever the peer has also deleted; the local drift
+  /// copy and the downloaded files go here. The conversation still returns to
+  /// the sidebar if the peer writes again — empty, with none of the history
+  /// back.
+  ///
+  /// The local wipe runs only after the server confirms. Doing it first would
+  /// destroy the device's copy of a chat that is still on the server whenever
+  /// the request fails.
   Future<void> hideDm(String conversationId) async {
     state = state.copyWith(
       dms: state.dms.where((c) => c.id != conversationId).toList(),
@@ -210,11 +219,14 @@ mixin _ChatMutateMixin
       await repo.hideDm(conversationId);
     } catch (_) {
       await (this as ChatNotifier).fetchSidebar(silent: true);
+      return;
     }
+    await wipeConversationLocally(ref, conversationId);
   }
 
   Future<void> deleteChannel(String channelId) async {
     await repo.deleteChannel(channelId);
+    await wipeConversationLocally(ref, channelId);
     await (this as ChatNotifier).fetchSidebar(silent: true);
   }
 }

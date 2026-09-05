@@ -47,6 +47,37 @@ class StorageManager {
     return release(items.map((item) => item.urlKey));
   }
 
+  /// Everything belonging to a conversation the user deleted.
+  ///
+  /// Unlike [releaseConversation], which frees space and leaves a download
+  /// badge behind, this drops the blob row as well: there is no message left
+  /// to draw a badge on, and a row holding the attachment's URL is a record of
+  /// a chat that is supposed to be gone.
+  ///
+  /// A file shared with a surviving row through content-hash dedupe keeps its
+  /// bytes; only this conversation's claim on it goes.
+  Future<int> purgeConversation(String conversationId) async {
+    if (conversationId.isEmpty) return 0;
+    final items = await _query.items(
+      limit: 1 << 30,
+      conversationId: conversationId,
+    );
+    var freed = 0;
+    for (final urlKey in items.map((item) => item.urlKey).toSet()) {
+      final row = await _blobs.read(urlKey);
+      if (row == null) {
+        await _blobs.delete(urlKey);
+        continue;
+      }
+      final path = row.localPath ?? '';
+      final shared =
+          path.isNotEmpty && await _dedupe.hasOtherReader(path, urlKey);
+      await _blobs.delete(urlKey);
+      if (!shared && await _deleteFile(path)) freed += row.receivedBytes;
+    }
+    return freed;
+  }
+
   /// Everything downloaded before [cutoff].
   ///
   /// The one action that keeps the store small without anybody picking files

@@ -101,6 +101,17 @@ class ChatOutboxCache {
     }
   }
 
+  /// Drops the queue for one conversation. A chat the user just deleted must
+  /// not keep a pending send alive — it would land in a conversation they
+  /// expect gone and drag it back into the sidebar.
+  Future<void> removeConversation(String conversationId) async {
+    try {
+      await (_db.delete(
+        _db.pendingOutboxMessages,
+      )..where((t) => t.conversationId.equals(conversationId))).go();
+    } catch (_) {}
+  }
+
   Future<void> clearAll() async {
     try {
       await _db.delete(_db.pendingOutboxMessages).go();

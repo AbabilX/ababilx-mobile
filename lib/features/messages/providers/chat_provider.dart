@@ -17,6 +17,7 @@ import '../data/chat_message_merge.dart';
 import '../data/chat_repository.dart';
 import '../data/local/chat_message_row.dart';
 import '../data/local/chat_message_store.dart';
+import '../data/local/conversation_wipe.dart';
 import '../data/local/chat_outbox_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';

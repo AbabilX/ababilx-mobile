@@ -14,10 +14,26 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
   set wsDisconnectSub(StreamSubscription<void>? v);
   Future<void> fetchSidebarSilent();
 
+  Future<void> _onConversationDeleted(String conversationId) async {
+    if (conversationId.isNotEmpty) {
+      await wipeConversationLocally(ref, conversationId);
+    }
+    await fetchSidebarSilent();
+  }
+
   void handleWsEvent(Map<String, dynamic> ev) {
     final type = ev['type'] as String? ?? '';
     if (type == 'chat.conversation.updated') {
       unawaited(fetchSidebarSilent());
+      return;
+    }
+    // Sent to this account alone when the conversation is deleted — either
+    // because the group is gone for everyone, or because the user deleted the
+    // chat on another device. Either way this device is still holding the
+    // whole history locally, so the wipe has to run here too.
+    if (type == 'chat.conversation.deleted') {
+      final deletedId = ev['conversation_id'] as String? ?? '';
+      unawaited(_onConversationDeleted(deletedId));
       return;
     }
     if (type == 'chat.message.created') {
