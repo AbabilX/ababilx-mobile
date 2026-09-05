@@ -195,6 +195,18 @@ class ChatRepository {
   Future<void> putE2eeIdentity(Map<String, dynamic> publicJwk) =>
       _e2ee.putIdentity(publicJwk);
   Future<void> deleteE2eeWrappedKey() => _e2ee.deleteWrappedKey();
+  Future<void> putE2eeRecoveryVault(
+    Map<String, dynamic> publicJwk,
+    Map<String, dynamic> recovery,
+  ) => _e2ee.putRecoveryVault(publicJwk, recovery);
+  Future<Map<String, dynamic>> requestE2eeResetCode() =>
+      _e2ee.requestResetCode();
+  Future<void> resetE2eeVault(
+    String code,
+    Map<String, dynamic> publicJwk,
+    Map<String, dynamic> recovery,
+  ) =>
+      _e2ee.resetVault(code, publicJwk, recovery);
   Future<Map<String, dynamic>> createE2eeLink(String deviceName) =>
       _e2ee.createLink(deviceName);
   Future<Map<String, dynamic>> inspectE2eeLink(String token) =>
@@ -212,6 +224,10 @@ class ChatRepository {
     String conversationId,
     Map<String, dynamic> envelopes,
   ) => _e2ee.createConversationKey(conversationId, envelopes);
+  Future<Map<String, dynamic>> backfillE2eeConversationKey(
+    String conversationId,
+    List<Map<String, dynamic>> envelopes,
+  ) => _e2ee.backfillConversationKey(conversationId, envelopes);
 
   Future<bool> muteConversation(String conversationId, bool muted) =>
       _conversations.muteConversation(conversationId, muted);

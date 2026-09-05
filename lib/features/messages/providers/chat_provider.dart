@@ -20,6 +20,7 @@ import '../data/local/chat_message_store.dart';
 import '../data/local/chat_outbox_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
+import '../message_e2ee/dm_key_rotation.dart';
 import '../message_e2ee/message_vault.dart';
 import 'chat_access_provider.dart';
 import 'chat_state.dart';

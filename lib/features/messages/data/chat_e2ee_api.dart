@@ -24,6 +24,40 @@ class ChatE2eeApi {
   Future<void> deleteWrappedKey() =>
       _client.delete(ApiConstants.chatE2eeWrappedKey);
 
+  /// Publishes the identity with its private key wrapped by a recovery code,
+  /// or re-wraps the same identity under a newly generated one. The code itself
+  /// never appears in this request.
+  Future<void> putRecoveryVault(
+    Map<String, dynamic> publicJwk,
+    Map<String, dynamic> recovery,
+  ) => _client.put(
+    ApiConstants.chatE2eeRecoveryVault,
+    data: {'public_key': publicJwk, ...recovery},
+  );
+
+  /// Asks for the emailed code that authorises replacing this account's
+  /// identity. Returns the masked address it went to, so the user knows which
+  /// inbox to open.
+  Future<Map<String, dynamic>> requestResetCode() async {
+    final res = await _client.post(ApiConstants.chatE2eeResetCode);
+    return unwrapApiData<Map<String, dynamic>>(res);
+  }
+
+  /// Swaps in a freshly minted identity. The emailed code authorises the swap;
+  /// it unlocks nothing old, because nobody holds that key any more.
+  ///
+  /// The new identity's recovery copy travels in the same request: leaving it
+  /// stranded on one device would recreate the situation the reset exists to
+  /// escape, and the emailed code has already been spent by then.
+  Future<void> resetVault(
+    String code,
+    Map<String, dynamic> publicJwk,
+    Map<String, dynamic> recovery,
+  ) => _client.post(
+    ApiConstants.chatE2eeReset,
+    data: {'code': code, 'public_key': publicJwk, 'recovery': recovery},
+  );
+
   Future<Map<String, dynamic>> createLink(String deviceName) async {
     final res = await _client.post(
       ApiConstants.chatE2eeLink,
@@ -77,6 +111,21 @@ class ChatE2eeApi {
   ) async {
     final res = await _client.post(
       _endpoints.action(conversationId, 'e2ee-key'),
+      data: {'envelopes': envelopes},
+    );
+    return unwrapApiData<Map<String, dynamic>>(res);
+  }
+
+  /// Hands existing conversation keys to members who cannot read them, after
+  /// they started a fresh identity. Each entry is
+  /// `{user_id, key_version, envelope}`, already sealed to that member's
+  /// public identity.
+  Future<Map<String, dynamic>> backfillConversationKey(
+    String conversationId,
+    List<Map<String, dynamic>> envelopes,
+  ) async {
+    final res = await _client.post(
+      _endpoints.action(conversationId, 'e2ee-key/backfill'),
       data: {'envelopes': envelopes},
     );
     return unwrapApiData<Map<String, dynamic>>(res);

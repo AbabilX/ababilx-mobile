@@ -131,7 +131,11 @@ class YouMenu extends ConsumerWidget {
         ),
         YouMenuItem(
           icon: HugeIcons.strokeRoundedQrCode,
-          label: 'Scan QR to sign in',
+          // One scanner, two jobs: a sign-in code and a message-link code. The
+          // label says neither, because naming only sign-in hides the link
+          // path from the person told to scan from the device that has their
+          // messages.
+          label: 'Scan QR code',
           onTap: () {
             // Let the parent start scanning after this route finishes closing.
             // Pushing a second modal while this one is popping can leave the

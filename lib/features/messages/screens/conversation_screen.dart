@@ -136,13 +136,16 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                 ? const Center(
                     child: CircularProgressIndicator(strokeWidth: 2.5),
                   )
-                : MessageVaultGate(
-                    onUnlocked: () {
-                      ref
-                          .read(chatProvider.notifier)
-                          .loadFeed(widget.conversationId, force: true);
-                      setState(() {});
-                    },
+                : SafeArea(
+                    top: false,
+                    child: MessageVaultGate(
+                      onUnlocked: () {
+                        ref
+                            .read(chatProvider.notifier)
+                            .loadFeed(widget.conversationId, force: true);
+                        setState(() {});
+                      },
+                    ),
                   ),
           ),
         ],

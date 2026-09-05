@@ -1,10 +1,19 @@
 part of 'message_vault.dart';
 
 /// Per-conversation AES key, tagged with the key version it belongs to.
+///
+/// [stale] marks a version the server reported as unreadable by some member —
+/// sealing to it would produce a message they could never open — so the next
+/// send rotates instead of reusing it.
 class _DmKey {
-  const _DmKey({required this.version, required this.key});
+  const _DmKey({
+    required this.version,
+    required this.key,
+    this.stale = false,
+  });
   final int version;
   final SecretKey key;
+  final bool stale;
 }
 
 extension MessageVaultKeys on MessageVault {
@@ -14,11 +23,40 @@ extension MessageVaultKeys on MessageVault {
     String peer,
   ) async {
     final loaded = await _loadKey(conversationId, self);
-    if (loaded != null) return loaded;
+    if (loaded != null && !loaded.stale) return loaded;
+    return _createKey(conversationId, self, peer);
+  }
+
+  /// Re-keys a conversation and seals [text] under the new key.
+  ///
+  /// Called when the server refuses a send because the key it was sealed with
+  /// is unreadable to the other side — in practice they started a fresh
+  /// identity, which drops their envelope while this device's own envelope
+  /// stays valid, so nothing local looks wrong. Dropping the cache first stops
+  /// a key that went stale mid-session from being handed back.
+  Future<EncryptedDmPayload> rekeyAndEncrypt({
+    required String conversationId,
+    required String text,
+    required String currentUserId,
+    required String peerUserId,
+  }) async {
+    _keys.remove(conversationId);
+    final key = await _createKey(conversationId, currentUserId, peerUserId);
+    return _seal(conversationId, text, currentUserId, key);
+  }
+
+  /// Mints a conversation key and wraps it for both members' current public
+  /// keys. The server rotates to a new version whenever somebody cannot read
+  /// the present one, so this is the first-key path and the re-key path alike.
+  Future<_DmKey> _createKey(
+    String conversationId,
+    String self,
+    String peer,
+  ) async {
     final identity = _identity;
     final publicJwk = _publicJwk;
     if (identity == null || publicJwk == null) {
-      throw StateError('Enter your message PIN first');
+      throw StateError('Secure messages are not ready on this device yet');
     }
     final dmKey = await _aes.newSecretKey();
     final peerResult = await _repo.getE2eePublicKey(peer);
@@ -54,15 +92,50 @@ extension MessageVaultKeys on MessageVault {
     final cached = _keys[conversationId];
     if (cached != null && !refresh) return cached;
     if (_identity == null) return null;
+    final pending = _keyLoads[conversationId];
+    if (pending != null && !refresh) return pending;
+    final load = _fetchKey(conversationId, self);
+    _keyLoads[conversationId] = load;
+    try {
+      return await load;
+    } finally {
+      if (identical(_keyLoads[conversationId], load)) {
+        _keyLoads.remove(conversationId);
+      }
+    }
+  }
+
+  Future<_DmKey?> _fetchKey(String conversationId, String self) async {
     final status = await _repo.getE2eeConversationKey(conversationId);
     if (status['exists'] != true) return null;
     final key = Map<String, dynamic>.from(status['key'] as Map);
-    final entry = _DmKey(
-      version: (key['key_version'] as num).toInt(),
-      key: await _unwrapKey(
+    final missing = (status['missing_member_ids'] as List?) ?? const [];
+    // An envelope that will not open is indistinguishable from having none:
+    // unwrapping is pure computation, so this is a corrupt or hostile row, not
+    // a network blip. Reporting "no key" lets the next send mint a fresh
+    // version instead of leaving the conversation unable to send at all.
+    final SecretKey opened;
+    try {
+      opened = await _unwrapKey(
         Map<String, dynamic>.from(key['envelope'] as Map),
         self,
-      ),
+      );
+    } catch (_) {
+      return null;
+    }
+    final entry = _DmKey(
+      version: (key['key_version'] as num).toInt(),
+      key: opened,
+      // Hand the surviving key to anyone who lost theirs BEFORE deciding this
+      // key is stale: a filled gap restores their history and leaves nothing
+      // to rotate.
+      stale:
+          missing.isNotEmpty &&
+          !await _backfillKeys(
+            conversationId,
+            self,
+            (status['gaps'] as List?) ?? const [],
+          ),
     );
     _keys[conversationId] = entry;
     return entry;
@@ -95,7 +168,7 @@ extension MessageVaultKeys on MessageVault {
   ) async {
     final identity = _identity;
     if (identity == null) {
-      throw StateError('Enter your message PIN first');
+      throw StateError('Secure messages are not ready on this device yet');
     }
     final key = await _envelopeKey(
       identity,

@@ -330,28 +330,55 @@ released on pause and on dispose. A paused video has no claim on the screen.
 Mute is state on the viewer, not read back off the controller — nothing rebuilds
 on volume now.
 
-# There is no message PIN
+# There is no message PIN — recovery is an emailed code
 
-A device mints its own P-256 message identity on first launch
-(`MessageVaultIdentity.ensureIdentity`) and publishes only the public half.
-`MessageVaultGate` asks the user for nothing; it renders a spinner and gets out
-of the way. The private key lives in `flutter_secure_storage` and nowhere else —
-**the server has no copy and must never be given one again.**
+Changed 2026-09-05, at the product owner's explicit direction.
 
-What it replaced: the key used to be uploaded wrapped by six digits. That is a
-keyspace of 10^6 behind PBKDF2, about 100 seconds of one GPU, so all of E2EE
-rested on nobody reading `chat_e2ee_user_vaults`.
+The **server** mints and holds the account's P-256 identity, sealed under
+`ABABILX_SECRET_KEY`. `MessageVaultIdentity.ensureIdentity` asks
+`GET .../e2ee/vault`:
 
-## Linking a second device
+- **no identity yet** → the server makes one and returns `private_key` in the
+  same response. A first launch is asked nothing.
+- **this phone already stores it** → loaded from `flutter_secure_storage`,
+  asked nothing.
+- **anything else** → `VaultIdentityState.verify`, and `VaultGateEmail` asks for
+  the 6 digits mailed to the account owner (`MessageVaultRecover`).
 
-The device *without* the key shows the QR; the device *with* it scans.
+Confirming the code returns the *same* identity, so every message the account
+ever received decrypts — including on a phone that has never seen this account
+before. That is the whole point of the change: most of this user base is on the
+web, on several machines, signing in with Google.
 
-- New device — `DeviceLinkController` + `VaultGateLink`: mints an ephemeral
-  P-256 pair, `POST /api/chat/e2ee/link` for a token, draws
-  `ababilx://link-messages?t=<token>&k=<ephemeral pub>`, polls. The ephemeral
-  private key is held in the controller and never written to disk: leaving the
-  screen means starting over, which is cheaper than storing a key that opens an
-  identity.
+**Be honest about what it costs.** A machine holding the server's environment
+key and its database can read every DM. This is not end-to-end encryption
+against AbabilX any more, and recovery-by-email cannot coexist with it. Do not
+write copy that says end-to-end.
+
+What is still true and still matters: per-conversation keys, ciphertext-only
+bodies, safety numbers, encrypted push, and a database dump that is inert on its
+own.
+
+What must not come back: the 6-digit PIN that wrapped the key *server-side*.
+That was 10^6 behind PBKDF2, about 100 GPU-seconds. A 32-byte environment key is
+a different thing entirely; a short secret a person types is not.
+
+`identity_changed: true` from the unlock means the account predates escrow and
+had no device left to hand its key over, so the server issued a new identity.
+History then returns per conversation wherever another member's key can be
+re-wrapped (the server does this on `GET .../e2ee-key`), and nowhere else.
+
+`MessageVaultIdentity` also uploads this phone's key
+(`PUT .../e2ee/vault/escrow`) when the server reports `recoverable: false` —
+that is the quiet migration for accounts made under the device-local scheme.
+
+## Linking a second device — this phone is the approver only
+
+Web still shows a QR above its "Email me a code" fallback, because a key that
+travels between two devices never passes through the server. **This phone only
+scans it**; `VaultGateLink` and `DeviceLinkController` are gone, since a phone
+without the key now takes the emailed code instead of showing a QR of its own.
+
 - Approving device — `DeviceLinkApproval`, reached from the same scanner as QR
   sign-in (`QrLoginFlow.start` dispatches on the scheme). `k` comes off the
   **camera**, never from the server; that is the entire security argument, so do
@@ -367,10 +394,35 @@ The device *without* the key shows the QR; the device *with* it scans.
   `key_ops: []`. That is correct for a public key and makes WebCrypto **reject**
   the private import, so a phone→browser link would fail while phone→phone
   worked. The one case a phone cannot test on its own.
-- Mobile only scans, so the supported direction is phone → web/desktop. A
-  web-only user with a new phone has no link path.
-- **Logging out erases the key on that device** (`SecureStorage.clearAll`).
-  With no server copy, a user whose only device logs out loses their history.
-- Legacy accounts get one last PIN prompt (`MessageVaultLegacy.unlock` +
-  `VaultGateLegacyPin`), which unlocks, writes the key to the device and
-  `DELETE`s the server's wrapped copy. Nothing creates a PIN vault any more.
+- Mobile only scans, so a phone that lacks the key takes `VaultGateEmail`, not a
+  QR. The screen requests the code on arrival rather than behind a button —
+  there is one action on it, so making people ask first is a tap carrying no
+  decision.
+- **After a reset, the other side hands the old key back.** The conversation
+  key survives on their device — the reset only dropped the resetting user's
+  envelope for it. `GET .../e2ee-key` reports the fillable versions as `gaps`
+  (each with this device's own envelope), `MessageVaultBackfill._backfillKeys`
+  re-wraps them for the missing member and POSTs `.../e2ee-key/backfill`, and
+  their history decrypts again. It runs from `_fetchKey`, so it fires the first
+  time the peer's app loads that conversation's key — one attempt per session,
+  cleared on failure. Never persist a failed decrypt: `chat_message_row.dart`
+  writes an encrypted message with an empty body, which is what lets a repaired
+  key take effect on the next load instead of freezing the placeholder in.
+- **After a reset, the OTHER side has to re-key too.** The reset drops only the
+  resetting user's key envelopes, so the peer's device still holds a valid one
+  and sees nothing wrong — it would keep sealing to a key the reset user can
+  never open, which reads as "every incoming message says *Unable to decrypt*".
+  `_DmKey.stale` (from `missing_member_ids` on `GET .../e2ee-key`) makes the
+  next send rotate, and `sendEncryptedDm` in `message_e2ee/dm_key_rotation.dart`
+  re-keys once on the server's 409 `chat_key_rotation_required` for a key that
+  went stale mid-session. `encryptExisting` (edits) refuses a stale key instead
+  of re-sealing under it; the notification quick reply uses `encryptNew` with
+  the push's `sender_id` so it can rotate. Messages written before the reset
+  stay unreadable — that half is the trade, not a bug.
+- **Logging out still erases the key on that device** (`SecureStorage.clearAll`)
+  — but signing back in costs one emailed code, not the account's history. That
+  used to be a permanent loss for a single-device user.
+- The reset endpoint (`POST /api/teams/chat/e2ee/reset`) and its 9-character
+  emailed code are still on the server and no longer reachable from this app;
+  `POST .../e2ee/device/unlock` covers the same ground without discarding the
+  identity. Both share one code row per user, so do not run them together.

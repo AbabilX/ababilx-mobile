@@ -5,17 +5,17 @@ import '../../../core/network/first_load_timeout.dart';
 import '../providers/chat_provider.dart';
 import 'message_vault.dart';
 import 'vault_gate_error.dart';
-import 'vault_gate_legacy_pin.dart';
-import 'vault_gate_link.dart';
+import 'vault_gate_recovery_code.dart';
+import 'vault_gate_recovery_setup.dart';
 
 /// Stands in front of the chat until this device holds the account's message
 /// key.
 ///
-/// On a first launch it mints one and gets out of the way without a single
-/// prompt: the private key is made here and only the public half is published,
-/// so there is nothing for a PIN to protect. It only asks for something when
-/// the account has an identity this device does not — then the key has to come
-/// from a device that has it.
+/// On a first launch it mints one, wraps it under a fresh recovery code and
+/// shows that code once — the only moment it can be shown, since nothing keeps
+/// a copy. On every launch after that it loads the key and gets out of the way.
+/// It asks for the code only where the key genuinely is not here, because
+/// AbabilX has none to hand over: that is what end-to-end encryption means.
 class MessageVaultGate extends ConsumerStatefulWidget {
   const MessageVaultGate({super.key, required this.onUnlocked});
   final VoidCallback onUnlocked;
@@ -30,7 +30,8 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
   // spin forever instead of offering a retry.
   bool _checking = true;
   Object? _error;
-  VaultIdentityState _state = VaultIdentityState.link;
+  VaultIdentityState _state = VaultIdentityState.unlock;
+  String _recoveryCode = '';
 
   @override
   void initState() {
@@ -44,16 +45,23 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
       _error = null;
     });
     try {
-      final state = await ref
-          .read(messageVaultProvider)
-          .ensureIdentity()
-          .timeout(firstLoadNetworkTimeout);
+      final vault = ref.read(messageVaultProvider);
+      final state = await vault.ensureIdentity().timeout(firstLoadNetworkTimeout);
       if (!mounted) return;
+      // Nothing keeps a copy of the code, so a missing one here means the chat
+      // opens and the user makes a new one from Settings later — better than
+      // blocking on a screen with nothing to show.
+      final code = state == VaultIdentityState.setup
+          ? (vault.takePendingRecoveryCode() ?? '')
+          : '';
       setState(() {
-        _state = state;
+        _state = code.isEmpty && state == VaultIdentityState.setup
+            ? VaultIdentityState.ready
+            : state;
+        _recoveryCode = code;
         _checking = false;
       });
-      if (state == VaultIdentityState.ready) await _finish();
+      if (_state == VaultIdentityState.ready) await _finish();
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -83,9 +91,15 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
     if (_state == VaultIdentityState.ready) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
-    if (_state == VaultIdentityState.legacy) {
-      return VaultGateLegacyPin(onUnlocked: _finish);
+    if (_state == VaultIdentityState.setup) {
+      return VaultGateRecoverySetup(code: _recoveryCode, onSaved: _finish);
     }
-    return VaultGateLink(onLinked: _finish);
+    return VaultGateRecoveryCode(
+      onUnlocked: _finish,
+      onIdentityReplaced: (code) => setState(() {
+        _state = VaultIdentityState.setup;
+        _recoveryCode = code;
+      }),
+    );
   }
 }

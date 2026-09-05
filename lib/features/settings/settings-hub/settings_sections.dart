@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
+import '../../messages/message_e2ee/recovery_code_dialog.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import 'account_rows.dart';
@@ -92,6 +93,23 @@ class SettingsSections extends ConsumerWidget {
           title: 'Scan QR to sign in',
           subtitle: 'Approve a sign-in on desktop or web',
           onTap: () => QrLoginFlow.start(context, ref),
+        ),
+        // Same scanner, named for the other job it does. The new device is
+        // told to "open AbabilX where your messages already work and scan" —
+        // without a row that says messages, the only thing matching that
+        // instruction reads as sign-in, and a phone holding the one copy of an
+        // account's message key is the only thing that can approve the link.
+        SettingsRow(
+          icon: HugeIcons.strokeRoundedLink01,
+          title: 'Link a device to your messages',
+          subtitle: 'Scan the code shown on the other device',
+          onTap: () => QrLoginFlow.start(context, ref),
+        ),
+        SettingsRow(
+          icon: HugeIcons.strokeRoundedKey01,
+          title: 'Message recovery code',
+          subtitle: 'The only way to read your messages on a new device',
+          onTap: () => RecoveryCodeDialog.show(context),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedShield01,

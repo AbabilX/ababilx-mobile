@@ -45,13 +45,20 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
         ),
-        child: SizedBox(
-          height: MediaQuery.sizeOf(sheetContext).height * 0.62,
-          child: MessageVaultGate(
-            onUnlocked: () {
-              if (mounted) setState(() => _vaultUnlocked = true);
-              Navigator.of(sheetContext).pop();
-            },
+        // Keyboard inset outside, gesture bar inside. SafeArea reads
+        // MediaQuery.padding, which the keyboard already zeroes out, so the
+        // two never stack into a double gap — and the sheet's last button
+        // stops sitting under the home indicator.
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * 0.62,
+            child: MessageVaultGate(
+              onUnlocked: () {
+                if (mounted) setState(() => _vaultUnlocked = true);
+                Navigator.of(sheetContext).pop();
+              },
+            ),
           ),
         ),
       ),

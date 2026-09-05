@@ -98,6 +98,12 @@ class ApiConstants {
   // Sheds the retired PIN-wrapped copy of the identity once a device holds it.
   static const String chatE2eeWrappedKey =
       '/api/teams/chat/e2ee/vault/wrapped';
+  // The private key wrapped by the user's 256-bit recovery code. The code is
+  // generated on the device and never sent, so what this endpoint stores is
+  // ciphertext the server cannot open — which is what keeps messages
+  // end-to-end encrypted while still letting a second device catch up.
+  static const String chatE2eeRecoveryVault =
+      '/api/teams/chat/e2ee/vault/recovery';
   // Device linking: identity, not chat, so it lives outside the independent
   // chat flag and has no /api/teams twin.
   static const String chatE2eeLink = '/api/chat/e2ee/link';
@@ -105,6 +111,11 @@ class ApiConstants {
   static const String chatE2eeLinkApprove = '/api/chat/e2ee/link/approve';
   static const String chatE2eeLinkDeny = '/api/chat/e2ee/link/deny';
   static const String chatE2eeLinkPoll = '/api/chat/e2ee/link/poll';
+  // Start fresh: an emailed code buys a brand-new identity for someone with no
+  // device left that holds the old one. Path is /api/teams even without a
+  // workspace — the identity belongs to the account, not to a team.
+  static const String chatE2eeResetCode = '/api/teams/chat/e2ee/reset/code';
+  static const String chatE2eeReset = '/api/teams/chat/e2ee/reset';
   static String chatE2eePublicKey(String userId) =>
       '/api/teams/chat/e2ee/users/$userId/public-key';
   static String chatE2eeConversationKey(String conversationId) =>

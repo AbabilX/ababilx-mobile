@@ -10,22 +10,26 @@ import '../data/chat_repository.dart';
 import '../data/models/chat_message.dart';
 import '../data/models/chat_message_quote.dart';
 import 'p256_ecdh.dart';
+import 'recovery_key.dart';
 
+part 'message_vault_backfill.dart';
+part 'message_vault_decrypt.dart';
 part 'message_vault_codec.dart';
 part 'message_vault_identity.dart';
 part 'message_vault_keys.dart';
-part 'message_vault_legacy.dart';
 part 'message_vault_link.dart';
-
-const _vaultAad = 'ababilx-message-vault-v1';
+part 'message_vault_recover.dart';
+part 'message_vault_reset.dart';
 
 /// What this device can do about secure messages right now.
 ///
 /// [ready] is the resting state and, after the first launch, the only one a
-/// user ever sees. [link] means the key has to be handed over from a device
-/// that holds it, and [legacy] is the single remaining PIN prompt for accounts
-/// that still carry a server-side wrapped key to shed.
-enum VaultIdentityState { ready, link, legacy }
+/// user ever sees. [setup] means a recovery code was just generated and has to
+/// be shown once — the only moment it can be, since nothing keeps a copy.
+/// [unlock] is a device that does not hold the key: it needs that code, because
+/// AbabilX has no copy of the key to hand over. That is the trade for
+/// end-to-end encryption.
+enum VaultIdentityState { ready, setup, unlock }
 
 class EncryptedDmPayload {
   const EncryptedDmPayload({
@@ -44,8 +48,25 @@ class MessageVault {
   final SecureStorage _storage;
   final _aes = AesGcm.with256bits();
   final _keys = <String, _DmKey>{};
+  // One backfill attempt per conversation per session; a failure clears it.
+  final _backfilled = <String>{};
+  // A conversation with no readable key caches nothing, so a screenful of
+  // messages would fire one identical GET each without this.
+  final _keyLoads = <String, Future<_DmKey?>>{};
   P256KeyPair? _identity;
   Map<String, dynamic>? _publicJwk;
+  // A recovery code that has been generated but not yet shown to its owner.
+  // It lives here and nowhere else — never in secure storage, never on the
+  // server — because anything durable would leave a key-equivalent on disk,
+  // which is the one thing this scheme exists to avoid.
+  String? _pendingRecoveryCode;
+
+  /// Reads the freshly generated code once and forgets it.
+  String? takePendingRecoveryCode() {
+    final code = _pendingRecoveryCode;
+    _pendingRecoveryCode = null;
+    return code;
+  }
 
   bool get isUnlocked => _identity != null;
 
@@ -74,7 +95,12 @@ class MessageVault {
     required String currentUserId,
   }) async {
     final key = await _loadKey(conversationId, currentUserId);
-    if (key == null) throw StateError('Secure message key is unavailable');
+    // A stale key is one somebody in the conversation can no longer read, so
+    // re-sealing under it would make the edit permanently unreadable to them.
+    // There is no peer id here to re-key with, so this refuses instead.
+    if (key == null || key.stale) {
+      throw StateError('Secure message key is unavailable');
+    }
     return _seal(conversationId, text, currentUserId, key);
   }
 
@@ -100,87 +126,6 @@ class MessageVault {
     );
   }
 
-  /// Decrypts a quoted message's preview, if it has one and it is ciphertext.
-  ///
-  /// The quote is resolved by the server from the original row, so in a DM it
-  /// arrives encrypted under the same conversation key — and under the
-  /// *quoted* sender's id, which the cipher binds into its AAD. Running it back
-  /// through [decryptMessage] as a stand-in message reuses the key cache and
-  /// the rotation refetch; the stand-in carries no quote of its own, so this
-  /// recurses exactly once.
-  Future<ChatMessageQuote?> _decryptQuote(
-    ChatMessage message,
-    String currentUserId,
-  ) async {
-    final quote = message.quote;
-    if (quote == null || !quote.isEncrypted) return null;
-    final decrypted = await decryptMessage(
-      ChatMessage(
-        id: quote.messageId,
-        conversationId: message.conversationId,
-        userId: quote.userId,
-        body: '',
-        createdAt: '',
-        encryptedBody: quote.encryptedBody,
-        encryptionNonce: quote.encryptionNonce,
-        encryptionVersion: 1,
-        encryptionKeyVersion: quote.encryptionKeyVersion,
-      ),
-      currentUserId,
-    );
-    return quote.copyWith(body: decrypted.body);
-  }
-
-  Future<ChatMessage> decryptMessage(
-    ChatMessage message,
-    String currentUserId,
-  ) async {
-    // An attachment-only DM carries no ciphertext of its own but can still
-    // quote one, so the quote is resolved before the outer early-return.
-    final quote = await _decryptQuote(message, currentUserId);
-    if (!message.isEncrypted) {
-      return quote == null ? message : message.copyWith(quote: quote);
-    }
-    if (!isUnlocked) {
-      return message.copyWith(body: 'Encrypted message', quote: quote);
-    }
-    if (currentUserId.isEmpty) {
-      return message.copyWith(body: 'Encrypted message', quote: quote);
-    }
-    try {
-      var key = await _loadKey(message.conversationId, currentUserId);
-      // A newer key version means the other side rotated (usually after a PIN
-      // reset), so the cached key is stale and worth one refetch.
-      if (key != null && (message.encryptionKeyVersion ?? 0) > key.version) {
-        key = await _loadKey(
-          message.conversationId,
-          currentUserId,
-          refresh: true,
-        );
-      }
-      if (key == null || key.version != message.encryptionKeyVersion) {
-        throw StateError('Secure message key is unavailable');
-      }
-      final clear = await _aes.decrypt(
-        _box(message.encryptedBody!, message.encryptionNonce!),
-        secretKey: key.key,
-        aad: utf8.encode(
-          'ababilx-dm-v1:${message.conversationId}:${key.version}:${message.userId}',
-        ),
-      );
-      return message.copyWith(body: utf8.decode(clear), quote: quote);
-    } catch (_) {
-      return message.copyWith(
-        body: 'Unable to decrypt this message',
-        quote: quote,
-      );
-    }
-  }
-
-  Future<List<ChatMessage>> decryptMessages(
-    List<ChatMessage> messages,
-    String currentUserId,
-  ) => Future.wait(messages.map((m) => decryptMessage(m, currentUserId)));
 }
 
 final messageVaultProvider = Provider<MessageVault>(

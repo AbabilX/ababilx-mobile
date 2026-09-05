@@ -87,10 +87,22 @@ Future<EncryptedDmPayload?> _seal(
     // message, so the reply fails and the user is told.
     throw StateError('chat vault locked');
   }
-  return vault.encryptExisting(
+  // encryptNew, not encryptExisting: the push names the sender, so a key the
+  // other side can no longer read (they started a fresh identity) is rotated
+  // here rather than producing a reply nobody can open.
+  final peerId = data['sender_id']?.toString() ?? '';
+  if (peerId.isEmpty) {
+    return vault.encryptExisting(
+      conversationId: conversationId,
+      text: body,
+      currentUserId: myUserId,
+    );
+  }
+  return vault.encryptNew(
     conversationId: conversationId,
     text: body,
     currentUserId: myUserId,
+    peerUserId: peerId,
   );
 }
 

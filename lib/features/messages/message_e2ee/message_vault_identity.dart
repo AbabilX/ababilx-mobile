@@ -1,11 +1,14 @@
 part of 'message_vault.dart';
 
-/// Vault identity: creating it on this device and restoring it from the OS
-/// secure storage. The private key is generated here and never leaves — the
-/// server is told the public half and nothing else — so bringing secure
-/// messages up asks the user for nothing at all.
+/// Vault identity: getting the account's message key onto this phone.
 ///
-/// The retired PIN paths live in `message_vault_legacy.dart`.
+/// The key is minted here and the server never sees it. What the server keeps
+/// is a copy wrapped by a 256-bit recovery code, generated on the device and
+/// shown once — ciphertext it cannot open. That is what lets a second device
+/// catch up without giving up end-to-end encryption.
+///
+/// The unlock path is in `message_vault_recover.dart`; the last-resort identity
+/// swap is in `message_vault_reset.dart`.
 extension MessageVaultIdentity on MessageVault {
   /// Restores the identity protected by this device's OS secure storage.
   /// It is intentionally erased on logout and by an app uninstall.
@@ -65,58 +68,64 @@ extension MessageVaultIdentity on MessageVault {
     }
   }
 
-  /// Brings secure messages up without asking the user anything.
+  /// Mints a recovery code for an identity, publishes the wrapped key, and
+  /// stages the code for the setup screen to show.
+  Future<VaultIdentityState> _provisionRecovery(
+    P256KeyPair identity,
+    Map<String, dynamic> publicJwk,
+  ) async {
+    final code = RecoveryKey.generateCode();
+    final vault = await RecoveryKey.wrap(
+      _privateJwkFromIdentity(identity),
+      code,
+    );
+    await _repo.putE2eeRecoveryVault(publicJwk, vault.toJson());
+    await _adopt(identity, publicJwk);
+    _pendingRecoveryCode = RecoveryKey.format(code);
+    return VaultIdentityState.setup;
+  }
+
+  /// Brings secure messages up, asking for nothing when it can.
   ///
-  /// A first device mints its own identity and publishes only the public half,
-  /// so there is no PIN to choose and nothing on the server worth stealing. A
-  /// device that already holds the identity simply loads it. Anything else
-  /// needs a human: a link from another device, or the one-time legacy unlock.
+  /// A first launch mints the identity here, wraps it under a fresh recovery
+  /// code and shows that code once. A phone that already holds the key just
+  /// loads it. A phone that does not has to be given the key by its owner —
+  /// there is nowhere else it could come from, which is the point.
   Future<VaultIdentityState> ensureIdentity() async {
     final status = await _repo.getE2eeVault();
+
     if (status['exists'] != true) {
       final identity = P256Ecdh.newKeyPair();
       final publicJwk = _publicJwkFromIdentity(identity);
       try {
-        await _repo.putE2eeIdentity(publicJwk);
-      } catch (error) {
+        return await _provisionRecovery(identity, publicJwk);
+      } catch (_) {
         // Two devices setting up at once both see an empty account and both
-        // mint; the server keeps whichever landed first and rejects the other.
-        // Losing that race is normal, not an error — but only if what is there
-        // now is genuinely somebody else's key, so re-read before deciding.
+        // mint; the server keeps whichever landed first. Re-read and take the
+        // normal path rather than reporting a race that resolved itself.
         final settled = await _repo.getE2eeVault();
         if (settled['exists'] != true) rethrow;
-        final theirs = Map<String, dynamic>.from(
-          (settled['vault'] as Map)['public_key'] as Map,
-        );
-        if (theirs['x'] != publicJwk['x'] || theirs['y'] != publicJwk['y']) {
-          return (settled['vault'] as Map)['wrapped_private_key'] != null
-              ? VaultIdentityState.legacy
-              : VaultIdentityState.link;
-        }
+        return VaultIdentityState.unlock;
       }
-      _identity = identity;
-      _publicJwk = publicJwk;
-      _keys.clear();
-      await _saveTrustedIdentity(_privateJwkFromIdentity(identity), publicJwk);
-      return VaultIdentityState.ready;
     }
 
     final vault = Map<String, dynamic>.from(status['vault'] as Map);
     final publicJwk = Map<String, dynamic>.from(vault['public_key'] as Map);
-    final hasWrapped = vault['wrapped_private_key'] != null;
 
     if (await _adoptStoredIdentity(publicJwk)) {
-      // A device that holds the key makes the server's wrapped copy pure risk.
-      if (hasWrapped) {
+      // An identity from before recovery codes has no way onto a second device.
+      // This phone holds it, so wrap it under a new code and show that code —
+      // the one moment this can be fixed without asking for anything.
+      if (vault['recovery'] == null) {
         try {
-          await _repo.deleteE2eeWrappedKey();
+          return await _provisionRecovery(_identity!, publicJwk);
         } catch (_) {
-          // Best effort; the next launch tries again.
+          // A working chat matters more; the next launch tries again.
         }
       }
       return VaultIdentityState.ready;
     }
-    return hasWrapped ? VaultIdentityState.legacy : VaultIdentityState.link;
+    return VaultIdentityState.unlock;
   }
 
   /// Loads the identity this device stored, but only if it is still the one the
@@ -144,6 +153,14 @@ extension MessageVaultIdentity on MessageVault {
       lock();
       return false;
     }
+  }
+
+  /// Puts an identity into memory and into this device's secure storage.
+  Future<void> _adopt(P256KeyPair identity, Map<String, dynamic> publicJwk) async {
+    _identity = identity;
+    _publicJwk = publicJwk;
+    _keys.clear();
+    await _saveTrustedIdentity(_privateJwkFromIdentity(identity), publicJwk);
   }
 
   void lock() {

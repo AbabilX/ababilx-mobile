@@ -117,31 +117,16 @@ mixin _ChatActionsMixin
     // Update sidebar preview with optimistic body.
     applyIncomingMessage(convId, pendingMsg, bumpUnread: false);
 
-    try {
-      EncryptedDmPayload? encrypted;
-      if (conv?.isDm == true && body.isNotEmpty) {
-        final peerId = conv?.peerUserId;
-        if (peerId == null || peerId.isEmpty) {
-          throw StateError('Secure DM recipient is unavailable');
-        }
-        encrypted = await ref
-            .read(messageVaultProvider)
-            .encryptNew(
-              conversationId: convId,
-              text: body,
-              currentUserId: currentUser,
-              peerUserId: peerId,
-            );
-      }
-      // Persist before the network call — even a send that never gets to
-      // try (app killed offline) must survive as a retryable outbox row.
+    // Persist before the network call — even a send that never gets to try
+    // (app killed offline) must survive as a retryable outbox row. Runs once
+    // per attempt, so a re-key rewrites the row with the new ciphertext.
+    Future<ChatMessage> deliver(EncryptedDmPayload? encrypted) async {
       await (this as _ChatOutboxMixin).persistOutbox(
         convId,
         pendingMsg,
         encrypted: encrypted,
       );
-      // ── Step 2: Fire the actual network call ─────────────────────────────
-      var msg = await repo.sendMessage(
+      return repo.sendMessage(
         convId,
         clientMessageId: clientRef,
         body: encrypted == null ? body : '',
@@ -154,6 +139,27 @@ mixin _ChatActionsMixin
         attachments: attachments,
         mentionedUserIds: mentionedUserIds,
       );
+    }
+
+    try {
+      // ── Step 2: Fire the actual network call ─────────────────────────────
+      ChatMessage msg;
+      if (conv?.isDm == true && body.isNotEmpty) {
+        final peerId = conv?.peerUserId;
+        if (peerId == null || peerId.isEmpty) {
+          throw StateError('Secure DM recipient is unavailable');
+        }
+        msg = await sendEncryptedDm(
+          vault: ref.read(messageVaultProvider),
+          conversationId: convId,
+          text: body,
+          currentUserId: currentUser,
+          peerUserId: peerId,
+          send: deliver,
+        );
+      } else {
+        msg = await deliver(null);
+      }
       if (msg.isEncrypted) {
         msg = await ref
             .read(messageVaultProvider)
