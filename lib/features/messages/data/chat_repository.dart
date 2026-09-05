@@ -205,8 +205,7 @@ class ChatRepository {
     String code,
     Map<String, dynamic> publicJwk,
     Map<String, dynamic> recovery,
-  ) =>
-      _e2ee.resetVault(code, publicJwk, recovery);
+  ) => _e2ee.resetVault(code, publicJwk, recovery);
   Future<Map<String, dynamic>> createE2eeLink(String deviceName) =>
       _e2ee.createLink(deviceName);
   Future<Map<String, dynamic>> inspectE2eeLink(String token) =>

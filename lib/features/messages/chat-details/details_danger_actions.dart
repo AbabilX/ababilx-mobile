@@ -6,6 +6,7 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
 import 'details_tile.dart';
+import 'report_spam_action.dart';
 
 /// The red block at the bottom. Every one of these ends the screen, so they
 /// all confirm first and then leave for the chat list — there is nothing left
@@ -74,6 +75,10 @@ class DetailsDangerActions extends ConsumerWidget {
               ),
             ),
         ],
+        // Report sits with the other red rows but ends nothing: filing one
+        // leaves the conversation exactly as it was unless the person also
+        // chose to block.
+        DetailsReportTile(conversation: conversation),
         if (group && conversation.canConfigureGroup)
           DetailsTile(
             icon: const Icon(Icons.delete_forever_outlined),

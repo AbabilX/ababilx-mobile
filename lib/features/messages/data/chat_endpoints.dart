@@ -42,6 +42,15 @@ class ChatEndpoints {
           'leave' => ApiConstants.chatChannelLeave(id),
           _ => ApiConstants.chatChannel(id),
         };
+  String media(String id) => independent
+      ? ApiConstants.independentChatConversationAction(id, 'media')
+      : ApiConstants.chatConversationMedia(id);
+  String report(String id) => independent
+      ? ApiConstants.independentChatConversationAction(id, 'report')
+      : ApiConstants.chatConversationReport(id);
+  String groupsInCommon(String userId) => independent
+      ? ApiConstants.independentChatGroupsInCommon(userId)
+      : ApiConstants.chatGroupsInCommon(userId);
   String publicKey(String id) => independent
       ? ApiConstants.independentChatE2eePublicKey(id)
       : ApiConstants.chatE2eePublicKey(id);

@@ -14,6 +14,8 @@ import 'details_header.dart';
 import 'details_members_section.dart';
 import 'details_tile.dart';
 import 'group_edit_sheet.dart';
+import 'groups_in_common_section.dart';
+import 'shared_media_section.dart';
 
 /// Signal's conversation settings: a full screen, reached by tapping the name
 /// in the chat header. It replaced a bottom sheet for DMs and a
@@ -107,6 +109,18 @@ class _ConversationDetailsScreenState
               members: _members,
               loading: _loadingMembers,
               onChanged: _loadMembers,
+            ),
+          ],
+          const DetailsSectionGap(),
+          SharedMediaSection(conversationId: conversation.id),
+          // A DM only. "Groups in common" is a fact about two people, and in a
+          // group the second person is a list.
+          if (conversation.isDm &&
+              (conversation.peerUserId ?? '').isNotEmpty) ...[
+            const DetailsSectionGap(),
+            GroupsInCommonSection(
+              peerUserId: conversation.peerUserId!,
+              peerName: conversation.peerUserName ?? 'this person',
             ),
           ],
           const DetailsSectionGap(),

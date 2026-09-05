@@ -96,8 +96,7 @@ class ApiConstants {
   static const String chatConversations = '/api/teams/chat/conversations';
   static const String chatE2eeVault = '/api/teams/chat/e2ee/vault';
   // Sheds the retired PIN-wrapped copy of the identity once a device holds it.
-  static const String chatE2eeWrappedKey =
-      '/api/teams/chat/e2ee/vault/wrapped';
+  static const String chatE2eeWrappedKey = '/api/teams/chat/e2ee/vault/wrapped';
   // The private key wrapped by the user's 256-bit recovery code. The code is
   // generated on the device and never sent, so what this endpoint stores is
   // ciphertext the server cannot open — which is what keeps messages
@@ -159,6 +158,12 @@ class ApiConstants {
       '/api/teams/chat/conversations/$conversationId/attachments/presign';
   static String chatConversationDiscard(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/attachments/discard';
+  static String chatConversationMedia(String conversationId) =>
+      '/api/teams/chat/conversations/$conversationId/media';
+  static String chatConversationReport(String conversationId) =>
+      '/api/teams/chat/conversations/$conversationId/report';
+  static String chatGroupsInCommon(String userId) =>
+      '/api/teams/chat/users/$userId/groups-in-common';
   static const String chatSearch = '/api/teams/chat/search';
 
   /// Call history. The workspace path lists this workspace's calls; the
@@ -196,6 +201,8 @@ class ApiConstants {
       '$independentChatRoot/messages/$messageId';
   static String independentChatMessageReactions(String messageId) =>
       '${independentChatMessage(messageId)}/reactions';
+  static String independentChatGroupsInCommon(String userId) =>
+      '$independentChatRoot/users/$userId/groups-in-common';
   static String independentChatE2eePublicKey(String userId) =>
       '$independentChatRoot/e2ee/users/$userId/public-key';
   static String independentChatConnectionRequestAction(

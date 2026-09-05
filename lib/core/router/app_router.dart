@@ -13,6 +13,7 @@ import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
 import '../../features/settings/app-icon/app_icon_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
 import '../../features/messages/chat-details/conversation_details_screen.dart';
+import '../../features/messages/chat-media/conversation_media_screen.dart';
 import '../../features/messages/screens/conversation_screen.dart';
 import '../../features/messages/screens/people_screen.dart';
 import '../../features/messages/screens/new_message_screen.dart';
@@ -128,7 +129,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       // Where an incoming ACTION_SEND from another app lands.
       GoRoute(path: '/share', builder: (_, _) => const ShareTargetScreen()),
-      GoRoute(path: '/settings/name', builder: (_, _) => const EditNameScreen()),
+      GoRoute(
+        path: '/settings/name',
+        builder: (_, _) => const EditNameScreen(),
+      ),
       GoRoute(
         path: '/settings/discovery',
         builder: (_, _) => const DiscoveryScreen(),
@@ -170,6 +174,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/messages/:id/details',
         builder: (_, state) => ConversationDetailsScreen(
+          conversationId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/messages/:id/media',
+        builder: (_, state) => ConversationMediaScreen(
           conversationId: state.pathParameters['id']!,
         ),
       ),

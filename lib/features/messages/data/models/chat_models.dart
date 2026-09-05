@@ -3,6 +3,8 @@ export 'chat_conversation.dart';
 export 'chat_conversation_json.dart';
 export 'chat_connection.dart';
 export 'chat_delivery_summary.dart';
+export 'chat_group_summary.dart';
+export 'chat_media_page.dart';
 export 'chat_member.dart';
 export 'chat_message.dart';
 export 'chat_message_quote.dart';
