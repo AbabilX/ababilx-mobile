@@ -45,7 +45,9 @@ class _State extends ConsumerState<VaultGateResetDialog> {
       _error = null;
     });
     try {
-      final sent = await ref.read(chatRepositoryProvider).requestE2eeResetCode();
+      final sent = await ref
+          .read(chatRepositoryProvider)
+          .requestE2eeResetCode();
       if (!mounted) return;
       setState(() {
         _sentTo = (sent['email'] as String?) ?? '';

@@ -25,8 +25,26 @@ void main() {
     expect(isEncryptedChatPush(data), isFalse);
   });
 
-  test('channel pushes are never treated as encrypted', () {
-    final data = encryptedPush()..['type'] = 'chat_message';
+  // Personal groups are E2EE and their pushes are chat_message / chat_mention.
+  // This assertion used to read the other way, and that is exactly what left an
+  // encrypted group push showing the server's placeholder with the ciphertext
+  // sitting unused in the same payload.
+  test('group pushes carrying ciphertext are decrypted here too', () {
+    for (final type in ['chat_message', 'chat_mention']) {
+      final data = encryptedPush()..['type'] = type;
+      expect(isEncryptedChatPush(data), isTrue, reason: type);
+    }
+  });
+
+  test('a plaintext channel push is not decryptable', () {
+    final data = encryptedPush()
+      ..['type'] = 'chat_message'
+      ..remove('enc_body');
+    expect(isEncryptedChatPush(data), isFalse);
+  });
+
+  test('a push that is not chat at all is never decrypted', () {
+    final data = encryptedPush()..['type'] = 'call_incoming';
     expect(isEncryptedChatPush(data), isFalse);
   });
 

@@ -74,7 +74,11 @@ class _State extends ConsumerState<VaultGateRecoveryCode> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.vpn_key_outlined, size: 44, color: theme.colorScheme.primary),
+            Icon(
+              Icons.vpn_key_outlined,
+              size: 44,
+              color: theme.colorScheme.primary,
+            ),
             const SizedBox(height: 16),
             Text(
               'Enter your recovery code',
@@ -95,7 +99,10 @@ class _State extends ConsumerState<VaultGateRecoveryCode> {
               enabled: !_busy,
               maxLines: 3,
               minLines: 3,
-              style: const TextStyle(fontFamily: 'monospace', letterSpacing: 1.2),
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                letterSpacing: 1.2,
+              ),
               decoration: const InputDecoration(
                 hintText: 'A1B2-C3D4-…',
                 border: OutlineInputBorder(),

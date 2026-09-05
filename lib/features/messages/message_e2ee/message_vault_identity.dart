@@ -156,7 +156,10 @@ extension MessageVaultIdentity on MessageVault {
   }
 
   /// Puts an identity into memory and into this device's secure storage.
-  Future<void> _adopt(P256KeyPair identity, Map<String, dynamic> publicJwk) async {
+  Future<void> _adopt(
+    P256KeyPair identity,
+    Map<String, dynamic> publicJwk,
+  ) async {
     _identity = identity;
     _publicJwk = publicJwk;
     _keys.clear();

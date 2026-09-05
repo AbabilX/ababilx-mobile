@@ -17,8 +17,10 @@ import 'recovery_code_card.dart';
 class RecoveryCodeDialog extends ConsumerStatefulWidget {
   const RecoveryCodeDialog({super.key});
 
-  static Future<void> show(BuildContext context) =>
-      showDialog<void>(context: context, builder: (_) => const RecoveryCodeDialog());
+  static Future<void> show(BuildContext context) => showDialog<void>(
+    context: context,
+    builder: (_) => const RecoveryCodeDialog(),
+  );
 
   @override
   ConsumerState<RecoveryCodeDialog> createState() => _State();
@@ -35,7 +37,9 @@ class _State extends ConsumerState<RecoveryCodeDialog> {
       _error = null;
     });
     try {
-      final code = await ref.read(messageVaultProvider).regenerateRecoveryCode();
+      final code = await ref
+          .read(messageVaultProvider)
+          .regenerateRecoveryCode();
       if (!mounted) return;
       setState(() {
         _code = code;
@@ -80,7 +84,9 @@ class _State extends ConsumerState<RecoveryCodeDialog> {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: _busy ? null : _regenerate,
-                child: Text(_busy ? 'Making a new code…' : 'Generate a new code'),
+                child: Text(
+                  _busy ? 'Making a new code…' : 'Generate a new code',
+                ),
               ),
             ),
           if (_error != null) ...[

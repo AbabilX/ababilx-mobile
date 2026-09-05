@@ -5,11 +5,7 @@ import '../../../core/network/friendly_error.dart';
 /// Offline/failed state for the vault gate, with a retry rather than a spinner
 /// that never resolves.
 class VaultGateError extends StatelessWidget {
-  const VaultGateError({
-    super.key,
-    required this.error,
-    required this.onRetry,
-  });
+  const VaultGateError({super.key, required this.error, required this.onRetry});
 
   final Object error;
   final VoidCallback onRetry;

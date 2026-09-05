@@ -85,6 +85,8 @@ class ChatNotificationPresenter {
   }) async {
     final conversationId = data['conversation_id']?.toString() ?? '';
     final title = data['title']?.toString() ?? 'AbabilX';
+    // MessagingStyle wants to know whether to name the sender on each line.
+    // Type is the right test here — this is about shape, not encryption.
     final isGroup = data['type']?.toString() != 'chat_dm';
     final upsert = await ChatNotificationStore.upsertDetailed(
       conversationId,

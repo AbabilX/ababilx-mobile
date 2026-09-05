@@ -33,7 +33,11 @@ class _VaultGateRecoverySetupState extends State<VaultGateRecoverySetup> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.vpn_key_outlined, size: 44, color: theme.colorScheme.primary),
+            Icon(
+              Icons.vpn_key_outlined,
+              size: 44,
+              color: theme.colorScheme.primary,
+            ),
             const SizedBox(height: 16),
             Text(
               'Save your recovery code',

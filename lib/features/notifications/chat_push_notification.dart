@@ -8,11 +8,16 @@ const chatPushTypes = {'chat_dm', 'chat_message', 'chat_mention'};
 bool isChatPush(Map<String, dynamic> data) =>
     chatPushTypes.contains(data['type']?.toString());
 
-/// True when this push is an E2EE DM that arrived data-only, i.e. its text has
+/// True when this push arrived data-only carrying ciphertext, i.e. its text has
 /// to be decrypted here before anything can be shown.
+///
+/// Every chat type can: personal groups are E2EE too, and their pushes are
+/// chat_message / chat_mention. Keying this on "chat_dm" alone left the
+/// ciphertext sitting unread in the payload while the tray showed the server's
+/// "🔒 Encrypted message" placeholder. Must stay in step with
+/// EncryptedChatPush in the Go senders.
 bool isEncryptedChatPush(Map<String, dynamic> data) =>
-    data['type'] == 'chat_dm' &&
-    (data['enc_body']?.toString().isNotEmpty ?? false);
+    isChatPush(data) && (data['enc_body']?.toString().isNotEmpty ?? false);
 
 /// Shows the tray entry for an encrypted DM: the placeholder first, rewritten
 /// with the real text once this device has decrypted it.

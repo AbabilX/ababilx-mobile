@@ -220,6 +220,10 @@ class ChatRepository {
       _e2ee.getPublicKey(userId);
   Future<Map<String, dynamic>> getE2eeConversationKey(String conversationId) =>
       _e2ee.getConversationKey(conversationId);
+  Future<Map<String, dynamic>> getE2eeConversationMembers(
+    String conversationId,
+  ) => _e2ee.getConversationMembers(conversationId);
+
   Future<Map<String, dynamic>> createE2eeConversationKey(
     String conversationId,
     Map<String, dynamic> envelopes,

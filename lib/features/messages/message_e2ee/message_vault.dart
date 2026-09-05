@@ -14,6 +14,7 @@ import 'recovery_key.dart';
 
 part 'message_vault_backfill.dart';
 part 'message_vault_decrypt.dart';
+part 'message_vault_envelope.dart';
 part 'message_vault_codec.dart';
 part 'message_vault_identity.dart';
 part 'message_vault_keys.dart';
@@ -79,13 +80,8 @@ class MessageVault {
     required String conversationId,
     required String text,
     required String currentUserId,
-    required String peerUserId,
   }) async {
-    final key = await _loadOrCreateKey(
-      conversationId,
-      currentUserId,
-      peerUserId,
-    );
+    final key = await _loadOrCreateKey(conversationId, currentUserId);
     return _seal(conversationId, text, currentUserId, key);
   }
 
@@ -97,7 +93,8 @@ class MessageVault {
     final key = await _loadKey(conversationId, currentUserId);
     // A stale key is one somebody in the conversation can no longer read, so
     // re-sealing under it would make the edit permanently unreadable to them.
-    // There is no peer id here to re-key with, so this refuses instead.
+    // Rotating here would leave the ORIGINAL message unreadable to the same
+    // people, so an edit refuses rather than re-keying.
     if (key == null || key.stale) {
       throw StateError('Secure message key is unavailable');
     }
@@ -125,7 +122,6 @@ class MessageVault {
       keyVersion: key.version,
     );
   }
-
 }
 
 final messageVaultProvider = Provider<MessageVault>(

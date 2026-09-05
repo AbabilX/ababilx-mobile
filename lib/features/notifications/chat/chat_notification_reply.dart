@@ -66,11 +66,14 @@ Future<bool> markChatNotificationRead(String conversationId) async {
   }
 }
 
-/// Seals [body] for an encrypted DM, or returns null for a conversation that is
-/// sent in plaintext (channels and personal groups are not E2EE).
+/// Seals [body] for an encrypted conversation, or returns null for one that is
+/// sent in plaintext (workspace channels).
 ///
-/// `recipient_id` is this device's own user id — the push named it so the
-/// key envelope could be opened — and it is what the vault seals as.
+/// `recipient_id` is this device's own user id — the push named it so the key
+/// envelope could be opened — and it is what the vault seals as. The server
+/// writes it only into an encrypted push, so its presence IS the discriminator;
+/// testing the type for "chat_dm" instead is what made a personal group's
+/// shade-reply go out in plaintext to a conversation that refuses plaintext.
 Future<EncryptedDmPayload?> _seal(
   ChatRepository repo,
   SecureStorage storage,
@@ -79,7 +82,7 @@ Future<EncryptedDmPayload?> _seal(
 ) async {
   final myUserId = data['recipient_id']?.toString() ?? '';
   final conversationId = data['conversation_id']?.toString() ?? '';
-  if (data['type']?.toString() != 'chat_dm' || myUserId.isEmpty) return null;
+  if (myUserId.isEmpty || conversationId.isEmpty) return null;
 
   final vault = MessageVault(repo, storage);
   if (!await vault.restoreTrustedIdentityOffline()) {
@@ -87,22 +90,14 @@ Future<EncryptedDmPayload?> _seal(
     // message, so the reply fails and the user is told.
     throw StateError('chat vault locked');
   }
-  // encryptNew, not encryptExisting: the push names the sender, so a key the
-  // other side can no longer read (they started a fresh identity) is rotated
-  // here rather than producing a reply nobody can open.
-  final peerId = data['sender_id']?.toString() ?? '';
-  if (peerId.isEmpty) {
-    return vault.encryptExisting(
-      conversationId: conversationId,
-      text: body,
-      currentUserId: myUserId,
-    );
-  }
+  // encryptNew, not encryptExisting: a key somebody in the conversation can no
+  // longer read is rotated here rather than producing a reply nobody can open.
+  // The roster comes from the server, so this works for a group reply too — the
+  // push no longer has to name a peer for it.
   return vault.encryptNew(
     conversationId: conversationId,
     text: body,
     currentUserId: myUserId,
-    peerUserId: peerId,
   );
 }
 

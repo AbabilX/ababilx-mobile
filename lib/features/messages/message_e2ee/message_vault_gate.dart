@@ -46,7 +46,9 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
     });
     try {
       final vault = ref.read(messageVaultProvider);
-      final state = await vault.ensureIdentity().timeout(firstLoadNetworkTimeout);
+      final state = await vault.ensureIdentity().timeout(
+        firstLoadNetworkTimeout,
+      );
       if (!mounted) return;
       // Nothing keeps a copy of the code, so a missing one here means the chat
       // opens and the user makes a new one from Settings later — better than

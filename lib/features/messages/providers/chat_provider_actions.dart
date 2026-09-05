@@ -144,17 +144,12 @@ mixin _ChatActionsMixin
     try {
       // ── Step 2: Fire the actual network call ─────────────────────────────
       ChatMessage msg;
-      if (conv?.isDm == true && body.isNotEmpty) {
-        final peerId = conv?.peerUserId;
-        if (peerId == null || peerId.isEmpty) {
-          throw StateError('Secure DM recipient is unavailable');
-        }
-        msg = await sendEncryptedDm(
+      if (conv?.isEncrypted == true && body.isNotEmpty) {
+        msg = await sendEncryptedChat(
           vault: ref.read(messageVaultProvider),
           conversationId: convId,
           text: body,
           currentUserId: currentUser,
-          peerUserId: peerId,
           send: deliver,
         );
       } else {

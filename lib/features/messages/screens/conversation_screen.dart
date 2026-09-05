@@ -125,7 +125,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
           ? ConversationUnavailable(onRetry: _retry)
           : const ConversationLoading();
     }
-    if (conversation.isDm && !vault.isUnlocked) {
+    if (conversation.isEncrypted && !vault.isUnlocked) {
       return Column(
         children: [
           ChatHeader(conversation: conversation),

@@ -130,7 +130,9 @@ class DeviceGallery {
   }
 
   /// Album list (Camera → All media → A–Z). Used by the wallpaper gallery.
-  static Future<List<DeviceMediaFolder>> folders({String kind = 'image'}) async {
+  static Future<List<DeviceMediaFolder>> folders({
+    String kind = 'image',
+  }) async {
     if (!_android) return const [];
     final raw = await _invoke<List<Object?>>('folders', {'kind': kind});
     if (raw == null) return const [];

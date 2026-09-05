@@ -1,26 +1,59 @@
 import 'package:flutter/material.dart';
 
 import 'device_gallery.dart';
-import 'media_grid_tile.dart';
+import 'media_bucket_grid.dart';
 import 'media_thumbnail.dart';
+
+/// How the gallery was left: with a photo, or with a request for the camera.
+enum MediaGalleryAction { picked, camera }
+
+@immutable
+class MediaGalleryResult {
+  const MediaGalleryResult(this.action, [this.item]);
+
+  final MediaGalleryAction action;
+
+  /// The chosen photo. Null for [MediaGalleryAction.camera].
+  final DeviceMediaItem? item;
+}
 
 /// Signal-style album gallery: folders first, then photos in the chosen album.
 ///
-/// Used by chat wallpaper — not the composer Recent sheet. Returns the tapped
-/// [DeviceMediaItem], or null when the user backs out. Images only.
-Future<DeviceMediaItem?> showMediaFolderGallery(BuildContext context) async {
+/// This is the picker for anything that takes ONE deliberate photo — a profile
+/// picture, a group photo, a chat wallpaper. Those are chosen from the whole
+/// library, and often not from this week, so a flat "Recent" strip is the wrong
+/// shape: it shows the last screenful and offers no way to reach an album. The
+/// composer's Recent sheet stays what it is, because sharing what you just shot
+/// is a different job.
+///
+/// Returns null when the user backs out, or immediately when the library is
+/// unreadable — no permission, or a platform without the MediaStore channel.
+/// Callers must treat that second case as "fall through to the system picker",
+/// not as a cancel; [DeviceGallery.requestAccess] is public so they can tell
+/// the two apart before opening this.
+///
+/// Images only. [allowCamera] adds a shutter button to the app bar, for the
+/// flows where taking the photo now is as likely as finding one.
+Future<MediaGalleryResult?> showMediaFolderGallery(
+  BuildContext context, {
+  String title = 'Choose a photo',
+  bool allowCamera = false,
+}) async {
   if (!await DeviceGallery.requestAccess()) return null;
   if (!context.mounted) return null;
-  return Navigator.of(context).push<DeviceMediaItem>(
+  return Navigator.of(context).push<MediaGalleryResult>(
     MaterialPageRoute(
-      builder: (_) => const _FolderListScreen(),
+      builder: (_) => _FolderListScreen(title: title, allowCamera: allowCamera),
       fullscreenDialog: true,
     ),
   );
 }
 
 class _FolderListScreen extends StatefulWidget {
-  const _FolderListScreen();
+  const _FolderListScreen({required this.title, required this.allowCamera});
+
+  final String title;
+  final bool allowCamera;
 
   @override
   State<_FolderListScreen> createState() => _FolderListScreenState();
@@ -47,11 +80,14 @@ class _FolderListScreenState extends State<_FolderListScreen> {
 
   Future<void> _openFolder(DeviceMediaFolder folder) async {
     final item = await Navigator.of(context).push<DeviceMediaItem>(
-      MaterialPageRoute(
-        builder: (_) => _BucketGridScreen(folder: folder),
-      ),
+      MaterialPageRoute(builder: (_) => MediaBucketGridScreen(folder: folder)),
     );
-    if (item != null && mounted) Navigator.pop(context, item);
+    if (item != null && mounted) {
+      Navigator.pop(
+        context,
+        MediaGalleryResult(MediaGalleryAction.picked, item),
+      );
+    }
   }
 
   @override
@@ -62,11 +98,22 @@ class _FolderListScreenState extends State<_FolderListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Choose a photo'),
+        title: Text(widget.title),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          if (widget.allowCamera)
+            IconButton(
+              tooltip: 'Take a photo',
+              icon: const Icon(Icons.photo_camera_outlined),
+              onPressed: () => Navigator.pop(
+                context,
+                const MediaGalleryResult(MediaGalleryAction.camera),
+              ),
+            ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -140,104 +187,6 @@ class _FolderTile extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _BucketGridScreen extends StatefulWidget {
-  const _BucketGridScreen({required this.folder});
-
-  final DeviceMediaFolder folder;
-
-  @override
-  State<_BucketGridScreen> createState() => _BucketGridScreenState();
-}
-
-class _BucketGridScreenState extends State<_BucketGridScreen> {
-  static const int _pageSize = 60;
-
-  final List<DeviceMediaItem> _items = [];
-  final ScrollController _scroll = ScrollController();
-  bool _loading = false;
-  bool _exhausted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _scroll.addListener(_onScroll);
-    _loadMore();
-  }
-
-  @override
-  void dispose() {
-    _scroll
-      ..removeListener(_onScroll)
-      ..dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scroll.hasClients) return;
-    if (_scroll.position.pixels > _scroll.position.maxScrollExtent - 600) {
-      _loadMore();
-    }
-  }
-
-  Future<void> _loadMore() async {
-    if (_loading || _exhausted) return;
-    setState(() => _loading = true);
-    final page = await DeviceGallery.page(
-      offset: _items.length,
-      limit: _pageSize,
-      kind: 'image',
-      bucketId: widget.folder.bucketId,
-    );
-    if (!mounted) return;
-    setState(() {
-      _items.addAll(page);
-      _loading = false;
-      _exhausted = page.length < _pageSize;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.folder.title),
-      ),
-      body: _items.isEmpty && _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _items.isEmpty
-          ? Center(
-              child: Text(
-                'Nothing in this album',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colors.onSurfaceVariant,
-                ),
-              ),
-            )
-          : GridView.builder(
-              controller: _scroll,
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 24),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 3,
-                crossAxisSpacing: 3,
-              ),
-              itemCount: _items.length,
-              itemBuilder: (_, index) {
-                final item = _items[index];
-                return MediaGridTile(
-                  item: item,
-                  showSelectionChrome: false,
-                  onTap: () => Navigator.pop(context, item),
-                );
-              },
-            ),
     );
   }
 }

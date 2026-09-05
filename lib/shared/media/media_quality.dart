@@ -39,9 +39,7 @@ class MediaQualityStore {
   }
 }
 
-final mediaQualityStoreProvider = Provider(
-  (ref) => const MediaQualityStore(),
-);
+final mediaQualityStoreProvider = Provider((ref) => const MediaQualityStore());
 
 class MediaQualityNotifier extends Notifier<MediaQuality> {
   @override
@@ -63,6 +61,7 @@ class MediaQualityNotifier extends Notifier<MediaQuality> {
   }
 }
 
-final mediaQualityProvider = NotifierProvider<MediaQualityNotifier, MediaQuality>(
-  MediaQualityNotifier.new,
-);
+final mediaQualityProvider =
+    NotifierProvider<MediaQualityNotifier, MediaQuality>(
+      MediaQualityNotifier.new,
+    );

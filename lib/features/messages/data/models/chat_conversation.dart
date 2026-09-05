@@ -147,6 +147,17 @@ class ChatConversation extends Equatable {
   bool get isPersonal => scope == 'personal';
   bool get isGroupConversation => isChannel || isGroup;
 
+  /// Whether this conversation's text is end-to-end encrypted.
+  ///
+  /// The mirror of `e2eeEligible` on the server, and it must stay one: encrypt
+  /// where the server does not expect it and the send is a 400; send plaintext
+  /// where it does and the send is a 409.
+  ///
+  /// DMs in either scope, and personal groups. Workspace channels never — they
+  /// are a searchable shared record and server-side search cannot read
+  /// ciphertext.
+  bool get isEncrypted => isDm || (isPersonal && isGroup);
+
   /// Resolved file chips for list preview (API list or legacy single fields).
   List<ChatLastAttachment> get previewAttachments {
     if (lastMessageAttachments.isNotEmpty) return lastMessageAttachments;

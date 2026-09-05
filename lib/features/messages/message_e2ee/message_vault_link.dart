@@ -19,18 +19,14 @@ extension MessageVaultLink on MessageVault {
       _b64(utf8.encode(jsonEncode(_publicJwkFromIdentity(ephemeral))));
 
   Map<String, dynamic> decodeLinkPublicKey(String param) =>
-      Map<String, dynamic>.from(
-        jsonDecode(utf8.decode(_bytes(param))) as Map,
-      );
+      Map<String, dynamic>.from(jsonDecode(utf8.decode(_bytes(param))) as Map);
 
   /// Six digits over the ephemeral key so both screens can be compared by eye.
   /// Byte-identical to the web client's derivation, or the codes would differ
   /// across platforms and the check would be worse than useless.
   Future<String> linkVerificationCode(Map<String, dynamic> publicJwk) async {
     final digest = await Sha256().hash(
-      utf8.encode(
-        '${publicJwk['crv']}.${publicJwk['x']}.${publicJwk['y']}',
-      ),
+      utf8.encode('${publicJwk['crv']}.${publicJwk['x']}.${publicJwk['y']}'),
     );
     final b = digest.bytes;
     final value = ((b[0] << 16) | (b[1] << 8) | b[2]) % 1000000;

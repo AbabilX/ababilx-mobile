@@ -106,6 +106,20 @@ class ChatE2eeApi {
     return unwrapApiData<Map<String, dynamic>>(res);
   }
 
+  /// Every member of a conversation with the public identity a key must be
+  /// sealed to, plus `unready_member_ids` — members with no identity at all.
+  ///
+  /// A DM could work from peer_user_id and one public-key fetch; a group cannot,
+  /// and asking per member would be one request per person on every rotation.
+  Future<Map<String, dynamic>> getConversationMembers(
+    String conversationId,
+  ) async {
+    final res = await _client.get(
+      _endpoints.action(conversationId, 'e2ee-members'),
+    );
+    return unwrapApiData<Map<String, dynamic>>(res);
+  }
+
   Future<Map<String, dynamic>> createConversationKey(
     String conversationId,
     Map<String, dynamic> envelopes,

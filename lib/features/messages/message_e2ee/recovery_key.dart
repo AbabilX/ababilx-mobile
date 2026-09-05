@@ -132,9 +132,7 @@ class RecoveryKey {
       secretKey: await deriveKey(code, _bytes(vault.salt)),
       aad: utf8.encode(_aad),
     );
-    return Map<String, dynamic>.from(
-      jsonDecode(utf8.decode(clear)) as Map,
-    );
+    return Map<String, dynamic>.from(jsonDecode(utf8.decode(clear)) as Map);
   }
 
   static String _b64(List<int> bytes) =>
