@@ -18,7 +18,7 @@ class ChatRecipientSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 34, 20, 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: TextField(
         controller: controller,
         autofocus: false,
@@ -27,8 +27,14 @@ class ChatRecipientSearchField extends StatelessWidget {
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: hintText,
+          hintStyle: TextStyle(fontSize: 15, color: colors.onSurfaceVariant),
           filled: true,
           fillColor: colors.surfaceContainerHighest,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
           suffixIcon: controller.text.isEmpty
               ? null
               : IconButton(
@@ -42,11 +48,11 @@ class ChatRecipientSearchField extends StatelessWidget {
                   icon: const Icon(Icons.close_rounded),
                 ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(34),
+            borderRadius: BorderRadius.circular(24),
             borderSide: BorderSide.none,
           ),
         ),
-        style: Theme.of(context).textTheme.titleLarge,
+        style: const TextStyle(fontSize: 15),
       ),
     );
   }

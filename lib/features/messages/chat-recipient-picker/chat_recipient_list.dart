@@ -66,12 +66,13 @@ class _Section extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
           child: Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
         for (final target in targets)
@@ -109,11 +110,11 @@ class _RecipientRow extends StatelessWidget {
       child: InkWell(
         onTap: enabled ? onTap : null,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
               _RecipientAvatar(target: target),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,35 +123,43 @@ class _RecipientRow extends StatelessWidget {
                       target.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleLarge,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     if (target.subtitle.isNotEmpty)
                       Text(
                         target.subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyLarge?.copyWith(
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontSize: 13,
                           color: colors.onSurfaceVariant,
                         ),
                       ),
                   ],
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 10),
               AnimatedContainer(
                 duration: const Duration(milliseconds: 160),
-                width: 42,
-                height: 42,
+                width: 26,
+                height: 26,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: selected ? colors.primary : colors.surface,
                   border: Border.all(
                     color: selected ? colors.primary : colors.outline,
-                    width: 2.5,
+                    width: 2,
                   ),
                 ),
                 child: selected
-                    ? Icon(Icons.check_rounded, color: colors.onPrimary)
+                    ? Icon(
+                        Icons.check_rounded,
+                        size: 16,
+                        color: colors.onPrimary,
+                      )
                     : null,
               ),
             ],
@@ -173,11 +182,11 @@ class _RecipientAvatar extends StatelessWidget {
         avatars: target.memberAvatars,
         avatarUrl: target.avatarUrl,
         name: target.name,
-        size: 56,
+        size: 44,
       );
     }
     return AppAvatar(
-      size: 56,
+      size: 44,
       url: target.avatarUrl.isEmpty ? null : target.avatarUrl,
       name: target.name,
     );

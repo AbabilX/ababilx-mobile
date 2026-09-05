@@ -64,31 +64,41 @@ class ChatTimelineView extends StatelessWidget {
             ),
           ),
         Expanded(
-          child: Stack(
-            children: [
-              MessageList(
-                messages: messages,
-                loading: loading,
-                loadingMore: loadingMore,
-                currentUserId: currentUserId,
-                scrollController: scrollController,
-                conversationId: conversationId,
-                threadRootId: threadRootId,
-                error: error,
-                onRetry: onRetry,
-                unreadAnchorId: unreadAnchorId,
-                unreadCount: unreadCount,
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: ScrollToBottomPill(
-                  visible: showJumpPill,
-                  unreadCount: unreadPillCount,
-                  onTap: onJumpToBottom,
+          child: Padding(
+            // The header carries its own top safe-area padding, so it's fine
+            // while visible — but auto-hide collapses it to zero height along
+            // with everything else, and the list underneath was drawing right
+            // under the status bar/notch the moment that happened. Only add
+            // this back while the header is actually gone.
+            padding: EdgeInsets.only(
+              top: headerVisible ? 0 : MediaQuery.paddingOf(context).top,
+            ),
+            child: Stack(
+              children: [
+                MessageList(
+                  messages: messages,
+                  loading: loading,
+                  loadingMore: loadingMore,
+                  currentUserId: currentUserId,
+                  scrollController: scrollController,
+                  conversationId: conversationId,
+                  threadRootId: threadRootId,
+                  error: error,
+                  onRetry: onRetry,
+                  unreadAnchorId: unreadAnchorId,
+                  unreadCount: unreadCount,
                 ),
-              ),
-            ],
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: ScrollToBottomPill(
+                    visible: showJumpPill,
+                    unreadCount: unreadPillCount,
+                    onTap: onJumpToBottom,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         // Renders only when the peer's identity key has changed under us. It

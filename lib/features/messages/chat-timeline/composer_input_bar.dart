@@ -97,22 +97,16 @@ class ComposerInputBar extends StatelessWidget {
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         isDense: true,
-                        // With camera and mic hidden there is nothing but a
-                        // 4px gap on the right, so long lines ran into the
-                        // pill's edge while the left stayed inset by the
-                        // emoji button. This puts the text back in the middle.
-                        contentPadding: EdgeInsets.fromLTRB(
-                          0,
-                          14,
-                          canSend ? 12 : 0,
-                          14,
-                        ),
+                        contentPadding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
                       ),
                     ),
                   ),
-                  // Hidden as soon as there is a draft: at that point the one
-                  // circle beside the pill means "send", and a camera next to
-                  // it would be a second, competing send path.
+                  // Camera and mic are send-adjacent shortcuts, so they hide
+                  // once there is a draft (the circle beside the pill is
+                  // "send" then, and a camera next to it would be a second,
+                  // competing send path). Attach stays reachable either way —
+                  // it opens the same keyboard the "+" circle opens when
+                  // empty, so a draft in progress never blocks adding a file.
                   if (!canSend) ...[
                     PillIcon(
                       icon: HugeIcons.strokeRoundedCamera01,
@@ -133,7 +127,12 @@ class ComposerInputBar extends StatelessWidget {
                             tooltip: voiceTooltip,
                             onTap: onVoice,
                           ),
-                  ],
+                  ] else
+                    PillIcon(
+                      icon: HugeIcons.strokeRoundedAdd01,
+                      tooltip: attachTooltip,
+                      onTap: onPlus,
+                    ),
                   const SizedBox(width: 4),
                 ],
               ),
