@@ -150,8 +150,8 @@ class _CrmOrganizationsScreenState
                 onRefresh: () async =>
                     ref.invalidate(crmOrganizationsProvider(_query)),
                 child: ListView.separated(
-                  padding: const EdgeInsets.only(
-                    bottom: ShellPillMetrics.contentBottomInset,
+                  padding: EdgeInsets.only(
+                    bottom: ShellPillMetrics.contentBottom(context),
                   ),
                   itemCount: items.length,
                   separatorBuilder: (_, _) => Divider(

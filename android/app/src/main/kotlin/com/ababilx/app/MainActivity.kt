@@ -41,6 +41,9 @@ class MainActivity : FlutterActivity() {
     /** Video poster frames, and no screen timeout while one is playing. */
     private val video by lazy { VideoPlaybackChannel(this) }
 
+    /** Roaming, which connectivity_plus cannot see — gates media auto-download. */
+    private val networkState by lazy { NetworkStateChannel(applicationContext) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
@@ -61,6 +64,7 @@ class MainActivity : FlutterActivity() {
         chatStore.attach(flutterEngine)
         battery.attach(flutterEngine)
         video.attach(flutterEngine)
+        networkState.attach(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.ababilx.app/media_store",
@@ -174,6 +178,7 @@ class MainActivity : FlutterActivity() {
         appIcon.dispose()
         chatStore.dispose()
         battery.dispose()
+        networkState.dispose()
         super.onDestroy()
     }
 

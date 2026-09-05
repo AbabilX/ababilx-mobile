@@ -26,11 +26,19 @@ class SettingsRow extends StatelessWidget {
   final bool destructive;
   final Widget? trailing;
 
+  /// Roughly a third of a small phone, past which the title has nothing left.
+  static const _valueMaxWidth = 140.0;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final tint = destructive ? colors.error : colors.onSurface;
+    final enabled = onTap != null;
+    final base = destructive ? colors.error : colors.onSurface;
+    final tint = enabled ? base : base.withValues(alpha: 0.38);
+    final muted = enabled
+        ? colors.onSurfaceVariant
+        : colors.onSurfaceVariant.withValues(alpha: 0.38);
 
     return InkWell(
       onTap: onTap,
@@ -47,6 +55,8 @@ class SettingsRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: tint,
                       fontWeight: FontWeight.w500,
@@ -58,7 +68,7 @@ class SettingsRow extends StatelessWidget {
                       child: Text(
                         subtitle!,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: colors.onSurfaceVariant,
+                          color: muted,
                         ),
                       ),
                     ),
@@ -68,10 +78,14 @@ class SettingsRow extends StatelessWidget {
             if (value != null && value!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(left: 12),
-                child: Text(
-                  value!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: _valueMaxWidth),
+                  child: Text(
+                    value!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: muted),
                   ),
                 ),
               ),

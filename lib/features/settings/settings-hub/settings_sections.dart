@@ -52,11 +52,14 @@ class SettingsSections extends ConsumerWidget {
           subtitle: 'Background for every chat',
           onTap: () => context.push('/settings/wallpaper'),
         ),
+        // Sent media quality lives inside this screen now, next to the
+        // auto-download and storage settings it belongs with — one address
+        // for every question about what this app costs in bytes.
         SettingsRow(
-          icon: HugeIcons.strokeRoundedImage01,
-          title: 'Media quality',
-          subtitle: 'How much photos are compressed before sending',
-          onTap: () => context.push('/settings/media-quality'),
+          icon: HugeIcons.strokeRoundedDatabase01,
+          title: 'Data and storage',
+          subtitle: 'Auto-download, media quality and space used',
+          onTap: () => context.push('/settings/data-storage'),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedLanguageSkill,

@@ -527,11 +527,11 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
                     return RefreshIndicator(
                       onRefresh: () async => _invalidate(),
                       child: ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(
+                        padding: EdgeInsets.fromLTRB(
                           16,
                           8,
                           16,
-                          ShellPillMetrics.contentBottomInset,
+                          ShellPillMetrics.contentBottom(context),
                         ),
                         itemCount: visible.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 10),

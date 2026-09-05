@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/network_probe.dart';
 import '../../messages/data/local/chat_sidebar_cache.dart'
     show chatLocalDbProvider;
 import '../../messages/data/models/chat_attachment.dart';
+import '../auto_download/auto_download_gate.dart';
+import '../auto_download/auto_download_store.dart';
 import '../data/local/attachment_blob_store.dart';
 import '../data/local/attachment_dedupe_store.dart';
 import '../data/local/attachment_ref_store.dart';
@@ -100,11 +103,20 @@ final attachmentAuthorityProvider = Provider<AttachmentAuthority>((ref) {
   return authority;
 });
 
+/// The user's Data-and-storage choice, bound to what this connection costs.
+final autoDownloadGateProvider = Provider<AutoDownloadGate>(
+  (ref) => AutoDownloadGate.of(
+    ref.watch(autoDownloadStoreProvider),
+    ref.watch(networkProbeProvider),
+  ),
+);
+
 final attachmentIntakeProvider = Provider<AttachmentIntake>(
   (ref) => AttachmentIntake(
     ref.watch(attachmentBlobStoreProvider),
     ref.watch(attachmentRefStoreProvider),
     ref.watch(attachmentQueueProvider),
+    ref.watch(autoDownloadGateProvider),
   ),
 );
 

@@ -42,11 +42,11 @@ class CrmHub extends ConsumerWidget {
     return Scaffold(
       appBar: CrmHubHeader(title: title),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           16,
           8,
           16,
-          ShellPillMetrics.contentBottomInset,
+          ShellPillMetrics.contentBottom(context),
         ),
         children: [
           const CrmHubDashboard(height: 260),

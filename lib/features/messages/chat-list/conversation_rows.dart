@@ -41,8 +41,8 @@ class ConversationRows extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.separated(
-        padding: const EdgeInsets.only(
-          bottom: ShellPillMetrics.contentBottomInset,
+        padding: EdgeInsets.only(
+          bottom: ShellPillMetrics.contentBottom(context),
         ),
         itemCount: conversations.length,
         separatorBuilder: (_, _) => Divider(

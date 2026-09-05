@@ -1,10 +1,10 @@
 import '../../messages/data/models/chat_message.dart';
 import '../attachment_config.dart';
+import '../auto_download/auto_download_gate.dart';
 import '../data/local/attachment_blob_store.dart';
 import '../data/local/attachment_ref_store.dart';
 import '../data/models/attachment_handle.dart';
 import '../data/models/attachment_url_key.dart';
-import 'attachment_policy.dart';
 import 'attachment_queue.dart';
 
 /// What every arriving message runs through.
@@ -19,11 +19,12 @@ import 'attachment_queue.dart';
 /// opaque HTTP cache that could evict them at any time and gave the UI no way
 /// to know whether a file was actually on disk.
 class AttachmentIntake {
-  AttachmentIntake(this._blobs, this._refs, this._queue);
+  AttachmentIntake(this._blobs, this._refs, this._queue, this._gate);
 
   final AttachmentBlobStore _blobs;
   final AttachmentRefStore _refs;
   final AttachmentQueue _queue;
+  final AutoDownloadGate _gate;
   final Map<String, int> _lastRetryMs = {};
 
   Future<void> onMessages(List<ChatMessage> messages) async {
@@ -46,10 +47,16 @@ class AttachmentIntake {
     if (entries.isEmpty) return;
     await _refs.indexAll(entries);
 
+    // Resolved once for the whole batch: the settings read and the network
+    // probe are both awaits, and a screenful of arriving messages must not pay
+    // for them per attachment — nor end up with two attachments of the same
+    // message judged against different answers.
+    final decision = await _gate.resolve();
+
     final started = <String>{};
     for (final message in messages) {
       for (final attachment in message.attachments) {
-        if (!shouldAutoDownload(attachment)) continue;
+        if (!decision.allows(attachment)) continue;
         final urlKey = attachmentUrlKey(attachment.fileUrl);
         if (urlKey.isEmpty || !started.add(urlKey)) continue;
         if (_queue.isRunning(urlKey)) continue;

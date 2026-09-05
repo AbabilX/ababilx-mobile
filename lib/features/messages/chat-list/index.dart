@@ -101,8 +101,8 @@ class _ChatListState extends ConsumerState<ChatList> {
         ),
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(
-          bottom: ShellPillMetrics.contentBottomInset - 24,
+        padding: EdgeInsets.only(
+          bottom: ShellPillMetrics.contentBottom(context) - 24,
         ),
         child: ChatListFab(
           onCamera: () => captureAndSendChatPhoto(context, ref),

@@ -71,8 +71,8 @@ class _CallsListState extends ConsumerState<CallsList> {
               onRefresh: () => ref.read(callLogProvider.notifier).load(),
               child: ListView.builder(
                 controller: _scroll,
-                padding: const EdgeInsets.only(
-                  bottom: ShellPillMetrics.contentBottomInset,
+                padding: EdgeInsets.only(
+                  bottom: ShellPillMetrics.contentBottom(context),
                 ),
                 itemCount: log.calls.length + (log.loadingMore ? 1 : 0),
                 itemBuilder: (context, i) {

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:ababilx/features/attachments/auto_download/auto_download_gate.dart';
 import 'package:ababilx/features/attachments/data/local/attachment_blob_store.dart';
 import 'package:ababilx/features/attachments/data/local/attachment_dedupe_store.dart';
 import 'package:ababilx/features/attachments/data/local/attachment_ref_store.dart';
@@ -85,7 +86,12 @@ void main() {
     final attachment = imageAt(
       'http://${server.address.host}:${server.port}/photo.jpg',
     );
-    final intake = AttachmentIntake(blobs, refs, queue);
+    final intake = AttachmentIntake(
+      blobs,
+      refs,
+      queue,
+      AutoDownloadGate.fixed(),
+    );
 
     await intake.onMessage(messageWith(attachment));
     // The first pass auto-downloads (small image), so wait for it to settle.
@@ -160,6 +166,7 @@ void main() {
         blobs,
         refs,
         queue,
+        AutoDownloadGate.fixed(),
       ).onMessage(messageWith(attachment));
       await queue.enqueue(attachment);
 
@@ -186,7 +193,12 @@ void main() {
       lastError: 'This file is no longer available',
     );
 
-    final intake = AttachmentIntake(blobs, refs, queue);
+    final intake = AttachmentIntake(
+      blobs,
+      refs,
+      queue,
+      AutoDownloadGate.fixed(),
+    );
     await intake.onMessage(messageWith(attachment));
     await intake.onMessage(messageWith(attachment));
 
@@ -209,7 +221,12 @@ void main() {
 
     final handle = await authority.resolve(locked);
     expect(handle.state, AttachmentTransferState.locked);
-    await AttachmentIntake(blobs, refs, queue).onMessage(messageWith(locked));
+    await AttachmentIntake(
+      blobs,
+      refs,
+      queue,
+      AutoDownloadGate.fixed(),
+    ).onMessage(messageWith(locked));
     expect(requests, 0);
   });
 }

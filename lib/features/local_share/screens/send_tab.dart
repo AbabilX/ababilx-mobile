@@ -93,7 +93,7 @@ class _SendTabState extends ConsumerState<SendTab> {
         16,
         8,
         16,
-        ShellPillMetrics.contentBottomInset,
+        ShellPillMetrics.contentBottom(context),
       ),
       children: [
         Row(

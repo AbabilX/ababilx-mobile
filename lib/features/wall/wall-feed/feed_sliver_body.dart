@@ -51,11 +51,11 @@ List<Widget> wallFeedSlivers(
   final count = state.posts.length + (state.hasMore ? 1 : 0);
   return [
     SliverPadding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         16,
         8,
         16,
-        ShellPillMetrics.contentBottomInset,
+        ShellPillMetrics.contentBottom(context),
       ),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate((context, i) {

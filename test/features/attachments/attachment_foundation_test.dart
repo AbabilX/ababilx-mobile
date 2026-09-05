@@ -1,3 +1,5 @@
+import 'package:ababilx/core/network/network_class.dart';
+import 'package:ababilx/features/attachments/auto_download/auto_download_settings.dart';
 import 'package:ababilx/features/attachments/data/models/attachment_url_key.dart';
 import 'package:ababilx/features/attachments/services/attachment_failure.dart';
 import 'package:ababilx/features/attachments/services/attachment_policy.dart';
@@ -42,21 +44,94 @@ void main() {
   });
 
   group('auto-download policy', () {
-    test('allows small images and voice notes', () {
-      expect(shouldAutoDownload(attachment()), isTrue);
+    bool auto(
+      ChatMessageAttachment a, {
+      AutoDownloadSettings settings = AutoDownloadSettings.defaults,
+      NetworkClass network = NetworkClass.wifi,
+    }) => shouldAutoDownload(a, settings: settings, network: network);
+
+    test('classifies an attachment by the knob that governs it', () {
+      expect(autoDownloadMediaOf(attachment()), AutoDownloadMedia.photos);
       expect(
-        shouldAutoDownload(attachment(name: 'voice.m4a', type: 'audio/mp4')),
-        isTrue,
+        autoDownloadMediaOf(attachment(name: 'voice.m4a', type: 'audio/mp4')),
+        AutoDownloadMedia.audio,
+      );
+      expect(
+        autoDownloadMediaOf(attachment(name: 'clip.mp4', type: 'video/mp4')),
+        AutoDownloadMedia.video,
+      );
+      // Everything unrecognised is a document, so no attachment falls through
+      // the four switches with nothing governing it.
+      expect(
+        autoDownloadMediaOf(attachment(name: 'deck.pptx', type: '')),
+        AutoDownloadMedia.documents,
       );
     });
 
-    test('blocks expensive or unavailable attachments', () {
+    test('defaults keep photos and voice notes automatic', () {
+      expect(auto(attachment()), isTrue);
+      expect(auto(attachment(name: 'voice.m4a', type: 'audio/mp4')), isTrue);
+      expect(auto(attachment(name: 'clip.mp4', type: 'video/mp4')), isFalse);
+    });
+
+    test('roaming is off by default even for photos', () {
+      expect(auto(attachment(), network: NetworkClass.cellular), isTrue);
+      expect(auto(attachment(), network: NetworkClass.roaming), isFalse);
+    });
+
+    test('nothing starts with no route out', () {
+      final everything = AutoDownloadSettings.defaults.withNetworks(
+        AutoDownloadMedia.photos,
+        AutoDownloadNetwork.values.toSet(),
+      );
       expect(
-        shouldAutoDownload(attachment(name: 'clip.mp4', type: 'video/mp4')),
+        auto(attachment(), settings: everything, network: NetworkClass.offline),
         isFalse,
       );
-      expect(shouldAutoDownload(attachment(locked: true)), isFalse);
-      expect(shouldAutoDownload(attachment(bytes: 6 * 1024 * 1024)), isFalse);
+    });
+
+    test('the user can turn video on for one network only', () {
+      final wifiVideo = AutoDownloadSettings.defaults.withNetworks(
+        AutoDownloadMedia.video,
+        {AutoDownloadNetwork.wifi},
+      );
+      final clip = attachment(name: 'clip.mp4', type: 'video/mp4');
+      expect(auto(clip, settings: wifiVideo), isTrue);
+      expect(
+        auto(clip, settings: wifiVideo, network: NetworkClass.cellular),
+        isFalse,
+      );
+    });
+
+    test('the size ceiling and availability are not the user to decide', () {
+      final everything = AutoDownloadSettings({
+        for (final media in AutoDownloadMedia.values) media: 7,
+      });
+      expect(auto(attachment(locked: true), settings: everything), isFalse);
+      expect(
+        auto(attachment(bytes: 6 * 1024 * 1024), settings: everything),
+        isFalse,
+      );
+    });
+
+    test('describe never shows an empty value', () {
+      expect(
+        AutoDownloadSettings.defaults.describe(AutoDownloadMedia.video),
+        'Never',
+      );
+      expect(
+        AutoDownloadSettings.defaults.describe(AutoDownloadMedia.photos),
+        'Wi-Fi, Cellular',
+      );
+      expect(
+        AutoDownloadSettings.defaults
+            .withNetworks(
+              AutoDownloadMedia.photos,
+              AutoDownloadNetwork.values.toSet(),
+            )
+            .describe(AutoDownloadMedia.photos),
+        'Always',
+      );
     });
   });
 

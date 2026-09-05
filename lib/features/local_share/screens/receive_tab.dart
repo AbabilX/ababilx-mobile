@@ -61,7 +61,7 @@ class _ReceiveTabState extends ConsumerState<ReceiveTab> {
         16,
         8,
         16,
-        ShellPillMetrics.contentBottomInset,
+        ShellPillMetrics.contentBottom(context),
       ),
       children: [
         Center(

@@ -31,6 +31,9 @@ import '../../features/calls/group/screens/group_call_screen.dart';
 import '../../features/calls/screens/calls_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
+import '../../features/settings/data-storage/data_storage_screen.dart';
+import '../../features/settings/data-storage/storage_management_screen.dart';
+import '../../features/settings/data-storage/storage_review_screen.dart';
 import '../../features/settings/screens/media_quality_screen.dart';
 import '../../features/settings/screens/notification_settings_screen.dart';
 import '../../features/settings/screens/discovery_screen.dart';
@@ -137,6 +140,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/media-quality',
         builder: (_, _) => const MediaQualityScreen(),
+      ),
+      // Signal's Data and storage, and the two screens under it.
+      GoRoute(
+        path: '/settings/data-storage',
+        builder: (_, _) => const DataStorageScreen(),
+      ),
+      GoRoute(
+        path: '/settings/storage',
+        builder: (_, _) => const StorageManagementScreen(),
+      ),
+      GoRoute(
+        path: '/settings/storage/review',
+        builder: (_, _) => const StorageReviewScreen(),
       ),
       // The default background for every chat.
       GoRoute(
