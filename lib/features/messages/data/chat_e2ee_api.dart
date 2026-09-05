@@ -83,14 +83,15 @@ class ChatE2eeApi {
   Future<void> denyLink(String token) =>
       _client.post(ApiConstants.chatE2eeLinkDeny, data: {'token': token});
 
-  /// Polling returns the whole envelope, so the raw response is handed back
-  /// rather than unwrapped: `status` sits beside `data`, not inside it.
+  /// `{status, identity_envelope?}` — nested under `data` like every other
+  /// endpoint. It was briefly returned at the top level, which made the web
+  /// client (which always unwraps) read `status` off `undefined`.
   Future<Map<String, dynamic>> pollLink(String token) async {
     final res = await _client.post(
       ApiConstants.chatE2eeLinkPoll,
       data: {'token': token},
     );
-    return Map<String, dynamic>.from(res.data as Map);
+    return unwrapApiData<Map<String, dynamic>>(res);
   }
 
   Future<Map<String, dynamic>> getPublicKey(String userId) async {
