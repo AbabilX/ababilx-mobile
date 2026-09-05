@@ -45,9 +45,17 @@
     <!-- Keep FCM reliable in background (WhatsApp-style unrestricted) -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
+    <!-- Backup is off, and both halves are load-bearing. allowBackup="false"
+         stops Google cloud backup on every version; on Android 12+ it no
+         longer governs device-to-device transfer, which reads
+         dataExtractionRules alone. Set only one and app data still leaves the
+         phone by the other path. See res/xml/data_extraction_rules.xml for
+         what would travel. -->
     <application
         android:label="AbabilX"
         android:name=".AbabilXApplication"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

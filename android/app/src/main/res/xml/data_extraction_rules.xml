@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Nothing this app stores may leave the device through a backup.
+
+  android:allowBackup="false" already stops cloud backup, but on Android 12
+  (API 31) and above it no longer covers device-to-device transfer — that
+  path is governed only by this file, so without it a phone-to-phone setup
+  would still copy everything the cloud path is denied.
+
+  What would otherwise travel: the drift chat database (workspace channel
+  messages are plaintext there — only DM and personal-group bodies are stored
+  as ciphertext), every downloaded attachment in the app's private files
+  directory, and the EncryptedSharedPreferences file behind
+  flutter_secure_storage. That last one is also a correctness problem, not
+  just a privacy one: its master key lives in the Android Keystore and never
+  leaves the device, so a restored copy is undecryptable and the user lands
+  on a session and a message identity that cannot be opened.
+
+  Only <exclude> rules are listed, which means everything is excluded and
+  nothing is opted back in. "root" covers internal storage, but "external"
+  and the device-encrypted (device_*) domains are separate trees and have to
+  be named on their own.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
+    </device-transfer>
+</data-extraction-rules>
