@@ -330,47 +330,45 @@ released on pause and on dispose. A paused video has no claim on the screen.
 Mute is state on the viewer, not read back off the controller — nothing rebuilds
 on volume now.
 
-# There is no message PIN — recovery is an emailed code
+# There is no message PIN — there is a 256-bit recovery code
 
-Changed 2026-09-05, at the product owner's explicit direction.
+Settled 2026-09-05 after one reversal. Messages are end-to-end encrypted: the
+server holds no private key and cannot derive one.
 
-The **server** mints and holds the account's P-256 identity, sealed under
-`ABABILX_SECRET_KEY`. `MessageVaultIdentity.ensureIdentity` asks
-`GET .../e2ee/vault`:
+The identity is minted on the device. Its private half is stored on the server
+**wrapped by a 256-bit recovery code** generated here, shown once, never sent.
+`MessageVaultIdentity.ensureIdentity` asks `GET .../e2ee/vault`:
 
-- **no identity yet** → the server makes one and returns `private_key` in the
-  same response. A first launch is asked nothing.
-- **this phone already stores it** → loaded from `flutter_secure_storage`,
-  asked nothing.
-- **anything else** → `VaultIdentityState.verify`, and `VaultGateEmail` asks for
-  the 6 digits mailed to the account owner (`MessageVaultRecover`).
+- **no identity yet** → mint identity + code, wrap, `PUT .../vault/recovery`,
+  return `VaultIdentityState.setup` and show the code once.
+- **this phone already stores it** → loaded from `flutter_secure_storage`, asked
+  nothing. If the account has no `recovery` blob (device-local era), a code is
+  minted and shown — the one moment that can be fixed silently.
+- **anything else** → `VaultIdentityState.unlock`, and `VaultGateRecoveryCode`
+  asks for the code (`MessageVaultRecover.unlockWithRecoveryCode`).
 
-Confirming the code returns the *same* identity, so every message the account
-ever received decrypts — including on a phone that has never seen this account
-before. That is the whole point of the change: most of this user base is on the
-web, on several machines, signing in with Google.
+A correct code restores the *same* identity, so every message the account ever
+received decrypts.
 
-**Be honest about what it costs.** A machine holding the server's environment
-key and its database can read every DM. This is not end-to-end encryption
-against AbabilX any more, and recovery-by-email cannot coexist with it. Do not
-write copy that says end-to-end.
+**The reversal is the lesson.** For a few hours this was server-side escrow with
+a 6-digit emailed code. Convenient, and not end-to-end: a machine with the
+server's environment key and database could read every DM. If anyone proposes
+"just email a code", that is this again.
 
-What is still true and still matters: per-conversation keys, ciphertext-only
-bodies, safety numbers, encrypted push, and a database dump that is inert on its
-own.
+**Entropy is the distinction, not ceremony.** The retired PIN wrapped the same
+blob with six digits — 10^6 behind PBKDF2, about 100 GPU-seconds. The recovery
+code is 32 random bytes and uses HKDF, since stretching only helps a guessable
+secret. Never wrap a stored key with something a person types from memory.
 
-What must not come back: the 6-digit PIN that wrapped the key *server-side*.
-That was 10^6 behind PBKDF2, about 100 GPU-seconds. A 32-byte environment key is
-a different thing entirely; a short secret a person types is not.
+**`recovery_key.dart` has a byte-for-byte twin in `lib/chat-e2ee/recovery-key.ts`.**
+Same info string, same AAD, same base64url. `recovery_key_test.dart` and
+`recovery-key.test.mjs` assert the same fixed vector; change one side alone and
+a code written on this phone opens nothing in a browser.
 
-`identity_changed: true` from the unlock means the account predates escrow and
-had no device left to hand its key over, so the server issued a new identity.
-History then returns per conversation wherever another member's key can be
-re-wrapped (the server does this on `GET .../e2ee-key`), and nowhere else.
-
-`MessageVaultIdentity` also uploads this phone's key
-(`PUT .../e2ee/vault/escrow`) when the server reports `recoverable: false` —
-that is the quiet migration for accounts made under the device-local scheme.
+**A code cannot be shown again, only replaced.** Nothing keeps it — the pending
+one lives in `MessageVault._pendingRecoveryCode` and is read once. Settings →
+Message recovery code regenerates (`regenerateRecoveryCode`), which re-wraps the
+same identity: history intact, old code dead.
 
 ## Linking a second device — this phone is the approver only
 
@@ -394,10 +392,10 @@ without the key now takes the emailed code instead of showing a QR of its own.
   `key_ops: []`. That is correct for a public key and makes WebCrypto **reject**
   the private import, so a phone→browser link would fail while phone→phone
   worked. The one case a phone cannot test on its own.
-- Mobile only scans, so a phone that lacks the key takes `VaultGateEmail`, not a
-  QR. The screen requests the code on arrival rather than behind a button —
-  there is one action on it, so making people ask first is a tap carrying no
-  decision.
+- Mobile only scans, so a phone that lacks the key takes `VaultGateRecoveryCode`,
+  not a QR of its own. Its last resort is `VaultGateResetDialog`, which returns
+  the **new** recovery code so the gate can show it — a user who just proved
+  they keep nothing must not be handed a replacement invisibly.
 - **After a reset, the other side hands the old key back.** The conversation
   key survives on their device — the reset only dropped the resetting user's
   envelope for it. `GET .../e2ee-key` reports the fillable versions as `gaps`
@@ -420,9 +418,11 @@ without the key now takes the emailed code instead of showing a QR of its own.
   the push's `sender_id` so it can rotate. Messages written before the reset
   stay unreadable — that half is the trade, not a bug.
 - **Logging out still erases the key on that device** (`SecureStorage.clearAll`)
-  — but signing back in costs one emailed code, not the account's history. That
-  used to be a permanent loss for a single-device user.
-- The reset endpoint (`POST /api/teams/chat/e2ee/reset`) and its 9-character
-  emailed code are still on the server and no longer reachable from this app;
-  `POST .../e2ee/device/unlock` covers the same ground without discarding the
-  identity. Both share one code row per user, so do not run them together.
+  — signing back in costs the recovery code, not the account's history. Without
+  the code it is a real loss, which is why the setup screen makes people tick a
+  box rather than letting them swipe past.
+- The reset (`POST /api/teams/chat/e2ee/reset`, 9-character emailed code) now
+  carries the replacement identity's `recovery` blob in the same request. The
+  emailed code is spent by then, so a client that stopped between two calls
+  would leave the new identity stranded on one device — the exact dead end the
+  reset existed to escape.
