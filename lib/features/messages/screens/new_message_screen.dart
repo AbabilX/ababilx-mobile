@@ -18,6 +18,7 @@ import '../providers/chat_provider.dart';
 import '../providers/team_gate_provider.dart';
 import '../providers/messageable_people_provider.dart';
 import '../../../shared/text/name_search.dart';
+import '../../../shared/widgets/app_toast.dart';
 import '../nickname/contact_nickname_provider.dart';
 
 class NewMessageScreen extends ConsumerStatefulWidget {
@@ -58,10 +59,6 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
   Widget build(BuildContext context) {
     final independent =
         ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
-    // A webhook feed is a workspace conversation by construction — the server
-    // refuses a personal-scope one — so the row is absent without a workspace
-    // rather than failing on tap.
-    final hasTeam = ref.watch(hasTeamProvider);
     final connectionState = ref.watch(chatConnectionsProvider);
     final people = _visiblePeople(
       ref.watch(messageablePeopleProvider),
@@ -107,12 +104,18 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
                 // Last of the actions: the two search hints above answer the
                 // question this screen is usually open for, and a feed is set
                 // up once and then never again.
-                if (hasTeam)
-                  NewMessageAction(
-                    icon: Icons.link_rounded,
-                    label: tr('chat_new_webhook_feed'),
-                    onTap: _newWebhookFeed,
-                  ),
+                //
+                // Shown even without a workspace, and refused on tap instead.
+                // It used to be hidden behind hasTeamProvider, which reads
+                // false while the team gate is still loading as well as when
+                // there is genuinely no workspace — so the row went missing on
+                // accounts that could in fact create a feed, with nothing on
+                // screen to explain it.
+                NewMessageAction(
+                  icon: Icons.link_rounded,
+                  label: tr('chat_new_webhook_feed'),
+                  onTap: _newWebhookFeed,
+                ),
               ],
             ),
           ),
@@ -172,9 +175,25 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
     if (mounted) context.pushReplacement('/messages/${dm.id}');
   }
 
+  /// A webhook feed is a workspace conversation by construction — the scope
+  /// constraint added in migration 0111 has no personal-scope webhook row — so
+  /// this waits for the team gate rather than reading a value that is false
+  /// while it loads, and says why when there is no workspace.
   Future<void> _newWebhookFeed() async {
+    final team = await ref.read(teamGateProvider.future);
+    if (!mounted) return;
+    if (team?.hasTeam != true) {
+      showAppToast(
+        context,
+        AppTranslations.translate(context, ref, 'chat_webhook_needs_workspace'),
+        isError: true,
+      );
+      return;
+    }
     final feed = await showWebhookCreateSheet(context, ref);
-    if (feed != null && mounted) context.pushReplacement('/messages/${feed.id}');
+    if (feed != null && mounted) {
+      context.pushReplacement('/messages/${feed.id}');
+    }
   }
 
   Future<void> _newGroup(bool independent) async {

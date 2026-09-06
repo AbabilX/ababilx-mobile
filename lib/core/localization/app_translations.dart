@@ -123,6 +123,8 @@ class AppTranslations {
       'chat_new_message': 'New message',
       'chat_new_workspace_channel': 'New workspace channel',
       'chat_new_webhook_feed': 'New webhook feed',
+      'chat_webhook_needs_workspace':
+          'Webhook feeds live in a workspace. Join or create one first.',
       'chat_webhook_read_only': 'Only webhook messages arrive here',
       'chat_new_group': 'New group',
       'chat_unread': 'Unread messages',
@@ -389,6 +391,8 @@ class AppTranslations {
       'chat_new_message': 'নতুন বার্তা',
       'chat_new_workspace_channel': 'নতুন ওয়ার্কস্পেস চ্যানেল',
       'chat_new_webhook_feed': 'নতুন ওয়েবহুক ফিড',
+      'chat_webhook_needs_workspace':
+          'ওয়েবহুক ফিড ওয়ার্কস্পেসে থাকে। আগে একটি ওয়ার্কস্পেসে যোগ দিন বা তৈরি করুন।',
       'chat_webhook_read_only': 'এখানে শুধু ওয়েবহুক বার্তা আসে',
       'chat_new_group': 'নতুন গ্রুপ',
       'chat_unread': 'অপঠিত বার্তা',
