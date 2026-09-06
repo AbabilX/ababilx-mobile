@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../chat-list/index.dart';
 import '../message_e2ee/message_vault.dart';
-import '../message_e2ee/message_vault_gate.dart';
+import '../message_e2ee/message_vault_sheet.dart';
 import '../providers/chat_provider.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
@@ -16,6 +16,7 @@ class MessagesScreen extends ConsumerStatefulWidget {
 
 class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   bool _vaultUnlocked = false;
+  bool _vaultSheetOpen = false;
 
   @override
   void initState() {
@@ -38,34 +39,16 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     if (!unlocked) _openUnlockSheet();
   }
 
-  void _openUnlockSheet() {
-    showModalBottomSheet(
+  Future<void> _openUnlockSheet() async {
+    if (_vaultSheetOpen || ref.read(messageVaultProvider).isUnlocked) return;
+    _vaultSheetOpen = true;
+    await showMessageVaultRecoverySheet(
       context: context,
-      isScrollControlled: true,
-      isDismissible: false,
-      enableDrag: false,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
-        ),
-        // Keyboard inset outside, gesture bar inside. SafeArea reads
-        // MediaQuery.padding, which the keyboard already zeroes out, so the
-        // two never stack into a double gap — and the sheet's last button
-        // stops sitting under the home indicator.
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: MediaQuery.sizeOf(sheetContext).height * 0.62,
-            child: MessageVaultGate(
-              onUnlocked: () {
-                if (mounted) setState(() => _vaultUnlocked = true);
-                Navigator.of(sheetContext).pop();
-              },
-            ),
-          ),
-        ),
-      ),
+      onUnlocked: () {
+        if (mounted) setState(() => _vaultUnlocked = true);
+      },
     );
+    _vaultSheetOpen = false;
   }
 
   @override
