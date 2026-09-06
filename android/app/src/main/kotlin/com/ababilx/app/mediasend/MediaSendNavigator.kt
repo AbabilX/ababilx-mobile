@@ -59,6 +59,10 @@ class MediaSendNavigator(
             editorVisible -> onEditorClosed()
             review.dismissSheet() -> Unit
             reviewVisible -> leaveReview()
+            // Inside an album, Back is "up to the album list" — the picker is
+            // two screens deep now, and leaving the flow from the first Back
+            // would throw away a selection made inside an album.
+            galleryVisible && gallery.backToAlbums() -> Unit
             galleryVisible && review.selection().isNotEmpty() -> showReview()
             else -> cancel()
         }

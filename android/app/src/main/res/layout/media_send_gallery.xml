@@ -28,7 +28,8 @@
             android:layout_weight="1"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:text="@string/media_send_recent"
+            android:background="?android:selectableItemBackground"
+            android:text="@string/media_send_albums"
             android:textColor="@color/media_send_on_dark"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -49,6 +50,15 @@
             android:contentDescription="@string/media_send_files"
             android:src="@drawable/ic_ms_file" />
     </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/gallery_albums"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:scrollbars="none"
+        android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/gallery_grid"

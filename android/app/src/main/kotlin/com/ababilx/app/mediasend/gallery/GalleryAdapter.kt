@@ -31,6 +31,13 @@ class GalleryAdapter(
         notifyItemRangeInserted(start, more.size)
     }
 
+    /** Switching album throws the old rows away rather than appending to them. */
+    fun clear() {
+        val had = entries.size
+        entries.clear()
+        if (had > 0) notifyItemRangeRemoved(0, had)
+    }
+
     val count: Int get() = entries.size
 
     class Cell(view: View) : RecyclerView.ViewHolder(view) {
@@ -49,17 +56,28 @@ class GalleryAdapter(
 
     override fun getItemCount() = entries.size
 
+    /**
+     * A selection change repaints the badge and nothing else.
+     *
+     * Tapping one photo can renumber every other one, so the whole grid is
+     * told it changed — but a full bind would re-request the thumbnail of
+     * every visible cell and re-install its click listener for a disc that
+     * moved from "2" to "1". With the payload the tap costs a text change per
+     * visible cell, which is what makes the number appear on the finger rather
+     * than a beat behind it.
+     */
+    override fun onBindViewHolder(holder: Cell, position: Int, payloads: List<Any>) {
+        if (payloads.contains(PAYLOAD_SELECTION)) {
+            paintSelection(holder, entries[position])
+            return
+        }
+        super.onBindViewHolder(holder, position, payloads)
+    }
+
     override fun onBindViewHolder(holder: Cell, position: Int) {
         val entry = entries[position]
         loader.load(holder.image, entry.uri, entry.isVideo, cellSize)
-
-        val order = selection.indexOf(entry.uri)
-        val picked = order >= 0
-        holder.badge.text = if (picked) (order + 1).toString() else ""
-        holder.badge.setBackgroundResource(
-            if (picked) R.drawable.ms_selection_filled else R.drawable.ms_selection_ring,
-        )
-        holder.dim.visibility = if (picked) View.VISIBLE else View.GONE
+        paintSelection(holder, entry)
 
         holder.duration.visibility = if (entry.isVideo) View.VISIBLE else View.GONE
         if (entry.isVideo) holder.duration.text = clock(entry.durationMs)
@@ -67,8 +85,23 @@ class GalleryAdapter(
         holder.itemView.setOnClickListener { onTap(entry) }
     }
 
+    private fun paintSelection(holder: Cell, entry: GalleryEntry) {
+        val order = selection.indexOf(entry.uri)
+        val picked = order >= 0
+        holder.badge.text = if (picked) (order + 1).toString() else ""
+        holder.badge.setBackgroundResource(
+            if (picked) R.drawable.ms_selection_filled else R.drawable.ms_selection_ring,
+        )
+        holder.dim.visibility = if (picked) View.VISIBLE else View.GONE
+    }
+
     private fun clock(ms: Long): String {
         val total = ms / 1000
         return "%d:%02d".format(total / 60, total % 60)
+    }
+
+    companion object {
+        /** "The badge moved" — never "the photo changed". */
+        const val PAYLOAD_SELECTION = "selection"
     }
 }

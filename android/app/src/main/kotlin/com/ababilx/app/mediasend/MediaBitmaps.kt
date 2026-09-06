@@ -55,8 +55,20 @@ object MediaBitmaps {
         }
     }
 
-    fun preview(context: Context, uri: Uri, isVideo: Boolean, maxPx: Int): Bitmap? =
-        if (isVideo) videoFrame(context, uri) else decode(context, uri, maxPx)
+    /**
+     * A thumbnail-sized bitmap for a cell or a strip.
+     *
+     * [FastThumbnail] first, because a grid asks for this once per photo and
+     * the provider's cached thumbnail is an order of magnitude cheaper than
+     * decoding the original — most of all for a video, where the slow path is
+     * a full [MediaMetadataRetriever] frame extraction. Anything it cannot
+     * serve (a `file://` URI, a size too large to be a thumbnail, API 28)
+     * falls through to the decode below.
+     */
+    fun preview(context: Context, uri: Uri, isVideo: Boolean, maxPx: Int): Bitmap? {
+        FastThumbnail.of(context, uri, maxPx)?.let { return it }
+        return if (isVideo) videoFrame(context, uri) else decode(context, uri, maxPx)
+    }
 
     fun rotate(source: Bitmap, degrees: Int): Bitmap {
         if (degrees % 360 == 0) return source

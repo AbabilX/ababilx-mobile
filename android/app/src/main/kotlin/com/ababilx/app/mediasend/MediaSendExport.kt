@@ -8,6 +8,7 @@ import android.util.Log
 import com.ababilx.app.mediasend.editor.EditRender
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -27,12 +28,47 @@ object MediaSendExport {
 
     private const val TAG = "MediaSendExport"
 
+    /** Concurrent encodes. See [exportAll] for why this is not core count. */
+    private const val LANES = 2
+
     class Output(
         val path: String,
         val name: String,
         val mime: String,
         val sizeBytes: Long,
     )
+
+    /**
+     * Every item, in the order given, encoded on a small pool.
+     *
+     * Encoding is CPU-bound and independent per file, so an album of ten went
+     * through one JPEG generation after another on the Activity's single
+     * export thread — a few seconds of a frozen Send button with nothing on
+     * screen to explain it.
+     *
+     * Two lanes, not one per core. Each lane holds a decoded bitmap at the
+     * quality level's largest target, which on High is a 4096 px edge — about
+     * 50 MB — and a phone that runs four of those at once trades the stall for
+     * an out-of-memory. Order is kept because the results are collected from
+     * the futures in submission order, not as they finish.
+     */
+    fun exportAll(
+        context: Context,
+        items: List<PickedItem>,
+        quality: MediaQuality,
+    ): List<Output> {
+        if (items.size < 2) return items.mapNotNull { export(context, it, quality) }
+        val pool = Executors.newFixedThreadPool(LANES)
+        return try {
+            items.map { item -> pool.submit<Output?> { export(context, item, quality) } }
+                .mapNotNull { future -> runCatching { future.get() }.getOrNull() }
+        } catch (error: Exception) {
+            Log.w(TAG, "parallel export failed", error)
+            items.mapNotNull { export(context, it, quality) }
+        } finally {
+            pool.shutdown()
+        }
+    }
 
     fun export(context: Context, item: PickedItem, quality: MediaQuality): Output? = when {
         item.isVideo -> copy(context, item)

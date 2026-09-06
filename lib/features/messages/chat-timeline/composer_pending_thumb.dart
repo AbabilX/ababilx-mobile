@@ -54,7 +54,7 @@ class PendingThumb extends StatelessWidget {
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: _content(colors),
+              child: _content(colors, MediaQuery.devicePixelRatioOf(context)),
             ),
           ),
           Positioned(
@@ -83,12 +83,16 @@ class PendingThumb extends StatelessWidget {
     );
   }
 
-  Widget _content(ColorScheme colors) {
+  Widget _content(ColorScheme colors, double pixelRatio) {
     final localPath = PendingPreviewCache.get(attachment.fileUrl);
     if (_isImage && localPath != null) {
       return Image.file(
         File(localPath),
         fit: BoxFit.cover,
+        // The file behind this tile is a full-size export — a 2048x1536 JPEG
+        // decodes to ~12 MB of RGBA, and ten of them overrun Flutter's image
+        // cache for a strip of 72 px squares. Decode at the size drawn.
+        cacheWidth: (size * pixelRatio).round(),
         errorBuilder: (_, _, _) => _remoteImage(colors),
       );
     }

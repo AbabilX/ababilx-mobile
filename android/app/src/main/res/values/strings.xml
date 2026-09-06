@@ -5,6 +5,10 @@
     <string name="media_send_close">Close</string>
     <string name="media_send_back">Back</string>
     <string name="media_send_recent">Recent</string>
+    <string name="media_send_albums">Albums</string>
+    <string name="media_send_all_media">All media</string>
+    <!-- Album name in the picker top bar; the caret says it is tappable. -->
+    <string name="media_send_album_title">%1$s \u25BE</string>
     <string name="media_send_camera">Camera</string>
     <string name="media_send_files">Files</string>
     <string name="media_send_next">Next</string>

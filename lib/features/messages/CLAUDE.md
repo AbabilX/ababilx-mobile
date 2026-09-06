@@ -426,3 +426,38 @@ without the key now takes the emailed code instead of showing a QR of its own.
   emailed code is spent by then, so a client that stopped between two calls
   would leave the new identity stranded on one device — the exact dead end the
   reset existed to escape.
+
+# An attachment tile is drawn before its bytes are uploaded
+
+Changed 2026-09-07, after "selecting images takes time".
+
+The composer used to call `onAdded` — the thing that puts a tile in the pending
+strip — only *after* the file's PUT had finished, and it uploaded one file
+before starting the next. Ten photos on a slow uplink therefore left the
+composer visibly empty for as long as the whole transfer took, which reads as
+the *picker* being slow rather than the network.
+
+`composer_upload.dart` now runs in two passes:
+
+```
+reserve   one at a time, no bytes read: presign -> cache the local preview
+                                        -> onAdded   (the tile appears NOW)
+transfer  three at a time: read the file, PUT, adopt
+```
+
+- **Order is the reserve pass's job.** Presigning sequentially is what keeps an
+  album in the order it was tapped however the transfers interleave. Do not
+  move the presign into the lanes to "save a round trip".
+- **Bytes are read inside a lane, never up front.** `UploadSource` describes a
+  file without holding it (`composer_upload_source.dart`) — an album of ten on
+  High is 30 MB otherwise, and ten videos, which are never transcoded, far
+  worse. A presign needs only name, type and length, and length comes from
+  `File.length()`.
+- **`ComposerUploads` is not optional.** A pending tile owns a reserved URL
+  whose object may not exist yet, so `_send` awaits `settle()` before posting.
+  Skip that and the conversation gets a message whose photos never load, for
+  everyone, permanently. It loops, because a rail tap can add work after the
+  wait began.
+- **A failed upload calls `onFailed`**, and the composer removes that tile. The
+  object is discarded server-side in the same path, so the reservation is not
+  charged.

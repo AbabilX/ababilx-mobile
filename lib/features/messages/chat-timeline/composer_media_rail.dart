@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
 import '../../../shared/media/device_gallery.dart';
+import '../../../shared/media/media_thumbnail.dart';
 
 /// The strip of recent library media across the top of the attachment
 /// keyboard, the way Signal opens straight onto your last photos instead of
@@ -56,36 +56,23 @@ class _ComposerMediaRailState extends State<ComposerMediaRail> {
   }
 }
 
-class _RailTile extends StatefulWidget {
+/// One recent item.
+///
+/// Draws through [MediaThumbnail] rather than fetching its own bytes, so the
+/// panel's forty tiles share the one decoded-thumbnail cache with the grid
+/// sheet and the folder gallery. Closing the "+" panel and opening it again
+/// used to re-decode every tile from scratch.
+class _RailTile extends StatelessWidget {
   const _RailTile({required this.item, required this.onTap});
 
   final DeviceMediaItem item;
   final VoidCallback onTap;
 
   @override
-  State<_RailTile> createState() => _RailTileState();
-}
-
-class _RailTileState extends State<_RailTile> {
-  Uint8List? _bytes;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  Future<void> _load() async {
-    final data = await DeviceGallery.thumbnail(widget.item.uri, maxPx: 320);
-    if (mounted) setState(() => _bytes = data);
-  }
-
-  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final bytes = _bytes;
     return InkWell(
-      onTap: widget.onTap,
+      onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
@@ -95,9 +82,8 @@ class _RailTileState extends State<_RailTile> {
             fit: StackFit.expand,
             children: [
               ColoredBox(color: colors.surfaceContainerHighest),
-              if (bytes != null)
-                Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true),
-              if (widget.item.isVideo)
+              MediaThumbnail(item: item, maxPx: 320),
+              if (item.isVideo)
                 Positioned(
                   left: 6,
                   bottom: 6,
