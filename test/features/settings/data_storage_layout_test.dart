@@ -66,8 +66,17 @@ void main() {
     // Defaults, rendered as the row's trailing value.
     expect(find.text('Wi-Fi, Cellular'), findsWidgets);
     expect(find.text('Never'), findsWidgets);
-    // The total from Manage storage, and the live connection under the group.
+    // The total from Manage storage.
     expect(find.text('4.5 GB'), findsOneWidget);
+    // The footnote sits below the fold on a 320dp screen, and a ListView does
+    // not build what it has not scrolled to — so this scrolls rather than
+    // asserting the copy happens to be above the fold, which is a fact about
+    // how many rows precede it rather than about the screen being correct.
+    await tester.scrollUntilVisible(
+      find.textContaining('roaming right now'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.textContaining('roaming right now'), findsOneWidget);
     // The ceiling is quoted from the constant that enforces it, so the copy
     // cannot drift away from the behaviour.

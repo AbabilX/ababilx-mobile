@@ -49,6 +49,38 @@ class DriftChatMessageStore {
     }
   }
 
+  /// Reads the archive in one ascending keyset cursor, across every
+  /// conversation and every thread. See [AndroidChatMessageStore.exportPage]
+  /// for why this cannot be [page] with different arguments: `page` filters
+  /// `thread_root_id IS NULL`, so it can never see a thread reply.
+  Future<List<ChatMessage>> exportPage({
+    int? afterMs,
+    String? afterId,
+    required int limit,
+  }) async {
+    try {
+      final query = _db.select(_db.cachedMessages);
+      if (afterMs != null) {
+        query.where(
+          (t) => afterId == null
+              ? t.createdAtMs.isBiggerThanValue(afterMs)
+              : t.createdAtMs.isBiggerThanValue(afterMs) |
+                    (t.createdAtMs.equals(afterMs) &
+                        t.id.isBiggerThanValue(afterId)),
+        );
+      }
+      query
+        ..orderBy([
+          (t) => OrderingTerm(expression: t.createdAtMs),
+          (t) => OrderingTerm(expression: t.id),
+        ])
+        ..limit(limit);
+      return messagesFromRows(await query.get());
+    } catch (_) {
+      return const [];
+    }
+  }
+
   Future<bool> hasOlderThan(
     String conversationId,
     int beforeMs, {

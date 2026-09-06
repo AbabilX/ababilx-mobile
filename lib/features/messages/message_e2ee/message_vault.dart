@@ -77,6 +77,20 @@ class MessageVault {
   /// anyone who may message us — so exposing it costs nothing.
   Map<String, dynamic>? get publicIdentity => _publicJwk;
 
+  /// The identity's 32-byte private scalar, for deriving the history-archive
+  /// key. Null while the vault is locked.
+  ///
+  /// This is key material and the only caller is `ArchiveKey.derive`. It is
+  /// exposed at all because the recovery code — the obvious root for a backup
+  /// — is deliberately never persisted (see [_pendingRecoveryCode]), so a
+  /// backup rooted in the code could only run while the user was typing it.
+  /// Rooting in the identity keeps the code as the transitive root and lets a
+  /// backup run unattended.
+  ///
+  /// Never log it, never send it, and never widen this to a public JWK: the
+  /// archive needs the raw scalar as HKDF input, nothing more.
+  List<int>? get archiveRootSecret => _identity?.d;
+
   Future<EncryptedDmPayload> encryptNew({
     required String conversationId,
     required String text,

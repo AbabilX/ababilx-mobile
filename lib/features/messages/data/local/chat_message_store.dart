@@ -11,6 +11,8 @@ import 'drift_chat_message_store.dart';
 
 export 'local_message_search.dart';
 
+part 'chat_message_export.dart';
+
 /// Local retention backstop: the most messages one conversation keeps on the
 /// device.
 ///

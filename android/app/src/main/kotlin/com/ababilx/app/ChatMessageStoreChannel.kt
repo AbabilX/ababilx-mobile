@@ -45,6 +45,13 @@ class ChatMessageStoreChannel(context: android.content.Context) {
                             call.argument("threadRootId"),
                         )
                     }
+                    "exportPage" -> background(result) {
+                        database.exportPage(
+                            call.argument<Number>("afterMs")?.toLong(),
+                            call.argument("afterId"),
+                            (call.argument<Int>("limit") ?: 500),
+                        )
+                    }
                     "hasOlder" -> background(result) {
                         database.hasOlder(
                             requiredString(call.argument("conversationId")),

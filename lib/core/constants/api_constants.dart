@@ -150,6 +150,13 @@ class ApiConstants {
   static String personalWebhookAvatar(String conversationId) =>
       independentChatConversationAction(conversationId, 'webhook/avatar');
 
+  // Encrypted history archive. Account-scoped like the E2EE vault, so it sits
+  // under /api/messaging rather than under a workspace or the chat flag.
+  static const String chatArchive = '/api/messaging/archive';
+  static const String chatArchiveBegin = '/api/messaging/archive/begin';
+  static const String chatArchiveChunk = '/api/messaging/archive/chunk';
+  static const String chatArchiveCommit = '/api/messaging/archive/commit';
+
   static const String chatDm = '/api/teams/chat/dm';
   static String chatVoiceCalls(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/calls';

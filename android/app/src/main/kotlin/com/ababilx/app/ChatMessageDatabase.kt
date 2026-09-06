@@ -136,6 +136,48 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
         return newestFirst.asReversed()
     }
 
+    /**
+     * Reads the archive in one ascending keyset cursor, across every
+     * conversation and every thread.
+     *
+     * Separate from [page] on purpose. `page` answers "what does this screen
+     * show next", so it filters `thread_root_id IS NULL` and reads newest
+     * first — which makes it structurally unable to see a thread reply, and
+     * therefore unable to back one up. This reads rows regardless of
+     * thread_root_id, oldest first, so an exporter can stream the whole
+     * history and resume from where it stopped.
+     *
+     * Ordering is (created_at_ms, id) so the cursor is total: two messages
+     * with the same millisecond still have a stable successor.
+     */
+    fun exportPage(afterMs: Long?, afterId: String?, limit: Int): List<String> {
+        val where = mutableListOf<String>()
+        val args = mutableListOf<String>()
+        if (afterMs != null) {
+            if (afterId == null) {
+                where += "created_at_ms > ?"
+                args += afterMs.toString()
+            } else {
+                where += "(created_at_ms > ? OR (created_at_ms = ? AND id > ?))"
+                args += listOf(afterMs.toString(), afterMs.toString(), afterId)
+            }
+        }
+        val payloads = mutableListOf<String>()
+        readableDatabase.query(
+            "messages",
+            arrayOf("payload_json"),
+            where.joinToString(" AND ").ifEmpty { null },
+            args.toTypedArray().takeIf { it.isNotEmpty() },
+            null,
+            null,
+            "created_at_ms ASC, id ASC",
+            limit.coerceIn(1, MAX_PAGE).toString(),
+        ).use { cursor ->
+            while (cursor.moveToNext()) payloads += cursor.getString(0)
+        }
+        return payloads
+    }
+
     fun hasOlder(conversationId: String, beforeMs: Long, beforeId: String?): Boolean {
         val boundary = if (beforeId == null) {
             "created_at_ms < ?"
