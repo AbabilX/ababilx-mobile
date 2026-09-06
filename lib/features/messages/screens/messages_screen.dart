@@ -35,12 +35,15 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
       unawaited(ref.read(chatProvider.notifier).fetchSidebar(silent: true));
     }
     setState(() => _vaultUnlocked = unlocked);
+    if (!unlocked) _openUnlockSheet();
   }
 
   void _openUnlockSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,

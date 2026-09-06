@@ -32,10 +32,11 @@ extension MessageVaultRecover on MessageVault {
       // the difference is of no use to the person holding the code.
       throw StateError('That recovery code is not right');
     }
-    await _adopt(
-      _identityFromJwk(privateJwk),
-      Map<String, dynamic>.from(vault['public_key'] as Map),
-    );
+    final publicJwk = Map<String, dynamic>.from(vault['public_key'] as Map);
+    if (privateJwk['x'] != publicJwk['x'] || privateJwk['y'] != publicJwk['y']) {
+      throw StateError('The recovery backup does not match this account');
+    }
+    await _adopt(_identityFromJwk(privateJwk), publicJwk);
   }
 
   /// Issues a new recovery code for the same identity.

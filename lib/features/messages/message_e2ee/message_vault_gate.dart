@@ -6,6 +6,8 @@ import '../providers/chat_provider.dart';
 import 'message_vault.dart';
 import 'vault_gate_error.dart';
 import 'vault_gate_recovery_code.dart';
+import 'vault_gate_recovery_choice.dart';
+import 'vault_gate_reset_dialog.dart';
 import 'vault_gate_recovery_setup.dart';
 
 /// Stands in front of the chat until this device holds the account's message
@@ -32,6 +34,9 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
   Object? _error;
   VaultIdentityState _state = VaultIdentityState.unlock;
   String _recoveryCode = '';
+  bool _recovering = false;
+  bool _resetting = false;
+  bool _finishing = false;
 
   @override
   void initState() {
@@ -77,9 +82,37 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
   /// previous session is still showing the locked placeholder, so it is
   /// resolved here rather than in each caller.
   Future<void> _finish() async {
-    await ref.read(chatProvider.notifier).fetchSidebar(silent: true);
-    await ref.read(chatProvider.notifier).redecryptFailedMessages();
-    if (mounted) widget.onUnlocked();
+    if (_finishing) return;
+    setState(() {
+      _finishing = true;
+      _error = null;
+    });
+    try {
+      await ref.read(chatProvider.notifier).fetchSidebar(silent: true);
+      await ref.read(chatProvider.notifier).redecryptFailedMessages();
+      if (mounted) widget.onUnlocked();
+    } catch (error) {
+      if (mounted) setState(() => _error = error);
+    } finally {
+      if (mounted) setState(() => _finishing = false);
+    }
+  }
+
+  void _identityReplaced(String code) {
+    if (!mounted) return;
+    setState(() {
+      _state = VaultIdentityState.setup;
+      _recoveryCode = code;
+    });
+  }
+
+  Future<void> _startFresh() async {
+    if (_resetting) return;
+    setState(() => _resetting = true);
+    final code = await VaultGateResetDialog.show(context);
+    if (!mounted) return;
+    setState(() => _resetting = false);
+    if (code != null) _identityReplaced(code);
   }
 
   @override
@@ -88,20 +121,30 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
     if (_error != null) {
-      return VaultGateError(error: _error!, onRetry: _load);
+      return VaultGateError(
+        error: _error!,
+        onRetry: ref.read(messageVaultProvider).isUnlocked ? _finish : _load,
+      );
     }
     if (_state == VaultIdentityState.ready) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
     if (_state == VaultIdentityState.setup) {
-      return VaultGateRecoverySetup(code: _recoveryCode, onSaved: _finish);
+      return PopScope(
+        canPop: false,
+        child: VaultGateRecoverySetup(code: _recoveryCode, onSaved: _finish),
+      );
+    }
+    if (!_recovering) {
+      return VaultGateRecoveryChoice(
+        busy: _resetting,
+        onRecover: () => setState(() => _recovering = true),
+        onStartFresh: _startFresh,
+      );
     }
     return VaultGateRecoveryCode(
       onUnlocked: _finish,
-      onIdentityReplaced: (code) => setState(() {
-        _state = VaultIdentityState.setup;
-        _recoveryCode = code;
-      }),
+      onBack: () => setState(() => _recovering = false),
     );
   }
 }

@@ -53,10 +53,25 @@ class ChatE2eeApi {
     String code,
     Map<String, dynamic> publicJwk,
     Map<String, dynamic> recovery,
-  ) => _client.post(
-    ApiConstants.chatE2eeReset,
-    data: {'code': code, 'public_key': publicJwk, 'recovery': recovery},
-  );
+  ) async {
+    // Older servers silently ignore clear_history. Refuse before replacing
+    // anything, instead of promising an empty account then reloading old chats.
+    final status = await getVault();
+    if (status['supports_fresh_start'] != true) {
+      throw StateError('Fresh start requires an updated server');
+    }
+    final response = await _client.post(
+      ApiConstants.chatE2eeReset,
+      data: {
+        'code': code, 'public_key': publicJwk,
+        'recovery': recovery, 'clear_history': true,
+      },
+    );
+    final data = unwrapApiData<Map<String, dynamic>>(response);
+    if (data['history_cleared'] != true) {
+      throw StateError('The server did not confirm clearing message history');
+    }
+  }
 
   Future<Map<String, dynamic>> createLink(String deviceName) async {
     final res = await _client.post(

@@ -19,6 +19,39 @@ class AppTranslations {
 
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
+      'recovery_choice_title': 'Restore your messages',
+      'recovery_choice_body':
+          'If you saved your recovery code, use it to restore up to the last 6 months of available messages. Otherwise, you can start fresh.',
+      'recovery_have_code': 'I have a recovery code',
+      'recovery_fresh': 'Start fresh',
+      'recovery_fresh_hint':
+          'Start fresh removes your old chat list, messages and media from this account. Other people keep their copies.',
+      'recovery_enter': 'Enter your recovery code',
+      'recovery_help':
+          'Enter the code you saved when you set up messages. Spacing and case do not matter.',
+      'recovery_working': 'Recovering…',
+      'recovery_restore': 'Recover messages',
+      'recovery_back': 'Back',
+      'recovery_invalid': 'Check your recovery code and try again.',
+      'recovery_failed':
+          'Could not recover messages. Check your connection and try again.',
+      'recovery_reset_body':
+          'Your old chat list, messages and media will be removed from your account and this phone. Your account and memberships stay. Other people keep their copies. Verify your email to continue, then save your new recovery code.',
+      'recovery_send': 'Email me a code',
+      'recovery_sending': 'Sending…',
+      'recovery_sent': 'Code sent to {email}',
+      'recovery_email_hint': '9-character code',
+      'recovery_email_invalid': 'Enter the 9-character code from your email.',
+      'recovery_send_failed':
+          'Could not send the code. Check your email settings and connection, then try again.',
+      'recovery_reset_failed':
+          'Could not start fresh. Check your code and connection, then try again.',
+      'recovery_clean_failed':
+          'Your reset succeeded. Tap Continue to finish clearing this phone.',
+      'recovery_continue': 'Continue',
+      'recovery_cancel': 'Cancel',
+      'recovery_saving': 'Starting fresh…',
+
       'login_subtitle':
           'Stay close to friends and family—with privacy and end-to-end encryption built in.',
       'continue_google': 'Continue with Google',
@@ -255,6 +288,39 @@ class AppTranslations {
       'policy_error': 'Could not save. Try again.',
     },
     'bn': {
+      'recovery_choice_title': 'আপনার মেসেজ ফিরিয়ে আনুন',
+      'recovery_choice_body':
+          'রিকভারি কোড সংরক্ষণ করে থাকলে সেটি দিয়ে গত ৬ মাসের উপলব্ধ মেসেজ ফিরিয়ে আনুন। কোড না থাকলে নতুনভাবে শুরু করতে পারবেন।',
+      'recovery_have_code': 'আমার রিকভারি কোড আছে',
+      'recovery_fresh': 'নতুনভাবে শুরু করুন',
+      'recovery_fresh_hint':
+          'নতুনভাবে শুরু করলে এই অ্যাকাউন্ট থেকে পুরোনো চ্যাট তালিকা, মেসেজ ও মিডিয়া সরবে। অন্যদের কপি থাকবে।',
+      'recovery_enter': 'আপনার রিকভারি কোড দিন',
+      'recovery_help':
+          'মেসেজ সেটআপের সময় সংরক্ষিত কোডটি দিন। স্পেস ও বড় বা ছোট হাতের অক্ষর যেকোনোভাবে লেখা যাবে।',
+      'recovery_working': 'ফিরিয়ে আনা হচ্ছে…',
+      'recovery_restore': 'মেসেজ ফিরিয়ে আনুন',
+      'recovery_back': 'ফিরে যান',
+      'recovery_invalid': 'রিকভারি কোড মিলিয়ে আবার চেষ্টা করুন।',
+      'recovery_failed':
+          'মেসেজ ফেরানো যায়নি। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+      'recovery_reset_body':
+          'আপনার অ্যাকাউন্ট ও এই ফোন থেকে পুরোনো চ্যাট তালিকা, মেসেজ ও মিডিয়া সরানো হবে। অ্যাকাউন্ট ও সদস্যপদ থাকবে। অন্যদের কপি থাকবে। চালিয়ে যেতে ইমেইল যাচাই করুন, তারপর নতুন রিকভারি কোড সংরক্ষণ করুন।',
+      'recovery_send': 'ইমেইলে কোড পাঠান',
+      'recovery_sending': 'পাঠানো হচ্ছে…',
+      'recovery_sent': '{email}-এ কোড পাঠানো হয়েছে',
+      'recovery_email_hint': '৯ অক্ষরের কোড',
+      'recovery_email_invalid': 'ইমেইলের ৯ অক্ষরের কোড দিন।',
+      'recovery_send_failed':
+          'কোড পাঠানো যায়নি। ইমেইল সেটিংস ও সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+      'recovery_reset_failed':
+          'নতুনভাবে শুরু করা যায়নি। কোড ও সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+      'recovery_clean_failed':
+          'রিসেট হয়েছে। এই ফোন পরিষ্কার করা শেষ করতে চালিয়ে যান চাপুন।',
+      'recovery_continue': 'চালিয়ে যান',
+      'recovery_cancel': 'বাতিল',
+      'recovery_saving': 'নতুনভাবে শুরু হচ্ছে…',
+
       'login_subtitle':
           'বন্ধু ও পরিবারের কাছাকাছি থাকুন—গোপনীয়তা ও এন্ড-টু-এন্ড এনক্রিপশনসহ।',
       'continue_google': 'গুগল অ্যাকাউন্ট দিয়ে এগিয়ে যান',

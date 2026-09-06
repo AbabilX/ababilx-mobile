@@ -27,18 +27,61 @@ extension MessageVaultReset on MessageVault {
   /// leaves this device exactly as it was rather than holding a key the account
   /// does not recognise.
   Future<String> startFreshIdentity(String code) async {
-    final identity = P256Ecdh.newKeyPair();
-    final publicJwk = _publicJwkFromIdentity(identity);
-    final recoveryCode = RecoveryKey.generateCode();
-    final vault = await RecoveryKey.wrap(
-      _privateJwkFromIdentity(identity),
-      recoveryCode,
-    );
-    await _repo.resetE2eeVault(code, publicJwk, vault.toJson());
-    // Every cached conversation key was agreed with the retired identity, so it
-    // decrypts nothing now. _adopt clears them, forcing a re-agreement under
-    // the new key instead of silently failing every message.
-    await _adopt(identity, publicJwk);
-    return RecoveryKey.format(recoveryCode);
+    var pending = _pendingFreshStart;
+    if (pending == null || pending.emailCode != code) {
+      final identity = P256Ecdh.newKeyPair();
+      final recoveryCode = RecoveryKey.generateCode();
+      pending = _PendingFreshStart(
+        code,
+        identity,
+        _publicJwkFromIdentity(identity),
+        recoveryCode,
+        await RecoveryKey.wrap(_privateJwkFromIdentity(identity), recoveryCode),
+      );
+      _pendingFreshStart = pending;
+    }
+    if (!pending.committed) {
+      try {
+        await _repo.resetE2eeVault(
+          code,
+          pending.publicJwk,
+          pending.vault.toJson(),
+        );
+      } catch (_) {
+        // A lost HTTP response can hide a committed reset. Reconcile before
+        // retrying; keep the candidate in memory so the new private key is
+        // never discarded merely because the emailed code was already spent.
+        final status = await _repo.getE2eeVault();
+        final remote = status['vault'];
+        final public = remote is Map ? remote['public_key'] : null;
+        if (public is! Map ||
+            public['x'] != pending.publicJwk['x'] ||
+            public['y'] != pending.publicJwk['y']) {
+          rethrow;
+        }
+      }
+      pending.committed = true;
+    }
+    await _adopt(pending.identity, pending.publicJwk);
+    _backfilled.clear();
+    final result = RecoveryKey.format(pending.recoveryCode);
+    _pendingFreshStart = null;
+    return result;
   }
+}
+
+class _PendingFreshStart {
+  _PendingFreshStart(
+    this.emailCode,
+    this.identity,
+    this.publicJwk,
+    this.recoveryCode,
+    this.vault,
+  );
+  final String emailCode;
+  final P256KeyPair identity;
+  final Map<String, dynamic> publicJwk;
+  final List<int> recoveryCode;
+  final RecoveryVault vault;
+  bool committed = false;
 }

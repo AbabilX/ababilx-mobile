@@ -61,6 +61,7 @@ class MessageVault {
   // server — because anything durable would leave a key-equivalent on disk,
   // which is the one thing this scheme exists to avoid.
   String? _pendingRecoveryCode;
+  _PendingFreshStart? _pendingFreshStart;
 
   /// Reads the freshly generated code once and forgets it.
   String? takePendingRecoveryCode() {

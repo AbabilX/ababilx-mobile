@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'message_vault.dart';
-import 'vault_gate_reset_dialog.dart';
+import '../../../core/localization/app_translations.dart';
 
 /// Unlocks this phone with the recovery code its owner saved.
 ///
@@ -14,15 +14,12 @@ class VaultGateRecoveryCode extends ConsumerStatefulWidget {
   const VaultGateRecoveryCode({
     super.key,
     required this.onUnlocked,
-    required this.onIdentityReplaced,
+    required this.onBack,
   });
 
   final Future<void> Function() onUnlocked;
 
-  /// Called with a brand-new recovery code after "start fresh", so the caller
-  /// can show it. The user has just proved they keep nothing; handing them the
-  /// replacement without showing it would repeat the same dead end.
-  final void Function(String code) onIdentityReplaced;
+  final VoidCallback onBack;
 
   @override
   ConsumerState<VaultGateRecoveryCode> createState() => _State();
@@ -40,6 +37,7 @@ class _State extends ConsumerState<VaultGateRecoveryCode> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -54,103 +52,85 @@ class _State extends ConsumerState<VaultGateRecoveryCode> {
       setState(() {
         _busy = false;
         _error = error is ArgumentError || error is StateError
-            ? '${(error as dynamic).message}'
-            : 'Could not unlock messages';
+            ? 'recovery_invalid'
+            : 'recovery_failed';
       });
     }
-  }
-
-  Future<void> _startFresh() async {
-    final code = await VaultGateResetDialog.show(context);
-    if (code != null) widget.onIdentityReplaced(code);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.vpn_key_outlined,
-              size: 44,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Enter your recovery code',
-              style: theme.textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'The code you saved when you set up messages. Spacing and case do '
-              'not matter.',
-              style: theme.textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              enabled: !_busy,
-              maxLines: 3,
-              minLines: 3,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                letterSpacing: 1.2,
+    String t(String key) => AppTranslations.translate(context, ref, key);
+    return PopScope(
+      canPop: !_busy,
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.vpn_key_outlined,
+                size: 44,
+                color: theme.colorScheme.primary,
               ),
-              decoration: const InputDecoration(
-                hintText: 'A1B2-C3D4-…',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 16),
               Text(
-                _error!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
+                t('recovery_enter'),
+                style: theme.textTheme.titleMedium,
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 8),
+              Text(
+                t('recovery_help'),
+                style: theme.textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                autocorrect: false,
+                enableSuggestions: false,
+                enabled: !_busy,
+                maxLines: 3,
+                minLines: 3,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  letterSpacing: 1.2,
+                ),
+                decoration: const InputDecoration(
+                  hintText: 'A1B2-C3D4-…',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  t(_error!),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _busy ? null : _submit,
+                  child: Text(
+                    t(_busy ? 'recovery_working' : 'recovery_restore'),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: _busy ? null : widget.onBack,
+                child: Text(t('recovery_back')),
+              ),
             ],
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _busy ? null : _submit,
-                child: Text(_busy ? 'Unlocking…' : 'Unlock messages'),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 8),
-            Text(
-              'Lost the code and have no other device?',
-              style: theme.textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: _busy ? null : _startFresh,
-                child: const Text('Start fresh on this device'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Messaging works again after an emailed code. Messages you '
-              'already have stay unreadable — nobody, including us, holds that '
-              'key.',
-              style: theme.textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
+          ),
         ),
       ),
     );

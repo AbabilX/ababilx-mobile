@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/chat_repository.dart';
+import '../../../core/localization/app_translations.dart';
+import 'vault_reset_cleanup.dart';
 import 'message_vault.dart';
 
 /// "Start fresh": an emailed code, then a brand-new message identity for
@@ -19,6 +21,7 @@ class VaultGateResetDialog extends ConsumerStatefulWidget {
 
   static Future<String?> show(BuildContext context) => showDialog<String>(
     context: context,
+    barrierDismissible: false,
     builder: (_) => const VaultGateResetDialog(),
   );
 
@@ -32,6 +35,7 @@ class _State extends ConsumerState<VaultGateResetDialog> {
   bool _saving = false;
   String _sentTo = '';
   String? _error;
+  String? _recovery;
 
   @override
   void dispose() {
@@ -56,7 +60,7 @@ class _State extends ConsumerState<VaultGateResetDialog> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = 'Could not send the code';
+        _error = 'recovery_send_failed';
         _sending = false;
       });
     }
@@ -64,8 +68,9 @@ class _State extends ConsumerState<VaultGateResetDialog> {
 
   Future<void> _submit() async {
     final code = _controller.text.trim().toUpperCase();
-    if (code.length != 9) {
-      setState(() => _error = 'Enter the 9-character code from your email.');
+    if (_saving) return;
+    if (_recovery == null && !RegExp(r'^[0-9A-F]{9}$').hasMatch(code)) {
+      setState(() => _error = 'recovery_email_invalid');
       return;
     }
     setState(() {
@@ -73,15 +78,18 @@ class _State extends ConsumerState<VaultGateResetDialog> {
       _error = null;
     });
     try {
-      final recovery = await ref
+      _recovery ??= await ref
           .read(messageVaultProvider)
           .startFreshIdentity(code);
-      if (mounted) Navigator.of(context).pop(recovery);
+      await clearFreshStartDevice(ref);
+      if (mounted) Navigator.of(context).pop(_recovery);
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'That code is wrong or expired';
+        _error = _recovery == null
+            ? 'recovery_reset_failed'
+            : 'recovery_clean_failed';
       });
     }
   }
@@ -89,65 +97,83 @@ class _State extends ConsumerState<VaultGateResetDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AlertDialog(
-      title: const Text('Start fresh'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'This gives you a new encryption identity so you can send messages '
-            'again. Everything already in your chats stays unreadable — nobody, '
-            'including AbabilX, holds that key.',
-            style: theme.textTheme.bodySmall,
+    String t(String key) => AppTranslations.translate(context, ref, key);
+    return PopScope(
+      canPop: !_saving && _recovery == null,
+      child: AlertDialog(
+        title: Text(t('recovery_fresh')),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t('recovery_reset_body'), style: theme.textTheme.bodySmall),
+              const SizedBox(height: 14),
+              if (_sentTo.isEmpty)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _sending ? null : _requestCode,
+                    child: Text(
+                      t(_sending ? 'recovery_sending' : 'recovery_send'),
+                    ),
+                  ),
+                )
+              else ...[
+                Text(
+                  t('recovery_sent').replaceAll('{email}', _sentTo),
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _controller,
+                  autofocus: true,
+                  enabled: !_saving && _recovery == null,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textCapitalization: TextCapitalization.characters,
+                  maxLength: 9,
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: t('recovery_email_hint'),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  t(_error!),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ],
+            ],
           ),
-          const SizedBox(height: 14),
-          if (_sentTo.isEmpty)
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: _sending ? null : _requestCode,
-                child: Text(_sending ? 'Sending…' : 'Email me a code'),
-              ),
-            )
-          else ...[
-            Text('Code sent to $_sentTo', style: theme.textTheme.bodySmall),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              enabled: !_saving,
-              textCapitalization: TextCapitalization.characters,
-              maxLength: 9,
-              decoration: const InputDecoration(
-                counterText: '',
-                hintText: '9-character code',
-                border: OutlineInputBorder(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _saving || _sending || _recovery != null
+                ? null
+                : () => Navigator.of(context).pop(),
+            child: Text(t('recovery_cancel')),
+          ),
+          if (_sentTo.isNotEmpty)
+            FilledButton(
+              onPressed: _saving ? null : _submit,
+              child: Text(
+                t(
+                  _saving
+                      ? 'recovery_saving'
+                      : _recovery != null
+                      ? 'recovery_continue'
+                      : 'recovery_fresh',
+                ),
               ),
             ),
-          ],
-          if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.error,
-              ),
-            ),
-          ],
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        if (_sentTo.isNotEmpty)
-          FilledButton(
-            onPressed: _saving ? null : _submit,
-            child: Text(_saving ? 'Working…' : 'Start fresh'),
-          ),
-      ],
     );
   }
 }
