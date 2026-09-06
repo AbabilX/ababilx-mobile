@@ -20,10 +20,21 @@ void main() {
       expect(feed.displayTitle(null), 'Group');
     });
 
-    test('is never end-to-end encrypted', () {
-      // Mirrors e2eeEligible on the server: a workspace room is plaintext, and
-      // a client that disagreed would send a body the server answers with 400.
+    test('is never end-to-end encrypted, in either scope', () {
+      // Mirrors e2eeEligible on the server. A feed's bodies arrive over plain
+      // HTTP from a sender that holds no key, so a PERSONAL feed must not be
+      // caught by the personal-group rule either — isGroup is false for it,
+      // which is what keeps them apart.
       expect(_conversation('webhook').isEncrypted, isFalse);
+      final personal = ChatConversation.fromJson({
+        'id': 'c1',
+        'scope': 'personal',
+        'type': 'webhook',
+      });
+      expect(personal.isPersonal, isTrue);
+      expect(personal.isWebhook, isTrue);
+      expect(personal.isGroupConversation, isTrue);
+      expect(personal.isEncrypted, isFalse);
     });
 
     test('read-only comes from the server, not from the type', () {

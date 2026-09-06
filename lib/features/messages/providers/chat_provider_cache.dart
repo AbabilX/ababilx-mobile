@@ -147,6 +147,20 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     return true;
   }
 
+  /// Whether the local store holds anything older than [oldest].
+  ///
+  /// The server is not the whole history any more. A webhook feed keeps only
+  /// its newest few messages server-side and the device is the archive, and a
+  /// free workspace's files age out the same way — so `has_more: false` means
+  /// "the server has no more", never "there is no more".
+  Future<bool> hasOlderOnDisk(String conversationId, ChatMessage oldest) {
+    return messageStore.hasOlderThan(
+      conversationId,
+      messageTimeMs(oldest),
+      beforeId: oldest.id,
+    );
+  }
+
   /// Persists a network page before it becomes the canonical in-memory feed.
   Future<void> persistFeed(List<ChatMessage> messages) =>
       messageStore.saveAll(messages);

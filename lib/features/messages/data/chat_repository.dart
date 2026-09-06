@@ -50,35 +50,48 @@ class ChatRepository {
     isPrivate: isPrivate,
   );
 
-  /// A webhook feed is an ordinary workspace channel in every way except
-  /// that nobody may post into it, so it is created here and then managed
-  /// through the same channel calls above.
+  /// A webhook feed is an ordinary group in every way except that nobody may
+  /// post into it, so it is created here and then managed through the same
+  /// conversation calls above.
+  ///
+  /// [personal] picks the scope, and for everything after creation it is the
+  /// CONVERSATION's own scope, not the app's independent-chat flag: an account
+  /// can hold a workspace feed and a personal one at the same time.
   Future<({ChatConversation conversation, ChatWebhookCreated created})>
   createWebhookChannel({
     required String name,
+    required bool personal,
     String? slug,
     bool isPrivate = false,
   }) => _webhooks.createWebhookChannel(
     name: name,
+    personal: personal,
     slug: slug,
     isPrivate: isPrivate,
   );
 
-  Future<ChatWebhookCreated> regenerateWebhook(String conversationId) =>
-      _webhooks.regenerate(conversationId);
+  Future<ChatWebhookCreated> regenerateWebhook(
+    String conversationId, {
+    required bool personal,
+  }) => _webhooks.regenerate(conversationId, personal: personal);
 
   Future<ChatPresignResult> presignWebhookAvatar(
     String conversationId, {
     required String contentType,
     required int sizeBytes,
+    required bool personal,
   }) => _webhooks.presignAvatar(
     conversationId,
     contentType: contentType,
     sizeBytes: sizeBytes,
+    personal: personal,
   );
 
-  Future<String> saveWebhookAvatar(String conversationId, String avatarUrl) =>
-      _webhooks.saveAvatar(conversationId, avatarUrl);
+  Future<String> saveWebhookAvatar(
+    String conversationId,
+    String avatarUrl, {
+    required bool personal,
+  }) => _webhooks.saveAvatar(conversationId, avatarUrl, personal: personal);
 
   Future<ChatConversation> patchChannel(
     String id, {

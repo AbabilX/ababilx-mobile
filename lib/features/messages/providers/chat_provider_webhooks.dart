@@ -2,9 +2,14 @@ part of 'chat_provider.dart';
 
 /// Webhook feeds: create one, replace its secret, set its picture.
 ///
-/// A feed lands in `state.channels` like any other workspace channel — the
-/// server already tells every client it is read-only through `can_message`,
-/// so nothing here has to keep a second copy of that rule.
+/// A feed lands in `state.channels` like any other group — the server already
+/// tells every client it is read-only through `can_message`, so nothing here
+/// has to keep a second copy of that rule.
+///
+/// Scope is passed in, never inferred from the app's independent-chat flag: a
+/// personal feed needs no workspace (migration 0128) and an account can hold
+/// one of each, so only the conversation itself knows which path to take.
+/// After creation that answer is `ChatConversation.isPersonal`.
 mixin _ChatWebhooksMixin
     on Notifier<ChatState>, _ChatPatchMixin, _ChatMutateMixin {
   @override
@@ -13,14 +18,19 @@ mixin _ChatWebhooksMixin
   /// Creates the feed and returns it together with the one response that
   /// carries the secret URL. The caller must show that URL immediately:
   /// nothing on the device or the server can produce it again.
+  ///
+  /// A personal feed takes only a name — it has no slug, and with no team
+  /// there is nobody a public feed could be open to.
   Future<({ChatConversation conversation, ChatWebhookCreated created})>
   createWebhookChannel({
     required String name,
+    required bool personal,
     bool isPrivate = false,
   }) async {
     final result = await repo.createWebhookChannel(
       name: name,
-      slug: slugifyChannel(name),
+      personal: personal,
+      slug: personal ? null : slugifyChannel(name),
       isPrivate: isPrivate,
     );
     if (!isDisposed) upsertChannel(result.conversation);
@@ -29,8 +39,8 @@ mixin _ChatWebhooksMixin
 
   /// Mints a new URL and kills the previous one in the same call. There is no
   /// way back to the old secret, which is why every caller confirms first.
-  Future<ChatWebhookCreated> regenerateWebhook(String conversationId) =>
-      repo.regenerateWebhook(conversationId);
+  Future<ChatWebhookCreated> regenerateWebhook(ChatConversation feed) =>
+      repo.regenerateWebhook(feed.id, personal: feed.isPersonal);
 
   /// Uploads a feed picture and saves it. Returns the stored URL, or '' when
   /// [bytes] is null, which clears the picture and deletes the object.
@@ -39,16 +49,24 @@ mixin _ChatWebhooksMixin
   /// attachment one: the server refuses an avatar URL that does not sit under
   /// this feed's storage prefix.
   Future<String> setWebhookAvatar(
-    String conversationId,
+    ChatConversation feed,
     List<int>? bytes,
   ) async {
-    if (bytes == null) return repo.saveWebhookAvatar(conversationId, '');
+    final personal = feed.isPersonal;
+    if (bytes == null) {
+      return repo.saveWebhookAvatar(feed.id, '', personal: personal);
+    }
     final presign = await repo.presignWebhookAvatar(
-      conversationId,
+      feed.id,
       contentType: 'image/jpeg',
       sizeBytes: bytes.length,
+      personal: personal,
     );
     await uploadAttachmentBytes(presign, bytes, 'image/jpeg');
-    return repo.saveWebhookAvatar(conversationId, presign.publicUrl);
+    return repo.saveWebhookAvatar(
+      feed.id,
+      presign.publicUrl,
+      personal: personal,
+    );
   }
 }

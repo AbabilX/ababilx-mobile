@@ -80,10 +80,23 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       final latest = state.feeds[key] ?? existing;
       final merged = canonicalChatMessages([...latest.messages, ...sorted]);
       await (this as _ChatCacheMixin).persistFeed(sorted);
+      // A server page running out does NOT mean the conversation has no more
+      // history. A webhook feed is trimmed to its newest few messages and the
+      // device holds the archive; ask the local store before closing the
+      // scrollback, or a feed would dead-end at whatever the server kept.
+      // With no cursor left, loadMoreFeed pages from disk on its own.
+      final hasMore =
+          page.hasMore ||
+          (threadRootId == null &&
+              merged.isNotEmpty &&
+              await (this as _ChatCacheMixin).hasOlderOnDisk(
+                conversationId,
+                merged.first,
+              ));
       final freshFeed = ChatFeed(
         messages: merged,
         nextCursor: page.nextCursor,
-        hasMore: page.hasMore,
+        hasMore: hasMore,
         fetchedAt: DateTime.now().millisecondsSinceEpoch,
         loading: false,
         error: '',

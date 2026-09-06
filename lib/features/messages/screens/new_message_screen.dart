@@ -15,10 +15,8 @@ import '../new-message/new_message_people_list.dart';
 import '../new-message/new_message_search.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
-import '../providers/team_gate_provider.dart';
 import '../providers/messageable_people_provider.dart';
 import '../../../shared/text/name_search.dart';
-import '../../../shared/widgets/app_toast.dart';
 import '../nickname/contact_nickname_provider.dart';
 
 class NewMessageScreen extends ConsumerStatefulWidget {
@@ -105,12 +103,11 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
                 // question this screen is usually open for, and a feed is set
                 // up once and then never again.
                 //
-                // Shown even without a workspace, and refused on tap instead.
-                // It used to be hidden behind hasTeamProvider, which reads
-                // false while the team gate is still loading as well as when
-                // there is genuinely no workspace — so the row went missing on
-                // accounts that could in fact create a feed, with nothing on
-                // screen to explain it.
+                // Never gated: a feed belongs to an account, so this is
+                // offered to everyone. It was briefly hidden behind
+                // hasTeamProvider, which reads false while the team gate is
+                // still loading as well as when there is genuinely no
+                // workspace — the row simply went missing.
                 NewMessageAction(
                   icon: Icons.link_rounded,
                   label: tr('chat_new_webhook_feed'),
@@ -175,21 +172,11 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
     if (mounted) context.pushReplacement('/messages/${dm.id}');
   }
 
-  /// A webhook feed is a workspace conversation by construction — the scope
-  /// constraint added in migration 0111 has no personal-scope webhook row — so
-  /// this waits for the team gate rather than reading a value that is false
-  /// while it loads, and says why when there is no workspace.
+  /// A feed needs no workspace: an account can own a personal one, and the
+  /// sheet offers the workspace/personal choice itself when there is a team to
+  /// choose. This used to refuse without one, which was the constraint
+  /// migration 0128 removed.
   Future<void> _newWebhookFeed() async {
-    final team = await ref.read(teamGateProvider.future);
-    if (!mounted) return;
-    if (team?.hasTeam != true) {
-      showAppToast(
-        context,
-        AppTranslations.translate(context, ref, 'chat_webhook_needs_workspace'),
-        isError: true,
-      );
-      return;
-    }
     final feed = await showWebhookCreateSheet(context, ref);
     if (feed != null && mounted) {
       context.pushReplacement('/messages/${feed.id}');

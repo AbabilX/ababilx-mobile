@@ -57,6 +57,12 @@ class _WebhookSettingsSectionState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.conversation.isPersonal)
+          DetailsTile(
+            icon: const Icon(Icons.person_outline_rounded),
+            title: 'Personal feed',
+            value: 'Belongs to your account, not to a workspace',
+          ),
         DetailsTile(
           icon: const Icon(Icons.link_rounded),
           title: 'Webhook URL',
@@ -112,7 +118,7 @@ class _WebhookSettingsSectionState
     try {
       final result = await ref
           .read(chatProvider.notifier)
-          .regenerateWebhook(widget.conversation.id);
+          .regenerateWebhook(widget.conversation);
       if (mounted) {
         await showWebhookUrlSheet(context, url: result.url, isNew: false);
       }
@@ -135,7 +141,7 @@ class _WebhookSettingsSectionState
     try {
       final saved = await ref
           .read(chatProvider.notifier)
-          .setWebhookAvatar(widget.conversation.id, bytes);
+          .setWebhookAvatar(widget.conversation, bytes);
       if (mounted) {
         _saved = true;
         _justSaved = saved.isEmpty ? null : saved;

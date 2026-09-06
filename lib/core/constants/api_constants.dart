@@ -126,9 +126,11 @@ class ApiConstants {
   static String chatChannelLeave(String id) =>
       '/api/teams/chat/channels/$id/leave';
 
-  // Webhook feeds. Workspace-only by construction — the server refuses a
-  // personal-scope webhook conversation — so these have no /api/chat twin and
-  // deliberately do not go through [ChatEndpoints].
+  // Webhook feeds, in both scopes. A workspace feed belongs to a team; a
+  // personal one belongs to an account and needs no workspace at all
+  // (migration 0128). Which path a feed answers on follows the CONVERSATION's
+  // own scope, never the app's independent-chat flag — an account can hold
+  // both kinds at once.
   static const String chatWebhookChannels = '/api/teams/chat/webhook-channels';
   static String chatWebhookRegenerate(String conversationId) =>
       '/api/teams/chat/channels/$conversationId/webhook/regenerate';
@@ -136,6 +138,17 @@ class ApiConstants {
       '/api/teams/chat/channels/$conversationId/webhook/avatar/presign';
   static String chatWebhookAvatar(String conversationId) =>
       '/api/teams/chat/channels/$conversationId/webhook/avatar';
+
+  static const String personalWebhookChannels = '/api/chat/webhook-channels';
+  static String personalWebhookRegenerate(String conversationId) =>
+      independentChatConversationAction(conversationId, 'webhook/regenerate');
+  static String personalWebhookAvatarPresign(String conversationId) =>
+      independentChatConversationAction(
+        conversationId,
+        'webhook/avatar/presign',
+      );
+  static String personalWebhookAvatar(String conversationId) =>
+      independentChatConversationAction(conversationId, 'webhook/avatar');
 
   static const String chatDm = '/api/teams/chat/dm';
   static String chatVoiceCalls(String conversationId) =>
