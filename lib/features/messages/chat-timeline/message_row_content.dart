@@ -61,7 +61,14 @@ class MessageRowContent extends ConsumerWidget {
               .watch(contactNicknamesProvider)
               .resolve(userId: message.userId, name: message.userName);
     final notifier = ref.read(chatProvider.notifier);
-    final replies = ref.watch(chatProvider).threadRepliesByRoot[message.id];
+    final chat = ref.watch(chatProvider);
+    final replies = chat.threadRepliesByRoot[message.id];
+    // A feed's picture belongs to the feed, not to one of its messages. The
+    // URL joined onto a message is whatever the hook wore when that message
+    // was fetched, so a photo set today would never reach the ones already in
+    // the local store — and a photo removed today would go on showing on them.
+    final feed = webhook ? chat.conversationById(message.conversationId) : null;
+    final avatarUrl = feed != null ? feed.avatarUrl : message.userAvatarUrl;
     final colors = SignalBubbleColors.of(scheme, hasWallpaper: hasWallpaper);
     // A name over an incoming bubble in a group, an avatar under the last one.
     final showName = isGroup && !isOwnMessage && _startsCluster;
@@ -154,7 +161,7 @@ class MessageRowContent extends ConsumerWidget {
                       child: ClipOval(
                         child: AppAvatar(
                           size: SignalBubbleMetrics.avatarSize,
-                          url: message.userAvatarUrl,
+                          url: avatarUrl,
                           name: name,
                           // A feed with no picture has no initial worth
                           // drawing — "W" for Webhook says nothing.

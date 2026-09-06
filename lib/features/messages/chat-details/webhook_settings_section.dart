@@ -37,11 +37,21 @@ class _WebhookSettingsSectionState
   String? _justSaved;
   bool _saved = false;
 
-  /// The feed's picture as the server last served it. There is no endpoint
-  /// that returns the webhook row, so it is read off a message the feed has
-  /// already posted — the server joins the hook's avatar into that column.
+  /// The feed's picture. The server mirrors the webhook's avatar onto the
+  /// conversation row, so that is the answer wherever it is there.
+  ///
+  /// The fallback reads it off a message the feed has already posted — the
+  /// server joins the hook's avatar into that column — which is all a build
+  /// talking to a server from before the mirror can see. It is skipped once
+  /// this screen has saved, or a removed photo would go on reading as "Set"
+  /// from the stale messages already on screen.
   String? get _currentAvatar {
     if (_saved) return _justSaved;
+    final conversation =
+        ref.watch(chatProvider).conversationById(widget.conversation.id) ??
+        widget.conversation;
+    final mirrored = conversation.avatarUrl?.trim() ?? '';
+    if (mirrored.isNotEmpty) return mirrored;
     final feed = ref.watch(chatProvider).feeds[feedKey(widget.conversation.id)];
     for (final message in (feed?.messages ?? const []).reversed) {
       final url = message.userAvatarUrl?.trim() ?? '';

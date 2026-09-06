@@ -54,7 +54,7 @@ mixin _ChatWebhooksMixin
   ) async {
     final personal = feed.isPersonal;
     if (bytes == null) {
-      return repo.saveWebhookAvatar(feed.id, '', personal: personal);
+      return _storeWebhookAvatar(feed, '', personal: personal);
     }
     final presign = await repo.presignWebhookAvatar(
       feed.id,
@@ -63,10 +63,26 @@ mixin _ChatWebhooksMixin
       personal: personal,
     );
     await uploadAttachmentBytes(presign, bytes, 'image/jpeg');
-    return repo.saveWebhookAvatar(
-      feed.id,
-      presign.publicUrl,
-      personal: personal,
-    );
+    return _storeWebhookAvatar(feed, presign.publicUrl, personal: personal);
+  }
+
+  /// Saves the picture and puts it on the conversation this device already
+  /// holds.
+  ///
+  /// The server mirrors the webhook's avatar onto the conversation row, which
+  /// is what every list row, header and details screen draws — but the sidebar
+  /// is not refetched after a save, so without this the photo went up, came
+  /// back saved, and nothing on screen changed until the next cold start.
+  Future<String> _storeWebhookAvatar(
+    ChatConversation feed,
+    String url, {
+    required bool personal,
+  }) async {
+    final saved = await repo.saveWebhookAvatar(feed.id, url, personal: personal);
+    if (!isDisposed) {
+      final current = state.conversationById(feed.id) ?? feed;
+      upsertChannel(current.copyWith(avatarUrl: saved));
+    }
+    return saved;
   }
 }

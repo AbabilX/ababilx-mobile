@@ -461,3 +461,38 @@ transfer  three at a time: read the file, PUT, adopt
 - **A failed upload calls `onFailed`**, and the composer removes that tile. The
   object is discarded server-side in the same path, so the reservation is not
   charged.
+
+# A feed has one picture, and it is not the group photo
+
+A webhook feed is a conversation nobody may post into, and the server enforces
+that on the whole send path — `CanUploadAttachment` rides on `CanSendMessage`,
+so the attachment presign is **403 for everybody**, admin included. The group
+edit sheet's photo/banner flow uploads through exactly that presign, which is
+why picking a picture for a feed failed the instant the crop was confirmed:
+
+```
++ pencil -> crop -> presign attachment  -> 403 read_only   (group flow)
++ pencil -> crop -> presign feed avatar -> 200             (feed flow)
+```
+
+- `groupEditPictures(conversation)` picks the block: `WebhookEditPhoto` for a
+  feed, `GroupEditImages` for a personal group, nothing otherwise. A feed gets
+  **no banner** — its one picture is the face stamped on every message it
+  posts, and a second one would only compete with it. The server refuses
+  `avatar_url` / `banner_url` on a feed's `PATCH .../info` for the same reason,
+  so the rule is enforced rather than merely intended.
+- **The webhook row is the source of truth; the conversation row is the
+  mirror.** `db.UpdateChatWebhookAvatar` writes both in one transaction. Every
+  list row, header and details screen draws `chat_conversations.avatar_url`
+  and nothing reads the hook row, so before the mirror a feed photo saved
+  successfully and appeared nowhere except on messages posted afterwards —
+  "uploading but not updating". Migration `0131` copies across the ones that
+  were already set.
+- The mirror is also what puts a feed picture under the sweeps that already
+  walk a conversation's own avatar: the discard guard that refuses to delete a
+  picture in use, and the delete/purge paths that queue the object.
+- **A webhook message draws the feed's current picture, not its own.** The URL
+  joined onto a message is whatever the hook wore when that message was
+  fetched, and the local store keeps messages forever — so a photo set today
+  would never reach the ones already on disk, and a photo removed today would
+  go on showing on them.
