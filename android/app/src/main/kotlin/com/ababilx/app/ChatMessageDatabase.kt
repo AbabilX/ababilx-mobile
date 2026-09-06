@@ -129,7 +129,7 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
             null,
             null,
             "created_at_ms DESC, id DESC",
-            limit.coerceIn(1, MAX_KEEP).toString(),
+            limit.coerceIn(1, MAX_PAGE).toString(),
         ).use { cursor ->
             while (cursor.moveToNext()) newestFirst += cursor.getString(0)
         }
@@ -182,6 +182,12 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
         writableDatabase.delete("messages", null, null)
     }
 
+    /**
+     * Trims a conversation to MAX_KEEP rows. This is a runaway backstop, not a
+     * retention policy: the phone is the archive and keeps far more history
+     * than the server, which holds six months (see CHAT_RETENTION.md). Only a
+     * conversation past a couple of hundred thousand messages ever reaches it.
+     */
     private fun prune(database: SQLiteDatabase, conversationId: String) {
         database.execSQL(
             "DELETE FROM messages WHERE conversation_id = ? AND id NOT IN " +
@@ -194,6 +200,11 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
     private companion object {
         const val DATABASE_NAME = "ababilx_messages.db"
         const val DATABASE_VERSION = 1
-        const val MAX_KEEP = 2000
+
+        /** Local retention backstop. The phone outlives the server's window. */
+        const val MAX_KEEP = 200_000
+
+        /** Upper bound on one page read, so a query cannot pull the archive. */
+        const val MAX_PAGE = 2_000
     }
 }

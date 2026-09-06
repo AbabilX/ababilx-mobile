@@ -191,6 +191,12 @@ class DriftChatMessageStore {
     } catch (_) {}
   }
 
+  /// Trims a conversation to [keepPerConversation] rows.
+  ///
+  /// A runaway backstop, not a retention policy. The phone is the archive and
+  /// deliberately holds far more history than the server, which keeps six
+  /// months — see CHAT_RETENTION.md. Only a conversation past a couple of
+  /// hundred thousand messages ever reaches this.
   Future<void> _prune(String conversationId) async {
     try {
       await _db.customStatement(
