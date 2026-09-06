@@ -129,8 +129,7 @@ class ApiConstants {
   // Webhook feeds. Workspace-only by construction — the server refuses a
   // personal-scope webhook conversation — so these have no /api/chat twin and
   // deliberately do not go through [ChatEndpoints].
-  static const String chatWebhookChannels =
-      '/api/teams/chat/webhook-channels';
+  static const String chatWebhookChannels = '/api/teams/chat/webhook-channels';
   static String chatWebhookRegenerate(String conversationId) =>
       '/api/teams/chat/channels/$conversationId/webhook/regenerate';
   static String chatWebhookAvatarPresign(String conversationId) =>
@@ -204,10 +203,16 @@ class ApiConstants {
       '$independentChatConversations/$conversationId/messages';
   static String independentChatConversation(String conversationId) =>
       '$independentChatConversations/$conversationId';
+
+  /// A suffix under one conversation. An empty [action] would build a
+  /// trailing slash, which Gin answers with a 307 redirect instead of the
+  /// route — use [independentChatConversation] for the conversation itself.
   static String independentChatConversationAction(
     String conversationId,
     String action,
-  ) => '$independentChatConversations/$conversationId/$action';
+  ) => action.isEmpty
+      ? independentChatConversation(conversationId)
+      : '$independentChatConversations/$conversationId/$action';
   static String independentChatVoiceCalls(String conversationId) =>
       '$independentChatConversations/$conversationId/calls';
   static String independentChatMessage(String messageId) =>
