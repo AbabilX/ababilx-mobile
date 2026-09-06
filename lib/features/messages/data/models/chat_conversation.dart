@@ -78,7 +78,7 @@ class ChatConversation extends Equatable {
   final String id;
   final String teamId;
   final String scope; // personal | workspace
-  final String type; // channel | dm | group
+  final String type; // channel | dm | group | webhook
   final String? name;
   final String? slug;
   final bool isPrivate;
@@ -144,8 +144,15 @@ class ChatConversation extends Equatable {
   bool get isChannel => type == 'channel';
   bool get isDm => type == 'dm';
   bool get isGroup => type == 'group';
+
+  /// A one-way workspace feed filled by inbound HTTP. It is a channel in every
+  /// respect — roster, name, members, notifications — except that nobody may
+  /// post into it, which the server says on its own by returning
+  /// `can_message: false`. Do not re-derive that from the type here, or a
+  /// future read-only channel would need the same rule written twice.
+  bool get isWebhook => type == 'webhook';
   bool get isPersonal => scope == 'personal';
-  bool get isGroupConversation => isChannel || isGroup;
+  bool get isGroupConversation => isChannel || isGroup || isWebhook;
 
   /// Whether this conversation's text is end-to-end encrypted.
   ///

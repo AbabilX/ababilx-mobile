@@ -125,6 +125,19 @@ class ApiConstants {
       '/api/teams/chat/channels/$id/members';
   static String chatChannelLeave(String id) =>
       '/api/teams/chat/channels/$id/leave';
+
+  // Webhook feeds. Workspace-only by construction — the server refuses a
+  // personal-scope webhook conversation — so these have no /api/chat twin and
+  // deliberately do not go through [ChatEndpoints].
+  static const String chatWebhookChannels =
+      '/api/teams/chat/webhook-channels';
+  static String chatWebhookRegenerate(String conversationId) =>
+      '/api/teams/chat/channels/$conversationId/webhook/regenerate';
+  static String chatWebhookAvatarPresign(String conversationId) =>
+      '/api/teams/chat/channels/$conversationId/webhook/avatar/presign';
+  static String chatWebhookAvatar(String conversationId) =>
+      '/api/teams/chat/channels/$conversationId/webhook/avatar';
+
   static const String chatDm = '/api/teams/chat/dm';
   static String chatVoiceCalls(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/calls';

@@ -7,6 +7,7 @@ import 'chat_endpoints.dart';
 import 'chat_e2ee_api.dart';
 import 'chat_conversations_api.dart';
 import 'chat_messages_api.dart';
+import 'chat_webhooks_api.dart';
 import 'models/chat_models.dart';
 import '../../profile/providers/profile_provider.dart';
 
@@ -26,7 +27,8 @@ class ChatRepository {
         ChatEndpoints(independent: independent),
       ),
       _devices = ChatDeviceRepository(client),
-      _connections = ChatConnectionsApi(client);
+      _connections = ChatConnectionsApi(client),
+      _webhooks = ChatWebhooksApi(client);
 
   final ChatConversationsApi _conversations;
   final ChatMessagesApi _messages;
@@ -34,6 +36,7 @@ class ChatRepository {
   final ChatAttachmentsApi _attachments;
   final ChatDeviceRepository _devices;
   final ChatConnectionsApi _connections;
+  final ChatWebhooksApi _webhooks;
 
   Future<ChatSidebar> listConversations() => _conversations.listConversations();
 
@@ -46,6 +49,36 @@ class ChatRepository {
     slug: slug,
     isPrivate: isPrivate,
   );
+
+  /// A webhook feed is an ordinary workspace channel in every way except
+  /// that nobody may post into it, so it is created here and then managed
+  /// through the same channel calls above.
+  Future<({ChatConversation conversation, ChatWebhookCreated created})>
+  createWebhookChannel({
+    required String name,
+    String? slug,
+    bool isPrivate = false,
+  }) => _webhooks.createWebhookChannel(
+    name: name,
+    slug: slug,
+    isPrivate: isPrivate,
+  );
+
+  Future<ChatWebhookCreated> regenerateWebhook(String conversationId) =>
+      _webhooks.regenerate(conversationId);
+
+  Future<ChatPresignResult> presignWebhookAvatar(
+    String conversationId, {
+    required String contentType,
+    required int sizeBytes,
+  }) => _webhooks.presignAvatar(
+    conversationId,
+    contentType: contentType,
+    sizeBytes: sizeBytes,
+  );
+
+  Future<String> saveWebhookAvatar(String conversationId, String avatarUrl) =>
+      _webhooks.saveAvatar(conversationId, avatarUrl);
 
   Future<ChatConversation> patchChannel(
     String id, {

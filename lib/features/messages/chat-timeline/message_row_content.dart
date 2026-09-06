@@ -52,9 +52,14 @@ class MessageRowContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final name = ref
-        .watch(contactNicknamesProvider)
-        .resolve(userId: message.userId, name: message.userName);
+    // A webhook message has no sender: no user id, no user name, and nobody to
+    // open a profile for. Its name is the feed's, carried in meta.
+    final webhook = message.isWebhook;
+    final name = webhook
+        ? (message.webhookSourceName ?? 'Webhook')
+        : ref
+              .watch(contactNicknamesProvider)
+              .resolve(userId: message.userId, name: message.userName);
     final notifier = ref.read(chatProvider.notifier);
     final replies = ref.watch(chatProvider).threadRepliesByRoot[message.id];
     final colors = SignalBubbleColors.of(scheme, hasWallpaper: hasWallpaper);
@@ -62,13 +67,16 @@ class MessageRowContent extends ConsumerWidget {
     final showName = isGroup && !isOwnMessage && _startsCluster;
     final showAvatar = isGroup && !isOwnMessage;
 
-    void showProfile() => showUserProfileSheet(
-      context: context,
-      ref: ref,
-      userId: message.userId,
-      userName: name,
-      userAvatarUrl: message.userAvatarUrl,
-    );
+    void showProfile() {
+      if (webhook) return;
+      showUserProfileSheet(
+        context: context,
+        ref: ref,
+        userId: message.userId,
+        userName: name,
+        userAvatarUrl: message.userAvatarUrl,
+      );
+    }
 
     final column = Column(
       crossAxisAlignment: isOwnMessage
@@ -86,7 +94,9 @@ class MessageRowContent extends ConsumerWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
-                  color: senderNameColor(message.userId),
+                  color: webhook
+                      ? scheme.primary
+                      : senderNameColor(message.userId),
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -146,6 +156,15 @@ class MessageRowContent extends ConsumerWidget {
                           size: SignalBubbleMetrics.avatarSize,
                           url: message.userAvatarUrl,
                           name: name,
+                          // A feed with no picture has no initial worth
+                          // drawing — "W" for Webhook says nothing.
+                          fallback: webhook
+                              ? Icon(
+                                  Icons.link_rounded,
+                                  size: SignalBubbleMetrics.avatarSize * 0.5,
+                                  color: scheme.primary,
+                                )
+                              : null,
                         ),
                       ),
                     )

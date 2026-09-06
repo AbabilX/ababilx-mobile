@@ -4,7 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/localization/app_translations.dart';
 
 class ComposerLocked extends ConsumerWidget {
-  const ComposerLocked({super.key});
+  const ComposerLocked({super.key, this.messageKey = 'chat_connection_required'});
+
+  /// Which locked copy to show. The default is the blocked-DM case; a webhook
+  /// feed is locked for everyone by design, so telling its readers they
+  /// "cannot send messages in this chat" reads as a fault rather than as the
+  /// point of the room.
+  final String messageKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,11 +28,7 @@ class ComposerLocked extends ConsumerWidget {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                AppTranslations.translate(
-                  context,
-                  ref,
-                  'chat_connection_required',
-                ),
+                AppTranslations.translate(context, ref, messageKey),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: colors.onSurfaceVariant),
               ),

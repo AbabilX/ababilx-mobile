@@ -22,7 +22,13 @@ class TimelineComposer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chat = ref.watch(chatProvider);
     final conversation = chat.conversationById(conversationId);
-    if (conversation?.canMessage == false) return const ComposerLocked();
+    if (conversation?.canMessage == false) {
+      return ComposerLocked(
+        messageKey: conversation?.isWebhook == true
+            ? 'chat_webhook_read_only'
+            : 'chat_connection_required',
+      );
+    }
     if (conversation?.isIncomingRequest == true) {
       return MessageRequestBar(conversation: conversation!);
     }

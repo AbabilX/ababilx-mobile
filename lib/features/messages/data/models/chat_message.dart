@@ -88,6 +88,19 @@ class ChatMessage extends Equatable {
   bool get isDeleted => deletedAt != null;
   bool get isSystem => messageType == 'system';
   bool get isVoiceCall => messageType == 'voice_call';
+
+  /// Posted by an inbound webhook, so it has no sender: [userId] is empty and
+  /// [userName] null. The display name comes from the feed, via
+  /// [webhookSourceName], and the avatar arrives in [userAvatarUrl] — the
+  /// server joins the webhook's own picture into that column.
+  bool get isWebhook => messageType == 'webhook';
+
+  String? get webhookSourceName {
+    final source = meta?['source_name'];
+    if (source is! String) return null;
+    final trimmed = source.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
   bool get isGroupCall => messageType == 'group_call';
   bool get isPending => sendStatus != MessageSendStatus.sent;
   bool get isEncrypted => encryptionVersion == 1 && encryptedBody != null;

@@ -8,12 +8,14 @@ import '../../../core/localization/app_translations.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat-list/create_channel_dialog.dart';
 import '../chat-people/personal_group_sheet.dart';
+import '../chat-webhook/webhook_create_sheet.dart';
 import '../data/models/chat_connection.dart';
 import '../new-message/new_message_action.dart';
 import '../new-message/new_message_people_list.dart';
 import '../new-message/new_message_search.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
+import '../providers/team_gate_provider.dart';
 import '../providers/messageable_people_provider.dart';
 import '../../../shared/text/name_search.dart';
 import '../nickname/contact_nickname_provider.dart';
@@ -56,6 +58,10 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
   Widget build(BuildContext context) {
     final independent =
         ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
+    // A webhook feed is a workspace conversation by construction — the server
+    // refuses a personal-scope one — so the row is absent without a workspace
+    // rather than failing on tap.
+    final hasTeam = ref.watch(hasTeamProvider);
     final connectionState = ref.watch(chatConnectionsProvider);
     final people = _visiblePeople(
       ref.watch(messageablePeopleProvider),
@@ -98,6 +104,15 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
                   label: tr('chat_find_by_phone'),
                   onTap: _focusSearch,
                 ),
+                // Last of the actions: the two search hints above answer the
+                // question this screen is usually open for, and a feed is set
+                // up once and then never again.
+                if (hasTeam)
+                  NewMessageAction(
+                    icon: Icons.link_rounded,
+                    label: tr('chat_new_webhook_feed'),
+                    onTap: _newWebhookFeed,
+                  ),
               ],
             ),
           ),
@@ -155,6 +170,11 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
   Future<void> _onPersonTap(ChatUserSummary user) async {
     final dm = await ref.read(chatProvider.notifier).startDm(user.userId);
     if (mounted) context.pushReplacement('/messages/${dm.id}');
+  }
+
+  Future<void> _newWebhookFeed() async {
+    final feed = await showWebhookCreateSheet(context, ref);
+    if (feed != null && mounted) context.pushReplacement('/messages/${feed.id}');
   }
 
   Future<void> _newGroup(bool independent) async {

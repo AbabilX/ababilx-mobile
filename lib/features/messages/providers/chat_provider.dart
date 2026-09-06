@@ -33,6 +33,7 @@ part 'chat_provider_feed.dart';
 part 'chat_provider_feed_edit.dart';
 part 'chat_provider_actions.dart';
 part 'chat_provider_mutate.dart';
+part 'chat_provider_webhooks.dart';
 part 'chat_provider_requests.dart';
 part 'chat_provider_ws.dart';
 part 'chat_provider_cache.dart';
@@ -45,6 +46,7 @@ class ChatNotifier extends Notifier<ChatState>
         _ChatFeedEditMixin,
         _ChatActionsMixin,
         _ChatMutateMixin,
+        _ChatWebhooksMixin,
         _ChatRequestsMixin,
         _ChatWsMixin,
         _ChatCacheMixin,
