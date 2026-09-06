@@ -10,14 +10,16 @@ import 'header_profile_pill.dart';
 import 'you-sheet/index.dart';
 import 'you-sheet/you_sheet_action.dart';
 
-/// Chat list header: identity pill, title, search, and Local Share.
+/// Chat list header: identity pill, title, search, and the QR scanner.
 ///
-/// Settings lives behind the avatar (You sheet), so this slot is free for a
-/// second destination rather than duplicating that path. Local Share needs
-/// its own always-visible entry point — it is how a nearby device starts a
-/// transfer, and it has no other icon anywhere in the shell. The filters this
-/// row used to hold — unread and the personal/workspace scope — live in the
-/// pill row under this header now (Slack's arrangement), where the current
+/// The scanner sits here because it is the one action that answers a prompt on
+/// another screen — a desktop waiting to sign in, or a new device waiting for
+/// this account's message key. Behind the avatar it was three taps deep
+/// (avatar, sheet, Scan QR code) while the other device timed out. Local Share
+/// gave up this slot for it: it is started from this phone at leisure, and it
+/// keeps its rows in the You sheet and at Settings → Local Share. The filters
+/// this row used to hold — unread and the personal/workspace scope — live in
+/// the pill row under this header now (Slack's arrangement), where the current
 /// selection is visible without opening anything.
 class ChatListHeader extends ConsumerWidget {
   const ChatListHeader({super.key});
@@ -54,9 +56,9 @@ class ChatListHeader extends ConsumerWidget {
               tooltip: MaterialLocalizations.of(context).searchFieldLabel,
             ),
             IconButton(
-              onPressed: () => context.push('/local-share'),
-              icon: const Icon(Icons.wifi_tethering_rounded),
-              tooltip: 'Local Share',
+              onPressed: () => QrLoginFlow.start(context, ref),
+              icon: const Icon(Icons.qr_code_scanner_rounded),
+              tooltip: 'Scan QR code',
             ),
           ],
         ),
