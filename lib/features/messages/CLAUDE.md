@@ -43,6 +43,14 @@ Rebuilt 2026-09-03. The chat used to be Slack: every message a full-width row
 with an avatar and a name, your own included. It is now bubbles — yours right
 on the accent, theirs left on a raised surface.
 
+## Autolink in bubbles
+
+`TiptapViewer` → `TiptapInline.linkify` runs `detectAutolinks` on every text
+node (`tiptap_autolink.dart`). `https://`, `www.`, emails and phone numbers
+(BD `01[3-9]…`, `+880…`, formatted) become tappable: browser / mailer /
+dialer. A URL wins if a number sits inside its path. Invoice-like digit
+runs stay plain text.
+
 ## Call events collapse (web parity)
 
 Same-day consecutive `voice_call` / `group_call` rows (≥2) fold into one

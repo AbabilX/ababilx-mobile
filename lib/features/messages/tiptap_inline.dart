@@ -2,14 +2,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'tiptap_autolink.dart';
+
 /// Link blue, shared by every surface that renders a body.
 const tiptapLinkColor = Color(0xFF64B5F6);
-
-/// Web autolinks URLs while they are typed, so a bare URL there carries a
-/// `link` mark. Text composed on mobile never does, and the same message would
-/// read as dead text — link bare URLs at render time so both look alike.
-final _bareUrlRe = RegExp(r'https?:\/\/[^\s<>\[\]()"]+', caseSensitive: false);
-final _urlTrailRe = RegExp(r'[.,;!?)]+$');
 
 /// Inline half of the TipTap renderer: text nodes, marks, mentions, links.
 class TiptapInline {
@@ -44,25 +40,20 @@ class TiptapInline {
         .join();
   }
 
+  /// URLs, emails and phone numbers in a bubble become tappable. Detection
+  /// is [detectAutolinks] so a pasted `017…` or `name@x.com` opens the
+  /// dialer / mailer the same way a `https://` link already did.
   List<InlineSpan> linkify(String text, TextStyle style) {
     final spans = <InlineSpan>[];
     var start = 0;
-    for (final match in _bareUrlRe.allMatches(text)) {
-      if (match.start > start) {
+    for (final hit in detectAutolinks(text)) {
+      if (hit.start > start) {
         spans.add(
-          TextSpan(text: text.substring(start, match.start), style: style),
+          TextSpan(text: text.substring(start, hit.start), style: style),
         );
       }
-      var url = match.group(0)!;
-      final trailing = _urlTrailRe.firstMatch(url)?.group(0) ?? '';
-      if (trailing.isNotEmpty) {
-        url = url.substring(0, url.length - trailing.length);
-      }
-      spans.add(linkSpan(url, url, _linkStyle(style)));
-      if (trailing.isNotEmpty) {
-        spans.add(TextSpan(text: trailing, style: style));
-      }
-      start = match.end;
+      spans.add(linkSpan(hit.text, hit.href, _linkStyle(style)));
+      start = hit.end;
     }
     if (start < text.length) {
       spans.add(TextSpan(text: text.substring(start), style: style));
