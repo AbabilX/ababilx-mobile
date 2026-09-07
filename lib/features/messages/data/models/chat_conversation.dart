@@ -128,18 +128,11 @@ class ChatConversation extends Equatable {
   final String addMembersRole; // admin | member
   final String myRole; // admin | member
 
+  /// The viewer's admin row in this conversation. What may be done with it
+  /// is decided by `GroupPermissions` in chat-details, which also knows the
+  /// two things a workspace channel needs and this model does not: who is
+  /// asking, and their team role.
   bool get iAmAdmin => myRole == 'admin';
-
-  /// Workspace channels take management from the team, which the old details
-  /// dialog approximated as "anyone but a personal non-creator".
-  bool get canEditGroupInfo =>
-      !isPersonal || iAmAdmin || editInfoRole == 'member';
-  bool get canAddGroupMembers =>
-      !isPersonal || iAmAdmin || addMembersRole == 'member';
-
-  /// Configuring a personal group — roles, removal, deletion — is always
-  /// admin-only and deliberately not itself a switch.
-  bool get canConfigureGroup => !isPersonal || iAmAdmin;
 
   bool get isChannel => type == 'channel';
   bool get isDm => type == 'dm';

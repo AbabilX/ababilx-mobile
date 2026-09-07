@@ -6,6 +6,7 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
 import 'details_tile.dart';
+import 'group_permissions.dart';
 import 'report_spam_action.dart';
 
 /// The red block at the bottom. Every one of these ends the screen, so they
@@ -81,7 +82,7 @@ class DetailsDangerActions extends ConsumerWidget {
         // leaves the conversation exactly as it was unless the person also
         // chose to block.
         DetailsReportTile(conversation: conversation),
-        if (group && conversation.canConfigureGroup)
+        if (group && GroupPermissions.of(ref, conversation).canManage)
           DetailsTile(
             icon: const Icon(Icons.delete_forever_outlined),
             title: 'Delete group',

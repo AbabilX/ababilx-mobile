@@ -10,6 +10,7 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'details_tile.dart';
 import 'group_image_flow.dart';
+import 'group_permissions.dart';
 
 /// The feed block on the details screen: replace the posting URL, change the
 /// bot picture.
@@ -62,7 +63,9 @@ class _WebhookSettingsSectionState
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.conversation.canConfigureGroup) return const SizedBox.shrink();
+    if (!GroupPermissions.of(ref, widget.conversation).canManage) {
+      return const SizedBox.shrink();
+    }
     final avatar = _currentAvatar;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

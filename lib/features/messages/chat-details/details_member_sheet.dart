@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../chat-timeline/user_profile_sheet.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
+import 'group_permissions.dart';
 
 /// Tapping a member of a personal group you administer. Signal offers the
 /// person first and the two admin actions under it, so a plain look-up never
@@ -18,7 +19,9 @@ Future<void> showGroupMemberSheet({
   required ChatMember member,
   required VoidCallback onChanged,
 }) async {
-  final canManage = conversation.isPersonal && conversation.canConfigureGroup;
+  final canManage =
+      conversation.isPersonal &&
+      GroupPermissions.read(ref, conversation).canManage;
   final isSelf = member.userId == ref.read(chatProvider).currentUserId;
 
   await showModalBottomSheet<void>(

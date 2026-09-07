@@ -492,7 +492,7 @@ why picking a picture for a feed failed the instant the crop was confirmed:
 + pencil -> crop -> presign feed avatar -> 200             (feed flow)
 ```
 
-- `groupEditPictures(conversation)` picks the block: `WebhookEditPhoto` for a
+- `groupEditPictures(conversation, perms)` picks the block: `WebhookEditPhoto` for a
   feed, `GroupEditImages` for a personal group, nothing otherwise. A feed gets
   **no banner** — its one picture is the face stamped on every message it
   posts, and a second one would only compete with it. The server refuses
@@ -573,3 +573,15 @@ Sign out, which also clears this device's message key.
 Rows show **dates** ("Linked 26/08/26"), not "3 days ago": the list is read to
 recognise a device, and a relative age answers neither question. The drawing is
 widgets (`devices_hero.dart`), not an asset, so it needs no dark variant.
+
+**Group permissions come from `chat-details/group_permissions.dart`, never
+from the model** (2026-09-08). `ChatConversation` used to carry
+`canEditGroupInfo` / `canAddGroupMembers` / `canConfigureGroup` as
+`!isPersonal || …` — every member of a workspace channel got the pencil, and
+the server's `CanManageConversation` (creator, admin row, or team leader)
+answered the rename with a 403 the sheet then printed as Dio's paragraph. The
+model cannot decide this: two of the three inputs — who is asking, and their
+team role — are not on the conversation. `GroupPermissions.of(ref, conv)` in
+a build, `.read(ref, conv)` in a callback; `canManage` / `canEditInfo` /
+`canAddMembers` mirror `services/chat/access*.go` branch for branch. The edit
+sheet turns `not_conversation_manager` into one sentence.

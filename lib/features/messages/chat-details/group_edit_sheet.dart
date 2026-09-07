@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/friendly_error.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'group_edit_images.dart';
+import 'group_permissions.dart';
 
 /// The pencil in the details app bar: banner, photo, name and description in
 /// one sheet.
@@ -52,7 +54,10 @@ Future<bool> showGroupEditSheet(
         // than to the conversation, and nobody may upload an attachment to a
         // conversation nobody may post into — so the group flow's presign is a
         // 403 there no matter who asks.
-        images: groupEditPictures(conversation),
+        images: groupEditPictures(
+          conversation,
+          GroupPermissions.read(ref, conversation),
+        ),
         initialName: conversation.name ?? '',
         initialDescription: conversation.description ?? '',
         showDescription: personal,
@@ -128,10 +133,19 @@ class _EditFormState extends State<_EditForm> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = '$e';
+          _error = _saveErrorCopy(e);
         });
       }
     }
+  }
+
+  /// Never Dio's paragraph. A 403 here means the roster changed under the
+  /// sheet — demoted, or the switch flipped — so say that, not "bad syntax".
+  static String _saveErrorCopy(Object e) {
+    if (serverErrorCode(e) == 'not_conversation_manager') {
+      return 'Only an admin can change this group.';
+    }
+    return serverErrorMessage(e) ?? friendlyErrorMessage(e);
   }
 
   @override

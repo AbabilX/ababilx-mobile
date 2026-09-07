@@ -5,6 +5,7 @@ import '../../../shared/widgets/app_avatar.dart';
 import 'add_members_sheet.dart';
 import '../data/models/chat_models.dart';
 import 'details_member_sheet.dart';
+import 'group_permissions.dart';
 
 /// The roster block: "N members", an Add row, then everyone, admins first
 /// (the server already orders them that way).
@@ -37,7 +38,7 @@ class DetailsMembersSection extends ConsumerWidget {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
-        if (conversation.canAddGroupMembers)
+        if (GroupPermissions.of(ref, conversation).canAddMembers)
           ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 20),
             leading: Container(

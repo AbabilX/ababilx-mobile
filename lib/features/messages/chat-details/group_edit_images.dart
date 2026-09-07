@@ -5,6 +5,7 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'group_edit_image_surfaces.dart';
 import 'group_image_flow.dart';
+import 'group_permissions.dart';
 import 'webhook_edit_photo.dart';
 
 /// The two pictures at the top of the group edit sheet: a wide banner with the
@@ -113,12 +114,15 @@ class _GroupEditImagesState extends ConsumerState<GroupEditImages> {
 }
 
 /// The picture block for this conversation, or null when it has none to set.
-Widget? groupEditPictures(ChatConversation conversation) {
+Widget? groupEditPictures(
+  ChatConversation conversation,
+  GroupPermissions perms,
+) {
   if (conversation.isWebhook) {
-    return conversation.canConfigureGroup
+    return perms.canManage
         ? WebhookEditPhoto(conversation: conversation)
         : null;
   }
-  if (!conversation.isPersonal || !conversation.canEditGroupInfo) return null;
+  if (!conversation.isPersonal || !perms.canEditInfo) return null;
   return GroupEditImages(conversation: conversation);
 }

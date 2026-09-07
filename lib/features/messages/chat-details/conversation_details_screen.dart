@@ -14,6 +14,7 @@ import 'details_header.dart';
 import 'details_members_section.dart';
 import 'details_tile.dart';
 import 'group_edit_sheet.dart';
+import 'group_permissions.dart';
 import 'groups_in_common_section.dart';
 import 'shared_media_section.dart';
 import 'webhook_settings_section.dart';
@@ -70,6 +71,7 @@ class _ConversationDetailsScreenState
       );
     }
     final group = conversation.isGroupConversation;
+    final perms = GroupPermissions.of(ref, conversation);
 
     return Scaffold(
       appBar: AppBar(
@@ -78,7 +80,7 @@ class _ConversationDetailsScreenState
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         actions: [
-          if (group && conversation.canEditGroupInfo)
+          if (group && perms.canEditInfo)
             IconButton(
               tooltip: 'Edit group',
               icon: const ChatIcon(HugeIcons.strokeRoundedEdit02),
