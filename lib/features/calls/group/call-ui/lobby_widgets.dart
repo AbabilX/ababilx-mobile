@@ -37,7 +37,7 @@ class LobbyMicrophoneRow extends StatelessWidget {
             icon: muted ? CallIcons.micMuted : CallIcons.micOn,
             label: muted ? 'Join unmuted' : 'Join muted',
             tone: muted ? CallButtonTone.active : CallButtonTone.neutral,
-            compact: true,
+            diameter: 44,
             enabled: !denied,
             onTap: onToggle,
           ),

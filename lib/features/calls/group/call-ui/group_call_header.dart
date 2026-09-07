@@ -54,7 +54,7 @@ class _GroupCallHeaderState extends State<GroupCallHeader> {
     final subtitle = state.phase == GroupCallPhase.joining
         ? 'Joining…'
         : [
-            participantCountLabel(state.participants.length),
+            callPresenceLabel(state.participants.length),
             if (elapsed.isNotEmpty) elapsed,
             if (state.muted) 'You are muted',
           ].join(' · ');

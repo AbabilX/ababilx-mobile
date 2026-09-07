@@ -17,6 +17,7 @@ class CallColors {
     required this.accent,
     required this.onAccent,
     required this.danger,
+    required this.onDanger,
     required this.hand,
     required this.muted,
     required this.chip,
@@ -25,6 +26,12 @@ class CallColors {
 
   factory CallColors.of(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    // Hang up is a filled destructive button, and M3 has no single pair that
+    // stays saturated in both themes: `error` is a strong red in light and a
+    // pale pink in dark, `errorContainer` the reverse. Picking per brightness
+    // is what keeps the button red-on-light in either theme — using `error`
+    // as a fill in dark drew the pale pink circle with a dark red glyph.
+    final dark = colors.brightness == Brightness.dark;
     return CallColors._(
       backdrop: colors.surface,
       tile: colors.surfaceContainerHighest,
@@ -33,7 +40,8 @@ class CallColors {
       faint: colors.onSurfaceVariant,
       accent: colors.primary,
       onAccent: colors.onPrimary,
-      danger: colors.error,
+      danger: dark ? colors.errorContainer : colors.error,
+      onDanger: dark ? colors.onErrorContainer : colors.onError,
       hand: colors.tertiary,
       muted: colors.error,
       // Overlay chip on a tile: sits over an avatar, so it stays translucent
@@ -51,6 +59,7 @@ class CallColors {
   final Color accent;
   final Color onAccent;
   final Color danger;
+  final Color onDanger;
   final Color hand;
   final Color muted;
   final Color chip;
@@ -86,3 +95,8 @@ String callElapsedLabel(DateTime? startedAt, {DateTime? now}) {
 
 String participantCountLabel(int count) =>
     count == 1 ? '1 person' : '$count people';
+
+/// What the header says about who is here. The count includes you, so a solo
+/// call rendered as "1 person" — true, and useless. Name the actual state.
+String callPresenceLabel(int participants) =>
+    participants <= 1 ? 'No one else is here' : participantCountLabel(participants);

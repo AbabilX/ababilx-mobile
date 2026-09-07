@@ -5,8 +5,13 @@ import 'call_surface.dart';
 
 enum CallButtonTone { neutral, active, danger, accent }
 
-/// One round control on the call bar. "On" states invert to white, so mute,
-/// sharing and a raised hand all read without reading a label.
+/// Standard diameter for a control on the call bar, and the floor the bar is
+/// allowed to shrink to before it starts scrolling instead.
+const double callButtonDiameter = 58;
+const double callButtonMinDiameter = 42;
+
+/// One round control on the call bar. "On" states invert to the theme's own
+/// text colour, so mute, sharing and a raised hand read without a label.
 class CallRoundButton extends StatelessWidget {
   const CallRoundButton({
     super.key,
@@ -16,7 +21,7 @@ class CallRoundButton extends StatelessWidget {
     this.tone = CallButtonTone.neutral,
     this.enabled = true,
     this.busy = false,
-    this.compact = false,
+    this.diameter = callButtonDiameter,
   });
 
   final CallGlyph icon;
@@ -25,21 +30,23 @@ class CallRoundButton extends StatelessWidget {
   final CallButtonTone tone;
   final bool enabled;
   final bool busy;
-  final bool compact;
+
+  /// Sized by the caller: the control bar divides the width it actually has,
+  /// so seven controls on a narrow phone shrink rather than wrapping onto a
+  /// second line and orphaning whichever ones did not fit.
+  final double diameter;
 
   @override
   Widget build(BuildContext context) {
     final palette = CallColors.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    // "On" states invert against the theme's own onSurface/surface pair, so a
+    // "On" states invert against the theme's own onSurface/backdrop pair, so a
     // muted mic or a raised hand reads at a glance in light mode as well.
     final (background, foreground) = switch (tone) {
       CallButtonTone.neutral => (palette.tile, palette.onSurface),
       CallButtonTone.active => (palette.onSurface, palette.backdrop),
-      CallButtonTone.danger => (palette.danger, scheme.onError),
+      CallButtonTone.danger => (palette.danger, palette.onDanger),
       CallButtonTone.accent => (palette.accent, palette.onAccent),
     };
-    final size = compact ? 44.0 : 58.0;
     final live = enabled && !busy && onTap != null;
 
     return Semantics(
@@ -54,21 +61,71 @@ class CallRoundButton extends StatelessWidget {
             customBorder: const CircleBorder(),
             onTap: live ? onTap : null,
             child: SizedBox(
-              width: size,
-              height: size,
+              width: diameter,
+              height: diameter,
               child: busy
                   ? Padding(
-                      padding: EdgeInsets.all(size / 3),
+                      padding: EdgeInsets.all(diameter / 3),
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: foreground,
                       ),
                     )
-                  : CallIcon(icon, color: foreground, size: compact ? 20 : 24),
+                  : CallIcon(
+                      icon,
+                      color: foreground,
+                      size: diameter >= 52 ? 24 : 20,
+                    ),
             ),
           ),
         ),
       ),
     );
   }
+}
+
+/// A single row of call controls that never wraps.
+///
+/// The old bar was a [Wrap] of fixed 58dp buttons: seven of them need 478dp
+/// and a 412dp phone has 388, so it broke 5 + 2 and left Hang up orphaned in
+/// the second row beside Participants. Dividing the real width instead keeps
+/// one row on every phone, and only a genuinely tiny screen scrolls.
+class CallControlBar extends StatelessWidget {
+  const CallControlBar({super.key, required this.builder, required this.count});
+
+  /// Built with the resolved diameter, so every control on the row matches.
+  final List<Widget> Function(double diameter) builder;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      const gap = 10.0;
+      final available = constraints.maxWidth;
+      final raw = count <= 0
+          ? callButtonDiameter
+          : (available - (count - 1) * gap) / count;
+      final diameter = raw.clamp(callButtonMinDiameter, callButtonDiameter);
+      final children = builder(diameter);
+      if (raw < callButtonMinDiameter) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0) const SizedBox(width: gap),
+                children[i],
+              ],
+            ],
+          ),
+        );
+      }
+      return Row(
+        mainAxisAlignment: children.length == 1
+            ? MainAxisAlignment.center
+            : MainAxisAlignment.spaceBetween,
+        children: children,
+      );
+    },
+  );
 }

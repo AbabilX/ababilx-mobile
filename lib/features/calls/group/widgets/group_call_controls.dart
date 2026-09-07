@@ -3,14 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../call-ui/call_round_button.dart';
 import '../call-ui/call_surface.dart';
-import '../call-ui/participants_sheet.dart';
 import '../call-ui/reaction_picker.dart';
 import '../call_icons.dart';
 import '../providers/group_call_provider.dart';
 import 'group_call_leave_dialog.dart';
 
-/// Mute · speaker · share · hand · react · participants · leave. Everything
-/// that is "on" inverts to a white pill, so state reads without a label.
+/// Mute · speaker · share · hand · react · leave, on one row that never wraps.
+///
+/// Participants deliberately is not here: the header already carries it, and
+/// the duplicate was the seventh control that pushed the bar onto two lines.
 class GroupCallControls extends ConsumerWidget {
   const GroupCallControls({super.key, required this.state});
 
@@ -42,13 +43,12 @@ class GroupCallControls extends ConsumerWidget {
             palette.faint,
           ),
         const SizedBox(height: 8),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 12,
-          runSpacing: 10,
-          children: [
+        CallControlBar(
+          count: connected ? 6 : 1,
+          builder: (diameter) => [
             if (connected) ...[
               CallRoundButton(
+                diameter: diameter,
                 icon: state.muted ? CallIcons.micMuted : CallIcons.micOn,
                 label: state.microphoneUnavailable
                     ? 'Microphone unavailable'
@@ -62,6 +62,7 @@ class GroupCallControls extends ConsumerWidget {
                 onTap: notifier.toggleMute,
               ),
               CallRoundButton(
+                diameter: diameter,
                 icon: state.speaker
                     ? CallIcons.speakerOn
                     : CallIcons.speakerOff,
@@ -72,6 +73,7 @@ class GroupCallControls extends ConsumerWidget {
                 onTap: notifier.toggleSpeaker,
               ),
               CallRoundButton(
+                diameter: diameter,
                 icon: CallIcons.screenShare,
                 label: state.sharingScreen
                     ? 'Stop sharing'
@@ -85,6 +87,7 @@ class GroupCallControls extends ConsumerWidget {
                 onTap: notifier.toggleScreenShare,
               ),
               CallRoundButton(
+                diameter: diameter,
                 icon: CallIcons.raiseHand,
                 label: handRaised ? 'Lower hand' : 'Raise hand',
                 tone: handRaised
@@ -93,17 +96,14 @@ class GroupCallControls extends ConsumerWidget {
                 onTap: notifier.toggleHand,
               ),
               CallRoundButton(
+                diameter: diameter,
                 icon: CallIcons.reaction,
                 label: 'Send a reaction',
                 onTap: () => showReactionPicker(context, notifier.sendReaction),
               ),
-              CallRoundButton(
-                icon: CallIcons.participants,
-                label: 'Participants',
-                onTap: () => showParticipantsSheet(context, state),
-              ),
             ],
             CallRoundButton(
+              diameter: diameter,
               icon: CallIcons.leave,
               label: 'Leave call',
               tone: CallButtonTone.danger,

@@ -4,6 +4,7 @@ import '../providers/group_call_state.dart';
 import '../widgets/group_screen_stage.dart';
 import 'call_stage_view.dart';
 import 'call_surface.dart';
+import 'call_tile_grid.dart';
 import 'participant_tile.dart';
 
 /// Picks the layout: a shared screen always wins the stage, then speaker view,
@@ -39,6 +40,10 @@ class _GroupCallStageState extends State<GroupCallStage> {
 
     if (screen != null) {
       return Column(
+        // Both stage columns stretch: a tile and the screen view size to their
+        // own content, so the default `center` left them at content width in
+        // the middle of the stage instead of filling it.
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(child: GroupScreenStage(screen: screen)),
           const SizedBox(height: 10),
@@ -57,11 +62,11 @@ class _GroupCallStageState extends State<GroupCallStage> {
           .where((participant) => participant.identity != speaker.identity)
           .toList();
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             child: ParticipantTile(
               participant: speaker,
-              size: CallTileSize.large,
               handRaised: state.hands.containsKey(speaker.identity),
               reaction: emoji[speaker.identity],
             ),
@@ -72,16 +77,9 @@ class _GroupCallStageState extends State<GroupCallStage> {
       );
     }
 
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: callGridColumns(participants.length),
-        childAspectRatio: participants.length <= 1 ? 0.9 : 1,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
-      itemCount: participants.length,
-      itemBuilder: (_, index) {
+    return CallTileGrid(
+      count: participants.length,
+      tileBuilder: (index) {
         final participant = participants[index];
         return ParticipantTile(
           participant: participant,
@@ -119,7 +117,6 @@ class _Strip extends StatelessWidget {
             width: 96,
             child: ParticipantTile(
               participant: participant,
-              size: CallTileSize.small,
               handRaised: hands.containsKey(participant.identity),
               reaction: emoji[participant.identity],
             ),

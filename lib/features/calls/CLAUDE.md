@@ -682,6 +682,46 @@ features/calls/group/
   permanently dark takeover would just be a light-theme bug. Do not "restore"
   the hardcoded palette here by pattern-matching the DM screens.
 
+### The stage divides the space it has; the control bar divides its width
+
+Four layout bugs shipped together in the rebuild and all four came from a
+widget being allowed to size itself:
+
+- **The control bar was a `Wrap` of fixed 58dp buttons.** Seven controls need
+  `7x58 + 6x12 = 478dp`; a 412dp phone has 388 after padding, so it broke 5 + 2
+  and left **Hang up orphaned in the second row beside Participants**.
+  `CallControlBar` divides the width it is actually given and shrinks the
+  buttons (floor 42dp, then it scrolls). Participants is gone from the bar
+  entirely — the header already carries it, and that duplicate was the seventh
+  control.
+- **`GridView` with a fixed `childAspectRatio` sizes rows from the tile width
+  and stops.** A solo call drew one screen-wide tile 1.11x as tall and left
+  ~185dp of dead black beneath it. `CallTileGrid` derives the tile height from
+  the stage height, and lays rows out by hand so a short final row centres.
+- **`Row` and `Column` default to `crossAxisAlignment: center`.** A tile draws
+  its own background and sizes to its content, so every tile collapsed to
+  content size — zero height in the grid, avatar width in speaker view. All
+  three stage axes are `stretch`. A layout test catches this; the eye does not,
+  because a centred half-size tile still looks deliberate.
+- **The avatar was a `CallTileSize` enum defaulting to 62dp and the grid never
+  passed anything else**, so a solo call put a 62dp speck in a screen-wide
+  tile. It is derived from the tile's own box now (`0.40` of the shortest side,
+  clamped 36-128) and the enum is gone, which is what stops the next caller
+  forgetting to override it.
+- **A `Positioned` with both `left` and `right` set hands its child a tight
+  width.** The name "chip" therefore stretched the tile edge to edge and read
+  as a disabled text field. It is wrapped in an `Align` now.
+
+Hang up is `CallButtonTone.danger`, and that pair is chosen per brightness in
+`CallColors`: M3's `error` is a strong red in light and a pale pink in dark,
+`errorContainer` the reverse, so neither alone stays red in both themes. Using
+`error` as a fill in dark is what drew the pale pink circle with the dark red
+glyph.
+
+Pinned by `test/features/calls/group_call_layout_test.dart` — these are all
+constraint bugs, which unit tests cannot see and screenshots only catch if
+somebody happens to look at the right participant count.
+
 ## Answering here has to silence every other device
 
 One account, several signed-in devices, all of them ringing. When one picks up,
