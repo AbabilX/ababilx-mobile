@@ -5,13 +5,14 @@ import '../chat-date-divider/index.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import '../wallpaper/chat_wallpaper_provider.dart';
+import 'call_events_collapse.dart';
 import 'message_list_error.dart';
 import 'signal_bubble_metrics.dart';
-import 'chat_timeline_unread.dart';
 import 'unread_divider.dart';
 import 'message_row.dart';
 import 'thread_sheet.dart';
 import 'group_call_event_row.dart';
+import 'timeline_items.dart';
 import 'voice_call_event_row.dart';
 
 class MessageList extends ConsumerWidget {
@@ -56,6 +57,10 @@ class MessageList extends ConsumerWidget {
     if (messages.isEmpty && error.isNotEmpty) {
       return MessageListError(message: error, onRetry: onRetry);
     }
+    final items = buildChatTimelineItems(messages);
+    final idIndex = <String, int>{
+      for (var i = 0; i < messages.length; i++) messages[i].id: i,
+    };
     return ListView.builder(
       controller: scrollController,
       reverse: true,
@@ -65,51 +70,87 @@ class MessageList extends ConsumerWidget {
         SignalBubbleMetrics.listSideGutter,
         12,
       ),
-      itemCount: messages.length + (loadingMore ? 1 : 0),
-      itemBuilder: (_, i) {
-        if (loadingMore && i == messages.length) {
+      itemCount: items.length + (loadingMore ? 1 : 0),
+      itemBuilder: (context, i) {
+        if (loadingMore && i == items.length) {
           return const Padding(
             padding: EdgeInsets.all(12),
             child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           );
         }
-        final idx = messages.length - 1 - i;
-        final msg = messages[idx];
-        final prev = idx > 0 ? messages[idx - 1] : null;
-        final next = idx + 1 < messages.length ? messages[idx + 1] : null;
+        final idx = items.length - 1 - i;
+        final item = items[idx];
+        final prevAnchor = idx > 0 ? items[idx - 1].anchor : null;
         final showDate =
-            prev == null || !isSameDay(prev.createdAt, msg.createdAt);
-        final clusterPosition = chatMessageClusterPosition(prev, msg, next);
+            prevAnchor == null ||
+            !isSameDay(prevAnchor.createdAt, item.anchor.createdAt);
         final hasWallpaper = ref
             .watch(chatWallpaperProvider)
             .forChat(conversationId)
             .isSet;
+        final showUnread =
+            unreadAnchorId != null &&
+            _itemContainsMessageId(item, unreadAnchorId!);
+
         return Column(
           children: [
             if (showDate)
               ChatDateDivider(
-                label: formatDateDivider(msg.createdAt),
+                label: formatDateDivider(item.anchor.createdAt),
                 hasWallpaper: hasWallpaper,
               ),
-            if (unreadAnchorId != null && msg.id == unreadAnchorId)
-              UnreadDivider(count: unreadCount),
-            if (msg.isVoiceCall)
-              VoiceCallEventRow(message: msg, currentUserId: currentUserId)
-            else if (msg.isGroupCall)
-              GroupCallEventRow(message: msg)
-            else
-              MessageRow(
-                message: msg,
-                conversationId: conversationId,
-                threadRootId: threadRootId,
-                clusterPosition: clusterPosition,
-                onOpenThread: threadRootId == null && msg.threadCount > 0
-                    ? () => openThreadSheet(context, conversationId, msg)
-                    : null,
+            if (showUnread) UnreadDivider(count: unreadCount),
+            switch (item) {
+              ChatTimelineCallEvents(:final messages) => CallEventsCollapse(
+                messages: messages,
+                currentUserId: currentUserId,
               ),
+              ChatTimelineMessage(:final message) => _buildMessage(
+                context: context,
+                message: message,
+                idIndex: idIndex,
+              ),
+            },
           ],
         );
       },
     );
   }
+
+  Widget _buildMessage({
+    required BuildContext context,
+    required ChatMessage message,
+    required Map<String, int> idIndex,
+  }) {
+    if (message.isVoiceCall) {
+      return VoiceCallEventRow(
+        message: message,
+        currentUserId: currentUserId,
+      );
+    }
+    if (message.isGroupCall) {
+      return GroupCallEventRow(message: message);
+    }
+    final idx = idIndex[message.id] ?? 0;
+    final prev = idx > 0 ? messages[idx - 1] : null;
+    final next = idx + 1 < messages.length ? messages[idx + 1] : null;
+    final clusterPosition = chatMessageClusterPosition(prev, message, next);
+    return MessageRow(
+      message: message,
+      conversationId: conversationId,
+      threadRootId: threadRootId,
+      clusterPosition: clusterPosition,
+      onOpenThread: threadRootId == null && message.threadCount > 0
+          ? () => openThreadSheet(context, conversationId, message)
+          : null,
+    );
+  }
+}
+
+bool _itemContainsMessageId(ChatTimelineItem item, String id) {
+  return switch (item) {
+    ChatTimelineMessage(:final message) => message.id == id,
+    ChatTimelineCallEvents(:final messages) =>
+      messages.any((m) => m.id == id),
+  };
 }

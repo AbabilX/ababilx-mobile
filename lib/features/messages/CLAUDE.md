@@ -43,6 +43,15 @@ Rebuilt 2026-09-03. The chat used to be Slack: every message a full-width row
 with an avatar and a name, your own included. It is now bubbles — yours right
 on the accent, theirs left on a raised surface.
 
+## Call events collapse (web parity)
+
+Same-day consecutive `voice_call` / `group_call` rows (≥2) fold into one
+`"N call events"` disclosure — web `call-events-collapse.tsx`. Pure grouping
+lives in `chat-timeline/timeline_items.dart` (`buildChatTimelineItems`); the
+pill + expand list is `call_events_collapse.dart`. A date break or any other
+message type ends the run. A single call stays the existing centered pill.
+Expanded lines use `voiceCallHistoryLabel` (Incoming/Outgoing, no duration).
+
 ## Where the numbers come from
 
 `chat-timeline/signal_bubble_metrics.dart` holds Signal-Android's own
