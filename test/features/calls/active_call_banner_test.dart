@@ -72,6 +72,7 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
     expect(wrapper(), findsOneWidget);
+    debugPrint('PHASE ${ProviderScope.containerOf(tester.element(find.byKey(probeKey))).read(groupCallProvider).phase}');
     expect(find.byType(CallReturnBar), findsOneWidget);
 
     phase.value = GroupCallPhase.idle;
