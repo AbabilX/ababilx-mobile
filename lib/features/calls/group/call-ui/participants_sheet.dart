@@ -13,12 +13,10 @@ Future<void> showParticipantsSheet(
   GroupCallState state,
 ) => showModalBottomSheet<void>(
   context: context,
-  backgroundColor: CallSurface.panel,
+  backgroundColor: CallColors.of(context).panel,
   showDragHandle: true,
   isScrollControlled: true,
-  builder: (_) => SafeArea(
-    child: ParticipantsSheet(state: state),
-  ),
+  builder: (_) => SafeArea(child: ParticipantsSheet(state: state)),
 );
 
 class ParticipantsSheet extends StatelessWidget {
@@ -39,6 +37,7 @@ class ParticipantsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
     final ordered = _ordered;
     final sharerId = state.call?.screenSharerId;
 
@@ -51,8 +50,8 @@ class ParticipantsSheet extends StatelessWidget {
             children: [
               Text(
                 'In this call · ${ordered.length}',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: palette.onSurface,
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -92,6 +91,7 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
     final subtitle = sharing
         ? 'Sharing screen'
         : queuePosition != null
@@ -108,14 +108,14 @@ class _Row extends StatelessWidget {
         participant.isLocal ? '${participant.name} (You)' : participant.name,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        style: TextStyle(color: palette.onSurface, fontSize: 14),
       ),
       subtitle: subtitle == null
           ? null
           : Text(
               subtitle,
               style: TextStyle(
-                color: sharing ? CallSurface.accent : CallSurface.hand,
+                color: sharing ? palette.accent : palette.hand,
                 fontSize: 12,
               ),
             ),
@@ -123,20 +123,16 @@ class _Row extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (queuePosition != null)
-            const CallIcon(
-              CallIcons.raiseHand,
-              size: 18,
-              color: CallSurface.hand,
-            ),
+            CallIcon(CallIcons.raiseHand, size: 18, color: palette.hand),
           const SizedBox(width: 10),
           CallIcon(
             participant.isMuted ? CallIcons.micMuted : CallIcons.micOn,
             size: 18,
             color: participant.isMuted
-                ? CallSurface.muted
+                ? palette.muted
                 : participant.isSpeaking
-                ? CallSurface.accent
-                : CallSurface.faint,
+                ? palette.accent
+                : palette.faint,
           ),
         ],
       ),

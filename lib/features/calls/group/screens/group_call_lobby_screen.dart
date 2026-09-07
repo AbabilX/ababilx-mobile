@@ -44,11 +44,12 @@ class _GroupCallLobbyScreenState extends ConsumerState<GroupCallLobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
     final state = ref.watch(groupCallProvider);
     final lobby = state.lobby;
 
     if (lobby == null) {
-      return const Scaffold(backgroundColor: CallSurface.backdrop);
+      return Scaffold(backgroundColor: palette.backdrop);
     }
 
     final active = lobby.call;
@@ -60,7 +61,7 @@ class _GroupCallLobbyScreenState extends ConsumerState<GroupCallLobbyScreen> {
         if (!didPop) _close();
       },
       child: Scaffold(
-        backgroundColor: CallSurface.backdrop,
+        backgroundColor: palette.backdrop,
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
@@ -68,18 +69,15 @@ class _GroupCallLobbyScreenState extends ConsumerState<GroupCallLobbyScreen> {
               children: [
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Group call',
-                      style: TextStyle(color: CallSurface.faint, fontSize: 13),
+                      style: TextStyle(color: palette.faint, fontSize: 13),
                     ),
                     const Spacer(),
                     IconButton(
                       tooltip: 'Close',
                       onPressed: _close,
-                      icon: const CallIcon(
-                        CallIcons.close,
-                        color: Colors.white,
-                      ),
+                      icon: CallIcon(CallIcons.close, color: palette.onSurface),
                     ),
                   ],
                 ),
@@ -98,8 +96,8 @@ class _GroupCallLobbyScreenState extends ConsumerState<GroupCallLobbyScreen> {
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: palette.onSurface,
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
                         ),
@@ -110,10 +108,7 @@ class _GroupCallLobbyScreenState extends ConsumerState<GroupCallLobbyScreen> {
                             ? 'Nobody is in this call yet'
                             : '${participantCountLabel(active.participantCount)}'
                                   ' in this call',
-                        style: const TextStyle(
-                          color: CallSurface.faint,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: palette.faint, fontSize: 14),
                       ),
                       const SizedBox(height: 28),
                       LobbyMicrophoneRow(

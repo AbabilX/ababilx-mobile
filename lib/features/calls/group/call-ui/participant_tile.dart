@@ -32,13 +32,14 @@ class ParticipantTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
     final speaking = participant.isSpeaking && !participant.isMuted;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: CallSurface.tile,
+        color: palette.tile,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: speaking ? CallSurface.accent : Colors.transparent,
+          color: speaking ? palette.accent : Colors.transparent,
           width: 2,
         ),
       ),
@@ -55,10 +56,10 @@ class ParticipantTile extends StatelessWidget {
               top: 6,
               right: 6,
               child: _Badge(
-                child: const CallIcon(
+                child: CallIcon(
                   CallIcons.raiseHand,
                   size: 16,
-                  color: CallSurface.hand,
+                  color: palette.hand,
                 ),
               ),
             ),
@@ -91,8 +92,8 @@ class _Badge extends StatelessWidget {
     width: 28,
     height: 28,
     alignment: Alignment.center,
-    decoration: const BoxDecoration(
-      color: Color(0x99000000),
+    decoration: BoxDecoration(
+      color: CallColors.of(context).chip,
       shape: BoxShape.circle,
     ),
     child: child,
@@ -104,28 +105,33 @@ class _NameChip extends StatelessWidget {
   final GroupParticipantView participant;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(
-      color: const Color(0x8C000000),
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (participant.isMuted) ...[
-          const CallIcon(CallIcons.micMuted, size: 13, color: CallSurface.muted),
-          const SizedBox(width: 4),
-        ],
-        Flexible(
-          child: Text(
-            participant.isLocal ? '${participant.name} (You)' : participant.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+  Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: palette.chip,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (participant.isMuted) ...[
+            CallIcon(CallIcons.micMuted, size: 13, color: palette.muted),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              participant.isLocal
+                  ? '${participant.name} (You)'
+                  : participant.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: palette.onChip, fontSize: 12),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }

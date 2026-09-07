@@ -48,6 +48,7 @@ class _GroupCallHeaderState extends State<GroupCallHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
     final state = widget.state;
     final elapsed = callElapsedLabel(state.call?.startedAt);
     final subtitle = state.phase == GroupCallPhase.joining
@@ -72,8 +73,8 @@ class _GroupCallHeaderState extends State<GroupCallHeader> {
                 state.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: palette.onSurface,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
@@ -83,7 +84,7 @@ class _GroupCallHeaderState extends State<GroupCallHeader> {
                 subtitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: CallSurface.faint, fontSize: 12),
+                style: TextStyle(color: palette.faint, fontSize: 12),
               ),
             ],
           ),
@@ -126,6 +127,6 @@ class _HeaderButton extends StatelessWidget {
   Widget build(BuildContext context) => IconButton(
     tooltip: label,
     onPressed: onTap,
-    icon: CallIcon(icon, color: Colors.white, size: 22),
+    icon: CallIcon(icon, color: CallColors.of(context).onSurface, size: 22),
   );
 }

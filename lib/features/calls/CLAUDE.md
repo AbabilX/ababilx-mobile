@@ -675,6 +675,9 @@ features/calls/group/
   (`List<List<dynamic>>`) and must go through `CallIcon`, never `Icon`. The
   chat-header pill still takes a Material `IconData` because it is shared with
   the DM call action.
-- **`Icons`-free is a rule for the call surface only.** Colours are hardcoded
-  in `CallSurface` for the same reason `CallControlButton`'s are: a call screen
-  is always dark.
+- **The group call follows the theme; the DM call does not.** Colours come from
+  `CallColors.of(context)`, resolved once per build. `CallControlButton` and
+  `ConnectedCallBody` stay hardcoded dark because they sit on a blurred
+  photograph of the caller — a group call has no such backdrop, so a
+  permanently dark takeover would just be a light-theme bug. Do not "restore"
+  the hardcoded palette here by pattern-matching the DM screens.

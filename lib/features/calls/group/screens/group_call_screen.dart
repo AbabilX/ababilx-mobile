@@ -81,7 +81,7 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
   }
 
   Widget _body(GroupCallState state) => Scaffold(
-    backgroundColor: CallSurface.backdrop,
+    backgroundColor: CallColors.of(context).backdrop,
     body: SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
@@ -126,17 +126,17 @@ class _Joining extends StatelessWidget {
   const _Joining();
 
   @override
-  Widget build(BuildContext context) => const Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CircularProgressIndicator(color: CallSurface.accent),
-        SizedBox(height: 16),
-        Text(
-          'Joining group call…',
-          style: TextStyle(color: CallSurface.faint),
-        ),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: palette.accent),
+          const SizedBox(height: 16),
+          Text('Joining group call…', style: TextStyle(color: palette.faint)),
+        ],
+      ),
+    );
+  }
 }

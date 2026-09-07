@@ -9,7 +9,7 @@ Future<void> showReactionPicker(
   ValueChanged<String> onPick,
 ) => showModalBottomSheet<void>(
   context: context,
-  backgroundColor: CallSurface.panel,
+  backgroundColor: CallColors.of(context).panel,
   builder: (sheetContext) => SafeArea(
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),

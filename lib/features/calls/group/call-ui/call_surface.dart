@@ -1,20 +1,60 @@
 import 'package:flutter/material.dart';
 
-/// The call surface is dark in both themes, the way Signal's is. This is the
-/// one place in the app where the "use Theme.colorScheme" rule is deliberately
-/// not followed — a call screen is always dark, and a light-theme surface
-/// colour would wash out over the backdrop (see features/calls/CLAUDE.md).
-class CallSurface {
-  const CallSurface._();
+/// Colours for the call surface, taken from the app theme.
+///
+/// The DM call screens are hardcoded dark on purpose — they sit on a blurred
+/// photograph of the caller (see features/calls/CLAUDE.md). A group call has
+/// no such backdrop: it is one route inside a themed app, so a permanently
+/// dark takeover reads as a bug in light mode. Resolve once per build with
+/// [CallColors.of] rather than reaching for `Theme.of` in every leaf.
+class CallColors {
+  const CallColors._({
+    required this.backdrop,
+    required this.tile,
+    required this.panel,
+    required this.onSurface,
+    required this.faint,
+    required this.accent,
+    required this.onAccent,
+    required this.danger,
+    required this.hand,
+    required this.muted,
+    required this.chip,
+    required this.onChip,
+  });
 
-  static const Color backdrop = Color(0xFF121214);
-  static const Color tile = Color(0xFF26262B);
-  static const Color panel = Color(0xFF1B1B1F);
-  static const Color accent = Color(0xFF3AD07F);
-  static const Color danger = Color(0xFFE2444F);
-  static const Color hand = Color(0xFFF5C518);
-  static const Color muted = Color(0xFFF0616B);
-  static const Color faint = Color(0x99FFFFFF);
+  factory CallColors.of(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return CallColors._(
+      backdrop: colors.surface,
+      tile: colors.surfaceContainerHighest,
+      panel: colors.surfaceContainerHigh,
+      onSurface: colors.onSurface,
+      faint: colors.onSurfaceVariant,
+      accent: colors.primary,
+      onAccent: colors.onPrimary,
+      danger: colors.error,
+      hand: colors.tertiary,
+      muted: colors.error,
+      // Overlay chip on a tile: sits over an avatar, so it stays translucent
+      // and takes its contrast from the theme's inverse pair.
+      chip: colors.inverseSurface.withValues(alpha: 0.82),
+      onChip: colors.onInverseSurface,
+    );
+  }
+
+  final Color backdrop;
+  final Color tile;
+  final Color panel;
+  final Color onSurface;
+  final Color faint;
+  final Color accent;
+  final Color onAccent;
+  final Color danger;
+  final Color hand;
+  final Color muted;
+  final Color chip;
+  final Color onChip;
 }
 
 /// Column count that keeps tiles roughly square as a call fills up.

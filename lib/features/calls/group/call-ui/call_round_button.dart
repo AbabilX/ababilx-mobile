@@ -29,11 +29,15 @@ class CallRoundButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    // "On" states invert against the theme's own onSurface/surface pair, so a
+    // muted mic or a raised hand reads at a glance in light mode as well.
     final (background, foreground) = switch (tone) {
-      CallButtonTone.neutral => (Colors.white.withValues(alpha: 0.12), Colors.white),
-      CallButtonTone.active => (Colors.white, CallSurface.backdrop),
-      CallButtonTone.danger => (CallSurface.danger, Colors.white),
-      CallButtonTone.accent => (CallSurface.accent, const Color(0xFF0B1F14)),
+      CallButtonTone.neutral => (palette.tile, palette.onSurface),
+      CallButtonTone.active => (palette.onSurface, palette.backdrop),
+      CallButtonTone.danger => (palette.danger, scheme.onError),
+      CallButtonTone.accent => (palette.accent, palette.onAccent),
     };
     final size = compact ? 44.0 : 58.0;
     final live = enabled && !busy && onTap != null;

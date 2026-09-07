@@ -19,6 +19,7 @@ class GroupCallControls extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(groupCallProvider.notifier);
+    final palette = CallColors.of(context);
     final connected = state.phase == GroupCallPhase.connected;
     final otherSharing =
         state.call?.screenSharerId != null && !state.sharingScreen;
@@ -33,15 +34,12 @@ class GroupCallControls extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (state.microphoneUnavailable)
-          const _Hint(
-            'Listening only — no microphone was detected.',
-            CallSurface.hand,
-          ),
+          _Hint('Listening only — no microphone was detected.', palette.hand),
         if (otherSharing)
           _Hint(
             '${state.call?.screenSharerName ?? "Someone"} is sharing — '
             'you can take over',
-            CallSurface.faint,
+            palette.faint,
           ),
         const SizedBox(height: 8),
         Wrap(
@@ -97,8 +95,7 @@ class GroupCallControls extends ConsumerWidget {
               CallRoundButton(
                 icon: CallIcons.reaction,
                 label: 'Send a reaction',
-                onTap: () =>
-                    showReactionPicker(context, notifier.sendReaction),
+                onTap: () => showReactionPicker(context, notifier.sendReaction),
               ),
               CallRoundButton(
                 icon: CallIcons.participants,

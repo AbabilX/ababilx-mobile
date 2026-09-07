@@ -53,9 +53,7 @@ CallSignal? decodeCallSignal(List<int> payload) {
     if (parsed is! Map) return null;
     final emoji = parsed['emoji'];
     if (parsed['t'] == 'reaction' && emoji is String) {
-      return ReactionSignal(
-        emoji.length > 8 ? emoji.substring(0, 8) : emoji,
-      );
+      return ReactionSignal(emoji.length > 8 ? emoji.substring(0, 8) : emoji);
     }
     final raised = parsed['raised'];
     if (parsed['t'] == 'hand' && raised is bool) return HandSignal(raised);

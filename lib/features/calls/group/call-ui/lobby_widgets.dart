@@ -22,11 +22,12 @@ class LobbyMicrophoneRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
     final denied = granted == false;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: palette.tile,
         borderRadius: BorderRadius.circular(40),
       ),
       child: Row(
@@ -44,15 +45,15 @@ class LobbyMicrophoneRow extends StatelessWidget {
           if (denied)
             TextButton(
               onPressed: onGrant,
-              child: const Text(
+              child: Text(
                 'Allow microphone',
-                style: TextStyle(color: CallSurface.hand, fontSize: 12),
+                style: TextStyle(color: palette.hand, fontSize: 12),
               ),
             )
           else
             Text(
               muted ? 'You will join muted' : 'Others will hear you',
-              style: const TextStyle(color: CallSurface.faint, fontSize: 12),
+              style: TextStyle(color: palette.faint, fontSize: 12),
             ),
         ],
       ),
@@ -61,11 +62,7 @@ class LobbyMicrophoneRow extends StatelessWidget {
 }
 
 class LobbyJoinButton extends StatelessWidget {
-  const LobbyJoinButton({
-    super.key,
-    required this.label,
-    required this.onTap,
-  });
+  const LobbyJoinButton({super.key, required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
@@ -76,8 +73,8 @@ class LobbyJoinButton extends StatelessWidget {
     child: FilledButton(
       onPressed: onTap,
       style: FilledButton.styleFrom(
-        backgroundColor: CallSurface.accent,
-        foregroundColor: const Color(0xFF0B1F14),
+        backgroundColor: CallColors.of(context).accent,
+        foregroundColor: CallColors.of(context).onAccent,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: const StadiumBorder(),
       ),

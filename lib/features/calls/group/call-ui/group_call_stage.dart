@@ -27,10 +27,10 @@ class _GroupCallStageState extends State<GroupCallStage> {
     final state = widget.state;
     final participants = state.participants;
     if (participants.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'Waiting for others to join…',
-          style: TextStyle(color: CallSurface.faint),
+          style: TextStyle(color: CallColors.of(context).faint),
         ),
       );
     }
