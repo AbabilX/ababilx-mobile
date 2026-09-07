@@ -32,6 +32,7 @@ import '../../features/calls/group/screens/group_call_screen.dart';
 import '../../features/calls/screens/calls_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
+import '../../features/settings/chat-backup/chat_backup_screen.dart';
 import '../../features/settings/data-storage/data_storage_screen.dart';
 import '../../features/settings/data-storage/storage_management_screen.dart';
 import '../../features/settings/data-storage/storage_review_screen.dart';
@@ -39,6 +40,8 @@ import '../../features/settings/screens/media_quality_screen.dart';
 import '../../features/settings/screens/notification_settings_screen.dart';
 import '../../features/settings/screens/discovery_screen.dart';
 import '../../features/settings/screens/edit_name_screen.dart';
+import '../../features/settings/screens/edit_username_screen.dart';
+import '../../features/settings/screens/my_qr_screen.dart';
 import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import 'home_shell.dart';
@@ -134,6 +137,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const EditNameScreen(),
       ),
       GoRoute(
+        path: '/settings/username',
+        builder: (_, _) => const EditUsernameScreen(),
+      ),
+      // Your own code, not the scanner. The scanner is the icon in the chat
+      // list header; this is the thing held up to it.
+      GoRoute(path: '/settings/qr', builder: (_, _) => const MyQrScreen()),
+      GoRoute(
         path: '/settings/discovery',
         builder: (_, _) => const DiscoveryScreen(),
       ),
@@ -145,10 +155,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/media-quality',
         builder: (_, _) => const MediaQualityScreen(),
       ),
-      // Signal's Data and storage, and the two screens under it.
+      // Signal's Data and storage, and the screens under it.
       GoRoute(
         path: '/settings/data-storage',
         builder: (_, _) => const DataStorageScreen(),
+      ),
+      GoRoute(
+        path: '/settings/chat-backup',
+        builder: (_, _) => const ChatBackupScreen(),
       ),
       GoRoute(
         path: '/settings/storage',

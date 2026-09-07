@@ -59,7 +59,10 @@ class ComposerPendingPreviews extends StatelessWidget {
           }
           final attachment = items[i];
           return Padding(
-            key: ValueKey('pending-${attachment.fileUrl}-$i'),
+            // Keyed by URL alone: with the index in the key, removing one
+            // tile re-keys every tile after it and throws away their elements,
+            // so the whole strip re-decodes to delete one photo.
+            key: ValueKey('pending-${attachment.fileUrl}'),
             padding: EdgeInsets.only(left: i == 0 ? 0 : 8),
             child: PendingThumb(
               attachment: attachment,

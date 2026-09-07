@@ -14,6 +14,7 @@ import '../providers/chat_provider.dart';
 import '../tiptap_encode.dart';
 import '../providers/team_gate_provider.dart';
 import 'composer_attach.dart';
+import 'composer_uploads_gate.dart';
 import 'composer_attachment_keyboard.dart';
 import 'composer_expanded_shell.dart';
 import 'composer_input_bar.dart';
@@ -57,6 +58,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   final _voiceRecorder = VoiceMessageRecorder();
   final _recordStopwatch = Stopwatch();
   final _pending = <ChatAttachmentInput>[];
+
+  /// Attachment uploads still travelling. A tile is drawn as soon as its URL
+  /// is reserved, so the send path has to wait these out or it would post a
+  /// message pointing at an object that is not in the bucket yet.
+  final _uploads = ComposerUploads();
   Timer? _recordClock;
   Duration _recordElapsed = Duration.zero;
   bool _recording = false;
@@ -234,6 +240,13 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   Future<void> _send() async {
     final plain = _ctrl.text.trim();
     if (plain.isEmpty && _pending.isEmpty) return;
+    // Every pending tile owns a reserved URL, and some of those objects may
+    // still be uploading. Sending now would hand the conversation a message
+    // whose photos never load, for everyone, permanently.
+    if (_uploads.busy) {
+      await _uploads.settle();
+      if (!mounted) return;
+    }
     final reply = ComposerReplyTarget.resolve(
       replyTo: ref.read(chatProvider).replyToMessage,
       threadRootId: widget.parentId,
@@ -308,10 +321,17 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
   }
 
+  /// An attachment whose upload failed leaves the strip: the tile was drawn
+  /// optimistically against a reserved URL, and that object will never exist.
+  void _dropPending(String fileUrl) {
+    if (!mounted) return;
+    setState(() => _pending.removeWhere((a) => a.fileUrl == fileUrl));
+  }
+
   Future<void> _attach({ImageSource? source, ComposerAttachKind? kind}) async {
     if (!mounted) return;
     try {
-      final outcome = await pickAndUploadAttachment(
+      final run = pickAndUploadAttachment(
         context,
         ref,
         conversationId: widget.conversationId,
@@ -322,7 +342,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           setState(() => _pending.add(a));
           _focus.requestFocus();
         },
+        onFailed: _dropPending,
       );
+      _uploads.track(run);
+      final outcome = await run;
       // The native review screen ends on its own Send: the album and the one
       // message typed under it go out without a second trip to the composer.
       if (outcome.sendRequested && mounted) {
@@ -352,16 +375,17 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   /// Rail tap: straight into the pending strip, no picker screen.
   void _pickFromRail(DeviceMediaItem item) {
     _closeAttachmentPanel();
-    unawaited(
-      uploadDeviceMediaItem(
-        ref,
-        conversationId: widget.conversationId,
-        item: item,
-        onAdded: (a) {
-          if (mounted) setState(() => _pending.add(a));
-        },
-      ),
+    final run = uploadDeviceMediaItem(
+      ref,
+      conversationId: widget.conversationId,
+      item: item,
+      onAdded: (a) {
+        if (mounted) setState(() => _pending.add(a));
+      },
+      onFailed: _dropPending,
     );
+    _uploads.track(run);
+    unawaited(run);
   }
 
   Future<void> _pickEmoji() async {

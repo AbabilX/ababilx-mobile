@@ -426,3 +426,133 @@ without the key now takes the emailed code instead of showing a QR of its own.
   emailed code is spent by then, so a client that stopped between two calls
   would leave the new identity stranded on one device — the exact dead end the
   reset existed to escape.
+
+# An attachment tile is drawn before its bytes are uploaded
+
+Changed 2026-09-07, after "selecting images takes time".
+
+The composer used to call `onAdded` — the thing that puts a tile in the pending
+strip — only *after* the file's PUT had finished, and it uploaded one file
+before starting the next. Ten photos on a slow uplink therefore left the
+composer visibly empty for as long as the whole transfer took, which reads as
+the *picker* being slow rather than the network.
+
+`composer_upload.dart` now runs in two passes:
+
+```
+reserve   one at a time, no bytes read: presign -> cache the local preview
+                                        -> onAdded   (the tile appears NOW)
+transfer  three at a time: read the file, PUT, adopt
+```
+
+- **Order is the reserve pass's job.** Presigning sequentially is what keeps an
+  album in the order it was tapped however the transfers interleave. Do not
+  move the presign into the lanes to "save a round trip".
+- **Bytes are read inside a lane, never up front.** `UploadSource` describes a
+  file without holding it (`composer_upload_source.dart`) — an album of ten on
+  High is 30 MB otherwise, and ten videos, which are never transcoded, far
+  worse. A presign needs only name, type and length, and length comes from
+  `File.length()`.
+- **`ComposerUploads` is not optional.** A pending tile owns a reserved URL
+  whose object may not exist yet, so `_send` awaits `settle()` before posting.
+  Skip that and the conversation gets a message whose photos never load, for
+  everyone, permanently. It loops, because a rail tap can add work after the
+  wait began.
+- **A failed upload calls `onFailed`**, and the composer removes that tile. The
+  object is discarded server-side in the same path, so the reservation is not
+  charged.
+
+# A feed has one picture, and it is not the group photo
+
+A webhook feed is a conversation nobody may post into, and the server enforces
+that on the whole send path — `CanUploadAttachment` rides on `CanSendMessage`,
+so the attachment presign is **403 for everybody**, admin included. The group
+edit sheet's photo/banner flow uploads through exactly that presign, which is
+why picking a picture for a feed failed the instant the crop was confirmed:
+
+```
++ pencil -> crop -> presign attachment  -> 403 read_only   (group flow)
++ pencil -> crop -> presign feed avatar -> 200             (feed flow)
+```
+
+- `groupEditPictures(conversation)` picks the block: `WebhookEditPhoto` for a
+  feed, `GroupEditImages` for a personal group, nothing otherwise. A feed gets
+  **no banner** — its one picture is the face stamped on every message it
+  posts, and a second one would only compete with it. The server refuses
+  `avatar_url` / `banner_url` on a feed's `PATCH .../info` for the same reason,
+  so the rule is enforced rather than merely intended.
+- **The webhook row is the source of truth; the conversation row is the
+  mirror.** `db.UpdateChatWebhookAvatar` writes both in one transaction. Every
+  list row, header and details screen draws `chat_conversations.avatar_url`
+  and nothing reads the hook row, so before the mirror a feed photo saved
+  successfully and appeared nowhere except on messages posted afterwards —
+  "uploading but not updating". Migration `0131` copies across the ones that
+  were already set.
+- The mirror is also what puts a feed picture under the sweeps that already
+  walk a conversation's own avatar: the discard guard that refuses to delete a
+  picture in use, and the delete/purge paths that queue the object.
+- **A webhook message draws the feed's current picture, not its own.** The URL
+  joined onto a message is whatever the hook wore when that message was
+  fetched, and the local store keeps messages forever — so a photo set today
+  would never reach the ones already on disk, and a photo removed today would
+  go on showing on them.
+
+# One scanner, three codes, and a QR of your own
+
+Changed 2026-09-07. Before this the camera icon was in two wrong places at
+once: the chat list header held **Local Share**, and the button beside your
+name in Settings opened the **scanner** — so both people in a QR exchange were
+on the same screen pointing cameras at each other, and nobody had a code to
+show.
+
+```
+chat list header  ->  scanner        (the thing that reads a code)
+Settings, beside your name -> /settings/qr   (the thing you hold up)
+Settings -> Local Share, You sheet -> Local Share  (unchanged, both kept)
+```
+
+`QrLoginFlow.start` now dispatches on the `ababilx://` host and handles three
+payloads: **desktop-login** (approve a sign-in), **link-messages** (hand this
+account's message key to a new device), and **user** (somebody's handle →
+`ScannedUserSheet` → `startDm`). The first two approve something and show what;
+a user code approves nothing, because a handle is public.
+
+- **The payload is a handle, never a user id.** A UUID cannot be read aloud,
+  cannot be revoked once a code is on a poster, and would resolve forever for
+  anyone who saw it. A handle can be changed or cleared, and the same string
+  works typed into people search when a camera will not focus.
+  `user_qr_payload.dart` is pure and tested: it accepts `ababilx://user?u=…`
+  and a bare `@handle`, and **refuses bare text** — otherwise every QR code in
+  the world would look like a contact.
+- **Resolution is not the search endpoint.** `GET .../chat/handles/:username`
+  is exact and ignores `discoverable_by_username`, which is off by default and
+  would have made the feature find almost nobody. The client calls the
+  **team-prefixed** path deliberately: it is registered whether or not
+  `ABABILX_INDEPENDENT_CHAT` is on, and the handler needs no team.
+- **Scanning your own code is answered before the request goes out.** The
+  server excludes the caller from the lookup, so it would otherwise come back
+  as "no account uses @you".
+- **A missing handle is the QR screen's empty state**, not an error: the code
+  has nothing to carry, so it offers `/settings/username` instead of drawing an
+  empty frame. `username_rules.dart` mirrors `handlers/me.NormalizeUsername` so
+  Save is dead before a round trip; the server still owns the decision, and
+  uniqueness is only ever settled by its index (409 → "already taken").
+- Copy and Share send `@handle`, not the `ababilx://` payload — a scheme URL
+  pasted into a chat is dead text on any device without the app.
+
+# Linked devices reads like Signal's screen
+
+Same date, `features/profile/screens/sessions_screen.dart`. The screen had a
+paragraph of explanation at the top, two labelled buttons on every row, and no
+way to add a device: the button that starts a link was never on it.
+
+Now: illustration + one sentence + **Link a new device** (the scanner), a
+divider, **My linked devices**, then the end-to-end-encryption footer. Rename
+and Sign out moved into each row's ⋮, and "sign out all other devices" into the
+app-bar overflow — a rare, heavy action does not belong under the list as a red
+button. The current session never offers Sign out here; that is Settings →
+Sign out, which also clears this device's message key.
+
+Rows show **dates** ("Linked 26/08/26"), not "3 days ago": the list is read to
+recognise a device, and a relative age answers neither question. The drawing is
+widgets (`devices_hero.dart`), not an asset, so it needs no dark variant.

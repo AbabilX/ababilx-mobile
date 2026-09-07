@@ -58,6 +58,10 @@ class AndroidChatMessageStore {
       'beforeId': beforeId,
       'threadRootId': threadRootId,
     });
+    return _decode(payloads);
+  }
+
+  List<ChatMessage> _decode(List<String>? payloads) {
     final messages = <ChatMessage>[];
     for (final payload in payloads ?? const <String>[]) {
       try {
@@ -69,6 +73,19 @@ class AndroidChatMessageStore {
       }
     }
     return messages;
+  }
+
+  Future<List<ChatMessage>> exportPage({
+    int? afterMs,
+    String? afterId,
+    required int limit,
+  }) async {
+    final payloads = await _channel.invokeListMethod<String>('exportPage', {
+      'afterMs': afterMs,
+      'afterId': afterId,
+      'limit': limit,
+    });
+    return _decode(payloads);
   }
 
   Future<bool> hasOlderThan(

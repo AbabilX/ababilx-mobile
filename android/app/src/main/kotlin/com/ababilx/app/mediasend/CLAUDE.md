@@ -14,11 +14,17 @@ Everything here is written against the observed UX, not the source.
 One Activity, three screens, one shared bitmap cache:
 
 ```
-MediaSendActivity          wiring only
+MediaSendActivity          lifecycle only: permissions, picker results, export
  ├─ MediaSendRequest       what the caller asked for, read off the Intent once
  ├─ MediaSendNavigator     which screen is up, and where Back goes
+ ├─ MediaSendWiring        every callback between the screens; owns `quality`
+ ├─ MediaSendIntake        what arrives picked, and where it goes
+ ├─ MediaSendPreview       what the pager and editor decode at
  ├─ MediaSendSelection     what is picked, and where each piece came from
- ├─ gallery/GalleryView    MediaStore grid, numbered selection, Camera + Files
+ ├─ gallery/GalleryView    albums -> one album's grid, numbered selection
+ │   ├─ GalleryAlbumPane   the folder list + the top-bar title that returns to it
+ │   ├─ GalleryPaging      one album's rows, paged, reset on album change
+ │   └─ GalleryChoices     what is picked, in tap order
  ├─ review/ReviewView      pager + rail + edit + quality + caption + Send
  │   ├─ AddMoreSheetView   "+" → Camera / Gallery / Files
  │   └─ QualitySheetView   Standard / High
@@ -26,6 +32,23 @@ MediaSendActivity          wiring only
 ```
 
 Back walks that stack; cancel returns `RESULT_CANCELED`.
+
+**The picker opens on ALBUMS, not on a flat recent grid.** The composer's "+"
+panel already draws a rail of your most recent media, so a Gallery button that
+opened on a full-screen copy of that rail showed the same photos twice and gave
+no route to the rest of the library — which is what a user reported as "gallery
+opens recent images instead of the gallery". `GalleryAlbumPane` reads
+`MediaGalleryQuery.folders` (Camera, All media, then the rest — the same order
+and the same synthetic `ALL_MEDIA_BUCKET_ID` the Dart folder gallery uses), and
+"All media" is the second row so the old behaviour is one tap away. Back inside
+an album returns to the list before it leaves the flow, and **selection survives
+the move** — `GalleryChoices` is never cleared by an album change, only the
+grid's rows are. A device with no readable albums falls straight into All media,
+because an empty folder list reads as a failed load.
+
+**A page landing for the album you just left is dropped by generation, not by
+luck.** `GalleryPaging.open` bumps a counter that every in-flight page checks
+before appending; without it two albums mix in one grid.
 
 **"+" opens a sheet, not the grid.** Camera, Gallery and Files are one tap
 each. `+` used to drop straight into the library grid, which left the other two
@@ -121,6 +144,46 @@ under the cap.
 - **Every bitmap that leaves `MediaBitmaps` is EXIF-upright.** A canvas does
   not read the orientation tag; a stroke on a sideways preview would land in
   the wrong place on the file.
+- **Thumbnails come from `FastThumbnail` before anything is decoded.**
+  `ContentResolver.loadThumbnail` hands back the thumbnail MediaProvider
+  already generated for the system gallery — upright, cached, and an order of
+  magnitude cheaper than the three `openInputStream` calls (bounds, pixels,
+  EXIF) `MediaBitmaps.decode` costs. For a **video** it replaces a full
+  `MediaMetadataRetriever` frame extraction, which is the larger win. It is
+  capped at `MAX_PX = 512` on purpose: asked for more, the provider decodes the
+  original anyway, sometimes upscaling a 512 px thumbnail to get there — so the
+  review pager and the editor, which need real pixels to draw strokes onto,
+  keep the full decode.
+- **A selection tap repaints badges, it does not rebind cells.** Tapping one
+  photo renumbers every photo after it, so the whole grid is notified — but
+  with `GalleryAdapter.PAYLOAD_SELECTION`, and with
+  `supportsChangeAnimations = false` on the grid. Without both, one tap
+  re-requested the thumbnail of every visible cell *and* had DefaultItemAnimator
+  cross-fade a second copy of each: about twenty inflations for a disc changing
+  from "2" to "1". That was the reported "selecting images is slow".
+- **Export runs on two lanes, not one and not one per core**
+  (`MediaSendExport.exportAll`). Serial encoding froze Send for seconds on an
+  album; one lane per core would hold four bitmaps at the quality level's
+  largest target — 4096 px on High, about 50 MB each — and trade the stall for
+  an OOM. Order is kept by reading the futures in submission order.
+- **One `ThumbnailLoader` for all four screens.** `GalleryView.start` takes the
+  Activity's, so a cell decoded in the grid is the bitmap the album cover asks
+  for. It used to build its own, which meant two LruCaches at a quarter of the
+  heap each.
+- **`ThumbnailCache` downscales rather than decoding again.** The screens want
+  four sizes of the same photo — grid at a third of the width, album covers at
+  192, review rail at 160, pager and editor at the preview size — and a plain
+  size-keyed cache misses every time, so picking one picture decoded it three
+  times over. A miss now looks for the smallest cached copy *at least* as large
+  and scales that down; only down, or the editor would get an upscaled blur to
+  draw strokes onto.
+- **A decode nothing is waiting for is cancelled, and two waiters share one.**
+  Re-binding a cell releases its claim (`R.id.media_send_thumb_claim`), and the
+  last claim leaving cancels the queued work — the URI tag alone only discarded
+  the *result*, after a fling had already paid for every cell it passed. The
+  in-flight table is what stops the review pager and its rail decoding the same
+  photo twice when they bind together. All of that bookkeeping is main-thread;
+  only the decode is on the pool.
 - **A grid cell is tagged with the URI its decode is for**
   (`R.id.media_send_thumb_key`). Without that, recycling puts the wrong photo
   in the wrong cell.

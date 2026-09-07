@@ -66,7 +66,31 @@ class _CallsListState extends ConsumerState<CallsList> {
       body: log.loading && log.calls.isEmpty
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
           : log.calls.isEmpty
-          ? CallsEmpty(error: log.error)
+          // Both states pull to refresh — the failure copy says so, and it
+          // was the one screen where it was not true: the empty branch sat
+          // outside the RefreshIndicator, so the only way out of a failed
+          // load was leaving the tab. AlwaysScrollable is what gives a
+          // one-screen child something to drag.
+          ? RefreshIndicator(
+              onRefresh: () => ref.read(callLogProvider.notifier).load(),
+              child: LayoutBuilder(
+                builder: (context, box) => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: box.maxHeight,
+                      child: CallsEmpty(
+                        error: log.error,
+                        // Calls start from a conversation, so the first-run
+                        // button hands the user to the tab that has one.
+                        // go(), not push(): Messages is a sibling shell tab.
+                        onStart: () => context.go('/messages'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
           : RefreshIndicator(
               onRefresh: () => ref.read(callLogProvider.notifier).load(),
               child: ListView.builder(

@@ -24,6 +24,7 @@ class ApiConstants {
   static const String meSessionsRevokeOthers = '/api/me/sessions/revoke-others';
   static const String meDiscovery = '/api/me/discovery';
   static const String meName = '/api/me/name';
+  static const String meUsername = '/api/me/username';
   static const String meUploadPresign = '/api/me/upload/presign';
 
   // Team
@@ -94,6 +95,14 @@ class ApiConstants {
 
   // Chat
   static const String chatConversations = '/api/teams/chat/conversations';
+
+  /// Resolve one exact handle to a person — what a scanned QR code carries.
+  ///
+  /// Deliberately the team-prefixed path, which is registered whether or not
+  /// ABABILX_INDEPENDENT_CHAT is on. The handler needs no team: it takes the
+  /// caller's id and a username, so a scan works on either build.
+  static String chatHandle(String username) =>
+      '/api/teams/chat/handles/${Uri.encodeComponent(username)}';
   static const String chatE2eeVault = '/api/teams/chat/e2ee/vault';
   // Sheds the retired PIN-wrapped copy of the identity once a device holds it.
   static const String chatE2eeWrappedKey = '/api/teams/chat/e2ee/vault/wrapped';
@@ -149,6 +158,13 @@ class ApiConstants {
       );
   static String personalWebhookAvatar(String conversationId) =>
       independentChatConversationAction(conversationId, 'webhook/avatar');
+
+  // Encrypted history archive. Account-scoped like the E2EE vault, so it sits
+  // under /api/messaging rather than under a workspace or the chat flag.
+  static const String chatArchive = '/api/messaging/archive';
+  static const String chatArchiveBegin = '/api/messaging/archive/begin';
+  static const String chatArchiveChunk = '/api/messaging/archive/chunk';
+  static const String chatArchiveCommit = '/api/messaging/archive/commit';
 
   static const String chatDm = '/api/teams/chat/dm';
   static String chatVoiceCalls(String conversationId) =>

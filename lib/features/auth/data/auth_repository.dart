@@ -81,9 +81,17 @@ class AuthRepository {
     return user ?? {};
   }
 
+  /// Ending the local session is the part that must not fail. Firebase and
+  /// Google are asked first but never allowed to abort it — a plugin error or
+  /// a dead network would otherwise leave the JWT on disk, and the app comes
+  /// back up still signed in with a sign-out the user believes happened.
   Future<void> signOut() async {
-    await _firebaseAuth.signOut();
-    await _googleSignIn.signOut();
+    try {
+      await _firebaseAuth.signOut();
+    } catch (_) {}
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
     await _storage.clearAll();
   }
 

@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
+import com.ababilx.app.mediasend.FastThumbnail
 import java.io.ByteArrayOutputStream
 import kotlin.math.max
 
@@ -26,23 +28,30 @@ object ShareThumbnails {
      */
     fun of(context: Context, uriString: String, maxPx: Int): ByteArray? {
         val uri = Uri.parse(uriString)
+        // MediaProvider's own cached thumbnail, when this is a library item.
+        // It costs one call instead of a getType() lookup plus two or three
+        // stream opens, and for a video it replaces a full frame extraction —
+        // which is what made a strip of forty recents take seconds to fill.
+        FastThumbnail.of(context, uri, maxPx)?.let { return jpeg(it) }
         val mime = try {
             context.contentResolver.getType(uri).orEmpty()
         } catch (_: Exception) {
             ""
         }
         val bitmap = when {
-            mime.startsWith("video/") -> videoFrame(context, uri)
+            mime.startsWith("video/") -> videoFrame(context, uri, maxPx)
             mime.startsWith("image/") -> imageBitmap(context, uri, maxPx)
             else -> null
         } ?: return null
+        return jpeg(bitmap)
+    }
 
-        return ByteArrayOutputStream().use { out ->
+    private fun jpeg(bitmap: Bitmap): ByteArray =
+        ByteArrayOutputStream().use { out ->
             bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
             bitmap.recycle()
             out.toByteArray()
         }
-    }
 
     private fun imageBitmap(context: Context, uri: Uri, maxPx: Int): Bitmap? = try {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -50,9 +59,7 @@ object ShareThumbnails {
             BitmapFactory.decodeStream(it, null, bounds)
         }
         val longest = max(bounds.outWidth, bounds.outHeight)
-        val options = BitmapFactory.Options().apply {
-            inSampleSize = if (longest > maxPx && maxPx > 0) longest / maxPx else 1
-        }
+        val options = BitmapFactory.Options().apply { inSampleSize = sampleSize(longest, maxPx) }
         context.contentResolver.openInputStream(uri)?.use {
             BitmapFactory.decodeStream(it, null, options)
         }
@@ -60,11 +67,38 @@ object ShareThumbnails {
         null
     }
 
-    private fun videoFrame(context: Context, uri: Uri): Bitmap? {
+    /**
+     * `inSampleSize` is rounded DOWN to a power of two by BitmapFactory, so
+     * the obvious `longest / maxPx` decodes up to twice the intended edge —
+     * four times the pixels. Doubling until the next step would overshoot is
+     * the only form that actually honours [maxPx].
+     */
+    private fun sampleSize(longest: Int, maxPx: Int): Int {
+        if (maxPx <= 0 || longest <= maxPx) return 1
+        var sample = 1
+        while (longest / (sample * 2) >= maxPx) sample *= 2
+        return sample
+    }
+
+    /**
+     * A frame, downscaled by the extractor where the platform can do it.
+     * [MediaMetadataRetriever.frameAtTime] hands back the video's full
+     * resolution — a 4K frame is 33 MB of heap for a 72 dp tile.
+     */
+    private fun videoFrame(context: Context, uri: Uri, maxPx: Int): Bitmap? {
         val retriever = MediaMetadataRetriever()
         return try {
             retriever.setDataSource(context, uri)
-            retriever.frameAtTime
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 && maxPx > 0) {
+                retriever.getScaledFrameAtTime(
+                    0,
+                    MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+                    maxPx,
+                    maxPx,
+                ) ?: retriever.frameAtTime
+            } else {
+                retriever.frameAtTime
+            }
         } catch (_: Exception) {
             null
         } finally {

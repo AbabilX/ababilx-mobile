@@ -4,6 +4,7 @@
          arbitrary int throws. This one tags a grid cell with the URI its
          in-flight thumbnail decode belongs to. -->
     <item name="media_send_thumb_key" type="id" />
+    <item name="media_send_thumb_claim" type="id" />
     <!-- Stashes a view's pre-insets padding so MediaSendInsets can re-add a
          changed system-bar inset without compounding on top of the last one. -->
     <item name="media_send_base_padding" type="id" />

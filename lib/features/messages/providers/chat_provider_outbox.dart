@@ -150,6 +150,4 @@ mixin _ChatOutboxMixin on Notifier<ChatState>, _ChatFeedMixin {
 bool isLockedFailedMessage(ChatMessage m) =>
     m.sendStatus == MessageSendStatus.failed &&
     m.isEncrypted &&
-    (m.body.isEmpty ||
-        m.body == 'Encrypted message' ||
-        m.body == 'Unable to decrypt this message');
+    isVaultPlaceholderBody(m.body);

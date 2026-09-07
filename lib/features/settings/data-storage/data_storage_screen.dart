@@ -55,6 +55,15 @@ class DataStorageScreen extends ConsumerWidget {
               ),
               onTap: () => context.push('/settings/storage'),
             ),
+            // Directly under Manage storage: both answer "what happens to my
+            // history", and this is the only one that answers it for a phone
+            // that is lost rather than full.
+            SettingsRow(
+              icon: HugeIcons.strokeRoundedCloudUpload,
+              title: 'Chat backup',
+              subtitle: 'An encrypted copy only your devices can read',
+              onTap: () => context.push('/settings/chat-backup'),
+            ),
             const Divider(height: 24),
             const SettingsSectionHeader('Media auto-download'),
             for (final media in AutoDownloadMedia.values)

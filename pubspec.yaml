@@ -1,7 +1,7 @@
 name: ababilx
 description: "AbabilX — All-in-one team collaboration platform featuring messaging, calls, CRM, Kanban boards, and local sharing."
 publish_to: "none"
-version: 5.0.3+14
+version: 5.0.4+15
 
 environment:
   sdk: ^3.12.0
@@ -134,6 +134,9 @@ flutter:
     - assets/icon/alternates/weather.png
     - assets/images/login_background_v1.png
     - assets/images/login_background_v2.png
+    # The two bundled chat wallpapers; see chatWallpaperPresets.
+    - assets/images/wallpapers/dewdrop_field.jpg
+    - assets/images/wallpapers/rainy_paddy.jpg
     - assets/ringtone/Clear_Agenda.mp3
 
 # `source: system` = package:sqlite3's FFI binding does a plain dlopen of

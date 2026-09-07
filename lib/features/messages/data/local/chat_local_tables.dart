@@ -13,7 +13,8 @@ class CachedSidebars extends Table {
 /// One row per message — the durable chat history (V4). Replaces the old
 /// "last 50 messages as one JSON blob per conversation" cache: paging, search
 /// and every offline read are indexed queries over this table, so history stays
-/// browsable with no network and no ceiling other than [pruneKeepPerConversation].
+/// browsable with no network and no ceiling other than [pruneKeepPerConversation],
+/// which is a runaway backstop rather than a retention window.
 ///
 /// [payloadJson] is the full server message JSON. For an E2EE DM its `body` is
 /// blanked and only the ciphertext fields are kept — the same "ciphertext only

@@ -11,6 +11,7 @@ class AppUser extends Equatable {
     required this.name,
     required this.email,
     required this.provider,
+    this.username = '',
     this.avatarUrl = '',
     this.plan = 'free',
     this.premiumUntil,
@@ -29,6 +30,11 @@ class AppUser extends Equatable {
   final String name;
   final String email;
   final String provider;
+
+  /// The AbabilX handle — what a personal QR code carries. Empty until the
+  /// user picks one; `githubUsername` is a different field and never stands in
+  /// for it, because a GitHub login is not an address on this app.
+  final String username;
   final String avatarUrl;
   final String plan;
   final String? premiumUntil;
@@ -47,6 +53,7 @@ class AppUser extends Equatable {
     name: json['name'] as String? ?? '',
     email: json['email'] as String? ?? '',
     provider: json['provider'] as String? ?? '',
+    username: json['username'] as String? ?? '',
     avatarUrl: json['avatar_url'] as String? ?? '',
     plan: json['plan'] as String? ?? 'free',
     premiumUntil: json['premium_until'] as String?,
@@ -67,6 +74,7 @@ class AppUser extends Equatable {
     'name': name,
     'email': email,
     'provider': provider,
+    'username': username,
     'avatar_url': avatarUrl,
     'plan': plan,
     'premium_until': premiumUntil,
@@ -83,6 +91,7 @@ class AppUser extends Equatable {
 
   AppUser copyWith({
     String? name,
+    String? username,
     String? avatarUrl,
     bool? acceptPolicy,
     String? policyVersion,
@@ -91,6 +100,7 @@ class AppUser extends Equatable {
     name: name ?? this.name,
     email: email,
     provider: provider,
+    username: username ?? this.username,
     avatarUrl: avatarUrl ?? this.avatarUrl,
     plan: plan,
     premiumUntil: premiumUntil,
@@ -117,6 +127,7 @@ class AppUser extends Equatable {
   List<Object?> get props => [
     id,
     name,
+    username,
     plan,
     slackConnected,
     acceptPolicy,

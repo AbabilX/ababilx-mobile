@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import 'models/chat_connection.dart';
@@ -17,6 +19,26 @@ class ChatConnectionsApi {
       matchedBy: data['matched_by'] as String? ?? '',
       users: _users(data['users']),
     );
+  }
+
+  /// Resolves one exact handle — what a scanned QR code carries — or null
+  /// when nobody holds it.
+  ///
+  /// Not the search endpoint: search is a prefix match gated by the person's
+  /// username-discovery toggle, which is off by default, so a QR code routed
+  /// through it would find almost nobody. A full handle shown by its owner is
+  /// exact, and the server treats it that way.
+  Future<ChatUserSummary?> lookupByUsername(String username) async {
+    try {
+      final response = await _client.get(ApiConstants.chatHandle(username));
+      final data = unwrapApiData<Map<String, dynamic>>(response);
+      final user = data['user'];
+      if (user is! Map) return null;
+      return ChatUserSummary.fromJson(Map<String, dynamic>.from(user));
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   Future<List<ChatConnection>> listConnections() async {

@@ -25,8 +25,13 @@ import java.util.concurrent.Executors
  *
  * What the caller asked for is [MediaSendRequest]; which screen is up and
  * where Back goes is [MediaSendNavigator]; what has been picked and where each
- * piece came from is [MediaSendSelection]. This class is the wiring between
- * them and the pickers.
+ * piece came from is [MediaSendSelection]; what arrives picked and where it
+ * goes is [MediaSendIntake]; every callback between the screens is
+ * [MediaSendWiring], which also owns the chosen [MediaQuality].
+ *
+ * What is left here is the Activity's own job and nothing else: create the
+ * views, hold the permission dance, receive the picker results, export, and
+ * finish.
  */
 class MediaSendActivity : Activity() {
 
@@ -36,13 +41,14 @@ class MediaSendActivity : Activity() {
     private lateinit var loader: ThumbnailLoader
     private lateinit var pickers: MediaSendPickers
     private lateinit var nav: MediaSendNavigator
+    private lateinit var intake: MediaSendIntake
+    private lateinit var wiring: MediaSendWiring
     private lateinit var request: MediaSendRequest
 
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private val selection = MediaSendSelection()
 
-    private var quality = MediaQuality.STANDARD
     private var galleryLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,7 +59,6 @@ class MediaSendActivity : Activity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.media_send_activity)
         request = MediaSendRequest.from(intent)
-        quality = request.quality
 
         loader = ThumbnailLoader(this)
         gallery = findViewById(R.id.gallery_view)
@@ -69,53 +74,46 @@ class MediaSendActivity : Activity() {
             editor = editor,
             startsAtGallery = request.startsAtGallery,
             onGalleryShown = ::loadGalleryOnce,
-            onEditorClosed = ::closeEditor,
+            onEditorClosed = { wiring.closeEditor() },
+            cancel = ::cancel,
+        )
+        intake = MediaSendIntake(
+            context = this,
+            review = review,
+            nav = nav,
+            selection = selection,
+            request = request,
+            finish = ::finishWith,
             cancel = ::cancel,
         )
         pickers = MediaSendPickers(
             activity = this,
             maxDocuments = request.maxSelection,
-            onCaptured = ::onCaptured,
-            onDocuments = ::onDocumentsPicked,
-            onNothing = ::onPickerClosedEmpty,
+            onCaptured = intake::captured,
+            onDocuments = intake::documentsPicked,
+            onNothing = intake::pickerClosedEmpty,
         )
 
-        wireGallery()
-        wireReview()
-        editor.onCancel = ::closeEditor
-        editor.onDone = { nav.showReview(); review.refreshCurrent() }
+        wiring = MediaSendWiring(
+            gallery = gallery,
+            review = review,
+            editor = editor,
+            nav = nav,
+            pickers = pickers,
+            intake = intake,
+            selection = selection,
+            loader = loader,
+            request = request,
+            previewPx = MediaSendPreview.sizeFor(resources),
+            finish = ::finishWith,
+        )
+        wiring.install()
 
         when (request.start) {
             START_CAMERA -> pickers.openCamera()
             START_FILES -> pickers.openFiles()
-            START_REVIEW -> if (!openHandedItems()) cancel()
+            START_REVIEW -> if (!intake.openHandedItems()) cancel()
             else -> nav.showGallery()
-        }
-    }
-
-    private fun wireGallery() {
-        gallery.maxSelection = request.maxSelection
-        gallery.allowVideo = request.allowVideo
-        gallery.onClose = { nav.leaveGallery() }
-        gallery.onCamera = { pickers.openCamera() }
-        gallery.onFiles = { pickers.openFiles() }
-        gallery.onNext = { entries ->
-            toReview(selection.mergeGrid(entries.map(::pick), review.selection()))
-        }
-    }
-
-    private fun wireReview() {
-        review.attach(loader, PREVIEW_PX)
-        review.quality = quality
-        review.onBack = { nav.leaveReview() }
-        review.onAddCamera = { pickers.openCamera() }
-        review.onAddGallery = { nav.showGallery() }
-        review.onAddFiles = { pickers.openFiles() }
-        review.onEmptied = { nav.leaveReview() }
-        review.onEditRequested = ::openEditor
-        review.onSend = { items, caption, chosen ->
-            quality = chosen
-            finishWith(items + selection.passthrough, caption)
         }
     }
 
@@ -132,95 +130,20 @@ class MediaSendActivity : Activity() {
 
     private fun startGallery() {
         galleryLoaded = true
-        gallery.start()
+        // One cache for all four screens: a cell decoded in the grid is the
+        // same bitmap the album cover and the review rail ask for.
+        gallery.start(loader)
     }
-
-    private fun onCaptured(item: PickedItem) {
-        // A camera shot is not the grid's. Remembering it is what stops
-        // "+ Add more" — which replaces the list with the grid's own — from
-        // dropping the photo just taken.
-        selection.remember(listOf(item))
-        toReview(review.selection() + item)
-    }
-
-    /**
-     * The caller already has the items — a share from another app. Anything
-     * reviewable opens the review screen; the rest rides along untouched.
-     *
-     * @return false when there was nothing usable at all.
-     */
-    private fun openHandedItems(): Boolean {
-        if (request.uris.isEmpty()) return false
-        val items = selection.itemsFrom(this, request.uris, request.names, request.mimes)
-        if (items.isEmpty()) return false
-        onDocumentsPicked(items)
-        return true
-    }
-
-    /**
-     * Files can hand back a mix. Anything reviewable joins the review screen;
-     * a document has nothing to review and is sent straight through.
-     */
-    private fun onDocumentsPicked(items: List<PickedItem>) {
-        val media = selection.acceptDocuments(items)
-        if (media.isNotEmpty()) {
-            toReview(review.selection() + media)
-            return
-        }
-        if (selection.passthrough.isNotEmpty()) {
-            finishWith(selection.passthrough.toList(), "")
-        }
-    }
-
-    /** A camera or document picker closed with nothing chosen. */
-    private fun onPickerClosedEmpty() {
-        if (review.selection().isNotEmpty()) {
-            nav.showReview()
-            return
-        }
-        if (selection.passthrough.isNotEmpty()) return
-        if (request.startsAtGallery) nav.showGallery() else cancel()
-    }
-
-    private fun toReview(items: List<PickedItem>) {
-        if (items.isEmpty()) return
-        // Keep the edits already made to anything that is still selected.
-        val existing = review.selection().associateBy { it.uri }
-        for (item in items) existing[item.uri]?.let(item::copyEditsFrom)
-        review.show(items)
-        nav.showReview()
-    }
-
-    private fun openEditor(item: PickedItem) {
-        loader.bitmap(item.uri, item.isVideo, PREVIEW_PX) { bitmap ->
-            editor.open(bitmap, item)
-            nav.showEditor()
-        }
-    }
-
-    private fun closeEditor() {
-        editor.revert()
-        nav.showReview()
-        review.refreshCurrent()
-    }
-
-    private fun pick(entry: GalleryEntry) = PickedItem(
-        uri = entry.uri,
-        name = entry.name,
-        mime = entry.mime,
-        isVideo = entry.isVideo,
-        sizeBytes = entry.sizeBytes,
-    )
 
     private fun finishWith(items: List<PickedItem>, caption: String) {
         io.execute {
-            val exported = items.mapNotNull { MediaSendExport.export(this, it, quality) }
+            val exported = MediaSendExport.exportAll(this, items, wiring.quality)
             main.post {
                 if (exported.isEmpty()) {
                     cancel()
                     return@post
                 }
-                setResult(RESULT_OK, MediaSendResult.intent(exported, caption, quality.code))
+                setResult(RESULT_OK, MediaSendResult.intent(exported, caption, wiring.quality.code))
                 finish()
             }
         }
@@ -259,7 +182,7 @@ class MediaSendActivity : Activity() {
                 } else {
                     Toast.makeText(this, R.string.media_send_camera_denied, Toast.LENGTH_SHORT)
                         .show()
-                    onPickerClosedEmpty()
+                    intake.pickerClosedEmpty()
                 }
         }
     }
@@ -269,9 +192,5 @@ class MediaSendActivity : Activity() {
         gallery.dispose()
         loader.dispose()
         super.onDestroy()
-    }
-
-    private companion object {
-        const val PREVIEW_PX = 1600
     }
 }

@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../data/session_repository.dart';
 
-/// One signed-in device: what it is, when it was last seen, and the two things
-/// the user can do to it — name it, or sign it out.
+/// One linked device: what it is, when it was linked, when it was last seen,
+/// and a ⋮ holding the two things that can be done to it.
+///
+/// The buttons used to sit in the row itself — two labelled actions per device,
+/// on every row. Signal puts them behind the overflow because the list is
+/// something you read far more often than you act on, and a wall of Rename /
+/// Sign out is what made this screen hard to scan.
 class SessionTile extends ConsumerWidget {
   const SessionTile({
     super.key,
@@ -24,146 +30,112 @@ class SessionTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final meta = theme.textTheme.bodyMedium?.copyWith(
+      color: colors.onSurfaceVariant,
+    );
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colors.outline),
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      leading: CircleAvatar(
+        radius: 24,
+        backgroundColor: colors.surfaceContainerHigh,
+        child: Icon(_clientIcon(session.client), color: colors.onSurface),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      title: Row(
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: colors.surfaceContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              _clientIcon(session.client),
-              size: 19,
-              color: colors.primary,
+          Flexible(
+            child: Text(
+              session.label,
+              style: theme.textTheme.titleMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      session.label,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    if (session.current)
-                      _Chip(
-                        text: AppTranslations.translate(
-                          context,
-                          ref,
-                          'devices_this_device',
-                        ),
-                        color: colors.primary,
-                      ),
-                    if (session.origin == 'qr')
-                      _Chip(
-                        text: AppTranslations.translate(
-                          context,
-                          ref,
-                          'devices_qr',
-                        ),
-                        color: colors.onSurfaceVariant,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _meta(context, ref, session),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    TextButton.icon(
-                      onPressed: busy ? null : onRename,
-                      icon: const Icon(Icons.edit_rounded, size: 16),
-                      label: Text(
-                        AppTranslations.translate(
-                          context,
-                          ref,
-                          'devices_rename',
-                        ),
-                      ),
-                      style: TextButton.styleFrom(
-                        foregroundColor: colors.onSurfaceVariant,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                    if (!session.current)
-                      TextButton.icon(
-                        onPressed: busy ? null : onRevoke,
-                        icon: const Icon(Icons.logout_rounded, size: 16),
-                        label: Text(
-                          AppTranslations.translate(
-                            context,
-                            ref,
-                            'devices_sign_out',
-                          ),
-                        ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: colors.error,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
+          if (session.current) ...[
+            const SizedBox(width: 8),
+            _Chip(
+              text: AppTranslations.translate(
+                context,
+                ref,
+                'devices_this_device',
+              ),
+              color: colors.primary,
             ),
+          ],
+        ],
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${AppTranslations.translate(context, ref, 'devices_linked_on')} '
+            '${_date(session.createdAt)}',
+            style: meta,
+          ),
+          Text(
+            '${AppTranslations.translate(context, ref, 'devices_last_active')} '
+            '${_date(session.lastSeenAt)}',
+            style: meta,
           ),
         ],
       ),
+      trailing: busy
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : PopupMenuButton<_TileAction>(
+              icon: const Icon(Icons.more_vert_rounded),
+              onSelected: (action) =>
+                  action == _TileAction.rename ? onRename() : onRevoke(),
+              itemBuilder: (menuContext) => [
+                PopupMenuItem(
+                  value: _TileAction.rename,
+                  child: Text(
+                    AppTranslations.translate(
+                      menuContext,
+                      ref,
+                      'devices_rename',
+                    ),
+                  ),
+                ),
+                // The current session is signed out from Settings → Sign out,
+                // which also clears this device's message key. Offering it
+                // here would be a second door to a different outcome.
+                if (!session.current)
+                  PopupMenuItem(
+                    value: _TileAction.revoke,
+                    child: Text(
+                      AppTranslations.translate(
+                        menuContext,
+                        ref,
+                        'devices_sign_out',
+                      ),
+                      style: TextStyle(color: colors.error),
+                    ),
+                  ),
+              ],
+            ),
     );
   }
 }
 
+enum _TileAction { rename, revoke }
+
 IconData _clientIcon(String client) {
   if (client == 'mobile') return Icons.smartphone_rounded;
-  if (client == 'desktop') return Icons.desktop_windows_rounded;
+  if (client == 'desktop') return Icons.laptop_mac_rounded;
   return Icons.language_rounded;
 }
 
-String _meta(BuildContext context, WidgetRef ref, UserSession s) {
-  final active = AppTranslations.translate(context, ref, 'devices_active');
-  final ip = s.ip.isNotEmpty ? '${s.ip} · ' : '';
-  return '$ip$active ${_ago(s.lastSeenAt)}';
-}
-
-/// Deliberately coarse: the list only needs to answer "was this recent?".
-String _ago(String iso) {
+/// A date, not "3 days ago". This list is read to answer "is that laptop still
+/// signed in, and is that the one I used in August?" — a relative age answers
+/// neither, and Signal shows dates here for the same reason.
+String _date(String iso) {
   final dt = DateTime.tryParse(iso)?.toLocal();
   if (dt == null) return '—';
-  final diff = DateTime.now().difference(dt);
-  if (diff.inMinutes < 1) return 'just now';
-  if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
-  if (diff.inHours < 24) {
-    return '${diff.inHours} ${diff.inHours == 1 ? 'hour' : 'hours'} ago';
-  }
-  if (diff.inDays == 1) return '1 day ago';
-  if (diff.inDays < 30) return '${diff.inDays} days ago';
-  return '${dt.day}/${dt.month}/${dt.year}';
+  return DateFormat.yMd().format(dt);
 }
 
 class _Chip extends StatelessWidget {

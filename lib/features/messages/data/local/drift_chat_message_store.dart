@@ -49,6 +49,38 @@ class DriftChatMessageStore {
     }
   }
 
+  /// Reads the archive in one ascending keyset cursor, across every
+  /// conversation and every thread. See [AndroidChatMessageStore.exportPage]
+  /// for why this cannot be [page] with different arguments: `page` filters
+  /// `thread_root_id IS NULL`, so it can never see a thread reply.
+  Future<List<ChatMessage>> exportPage({
+    int? afterMs,
+    String? afterId,
+    required int limit,
+  }) async {
+    try {
+      final query = _db.select(_db.cachedMessages);
+      if (afterMs != null) {
+        query.where(
+          (t) => afterId == null
+              ? t.createdAtMs.isBiggerThanValue(afterMs)
+              : t.createdAtMs.isBiggerThanValue(afterMs) |
+                    (t.createdAtMs.equals(afterMs) &
+                        t.id.isBiggerThanValue(afterId)),
+        );
+      }
+      query
+        ..orderBy([
+          (t) => OrderingTerm(expression: t.createdAtMs),
+          (t) => OrderingTerm(expression: t.id),
+        ])
+        ..limit(limit);
+      return messagesFromRows(await query.get());
+    } catch (_) {
+      return const [];
+    }
+  }
+
   Future<bool> hasOlderThan(
     String conversationId,
     int beforeMs, {
@@ -191,6 +223,12 @@ class DriftChatMessageStore {
     } catch (_) {}
   }
 
+  /// Trims a conversation to [keepPerConversation] rows.
+  ///
+  /// A runaway backstop, not a retention policy. The phone is the archive and
+  /// deliberately holds far more history than the server, which keeps six
+  /// months — see CHAT_RETENTION.md. Only a conversation past a couple of
+  /// hundred thousand messages ever reaches this.
   Future<void> _prune(String conversationId) async {
     try {
       await _db.customStatement(

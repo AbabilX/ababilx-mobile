@@ -2,15 +2,32 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+// The preset catalogue is a separate file but the same concept: everything
+// that imports a wallpaper wants the presets too, so it is re-exported rather
+// than made a second import at 20 call sites.
+export 'chat_wallpaper_presets.dart';
+
 /// Where a chat background comes from.
 enum ChatWallpaperKind { none, preset, photo }
+
+/// The faintest a wallpaper may be drawn.
+///
+/// Not zero: a fully transparent wallpaper is indistinguishable from having
+/// none, so the slider's floor would look like a bug rather than a setting,
+/// and "No wallpaper" already exists one screen down.
+const double chatWallpaperMinOpacity = 0.2;
 
 /// A chat background.
 ///
 /// Signal models this as a per-chat value that falls back to a global default,
 /// plus a "dim in dark theme" flag — a photo bright enough to read against in
 /// daylight is glaring at night, and dimming it is cheaper than asking for two
-/// pictures. Same three fields here.
+/// pictures.
+///
+/// [opacity] is ours, and is a different question from [dimInDark]: dimming is
+/// conditional on the theme and paints black OVER the wallpaper, while opacity
+/// is unconditional and fades the wallpaper INTO the chat surface. Someone who
+/// wants a picture they can barely notice at noon needs the second one.
 @immutable
 class ChatWallpaper {
   const ChatWallpaper({
@@ -18,13 +35,30 @@ class ChatWallpaper {
     this.presetId = '',
     this.photoPath = '',
     this.dimInDark = true,
+    this.opacity = 1,
   });
 
-  factory ChatWallpaper.preset(String id) =>
-      ChatWallpaper(kind: ChatWallpaperKind.preset, presetId: id);
+  factory ChatWallpaper.preset(
+    String id, {
+    bool dimInDark = true,
+    double opacity = 1,
+  }) => ChatWallpaper(
+    kind: ChatWallpaperKind.preset,
+    presetId: id,
+    dimInDark: dimInDark,
+    opacity: opacity,
+  );
 
-  factory ChatWallpaper.photo(String path) =>
-      ChatWallpaper(kind: ChatWallpaperKind.photo, photoPath: path);
+  factory ChatWallpaper.photo(
+    String path, {
+    bool dimInDark = true,
+    double opacity = 1,
+  }) => ChatWallpaper(
+    kind: ChatWallpaperKind.photo,
+    photoPath: path,
+    dimInDark: dimInDark,
+    opacity: opacity,
+  );
 
   static const ChatWallpaper none = ChatWallpaper();
 
@@ -33,13 +67,21 @@ class ChatWallpaper {
   final String photoPath;
   final bool dimInDark;
 
+  /// 0..1. Always read through [drawOpacity], never raw — a value decoded from
+  /// storage written by an older or newer build has no guarantee behind it.
+  final double opacity;
+
   bool get isSet => kind != ChatWallpaperKind.none;
 
-  ChatWallpaper copyWith({bool? dimInDark}) => ChatWallpaper(
+  /// What the painters actually use.
+  double get drawOpacity => opacity.clamp(chatWallpaperMinOpacity, 1.0);
+
+  ChatWallpaper copyWith({bool? dimInDark, double? opacity}) => ChatWallpaper(
     kind: kind,
     presetId: presetId,
     photoPath: photoPath,
     dimInDark: dimInDark ?? this.dimInDark,
+    opacity: opacity ?? this.opacity,
   );
 
   String encode() => jsonEncode({
@@ -47,6 +89,7 @@ class ChatWallpaper {
     'preset': presetId,
     'photo': photoPath,
     'dim': dimInDark,
+    'opacity': opacity,
   });
 
   static ChatWallpaper decode(String? raw) {
@@ -61,6 +104,9 @@ class ChatWallpaper {
         presetId: json['preset'] as String? ?? '',
         photoPath: json['photo'] as String? ?? '',
         dimInDark: json['dim'] as bool? ?? true,
+        // Absent means a value written before opacity existed, which was
+        // always fully opaque.
+        opacity: (json['opacity'] as num?)?.toDouble() ?? 1,
       );
     } catch (_) {
       return none;
@@ -73,54 +119,10 @@ class ChatWallpaper {
       other.kind == kind &&
       other.presetId == presetId &&
       other.photoPath == photoPath &&
-      other.dimInDark == dimInDark;
+      other.dimInDark == dimInDark &&
+      other.opacity == opacity;
 
   @override
-  int get hashCode => Object.hash(kind, presetId, photoPath, dimInDark);
-}
-
-/// One of the built-in backgrounds.
-@immutable
-class ChatWallpaperPreset {
-  const ChatWallpaperPreset(this.id, this.colors);
-
-  final String id;
-
-  /// One colour paints flat; two or more paint as a diagonal gradient, which
-  /// is how Signal's preset set is built.
-  final List<Color> colors;
-
-  Gradient? get gradient => colors.length < 2
-      ? null
-      : LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: colors,
-        );
-
-  Color get solid => colors.first;
-}
-
-/// The built-in set. Solids first, then gradients, same shape as Signal's
-/// picker so the grid reads left-to-right from calm to loud.
-const List<ChatWallpaperPreset> chatWallpaperPresets = [
-  ChatWallpaperPreset('slate', [Color(0xFF1F2430)]),
-  ChatWallpaperPreset('ink', [Color(0xFF0F172A)]),
-  ChatWallpaperPreset('sand', [Color(0xFFEFE7DA)]),
-  ChatWallpaperPreset('mist', [Color(0xFFE6ECF5)]),
-  ChatWallpaperPreset('sage', [Color(0xFFDDE9DF)]),
-  ChatWallpaperPreset('rose', [Color(0xFFF6E2E6)]),
-  ChatWallpaperPreset('indigo', [Color(0xFF6366F1), Color(0xFF312E81)]),
-  ChatWallpaperPreset('dusk', [Color(0xFF7C3AED), Color(0xFFDB2777)]),
-  ChatWallpaperPreset('ocean', [Color(0xFF0EA5E9), Color(0xFF1E3A8A)]),
-  ChatWallpaperPreset('forest', [Color(0xFF34D399), Color(0xFF065F46)]),
-  ChatWallpaperPreset('ember', [Color(0xFFF97316), Color(0xFF9A3412)]),
-  ChatWallpaperPreset('graphite', [Color(0xFF334155), Color(0xFF0B1120)]),
-];
-
-ChatWallpaperPreset? chatWallpaperPresetById(String id) {
-  for (final preset in chatWallpaperPresets) {
-    if (preset.id == id) return preset;
-  }
-  return null;
+  int get hashCode =>
+      Object.hash(kind, presetId, photoPath, dimInDark, opacity);
 }

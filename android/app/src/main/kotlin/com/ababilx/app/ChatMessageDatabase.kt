@@ -129,11 +129,53 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
             null,
             null,
             "created_at_ms DESC, id DESC",
-            limit.coerceIn(1, MAX_KEEP).toString(),
+            limit.coerceIn(1, MAX_PAGE).toString(),
         ).use { cursor ->
             while (cursor.moveToNext()) newestFirst += cursor.getString(0)
         }
         return newestFirst.asReversed()
+    }
+
+    /**
+     * Reads the archive in one ascending keyset cursor, across every
+     * conversation and every thread.
+     *
+     * Separate from [page] on purpose. `page` answers "what does this screen
+     * show next", so it filters `thread_root_id IS NULL` and reads newest
+     * first — which makes it structurally unable to see a thread reply, and
+     * therefore unable to back one up. This reads rows regardless of
+     * thread_root_id, oldest first, so an exporter can stream the whole
+     * history and resume from where it stopped.
+     *
+     * Ordering is (created_at_ms, id) so the cursor is total: two messages
+     * with the same millisecond still have a stable successor.
+     */
+    fun exportPage(afterMs: Long?, afterId: String?, limit: Int): List<String> {
+        val where = mutableListOf<String>()
+        val args = mutableListOf<String>()
+        if (afterMs != null) {
+            if (afterId == null) {
+                where += "created_at_ms > ?"
+                args += afterMs.toString()
+            } else {
+                where += "(created_at_ms > ? OR (created_at_ms = ? AND id > ?))"
+                args += listOf(afterMs.toString(), afterMs.toString(), afterId)
+            }
+        }
+        val payloads = mutableListOf<String>()
+        readableDatabase.query(
+            "messages",
+            arrayOf("payload_json"),
+            where.joinToString(" AND ").ifEmpty { null },
+            args.toTypedArray().takeIf { it.isNotEmpty() },
+            null,
+            null,
+            "created_at_ms ASC, id ASC",
+            limit.coerceIn(1, MAX_PAGE).toString(),
+        ).use { cursor ->
+            while (cursor.moveToNext()) payloads += cursor.getString(0)
+        }
+        return payloads
     }
 
     fun hasOlder(conversationId: String, beforeMs: Long, beforeId: String?): Boolean {
@@ -182,6 +224,12 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
         writableDatabase.delete("messages", null, null)
     }
 
+    /**
+     * Trims a conversation to MAX_KEEP rows. This is a runaway backstop, not a
+     * retention policy: the phone is the archive and keeps far more history
+     * than the server, which holds six months (see CHAT_RETENTION.md). Only a
+     * conversation past a couple of hundred thousand messages ever reaches it.
+     */
     private fun prune(database: SQLiteDatabase, conversationId: String) {
         database.execSQL(
             "DELETE FROM messages WHERE conversation_id = ? AND id NOT IN " +
@@ -194,6 +242,11 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
     private companion object {
         const val DATABASE_NAME = "ababilx_messages.db"
         const val DATABASE_VERSION = 1
-        const val MAX_KEEP = 2000
+
+        /** Local retention backstop. The phone outlives the server's window. */
+        const val MAX_KEEP = 200_000
+
+        /** Upper bound on one page read, so a query cannot pull the archive. */
+        const val MAX_PAGE = 2_000
     }
 }

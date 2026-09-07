@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/root_back.dart';
-import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../avatar/avatar_flow.dart';
 import '../settings-hub/settings_bio_row.dart';
@@ -39,7 +38,7 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             SettingsBioRow(
               user: user,
-              onQrTap: () => QrLoginFlow.start(context, ref),
+              onQrTap: () => context.push('/settings/qr'),
               onEditName: () => context.push('/settings/name'),
               onEditAvatar: () => startAvatarFlow(context, ref),
             ),

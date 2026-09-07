@@ -88,3 +88,17 @@ class GalleryEntry(
     val sizeBytes: Long,
     val durationMs: Long,
 )
+
+/**
+ * One album in the picker's folder list.
+ *
+ * [bucketId] is MediaStore's `BUCKET_ID`, except for the synthetic
+ * `MediaGalleryQuery.ALL_MEDIA_BUCKET_ID`, which means "do not filter" — the
+ * grid the picker used to open on directly.
+ */
+class GalleryAlbum(
+    val bucketId: String,
+    val title: String,
+    val count: Int,
+    val thumbnailUri: Uri?,
+)

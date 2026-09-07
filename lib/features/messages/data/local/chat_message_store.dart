@@ -11,7 +11,22 @@ import 'drift_chat_message_store.dart';
 
 export 'local_message_search.dart';
 
-const int pruneKeepPerConversation = 2000;
+part 'chat_message_export.dart';
+
+/// Local retention backstop: the most messages one conversation keeps on the
+/// device.
+///
+/// This is NOT the retention policy and must not be read as one. The phone is
+/// the archive and deliberately outlives the server, which keeps six months —
+/// see CHAT_RETENTION.md. This exists so a runaway feed cannot fill the disk;
+/// at 200k messages a conversation is already far past anything the server
+/// still holds.
+const int pruneKeepPerConversation = 200000;
+
+/// Upper bound on ONE page read out of the local store. Separate from the
+/// retention ceiling on purpose: raising how much the phone KEEPS must never
+/// raise how much a single query can pull into memory.
+const int localPageCeiling = 2000;
 const int diskPageSize = 50;
 
 /// Durable history facade.
@@ -58,7 +73,7 @@ class ChatMessageStore {
         // Re-running after a crash is harmless because id is the conflict key.
         final legacy = await _drift.page(
           conversationId,
-          limit: keepPerConversation,
+          limit: localPageCeiling,
           threadRootId: threadRootId,
         );
         await native.migrateLegacy(scope, legacy);

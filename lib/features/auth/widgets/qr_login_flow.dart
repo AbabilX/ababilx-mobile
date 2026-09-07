@@ -3,17 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../local_share/widgets/qr_scan_sheet.dart';
+import '../../messages/chat-people/scanned_user_sheet.dart';
+import '../../messages/chat-people/user_qr_payload.dart';
 import '../../messages/message_e2ee/device_link_approval.dart';
 import '../data/qr_login_repository.dart';
 
 /// Scan a QR from another device and act on it.
 ///
-/// Two things can come off the camera. A sign-in code hands that device a
-/// session; a device-link code hands it this account's message key, which is
-/// the only way a new device can read messages at all — the server has no copy
-/// to give it. Either way the user sees what they are approving first, and
-/// declining calls the matching deny endpoint so the waiting device stops
-/// immediately rather than sitting on a dead code.
+/// Three things can come off the camera, told apart by the `ababilx://` host:
+/// a **sign-in** code hands that device a session; a **device-link** code
+/// hands it this account's message key, which is the only way a new device can
+/// read messages at all — the server has no copy to give it; a **user** code
+/// is somebody's handle, and opens a chat with them.
+///
+/// The two device codes show what is being approved first, and declining calls
+/// the matching deny endpoint so the waiting device stops immediately rather
+/// than sitting on a dead code. A user code approves nothing — it is a public
+/// handle, and the sheet it opens is the confirmation.
 class QrLoginFlow {
   QrLoginFlow._();
 
@@ -24,6 +30,11 @@ class QrLoginFlow {
 
     if (isDeviceLinkPayload(payload)) {
       await DeviceLinkApproval.start(context, ref, payload);
+      return;
+    }
+    final handle = usernameFromQrPayload(payload);
+    if (handle != null) {
+      await ScannedUserSheet.open(context, ref, handle);
       return;
     }
     if (!repo.isLoginPayload(payload)) {

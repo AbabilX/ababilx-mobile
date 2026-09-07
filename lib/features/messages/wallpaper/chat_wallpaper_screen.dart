@@ -5,6 +5,7 @@ import '../../../core/router/root_back.dart';
 import '../../../shared/media/pick_wallpaper_photo.dart';
 import 'chat_wallpaper.dart';
 import 'chat_wallpaper_grid.dart';
+import 'chat_wallpaper_opacity_slider.dart';
 import 'chat_wallpaper_preview.dart';
 import 'chat_wallpaper_provider.dart';
 
@@ -46,7 +47,20 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
   Future<void> _pickPhoto() async {
     final path = await pickWallpaperPhoto(context);
     if (path == null) return;
-    await _apply(ChatWallpaper.photo(path));
+    await _apply(_carrying(ChatWallpaper.photo(path)));
+  }
+
+  /// Keeps the two adjustments across a change of picture.
+  ///
+  /// They belong to the chat, not to the image: picking a second wallpaper to
+  /// compare it against the first used to snap opacity and dimming back to
+  /// their defaults, which made the comparison meaningless.
+  ChatWallpaper _carrying(ChatWallpaper next) {
+    final current = _current(ref.read(chatWallpaperProvider));
+    return next.copyWith(
+      dimInDark: current.dimInDark,
+      opacity: current.opacity,
+    );
   }
 
   @override
@@ -72,7 +86,8 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
             selectedPresetId: wallpaper.kind == ChatWallpaperKind.preset
                 ? wallpaper.presetId
                 : null,
-            onSelect: (preset) => _apply(ChatWallpaper.preset(preset.id)),
+            onSelect: (preset) =>
+                _apply(_carrying(ChatWallpaper.preset(preset.id))),
           ),
           const SizedBox(height: 8),
           ListTile(
@@ -80,6 +95,15 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
             leading: const Icon(Icons.image_outlined),
             title: const Text('Choose from photos'),
             onTap: _pickPhoto,
+          ),
+          ChatWallpaperOpacitySlider(
+            value: wallpaper.drawOpacity,
+            enabled: wallpaper.isSet,
+            // Dragging only redraws; the write waits for the thumb to land.
+            onChanged: (value) => setState(
+              () => _draft = wallpaper.copyWith(opacity: value),
+            ),
+            onSettled: (value) => _apply(wallpaper.copyWith(opacity: value)),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,

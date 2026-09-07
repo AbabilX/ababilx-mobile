@@ -47,9 +47,12 @@ Future<bool> showGroupEditSheet(
         // The permission is re-checked here rather than trusted from the one
         // caller: a member of an admins-only group would otherwise pick and
         // crop a photo and only then be told no, by a 403 from the server.
-        images: personal && conversation.canEditGroupInfo
-            ? GroupEditImages(conversation: conversation)
-            : null,
+        //
+        // A feed takes a third path. Its picture belongs to the webhook rather
+        // than to the conversation, and nobody may upload an attachment to a
+        // conversation nobody may post into — so the group flow's presign is a
+        // 403 there no matter who asks.
+        images: groupEditPictures(conversation),
         initialName: conversation.name ?? '',
         initialDescription: conversation.description ?? '',
         showDescription: personal,

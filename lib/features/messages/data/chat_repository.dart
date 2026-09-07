@@ -141,6 +141,8 @@ class ChatRepository {
 
   Future<ChatUserSearchResult> searchUsers(String query) =>
       _connections.search(query);
+  Future<ChatUserSummary?> lookupUserByUsername(String username) =>
+      _connections.lookupByUsername(username);
   Future<List<ChatConnection>> listConnections() =>
       _connections.listConnections();
   Future<ChatConnectionRequests> listConnectionRequests() =>
@@ -156,11 +158,13 @@ class ChatRepository {
     required String messageId,
     List<String>? conversationIds,
     List<String>? userIds,
+    List<Map<String, dynamic>>? targets,
     String? caption,
   }) => _conversations.forwardMessage(
     messageId: messageId,
     conversationIds: conversationIds,
     userIds: userIds,
+    targets: targets,
     caption: caption,
   );
 
