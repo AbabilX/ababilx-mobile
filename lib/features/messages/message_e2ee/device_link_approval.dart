@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -64,8 +65,11 @@ class DeviceLinkApproval {
     try {
       final info = await repo.inspectE2eeLink(request.token);
       deviceName = (info['device_name'] ?? '').toString();
-    } catch (_) {
-      if (context.mounted) _toast(context, 'That link code has expired.');
+    } catch (error) {
+      // This used to report EVERY failure as "expired" — a 401, a 500, a dead
+      // network and a genuinely stale code all read the same, so the one
+      // message people saw named the one cause that was usually not it.
+      if (context.mounted) _toast(context, _linkFailureMessage(error));
       return;
     }
     if (!context.mounted) return;
@@ -87,8 +91,8 @@ class DeviceLinkApproval {
       } else {
         await repo.denyE2eeLink(request.token);
       }
-    } catch (_) {
-      if (context.mounted) _toast(context, 'Could not link that device.');
+    } catch (error) {
+      if (context.mounted) _toast(context, _linkFailureMessage(error));
     }
   }
 
@@ -141,6 +145,24 @@ class DeviceLinkApproval {
         ],
       ),
     );
+  }
+
+  /// The server answers 410 for a stale code, a consumed one AND one belonging
+  /// to another account — deliberately, so a stranger's token reveals nothing.
+  /// The message says so rather than picking one of the three and sounding
+  /// certain.
+  static String _linkFailureMessage(Object error) {
+    final status = error is DioException ? error.response?.statusCode : null;
+    if (status == 410) {
+      return 'That code has expired, or it belongs to a different account.';
+    }
+    if (status == 401 || status == 403) {
+      return 'Sign in again on this phone, then scan once more.';
+    }
+    if (status == null) {
+      return 'Could not reach the server. Check your connection.';
+    }
+    return 'Could not read that code (error $status).';
   }
 
   static void _toast(BuildContext context, String message) =>
