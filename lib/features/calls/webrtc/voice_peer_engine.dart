@@ -238,9 +238,13 @@ class VoicePeerEngine {
 
   // ---- camera -------------------------------------------------------------
 
+  /// One video lane at a time: turning the camera on ends a running screen
+  /// share, and the single renegotiation below carries both changes.
   Future<void> startCamera({bool front = true, bool renegotiate = true}) async {
     if (_camera != null || _disposed) return;
     final peer = _requirePeer();
+    final droppedScreen = _screenStream != null;
+    if (droppedScreen) await stopScreenShare(renegotiate: false);
     final camera = await VoiceCameraCapture.open(front: front);
     if (_disposed) {
       await camera.close();
@@ -268,7 +272,7 @@ class VoicePeerEngine {
     onLocalCameraChanged(camera.stream, front: camera.front);
     if (!renegotiate) return; // the caller's offer/answer sends the map
     await _sendMediaMap();
-    if (needsOffer) await _renegotiate();
+    if (needsOffer || droppedScreen) await _renegotiate();
   }
 
   /// The stream id the far side learned at addTrack time. A later camera
@@ -543,9 +547,12 @@ class VoicePeerEngine {
 
   Future<void> setSpeaker(bool enabled) => CallAudioRoute.setSpeaker(enabled);
 
+  /// Sharing a screen turns the camera off: the far side shows one or the
+  /// other, never both. The share's own renegotiation covers the swap.
   Future<void> startScreenShare() async {
     if (_screenStream != null) return;
     final peer = _requirePeer();
+    await stopCamera();
     if (Platform.isAndroid) {
       final granted = await Helper.requestCapturePermission();
       if (!granted) throw StateError('screen capture permission denied');
