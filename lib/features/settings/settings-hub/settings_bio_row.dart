@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../messages/chat_icon.dart';
 import '../../profile/data/profile_repository.dart';
@@ -13,7 +15,7 @@ import '../../profile/data/profile_repository.dart';
 /// code — the thing you hold up for somebody else to scan. It used to open the
 /// scanner, which had both people on this screen pointing cameras at each
 /// other; the scanner is the icon in the chat list header now.
-class SettingsBioRow extends StatelessWidget {
+class SettingsBioRow extends ConsumerWidget {
   const SettingsBioRow({
     super.key,
     required this.user,
@@ -31,7 +33,7 @@ class SettingsBioRow extends StatelessWidget {
   final VoidCallback onEditAvatar;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
 
     return Row(
@@ -45,7 +47,7 @@ class SettingsBioRow extends StatelessWidget {
                 children: [
                   _AvatarButton(user: user, onTap: onEditAvatar),
                   const SizedBox(width: 20),
-                  Expanded(child: _Identity(user: user)),
+                  Expanded(child: _Identity(user: user, youLabel: AppTranslations.translate(context, ref, 'settings_you'))),
                 ],
               ),
             ),
@@ -54,7 +56,7 @@ class SettingsBioRow extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(right: 20),
           child: Tooltip(
-            message: 'Your QR code',
+            message: AppTranslations.translate(context, ref, 'settings_your_qr'),
             child: Material(
               color: colors.surfaceContainerHigh,
               shape: const CircleBorder(),
@@ -79,9 +81,10 @@ class SettingsBioRow extends StatelessWidget {
 }
 
 class _Identity extends StatelessWidget {
-  const _Identity({required this.user});
+  const _Identity({required this.user, required this.youLabel});
 
   final AppUser user;
+  final String youLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +110,7 @@ class _Identity extends StatelessWidget {
           children: [
             Flexible(
               child: Text(
-                user.name.isNotEmpty ? user.name : 'You',
+                user.name.isNotEmpty ? user.name : youLabel,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),

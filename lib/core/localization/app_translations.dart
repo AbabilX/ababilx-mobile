@@ -300,6 +300,47 @@ class AppTranslations {
       'policy_accept': 'I Agree',
       'policy_decline_signout': 'Decline & Sign Out',
       'policy_error': 'Could not save. Try again.',
+
+      'settings_title': 'Settings',
+      'settings_load_error': 'Could not load settings',
+      'settings_notifications': 'Notifications',
+      'settings_app_icon': 'App icon',
+      'settings_app_icon_sub': 'How AbabilX looks on your home screen',
+      'settings_wallpaper': 'Chat wallpaper',
+      'settings_wallpaper_sub': 'Background for every chat',
+      'settings_data_storage': 'Data and storage',
+      'settings_data_storage_sub':
+          'Auto-download, media quality and space used',
+      'settings_local_share': 'Local Share',
+      'settings_local_share_sub':
+          'Send files to devices on the same network',
+      'settings_username': 'Username',
+      'settings_username_needed': 'Needed for your QR code',
+      'settings_discovery': 'Discovery',
+      'settings_discovery_sub': 'Your phone number and who can find you',
+      'settings_people_sub': 'Connections, requests and blocked accounts',
+      'settings_scan_qr': 'Scan QR to sign in',
+      'settings_scan_qr_sub': 'Approve a sign-in on desktop or web',
+      'settings_link_messages': 'Link a device to your messages',
+      'settings_link_messages_sub': 'Scan the code shown on the other device',
+      'settings_recovery': 'Message recovery code',
+      'settings_recovery_sub':
+          'The only way to read your messages on a new device',
+      'settings_privacy': 'Privacy policy',
+      'settings_invite': 'Invite your friends',
+      'settings_invite_text':
+          'Try AbabilX — chat, boards and automation in one app. '
+          'https://ababilx.com',
+      'settings_you': 'You',
+      'settings_your_qr': 'Your QR code',
+      'settings_signed_in_with': 'Signed in with',
+      'settings_not_connected': 'Not connected',
+      'settings_connected': 'Connected',
+      'settings_unknown': 'Unknown',
+      'settings_plan': 'Plan',
+      'settings_renews': 'Renews {date}',
+      'settings_sign_out_body':
+          'You will need to sign in again on this device.',
     },
     'bn': {
       'recovery_choice_title': 'আপনার মেসেজ ফিরিয়ে আনুন',
@@ -579,6 +620,47 @@ class AppTranslations {
       'policy_accept': 'আমি সম্মত',
       'policy_decline_signout': 'প্রত্যাখ্যান ও প্রস্থান',
       'policy_error': 'সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।',
+
+      'settings_title': 'সেটিংস',
+      'settings_load_error': 'সেটিংস লোড করা যায়নি',
+      'settings_notifications': 'বিজ্ঞপ্তি',
+      'settings_app_icon': 'অ্যাপ আইকন',
+      'settings_app_icon_sub': 'হোম স্ক্রিনে AbabilX কেমন দেখাবে',
+      'settings_wallpaper': 'চ্যাট ওয়ালপেপার',
+      'settings_wallpaper_sub': 'প্রতিটি চ্যাটের পটভূমি',
+      'settings_data_storage': 'ডেটা ও সংরক্ষণ',
+      'settings_data_storage_sub':
+          'অটো-ডাউনলোড, মিডিয়ার মান ও ব্যবহৃত জায়গা',
+      'settings_local_share': 'লোকাল শেয়ার',
+      'settings_local_share_sub':
+          'একই নেটওয়ার্কের ডিভাইসে ফাইল পাঠান',
+      'settings_username': 'ইউজারনেম',
+      'settings_username_needed': 'আপনার QR কোডের জন্য প্রয়োজন',
+      'settings_discovery': 'খুঁজে পাওয়া',
+      'settings_discovery_sub': 'আপনার ফোন নম্বর এবং কে আপনাকে খুঁজে পাবে',
+      'settings_people_sub': 'সংযোগ, অনুরোধ ও ব্লক করা অ্যাকাউন্ট',
+      'settings_scan_qr': 'সাইন ইন করতে কিউআর স্ক্যান করুন',
+      'settings_scan_qr_sub': 'ডেস্কটপ বা ওয়েবে সাইন ইন অনুমোদন করুন',
+      'settings_link_messages': 'আপনার বার্তায় একটি ডিভাইস যুক্ত করুন',
+      'settings_link_messages_sub': 'অন্য ডিভাইসে দেখানো কোড স্ক্যান করুন',
+      'settings_recovery': 'বার্তা রিকভারি কোড',
+      'settings_recovery_sub':
+          'নতুন ডিভাইসে বার্তা পড়ার একমাত্র উপায়',
+      'settings_privacy': 'গোপনীয়তা নীতি',
+      'settings_invite': 'বন্ধুদের আমন্ত্রণ জানান',
+      'settings_invite_text':
+          'AbabilX ব্যবহার করে দেখুন — চ্যাট, বোর্ড ও অটোমেশন এক অ্যাপে। '
+          'https://ababilx.com',
+      'settings_you': 'আপনি',
+      'settings_your_qr': 'আপনার কিউআর কোড',
+      'settings_signed_in_with': 'যে মাধ্যমে সাইন ইন',
+      'settings_not_connected': 'সংযুক্ত নয়',
+      'settings_connected': 'সংযুক্ত',
+      'settings_unknown': 'অজানা',
+      'settings_plan': 'প্ল্যান',
+      'settings_renews': '{date} তারিখে নবায়ন',
+      'settings_sign_out_body':
+          'এই ডিভাইসে আবার সাইন ইন করতে হবে।',
     },
   };
 
@@ -586,4 +668,8 @@ class AppTranslations {
     final lang = ref.watch(appLanguageProvider);
     return _localizedValues[lang]?[key] ?? _localizedValues['en']?[key] ?? key;
   }
+
+  /// Keys present for a locale. Used to keep `en` and `bn` in lockstep.
+  static Set<String> keysOf(String lang) =>
+      Set<String>.from(_localizedValues[lang]?.keys ?? const <String>[]);
 }

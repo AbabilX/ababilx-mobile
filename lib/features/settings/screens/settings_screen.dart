@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../../core/router/root_back.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../avatar/avatar_flow.dart';
@@ -19,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider);
+    String t(String key) => AppTranslations.translate(context, ref, key);
 
     return Scaffold(
       appBar: AppBar(
@@ -28,11 +30,11 @@ class SettingsScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => popOrGoHome(context),
         ),
-        title: const Text('Settings'),
+        title: Text(t('settings_title')),
       ),
       body: profile.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => const Center(child: Text('Could not load settings')),
+        error: (_, _) => Center(child: Text(t('settings_load_error'))),
         data: (user) => ListView(
           padding: const EdgeInsets.only(bottom: 24),
           children: [

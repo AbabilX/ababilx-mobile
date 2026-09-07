@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../profile/data/profile_repository.dart';
 import 'settings_row.dart';
 
@@ -10,37 +12,41 @@ import 'settings_row.dart';
 /// None of these are editable on the phone — GitHub and Slack are both OAuth
 /// flows that finish in a browser — so they are stated, not offered as taps
 /// that would dead-end.
-class AccountRows extends StatelessWidget {
+class AccountRows extends ConsumerWidget {
   const AccountRows({super.key, required this.user});
 
   final AppUser user;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    String t(String key) => AppTranslations.translate(context, ref, key);
     final github = user.githubUsername.isNotEmpty
         ? '@${user.githubUsername}'
-        : 'Not connected';
+        : t('settings_not_connected');
+    final renewsOn = user.premiumUntil?.split('T').first;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SettingsRow(
           icon: HugeIcons.strokeRoundedAt,
-          title: 'Signed in with',
+          title: t('settings_signed_in_with'),
           value: user.provider.isNotEmpty
               ? user.provider.toUpperCase()
-              : 'Unknown',
+              : t('settings_unknown'),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedGithub,
-          title: 'GitHub',
+          title: t('github_connection'),
           value: github,
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedSlack,
-          title: 'Slack workspace',
-          value: user.slackConnected ? 'Connected' : 'Not connected',
+          title: t('slack_workspace'),
+          value: user.slackConnected
+              ? t('settings_connected')
+              : t('settings_not_connected'),
           trailing: user.slackConnected
               ? Icon(
                   Icons.check_circle_rounded,
@@ -51,10 +57,10 @@ class AccountRows extends StatelessWidget {
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedCrown,
-          title: 'Plan',
+          title: t('settings_plan'),
           value: user.effectivePlan.toUpperCase(),
-          subtitle: user.premiumUntil != null && user.effectivePlan == 'premium'
-              ? 'Renews ${user.premiumUntil!.split('T').first}'
+          subtitle: renewsOn != null && user.effectivePlan == 'premium'
+              ? t('settings_renews').replaceAll('{date}', renewsOn)
               : null,
         ),
       ],

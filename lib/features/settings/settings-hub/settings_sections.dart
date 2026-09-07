@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/api_constants.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../../messages/message_e2ee/recovery_code_dialog.dart';
@@ -25,31 +26,32 @@ class SettingsSections extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    String t(String key) => AppTranslations.translate(context, ref, key);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AccountRows(user: user),
         SettingsRow(
           icon: HugeIcons.strokeRoundedComputerPhoneSync,
-          title: 'Linked devices',
+          title: t('devices_title'),
           onTap: () => context.push('/profile/devices'),
         ),
         const Divider(height: 24),
         SettingsRow(
           icon: HugeIcons.strokeRoundedNotification03,
-          title: 'Notifications',
+          title: t('settings_notifications'),
           onTap: () => context.push('/settings/notifications'),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedMobileNavigator01,
-          title: 'App icon',
-          subtitle: 'How AbabilX looks on your home screen',
+          title: t('settings_app_icon'),
+          subtitle: t('settings_app_icon_sub'),
           onTap: () => context.push('/settings/app-icon'),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedPaintBoard,
-          title: 'Chat wallpaper',
-          subtitle: 'Background for every chat',
+          title: t('settings_wallpaper'),
+          subtitle: t('settings_wallpaper_sub'),
           onTap: () => context.push('/settings/wallpaper'),
         ),
         // Sent media quality lives inside this screen now, next to the
@@ -57,13 +59,13 @@ class SettingsSections extends ConsumerWidget {
         // for every question about what this app costs in bytes.
         SettingsRow(
           icon: HugeIcons.strokeRoundedDatabase01,
-          title: 'Data and storage',
-          subtitle: 'Auto-download, media quality and space used',
+          title: t('settings_data_storage'),
+          subtitle: t('settings_data_storage_sub'),
           onTap: () => context.push('/settings/data-storage'),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedLanguageSkill,
-          title: 'App language',
+          title: t('app_language'),
           value: languageLabel(user.appLanguage),
           onTap: () async {
             final picked = await showLanguageDialog(context, user.appLanguage);
@@ -73,39 +75,39 @@ class SettingsSections extends ConsumerWidget {
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedFolderTransfer,
-          title: 'Local Share',
-          subtitle: 'Send files to devices on the same network',
+          title: t('settings_local_share'),
+          subtitle: t('settings_local_share_sub'),
           onTap: () => context.push('/local-share'),
         ),
         // A handle is what a QR code carries, so it sits directly above the
         // switches that decide who else can find you by one.
         SettingsRow(
           icon: HugeIcons.strokeRoundedAt,
-          title: 'Username',
+          title: t('settings_username'),
           value: user.username.isEmpty ? null : '@${user.username}',
           subtitle: user.username.isEmpty
-              ? 'Needed for your QR code'
+              ? t('settings_username_needed')
               : null,
           onTap: () => context.push('/settings/username'),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedSearch01,
-          title: 'Discovery',
-          subtitle: 'Your phone number and who can find you',
+          title: t('settings_discovery'),
+          subtitle: t('settings_discovery_sub'),
           onTap: () => context.push('/settings/discovery'),
         ),
         if (user.independentChat)
           SettingsRow(
             icon: HugeIcons.strokeRoundedUserGroup,
-            title: 'People',
-            subtitle: 'Connections, requests and blocked accounts',
+            title: t('chat_people'),
+            subtitle: t('settings_people_sub'),
             onTap: () => context.push('/messages/people'),
           ),
         const Divider(height: 24),
         SettingsRow(
           icon: HugeIcons.strokeRoundedQrCode,
-          title: 'Scan QR to sign in',
-          subtitle: 'Approve a sign-in on desktop or web',
+          title: t('settings_scan_qr'),
+          subtitle: t('settings_scan_qr_sub'),
           onTap: () => QrLoginFlow.start(context, ref),
         ),
         // Same scanner, named for the other job it does. The new device is
@@ -115,19 +117,19 @@ class SettingsSections extends ConsumerWidget {
         // account's message key is the only thing that can approve the link.
         SettingsRow(
           icon: HugeIcons.strokeRoundedLink01,
-          title: 'Link a device to your messages',
-          subtitle: 'Scan the code shown on the other device',
+          title: t('settings_link_messages'),
+          subtitle: t('settings_link_messages_sub'),
           onTap: () => QrLoginFlow.start(context, ref),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedKey01,
-          title: 'Message recovery code',
-          subtitle: 'The only way to read your messages on a new device',
+          title: t('settings_recovery'),
+          subtitle: t('settings_recovery_sub'),
           onTap: () => RecoveryCodeDialog.show(context),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedShield01,
-          title: 'Privacy policy',
+          title: t('settings_privacy'),
           onTap: () => launchUrl(
             Uri.parse(ApiConstants.webPrivacyPolicyUrl),
             mode: LaunchMode.externalApplication,
@@ -135,19 +137,15 @@ class SettingsSections extends ConsumerWidget {
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedMail01,
-          title: 'Invite your friends',
+          title: t('settings_invite'),
           onTap: () => SharePlus.instance.share(
-            ShareParams(
-              text:
-                  'Try AbabilX — chat, boards and automation in one app. '
-                  'https://ababilx.com',
-            ),
+            ShareParams(text: t('settings_invite_text')),
           ),
         ),
         const Divider(height: 24),
         SettingsRow(
           icon: HugeIcons.strokeRoundedLogout01,
-          title: 'Sign out',
+          title: t('sign_out'),
           destructive: true,
           onTap: () async {
             if (!await confirmSignOut(context)) return;
