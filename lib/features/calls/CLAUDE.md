@@ -762,6 +762,34 @@ person to switch a `go` to a `push` should not have to rediscover this.
 `test/core/router/router_path_test.dart` pins both halves, including the
 assertion that `uri.path` still reports the old location.
 
+## `ActiveCallBanner` must never change the shape of its subtree
+
+Its `child` is go_router's `_CustomNavigator`, keyed by
+`GlobalObjectKey(navigatorKey.hashCode)` (`go_router/src/builder.dart`). The
+banner used to return that child bare when no call was running and wrap it in
+`Column > Expanded > MediaQuery` when one was, which moves a GlobalKey between
+parents — in the same frame the router is rebuilding its match list, because
+both are driven by the call ending. On device that is:
+
+```
+Duplicate GlobalKey detected in widget tree
+_CustomNavigator-[GlobalObjectKey int#…] must not be deactivated when in
+  _ElementLifecycle.failed state
+'!_dirty': is not true            '_elements.contains(element)': is not true
+```
+
+right after `onConnectionChangeDISCONNECTED`. The slot is now always occupied —
+by the bar, or by a `SizedBox.shrink()` — and `MediaQuery.removePadding` is
+always present with `removeTop: show`. **An `if (show)` in the children list is
+the same bug more quietly**: it shifts the `Expanded` from index 1 to index 0,
+and a multi-child widget matches children by index, so the navigator is
+reparented again.
+
+`test/features/calls/active_call_banner_test.dart` asserts the *shape*, not the
+state: a GlobalKey preserves its `State` across a reparent, so an assertion on
+the State passes either way — the first version of this test did, which is
+worth remembering before writing another one like it.
+
 ## Leaving the call screen is not leaving the app
 
 The chevron and Back return to the app and leave the call running behind

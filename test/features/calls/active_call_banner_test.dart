@@ -1,5 +1,4 @@
 import 'package:ababilx/features/calls/group/providers/group_call_provider.dart';
-import 'package:ababilx/features/calls/providers/voice_call_provider.dart';
 import 'package:ababilx/features/calls/widgets/active_call_banner.dart';
 import 'package:ababilx/features/calls/widgets/call_return_bar.dart';
 import 'package:flutter/material.dart';
@@ -13,10 +12,10 @@ import 'package:go_router/go_router.dart';
 /// shape has to stay constant whatever the call is doing.
 
 class _FakeGroupCall extends GroupCallNotifier {
-  _FakeGroupCall(this._state);
-  final GroupCallState _state;
   @override
-  GroupCallState build() => _state;
+  GroupCallState build() => const GroupCallState();
+
+  void setPhase(GroupCallPhase phase) => state = GroupCallState(phase: phase);
 }
 
 /// Stands in for the navigator: a `GlobalKey` state that must survive.
@@ -39,23 +38,24 @@ void main() {
     final router = GoRouter(
       routes: [GoRoute(path: '/', builder: (_, _) => const Text('home'))],
     );
-    final phase = ValueNotifier(GroupCallPhase.idle);
 
     await tester.pumpWidget(
-      ValueListenableBuilder<GroupCallPhase>(
-        valueListenable: phase,
-        builder: (context, value, _) => ProviderScope(
-          overrides: [
-            groupCallProvider.overrideWith(
-              () => _FakeGroupCall(GroupCallState(phase: value)),
-            ),
-          ],
-          child: MaterialApp(
-            home: ActiveCallBanner(router: router, child: _Probe(key: probeKey)),
+      ProviderScope(
+        overrides: [groupCallProvider.overrideWith(_FakeGroupCall.new)],
+        child: MaterialApp(
+          home: ActiveCallBanner(
+            router: router,
+            child: _Probe(key: probeKey),
           ),
         ),
       ),
     );
+
+    final call =
+        ProviderScope.containerOf(
+              tester.element(find.byKey(probeKey)),
+            ).read(groupCallProvider.notifier)
+            as _FakeGroupCall;
 
     // The invariant is the SHAPE, not the state: a GlobalKey preserves its
     // State across a reparent, so asserting on the State would pass either
@@ -68,14 +68,13 @@ void main() {
 
     expect(wrapper(), findsOneWidget);
 
-    phase.value = GroupCallPhase.connected;
+    call.setPhase(GroupCallPhase.connected);
     await tester.pump();
     expect(tester.takeException(), isNull);
     expect(wrapper(), findsOneWidget);
-    debugPrint('PHASE ${ProviderScope.containerOf(tester.element(find.byKey(probeKey))).read(groupCallProvider).phase}');
     expect(find.byType(CallReturnBar), findsOneWidget);
 
-    phase.value = GroupCallPhase.idle;
+    call.setPhase(GroupCallPhase.idle);
     await tester.pump();
     expect(tester.takeException(), isNull);
     // Bar gone, but the child has not moved — that move is what crashed on
