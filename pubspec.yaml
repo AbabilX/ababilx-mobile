@@ -134,6 +134,9 @@ flutter:
     - assets/icon/alternates/weather.png
     - assets/images/login_background_v1.png
     - assets/images/login_background_v2.png
+    # The two bundled chat wallpapers; see chatWallpaperPresets.
+    - assets/images/wallpapers/dewdrop_field.jpg
+    - assets/images/wallpapers/rainy_paddy.jpg
     - assets/ringtone/Clear_Agenda.mp3
 
 # `source: system` = package:sqlite3's FFI binding does a plain dlopen of

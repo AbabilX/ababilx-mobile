@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:ababilx/features/messages/wallpaper/chat_wallpaper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -43,5 +45,53 @@ void main() {
   test('preset ids are unique', () {
     final ids = chatWallpaperPresets.map((p) => p.id).toSet();
     expect(ids.length, chatWallpaperPresets.length);
+  });
+
+  test('opacity survives a round trip', () {
+    const faded = ChatWallpaper(
+      kind: ChatWallpaperKind.preset,
+      presetId: 'ink',
+      opacity: 0.45,
+    );
+    expect(ChatWallpaper.decode(faded.encode()), faded);
+  });
+
+  test('a wallpaper stored before opacity existed is fully opaque', () {
+    final legacy = ChatWallpaper.decode(
+      '{"kind":"preset","preset":"ink","dim":true}',
+    );
+    expect(legacy.opacity, 1);
+    expect(legacy.drawOpacity, 1);
+  });
+
+  test('drawOpacity never lets a wallpaper vanish', () {
+    const invisible = ChatWallpaper(
+      kind: ChatWallpaperKind.preset,
+      presetId: 'ink',
+      opacity: 0,
+    );
+    expect(invisible.drawOpacity, chatWallpaperMinOpacity);
+    // Out of range the other way too — nothing guarantees what was stored.
+    expect(invisible.copyWith(opacity: 9).drawOpacity, 1);
+  });
+
+  test('nothing is applied until a person picks it', () {
+    // The paintings are offered, never imposed: a chat with no stored choice
+    // paints no wallpaper, exactly as it did before they were bundled.
+    expect(ChatWallpaper.decode(null).isSet, isFalse);
+    expect(ChatWallpaper.none.isSet, isFalse);
+  });
+
+  test('the paintings lead the grid and name real bundled files', () {
+    final art = chatWallpaperPresets.where((p) => p.isArt).toList();
+    expect(art.map((p) => p.id), [
+      chatWallpaperDewdropId,
+      chatWallpaperRainyPaddyId,
+    ]);
+    // Leading the list is what puts them on the first row of the picker.
+    expect(chatWallpaperPresets.take(art.length), art);
+    for (final preset in art) {
+      expect(File(preset.asset!).existsSync(), isTrue, reason: preset.asset);
+    }
   });
 }

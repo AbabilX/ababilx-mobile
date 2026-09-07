@@ -119,10 +119,19 @@ class ChatConversationsApi {
     return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
 
+  /// Forwards one message to prepared destinations.
+  ///
+  /// [targets] carries the per-destination text and is required whenever
+  /// encryption is in play — which is every DM and every personal group. The
+  /// server holds only ciphertext sealed under the SOURCE conversation's key,
+  /// so it cannot produce the copy a destination needs. The id lists remain
+  /// for the one case that does not need it: a plaintext source going to a
+  /// workspace channel.
   Future<int> forwardMessage({
     required String messageId,
     List<String>? conversationIds,
     List<String>? userIds,
+    List<Map<String, dynamic>>? targets,
     String? caption,
   }) async {
     final res = await _client.post(
@@ -131,6 +140,7 @@ class ChatConversationsApi {
         'message_id': messageId,
         'conversation_ids': ?conversationIds,
         'user_ids': ?userIds,
+        'targets': ?targets,
         'caption': ?caption,
       },
     );

@@ -130,6 +130,10 @@ class AppTranslations {
       'chat_reply': 'Reply',
       'chat_forward': 'Forward',
       'chat_forward_failed': 'Could not forward this message.',
+      'chat_forward_offline':
+          'No internet connection. Please try again once you are back online.',
+      'chat_forward_undecryptable':
+          'This message has not been unlocked on this device, so it cannot be forwarded.',
       'chat_forwarded_one': 'Forwarded to 1 chat',
       'chat_forwarded_many': 'Forwarded to {n} chats',
       'chat_recipient_search': 'Name, username or number',
@@ -404,6 +408,10 @@ class AppTranslations {
       'chat_reply': 'উত্তর দিন',
       'chat_forward': 'ফরওয়ার্ড করুন',
       'chat_forward_failed': 'বার্তাটি ফরওয়ার্ড করা যায়নি।',
+      'chat_forward_offline':
+          'ইন্টারনেট সংযোগ নেই। অনলাইনে ফিরে এসে আবার চেষ্টা করুন।',
+      'chat_forward_undecryptable':
+          'এই ডিভাইসে বার্তাটি খোলা যায়নি, তাই ফরওয়ার্ড করা যাবে না।',
       'chat_forwarded_one': '১টি চ্যাটে ফরওয়ার্ড হয়েছে',
       'chat_forwarded_many': '{n}টি চ্যাটে ফরওয়ার্ড হয়েছে',
       'chat_recipient_search': 'নাম, ইউজারনেম বা নম্বর',

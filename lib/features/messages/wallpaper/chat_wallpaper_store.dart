@@ -15,6 +15,8 @@ class ChatWallpaperStore {
   static const String _globalKey = 'ababilx_chat_wallpaper_global';
   static const String _perChatPrefix = 'ababilx_chat_wallpaper_';
 
+  /// Absence means no wallpaper, which is also what an unset one decodes to —
+  /// so the write below can drop the key rather than store a blank.
   Future<ChatWallpaper> readGlobal() async {
     final prefs = await SharedPreferences.getInstance();
     return ChatWallpaper.decode(prefs.getString(_globalKey));

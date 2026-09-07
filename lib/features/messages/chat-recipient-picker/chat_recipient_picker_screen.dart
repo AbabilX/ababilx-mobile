@@ -169,10 +169,16 @@ class _ChatRecipientPickerScreenState
     ),
   );
 
+  /// The spinner must come back for ANY outcome, including one nobody
+  /// anticipated. A submit that threw used to leave the button spinning with
+  /// the exception going nowhere, so the screen simply stopped — reporting
+  /// failure is the caller's job, but not hanging is this one's.
   Future<void> _submit() async {
     setState(() => _sending = true);
     try {
       await widget.onSubmit(_selected.values.toList(), _caption.text.trim());
+    } catch (_) {
+      // Swallowed on purpose: every onSubmit surfaces its own message.
     } finally {
       if (mounted) setState(() => _sending = false);
     }

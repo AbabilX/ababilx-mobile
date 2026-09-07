@@ -158,11 +158,13 @@ class ChatRepository {
     required String messageId,
     List<String>? conversationIds,
     List<String>? userIds,
+    List<Map<String, dynamic>>? targets,
     String? caption,
   }) => _conversations.forwardMessage(
     messageId: messageId,
     conversationIds: conversationIds,
     userIds: userIds,
+    targets: targets,
     caption: caption,
   );
 
