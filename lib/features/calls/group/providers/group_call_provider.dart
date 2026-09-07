@@ -16,6 +16,7 @@ import '../../native/android_group_call_ui.dart';
 import '../data/group_call_api.dart';
 import '../data/group_call_repository.dart';
 import '../data/models/group_call.dart';
+import '../signals/call_signals.dart';
 import 'group_call_errors.dart';
 import 'group_call_invites.dart';
 import 'group_call_state.dart';
@@ -27,6 +28,8 @@ export 'group_call_state.dart';
 
 part 'group_call_callkit.dart';
 part 'group_call_lifecycle.dart';
+part 'group_call_lobby.dart';
+part 'group_call_signals.dart';
 part 'group_call_media.dart';
 part 'group_call_ws.dart';
 
@@ -42,6 +45,7 @@ abstract class GroupCallBase extends Notifier<GroupCallState> {
   StreamSubscription<CallEvent?>? _nativeSub;
   bool _booted = false;
   bool _joinPending = false;
+  Timer? _reactionSweep;
   int _joinEpoch = 0;
   final Set<String> _leftCallIds = {};
   String _currentUserId = '';
@@ -55,7 +59,13 @@ abstract class GroupCallBase extends Notifier<GroupCallState> {
 /// Deliberately separate from `voiceCallProvider` (1:1 DM peer-to-peer WebRTC):
 /// the two systems share only the ringtone, exactly as on web.
 class GroupCallNotifier extends GroupCallBase
-    with GroupCallLifecycle, GroupCallMedia, GroupCallWs, GroupCallCallkit {
+    with
+        GroupCallLifecycle,
+        GroupCallLobby,
+        GroupCallMedia,
+        GroupCallSignals,
+        GroupCallWs,
+        GroupCallCallkit {
   @override
   GroupCallState build() {
     ref.onDispose(() => unawaited(_teardown()));
@@ -92,6 +102,7 @@ class GroupCallNotifier extends GroupCallBase
   }
 
   /// Best-effort discovery for the channel header; join re-checks server-side.
+  @override
   Future<void> refresh(String conversationId) async {
     try {
       rememberActiveCall(
@@ -153,12 +164,17 @@ class GroupCallNotifier extends GroupCallBase
       _bind(room);
       await room.connect(session.serverUrl, session.participantToken);
       final micOn = await enableMicrophone(room);
+      // The lobby's microphone choice, applied before anybody hears anything.
+      if (micOn && (state.lobby?.joinMuted ?? false)) {
+        await room.localParticipant?.setMicrophoneEnabled(false);
+      }
       await AudioManager.instance.setSpeakerOutputPreferred(true);
       if (_room != room || joinEpoch != _joinEpoch) return;
       state = state.copyWith(
         phase: GroupCallPhase.connected,
         microphoneUnavailable: !micOn,
         speaker: true,
+        clearLobby: true,
       );
       syncRoom();
     } catch (error) {
@@ -182,9 +198,14 @@ class GroupCallNotifier extends GroupCallBase
     if (call != null) await leaveOnce(call.id);
   }
 
+  /// Answering an invite lands in the lobby, not the room: the mic check and
+  /// the "who is already in there" count both happen before anybody hears you.
   void acceptInvite() {
     final invite = state.invite;
-    if (invite != null) unawaited(join(invite.conversationId));
+    if (invite == null) return;
+    openLobby(invite.conversationId, conversationName: invite.title);
+    _invites?.markAnswered(invite.id);
+    unawaited(AndroidGroupCallUi.endCall(invite.id));
   }
 
   /// Local-only: silences this device, the call keeps running for everyone else.
@@ -209,6 +230,9 @@ class GroupCallNotifier extends GroupCallBase
       onDisconnected: () => unawaited(onRoomDisconnected(room)),
       onLocalTrackUnpublished: (source) =>
           unawaited(onLocalTrackUnpublished(source)),
+      onData: onSignalData,
+      onParticipantJoined: onParticipantJoined,
+      onParticipantLeft: onParticipantLeft,
     );
   }
 

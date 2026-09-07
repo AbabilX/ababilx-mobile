@@ -71,13 +71,25 @@ mixin GroupCallWs on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
   }
 
   void rememberActiveCall(String conversationId, GroupCall? call) {
+    final live = call != null && call.active ? call : null;
     final next = Map<String, GroupCall>.from(state.activeCalls);
-    if (call == null || !call.active) {
-      if (next.remove(conversationId) == null) return;
+    var changed = true;
+    if (live == null) {
+      changed = next.remove(conversationId) != null;
     } else {
-      next[conversationId] = call;
+      next[conversationId] = live;
     }
-    state = state.copyWith(activeCalls: next);
+    // The lobby watches a call it has not joined: it must see one start, fill
+    // up and end, or it would offer "Join" to a room nobody is in.
+    final lobby = state.lobby;
+    final watching = lobby != null && lobby.conversationId == conversationId;
+    if (!changed && !watching) return;
+    state = state.copyWith(
+      activeCalls: next,
+      lobby: watching
+          ? lobby.copyWith(call: live, clearCall: live == null)
+          : null,
+    );
   }
 
   /// Projects the live room onto the view state. No-ops unless a room and call

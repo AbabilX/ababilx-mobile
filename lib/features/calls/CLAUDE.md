@@ -638,3 +638,43 @@ killed, repeat while changing volume and with an OEM increasing-ring ramp on.
 ```bash
 adb logcat -s CallRinger:V CallRingerPlugin:V flutter:V
 ```
+
+## The group call screen is a lobby, a stage and a roster
+
+Rebuilt 2026-09-07, desktop first (`ababilxdesktopcode`), then here. Nothing
+about the transport moved: same LiveKit `Room`, same four endpoints, still
+audio plus one screen share. The write-up that covers both platforms is in the
+monorepo root `CLAUDE.md`; what follows is what only matters on the phone.
+
+```
+features/calls/group/
+  signals/call_signals.dart        wire codec, byte-shared with web
+  providers/group_call_signals.dart   hands + reactions over the data channel
+  providers/group_call_lobby.dart     the pre-join phase (no server side)
+  call_icons.dart                  hugeicons glyphs + the CallIcon wrapper
+  call-ui/                         surface, tiles, stage, header, roster, bursts
+  screens/group_call_lobby_screen.dart
+  screens/group_call_screen.dart
+```
+
+- **`GroupCallSync` owns every route change, lobby included.** The lobby screen
+  and the call screen navigate nowhere themselves — two owners would race, and
+  lobby → call has to be a `pushReplacement` or leaving the call pops back into
+  the lobby it came from. Cancelling the lobby only clears the phase; the sync
+  pops the route.
+- **The lobby asks for the microphone, and that is the point of asking there**:
+  before anybody can hear whether the answer was no. `FcmBootstrap` still asks
+  once at first launch, so this is usually a status read, not a prompt. There
+  is no level meter — `livekit_client` exposes no pre-join capture and faking a
+  bar that moves for nothing would be worse than showing none.
+- **PiP, the ongoing-call foreground service and the display locks are
+  untouched.** `AndroidPip.setActive` is still armed by the call screen only
+  (never the lobby: there is no call to shrink), and back still shrinks rather
+  than leaving a live room with nothing on screen.
+- **Hugeicons are path data, not `IconData`.** `CallIcons` are `CallGlyph`
+  (`List<List<dynamic>>`) and must go through `CallIcon`, never `Icon`. The
+  chat-header pill still takes a Material `IconData` because it is shared with
+  the DM call action.
+- **`Icons`-free is a rule for the call surface only.** Colours are hardcoded
+  in `CallSurface` for the same reason `CallControlButton`'s are: a call screen
+  is always dark.

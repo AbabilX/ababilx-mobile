@@ -28,6 +28,7 @@ import '../../features/crm/screens/crm_followup_detail_screen.dart';
 import '../../features/crm/screens/crm_contact_detail_screen.dart';
 import '../../features/crm/screens/crm_organizations_screen.dart';
 import '../../features/crm/screens/crm_organization_detail_screen.dart';
+import '../../features/calls/group/screens/group_call_lobby_screen.dart';
 import '../../features/calls/group/screens/group_call_screen.dart';
 import '../../features/calls/screens/calls_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
@@ -125,6 +126,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/call', builder: (_, _) => const VoiceCallScreen()),
       GoRoute(path: '/group-call', builder: (_, _) => const GroupCallScreen()),
+      GoRoute(
+        path: '/group-call/lobby',
+        builder: (_, _) => const GroupCallLobbyScreen(),
+      ),
       GoRoute(
         path: '/local-share',
         builder: (_, _) => const LocalShareScreen(),

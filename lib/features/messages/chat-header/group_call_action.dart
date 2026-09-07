@@ -55,8 +55,12 @@ class _GroupCallActionState extends ConsumerState<GroupCallAction> {
         state.phase == GroupCallPhase.joining &&
         (state.call == null ||
             state.call?.conversationId == widget.conversation.id);
+    final inLobbyForThis =
+        state.phase == GroupCallPhase.lobby &&
+        state.lobby?.conversationId == widget.conversation.id;
     // Already busy in some other call — joining a second one would drop it.
-    final busyElsewhere = state.active && !inThisCall && !joiningThis;
+    final busyElsewhere =
+        state.active && !inThisCall && !joiningThis && !inLobbyForThis;
 
     final label = inThisCall
         ? AppTranslations.translate(context, ref, 'chat_call_in')
@@ -71,14 +75,21 @@ class _GroupCallActionState extends ConsumerState<GroupCallAction> {
       busy: joiningThis,
       badgeCount: active?.participantCount ?? 0,
       // Already in this call means the user minimized it — take them back to
-      // the call screen instead of a join that would no-op.
+      // the call screen instead of a join that would no-op. Otherwise this
+      // opens the lobby, not the call: the mic choice and the "who is already
+      // in there" count both happen before anybody hears you.
       onTap: busyElsewhere || joiningThis
           ? null
           : inThisCall
           ? () => context.push('/group-call')
-          : () => unawaited(
-              ref.read(groupCallProvider.notifier).join(widget.conversation.id),
-            ),
+          // GroupCallSync owns the route: it pushes the lobby on the phase
+          // edge, so pushing here too would open it twice.
+          : () => ref
+                .read(groupCallProvider.notifier)
+                .openLobby(
+                  widget.conversation.id,
+                  conversationName: widget.conversation.name,
+                ),
     );
   }
 }

@@ -5,13 +5,18 @@ import '../../../../core/router/root_back.dart';
 import '../../native/android_call_screen_lock.dart';
 import '../../native/android_pip.dart';
 import '../../widgets/pip_call_view.dart';
+import '../call-ui/call_stage_view.dart';
+import '../call-ui/call_surface.dart';
+import '../call-ui/group_call_header.dart';
+import '../call-ui/group_call_stage.dart';
+import '../call-ui/participants_sheet.dart';
+import '../call-ui/reaction_burst.dart';
 import '../providers/group_call_provider.dart';
 import '../widgets/group_call_controls.dart';
-import '../widgets/group_participant_grid.dart';
-import '../widgets/group_screen_stage.dart';
 
-/// Full-screen group call — participant grid, or the screen share on stage
-/// with the participants as a filmstrip. Mirrors web `group-call-overlay.tsx`.
+/// Full-screen group call: header, stage (grid, speaker or a shared screen),
+/// floating reactions and the control bar. Always dark, like every call
+/// surface in the app.
 class GroupCallScreen extends ConsumerStatefulWidget {
   const GroupCallScreen({super.key});
 
@@ -20,6 +25,8 @@ class GroupCallScreen extends ConsumerStatefulWidget {
 }
 
 class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
+  CallStageView _view = CallStageView.grid;
+
   @override
   void initState() {
     super.initState();
@@ -39,7 +46,7 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
   /// Back shrinks the call into a floating window rather than leaving it
   /// running with nothing on screen; the ordinary pop is the fallback for
   /// devices that refuse to shrink.
-  Future<void> _leave() async {
+  Future<void> _minimize() async {
     if (await AndroidPip.enter()) return;
     if (mounted) popOrGoHome(context);
   }
@@ -47,7 +54,6 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(groupCallProvider);
-    final colors = Theme.of(context).colorScheme;
 
     return ValueListenableBuilder<bool>(
       valueListenable: AndroidPip.inPip,
@@ -56,7 +62,7 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
           return Scaffold(
             backgroundColor: Colors.black,
             body: PipCallView(
-              name: state.title.isEmpty ? 'Group call' : state.title,
+              name: state.title,
               avatarUrl: null,
               status: '${state.participants.length} in call',
             ),
@@ -66,127 +72,71 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
           canPop: state.phase != GroupCallPhase.connected,
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) return;
-            _leave();
+            _minimize();
           },
-          child: _body(state, colors),
+          child: _body(state),
         );
       },
     );
   }
 
-  Widget _body(GroupCallState state, ColorScheme colors) {
-    return Scaffold(
-      backgroundColor: colors.surface,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-          child: Column(
-            children: [
-              _Header(state: state, onMinimize: _leave),
-              const SizedBox(height: 12),
-              Expanded(
-                child: state.phase == GroupCallPhase.joining
-                    ? const _Joining()
-                    : _Stage(state: state),
+  Widget _body(GroupCallState state) => Scaffold(
+    backgroundColor: CallSurface.backdrop,
+    body: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+        child: Column(
+          children: [
+            GroupCallHeader(
+              state: state,
+              view: _view,
+              onView: (next) => setState(() => _view = next),
+              onParticipants: () => showParticipantsSheet(context, state),
+              onMinimize: _minimize,
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: state.phase == GroupCallPhase.joining
+                        ? const _Joining()
+                        : GroupCallStage(state: state, view: _view),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: 200,
+                    child: ReactionBurst(reactions: state.reactions),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              GroupCallControls(state: state),
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            GroupCallControls(state: state),
+          ],
         ),
       ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.state, required this.onMinimize});
-  final GroupCallState state;
-  final VoidCallback onMinimize;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    final subtitle = state.phase == GroupCallPhase.joining
-        ? 'Joining…'
-        : '${state.participants.length} in call';
-
-    return Row(
-      children: [
-        IconButton(
-          tooltip: 'Minimize call',
-          icon: const Icon(Icons.keyboard_arrow_down_rounded),
-          onPressed: onMinimize,
-        ),
-        Expanded(
-          child: Column(
-            children: [
-              Text(
-                state.title,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
-        // Balances the leading icon so the title stays optically centred.
-        const SizedBox(width: 48),
-      ],
-    );
-  }
+    ),
+  );
 }
 
 class _Joining extends StatelessWidget {
   const _Joining();
 
   @override
-  Widget build(BuildContext context) => Center(
+  Widget build(BuildContext context) => const Center(
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const CircularProgressIndicator(),
-        const SizedBox(height: 16),
+        CircularProgressIndicator(color: CallSurface.accent),
+        SizedBox(height: 16),
         Text(
           'Joining group call…',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          style: TextStyle(color: CallSurface.faint),
         ),
       ],
     ),
   );
-}
-
-class _Stage extends StatelessWidget {
-  const _Stage({required this.state});
-  final GroupCallState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final screen = state.screen;
-    if (screen == null) {
-      return GroupParticipantGrid(participants: state.participants);
-    }
-    return Column(
-      children: [
-        Expanded(child: GroupScreenStage(screen: screen)),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 96,
-          child: GroupParticipantGrid(
-            participants: state.participants,
-            compact: true,
-          ),
-        ),
-      ],
-    );
-  }
 }
