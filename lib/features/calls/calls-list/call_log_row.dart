@@ -64,6 +64,8 @@ class CallLogRow extends StatelessWidget {
               ? Icons.video_call_rounded
               : entry.isScreenShare
               ? Icons.screen_share_outlined
+              : entry.isVideo
+              ? Icons.videocam_rounded
               : Icons.call_rounded,
           color: scheme.primary,
         ),

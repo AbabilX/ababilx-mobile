@@ -830,3 +830,30 @@ announces it:
 - **Never route these through `VoiceCallEndedGuard.markEnded`.** Answering is
   not terminal. That mark is what suppresses a later `incoming`, and the call it
   describes is still very much running.
+
+## Video calls (2026-09-08)
+
+A video call is the voice call with a camera track — same `VoicePeerEngine`,
+same signalling, still peer-to-peer. The parts that are not obvious:
+
+- `webrtc/voice_camera_capture.dart` opens the camera as its **own**
+  MediaStream, separate from the microphone stream. That gives the track its
+  own `msid`, which is the only thing that lets the far side tell a camera
+  from a shared screen.
+- `webrtc/voice_media_map.dart` is the receiver half: a `media` signal
+  (`camera_stream`, `screen_stream`) arrives before the offer/answer and
+  `onTrack` is routed by stream id. No map ever = legacy peer = screen share.
+- **Open the camera before the first offer/answer** (`prepare(video: true)`),
+  never on `connected`: both sides re-offering at once is glare, and the
+  losing offer is silently dropped.
+- **On/off after the first add is `replaceTrack`**, so no renegotiation and
+  no glare. The map names `_cameraWireStreamId` — the id the far side learned
+  at `addTrack` — not the new capture's id.
+- The camera pauses (`setCameraPaused`) on `paused`/`hidden`/`detached` via
+  `CallStoreSync.didChangeAppLifecycleState` → `onAppLifecycle`. There is no
+  camera foreground-service type in the manifest, on purpose.
+- Camera permission refused = audio call, not a failed call.
+  `_ensureCameraPermission` never throws; only the in-call toggle reports it.
+- Layout: remote camera full-screen (`CallVideoView`, cover fit), a shared
+  screen still wins the stage, local preview is `LocalCameraPreview` with the
+  flip button on it. CallKit gets `type: 1` and "Video call" as the handle.

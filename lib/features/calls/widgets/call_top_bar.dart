@@ -59,7 +59,9 @@ class CallTopBar extends StatelessWidget {
                   children: [
                     IconButton(
                       onPressed: onMinimize,
-                      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                      tooltip: MaterialLocalizations.of(
+                        context,
+                      ).backButtonTooltip,
                       icon: Icon(minimizeIcon, color: Colors.white, size: 28),
                     ),
                     Expanded(

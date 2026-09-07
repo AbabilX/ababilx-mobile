@@ -63,6 +63,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
       phase: ref.read(voiceCallProvider).phase.name,
       reason: '${previous.name}→${state.name}',
     );
+    unawaited(ref.read(voiceCallProvider.notifier).onAppLifecycle(state));
 
     if (_canOpenFlutterCallScreen) {
       // CallKit may already be ringing while Flutter was backgrounded — sync

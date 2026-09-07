@@ -10,8 +10,8 @@ class VoiceCallRepository {
 
   final VoiceCallApi _api;
 
-  Future<VoiceCallSession> start(String conversationId) =>
-      _api.start(conversationId);
+  Future<VoiceCallSession> start(String conversationId, {bool video = false}) =>
+      _api.start(conversationId, mode: video ? 'video' : 'audio');
 
   Future<VoiceCallSession> get(String callId) => _api.get(callId);
 

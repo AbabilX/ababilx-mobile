@@ -69,7 +69,10 @@ class _Fallback extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color.alphaBlend(colors.primary.withValues(alpha: 0.35), Colors.black),
+            Color.alphaBlend(
+              colors.primary.withValues(alpha: 0.35),
+              Colors.black,
+            ),
             Colors.black,
           ],
         ),

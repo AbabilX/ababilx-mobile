@@ -24,7 +24,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"/>
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS"/>
-    <!-- Live CRM/Wall capture. Calls remain audio-only in Flutter UI. -->
+    <!-- Live CRM/Wall capture and the 1:1 video call camera. The camera is
+         paused whenever the app leaves the foreground (no camera FGS type). -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" tools:node="remove"/>
     <!-- Local Share: writing received files into the public Downloads

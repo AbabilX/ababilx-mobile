@@ -37,8 +37,7 @@ class CallTileGrid extends StatelessWidget {
       builder: (context, constraints) {
         final tileWidth =
             (constraints.maxWidth - (columns - 1) * _gap) / columns;
-        final tileHeight =
-            (constraints.maxHeight - (rows - 1) * _gap) / rows;
+        final tileHeight = (constraints.maxHeight - (rows - 1) * _gap) / rows;
 
         if (!constraints.maxHeight.isFinite || tileHeight < _minTileHeight) {
           return GridView.builder(

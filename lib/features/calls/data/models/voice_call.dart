@@ -6,6 +6,7 @@ class VoiceCall {
     required this.callerId,
     required this.calleeId,
     required this.status,
+    this.mode = 'audio',
     required this.callerName,
     this.callerAvatarUrl,
     required this.calleeName,
@@ -24,6 +25,9 @@ class VoiceCall {
   final String callerId;
   final String calleeId;
   final String status;
+
+  /// `audio`, `video` or `screen` — how the call was placed.
+  final String mode;
   final String callerName;
   final String? callerAvatarUrl;
   final String calleeName;
@@ -43,6 +47,8 @@ class VoiceCall {
     'failed',
   }.contains(status);
 
+  bool get isVideo => mode == 'video';
+
   String peerName(String currentUserId) =>
       callerId == currentUserId ? calleeName : callerName;
 
@@ -56,6 +62,7 @@ class VoiceCall {
     callerId: callerId,
     calleeId: calleeId,
     status: status ?? this.status,
+    mode: mode,
     callerName: callerName,
     callerAvatarUrl: callerAvatarUrl,
     calleeName: calleeName,
@@ -75,6 +82,7 @@ class VoiceCall {
     callerId: json['caller_id'] as String? ?? '',
     calleeId: json['callee_id'] as String? ?? '',
     status: json['status'] as String? ?? 'ringing',
+    mode: json['mode'] as String? ?? 'audio',
     callerName: json['caller_name'] as String? ?? 'Unknown',
     callerAvatarUrl: json['caller_avatar_url'] as String?,
     calleeName: json['callee_name'] as String? ?? 'Unknown',

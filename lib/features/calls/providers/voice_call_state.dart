@@ -26,9 +26,14 @@ class VoiceCallState {
     this.reconnectingSince,
     this.remoteScreenStream,
     this.screenShareError,
+    this.localCameraStream,
+    this.cameraFront = true,
+    this.remoteCameraStream,
+    this.cameraError,
     this.pendingConversationId,
     this.pendingPeerName,
     this.pendingPeerAvatar,
+    this.pendingVideo = false,
     this.connectedAt,
     this.error,
   });
@@ -51,9 +56,24 @@ class VoiceCallState {
   bool get reconnecting => reconnectingSince != null;
   final MediaStream? remoteScreenStream;
   final String? screenShareError;
+
+  /// Our own camera while it is on. Mirrored in the preview when [cameraFront].
+  final MediaStream? localCameraStream;
+  final bool cameraFront;
+
+  /// The peer's camera while theirs is on.
+  final MediaStream? remoteCameraStream;
+  final String? cameraError;
+
+  bool get cameraOn => localCameraStream != null;
+
+  /// Placed as a video call — what the ring screen says and whether the
+  /// camera opens with the call. Either side may turn it off afterwards.
+  bool get isVideoCall => call?.isVideo ?? pendingVideo;
   final String? pendingConversationId;
   final String? pendingPeerName;
   final String? pendingPeerAvatar;
+  final bool pendingVideo;
   final DateTime? connectedAt;
   final String? error;
 
@@ -96,9 +116,17 @@ class VoiceCallState {
     bool clearRemoteScreen = false,
     String? screenShareError,
     bool clearScreenShareError = false,
+    MediaStream? localCameraStream,
+    bool clearLocalCamera = false,
+    bool? cameraFront,
+    MediaStream? remoteCameraStream,
+    bool clearRemoteCamera = false,
+    String? cameraError,
+    bool clearCameraError = false,
     String? pendingConversationId,
     String? pendingPeerName,
     String? pendingPeerAvatar,
+    bool? pendingVideo,
     DateTime? connectedAt,
     bool clearConnectedAt = false,
     String? error,
@@ -120,6 +148,15 @@ class VoiceCallState {
     screenShareError: clearScreenShareError
         ? null
         : (screenShareError ?? this.screenShareError),
+    localCameraStream: clearLocalCamera
+        ? null
+        : (localCameraStream ?? this.localCameraStream),
+    cameraFront: cameraFront ?? this.cameraFront,
+    remoteCameraStream: clearRemoteCamera
+        ? null
+        : (remoteCameraStream ?? this.remoteCameraStream),
+    cameraError: clearCameraError ? null : (cameraError ?? this.cameraError),
+    pendingVideo: pendingVideo ?? this.pendingVideo,
     pendingConversationId: pendingConversationId ?? this.pendingConversationId,
     pendingPeerName: pendingPeerName ?? this.pendingPeerName,
     pendingPeerAvatar: pendingPeerAvatar ?? this.pendingPeerAvatar,

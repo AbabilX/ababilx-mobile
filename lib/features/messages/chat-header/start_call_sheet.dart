@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../calls/providers/voice_call_provider.dart';
 import '../data/models/chat_models.dart';
 
-/// Bottom sheet: Voice call (starts flow) · Video call (disabled for now).
+/// Bottom sheet: Voice call · Video call. Both are the same peer-to-peer
+/// session; video only opens the camera with the call.
 Future<void> showStartCallSheet(
   BuildContext context,
   WidgetRef ref,
@@ -54,9 +55,14 @@ Future<void> showStartCallSheet(
               _CallOptionTile(
                 icon: Icons.videocam_rounded,
                 title: 'Video call',
-                subtitle: 'Coming soon',
-                enabled: false,
-                onTap: null,
+                subtitle: 'Camera and audio',
+                enabled: true,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  ref
+                      .read(voiceCallProvider.notifier)
+                      .startOutgoing(conversation, video: true);
+                },
               ),
             ],
           ),

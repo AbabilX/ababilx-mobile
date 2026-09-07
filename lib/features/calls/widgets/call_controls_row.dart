@@ -13,6 +13,7 @@ class CallControlsRow extends StatelessWidget {
     super.key,
     required this.call,
     required this.onToggleMute,
+    required this.onToggleCamera,
     required this.onToggleScreenShare,
     required this.onToggleSpeaker,
     required this.onHangUp,
@@ -20,6 +21,7 @@ class CallControlsRow extends StatelessWidget {
 
   final VoiceCallState call;
   final VoidCallback onToggleMute;
+  final VoidCallback onToggleCamera;
   final VoidCallback onToggleScreenShare;
   final VoidCallback onToggleSpeaker;
   final VoidCallback onHangUp;
@@ -44,6 +46,16 @@ class CallControlsRow extends StatelessWidget {
           label: call.muted ? 'Unmute' : 'Mute',
           selected: call.muted,
           onPressed: _live ? onToggleMute : null,
+        ),
+        CallControlButton(
+          icon: call.cameraOn
+              ? Icons.videocam_rounded
+              : Icons.videocam_off_rounded,
+          label: call.cameraOn ? 'Camera' : 'Camera',
+          selected: call.cameraOn,
+          onPressed: call.phase == VoiceCallPhase.connected
+              ? onToggleCamera
+              : null,
         ),
         CallControlButton(
           icon: call.screenSharing

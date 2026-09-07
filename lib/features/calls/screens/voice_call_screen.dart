@@ -115,6 +115,9 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
         body: IncomingCallView(
           peerName: call.peerName,
           peerAvatar: call.peerAvatar,
+          subtitle: call.isVideoCall
+              ? 'AbabilX video call'
+              : 'AbabilX voice call',
           onDecline: () {
             unawaited(IncomingCallRingtone.stop());
             notifier.declineIncoming();
@@ -141,9 +144,11 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
         body: ConnectedCallBody(
           call: call,
           onMinimize: _leave,
+          onSwitchCamera: notifier.switchCamera,
           controls: CallControlsRow(
             call: call,
             onToggleMute: notifier.toggleMute,
+            onToggleCamera: notifier.toggleCamera,
             onToggleScreenShare: notifier.toggleScreenShare,
             onToggleSpeaker: notifier.toggleSpeaker,
             onHangUp: () {

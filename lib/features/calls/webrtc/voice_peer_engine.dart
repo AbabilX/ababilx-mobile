@@ -8,6 +8,8 @@ import '../audio/call_audio_route.dart';
 import '../native/android_screen_share.dart';
 import '../voice_call_log.dart';
 import 'ice_candidate_stats.dart';
+import 'voice_camera_capture.dart';
+import 'voice_media_map.dart';
 
 typedef VoiceSignalSender = Future<bool> Function(Map<String, dynamic> signal);
 
@@ -46,6 +48,8 @@ class VoicePeerEngine {
     required this.onRestartRequested,
     required this.onLocalScreenChanged,
     required this.onRemoteScreenChanged,
+    required this.onLocalCameraChanged,
+    required this.onRemoteCameraChanged,
   });
 
   final VoiceSignalSender sendSignal;
@@ -68,11 +72,21 @@ class VoicePeerEngine {
   final void Function(bool sharing) onLocalScreenChanged;
   final void Function(MediaStream? stream) onRemoteScreenChanged;
 
+  /// The local camera preview, or null once it is off. Carries the facing so
+  /// the preview knows whether to mirror.
+  final void Function(MediaStream? stream, {required bool front})
+  onLocalCameraChanged;
+  final void Function(MediaStream? stream) onRemoteCameraChanged;
+
   RTCPeerConnection? _peer;
   MediaStream? _localStream;
   MediaStream? _screenStream;
   MediaStream? _remoteScreenStream;
   RTCRtpSender? _screenSender;
+  VoiceCameraCapture? _camera;
+  RTCRtpSender? _cameraSender;
+  final VoiceMediaMap _remoteMedia = VoiceMediaMap();
+  MediaStream? _remoteCameraShown;
   final List<MediaStream> _remoteStreams = [];
   final List<RTCIceCandidate> _pendingCandidates = [];
   final IceCandidateStats _localCandidates = IceCandidateStats();
@@ -87,7 +101,16 @@ class VoicePeerEngine {
 
   bool get answerReceived => _answerReceived;
 
-  Future<void> prepare({required List<IceServer> iceServers}) async {
+  bool get cameraOn => _camera != null;
+
+  /// [video] opens the camera before the first offer/answer so a video call
+  /// negotiates once. Starting it after `connected` instead would have both
+  /// sides re-offer at the same instant, and colliding offers are dropped.
+  /// A camera that cannot open (permission, hardware) degrades to audio.
+  Future<void> prepare({
+    required List<IceServer> iceServers,
+    bool video = false,
+  }) async {
     if (_disposed) throw StateError('Voice peer engine is disposed');
     if (ready) return;
 
@@ -177,12 +200,12 @@ class VoicePeerEngine {
       if (event.track.kind == 'video') {
         final remote = event.streams.isNotEmpty ? event.streams.first : null;
         if (remote == null) return;
-        _remoteScreenStream = remote;
-        onRemoteScreenChanged(remote);
+        _remoteMedia.streams[remote.id] = remote;
+        _syncRemoteVideo();
         event.track.onEnded = () {
-          if (_disposed || _remoteScreenStream != remote) return;
-          _remoteScreenStream = null;
-          onRemoteScreenChanged(null);
+          if (_disposed) return;
+          _remoteMedia.streams.remove(remote.id);
+          _syncRemoteVideo();
         };
         return;
       }
@@ -199,15 +222,118 @@ class VoicePeerEngine {
     for (final track in stream.getAudioTracks()) {
       await peer.addTrack(track, stream);
     }
+    if (video) {
+      try {
+        await startCamera(renegotiate: false);
+      } catch (e) {
+        voiceCallLog('camera.open.failed', reason: e.toString());
+      }
+    }
     // Re-assert the route once media is attached: opening the microphone can
     // move the phone off its route on its own. `force` is false for the
-    // earpiece on purpose, so a connected headset still wins.
-    await CallAudioRoute.setSpeaker(false);
+    // earpiece on purpose, so a connected headset still wins. A video call
+    // opens on the loudspeaker: the phone is held out to see the picture.
+    await CallAudioRoute.setSpeaker(_camera != null);
+  }
+
+  // ---- camera -------------------------------------------------------------
+
+  Future<void> startCamera({bool front = true, bool renegotiate = true}) async {
+    if (_camera != null || _disposed) return;
+    final peer = _requirePeer();
+    final camera = await VoiceCameraCapture.open(front: front);
+    if (_disposed) {
+      await camera.close();
+      return;
+    }
+    _camera = camera;
+    var needsOffer = false;
+    try {
+      final sender = _cameraSender;
+      if (sender != null) {
+        // The transceiver from an earlier camera session is still there; a
+        // replaceTrack needs no renegotiation and the far side keeps drawing
+        // the stream it already holds under the original id.
+        await sender.replaceTrack(camera.track);
+      } else {
+        _cameraSender = await peer.addTrack(camera.track, camera.stream);
+        _cameraWireStreamId = camera.stream.id;
+        needsOffer = true;
+      }
+    } catch (_) {
+      _camera = null;
+      await camera.close();
+      rethrow;
+    }
+    onLocalCameraChanged(camera.stream, front: camera.front);
+    if (!renegotiate) return; // the caller's offer/answer sends the map
+    await _sendMediaMap();
+    if (needsOffer) await _renegotiate();
+  }
+
+  /// The stream id the far side learned at addTrack time. A later camera
+  /// session captures a fresh stream, but replaceTrack keeps the wire msid,
+  /// so this is the id the media map has to name.
+  String? _cameraWireStreamId;
+
+  Future<void> stopCamera() async {
+    final camera = _camera;
+    if (camera == null) return;
+    _camera = null;
+    try {
+      await _cameraSender?.replaceTrack(null);
+    } catch (e) {
+      voiceCallLog('camera.replaceTrack.failed', reason: e.toString());
+    }
+    await camera.close();
+    onLocalCameraChanged(null, front: camera.front);
+    if (!_disposed) await _sendMediaMap();
+  }
+
+  Future<void> switchCamera() async {
+    final camera = _camera;
+    if (camera == null) return;
+    await camera.switchCamera();
+    onLocalCameraChanged(camera.stream, front: camera.front);
+  }
+
+  /// Pauses capture without tearing the transceiver down — the app went to
+  /// the background, where Android revokes the camera anyway.
+  Future<void> setCameraPaused(bool paused) async {
+    final camera = _camera;
+    if (camera == null) return;
+    camera.track.enabled = !paused;
+  }
+
+  /// Tells the far side which of our stream ids is the camera and which the
+  /// screen. Sent before any offer/answer that touches video, and again on
+  /// every camera flip so a peer can clear its view without a renegotiation.
+  Future<void> _sendMediaMap() async {
+    if (_disposed) return;
+    await sendSignal({
+      'kind': 'media',
+      'camera_stream': _camera == null ? '' : (_cameraWireStreamId ?? ''),
+      'screen_stream': _screenStream?.id ?? '',
+    });
+  }
+
+  void _syncRemoteVideo() {
+    final camera = _remoteMedia.camera;
+    if (!identical(camera, _remoteCameraShown)) {
+      _remoteCameraShown = camera;
+      onRemoteCameraChanged(camera);
+    }
+    final screen = _remoteMedia.screen;
+    if (!identical(screen, _remoteScreenStream)) {
+      _remoteScreenStream = screen;
+      onRemoteScreenChanged(screen);
+    }
   }
 
   Future<void> createAndSendOffer({bool renegotiate = false}) async {
     final peer = _requirePeer();
     if (!renegotiate) {
+      if (_camera != null) await _sendMediaMap();
       final offer = await peer.createOffer({
         'mandatory': {'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true},
       });
@@ -234,13 +360,18 @@ class VoicePeerEngine {
       case 'offer':
         final sdp = signal['sdp'] as String? ?? '';
         if (sdp.isEmpty) return;
-        if (!_sdpSendsVideo(sdp) && _remoteScreenStream != null) {
-          _remoteScreenStream = null;
-          onRemoteScreenChanged(null);
+        if (!_remoteMedia.received &&
+            !_sdpSendsVideo(sdp) &&
+            _remoteScreenStream != null) {
+          // Legacy peer with no media map: a re-offer without video means
+          // its screen share stopped.
+          _remoteMedia.clear();
+          _syncRemoteVideo();
         }
         final peer = _requirePeer();
         await peer.setRemoteDescription(RTCSessionDescription(sdp, 'offer'));
         _remoteDescriptionSet = true;
+        if (_camera != null || _screenStream != null) await _sendMediaMap();
         final answer = await peer.createAnswer({
           'mandatory': {
             'OfferToReceiveAudio': true,
@@ -268,6 +399,9 @@ class VoicePeerEngine {
         await _flushCandidates();
       case 'restart':
         onRestartRequested();
+      case 'media':
+        _remoteMedia.apply(signal);
+        _syncRemoteVideo();
       case 'ice':
         final candidate = signal['candidate'] as String? ?? '';
         if (candidate.isEmpty) return;
@@ -433,6 +567,7 @@ class VoicePeerEngine {
       _screenSender = await peer.addTrack(track, stream);
       onLocalScreenChanged(true);
       track.onEnded = () => unawaited(stopScreenShare());
+      await _sendMediaMap();
       await _renegotiate();
     } catch (_) {
       if (_screenStream != null) {
@@ -465,7 +600,10 @@ class VoicePeerEngine {
     await stream.dispose();
     await AndroidScreenShare.stop();
     onLocalScreenChanged(false);
-    if (renegotiate && peer != null && !_disposed) await _renegotiate();
+    if (renegotiate && peer != null && !_disposed) {
+      await _sendMediaMap();
+      await _renegotiate();
+    }
   }
 
   /// Swaps in freshly-issued ICE servers without tearing the call down.
@@ -540,6 +678,17 @@ class VoicePeerEngine {
     if (_disposed) return;
     _disposed = true;
     await stopScreenShare(renegotiate: false);
+    final camera = _camera;
+    _camera = null;
+    _cameraSender = null;
+    _cameraWireStreamId = null;
+    if (camera != null) {
+      await camera.close();
+      onLocalCameraChanged(null, front: camera.front);
+    }
+    _remoteMedia.clear();
+    _remoteCameraShown = null;
+    onRemoteCameraChanged(null);
     for (final track in _localStream?.getTracks() ?? const []) {
       await track.stop();
     }

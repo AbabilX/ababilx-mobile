@@ -14,12 +14,15 @@ class VoiceCallApi {
   static const _legacyPublicKey =
       'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
 
-  Future<VoiceCallSession> start(String conversationId) async {
+  Future<VoiceCallSession> start(
+    String conversationId, {
+    String mode = 'audio',
+  }) async {
     final response = await _client.post(
       independent
           ? ApiConstants.independentChatVoiceCalls(conversationId)
           : ApiConstants.chatVoiceCalls(conversationId),
-      data: const {'caller_public_key': _legacyPublicKey},
+      data: {'caller_public_key': _legacyPublicKey, 'mode': mode},
     );
     return VoiceCallSession.fromJson(
       unwrapApiData<Map<String, dynamic>>(response),

@@ -108,7 +108,12 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     state = VoiceCallState(currentUserId: currentUserId);
   }
 
-  Future<void> startOutgoing(ChatConversation conversation) async {
+  /// [video] places a video call: the camera opens with the call on both
+  /// sides and the callee's ring screen says so. Media is still peer-to-peer.
+  Future<void> startOutgoing(
+    ChatConversation conversation, {
+    bool video = false,
+  }) async {
     if (state.active || _transitioning || !conversation.isDm) return;
     if (!conversation.canMessage || conversation.peerUserId == null) {
       state = state.copyWith(
@@ -126,6 +131,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         pendingConversationId: conversation.id,
         pendingPeerName: conversation.peerUserName,
         pendingPeerAvatar: conversation.peerUserAvatar,
+        pendingVideo: video,
       );
       voiceCallLog(
         'start.permission',
@@ -133,8 +139,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         source: 'startOutgoing',
       );
       await _ensureCallPermissions();
+      if (video) await _ensureCameraPermission();
       voiceCallLog('start.api.begin', source: 'startOutgoing');
-      final session = await _repository.start(conversation.id);
+      final session = await _repository.start(conversation.id, video: video);
       voiceCallLog(
         'start.api.ok',
         callId: session.call.id,
@@ -309,6 +316,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       );
       // Callee must be on WS before the caller offer arrives / is flushed.
       await _ws.connect();
+      if (session.call.isVideo) await _ensureCameraPermission();
       await _prepareEngine(session);
       if (_engine == null || state.call?.id != call.id) {
         voiceCallLog(
@@ -448,6 +456,56 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     final next = !state.speaker;
     await _engine?.setSpeaker(next);
     state = state.copyWith(speaker: next);
+  }
+
+  Future<void> toggleCamera() async {
+    final engine = _engine;
+    if (engine == null || state.phase != VoiceCallPhase.connected) return;
+    try {
+      state = state.copyWith(clearCameraError: true);
+      if (engine.cameraOn) {
+        await engine.stopCamera();
+      } else {
+        await _ensureCameraPermission();
+        if (!await Permission.camera.isGranted) {
+          throw StateError('camera permission denied');
+        }
+        await engine.startCamera(front: state.cameraFront);
+      }
+    } catch (error) {
+      voiceCallLog(
+        'camera.toggle.failed',
+        callId: state.call?.id,
+        phase: _phaseName,
+        reason: _debugError(error),
+      );
+      state = state.copyWith(
+        cameraError: error.toString().toLowerCase().contains('permission')
+            ? 'Camera permission was not granted.'
+            : 'Could not start the camera.',
+      );
+    }
+  }
+
+  Future<void> switchCamera() async {
+    try {
+      await _engine?.switchCamera();
+    } catch (error) {
+      voiceCallLog('camera.switch.failed', reason: _debugError(error));
+    }
+  }
+
+  /// Android revokes the camera from a backgrounded app; pausing the track
+  /// ourselves keeps the transceiver so the picture resumes on return instead
+  /// of needing a renegotiation.
+  Future<void> onAppLifecycle(AppLifecycleState lifecycle) async {
+    final engine = _engine;
+    if (engine == null || !engine.cameraOn) return;
+    final paused =
+        lifecycle == AppLifecycleState.paused ||
+        lifecycle == AppLifecycleState.hidden ||
+        lifecycle == AppLifecycleState.detached;
+    await engine.setCameraPaused(paused);
   }
 
   Future<void> toggleScreenShare() async {
@@ -743,8 +801,27 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
           clearRemoteScreen: stream == null,
         );
       },
+      onLocalCameraChanged: (stream, {required bool front}) {
+        if (state.call?.id != callId) return;
+        state = state.copyWith(
+          localCameraStream: stream,
+          clearLocalCamera: stream == null,
+          cameraFront: front,
+          clearCameraError: true,
+        );
+      },
+      onRemoteCameraChanged: (stream) {
+        if (state.call?.id != callId) return;
+        state = state.copyWith(
+          remoteCameraStream: stream,
+          clearRemoteCamera: stream == null,
+        );
+      },
     );
-    await engine.prepare(iceServers: session.iceServers);
+    await engine.prepare(
+      iceServers: session.iceServers,
+      video: call.isVideo && await Permission.camera.isGranted,
+    );
     // Call may have ended, been replaced, or left connecting while prepare ran.
     if (state.call?.id != callId ||
         (state.phase != VoiceCallPhase.connecting &&
@@ -777,10 +854,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     if (state.muted) {
       await engine.setMuted(true);
     }
-    // Mirrors the route VoicePeerEngine just applied. Explicit rather than
-    // relying on the default, because a previous call in this session may have
-    // left the flag on.
-    state = state.copyWith(speaker: false);
+    // Mirrors the route VoicePeerEngine just applied (loudspeaker for a call
+    // that opened with the camera, earpiece otherwise). Explicit rather than
+    // relying on the default, because a previous call in this session may
+    // have left the flag on.
+    state = state.copyWith(speaker: engine.cameraOn);
     voiceCallLog('engine.prepare.ok', callId: callId, phase: _phaseName);
     _startConnectWatchdog(callId);
   }
@@ -1363,6 +1441,21 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
     // Bluetooth is optional; a denied request falls back to earpiece/speaker.
     await Permission.bluetoothConnect.request();
+  }
+
+  /// Camera is optional on a video call: a refusal degrades to audio rather
+  /// than failing the call, so this only throws when asked from a toggle.
+  Future<void> _ensureCameraPermission() async {
+    if (await Permission.camera.isGranted) return;
+    final resumed =
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    if (!resumed) return;
+    final status = await Permission.camera.request();
+    voiceCallLog(
+      'permission.camera',
+      callId: state.call?.id,
+      reason: status.name,
+    );
   }
 
   /// Ask for microphone up-front so an incoming call can be answered instantly,

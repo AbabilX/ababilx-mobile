@@ -31,7 +31,7 @@ class CallLogEntry {
   final String conversationId;
   final String teamId;
 
-  /// `audio`, `screen` or `group`.
+  /// `audio`, `video`, `screen` or `group`.
   final String mode;
   final String status;
 
@@ -53,6 +53,7 @@ class CallLogEntry {
   bool get isGroup => kind == 'group';
   bool get isOutgoing => direction == 'outgoing';
   bool get isScreenShare => mode == 'screen';
+  bool get isVideo => mode == 'video';
 
   /// Answered at some point, so it has a real duration to show.
   bool get connected => answeredAt != null;

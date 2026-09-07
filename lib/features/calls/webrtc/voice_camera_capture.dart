@@ -43,10 +43,8 @@ class VoiceCameraCapture {
   /// Flips between the front and back lens in place — the track object and the
   /// stream survive, so no renegotiation and no flicker on the far side.
   Future<void> switchCamera() async {
-    final result = await Helper.switchCamera(track);
-    // The plugin reports the new facing; on platforms that return nothing
-    // useful, assume the flip happened.
-    front = result is bool ? result : !front;
+    // Android reports whether the lens now facing is the front one.
+    front = await Helper.switchCamera(track);
   }
 
   Future<void> close() async {

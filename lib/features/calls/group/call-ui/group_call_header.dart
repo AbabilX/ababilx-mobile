@@ -109,9 +109,7 @@ class _GroupCallHeaderState extends State<GroupCallHeader> {
         ),
         if (state.phase == GroupCallPhase.connected)
           _HeaderButton(
-            icon: state.speaker
-                ? CallIcons.speakerOn
-                : CallIcons.speakerOff,
+            icon: state.speaker ? CallIcons.speakerOn : CallIcons.speakerOff,
             label: state.speaker ? 'Speaker on' : 'Earpiece',
             active: state.speaker,
             onTap: widget.onToggleSpeaker,

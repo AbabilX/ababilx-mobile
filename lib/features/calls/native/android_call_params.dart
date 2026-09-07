@@ -31,6 +31,7 @@ class AndroidCallParams {
     callerName: call.callerName,
     callerAvatarUrl: call.callerAvatarUrl,
     expiresAt: call.expiresAt,
+    video: call.isVideo,
   );
 
   static CallKitParams fromPush(Map<String, dynamic> data) {
@@ -44,6 +45,7 @@ class AndroidCallParams {
       callerName: data['caller_name']?.toString() ?? 'AbabilX call',
       callerAvatarUrl: data['caller_avatar_url']?.toString(),
       expiresAt: expiresAt,
+      video: data['mode']?.toString() == 'video',
     );
   }
 
@@ -53,13 +55,14 @@ class AndroidCallParams {
         nameCaller: call.peerName(currentUserId),
         appName: 'AbabilX',
         avatar: call.peerAvatar(currentUserId),
-        handle: 'Voice call',
-        type: 0,
+        handle: call.isVideo ? 'Video call' : 'Voice call',
+        type: call.isVideo ? 1 : 0,
         callingNotification: _noOngoingNotification,
         extra: {
           'type': 'voice_call',
           'call_id': call.id,
           'conversation_id': call.conversationId,
+          'mode': call.mode,
         },
         android: AndroidParams(
           isCustomNotification: true,
@@ -82,6 +85,7 @@ class AndroidCallParams {
     required String callerName,
     required String? callerAvatarUrl,
     required DateTime expiresAt,
+    bool video = false,
   }) {
     final remaining = expiresAt.difference(DateTime.now()).inMilliseconds;
     return CallKitParams(
@@ -89,13 +93,15 @@ class AndroidCallParams {
       nameCaller: callerName,
       appName: 'AbabilX',
       avatar: callerAvatarUrl,
-      handle: 'Voice call',
-      type: 0,
+      handle: video ? 'Video call' : 'Voice call',
+      // 1 = video on both CallKit and the plugin's Android surface, which
+      // swaps the icon and the accept label.
+      type: video ? 1 : 0,
       duration: remaining.clamp(1000, 60000),
       callingNotification: _noOngoingNotification,
-      missedCallNotification: const NotificationParams(
+      missedCallNotification: NotificationParams(
         showNotification: true,
-        subtitle: 'Missed voice call',
+        subtitle: video ? 'Missed video call' : 'Missed voice call',
         callbackText: 'Call back',
         isShowCallback: true,
       ),
@@ -107,6 +113,7 @@ class AndroidCallParams {
         'caller_name': callerName,
         'caller_avatar_url': callerAvatarUrl ?? '',
         'expires_at': expiresAt.toUtc().toIso8601String(),
+        'mode': video ? 'video' : 'audio',
       },
       android: AndroidParams(
         isCustomNotification: true,

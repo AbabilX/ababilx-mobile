@@ -98,5 +98,6 @@ String participantCountLabel(int count) =>
 
 /// What the header says about who is here. The count includes you, so a solo
 /// call rendered as "1 person" — true, and useless. Name the actual state.
-String callPresenceLabel(int participants) =>
-    participants <= 1 ? 'No one else is here' : participantCountLabel(participants);
+String callPresenceLabel(int participants) => participants <= 1
+    ? 'No one else is here'
+    : participantCountLabel(participants);
