@@ -96,8 +96,13 @@ class YouMenu extends ConsumerWidget {
       ),
     );
     if (confirmed != true) return;
+    // Read the notifier BEFORE the pop. Closing the sheet disposes this
+    // widget, and a disposed `ref` asserts — which only fires in debug, since
+    // release strips asserts. That is why signing out worked in a release
+    // build and silently did nothing in a debug one.
+    final auth = ref.read(authProvider.notifier);
     if (context.mounted) Navigator.pop(context); // close You sheet first
-    await ref.read(authProvider.notifier).signOut();
+    await auth.signOut();
   }
 
   static const _themeModeLabels = {
@@ -150,7 +155,9 @@ class YouMenu extends ConsumerWidget {
         ),
         YouMenuItem(
           icon: HugeIcons.strokeRoundedLogout01,
-          label: 'Sign out from workspace',
+          // "Sign out" — this ends the account session on the device, not a
+          // workspace membership. The old wording read as leaving a team.
+          label: 'Sign out',
           onTap: () => _signOut(context, ref),
         ),
       ],

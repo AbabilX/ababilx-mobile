@@ -1,12 +1,22 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Nothing to show yet — or the first page failed. Both land here, because an
 /// empty history and an unreachable server look identical to the user until
 /// the message says otherwise.
+///
+/// The empty half carries a button, the failed half does not. A first-run
+/// screen that only says "no calls yet" leaves the one thing to do on another
+/// tab; a failed one has nothing to offer but the pull-to-refresh already
+/// under it, and a call button there would just fail again.
 class CallsEmpty extends StatelessWidget {
-  const CallsEmpty({super.key, this.error});
+  const CallsEmpty({super.key, this.error, this.onStart});
 
   final String? error;
+
+  /// Opens the place a call is started from — the conversation list. Null
+  /// hides the button, so the widget stays usable without a router.
+  final VoidCallback? onStart;
 
   @override
   Widget build(BuildContext context) {
@@ -27,17 +37,47 @@ class CallsEmpty extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              failed ? 'Call history unavailable' : 'No calls yet',
+              failed ? 'Call history unavailable' : 'Start your first call',
               style: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             Text(
               failed
                   ? 'Check your connection and pull to refresh.'
-                  : 'Calls you make and receive show up here.',
+                  : 'Open a chat and tap the call button. Calls you make and '
+                        'receive show up here.',
               textAlign: TextAlign.center,
               style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
+            // Debug builds print what actually came back. "Call history
+            // unavailable" is the same sentence for a dead socket, a 500 and
+            // a parse failure, which is fine for a user and useless while
+            // diagnosing one. Never shown in release.
+            if (failed && kDebugMode) ...[
+              const SizedBox(height: 10),
+              Text(
+                error!,
+                textAlign: TextAlign.center,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: text.bodySmall?.copyWith(color: scheme.error),
+              ),
+            ],
+            if (!failed && onStart != null) ...[
+              const SizedBox(height: 20),
+              FilledButton.tonalIcon(
+                onPressed: onStart,
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                label: const Text('Go to chats'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  shape: const StadiumBorder(),
+                ),
+              ),
+            ],
           ],
         ),
       ),
