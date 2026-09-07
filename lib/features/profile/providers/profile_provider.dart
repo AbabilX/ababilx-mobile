@@ -6,6 +6,7 @@ import '../../../core/network/first_load_timeout.dart';
 import '../../../core/session/authenticated_fetch.dart';
 import '../data/profile_media_repository.dart';
 import '../data/profile_repository.dart';
+import '../data/username_repository.dart';
 
 class ProfileNotifier extends AsyncNotifier<AppUser> {
   @override
@@ -77,6 +78,26 @@ class ProfileNotifier extends AsyncNotifier<AppUser> {
     final updated = current.copyWith(name: stored);
     state = AsyncData(updated);
     await repo.cacheUser(updated);
+  }
+
+  /// Claims (or clears) the account handle and shows it immediately.
+  ///
+  /// Optimistic like [updateName], and for a stronger reason: the QR screen
+  /// draws the handle, so a round trip through GET /me before it appears would
+  /// leave the code showing the old one.
+  ///
+  /// Throws [UsernameException] so the editor can say "already taken" rather
+  /// than "could not save".
+  Future<void> updateUsername(String username) async {
+    final stored = await ref.read(usernameRepositoryProvider).save(username);
+    final current = state.valueOrNull;
+    if (current == null) {
+      await refresh();
+      return;
+    }
+    final updated = current.copyWith(username: stored);
+    state = AsyncData(updated);
+    await ref.read(profileRepositoryProvider).cacheUser(updated);
   }
 
   /// Uploads a new avatar and shows it immediately.

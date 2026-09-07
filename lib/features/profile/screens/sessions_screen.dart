@@ -3,16 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../core/router/root_back.dart';
+import '../../auth/widgets/qr_login_flow.dart';
 import '../data/session_repository.dart';
 import '../providers/sessions_provider.dart';
+import '../widgets/devices_hero.dart';
+import '../widgets/devices_notes.dart';
 import '../widgets/session_rename_dialog.dart';
 import '../widgets/session_tile.dart';
 
-/// Signed-in devices, with a way to name one and to sign any of them out.
+/// Linked devices — Signal's screen of the same name.
 ///
-/// QR login makes adding a device a two-second act, so the account needs the
-/// matching ability to take one away — including from a device the user no
-/// longer has in hand.
+/// Three blocks, in the order the questions arrive: link a new device, see
+/// what is already linked, and the note that says the messages on all of them
+/// are encrypted. The old version opened with a paragraph of explanation and
+/// put two labelled buttons on every row; the button that actually adds a
+/// device was nowhere on it.
+///
+/// "Link a new device" opens the scanner, which is the same act as approving a
+/// desktop sign-in: the code on the other screen is what this phone reads.
 class SessionsScreen extends ConsumerStatefulWidget {
   const SessionsScreen({super.key});
 
@@ -28,94 +36,85 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final sessionsAsync = ref.watch(sessionsProvider);
+    final hasOthers =
+        sessionsAsync.valueOrNull?.any((s) => !s.current) ?? false;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => popOrGoHome(context),
         ),
-        title: Text(
-          AppTranslations.translate(context, ref, 'devices_title'),
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
+        title: Text(_t('devices_title')),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
             onPressed: () => ref.read(sessionsProvider.notifier).refresh(),
           ),
-        ],
-      ),
-      body: sessionsAsync.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(
-            color: colors.primary,
-            strokeWidth: 2.5,
-          ),
-        ),
-        error: (_, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              AppTranslations.translate(context, ref, 'devices_error'),
-              textAlign: TextAlign.center,
-              style: TextStyle(color: colors.error),
-            ),
-          ),
-        ),
-        data: (sessions) => ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [
-            Text(
-              AppTranslations.translate(context, ref, 'devices_subtitle'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colors.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (sessions.isEmpty)
-              Text(
-                AppTranslations.translate(context, ref, 'devices_empty'),
-                style: TextStyle(color: colors.onSurfaceVariant),
-              ),
-            for (final s in sessions)
-              SessionTile(
-                session: s,
-                busy: _busyId == s.id,
-                onRename: () => _rename(s),
-                onRevoke: () => _revoke(s),
-              ),
-            if (sessions.where((s) => !s.current).isNotEmpty) ...[
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _busyId == null ? _revokeOthers : null,
-                icon: const Icon(Icons.logout_rounded, size: 18),
-                label: Text(
-                  AppTranslations.translate(
-                    context,
-                    ref,
-                    'devices_sign_out_others',
+          // Signing every other device out is a rare, heavy action: it belongs
+          // in the overflow, not as a red button under the list.
+          if (hasOthers)
+            PopupMenuButton<void>(
+              icon: const Icon(Icons.more_vert_rounded),
+              itemBuilder: (menuContext) => [
+                PopupMenuItem(
+                  onTap: _revokeOthers,
+                  child: Text(
+                    _t('devices_sign_out_others'),
+                    style: TextStyle(color: colors.error),
                   ),
                 ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colors.error,
-                  side: BorderSide(color: colors.error.withValues(alpha: 0.4)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: const StadiumBorder(),
-                ),
+              ],
+            ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 32),
+        children: [
+          DevicesHero(
+            caption: _t('devices_hero'),
+            buttonLabel: _t('devices_link_new'),
+            onLink: () => QrLoginFlow.start(context, ref),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+            child: Text(
+              _t('devices_my'),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          ...sessionsAsync.when(
+            loading: () => [
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Center(child: CircularProgressIndicator()),
               ),
             ],
-          ],
-        ),
+            error: (_, _) => [
+              DevicesNote(_t('devices_error'), color: colors.error),
+            ],
+            data: (sessions) => [
+              if (sessions.isEmpty) DevicesNote(_t('devices_empty')),
+              for (final session in sessions)
+                SessionTile(
+                  session: session,
+                  busy: _busyId == session.id,
+                  onRename: () => _rename(session),
+                  onRevoke: () => _revoke(session),
+                ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          DevicesEncryptionNote(text: _t('devices_e2ee_note')),
+        ],
       ),
     );
   }
+
+  String _t(String key) => AppTranslations.translate(context, ref, key);
 
   Future<void> _rename(UserSession session) async {
     final name = await showSessionRenameDialog(

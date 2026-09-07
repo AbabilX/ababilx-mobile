@@ -219,7 +219,15 @@ class AppTranslations {
       'qr_login_invalid': 'That is not an AbabilX sign-in code.',
       'qr_login_failed': 'Could not approve the sign-in. Try again.',
       'app_language': 'Application Language',
-      'devices_title': 'Signed-in devices',
+      'devices_title': 'Linked devices',
+      'devices_hero': 'Use this AbabilX account on another device.',
+      'devices_link_new': 'Link a new device',
+      'devices_my': 'My linked devices',
+      'devices_linked_on': 'Linked',
+      'devices_last_active': 'Last active',
+      'devices_e2ee_note':
+          'Messages and chat info are protected by end-to-end encryption on '
+          'all devices',
       'devices_subtitle':
           'Every browser, desktop app and phone signed in to this account. Rename one to tell two look-alikes apart, or sign out any you do not recognise.',
       'devices_empty': 'No devices are signed in.',
@@ -486,12 +494,19 @@ class AppTranslations {
       'qr_login_invalid': 'এটি AbabilX সাইন ইন কোড নয়।',
       'qr_login_failed': 'সাইন ইন অনুমোদন করা যায়নি। আবার চেষ্টা করুন।',
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',
-      'devices_title': 'সাইন ইন করা ডিভাইস',
+      'devices_title': 'যুক্ত ডিভাইস',
       'devices_subtitle':
           'এই অ্যাকাউন্টে সাইন ইন করা প্রতিটি ব্রাউজার, ডেস্কটপ অ্যাপ ও ফোন। একই রকম দুটি ডিভাইস আলাদা করতে নাম দিন, অচেনা কোনোটি থাকলে সাইন আউট করুন।',
       'devices_empty': 'কোনো ডিভাইস সাইন ইন করা নেই।',
       'devices_error': 'সাইন ইন করা ডিভাইসগুলো লোড করা যায়নি।',
       'devices_this_device': 'এই ডিভাইস',
+      'devices_hero': 'অন্য ডিভাইসে এই AbabilX অ্যাকাউন্ট ব্যবহার করুন।',
+      'devices_link_new': 'নতুন ডিভাইস যুক্ত করুন',
+      'devices_my': 'আমার যুক্ত ডিভাইস',
+      'devices_linked_on': 'যুক্ত হয়েছে',
+      'devices_last_active': 'সর্বশেষ সক্রিয়',
+      'devices_e2ee_note':
+          'সব ডিভাইসে মেসেজ ও চ্যাটের তথ্য এন্ড-টু-এন্ড এনক্রিপশনে সুরক্ষিত',
       'devices_qr': 'QR সাইন ইন',
       'devices_active': 'সক্রিয়',
       'devices_rename': 'নাম দিন',

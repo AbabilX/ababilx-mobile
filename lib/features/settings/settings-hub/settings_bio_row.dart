@@ -9,10 +9,10 @@ import '../../profile/data/profile_repository.dart';
 /// name, then the handles underneath, with a QR button on the right.
 ///
 /// Tapping the name block opens the name editor, which is where Signal puts it
-/// too. The QR button stays outside that tap target: our QR is not Signal's
-/// username link, it opens the scanner that approves a desktop/web sign-in.
-/// Same affordance, different job, so it carries a tooltip rather than sitting
-/// there bare.
+/// too. The QR button stays outside that tap target and opens **your own**
+/// code — the thing you hold up for somebody else to scan. It used to open the
+/// scanner, which had both people on this screen pointing cameras at each
+/// other; the scanner is the icon in the chat list header now.
 class SettingsBioRow extends StatelessWidget {
   const SettingsBioRow({
     super.key,
@@ -54,7 +54,7 @@ class SettingsBioRow extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(right: 20),
           child: Tooltip(
-            message: 'Scan QR to sign in',
+            message: 'Your QR code',
             child: Material(
               color: colors.surfaceContainerHigh,
               shape: const CircleBorder(),
@@ -87,7 +87,12 @@ class _Identity extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final handle = user.githubUsername.isNotEmpty
+    // The AbabilX handle first: it is the one a QR code carries and the one
+    // people can type into search. A GitHub login only stands in when there is
+    // no handle yet, since it is what the sign-in copied across.
+    final handle = user.username.isNotEmpty
+        ? '@${user.username}'
+        : user.githubUsername.isNotEmpty
         ? '@${user.githubUsername}'
         : '';
     final subtitle = theme.textTheme.bodyMedium?.copyWith(

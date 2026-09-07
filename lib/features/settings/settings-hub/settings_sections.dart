@@ -77,6 +77,17 @@ class SettingsSections extends ConsumerWidget {
           subtitle: 'Send files to devices on the same network',
           onTap: () => context.push('/local-share'),
         ),
+        // A handle is what a QR code carries, so it sits directly above the
+        // switches that decide who else can find you by one.
+        SettingsRow(
+          icon: HugeIcons.strokeRoundedAt,
+          title: 'Username',
+          value: user.username.isEmpty ? null : '@${user.username}',
+          subtitle: user.username.isEmpty
+              ? 'Needed for your QR code'
+              : null,
+          onTap: () => context.push('/settings/username'),
+        ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedSearch01,
           title: 'Discovery',

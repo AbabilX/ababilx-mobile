@@ -40,6 +40,8 @@ import '../../features/settings/screens/media_quality_screen.dart';
 import '../../features/settings/screens/notification_settings_screen.dart';
 import '../../features/settings/screens/discovery_screen.dart';
 import '../../features/settings/screens/edit_name_screen.dart';
+import '../../features/settings/screens/edit_username_screen.dart';
+import '../../features/settings/screens/my_qr_screen.dart';
 import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import 'home_shell.dart';
@@ -134,6 +136,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/name',
         builder: (_, _) => const EditNameScreen(),
       ),
+      GoRoute(
+        path: '/settings/username',
+        builder: (_, _) => const EditUsernameScreen(),
+      ),
+      // Your own code, not the scanner. The scanner is the icon in the chat
+      // list header; this is the thing held up to it.
+      GoRoute(path: '/settings/qr', builder: (_, _) => const MyQrScreen()),
       GoRoute(
         path: '/settings/discovery',
         builder: (_, _) => const DiscoveryScreen(),

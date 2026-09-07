@@ -496,3 +496,63 @@ why picking a picture for a feed failed the instant the crop was confirmed:
   fetched, and the local store keeps messages forever — so a photo set today
   would never reach the ones already on disk, and a photo removed today would
   go on showing on them.
+
+# One scanner, three codes, and a QR of your own
+
+Changed 2026-09-07. Before this the camera icon was in two wrong places at
+once: the chat list header held **Local Share**, and the button beside your
+name in Settings opened the **scanner** — so both people in a QR exchange were
+on the same screen pointing cameras at each other, and nobody had a code to
+show.
+
+```
+chat list header  ->  scanner        (the thing that reads a code)
+Settings, beside your name -> /settings/qr   (the thing you hold up)
+Settings -> Local Share, You sheet -> Local Share  (unchanged, both kept)
+```
+
+`QrLoginFlow.start` now dispatches on the `ababilx://` host and handles three
+payloads: **desktop-login** (approve a sign-in), **link-messages** (hand this
+account's message key to a new device), and **user** (somebody's handle →
+`ScannedUserSheet` → `startDm`). The first two approve something and show what;
+a user code approves nothing, because a handle is public.
+
+- **The payload is a handle, never a user id.** A UUID cannot be read aloud,
+  cannot be revoked once a code is on a poster, and would resolve forever for
+  anyone who saw it. A handle can be changed or cleared, and the same string
+  works typed into people search when a camera will not focus.
+  `user_qr_payload.dart` is pure and tested: it accepts `ababilx://user?u=…`
+  and a bare `@handle`, and **refuses bare text** — otherwise every QR code in
+  the world would look like a contact.
+- **Resolution is not the search endpoint.** `GET .../chat/handles/:username`
+  is exact and ignores `discoverable_by_username`, which is off by default and
+  would have made the feature find almost nobody. The client calls the
+  **team-prefixed** path deliberately: it is registered whether or not
+  `ABABILX_INDEPENDENT_CHAT` is on, and the handler needs no team.
+- **Scanning your own code is answered before the request goes out.** The
+  server excludes the caller from the lookup, so it would otherwise come back
+  as "no account uses @you".
+- **A missing handle is the QR screen's empty state**, not an error: the code
+  has nothing to carry, so it offers `/settings/username` instead of drawing an
+  empty frame. `username_rules.dart` mirrors `handlers/me.NormalizeUsername` so
+  Save is dead before a round trip; the server still owns the decision, and
+  uniqueness is only ever settled by its index (409 → "already taken").
+- Copy and Share send `@handle`, not the `ababilx://` payload — a scheme URL
+  pasted into a chat is dead text on any device without the app.
+
+# Linked devices reads like Signal's screen
+
+Same date, `features/profile/screens/sessions_screen.dart`. The screen had a
+paragraph of explanation at the top, two labelled buttons on every row, and no
+way to add a device: the button that starts a link was never on it.
+
+Now: illustration + one sentence + **Link a new device** (the scanner), a
+divider, **My linked devices**, then the end-to-end-encryption footer. Rename
+and Sign out moved into each row's ⋮, and "sign out all other devices" into the
+app-bar overflow — a rare, heavy action does not belong under the list as a red
+button. The current session never offers Sign out here; that is Settings →
+Sign out, which also clears this device's message key.
+
+Rows show **dates** ("Linked 26/08/26"), not "3 days ago": the list is read to
+recognise a device, and a relative age answers neither question. The drawing is
+widgets (`devices_hero.dart`), not an asset, so it needs no dark variant.

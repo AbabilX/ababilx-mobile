@@ -141,6 +141,8 @@ class ChatRepository {
 
   Future<ChatUserSearchResult> searchUsers(String query) =>
       _connections.search(query);
+  Future<ChatUserSummary?> lookupUserByUsername(String username) =>
+      _connections.lookupByUsername(username);
   Future<List<ChatConnection>> listConnections() =>
       _connections.listConnections();
   Future<ChatConnectionRequests> listConnectionRequests() =>
