@@ -1,44 +1,28 @@
-import 'package:ababilx/features/calls/group/call-ui/call_round_button.dart';
 import 'package:ababilx/features/calls/group/call-ui/call_tile_grid.dart';
 import 'package:ababilx/features/calls/group/call-ui/call_stage_view.dart';
 import 'package:ababilx/features/calls/group/call-ui/group_call_stage.dart';
 import 'package:ababilx/features/calls/group/call-ui/participant_tile.dart';
-import 'package:ababilx/features/calls/group/call_icons.dart';
 import 'package:ababilx/features/calls/group/providers/group_call_state.dart';
 import 'package:ababilx/shared/widgets/app_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Layout regressions the group call screen actually shipped with: a control
-/// bar that wrapped onto two lines and orphaned Hang up, a grid that left dead
-/// space under a solo call, a fixed 62dp avatar in a screen-wide tile, and a
-/// name chip stretched edge to edge.
+/// Stage layout regressions the group call screen actually shipped with: a
+/// grid that left dead space under a solo call, a fixed 62dp avatar in a
+/// screen-wide tile, and a name chip stretched edge to edge. The control bar
+/// has its own file.
 
-Widget _host({required double width, required double height, required Widget child}) =>
-    MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: SizedBox(width: width, height: height, child: child),
-        ),
-      ),
-    );
-
-List<Widget> _controls(double diameter) => [
-  for (final icon in [
-    CallIcons.micOn,
-    CallIcons.speakerOn,
-    CallIcons.screenShare,
-    CallIcons.raiseHand,
-    CallIcons.reaction,
-    CallIcons.leave,
-  ])
-    CallRoundButton(
-      diameter: diameter,
-      icon: icon,
-      label: 'control',
-      onTap: () {},
+Widget _host({
+  required double width,
+  required double height,
+  required Widget child,
+}) => MaterialApp(
+  home: Scaffold(
+    body: Center(
+      child: SizedBox(width: width, height: height, child: child),
     ),
-];
+  ),
+);
 
 const _participant = GroupParticipantView(
   identity: 'u1',
@@ -49,49 +33,6 @@ const _participant = GroupParticipantView(
 );
 
 void main() {
-  group('control bar', () {
-    testWidgets('keeps six controls on one row on a 412dp phone', (tester) async {
-      await tester.pumpWidget(
-        _host(
-          width: 388,
-          height: 120,
-          child: CallControlBar(count: 6, builder: _controls),
-        ),
-      );
-      expect(tester.takeException(), isNull);
-
-      final buttons = tester.widgetList<CallRoundButton>(
-        find.byType(CallRoundButton),
-      );
-      expect(buttons.length, 6);
-
-      final tops = <double>{
-        for (var i = 0; i < 6; i++)
-          tester.getTopLeft(find.byType(CallRoundButton).at(i)).dy,
-      };
-      expect(tops.length, 1, reason: 'wrapped onto a second line');
-    });
-
-    testWidgets('shrinks the controls rather than wrapping on a narrow phone', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        _host(
-          width: 300,
-          height: 120,
-          child: CallControlBar(count: 6, builder: _controls),
-        ),
-      );
-      expect(tester.takeException(), isNull);
-
-      final first = tester.widget<CallRoundButton>(
-        find.byType(CallRoundButton).first,
-      );
-      expect(first.diameter, lessThan(callButtonDiameter));
-      expect(first.diameter, greaterThanOrEqualTo(callButtonMinDiameter));
-    });
-  });
-
   group('tile grid', () {
     testWidgets('a solo tile fills the stage', (tester) async {
       await tester.pumpWidget(
@@ -100,7 +41,8 @@ void main() {
           height: 600,
           child: CallTileGrid(
             count: 1,
-            tileBuilder: (_) => const ColoredBox(key: Key('t0'), color: Colors.red),
+            tileBuilder: (_) =>
+                const ColoredBox(key: Key('t0'), color: Colors.red),
           ),
         ),
       );

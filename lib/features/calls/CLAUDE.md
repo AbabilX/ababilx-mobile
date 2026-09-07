@@ -691,9 +691,18 @@ widget being allowed to size itself:
   `7x58 + 6x12 = 478dp`; a 412dp phone has 388 after padding, so it broke 5 + 2
   and left **Hang up orphaned in the second row beside Participants**.
   `CallControlBar` divides the width it is actually given and shrinks the
-  buttons (floor 42dp, then it scrolls). Participants is gone from the bar
+  buttons (floor 36dp, then it scrolls). Participants is gone from the bar
   entirely — the header already carries it, and that duplicate was the seventh
   control.
+- **Fitting on one row was not the same as looking like a bar.** The fixed
+  buttons then spanned the screen edge to edge over the bare backdrop, and the
+  disconnected state drew Hang up as a lone 58dp circle in the middle of
+  nothing. `CallControlBar` draws one rounded pill (`palette.panel`) behind the
+  row with 8dp of inner padding, and the pill hugs its contents, so a single
+  control comes out as a small rounded button rather than a floating circle.
+  The controls divide the width **inside** that padding — dividing the full
+  width first overflows the pill by exactly `2 x padding`. Standard diameter
+  came down 58 → 50 to leave room for the pill and a margin either side of it.
 - **`GridView` with a fixed `childAspectRatio` sizes rows from the tile width
   and stops.** A solo call drew one screen-wide tile 1.11x as tall and left
   ~185dp of dead black beneath it. `CallTileGrid` derives the tile height from
@@ -718,7 +727,8 @@ Hang up is `CallButtonTone.danger`, and that pair is chosen per brightness in
 `error` as a fill in dark is what drew the pale pink circle with the dark red
 glyph.
 
-Pinned by `test/features/calls/group_call_layout_test.dart` — these are all
+Pinned by `test/features/calls/group_call_layout_test.dart` (stage) and
+`group_call_control_bar_test.dart` (bar) — these are all
 constraint bugs, which unit tests cannot see and screenshots only catch if
 somebody happens to look at the right participant count.
 

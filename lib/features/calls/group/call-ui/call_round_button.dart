@@ -7,8 +7,13 @@ enum CallButtonTone { neutral, active, danger, accent }
 
 /// Standard diameter for a control on the call bar, and the floor the bar is
 /// allowed to shrink to before it starts scrolling instead.
-const double callButtonDiameter = 58;
-const double callButtonMinDiameter = 42;
+///
+/// 58 was the old value and it drew six circles spanning the screen edge to
+/// edge with nothing around them — the controls read as six separate buttons
+/// dropped on the backdrop rather than one bar. 50 leaves room for the pill
+/// [CallControlBar] draws behind them and for a margin either side of it.
+const double callButtonDiameter = 50;
+const double callButtonMinDiameter = 36;
 
 /// One round control on the call bar. "On" states invert to the theme's own
 /// text colour, so mute, sharing and a raised hand read without a label.
@@ -74,7 +79,7 @@ class CallRoundButton extends StatelessWidget {
                   : CallIcon(
                       icon,
                       color: foreground,
-                      size: diameter >= 52 ? 24 : 20,
+                      size: diameter >= 46 ? 22 : 19,
                     ),
             ),
           ),
@@ -84,12 +89,18 @@ class CallRoundButton extends StatelessWidget {
   }
 }
 
-/// A single row of call controls that never wraps.
+/// A single row of call controls, grouped inside one rounded pill.
 ///
-/// The old bar was a [Wrap] of fixed 58dp buttons: seven of them need 478dp
-/// and a 412dp phone has 388, so it broke 5 + 2 and left Hang up orphaned in
-/// the second row beside Participants. Dividing the real width instead keeps
-/// one row on every phone, and only a genuinely tiny screen scrolls.
+/// Two things this fixes. The old bar was a [Wrap] of fixed 58dp buttons:
+/// seven of them need 478dp and a 412dp phone has 388, so it broke 5 + 2 and
+/// left Hang up orphaned in the second row. And once it did fit on one row it
+/// still spread edge to edge over the bare backdrop, so the controls read as
+/// loose circles rather than a bar. Dividing the real width keeps one row on
+/// every phone; the pill gives the row a body, an inner padding and a margin.
+///
+/// The pill hugs its contents ([MainAxisSize.min]), so the disconnected state
+/// — Leave on its own — comes out as one small rounded button instead of a
+/// lone 58dp circle floating in the middle of the screen.
 class CallControlBar extends StatelessWidget {
   const CallControlBar({super.key, required this.builder, required this.count});
 
@@ -97,34 +108,48 @@ class CallControlBar extends StatelessWidget {
   final List<Widget> Function(double diameter) builder;
   final int count;
 
+  /// Breathing room between the pill's edge and the outermost control.
+  static const double _padding = 8;
+  static const double _gap = 10;
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      const gap = 10.0;
-      final available = constraints.maxWidth;
+      // The pill's own padding is not available to the controls, so the
+      // division has to happen inside it or the row overflows the pill by
+      // exactly that much.
+      final available = constraints.maxWidth - _padding * 2;
       final raw = count <= 0
           ? callButtonDiameter
-          : (available - (count - 1) * gap) / count;
+          : (available - (count - 1) * _gap) / count;
       final diameter = raw.clamp(callButtonMinDiameter, callButtonDiameter);
       final children = builder(diameter);
-      if (raw < callButtonMinDiameter) {
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (var i = 0; i < children.length; i++) ...[
-                if (i > 0) const SizedBox(width: gap),
-                children[i],
-              ],
-            ],
+      final row = <Widget>[
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) const SizedBox(width: _gap),
+          children[i],
+        ],
+      ];
+      final palette = CallColors.of(context);
+
+      return Center(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: palette.panel,
+            borderRadius: BorderRadius.circular(diameter / 2 + _padding),
           ),
-        );
-      }
-      return Row(
-        mainAxisAlignment: children.length == 1
-            ? MainAxisAlignment.center
-            : MainAxisAlignment.spaceBetween,
-        children: children,
+          child: Padding(
+            padding: const EdgeInsets.all(_padding),
+            child: raw < callButtonMinDiameter
+                // Only a genuinely tiny screen gets here, and a squashed row
+                // is worse than one the user can push sideways.
+                ? SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: row),
+                  )
+                : Row(mainAxisSize: MainAxisSize.min, children: row),
+          ),
+        ),
       );
     },
   );
