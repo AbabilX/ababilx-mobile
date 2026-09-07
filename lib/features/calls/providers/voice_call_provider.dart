@@ -20,6 +20,8 @@ import '../incoming_call_ringtone.dart';
 import '../native/android_call_ui.dart';
 import '../native/android_group_call_ui.dart';
 import '../native/incoming_call_admission.dart';
+import '../native/answered_elsewhere.dart';
+import '../native/call_answered_guard.dart';
 import '../native/voice_call_ended_guard.dart';
 import '../ringtone/callkit_ring_events.dart';
 import '../voice_call_log.dart';
@@ -282,6 +284,12 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         return;
       }
       voiceCallLog('accept.api.ok', callId: call.id, phase: 'connecting');
+      // The server now pushes "answered elsewhere" to every device on this
+      // account, this one included — FCM cannot address a single device. This
+      // durable mark is how the background isolate, which has none of this
+      // state, knows the push is about a call it is holding rather than one it
+      // is ringing.
+      unawaited(CallAnsweredGuard.mark(call.id));
       state = VoiceCallState(
         phase: VoiceCallPhase.connecting,
         call: session.call,
@@ -1048,6 +1056,34 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         unawaited(
           _finishLocal(VoiceCallPhase.ended, reason: 'fcm.voice_call_ended'),
         );
+      }
+      return;
+    }
+    if (type == 'voice_call_answered') {
+      // Another of this account's devices picked up. Deliberately NOT recorded
+      // as finished: that mark suppresses a later `incoming`, and an answered
+      // call is one that very much still exists.
+      final holdsThisCall = state.call?.id == callId;
+      switch (decideAnsweredElsewhere(
+        answeredHere:
+            holdsThisCall &&
+            (state.phase == VoiceCallPhase.connecting ||
+                state.phase == VoiceCallPhase.connected),
+        ringingHere:
+            holdsThisCall && state.phase == VoiceCallPhase.incomingRinging,
+      )) {
+        case AnsweredElsewhereAction.ignore:
+          break;
+        case AnsweredElsewhereAction.finishRinging:
+          unawaited(
+            _finishLocal(
+              VoiceCallPhase.ended,
+              reason: 'fcm.answered_elsewhere',
+              callId: callId,
+            ),
+          );
+        case AnsweredElsewhereAction.dismissNative:
+          unawaited(AndroidCallUi.endCall(callId));
       }
       return;
     }

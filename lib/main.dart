@@ -12,6 +12,8 @@ import 'features/calls/native/android_call_background.dart';
 import 'features/calls/native/android_call_ui.dart';
 import 'features/calls/native/android_group_call_ui.dart';
 import 'features/calls/native/background_voice_call_gate.dart';
+import 'features/calls/native/answered_elsewhere.dart';
+import 'features/calls/native/call_answered_guard.dart';
 import 'features/calls/native/voice_call_ended_guard.dart';
 import 'features/notifications/chat_push_notification.dart';
 import 'features/notifications/local_notifications.dart';
@@ -56,6 +58,24 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       final callId = data['call_id']?.toString() ?? '';
       if (callId.isNotEmpty) await VoiceCallEndedGuard.markEnded(callId);
       await AndroidCallUi.endCall(callId);
+    case 'voice_call_answered':
+      // Another device on this account picked up. Only the ringing surface
+      // goes away — this is NOT a terminal event, so the call is deliberately
+      // not marked ended: that mark is what suppresses a later `incoming`, and
+      // an answered call is one that very much still exists.
+      final answeredId = data['call_id']?.toString() ?? '';
+      if (answeredId.isEmpty) break;
+      // Addressed to the account, so it reaches the answering device too.
+      if (await _answeredOnAnotherDevice(answeredId)) {
+        await AndroidCallUi.endCall(answeredId);
+      }
+    case 'group_call_joined':
+      // Same shape for a channel call: this member joined on another device.
+      final joinedId = data['call_id']?.toString() ?? '';
+      if (joinedId.isEmpty) break;
+      if (await _answeredOnAnotherDevice(joinedId)) {
+        await AndroidGroupCallUi.endCall(joinedId);
+      }
     case 'group_call':
       await AndroidGroupCallUi.showIncomingFromPush(data);
     case 'group_call_ended':
@@ -66,6 +86,17 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       await _handleChatPushInBackground(data);
   }
 }
+
+/// A control push says one of this account's devices answered. This isolate
+/// holds no call state, so the durable mark is the only way to tell whether it
+/// was this device — which must keep its live call — or another one, whose
+/// ringing surface here is now stale.
+Future<bool> _answeredOnAnotherDevice(String callId) async =>
+    decideAnsweredElsewhere(
+      answeredHere: await CallAnsweredGuard.answeredHere(callId),
+      ringingHere: false,
+    ) ==
+    AnsweredElsewhereAction.dismissNative;
 
 /// Encrypted DMs arrive data-only on Android: the server holds no plaintext, so
 /// this isolate decrypts and raises the notification itself. Everything here is

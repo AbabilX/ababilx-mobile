@@ -681,3 +681,31 @@ features/calls/group/
   photograph of the caller — a group call has no such backdrop, so a
   permanently dark takeover would just be a light-theme bug. Do not "restore"
   the hardcoded palette here by pattern-matching the DM screens.
+
+## Answering here has to silence every other device
+
+One account, several signed-in devices, all of them ringing. When one picks up,
+the other ring surfaces have to come down, and they learn about it two ways: the
+WebSocket `call.accepted` / `group_call.self_joined` for a device whose app is
+alive, and an FCM control push (`voice_call_answered`, `group_call_joined`) for
+one that is killed or dozing and is ringing from the push alone.
+
+**The push is addressed to the account, not to a device** — FCM cannot address
+a device — so it also lands on the phone that just answered. Everything below
+exists to keep that phone's live call from being torn down by the message that
+announces it:
+
+- `decideAnsweredElsewhere` (`native/answered_elsewhere.dart`) is the single
+  rule, pinned by `test/features/calls/answered_elsewhere_test.dart`. Three
+  places act on these pushes and they must agree.
+- In the foreground the answer comes from **live call state** — a DM in
+  `connecting`/`connected`, a group call this device is in. In the background
+  isolate there is no state, so `CallAnsweredGuard` (a durable secure-storage
+  mark written on accept and on join) stands in for it.
+- **`FcmService` swallows both control types on purpose.** Both call providers
+  subscribe to the same `onMessage` stream and hold the state that separates
+  the answerer from a bystander; a second handler acting off the durable mark
+  alone would race the write and could dismiss the answerer's own surface.
+- **Never route these through `VoiceCallEndedGuard.markEnded`.** Answering is
+  not terminal. That mark is what suppresses a later `incoming`, and the call it
+  describes is still very much running.

@@ -311,6 +311,15 @@ class FcmService {
       await AndroidCallUi.endCall(callId);
       return;
     }
+    if (type == 'voice_call_answered' || type == 'group_call_joined') {
+      // Silent control push: one of this account's devices picked up, so the
+      // rest must stop ringing. Swallowed here on purpose — the call providers
+      // subscribe to the same foreground stream and act on it with the live
+      // call state, which is the only thing that can tell the device that
+      // answered from a device that merely knows about the call. Acting on it
+      // twice risks tearing down the answerer's own call.
+      return;
+    }
     if (type == 'group_call_ended') {
       // This is a silent lifecycle push, not a user notification. It closes a
       // native ring/ongoing surface when the WebSocket missed the ended event.

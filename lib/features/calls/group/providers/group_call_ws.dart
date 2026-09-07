@@ -8,6 +8,20 @@ mixin GroupCallWs on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
     final payload = event['group_call'];
     if (payload is! Map) return;
     final call = GroupCall.fromJson(Map<String, dynamic>.from(payload));
+
+    // Sent only to the member who just joined. Their other signed-in devices
+    // are still ringing an invite that has already been answered, and no
+    // broadcast event names the joiner — `group_call.updated` carries a
+    // participant count, nothing more.
+    if (type == 'group_call.self_joined') {
+      _invites?.markAnswered(call.id);
+      if (state.call?.id != call.id) {
+        unawaited(AndroidGroupCallUi.endCall(call.id));
+      }
+      rememberActiveCall(call.conversationId, call);
+      return;
+    }
+
     final ended = type == 'group_call.ended';
 
     if (ended) {
@@ -49,6 +63,14 @@ mixin GroupCallWs on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
       if (state.call?.id == callId) unawaited(clearRoom());
       final conversationId = data['conversation_id']?.toString() ?? '';
       if (conversationId.isNotEmpty) rememberActiveCall(conversationId, null);
+      return;
+    }
+    if (type == 'group_call_joined') {
+      // This member joined on another device. Silent control push, not a
+      // terminal one: the call itself keeps running.
+      if (callId.isEmpty || state.call?.id == callId) return;
+      _invites?.markAnswered(callId);
+      unawaited(AndroidGroupCallUi.endCall(callId));
       return;
     }
     if (type != 'group_call') return;

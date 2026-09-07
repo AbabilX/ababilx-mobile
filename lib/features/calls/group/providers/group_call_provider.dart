@@ -13,6 +13,7 @@ import '../../call_lifecycle.dart';
 import '../../call_ringtone.dart';
 import '../../ringtone/callkit_ring_events.dart';
 import '../../native/android_group_call_ui.dart';
+import '../../native/call_answered_guard.dart';
 import '../data/group_call_api.dart';
 import '../data/group_call_repository.dart';
 import '../data/models/group_call.dart';
@@ -143,6 +144,10 @@ class GroupCallNotifier extends GroupCallBase
       }
       _leftCallIds.remove(call.id);
       _invites?.markAnswered(call.id);
+      // The server now tells this account's other devices to stop ringing, and
+      // that message comes back here too — FCM addresses an account, never a
+      // device. This is how the background isolate knows to leave it alone.
+      unawaited(CallAnsweredGuard.mark(call.id));
       await AndroidGroupCallUi.hideIncoming(call.id);
       // Ongoing-call notification + `phoneCall|microphone` foreground service,
       // so Android keeps the SFU connection alive once the app leaves screen.
