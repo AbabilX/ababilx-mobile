@@ -17,6 +17,9 @@ class GroupRoomBinding {
     required void Function() sync,
     required void Function() onDisconnected,
     required void Function(TrackSource source) onLocalTrackUnpublished,
+    required void Function(DataReceivedEvent event) onData,
+    required void Function() onParticipantJoined,
+    required void Function(String identity) onParticipantLeft,
   }) {
     final listener = room.createListener();
     final binding = GroupRoomBinding._(room, sync, listener);
@@ -32,7 +35,13 @@ class GroupRoomBinding {
       )
       ..on<TrackSubscribedEvent>((_) => sync())
       ..on<TrackUnsubscribedEvent>((_) => sync())
-      ..on<ActiveSpeakersChangedEvent>((_) => sync());
+      ..on<ActiveSpeakersChangedEvent>((_) => sync())
+      // Hands and reactions ride the data channel; see signals/call_signals.dart.
+      ..on<DataReceivedEvent>(onData)
+      ..on<ParticipantConnectedEvent>((_) => onParticipantJoined())
+      ..on<ParticipantDisconnectedEvent>(
+        (event) => onParticipantLeft(event.participant.identity),
+      );
 
     return binding;
   }

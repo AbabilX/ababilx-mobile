@@ -32,6 +32,7 @@ mixin GroupCallLifecycle on GroupCallBase {
     await _binding?.detach();
     _binding = null;
     await _screenShare?.reset();
+    resetSignals();
     if (room != null) {
       unawaited(
         room.disconnect().whenComplete(() => unawaited(room.dispose())),
@@ -42,6 +43,9 @@ mixin GroupCallLifecycle on GroupCallBase {
       clearCall: true,
       clearScreen: true,
       participants: const [],
+      clearLobby: true,
+      hands: const {},
+      reactions: const [],
       muted: false,
       sharingScreen: false,
       screenSharePending: false,
@@ -53,4 +57,7 @@ mixin GroupCallLifecycle on GroupCallBase {
 
   /// Implemented by [GroupCallWs] — declared here so the mixins stay decoupled.
   void applyCall(GroupCall call);
+
+  /// Implemented by [GroupCallSignals].
+  void resetSignals();
 }

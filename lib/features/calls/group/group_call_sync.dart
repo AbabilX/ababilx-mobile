@@ -26,6 +26,7 @@ class GroupCallSync extends ConsumerStatefulWidget {
 class _GroupCallSyncState extends ConsumerState<GroupCallSync>
     with WidgetsBindingObserver {
   static const _route = '/group-call';
+  static const _lobbyRoute = '/group-call/lobby';
   bool _booted = false;
 
   String get _currentPath =>
@@ -76,12 +77,21 @@ class _GroupCallSyncState extends ConsumerState<GroupCallSync>
       });
     }
 
+    // One owner for every group-call route change. The screens themselves
+    // never navigate: two places pushing would race, and the lobby -> call
+    // handoff has to be a replacement, not a second push, or leaving the call
+    // would land back in the lobby it came from.
     ref.listen(groupCallProvider, (previous, next) {
+      final wasLobby = previous?.phase == GroupCallPhase.lobby;
+      if (next.phase == GroupCallPhase.lobby) {
+        if (!wasLobby) _openLobbyScreen();
+        return;
+      }
       if (next.active) {
         // Only on the edge into a call. The state churns constantly while
         // connected (speaking, mutes, joins) and re-pushing on every tick
         // would drag a user who minimized straight back into the call screen.
-        if (previous?.active != true) _openCallScreen();
+        if (previous?.active != true) _openCallScreen(replacingLobby: wasLobby);
         return;
       }
       // Left, failed, or the call ended for everyone — get off the call screen.
@@ -89,18 +99,41 @@ class _GroupCallSyncState extends ConsumerState<GroupCallSync>
       // clears `call` before this listener runs.
       if (previous?.active == true) {
         _leaveCallScreen(previous?.call?.conversationId);
+      } else if (wasLobby) {
+        _leaveLobbyScreen();
       }
     });
 
     return widget.child;
   }
 
-  void _openCallScreen() {
+  void _openLobbyScreen() {
+    if (_currentPath == _lobbyRoute) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _currentPath == _lobbyRoute) return;
+      if (ref.read(groupCallProvider).phase != GroupCallPhase.lobby) return;
+      widget.router.push(_lobbyRoute);
+    });
+  }
+
+  void _leaveLobbyScreen() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _currentPath != _lobbyRoute) return;
+      if (ref.read(groupCallProvider).phase == GroupCallPhase.lobby) return;
+      if (widget.router.canPop()) widget.router.pop();
+    });
+  }
+
+  void _openCallScreen({bool replacingLobby = false}) {
     if (_currentPath == _route) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _currentPath == _route) return;
       if (!ref.read(groupCallProvider).active) return;
-      widget.router.push(_route);
+      if (replacingLobby && _currentPath == _lobbyRoute) {
+        widget.router.pushReplacement(_route);
+      } else {
+        widget.router.push(_route);
+      }
     });
   }
 
