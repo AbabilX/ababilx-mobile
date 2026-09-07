@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/router_path.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import 'providers/group_call_provider.dart';
@@ -29,8 +30,7 @@ class _GroupCallSyncState extends ConsumerState<GroupCallSync>
   static const _lobbyRoute = '/group-call/lobby';
   bool _booted = false;
 
-  String get _currentPath =>
-      widget.router.routerDelegate.currentConfiguration.uri.path;
+  String get _currentPath => currentRoutePath(widget.router);
 
   @override
   void initState() {

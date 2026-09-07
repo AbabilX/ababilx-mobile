@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/router/router_path.dart';
 import '../auth/providers/auth_provider.dart';
 import '../messages/providers/chat_access_provider.dart';
 import '../profile/providers/user_status_provider.dart';
@@ -27,8 +28,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
   bool _shutdownScheduled = false;
   AppLifecycleState _lifecycle = AppLifecycleState.resumed;
 
-  String get _currentPath =>
-      widget.router.routerDelegate.currentConfiguration.uri.path;
+  String get _currentPath => currentRoutePath(widget.router);
 
   /// Flutter route/UI can update while resumed or in the brief inactive
   /// transition (e.g. notification shade). Paused/hidden → native CallKit.

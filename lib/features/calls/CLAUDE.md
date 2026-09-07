@@ -732,6 +732,47 @@ Pinned by `test/features/calls/group_call_layout_test.dart` (stage) and
 constraint bugs, which unit tests cannot see and screenshots only catch if
 somebody happens to look at the right participant count.
 
+## `currentConfiguration.uri` is not the route you are on
+
+`GroupCallSync` owns every `/group-call` route change and asks "am I on it?"
+before pushing or popping. It asked `routerDelegate.currentConfiguration.uri.path`,
+and that is wrong for a pushed route: `RouteMatchList.push` appends an
+`ImperativeRouteMatch` through `copyWith(matches: …)` and carries the base
+`uri` over untouched. After `push('/group-call')` from a chat the location
+still reads `/messages/<id>`.
+
+Everything downstream of that guard was therefore dead:
+
+- **Leave never left.** `_leaveCallScreen` bails unless the path is
+  `/group-call`, so hanging up only emptied the state and the screen stayed —
+  header with no duration, "Waiting for others to join…", and a hang-up button
+  for a call that had already ended. That page was not a state anyone designed;
+  it was the call screen that failed to pop.
+- The dedupe in `_openCallScreen` never matched either, so two pushes of the
+  same route were possible and only one of them would ever be popped.
+- `ActiveCallBanner` hides itself on the call route by the same comparison, so
+  the "return to call" bar drew across the top of the call it was offering to
+  return to.
+
+`currentRoutePath` (`core/router/router_path.dart`) reads
+`currentConfiguration.last.matchedLocation`, which `push` does update, and is
+now the only way any of this is asked. `CallStoreSync` navigates with `go`, so
+the DM side never showed the bug — it is on the helper anyway, because the next
+person to switch a `go` to a `push` should not have to rediscover this.
+`test/core/router/router_path_test.dart` pins both halves, including the
+assertion that `uri.path` still reports the old location.
+
+## Leaving the call screen is not leaving the app
+
+The chevron and Back return to the app and leave the call running behind
+`ActiveCallBanner`; they do not shrink into a floating window. Reaching for a
+control *inside* the app should not eject the whole app into a thumbnail over
+the launcher. PiP is still armed the whole time the call screen is mounted
+(`AndroidPip.setActive`, which sets `setAutoEnterEnabled` / `onUserLeaveHint`),
+so pressing Home shrinks the call exactly as before — that is the case PiP is
+for. Nothing is lost by popping, because the call was never the route: the
+banner, the ongoing notification and the channel header all lead back to it.
+
 ## Answering here has to silence every other device
 
 One account, several signed-in devices, all of them ringing. When one picks up,

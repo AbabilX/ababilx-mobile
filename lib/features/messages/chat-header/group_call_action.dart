@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../core/router/router_path.dart';
 import '../../calls/group/providers/group_call_provider.dart';
 import '../data/models/chat_models.dart';
 import 'call_action_pill.dart';
@@ -44,6 +45,15 @@ class _GroupCallActionState extends ConsumerState<GroupCallAction> {
     );
   }
 
+  /// Back to the call screen the user minimised, without stacking a second
+  /// copy of it — a double tap used to leave one `/group-call` route buried
+  /// under the other, and leaving the call then popped only the top one.
+  void _returnToCall(BuildContext context) {
+    final router = GoRouter.of(context);
+    if (currentRoutePath(router) == '/group-call') return;
+    router.push('/group-call');
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(groupCallProvider);
@@ -81,7 +91,7 @@ class _GroupCallActionState extends ConsumerState<GroupCallAction> {
       onTap: busyElsewhere || joiningThis
           ? null
           : inThisCall
-          ? () => context.push('/group-call')
+          ? () => _returnToCall(context)
           // GroupCallSync owns the route: it pushes the lobby on the phase
           // edge, so pushing here too would open it twice.
           : () => ref

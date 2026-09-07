@@ -17,6 +17,10 @@ const double callButtonMinDiameter = 36;
 
 /// One round control on the call bar. "On" states invert to the theme's own
 /// text colour, so mute, sharing and a raised hand read without a label.
+///
+/// Visuals match desktop group-call controls (surface fill + hairline border
+/// on idle) with a soft Material elevation so the six bottom controls read as
+/// tappable circles rather than flat discs on the pill.
 class CallRoundButton extends StatelessWidget {
   const CallRoundButton({
     super.key,
@@ -44,6 +48,7 @@ class CallRoundButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = CallColors.of(context);
+    final outline = Theme.of(context).colorScheme.outlineVariant;
     // "On" states invert against the theme's own onSurface/backdrop pair, so a
     // muted mic or a raised hand reads at a glance in light mode as well.
     final (background, foreground) = switch (tone) {
@@ -53,6 +58,14 @@ class CallRoundButton extends StatelessWidget {
       CallButtonTone.accent => (palette.accent, palette.onAccent),
     };
     final live = enabled && !busy && onTap != null;
+    // Desktop idle controls carry a border; filled tones already read as solid
+    // discs so a second stroke only muddies the edge.
+    final side = tone == CallButtonTone.neutral
+        ? BorderSide(color: outline, width: 1)
+        : BorderSide.none;
+    final shape = CircleBorder(side: side);
+    final fill = live ? background : background.withValues(alpha: 0.4);
+    final iconSize = (diameter * 0.44).clamp(18.0, 22.0);
 
     return Semantics(
       button: true,
@@ -60,27 +73,31 @@ class CallRoundButton extends StatelessWidget {
       child: Tooltip(
         message: label,
         child: Material(
-          color: live ? background : background.withValues(alpha: 0.4),
-          shape: const CircleBorder(),
+          color: fill,
+          elevation: live ? 2 : 0,
+          shadowColor: palette.onSurface.withValues(alpha: 0.28),
+          shape: shape,
+          clipBehavior: Clip.antiAlias,
           child: InkWell(
-            customBorder: const CircleBorder(),
+            customBorder: shape,
             onTap: live ? onTap : null,
+            splashColor: foreground.withValues(alpha: 0.16),
+            highlightColor: foreground.withValues(alpha: 0.08),
             child: SizedBox(
               width: diameter,
               height: diameter,
-              child: busy
-                  ? Padding(
-                      padding: EdgeInsets.all(diameter / 3),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: foreground,
-                      ),
-                    )
-                  : CallIcon(
-                      icon,
-                      color: foreground,
-                      size: diameter >= 46 ? 22 : 19,
-                    ),
+              child: Center(
+                child: busy
+                    ? SizedBox(
+                        width: iconSize,
+                        height: iconSize,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: foreground,
+                        ),
+                      )
+                    : CallIcon(icon, color: foreground, size: iconSize),
+              ),
             ),
           ),
         ),

@@ -43,13 +43,17 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
     super.dispose();
   }
 
-  /// Back shrinks the call into a floating window rather than leaving it
-  /// running with nothing on screen; the ordinary pop is the fallback for
-  /// devices that refuse to shrink.
-  Future<void> _minimize() async {
-    if (await AndroidPip.enter()) return;
-    if (mounted) popOrGoHome(context);
-  }
+  /// Back and the chevron return to the app, leaving the call running with
+  /// [ActiveCallBanner] across the top.
+  ///
+  /// They deliberately do NOT shrink into a floating window. Reaching for a
+  /// control inside the app should not eject the whole app into a thumbnail
+  /// over the launcher — PiP is for leaving AbabilX entirely, and it still
+  /// fires there: [AndroidPip.setActive] arms `setAutoEnterEnabled` /
+  /// `onUserLeaveHint`, so Home still shrinks the call. Nothing is lost by
+  /// popping, because the call is not the route — the banner and the ongoing
+  /// notification both lead back to it.
+  void _minimize() => popOrGoHome(context);
 
   @override
   Widget build(BuildContext context) {
