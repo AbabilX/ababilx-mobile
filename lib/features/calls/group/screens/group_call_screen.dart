@@ -96,6 +96,8 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
               view: _view,
               onView: (next) => setState(() => _view = next),
               onParticipants: () => showParticipantsSheet(context, state),
+              onToggleSpeaker: () =>
+                  ref.read(groupCallProvider.notifier).toggleSpeaker(),
               onMinimize: _minimize,
             ),
             const SizedBox(height: 12),

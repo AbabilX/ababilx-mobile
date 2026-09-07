@@ -8,10 +8,10 @@ import '../call_icons.dart';
 import '../providers/group_call_provider.dart';
 import 'group_call_leave_dialog.dart';
 
-/// Mute · speaker · share · hand · react · leave, on one row that never wraps.
+/// Mute · share · hand · react · leave, on one row that never wraps.
 ///
-/// Participants deliberately is not here: the header already carries it, and
-/// the duplicate was the seventh control that pushed the bar onto two lines.
+/// Speaker routing and participants live in the header — not here — so the
+/// bar stays five controls and does not wrap on a narrow phone.
 class GroupCallControls extends ConsumerWidget {
   const GroupCallControls({super.key, required this.state});
 
@@ -44,7 +44,7 @@ class GroupCallControls extends ConsumerWidget {
           ),
         const SizedBox(height: 8),
         CallControlBar(
-          count: connected ? 6 : 1,
+          count: connected ? 5 : 1,
           builder: (diameter) => [
             if (connected) ...[
               CallRoundButton(
@@ -60,17 +60,6 @@ class GroupCallControls extends ConsumerWidget {
                     : CallButtonTone.neutral,
                 enabled: !state.microphoneUnavailable,
                 onTap: notifier.toggleMute,
-              ),
-              CallRoundButton(
-                diameter: diameter,
-                icon: state.speaker
-                    ? CallIcons.speakerOn
-                    : CallIcons.speakerOff,
-                label: state.speaker ? 'Speaker on' : 'Earpiece',
-                tone: state.speaker
-                    ? CallButtonTone.active
-                    : CallButtonTone.neutral,
-                onTap: notifier.toggleSpeaker,
               ),
               CallRoundButton(
                 diameter: diameter,

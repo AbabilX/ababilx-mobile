@@ -693,7 +693,9 @@ widget being allowed to size itself:
   `CallControlBar` divides the width it is actually given and shrinks the
   buttons (floor 36dp, then it scrolls). Participants is gone from the bar
   entirely — the header already carries it, and that duplicate was the seventh
-  control.
+  control. Speaker routing (earpiece / loudspeaker) lives in the header beside
+  Participants too — device routing, not an in-call action — so the connected
+  bar is five: Mute · Share · Hand · React · Leave.
 - **Fitting on one row was not the same as looking like a bar.** The fixed
   buttons then spanned the screen edge to edge over the bare backdrop, and the
   disconnected state drew Hang up as a lone 58dp circle in the middle of

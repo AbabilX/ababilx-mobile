@@ -7,7 +7,10 @@ import '../providers/group_call_state.dart';
 import 'call_stage_view.dart';
 import 'call_surface.dart';
 
-/// Name, how long this has been going, and the two layout switches.
+/// Name, how long this has been going, layout switch, and speaker routing.
+///
+/// Speaker lives here (beside participants) instead of the bottom bar — that
+/// bar is for in-call actions; earpiece/loudspeaker is device routing.
 class GroupCallHeader extends StatefulWidget {
   const GroupCallHeader({
     super.key,
@@ -15,6 +18,7 @@ class GroupCallHeader extends StatefulWidget {
     required this.view,
     required this.onView,
     required this.onParticipants,
+    required this.onToggleSpeaker,
     required this.onMinimize,
   });
 
@@ -22,6 +26,7 @@ class GroupCallHeader extends StatefulWidget {
   final CallStageView view;
   final ValueChanged<CallStageView> onView;
   final VoidCallback onParticipants;
+  final VoidCallback onToggleSpeaker;
   final VoidCallback onMinimize;
 
   @override
@@ -102,6 +107,15 @@ class _GroupCallHeaderState extends State<GroupCallHeader> {
                 : CallStageView.grid,
           ),
         ),
+        if (state.phase == GroupCallPhase.connected)
+          _HeaderButton(
+            icon: state.speaker
+                ? CallIcons.speakerOn
+                : CallIcons.speakerOff,
+            label: state.speaker ? 'Speaker on' : 'Earpiece',
+            active: state.speaker,
+            onTap: widget.onToggleSpeaker,
+          ),
         _HeaderButton(
           icon: CallIcons.participants,
           label: 'Participants',
@@ -117,16 +131,26 @@ class _HeaderButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.active = false,
   });
 
   final CallGlyph icon;
   final String label;
   final VoidCallback onTap;
+  final bool active;
 
   @override
-  Widget build(BuildContext context) => IconButton(
-    tooltip: label,
-    onPressed: onTap,
-    icon: CallIcon(icon, color: CallColors.of(context).onSurface, size: 22),
-  );
+  Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
+    final fg = active ? palette.backdrop : palette.onSurface;
+    return IconButton(
+      tooltip: label,
+      onPressed: onTap,
+      style: IconButton.styleFrom(
+        backgroundColor: active ? palette.onSurface : null,
+        foregroundColor: fg,
+      ),
+      icon: CallIcon(icon, color: fg, size: 22),
+    );
+  }
 }
