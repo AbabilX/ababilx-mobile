@@ -1,5 +1,3 @@
-import 'link_preview_data.dart';
-
 /// Signal-Android's `LinkPreviewUtil.parseOpenGraphFields`, with one shape
 /// change: Signal writes a separate pattern per property family and only ever
 /// matches double-quoted attributes. This reads a `<meta>` tag's attributes
@@ -10,6 +8,8 @@ import 'link_preview_data.dart';
 /// the byte cap, and only six fields are wanted. It is the same trade the
 /// desktop's Rust scanner makes.
 library;
+
+import 'link_preview_data.dart';
 
 final _metaTag = RegExp(r'<\s*meta\b[^>]*>', caseSensitive: false);
 final _linkTag = RegExp(r'<\s*link\b[^>]*>', caseSensitive: false);

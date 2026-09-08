@@ -78,6 +78,15 @@ class LinkPreviewCache {
     return (true, entry.data);
   }
 
+  /// The same answer without an await, for a first frame that must not flash
+  /// an empty bubble before the store has been read. Null means "ask [read]" —
+  /// either the store is not loaded yet or this URL is not in it.
+  LinkPreviewData? peek(String url) {
+    final entry = _entries?[url];
+    if (entry == null || entry.expired) return null;
+    return entry.data;
+  }
+
   Future<void> write(String url, LinkPreviewData? data) async {
     await _ensureLoaded();
     final entries = _entries!;

@@ -51,6 +51,79 @@ node (`tiptap_autolink.dart`). `https://`, `www.`, emails and phone numbers
 dialer. A URL wins if a number sits inside its path. Invoice-like digit
 runs stay plain text.
 
+## Link previews are fetched on THIS phone
+
+`shared/link-preview/` is Signal-Android's `LinkPreviewRepository` +
+`LinkPreviewUtil` + `LinkUtil`, ported; `chat-timeline/message_link_preview.dart`
+is its `LinkPreviewView`. It replaced a microlink.io call whose free tier is
+**25 requests per day per IP** — past that every call is a 429 and the card
+silently drew nothing, which is exactly what "link previews don't work" looked
+like.
+
+```
+one preview per message, attachments win
+https only, and the link must survive isValidPreviewUrl
+2 MB read cap, 20 redirects followed BY HAND, each hop re-checked
+```
+
+- **The one Signal rule NOT ported is the important one.** Signal unfurls in
+  the COMPOSER, on the sender's phone, for a link that person just typed, and
+  ships the card inside the message — a receiver never makes a request, and
+  the setting is off by default. We unfurl on READ, so this runs for links
+  other people sent and the link's host learns this phone's address and the
+  moment the chat was opened. That is the accepted cost of having no server in
+  the path.
+- **`isValidPreviewUrl` is `LinkUtil.kt` line for line.** https only, no
+  reserved domain (`example`, `localhost`, `onion`, `test`, `i2p`), no `..` or
+  `…` in the host, no bidi override or box-drawing character anywhere, no
+  private/loopback/link-local/CGNAT/ULA IP literal — and **no mixed
+  ASCII/non-ASCII in the domain as written**. That last one is the point:
+  `аpple.com` with a Cyrillic а would otherwise draw a card carrying Apple's
+  real title and logo, a far better lure than the bare link. Read out of the
+  raw string, because `Uri.host` has already punycoded it.
+- **A NAME that resolves to a private address is not caught, and Signal does
+  not catch it either.** Closing it needs the resolved address at dial time,
+  which Dart's HTTP client does not expose. Only IP literals are refused.
+- **The user agent is ours, not Signal's.** Signal sends `WhatsApp/2`. Large
+  sites do key their Open Graph markup on it — Facebook answers a browser
+  string with **400** on a `/share/` link — but wearing another company's
+  crawler name is not something to build on. `AbabilXBot/1.0` is what desktop
+  and the server send too, so all three get the same markup back.
+- **The 2 MB cap is load-bearing.** YouTube serves an app shell to anything it
+  does not recognise as a crawler, with `og:title` some 700 KB in. A smaller
+  cap loses YouTube and nothing says so.
+- **Redirects are followed by hand** so every hop is re-validated — Signal
+  guards the same seam with `LinkPreviewRedirectValidationInterceptor`.
+  Following them inside Dio would let one https link land on a private address
+  two jumps later.
+- **Two layouts, and the image's shape picks between them**
+  (`isBigImagePreview`, Signal's `hasBigImageLinkPreview`): a full-width
+  picture above the text when it is ≥150dp wide AND wider than tall, otherwise
+  a 72dp square with the title beside it. A square `og:image` is nearly always
+  a logo, and a logo stretched across the bubble reads as a rendering fault.
+- **The size is resolved at load, not in the widget.** Signal never has to —
+  the SENDER attaches the thumbnail, so its dimensions arrive with the
+  message. Measuring in `build` instead would draw the small card and snap to
+  the big one a frame later, on every scroll past.
+- **The card takes the bubble's own fill**, as Signal does
+  (`setBackgroundColor(getDefaultBubbleColor(...))`), and bleeds to the
+  bubble's edges — which is why `MessageBubbleContent` moves the 12/7 inset off
+  the column and onto the parts that still want it, the same move media-only
+  bubbles already make.
+- **The cache key carries a version and MUST be bumped whenever the metadata
+  source changes** (`link_preview_cache.dart`). Misses are cached (2 h; hits
+  24 h), so every link that failed under the old source would stay blank on
+  that device even after the update that fixed it. Desktop was bitten by this
+  twice.
+- `LinkPreviewBuilder` is stateful on purpose: calling the loader from `build`
+  hands `FutureBuilder` a new future on every rebuild, and the card blinks out
+  for a frame whenever a reaction or a delivery tick rebuilds the bubble.
+- **Deliberately without a card**: `thread_root_card.dart` (a condensed
+  summary header — Signal drops the description there for the same reason) and
+  every message carrying an attachment.
+- The wall keeps its own bordered card (`shared/widgets/link_preview.dart`,
+  up to three per post) and now reads the same on-device unfurl.
+
 ## Call events collapse (web parity)
 
 Same-day consecutive `voice_call` / `group_call` rows (≥2) fold into one

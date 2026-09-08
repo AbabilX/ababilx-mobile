@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/link_preview.dart';
 import '../data/models/chat_models.dart';
 import '../tiptap_plain_text.dart';
 import '../tiptap_viewer.dart';
@@ -50,7 +49,6 @@ class MessageBody extends StatelessWidget {
             colors: colors,
             editedAt: message.editedAt,
           ),
-        if (plain.isNotEmpty) MessageLinkPreviews(text: plain),
         if (message.attachments.isNotEmpty)
           MessageAttachments(
             attachments: message.attachments,

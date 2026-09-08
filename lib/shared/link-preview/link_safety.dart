@@ -1,5 +1,3 @@
-import 'dart:io';
-
 /// Signal-Android's `util/LinkUtil.kt`, ported. A link is only fetched — and
 /// only drawn — if it survives every one of these.
 ///
@@ -7,6 +5,8 @@ import 'dart:io';
 /// with a Cyrillic а would otherwise unfurl into a card carrying Apple's real
 /// title and logo, which is a far better lure than the bare link ever was.
 library;
+
+import 'dart:io';
 
 /// Domains that exist to be examples, and the two darknet TLDs a phone cannot
 /// reach anyway.

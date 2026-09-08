@@ -1,12 +1,3 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:dio/dio.dart';
-
-import 'link_preview_data.dart';
-import 'link_preview_parse.dart';
-import 'link_safety.dart';
-
 /// Fetches a page and reads its Open Graph tags — on this device, the way
 /// Signal-Android does it (`LinkPreviewRepository`), not through a proxy.
 ///
@@ -17,6 +8,15 @@ import 'link_safety.dart';
 /// and the moment the chat was opened. That is what buys previews with no
 /// server in the path and no third-party quota.
 library;
+
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
+
+import 'link_preview_data.dart';
+import 'link_preview_parse.dart';
+import 'link_safety.dart';
 
 /// Signal's `FAILSAFE_MAX_TEXT_SIZE`. Worth keeping exactly: YouTube serves an
 /// app shell to anything it does not recognise as a crawler, with `og:title`
