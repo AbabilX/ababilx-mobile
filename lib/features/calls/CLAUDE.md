@@ -378,6 +378,46 @@ notification sitting in the tray until the user next opened the app, which
 reads exactly like the press having done nothing. Anything that has to react
 while the app is in the background belongs on a listener, never on a frame.
 
+## The notification must not outlive the engine that posted it
+
+Fixed 2026-09-09, from "I home the app, the shade says the call is running, but
+back in the app there is no call bar and I cannot reach the call screen".
+
+The call lives in the FlutterEngine, which the **Activity** owns.
+`OngoingCallService` does not — it is a foreground service in a process that
+survives its Activity. So when Android reclaims the Activity while a call is up
+("Don't keep activities", memory pressure), the WebRTC session dies with the
+engine and the notification stays behind, describing a call nothing in the app
+knows about. Every surface then disagrees: no `ActiveCallBanner` (the provider
+is at `idle`), no `/call` route to open, and the notification's tap lands in
+`OngoingCallSync` which had nothing to return to.
+
+`stopWithTask="true"` does not cover it — that is the task being swiped away,
+which is a different event.
+
+Three pieces, and they are all needed because each fails alone:
+
+- **`MainActivity.onDestroy` stops the service.** The engine is dying, so the
+  call is dying; the tray entry has to go with it.
+- **`AndroidOngoingCall.stop(force: true)`.** `_running` is per-isolate state,
+  so a *fresh* engine believes it has posted nothing and the ordinary `stop()`
+  returns before it sends anything. Force is the only way a new engine can take
+  down an entry an old one raised.
+- **`OngoingCallSync` clears once on boot** (`_clearedOrphan`). Its `_shownKey`
+  is empty at start, and the early return on an empty key meant a stale entry
+  was never even considered. The first sync with no call now always sends the
+  stop; after that the key check takes over and nothing is re-sent per state
+  change.
+
+The tap itself is also handled: `returnToCall` with neither provider active
+takes the notification down instead of opening a call screen with no call
+behind it.
+
+What this does **not** do is save the call — the media died with the engine and
+cannot be recovered. The server's own row is cleaned up by the heartbeat sweep
+(2 minutes), and a user who calls again before then gets `voice_call_busy_self`,
+which `activeCall()` already recovers from.
+
 ## A CallKit Accept can arrive as a fact, not as an event
 
 Fixed 2026-09-04, from "I accept from the full-screen call notification and the

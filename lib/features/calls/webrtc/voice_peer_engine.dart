@@ -447,6 +447,10 @@ class VoicePeerEngine {
       // ICE, so this never enters the reconnect path.
       case 'renegotiate':
         if (isOfferer) await _renegotiate();
+      // The peer has started sharing and there is only ever one shared screen
+      // in a 1:1 call. No-op unless we are the one sharing.
+      case 'screen_takeover':
+        await stopScreenShare();
       case 'media':
         _remoteMedia.apply(signal);
         _syncRemoteVideo();
@@ -637,6 +641,15 @@ class VoicePeerEngine {
       }
       rethrow;
     }
+  }
+
+  /// "I am taking the screen share" — the peer stops sharing its own.
+  ///
+  /// Sent only after our own capture succeeded: a picker the user backs out of
+  /// must not end somebody else's share for nothing.
+  Future<void> requestScreenTakeover() async {
+    if (_disposed) return;
+    await sendSignal({'kind': 'screen_takeover'});
   }
 
   Future<void> stopScreenShare({bool renegotiate = true}) async {

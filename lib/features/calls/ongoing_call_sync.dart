@@ -42,6 +42,18 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
   /// state change that alters neither does not re-post it.
   String _shownKey = '';
 
+  /// Whether the one unconditional stop has been sent yet.
+  ///
+  /// The Activity can be destroyed while a call is running — the OS reclaiming
+  /// it, "Don't keep activities" — and that takes the FlutterEngine and the
+  /// whole WebRTC session with it while [OngoingCallService] keeps running in
+  /// the surviving process. The shade then shows a call this app no longer
+  /// has: no return bar, no call screen, and tapping the notification does
+  /// nothing, because there is nothing to return to. A fresh sync knows only
+  /// its own [_shownKey] (empty), so without this it would leave that entry up
+  /// forever.
+  bool _clearedOrphan = false;
+
   @override
   void initState() {
     super.initState();
@@ -90,6 +102,12 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
           widget.router.go('/call');
         } else if (ref.read(groupCallProvider).phase != GroupCallPhase.idle) {
           widget.router.go('/group-call');
+        } else {
+          // The entry outlived the call it was posted for. Take it down rather
+          // than open a call screen with no call behind it.
+          voiceCallLog('ongoing.notification.orphan');
+          _shownKey = '';
+          unawaited(AndroidOngoingCall.stop(force: true));
         }
     }
   }
@@ -124,9 +142,10 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
       );
       return;
     }
-    if (_shownKey.isEmpty) return;
+    if (_shownKey.isEmpty && _clearedOrphan) return;
+    _clearedOrphan = true;
     _shownKey = '';
-    unawaited(AndroidOngoingCall.stop());
+    unawaited(AndroidOngoingCall.stop(force: true));
   }
 
   /// The screen blanks at the ear only for a call that is actually up and

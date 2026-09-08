@@ -92,8 +92,15 @@ class AndroidOngoingCall {
     await _send(_running ? 'update' : 'start');
   }
 
-  static Future<void> stop() async {
-    if (!_supported || !_running) return;
+  /// [force] sends the stop even though this isolate never posted anything.
+  ///
+  /// `_running` is per-isolate state, so a notification raised by a previous
+  /// FlutterEngine — the Activity was destroyed while the call was up, taking
+  /// the WebRTC session with it and leaving the foreground service behind —
+  /// is invisible to a fresh one and would never be taken down. The shade
+  /// then claims a call the app does not have and cannot get back to.
+  static Future<void> stop({bool force = false}) async {
+    if (!_supported || (!_running && !force)) return;
     _running = false;
     _screenSharing = false;
     _connected = true;

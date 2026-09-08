@@ -167,6 +167,14 @@ class MainActivity : FlutterActivity() {
         // The in-app call screen died with the Activity; CallKit's own hold is
         // untouched, so a call ringing natively keeps ringing.
         CallRinger.release(FLUTTER_HOLDER)
+        // The connected call died with it too, and less obviously: the WebRTC
+        // session lives in the FlutterEngine, which this Activity owns. The
+        // foreground service does not — it survives in the process and kept
+        // showing "Ongoing call" for a call that no longer existed, with no
+        // return bar in the app and nothing behind the notification's tap.
+        // `stopWithTask` only covers the task being swiped away; the OS
+        // reclaiming the Activity (or "Don't keep activities") is this case.
+        OngoingCallService.stop(this)
         shareIntake.dispose()
         ongoingCall.dispose()
         pip.dispose()

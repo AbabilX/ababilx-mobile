@@ -524,13 +524,21 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   Future<void> toggleScreenShare() async {
     final engine = _engine;
     if (engine == null || state.phase != VoiceCallPhase.connected) return;
-    if (state.remoteScreenStream != null && !state.screenSharing) return;
+    // Pressing Share while the other side is sharing TAKES OVER. It used to
+    // return here without a word, so on a call where the desktop shared first
+    // the button on the phone did nothing at all and reported nothing —
+    // indistinguishable from a broken button. There is one shared screen in a
+    // 1:1 call, and this is how it changes hands.
+    final takingOver = state.remoteScreenStream != null && !state.screenSharing;
     try {
       state = state.copyWith(clearScreenShareError: true);
       if (state.screenSharing) {
         await engine.stopScreenShare();
       } else {
         await engine.startScreenShare();
+        // After the capture, never before: a cancelled permission prompt or a
+        // dismissed picker must leave the peer's share running.
+        if (takingOver) await engine.requestScreenTakeover();
       }
     } catch (error) {
       voiceCallLog(

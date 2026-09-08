@@ -30,11 +30,14 @@ class CallControlsRow extends StatelessWidget {
   /// speaker has nothing to act on.
   bool get _live => call.active && call.phase != VoiceCallPhase.starting;
 
-  /// You may start sharing only when connected, and only while the other side
-  /// is not already sharing; stopping your own share is always allowed.
-  bool get _canShare =>
-      call.phase == VoiceCallPhase.connected &&
-      (call.remoteScreenStream == null || call.screenSharing);
+  /// Sharing needs a connected call and nothing else. Pressing this while the
+  /// other side is sharing TAKES OVER — the button used to be greyed out
+  /// there, which read as "screen sharing is broken on this call".
+  bool get _canShare => call.phase == VoiceCallPhase.connected;
+
+  /// The other side holds the one shared screen a 1:1 call has.
+  bool get _takingOver =>
+      call.remoteScreenStream != null && !call.screenSharing;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +64,11 @@ class CallControlsRow extends StatelessWidget {
           icon: call.screenSharing
               ? Icons.stop_screen_share_rounded
               : Icons.screen_share_rounded,
-          label: call.screenSharing ? 'Stop' : 'Share',
+          label: call.screenSharing
+              ? 'Stop'
+              : _takingOver
+              ? 'Take over'
+              : 'Share',
           selected: call.screenSharing,
           onPressed: _canShare ? onToggleScreenShare : null,
         ),
