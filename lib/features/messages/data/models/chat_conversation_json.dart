@@ -29,9 +29,11 @@ extension ChatConversationJson on ChatConversation {
     'peer_user_name': peerUserName,
     'peer_user_avatar': peerUserAvatar,
     'peer_left': peerLeft,
+    'is_self': isSelf,
     'can_message': canMessage,
     'request_state': requestState,
     'muted': muted,
+    'pinned': pinned,
     'member_avatars': memberAvatars,
     'member_count': memberCount,
   };

@@ -11,7 +11,12 @@ List<ChatConversation> unifiedConversations({
   ChatListFilter filter = ChatListFilter.all,
 }) {
   final all = [...dms, ...channels];
+  // Pinned first, and inside each block the same newest-first order. A pin
+  // says "keep this reachable", not "freeze it in place", so a pinned chat
+  // still rises within its block when it gets a message — which is why this
+  // is one comparator with a leading key rather than two sorted lists.
   all.sort((a, b) {
+    if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
     final ta =
         DateTime.tryParse(a.lastMessageAt ?? '')?.millisecondsSinceEpoch ?? 0;
     final tb =

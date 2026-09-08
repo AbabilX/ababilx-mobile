@@ -12,6 +12,7 @@ import '../chat_icon.dart';
 import '../chat_list_filters.dart';
 import '../chat_unread_badge.dart';
 import '../data/models/chat_models.dart';
+import '../note_to_self_avatar.dart';
 import 'group_avatar_stack.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_title.dart';
@@ -21,11 +22,15 @@ class ConversationRow extends ConsumerWidget {
     super.key,
     required this.conversation,
     required this.onTap,
+    this.onLongPress,
     this.currentUserId,
   });
 
   final ChatConversation conversation;
   final VoidCallback onTap;
+
+  /// Signal's gesture: press and hold a row for what can be done to it.
+  final VoidCallback? onLongPress;
   final String? currentUserId;
 
   @override
@@ -39,9 +44,9 @@ class ConversationRow extends ConsumerWidget {
     final time = relativeChatTime(conversation.lastMessageAt);
     final unread = conversation.unreadCount > 0;
     final peerInCall =
-        conversation.isDm &&
+        conversation.hasDmPeer &&
         ref.watch(isUserInCallProvider(conversation.peerUserId));
-    final peerStatus = conversation.isDm && !peerInCall
+    final peerStatus = conversation.hasDmPeer && !peerInCall
         ? ref.watch(userStatusForProvider(conversation.peerUserId))
         : null;
 
@@ -49,7 +54,7 @@ class ConversationRow extends ConsumerWidget {
     // Matching is done by comparing the peer's display name against each
     // discovered device's alias broadcast via UDP Multicast (LocalSend v2.1).
     final isLocalPeerNearby =
-        conversation.isDm &&
+        conversation.hasDmPeer &&
         conversation.peerUserName != null &&
         ref
             .watch(nearbyDevicesProvider)
@@ -65,6 +70,7 @@ class ConversationRow extends ConsumerWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
@@ -160,7 +166,17 @@ class ConversationRow extends ConsumerWidget {
                           currentUserId: currentUserId,
                         ),
                       ),
-                      ChatUnreadBadge(count: conversation.unreadCount),
+                      // Signal puts the pin where the unread badge goes and
+                      // lets the badge win: a pinned chat with something to
+                      // read has more to say about the badge than the pin.
+                      if (conversation.pinned && conversation.unreadCount <= 0)
+                        ChatIcon(
+                          HugeIcons.strokeRoundedPin,
+                          size: 15,
+                          color: colors.onSurfaceVariant,
+                        )
+                      else
+                        ChatUnreadBadge(count: conversation.unreadCount),
                     ],
                   ),
                 ],
@@ -387,6 +403,12 @@ class _ConversationAvatar extends StatelessWidget {
         name: title,
         size: 52,
       );
+    }
+    // The "peer" of a note to self is the viewer, so their own picture with
+    // their own presence dot on it would be the avatar. Signal draws a
+    // bookmark instead, and so do we.
+    if (conversation.isSelf) {
+      return NoteToSelfAvatar(size: 52, iconSize: 24);
     }
     return AppAvatar(
       size: 52,

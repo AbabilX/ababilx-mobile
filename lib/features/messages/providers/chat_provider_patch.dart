@@ -14,6 +14,7 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
     List<ChatLastAttachment>? lastMessageAttachments,
     bool clearLastMessageAttachment = false,
     bool? muted,
+    bool? pinned,
     String? name,
   }) {
     final next = list.map((c) {
@@ -31,6 +32,7 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
         lastMessageAttachments: lastMessageAttachments,
         clearLastMessageAttachment: clearLastMessageAttachment,
         muted: muted ?? c.muted,
+        pinned: pinned ?? c.pinned,
         name: name,
       );
     }).toList();

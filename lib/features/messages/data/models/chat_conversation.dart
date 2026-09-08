@@ -62,9 +62,11 @@ class ChatConversation extends Equatable {
     this.peerUserAvatar,
     this.peerUserEmail,
     this.peerLeft = false,
+    this.isSelf = false,
     this.canMessage = true,
     this.requestState = 'none',
     this.muted = false,
+    this.pinned = false,
     this.memberAvatars = const [],
     this.memberCount,
     this.avatarUrl,
@@ -101,6 +103,12 @@ class ChatConversation extends Equatable {
   final String? peerUserAvatar;
   final String? peerUserEmail;
   final bool peerLeft;
+
+  /// Note to Self: a personal DM whose two participants are the same account.
+  /// The peer fields describe the viewer, so everything that needs a second
+  /// person — calls, presence, safety numbers, the request bar, block and
+  /// report — is dropped rather than pointed back at them.
+  final bool isSelf;
   final bool canMessage;
 
   /// Signal-style message request, from this viewer's side:
@@ -110,8 +118,16 @@ class ChatConversation extends Equatable {
   /// was never a request.
   final String requestState;
 
-  bool get isIncomingRequest => requestState == 'incoming';
+  /// A note to self can never be a request: the server reports `none`, and a
+  /// bar offering to accept or block yourself would replace the composer.
+  bool get isIncomingRequest => !isSelf && requestState == 'incoming';
   final bool muted;
+
+  /// Kept at the top of this member's own list. Per-member like [muted], so
+  /// pinning a group reorders it for nobody else. The server caps it at four
+  /// (`chat.MaxPinnedConversations`) and answers a fifth with 409
+  /// `chat_pin_limit`.
+  final bool pinned;
   final List<String> memberAvatars;
   final int? memberCount;
 
@@ -133,6 +149,12 @@ class ChatConversation extends Equatable {
   /// two things a workspace channel needs and this model does not: who is
   /// asking, and their team role.
   bool get iAmAdmin => myRole == 'admin';
+
+  /// Whether this conversation has a second person in it — the precondition
+  /// for a nickname, a safety number, a call, a block, a report and
+  /// groups-in-common. A note to self is a DM and has no peer, which is the
+  /// one case a bare `isDm` check gets wrong.
+  bool get hasDmPeer => isDm && !isSelf && (peerUserId ?? '').isNotEmpty;
 
   bool get isChannel => type == 'channel';
   bool get isDm => type == 'dm';
@@ -173,6 +195,7 @@ class ChatConversation extends Equatable {
   /// bidi overrides that flip the rest of the row, newlines that break its
   /// layout, or a stack of combining marks that draws outside it.
   String displayTitle(String? currentUserId) {
+    if (isSelf) return 'Note to Self';
     if (isGroupConversation) {
       return safeDisplayName(name ?? slug, fallback: 'Group');
     }
@@ -236,9 +259,11 @@ class ChatConversation extends Equatable {
         json['peer_user_email'] ?? json['peerUserEmail'],
       ),
       peerLeft: json['peer_left'] as bool? ?? false,
+      isSelf: json['is_self'] as bool? ?? false,
       canMessage: json['can_message'] as bool? ?? true,
       requestState: json['request_state'] as String? ?? 'none',
       muted: json['muted'] as bool? ?? false,
+      pinned: json['pinned'] as bool? ?? false,
       memberAvatars: (json['member_avatars'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
@@ -262,6 +287,7 @@ class ChatConversation extends Equatable {
     List<ChatLastAttachment>? lastMessageAttachments,
     bool clearLastMessageAttachment = false,
     bool? muted,
+    bool? pinned,
     String? name,
     String? requestState,
     String? description,
@@ -302,9 +328,11 @@ class ChatConversation extends Equatable {
     peerUserName: peerUserName,
     peerUserAvatar: peerUserAvatar,
     peerLeft: peerLeft,
+    isSelf: isSelf,
     canMessage: canMessage,
     requestState: requestState ?? this.requestState,
     muted: muted ?? this.muted,
+    pinned: pinned ?? this.pinned,
     memberAvatars: memberAvatars,
     memberCount: memberCount,
     avatarUrl: avatarUrl ?? this.avatarUrl,
@@ -326,9 +354,11 @@ class ChatConversation extends Equatable {
     lastMessageAttachmentName,
     lastMessageAttachments,
     muted,
+    pinned,
     name,
     peerUserName,
     scope,
+    isSelf,
     canMessage,
     requestState,
     description,

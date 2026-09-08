@@ -193,6 +193,8 @@ class ApiConstants {
       '/api/teams/chat/conversations/$conversationId/read';
   static String chatConversationMute(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/mute';
+  static String chatConversationPin(String conversationId) =>
+      '/api/teams/chat/conversations/$conversationId/pin';
   static String chatConversationHide(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/hide';
   static String chatConversationAccept(String conversationId) =>

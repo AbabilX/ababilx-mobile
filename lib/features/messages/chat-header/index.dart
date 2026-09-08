@@ -37,10 +37,12 @@ class ChatHeader extends ConsumerWidget {
     final callActive = ref.watch(
       voiceCallProvider.select((state) => state.active),
     );
+    // hasDmPeer, not isDm: a note to self is a DM whose peer is the viewer, so
+    // these would report the viewer's own presence back at them.
     final peerInCall =
-        conversation.isDm &&
+        conversation.hasDmPeer &&
         ref.watch(isUserInCallProvider(conversation.peerUserId));
-    final peerStatus = conversation.isDm && !peerInCall
+    final peerStatus = conversation.hasDmPeer && !peerInCall
         ? ref.watch(userStatusForProvider(conversation.peerUserId))
         : null;
 
@@ -136,7 +138,9 @@ class ChatHeader extends ConsumerWidget {
                       color: colors.onSurfaceVariant,
                     ),
                   ),
-                if (conversation.isDm && conversation.canMessage)
+                // A note to self has no callee: the server finds no second
+                // member and answers voice_call_peer_unavailable.
+                if (conversation.hasDmPeer && conversation.canMessage)
                   CallActionPill(
                     icon: Icons.call_rounded,
                     label: AppTranslations.translate(context, ref, 'chat_call'),

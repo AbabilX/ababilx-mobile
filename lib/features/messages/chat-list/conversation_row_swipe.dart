@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../data/models/chat_models.dart';
+import 'conversation_end_action.dart';
 
 /// Swipe-right (any tile) → pinned "Read" action button.
 /// Swipe-left → pinned "Leave" (groups) or "Remove" (DMs, "delete for me" —
@@ -23,35 +24,14 @@ class ConversationRowSwipe extends StatelessWidget {
   final Widget child;
 
   Future<void> _confirmEndAction(BuildContext context) async {
-    final isChannel = conversation.isGroupConversation;
-    final title = isChannel ? 'Leave group?' : 'Delete chat?';
-    final message = isChannel
-        ? 'You will stop receiving messages from "${conversation.displayTitle(null)}".'
-        : 'The messages and files in "${conversation.displayTitle(null)}" are '
-              'deleted from this device and from your account, and cannot be '
-              'restored. The other person keeps their own copy.';
-    final actionLabel = isChannel ? 'Leave' : 'Delete';
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(actionLabel),
-          ),
-        ],
-      ),
+    // Same dialog the long-press sheet raises — one wording for one action.
+    final ok = await confirmConversationEndAction(
+      context,
+      conversation,
+      conversation.displayTitle(null),
     );
-    if (ok != true) return;
-    if (isChannel) {
+    if (!ok) return;
+    if (conversation.isGroupConversation) {
       onLeaveChannel();
     } else {
       onRemoveDm();

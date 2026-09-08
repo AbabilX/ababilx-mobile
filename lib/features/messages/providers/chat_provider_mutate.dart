@@ -164,6 +164,18 @@ mixin _ChatMutateMixin
     );
   }
 
+  /// Pin or unpin for this account. The server owns the four-pin cap and
+  /// answers a fifth with 409 `chat_pin_limit`, which is left to propagate:
+  /// the sheet turns it into one sentence, and patching state optimistically
+  /// here would show a pin the server refused.
+  Future<void> pinConversation(String id, bool pinned) async {
+    await repo.pinConversation(id, pinned);
+    state = state.copyWith(
+      dms: patchList(state.dms, id, pinned: pinned),
+      channels: patchList(state.channels, id, pinned: pinned),
+    );
+  }
+
   /// Personal groups only — name, description, picture, banner in one call. A
   /// workspace channel renames through [renameChannel].
   Future<ChatConversation> updateGroupInfo(

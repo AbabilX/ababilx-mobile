@@ -43,6 +43,7 @@ class ChatEndpoints {
       : switch (action) {
           'read' => ApiConstants.chatConversationRead(id),
           'mute' => ApiConstants.chatConversationMute(id),
+          'pin' => ApiConstants.chatConversationPin(id),
           'hide' => ApiConstants.chatConversationHide(id),
           'accept' => ApiConstants.chatConversationAccept(id),
           'attachments/presign' => ApiConstants.chatConversationPresign(id),

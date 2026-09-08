@@ -8,7 +8,11 @@ import 'contact_nickname.dart';
 /// which nobody has a private name for.
 extension ConversationNicknameTitle on ContactNicknames {
   String titleFor(ChatConversation conversation, String? currentUserId) {
-    if (!conversation.isDm) return conversation.displayTitle(currentUserId);
+    // A note to self is a DM with no second person: its "peer" is the viewer,
+    // so a nickname they set for themselves elsewhere would rename the thread.
+    if (!conversation.hasDmPeer) {
+      return conversation.displayTitle(currentUserId);
+    }
     return resolve(
       userId: conversation.peerUserId,
       name: conversation.peerUserName,

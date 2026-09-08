@@ -16,6 +16,7 @@ import '../chat-list/chat_search.dart';
 import '../chat-timeline/user_profile_sheet.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
+import '../note_to_self_avatar.dart';
 import '../providers/chat_provider.dart';
 import 'details_action_button.dart';
 import 'group_banner_header.dart';
@@ -50,6 +51,8 @@ class DetailsHeader extends ConsumerWidget {
         // spacing rather than reserving an empty band.
         if ((banner ?? '').isNotEmpty)
           GroupBannerHeader(url: banner!, title: title, avatarUrl: avatar)
+        else if (conversation.isSelf)
+          const NoteToSelfAvatar(size: 96, iconSize: 40)
         else
           ClipOval(
             child: AppAvatar(size: 96, url: avatar, name: title),
@@ -57,7 +60,7 @@ class DetailsHeader extends ConsumerWidget {
         const SizedBox(height: 14),
         InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: isDm && conversation.peerUserId != null
+          onTap: conversation.hasDmPeer
               ? () => showUserProfileSheet(
                   context: context,
                   ref: ref,
@@ -83,7 +86,7 @@ class DetailsHeader extends ConsumerWidget {
                     ),
                   ),
                 ),
-                if (isDm && conversation.peerUserId != null)
+                if (conversation.hasDmPeer)
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 24,
@@ -98,7 +101,7 @@ class DetailsHeader extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (isDm && conversation.canMessage)
+            if (conversation.hasDmPeer && conversation.canMessage)
               DetailsActionButton(
                 icon: const Icon(Icons.call_rounded),
                 label: 'Call',
@@ -161,6 +164,17 @@ class DetailsHeader extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(32, 6, 32, 0),
         child: Text(
           description,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant),
+        ),
+      );
+    }
+    if (conversation.isSelf) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(32, 6, 32, 0),
+        child: Text(
+          'Notes and files you keep here are readable only by your own '
+          'devices.',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant),
         ),

@@ -43,23 +43,26 @@ class DetailsDangerActions extends ConsumerWidget {
         else ...[
           DetailsTile(
             icon: const Icon(Icons.delete_outline_rounded),
-            title: 'Delete chat',
+            title: conversation.isSelf ? 'Delete notes' : 'Delete chat',
             destructive: true,
             onTap: () => _confirm(
               context,
               ref,
-              title: 'Delete chat?',
-              body:
-                  'The messages and files are deleted from this device and '
-                  'from your account, and cannot be restored. The other '
-                  'person keeps their own copy. If they message you again the '
-                  'chat returns empty.',
+              title: conversation.isSelf ? 'Delete your notes?' : 'Delete chat?',
+              body: conversation.isSelf
+                  ? 'Every note and file you saved here is deleted from this '
+                        'device and from your account. Nobody else ever had a '
+                        'copy, so this cannot be undone.'
+                  : 'The messages and files are deleted from this device and '
+                        'from your account, and cannot be restored. The other '
+                        'person keeps their own copy. If they message you '
+                        'again the chat returns empty.',
               action: 'Delete',
               run: () =>
                   ref.read(chatProvider.notifier).hideDm(conversation.id),
             ),
           ),
-          if (conversation.isPersonal && conversation.peerUserId != null)
+          if (conversation.isPersonal && conversation.hasDmPeer)
             DetailsTile(
               icon: const Icon(Icons.block_rounded),
               title: 'Block',
@@ -80,8 +83,9 @@ class DetailsDangerActions extends ConsumerWidget {
         ],
         // Report sits with the other red rows but ends nothing: filing one
         // leaves the conversation exactly as it was unless the person also
-        // chose to block.
-        DetailsReportTile(conversation: conversation),
+        // chose to block. There is nobody to report in a note to self.
+        if (!conversation.isSelf)
+          DetailsReportTile(conversation: conversation),
         if (group && GroupPermissions.of(ref, conversation).canManage)
           DetailsTile(
             icon: const Icon(Icons.delete_forever_outlined),

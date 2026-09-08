@@ -157,6 +157,18 @@ class ChatConversationsApi {
     return data['muted'] as bool? ?? muted;
   }
 
+  /// Pin or unpin for this account. A fifth pin comes back as 409
+  /// `chat_pin_limit`, which the caller shows rather than swallowing: a pin
+  /// that silently did nothing is indistinguishable from a broken button.
+  Future<bool> pinConversation(String conversationId, bool pinned) async {
+    final res = await _client.post(
+      _endpoints.action(conversationId, 'pin'),
+      data: {'pinned': pinned},
+    );
+    final data = unwrapApiData<Map<String, dynamic>>(res);
+    return data['pinned'] as bool? ?? pinned;
+  }
+
   Future<void> hideDm(String conversationId) async {
     await _client.post(_endpoints.action(conversationId, 'hide'));
   }

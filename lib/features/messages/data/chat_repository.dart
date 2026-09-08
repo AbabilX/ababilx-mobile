@@ -285,6 +285,9 @@ class ChatRepository {
   Future<bool> muteConversation(String conversationId, bool muted) =>
       _conversations.muteConversation(conversationId, muted);
 
+  Future<bool> pinConversation(String conversationId, bool pinned) =>
+      _conversations.pinConversation(conversationId, pinned);
+
   Future<void> hideDm(String conversationId) =>
       _conversations.hideDm(conversationId);
 

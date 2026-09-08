@@ -22,7 +22,9 @@ class SafetyNumberBanner extends ConsumerWidget {
     final chat = ref.watch(chatProvider);
     final conversation = chat.conversationById(conversationId);
     // A group has no single peer identity to pin, so there is nothing to watch.
-    final peerUserId = conversation?.isDm == true
+    // hasDmPeer, not isDm: in a note to self the peer is the viewer, so there
+    // is no second identity to compare and no substitution to catch.
+    final peerUserId = conversation?.hasDmPeer == true
         ? (conversation?.peerUserId ?? '')
         : '';
     if (peerUserId.isEmpty) return const SizedBox.shrink();

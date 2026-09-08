@@ -14,6 +14,7 @@ class ConversationRows extends StatelessWidget {
     required this.onMarkRead,
     required this.onLeaveChannel,
     required this.onRemoveDm,
+    required this.onLongPress,
     this.currentUserId,
   });
 
@@ -23,6 +24,9 @@ class ConversationRows extends StatelessWidget {
   final void Function(ChatConversation) onMarkRead;
   final void Function(ChatConversation) onLeaveChannel;
   final void Function(ChatConversation) onRemoveDm;
+
+  /// Signal's gesture: press and hold a row for what can be done to it.
+  final void Function(ChatConversation) onLongPress;
   final String? currentUserId;
 
   @override
@@ -62,6 +66,7 @@ class ConversationRows extends StatelessWidget {
               conversation: c,
               currentUserId: currentUserId,
               onTap: () => onTap(c),
+              onLongPress: () => onLongPress(c),
             ),
           );
         },

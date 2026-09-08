@@ -125,8 +125,7 @@ class _ConversationDetailsScreenState
           SharedMediaSection(conversationId: conversation.id),
           // A DM only. "Groups in common" is a fact about two people, and in a
           // group the second person is a list.
-          if (conversation.isDm &&
-              (conversation.peerUserId ?? '').isNotEmpty) ...[
+          if (conversation.hasDmPeer) ...[
             const DetailsSectionGap(),
             GroupsInCommonSection(
               peerUserId: conversation.peerUserId!,
@@ -143,7 +142,7 @@ class _ConversationDetailsScreenState
   List<Widget> _settingsTiles(ChatConversation conversation) => [
     // DM only: a nickname renames a person, and a group is not one. It sits
     // first because it is the fix for a name you cannot read.
-    if (conversation.isDm && (conversation.peerUserId ?? '').isNotEmpty)
+    if (conversation.hasDmPeer)
       DetailsTile(
         icon: const ChatIcon(HugeIcons.strokeRoundedUserEdit01),
         title: 'Nickname',
@@ -161,7 +160,7 @@ class _ConversationDetailsScreenState
       ),
     // DM only: a safety number is a comparison between two identities, and a
     // group has no single peer identity to compare against.
-    if (conversation.isDm && (conversation.peerUserId ?? '').isNotEmpty)
+    if (conversation.hasDmPeer)
       SafetyNumberTile(
         peerUserId: conversation.peerUserId!,
         peerName: conversation.displayTitle(

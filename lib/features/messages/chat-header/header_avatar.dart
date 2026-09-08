@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../chat-list/group_avatar_stack.dart';
 import '../data/models/chat_models.dart';
+import '../note_to_self_avatar.dart';
 
 /// The small picture beside the conversation name in the top bar.
 ///
@@ -31,6 +32,9 @@ class ChatHeaderAvatar extends StatelessWidget {
         name: title,
         size: size,
       );
+    }
+    if (conversation.isSelf) {
+      return NoteToSelfAvatar(size: size, iconSize: size * 0.55);
     }
     return ClipOval(
       child: AppAvatar(
