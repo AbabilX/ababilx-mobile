@@ -23,12 +23,20 @@ class VoiceCameraCapture {
   static Future<VoiceCameraCapture> open({bool front = true}) async {
     final stream = await navigator.mediaDevices.getUserMedia({
       'audio': false,
+      // Floors AND ceilings. With minimums alone the device picked whatever
+      // resolution it liked — often 1080p — and a 1:1 call that falls back to
+      // the TURN relay could not carry it, which is what made video calls drop
+      // where audio ones did not. 720p at 30fps, capped again on the sender
+      // side by [capVideoSendBitrate].
       'video': {
         'facingMode': front ? 'user' : 'environment',
         'mandatory': {
-          'minWidth': '640',
-          'minHeight': '480',
-          'minFrameRate': '24',
+          'minWidth': '480',
+          'minHeight': '360',
+          'minFrameRate': '15',
+          'maxWidth': '1280',
+          'maxHeight': '720',
+          'maxFrameRate': '30',
         },
         'optional': <dynamic>[],
       },

@@ -854,6 +854,22 @@ same signalling, still peer-to-peer. The parts that are not obvious:
   camera foreground-service type in the manifest, on purpose.
 - Camera permission refused = audio call, not a failed call.
   `_ensureCameraPermission` never throws; only the in-call toggle reports it.
+- **The callee never offers.** `_renegotiate` on the non-offerer sends
+  `{"kind":"renegotiate"}` and the caller re-offers. flutter_webrtc has no SDP
+  rollback, so a peer holding its own offer can never apply an incoming one:
+  glare is unrecoverable here and the fix is to make it impossible. A colliding
+  offer that still arrives (old peer) is ignored, not applied. There is a 4 s
+  fallback to offering directly, for a server that predates the signal.
+- **A signal-handling error does not end a connected call** any more; it goes
+  to `VoiceReconnectController`. That single `_failLocal` was why a bad SDP
+  dropped the call on both phones at once.
+- **`VoiceCallHeartbeat` beats every 20 s while accepted.** Without it a call
+  whose network died stayed `accepted` on the server forever and both accounts
+  were refused every later call as busy. The reply carries the row, so a phone
+  that was swept learns it here.
+- **Camera capture is bounded (720p30) and the sender capped at 800 kbps**
+  (`voice_video_quality.dart`). It had minimums only, so devices captured
+  1080p, and a relayed call could not carry it.
 - Layout: remote camera full-screen (`CallVideoView`, cover fit), a shared
   screen still wins the stage, local preview is `LocalCameraPreview` with the
   flip button on it. CallKit gets `type: 1` and "Video call" as the handle.

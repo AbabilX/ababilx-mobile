@@ -24,6 +24,7 @@ import '../native/answered_elsewhere.dart';
 import '../native/call_answered_guard.dart';
 import '../native/voice_call_ended_guard.dart';
 import '../ringtone/callkit_ring_events.dart';
+import '../voice_call_heartbeat.dart';
 import '../voice_call_log.dart';
 import '../voice_call_ringable.dart';
 import '../webrtc/voice_peer_engine.dart';
@@ -38,6 +39,19 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   StreamSubscription<CallEvent?>? _nativeSub;
   StreamSubscription<RemoteMessage>? _foregroundPushSub;
   VoicePeerEngine? _engine;
+
+  /// Proof of life for the server, so an accepted call cannot outlive the two
+  /// devices on it. See [VoiceCallHeartbeat].
+  late final VoiceCallHeartbeat _heartbeat = VoiceCallHeartbeat(
+    send: (callId) async => (await _repository.action(callId, 'heartbeat')).call,
+    onEndedRemotely: (call) => unawaited(
+      _finishLocal(
+        call.status == 'ended' ? VoiceCallPhase.ended : VoiceCallPhase.failed,
+        reason: 'heartbeat.${call.status}',
+        callId: call.id,
+      ),
+    ),
+  );
   VoiceReconnectController? _reconnect;
   final List<Map<String, dynamic>> _pendingSignals = [];
   Timer? _ringTimer;
@@ -141,7 +155,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       await _ensureCallPermissions();
       if (video) await _ensureCameraPermission();
       voiceCallLog('start.api.begin', source: 'startOutgoing');
-      final session = await _repository.start(conversation.id, video: video);
+      final session = await _startWithStaleRecovery(conversation.id, video);
       voiceCallLog(
         'start.api.ok',
         callId: session.call.id,
@@ -466,8 +480,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       if (engine.cameraOn) {
         await engine.stopCamera();
       } else {
-        await _ensureCameraPermission();
-        if (!await Permission.camera.isGranted) {
+        if (!await _ensureCameraPermission()) {
           throw StateError('camera permission denied');
         }
         await engine.startCamera(front: state.cameraFront);
@@ -817,10 +830,16 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
           clearRemoteCamera: stream == null,
         );
       },
+      // The side that placed the call is the only one allowed to offer.
+      isOfferer: state.outgoing,
     );
+    // Ask for the camera BEFORE the first offer. Checking without asking was
+    // why a first-ever video call silently became an audio one: nothing else
+    // requests this permission, so the check could only ever fail, and the
+    // initial SDP then carried no video at all.
     await engine.prepare(
       iceServers: session.iceServers,
-      video: call.isVideo && await Permission.camera.isGranted,
+      video: call.isVideo && await _ensureCameraPermission(),
     );
     // Call may have ended, been replaced, or left connecting while prepare ran.
     if (state.call?.id != callId ||
@@ -836,6 +855,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       return;
     }
     _engine = engine;
+    _heartbeat.start(callId);
     _reconnect = VoiceReconnectController(
       // Only the original caller re-offers; the callee asks it to. Two
       // simultaneous restart offers collide and neither is applied.
@@ -962,6 +982,17 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         phase: _phaseName,
         reason: _debugError(error),
       );
+      // One bad SDP must not end a call that is already carrying media. A
+      // renegotiation that collides, an answer that arrives twice, a stale
+      // description — all of these threw here and killed the call on both
+      // sides at once, which is why video dropped far more often than audio:
+      // it renegotiates and audio does not. Once connected, hand it to the
+      // reconnect controller instead, which restarts ICE and only gives up
+      // after its own window.
+      if (state.connectedAt != null) {
+        _reconnect?.noteTrouble('signal_handle_failed', immediate: false);
+        return;
+      }
       await _failLocal('signal_handle_failed', error);
     }
   }
@@ -1408,6 +1439,52 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
   }
 
+  /// Places the call, and if the server says this account is already busy,
+  /// clears the account's own dead call once and tries again.
+  ///
+  /// The dead call is the whole reason this exists: a drop that took the
+  /// network with it never reached the server, so the row stayed live and
+  /// every later call was refused. Both people then saw "the other one is in
+  /// another call" and neither could do anything about it, because neither
+  /// device still knew the id to hang up.
+  Future<VoiceCallSession> _startWithStaleRecovery(
+    String conversationId,
+    bool video,
+  ) async {
+    try {
+      return await _repository.start(conversationId, video: video);
+    } on DioException catch (error) {
+      final busySelf = _apiError(error).contains('voice_call_busy_self');
+      if (!busySelf || !await _clearOwnStaleCall()) rethrow;
+      return _repository.start(conversationId, video: video);
+    }
+  }
+
+  /// Ends a call the server still believes this account is on while nothing on
+  /// this device is running one. Never touches a live call: an engine here
+  /// means the media session is real and the server is right.
+  Future<bool> _clearOwnStaleCall() async {
+    if (_engine != null) return false;
+    try {
+      final stale = await _repository.activeCall();
+      if (stale == null) return false;
+      voiceCallLog(
+        'busy.stale.clear',
+        callId: stale.call.id,
+        reason: stale.call.status,
+      );
+      await _repository.action(
+        stale.call.id,
+        'fail',
+        reason: 'stale_call_recovered',
+      );
+      return true;
+    } catch (error) {
+      voiceCallLog('busy.stale.clear.failed', reason: _debugError(error));
+      return false;
+    }
+  }
+
   bool _wasFinished(String callId) => _finishedCallIds.contains(callId);
 
   /// Microphone must be granted before WebRTC capture.
@@ -1445,17 +1522,25 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
   /// Camera is optional on a video call: a refusal degrades to audio rather
   /// than failing the call, so this only throws when asked from a toggle.
-  Future<void> _ensureCameraPermission() async {
-    if (await Permission.camera.isGranted) return;
+  Future<bool> _ensureCameraPermission() async {
+    if (await Permission.camera.isGranted) return true;
     final resumed =
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
-    if (!resumed) return;
+    if (!resumed) {
+      voiceCallLog(
+        'permission.camera.blocked',
+        callId: state.call?.id,
+        reason: 'app_not_resumed',
+      );
+      return false;
+    }
     final status = await Permission.camera.request();
     voiceCallLog(
       'permission.camera',
       callId: state.call?.id,
       reason: status.name,
     );
+    return status.isGranted;
   }
 
   /// Ask for microphone up-front so an incoming call can be answered instantly,
@@ -1471,6 +1556,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   }
 
   Future<void> _resetResources() async {
+    _heartbeat.stop();
     _ringTimer?.cancel();
     _resetTimer?.cancel();
     _connectWatchdog?.cancel();
@@ -1486,6 +1572,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   String _friendlyError(Object error) {
     final apiError = _apiError(error);
     final value = '$apiError ${error.toString()}';
+    if (value.contains('voice_call_busy_self')) {
+      return 'You are already in another call.';
+    }
     if (value.contains('voice_call_busy')) {
       final name = state.pendingPeerName?.trim();
       if (name != null && name.isNotEmpty) {

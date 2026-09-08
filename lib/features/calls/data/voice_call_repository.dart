@@ -15,6 +15,8 @@ class VoiceCallRepository {
 
   Future<VoiceCallSession> get(String callId) => _api.get(callId);
 
+  Future<VoiceCallSession?> activeCall() => _api.activeCall();
+
   Future<VoiceCallSession> action(
     String callId,
     String action, {

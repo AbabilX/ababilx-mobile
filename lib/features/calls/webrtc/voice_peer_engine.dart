@@ -10,6 +10,7 @@ import '../voice_call_log.dart';
 import 'ice_candidate_stats.dart';
 import 'voice_camera_capture.dart';
 import 'voice_media_map.dart';
+import 'voice_video_quality.dart';
 
 typedef VoiceSignalSender = Future<bool> Function(Map<String, dynamic> signal);
 
@@ -50,7 +51,19 @@ class VoicePeerEngine {
     required this.onRemoteScreenChanged,
     required this.onLocalCameraChanged,
     required this.onRemoteCameraChanged,
+    required this.isOfferer,
   });
+
+  /// True on the side that placed the call.
+  ///
+  /// Exactly one side is allowed to create offers. flutter_webrtc has no SDP
+  /// rollback, so a peer that receives an offer while holding one of its own
+  /// can never apply it — there is no way back to `stable`. Glare therefore
+  /// cannot be resolved after the fact here, only avoided: the callee asks the
+  /// caller to re-offer instead of offering itself. Every renegotiation a
+  /// video call needs (camera on/off, screen share, ICE restart) goes through
+  /// this one funnel.
+  final bool isOfferer;
 
   final VoiceSignalSender sendSignal;
   final void Function() onConnected;
@@ -94,6 +107,11 @@ class VoicePeerEngine {
   bool _disposed = false;
   bool _connected = false;
   bool _answerReceived = false;
+
+  /// Counts remote offers applied, so the fallback below can tell whether the
+  /// peer answered a renegotiation request or ignored it.
+  int _remoteOffers = 0;
+  Timer? _renegotiateFallback;
 
   bool get ready => _peer != null && _localStream != null;
 
@@ -264,6 +282,14 @@ class VoicePeerEngine {
         _cameraWireStreamId = camera.stream.id;
         needsOffer = true;
       }
+      final cameraSender = _cameraSender;
+      if (cameraSender != null) {
+        await capVideoSendBitrate(
+          cameraSender,
+          maxBitrate: kCameraMaxBitrate,
+          maintainResolution: false,
+        );
+      }
     } catch (_) {
       _camera = null;
       await camera.close();
@@ -364,6 +390,18 @@ class VoicePeerEngine {
       case 'offer':
         final sdp = signal['sdp'] as String? ?? '';
         if (sdp.isEmpty) return;
+        if (await _requirePeer().getSignalingState() !=
+            RTCSignalingState.RTCSignalingStateStable) {
+          // Glare. Applying this would throw, and that thrown error used to
+          // end the call on both phones at once. With no SDP rollback in
+          // flutter_webrtc there is nothing else this side can do: drop their
+          // offer, keep ours, and let them re-offer after it is answered.
+          // Checked before anything below mutates state for an offer that is
+          // not going to be applied. Only a peer on a build that predates the
+          // single-offerer rule can reach here.
+          voiceCallLog('signal.offer.glare', reason: 'ignored_remote_offer');
+          return;
+        }
         if (!_remoteMedia.received &&
             !_sdpSendsVideo(sdp) &&
             _remoteScreenStream != null) {
@@ -375,6 +413,8 @@ class VoicePeerEngine {
         final peer = _requirePeer();
         await peer.setRemoteDescription(RTCSessionDescription(sdp, 'offer'));
         _remoteDescriptionSet = true;
+        _remoteOffers++;
+        _renegotiateFallback?.cancel();
         if (_camera != null || _screenStream != null) await _sendMediaMap();
         final answer = await peer.createAnswer({
           'mandatory': {
@@ -403,6 +443,10 @@ class VoicePeerEngine {
         await _flushCandidates();
       case 'restart':
         onRestartRequested();
+      // The peer's tracks changed and it may not offer. Nothing to do with
+      // ICE, so this never enters the reconnect path.
+      case 'renegotiate':
+        if (isOfferer) await _renegotiate();
       case 'media':
         _remoteMedia.apply(signal);
         _syncRemoteVideo();
@@ -572,6 +616,11 @@ class VoicePeerEngine {
       final track = tracks.first;
       _screenStream = stream;
       _screenSender = await peer.addTrack(track, stream);
+      await capVideoSendBitrate(
+        _screenSender!,
+        maxBitrate: kScreenMaxBitrate,
+        maintainResolution: true,
+      );
       onLocalScreenChanged(true);
       track.onEnded = () => unawaited(stopScreenShare());
       await _sendMediaMap();
@@ -650,14 +699,66 @@ class VoicePeerEngine {
     voiceCallLog('signal.restart.send', reason: sent ? 'ok' : 'ws_unavailable');
   }
 
+  /// The one place a mid-call offer can come from.
+  ///
+  /// The callee never offers; it asks the caller to, and answers what comes
+  /// back. `OfferToReceiveVideo` on the caller's offer is what makes that
+  /// work: it puts a video m-line on the wire, and the callee's own pending
+  /// track — added by `addTrack` and not yet associated with anything — is
+  /// bound to it when the offer is applied. So a camera the callee turned on
+  /// still reaches the caller, without the callee ever having to offer.
   Future<void> _renegotiate() async {
+    if (_disposed) return;
+    if (isOfferer) return _offerDirectly();
+    // Ask, do not offer. Deliberately not the `restart` signal: that one routes
+    // through the reconnect controller and paints "Reconnecting…" over a call
+    // that is perfectly healthy and merely turning a camera on.
+    final sent = await sendSignal({'kind': 'renegotiate'});
+    if (!sent) throw StateError('signaling_unavailable');
+    _armRenegotiateFallback();
+  }
+
+  /// A server that predates the `renegotiate` signal drops it without telling
+  /// anyone — the socket accepted the frame, so [sendSignal] reports success.
+  /// If no offer has arrived by the time this fires, fall back to offering
+  /// directly, which is what this side used to do unconditionally.
+  void _armRenegotiateFallback() {
+    _renegotiateFallback?.cancel();
+    final before = _remoteOffers;
+    _renegotiateFallback = Timer(const Duration(seconds: 4), () async {
+      if (_disposed || _remoteOffers != before) return;
+      voiceCallLog('signal.renegotiate.fallback', reason: 'no_offer_in_4s');
+      try {
+        // This side is the callee: offering is only valid from `stable`.
+        if (await _requirePeer().getSignalingState() !=
+            RTCSignalingState.RTCSignalingStateStable) {
+          return;
+        }
+        await _offerDirectly();
+      } catch (error) {
+        voiceCallLog(
+          'signal.renegotiate.fallback.failed',
+          reason: error.toString(),
+        );
+      }
+    });
+  }
+
+  /// Creates and sends an offer.
+  ///
+  /// No stability check: replacing an offer this side already has outstanding
+  /// is legal, and it is exactly what an ICE restart does when the first offer
+  /// was lost. Refusing here left a recovery with nothing to send and the call
+  /// died when the reconnect budget ran out.
+  Future<void> _offerDirectly() async {
     final peer = _requirePeer();
     final offer = await peer.createOffer({
       'mandatory': {'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true},
     });
     await peer.setLocalDescription(offer);
-    final sent = await sendSignal({'kind': 'offer', 'sdp': offer.sdp});
-    if (!sent) throw StateError('signaling_unavailable');
+    if (!await sendSignal({'kind': 'offer', 'sdp': offer.sdp})) {
+      throw StateError('signaling_unavailable');
+    }
   }
 
   bool _sdpSendsVideo(String sdp) {
@@ -685,6 +786,8 @@ class VoicePeerEngine {
     if (_disposed) return;
     _disposed = true;
     await stopScreenShare(renegotiate: false);
+    _renegotiateFallback?.cancel();
+    _renegotiateFallback = null;
     final camera = _camera;
     _camera = null;
     _cameraSender = null;

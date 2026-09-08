@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import 'models/voice_call_session.dart';
@@ -27,6 +29,25 @@ class VoiceCallApi {
     return VoiceCallSession.fromJson(
       unwrapApiData<Map<String, dynamic>>(response),
     );
+  }
+
+  /// The account's current live call, or null.
+  ///
+  /// Recovery path for a call this device no longer knows the id of — a killed
+  /// process, or a drop that took the network with it. Without it a row the
+  /// server still believes in is unreachable: every new call is refused as
+  /// busy and there is nothing to point the hangup at. A 404 means the server
+  /// predates the endpoint, which is not an error worth surfacing.
+  Future<VoiceCallSession?> activeCall() async {
+    try {
+      final response = await _client.get(ApiConstants.meActiveCall);
+      final data = unwrapApiData<Map<String, dynamic>>(response);
+      if (data['call'] == null) return null;
+      return VoiceCallSession.fromJson(data);
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   Future<VoiceCallSession> get(String callId) async {
