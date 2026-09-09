@@ -494,6 +494,65 @@ without the key now takes the emailed code instead of showing a QR of its own.
   `test/features/messages/device_link_test.dart` — change one side alone and the
   check silently becomes two unrelated numbers.
 
+## Sending this phone's history to a new device — `history-transfer/`
+
+The phone is the SOURCE and only the source. A new web or desktop device draws
+`ababilx://history-transfer?t=<token>&k=<ephemeral public key>&v=1`, this phone
+scans it from the same scanner as the other two codes (`QrLoginFlow.start`
+dispatches on the scheme), approves once, and uploads. Server side is
+`/api/messaging/history-transfers/*`, migrations `0140` + `0142`.
+
+```
+snapshot   seal message chunks onto disk, plan where every file's bytes go
+upload     chunk by chunk, resumable; an uploaded chunk is NEVER re-sent
+manifest   seal and commit the index of what was sent — and what was missing
+```
+
+- **Why a snapshot exists at all**, when the messages are already here: gzip
+  output is not reproducible and a chunk the server has accepted is frozen, so
+  re-running the export after an interruption would produce different bytes for
+  an index the destination may already have read. Message chunks are sealed
+  into `<app support>/history_transfer/<id>/` first; the upload replays those
+  files. **Media is never staged** — the attachment files already are the
+  snapshot, and copying a phone's media library to send it once is the one
+  thing a device short on storage cannot afford.
+- **The manifest is committed LAST and freezes the transfer.** The server
+  refuses new chunks after it and refuses completion until every chunk it names
+  is uploaded *and* acknowledged, so an early manifest either describes chunks
+  that do not exist or shuts out the ones still to come.
+- **A file the phone no longer holds is recorded, not skipped** (`first_chunk:
+  -1`). The message still arrives and the attachment reads as unavailable —
+  which is the truth — rather than as a download that will never finish.
+  `HistoryTransferOutcome.missingFiles` is reported separately from progress
+  for the same reason: every message plus four lost photos is not "everything
+  transferred".
+- **The hash is the store's, not a re-read.** `AttachmentBlobs.contentHash` was
+  computed when the file landed; re-hashing a 200 MB video per transfer would
+  cost minutes for nothing. Only a row without one is streamed through
+  `hashFileContents`.
+- **One file is sent once**, keyed by `attachmentUrlKey` — the same key the
+  destination's own attachment store uses, so a forward that shares a URL
+  re-attaches on both sides without a second copy.
+- **Pending and failed sends stay here** (`message.isPending`). They are not
+  history, the destination cannot finish sending them, and the confirmed copy
+  would arrive later under a different id.
+- **Deletion markers ride in the manifest**, read at the END of the run. A
+  message deleted mid-snapshot is already inside a sealed chunk; carrying the
+  markers (rather than a list of revoked ids) also covers a whole conversation
+  cleared while the upload was running.
+- **Crypto is one random key per transfer**, sealed to the scanned ephemeral
+  key — SHA-256 over the ECDH X coordinate, the device-link derivation exactly
+  — and every chunk binds its index into the AAD, so dropping or reordering
+  chunks fails the tag instead of producing a shorter, plausible history. The
+  AAD strings are the wire format; desktop and web must match them byte for
+  byte. Pinned in `test/features/messages/history_transfer_crypto_test.dart`.
+- The verification code is `historyTransferVerificationCode`, deliberately the
+  same six digits as the device link: one question, one derivation.
+- **Not built yet**, and none of it is fake: no attempt to re-download a file
+  from R2 before sending it (missing is reported as missing), no network-class
+  or storage-pressure gating on the upload, no background/foreground-service
+  continuation, and no destination — so nothing has been transferred end to end.
+
 ## Traps
 
 - `_privateJwkFromIdentity` exists because `_publicJwkFromIdentity` emits

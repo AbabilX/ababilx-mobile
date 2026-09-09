@@ -170,6 +170,18 @@ class ApiConstants {
   static const String chatArchiveChunk = '/api/messaging/archive/chunk';
   static const String chatArchiveCommit = '/api/messaging/archive/commit';
 
+  // Phone -> new web/desktop device history transfer. The phone is always the
+  // source; listing and acknowledging chunks belong to the destination.
+  static const String historyTransfers = '/api/messaging/history-transfers';
+  static const String historyTransferActive =
+      '/api/messaging/history-transfers/active';
+  static const String historyTransferInfo =
+      '/api/messaging/history-transfers/info';
+  static const String historyTransferApprove =
+      '/api/messaging/history-transfers/approve';
+  static const String historyTransferDeny =
+      '/api/messaging/history-transfers/deny';
+
   static const String chatDm = '/api/teams/chat/dm';
   static String chatVoiceCalls(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/calls';

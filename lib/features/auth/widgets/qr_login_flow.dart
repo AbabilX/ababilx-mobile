@@ -5,16 +5,20 @@ import '../../../core/localization/app_translations.dart';
 import '../../local_share/widgets/qr_scan_sheet.dart';
 import '../../messages/chat-people/scanned_user_sheet.dart';
 import '../../messages/chat-people/user_qr_payload.dart';
+import '../../messages/history-transfer/history_transfer_approval.dart';
+import '../../messages/history-transfer/history_transfer_payload.dart';
 import '../../messages/message_e2ee/device_link_approval.dart';
 import '../data/qr_login_repository.dart';
 
 /// Scan a QR from another device and act on it.
 ///
-/// Three things can come off the camera, told apart by the `ababilx://` host:
+/// Four things can come off the camera, told apart by the `ababilx://` host:
 /// a **sign-in** code hands that device a session; a **device-link** code
 /// hands it this account's message key, which is the only way a new device can
-/// read messages at all — the server has no copy to give it; a **user** code
-/// is somebody's handle, and opens a chat with them.
+/// read messages at all — the server has no copy to give it; a
+/// **history-transfer** code asks for the messages and files this phone still
+/// holds, including the ones the server let go at 180 days; a **user** code is
+/// somebody's handle, and opens a chat with them.
 ///
 /// The two device codes show what is being approved first, and declining calls
 /// the matching deny endpoint so the waiting device stops immediately rather
@@ -30,6 +34,10 @@ class QrLoginFlow {
 
     if (isDeviceLinkPayload(payload)) {
       await DeviceLinkApproval.start(context, ref, payload);
+      return;
+    }
+    if (isHistoryTransferPayload(payload)) {
+      await HistoryTransferApproval.start(context, ref, payload);
       return;
     }
     final handle = usernameFromQrPayload(payload);
