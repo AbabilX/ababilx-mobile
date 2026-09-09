@@ -8,7 +8,16 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
 
   void setFeed(String key, ChatFeed feed) {
     if (isDisposed) return;
-    state = state.copyWith(feeds: {...state.feeds, key: feed});
+    final filtered = ref
+        .read(chatMessageStoreProvider)
+        .deletions
+        .filter(feed.messages);
+    state = state.copyWith(
+      feeds: {
+        ...state.feeds,
+        key: feed.copyWith(messages: filtered),
+      },
+    );
   }
 
   /// Decrypts when the page itself carries E2EE rows. Deciding this from the

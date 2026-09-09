@@ -52,7 +52,16 @@ mixin _ChatMutateMixin
   }
 
   Future<void> deleteMessage(String messageId) async {
+    final deletingConversation = state.activeConversationId;
     await repo.deleteMessage(messageId);
+    if (deletingConversation != null) {
+      await ref
+          .read(chatMessageStoreProvider)
+          .deletions
+          .rememberMessage(deletingConversation, messageId);
+    }
+    await ref.read(attachmentSweeperProvider).onMessageDeleted(messageId);
+    await ref.read(chatMessageStoreProvider).remove(messageId);
     final convId = state.activeConversationId;
     if (convId == null) return;
     removeFeedMessage(convId, messageId);
@@ -231,7 +240,10 @@ mixin _ChatMutateMixin
       },
       threadRepliesByRoot: {
         for (final entry in state.threadRepliesByRoot.entries)
-          if (!belongs(entry.key)) entry.key: entry.value,
+          if (entry.value.any((m) => m.conversationId != conversationId))
+            entry.key: entry.value
+                .where((m) => m.conversationId != conversationId)
+                .toList(),
       },
       searchResults: state.searchResults
           .where((m) => m.conversationId != conversationId)
@@ -269,6 +281,7 @@ mixin _ChatMutateMixin
     }
     _forgetConversationInMemory(conversationId);
     await wipeConversationLocally(ref, conversationId);
+    await syncChatDeletions(ref, state.currentUserId);
   }
 
   Future<void> deleteChannel(String channelId) async {

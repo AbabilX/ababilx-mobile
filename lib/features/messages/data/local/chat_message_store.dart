@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'chat_deletion_filter.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,11 +45,29 @@ class ChatMessageStore {
        ),
        _android = androidStore;
 
+  final deletions = ChatDeletionFilter();
+  bool deletionCleanupComplete = false;
   final int keepPerConversation;
   final DriftChatMessageStore _drift;
   final AndroidChatMessageStore? _android;
 
   Future<List<ChatMessage>> page(
+    String conversationId, {
+    int limit = diskPageSize,
+    int? beforeMs,
+    String? beforeId,
+    String? threadRootId,
+  }) async => deletions.filter(
+    await _page(
+      conversationId,
+      limit: limit,
+      beforeMs: beforeMs,
+      beforeId: beforeId,
+      threadRootId: threadRootId,
+    ),
+  );
+
+  Future<List<ChatMessage>> _page(
     String conversationId, {
     int limit = diskPageSize,
     int? beforeMs,
@@ -117,6 +136,8 @@ class ChatMessageStore {
   }
 
   Future<void> saveAll(List<ChatMessage> messages) async {
+    messages = deletions.filter(messages);
+    final deletionRevision = deletions.revision;
     final native = _android;
     if (native != null) {
       try {
@@ -125,7 +146,8 @@ class ChatMessageStore {
         // Drift below remains a safe write path if the platform store fails.
       }
     }
-    await _drift.saveAll(messages);
+    await _drift.saveAll(deletions.filter(messages));
+    if (deletionRevision != deletions.revision) deletionCleanupComplete = false;
   }
 
   Future<void> saveOne(ChatMessage message) => saveAll([message]);
@@ -142,17 +164,35 @@ class ChatMessageStore {
   }
 
   Future<void> remove(String messageId) async {
-    final native = _android;
-    if (native != null) {
+    Object? failure;
+    if (_android != null) {
       try {
-        await native.remove(messageId);
-      } catch (_) {}
+        await _android.remove(messageId);
+      } catch (e) {
+        failure = e;
+      }
     }
     await _drift.remove(messageId);
+    if (failure != null) throw failure;
   }
 
+  Future<List<ChatMessage>> deletionPage({
+    int? afterMs,
+    String? afterId,
+    bool rollback = false,
+  }) => rollback
+      ? _drift.exportPage(
+          afterMs: afterMs,
+          afterId: afterId,
+          limit: localPageCeiling,
+        )
+      : exportPage(afterMs: afterMs, afterId: afterId);
+
   Future<List<ChatMessage>> search(String query, {int limit = 30}) =>
-      _drift.search(query, limit: limit);
+      _filteredSearch(query, limit);
+
+  Future<List<ChatMessage>> _filteredSearch(String query, int limit) async =>
+      deletions.filter(await _drift.search(query, limit: limit));
 
   Future<List<ChatMessage>> encryptedPage({int limit = 200, int offset = 0}) =>
       _drift.encryptedPage(limit: limit, offset: offset);

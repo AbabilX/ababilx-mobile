@@ -136,15 +136,13 @@ class DriftChatMessageStore {
 
   Future<void> remove(String messageId) async {
     if (messageId.isEmpty) return;
-    try {
-      await (_db.delete(
-        _db.cachedMessages,
-      )..where((t) => t.id.equals(messageId))).go();
-      await _db.customStatement(
-        "DELETE FROM cached_messages WHERE json_extract(payload_json, '\$.id') = ?",
-        [messageId],
-      );
-    } catch (_) {}
+    await (_db.delete(
+      _db.cachedMessages,
+    )..where((t) => t.id.equals(messageId))).go();
+    await _db.customStatement(
+      "DELETE FROM cached_messages WHERE json_extract(payload_json, '\$.id') = ?",
+      [messageId],
+    );
   }
 
   Future<List<ChatMessage>> listUnsent() async {

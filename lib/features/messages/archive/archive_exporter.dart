@@ -83,6 +83,7 @@ class ArchiveExporter {
       );
       if (page.isEmpty) break;
       for (final message in page) {
+        if (!store.deletions.allows(message)) continue;
         await writer.add(ArchiveFrame.messageFrame(message));
       }
       onProgress?.call(writer.framesWritten);

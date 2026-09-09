@@ -210,11 +210,17 @@ mixin _ChatActionsMixin
   /// [hydrateOutboxMessages]. Locked DM bubbles are skipped; they flush once
   /// [redecryptFailedMessages] resolves their real text after vault unlock.
   Future<void> retryPendingMessages() async {
+    try {
+      await syncChatDeletions(ref, state.currentUserId);
+    } catch (_) {
+      return;
+    }
     for (final entry in state.feeds.entries) {
       final feed = entry.value;
       final failedList = feed.messages
           .where(
             (m) =>
+                ref.read(chatMessageStoreProvider).deletions.allows(m) &&
                 m.sendStatus == MessageSendStatus.failed &&
                 !isLockedFailedMessage(m),
           )

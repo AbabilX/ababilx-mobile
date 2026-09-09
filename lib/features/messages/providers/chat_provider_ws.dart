@@ -15,11 +15,9 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
   Future<void> fetchSidebarSilent();
 
   Future<void> _onConversationDeleted(String conversationId) async {
-    if (conversationId.isNotEmpty) {
-      _forgetConversationInMemory(conversationId);
-      await wipeConversationLocally(ref, conversationId);
-    }
-    await fetchSidebarSilent();
+    // Reconcile the server cutoff rather than wiping newer messages that may
+    // have arrived while the deletion event was in flight.
+    if (conversationId.isNotEmpty) await fetchSidebarSilent();
   }
 
   void handleWsEvent(Map<String, dynamic> ev) {
@@ -64,6 +62,12 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     if (type == 'chat.message.deleted') {
       final id = ev['id'] as String? ?? '';
       if (id.isEmpty) return;
+      unawaited(
+        ref
+            .read(chatMessageStoreProvider)
+            .deletions
+            .rememberMessage(convId, id),
+      );
       removeFeedMessage(convId, id);
       (this as _ChatCacheMixin).deleteCachedMessageAsync(id);
       // Remove from all known thread feeds.

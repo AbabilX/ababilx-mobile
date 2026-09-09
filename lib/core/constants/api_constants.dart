@@ -1,5 +1,6 @@
 /// Base URL for the AbabilX backend.
 class ApiConstants {
+  static const chatDeletions = "/api/me/chat-deletions";
   ApiConstants._();
 
   static const String baseUrl = 'https://api.ababilx.com';
@@ -23,6 +24,7 @@ class ApiConstants {
   static const String meSessions = '/api/me/sessions';
   static const String meSessionsRevokeOthers = '/api/me/sessions/revoke-others';
   static const String meDiscovery = '/api/me/discovery';
+
   /// The caller's own live 1:1 call, for a client that lost track of one.
   static const String meActiveCall = '/api/me/active-call';
   static const String meName = '/api/me/name';

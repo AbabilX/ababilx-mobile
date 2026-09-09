@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../data/local/chat_deletion_sync.dart';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -142,6 +143,7 @@ class ChatNotifier extends Notifier<ChatState>
     // block may touch the network (see hydrateSidebarFromCache / localUserId),
     // so a cold open offline shows the last known chat list instantly
     // instead of waiting on any request to fail or time out.
+    await messageStore.deletions.load(await localUserId());
     final hadCache = await hydrateSidebarFromCache();
     unawaited(ref.read(attachmentSweeperProvider).sweepIfDue());
     try {
@@ -248,6 +250,20 @@ class ChatNotifier extends Notifier<ChatState>
       // Dio's full connect+receive timeout — cached rows (if any) stay on
       // screen either way since this only ever clears sidebarLoading, never
       // the dms/channels lists, on failure.
+      await syncChatDeletions(ref, await ensureCurrentUserId());
+      state = state.copyWith(
+        feeds: {
+          for (final e in state.feeds.entries)
+            e.key: e.value.copyWith(
+              messages: messageStore.deletions.filter(e.value.messages),
+            ),
+        },
+        threadRepliesByRoot: {
+          for (final e in state.threadRepliesByRoot.entries)
+            e.key: messageStore.deletions.filter(e.value),
+        },
+        searchResults: messageStore.deletions.filter(state.searchResults),
+      );
       final data = await _repo.listConversations().timeout(
         firstLoadNetworkTimeout,
       );

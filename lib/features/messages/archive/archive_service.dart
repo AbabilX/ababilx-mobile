@@ -8,6 +8,7 @@ import '../data/models/chat_models.dart';
 import '../message_e2ee/message_vault.dart';
 import '../providers/chat_provider.dart';
 import 'archive_api.dart';
+import '../data/local/chat_deletion_sync.dart';
 import 'archive_exporter.dart';
 import 'archive_importer.dart';
 
@@ -49,6 +50,10 @@ class ArchiveService {
     required int nowMs,
     void Function(int frames)? onProgress,
   }) async {
+    await syncChatDeletions(
+      _ref,
+      await _ref.read(chatProvider.notifier).ensureCurrentUserId(),
+    );
     final store = _ref.read(chatMessageStoreProvider);
     final result =
         await ArchiveExporter(
@@ -70,6 +75,10 @@ class ArchiveService {
   Future<ArchiveImportResult> restore({
     void Function(int restored)? onProgress,
   }) async {
+    await syncChatDeletions(
+      _ref,
+      await _ref.read(chatProvider.notifier).ensureCurrentUserId(),
+    );
     final manifest = await _api.fetchManifest();
     if (manifest == null) {
       throw StateError('there is no archive to restore');
