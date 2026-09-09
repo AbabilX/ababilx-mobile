@@ -11,6 +11,7 @@ class LinkPreviewData {
     this.title,
     this.description,
     this.imageUrl,
+    this.imagePath,
     this.siteName,
     this.imageWidth,
     this.imageHeight,
@@ -19,7 +20,14 @@ class LinkPreviewData {
   final String url;
   final String? title;
   final String? description;
+  /// Where the picture came from. Kept for the record only — nothing draws it,
+  /// because a remote URL in an image widget is the request this design exists
+  /// to avoid (see `link_preview_image_store.dart`).
   final String? imageUrl;
+
+  /// The downloaded copy on this device. This is what the card draws.
+  final String? imagePath;
+
   final String? siteName;
   final int? imageWidth;
   final int? imageHeight;
@@ -29,21 +37,24 @@ class LinkPreviewData {
   /// with neither is not a failure — it is a link with nothing to say.
   bool get isEmpty => (title ?? '').isEmpty && (imageUrl ?? '').isEmpty;
 
-  LinkPreviewData withImageSize(int? width, int? height) => LinkPreviewData(
-    url: url,
-    title: title,
-    description: description,
-    imageUrl: imageUrl,
-    siteName: siteName,
-    imageWidth: width,
-    imageHeight: height,
-  );
+  LinkPreviewData withImage(String? path, int? width, int? height) =>
+      LinkPreviewData(
+        url: url,
+        title: title,
+        description: description,
+        imageUrl: imageUrl,
+        imagePath: path,
+        siteName: siteName,
+        imageWidth: width,
+        imageHeight: height,
+      );
 
   Map<String, dynamic> toJson() => {
     'url': url,
     if (title != null) 'title': title,
     if (description != null) 'description': description,
     if (imageUrl != null) 'image': imageUrl,
+    if (imagePath != null) 'file': imagePath,
     if (siteName != null) 'site': siteName,
     if (imageWidth != null) 'w': imageWidth,
     if (imageHeight != null) 'h': imageHeight,
@@ -58,6 +69,7 @@ class LinkPreviewData {
       title: raw['title'] as String?,
       description: raw['description'] as String?,
       imageUrl: raw['image'] as String?,
+      imagePath: raw['file'] as String?,
       siteName: raw['site'] as String?,
       imageWidth: (raw['w'] as num?)?.toInt(),
       imageHeight: (raw['h'] as num?)?.toInt(),

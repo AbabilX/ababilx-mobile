@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../link-preview/link_preview_builder.dart';
+import '../link-preview/link_preview_photo.dart';
 import '../link-preview/link_safety.dart';
 
 /// Extract http(s) URLs from plain text, in the order they were written.
@@ -41,7 +41,7 @@ class LinkPreviewCard extends StatelessWidget {
         if (preview == null) return const SizedBox.shrink();
         final title = preview.title;
         final description = preview.description;
-        final image = preview.imageUrl;
+        final image = preview.imagePath;
 
         return Padding(
           padding: const EdgeInsets.only(top: 8),
@@ -115,13 +115,9 @@ class LinkPreviewCard extends StatelessWidget {
                       if (image != null)
                         SizedBox(
                           width: 116,
-                          child: CachedNetworkImage(
-                            imageUrl: image,
-                            fit: BoxFit.cover,
-                            placeholder: (_, _) => ColoredBox(
-                              color: scheme.surfaceContainerHighest,
-                            ),
-                            errorWidget: (_, _, _) => ColoredBox(
+                          child: LinkPreviewPhoto(
+                            path: image,
+                            fallback: ColoredBox(
                               color: scheme.surfaceContainerHighest,
                             ),
                           ),

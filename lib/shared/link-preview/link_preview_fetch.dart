@@ -43,6 +43,60 @@ const _timeout = Duration(seconds: 10);
 /// page with no tags all mean the same thing on screen: no card under a link
 /// that is still perfectly clickable.
 Future<LinkPreviewData?> fetchLinkPreview(String url, {Dio? client}) async {
+  final opened = await openPreviewStream(
+    url,
+    accept: 'text/html,application/xhtml+xml',
+    client: client,
+  );
+  if (opened == null) return null;
+
+  final contentType = previewContentType(opened.response);
+
+  // Linked straight at a picture. Signal makes it the card and uses the file
+  // name as the title, "which is no worse than the body of the message".
+  if (contentType.startsWith('image/')) {
+    await drainPreviewBody(opened.response);
+    return LinkPreviewData(
+      url: url,
+      title: _fileName(opened.finalUrl),
+      imageUrl: opened.finalUrl,
+    );
+  }
+  if (contentType.isNotEmpty && !contentType.contains('html')) {
+    await drainPreviewBody(opened.response);
+    return null;
+  }
+
+  final bytes = await readCappedBody(opened.response, _maxHtmlBytes);
+  // Malformed input is allowed through rather than thrown on: the read is cut
+  // at a byte boundary, so the last character of a capped page is usually
+  // half of one. Charset detection is NOT ported — a page declaring anything
+  // but UTF-8 loses its accents, not its card.
+  final html = const Utf8Decoder(allowMalformed: true).convert(bytes);
+  final preview = parseLinkPreview(url, html);
+  return preview.isEmpty ? null : preview;
+}
+
+/// A response that survived every check, and the URL it actually came from.
+class PreviewStream {
+  const PreviewStream(this.response, this.finalUrl);
+
+  final Response<ResponseBody> response;
+  final String finalUrl;
+}
+
+/// Opens [url] and follows its redirects BY HAND, re-checking every hop.
+///
+/// The page and its picture go through this same door on purpose. An `og:image`
+/// is written by whoever wrote the page, so it is exactly as untrusted as the
+/// link that led here — handing it straight to an image widget would skip the
+/// https rule, the reserved-domain list and the private-address refusal that
+/// the page itself had to pass.
+Future<PreviewStream?> openPreviewStream(
+  String url, {
+  required String accept,
+  Dio? client,
+}) async {
   if (!isValidPreviewUrl(url)) return null;
 
   final dio = client ?? Dio();
@@ -53,65 +107,49 @@ Future<LinkPreviewData?> fetchLinkPreview(String url, {Dio? client}) async {
       Uri.parse(target),
       options: Options(
         responseType: ResponseType.stream,
-        // Redirects are followed BY HAND so every hop is re-checked. Following
-        // them inside the client would let one https link land on a private
-        // address two jumps later — Signal guards the same seam with
-        // LinkPreviewRedirectValidationInterceptor.
+        // Following redirects inside the client would let one https link land
+        // on a private address two jumps later — Signal guards the same seam
+        // with LinkPreviewRedirectValidationInterceptor.
         followRedirects: false,
         validateStatus: (_) => true,
         sendTimeout: _timeout,
         receiveTimeout: _timeout,
-        headers: {
-          'User-Agent': previewUserAgent,
-          'Accept': 'text/html,application/xhtml+xml',
-        },
+        headers: {'User-Agent': previewUserAgent, 'Accept': accept},
       ),
     );
 
     final status = response.statusCode ?? 0;
-    final location = _header(response, 'location');
+    final location = response.headers.value('location');
     if (status >= 300 && status < 400 && location != null) {
-      await _drain(response);
+      await drainPreviewBody(response);
       final next = Uri.parse(target).resolve(location).toString();
       if (!isValidPreviewUrl(next)) return null;
       target = next;
       continue;
     }
     if (status < 200 || status >= 300) {
-      await _drain(response);
+      await drainPreviewBody(response);
       return null;
     }
-
-    final contentType = _header(response, 'content-type')?.toLowerCase() ?? '';
-
-    // Linked straight at a picture. Signal makes it the card and uses the file
-    // name as the title, "which is no worse than the body of the message".
-    if (contentType.startsWith('image/')) {
-      await _drain(response);
-      return LinkPreviewData(url: url, title: _fileName(target), imageUrl: target);
-    }
-    if (contentType.isNotEmpty && !contentType.contains('html')) {
-      await _drain(response);
-      return null;
-    }
-
-    final bytes = await _readCapped(response, _maxHtmlBytes);
-    // Malformed input is allowed through rather than thrown on: the read is cut
-    // at a byte boundary, so the last character of a capped page is usually
-    // half of one. Charset detection is NOT ported — a page declaring anything
-    // but UTF-8 loses its accents, not its card.
-    final html = const Utf8Decoder(allowMalformed: true).convert(bytes);
-    final preview = parseLinkPreview(url, html);
-    return preview.isEmpty ? null : preview;
+    return PreviewStream(response, target);
   }
 
   return null;
 }
 
-String? _header(Response<ResponseBody> response, String name) =>
-    response.headers.value(name);
+String previewContentType(Response<ResponseBody> response) =>
+    (response.headers.value('content-type') ?? '')
+        .split(';')
+        .first
+        .trim()
+        .toLowerCase();
 
-Future<Uint8List> _readCapped(Response<ResponseBody> response, int limit) async {
+/// Reads at most [limit] bytes, chunk by chunk, so the ceiling holds whatever
+/// the server claims its length to be.
+Future<Uint8List> readCappedBody(
+  Response<ResponseBody> response,
+  int limit,
+) async {
   final builder = BytesBuilder(copy: false);
   await for (final chunk in response.data!.stream) {
     builder.add(chunk);
@@ -121,7 +159,7 @@ Future<Uint8List> _readCapped(Response<ResponseBody> response, int limit) async 
   return bytes.length <= limit ? bytes : Uint8List.sublistView(bytes, 0, limit);
 }
 
-Future<void> _drain(Response<ResponseBody> response) async {
+Future<void> drainPreviewBody(Response<ResponseBody> response) async {
   try {
     await response.data?.stream.drain<void>();
   } catch (_) {

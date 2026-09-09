@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'link_preview_cache.dart';
 import 'link_preview_data.dart';
 import 'link_preview_fetch.dart';
-import 'link_preview_image.dart';
+import 'link_preview_image_store.dart';
 
 /// The one entry point a widget calls. Cache first, then one fetch per URL no
 /// matter how many bubbles ask at once — a forwarded link in twenty chats is
@@ -36,8 +36,22 @@ Future<LinkPreviewData?> _load(String url) async {
   }
 
   if (preview != null && preview.imageUrl != null) {
-    final size = await resolvePreviewImageSize(preview.imageUrl!);
-    preview = preview.withImageSize(size?.width.round(), size?.height.round());
+    // The picture is pulled onto this device rather than left as a URL for an
+    // image widget to fetch — Signal's `fetchThumbnail`, and the only way the
+    // og:image gets the same guards the page got.
+    PreviewImageFile? image;
+    try {
+      image = await downloadPreviewImage(preview.imageUrl!);
+    } catch (error) {
+      // Named for the same reason the unfurl's failure is: a card that lost its
+      // picture and a page that never had one look identical on screen.
+      debugPrint('[link-preview] could not download image for $url: $error');
+    }
+    preview = preview.withImage(image?.path, image?.width, image?.height);
+    // `isEmpty` cannot answer this: it asks what the PAGE offered, and the
+    // page still offers an og:image URL that would not download. A card whose
+    // only content was that picture has nothing left to say.
+    if (image == null && (preview.title ?? '').isEmpty) preview = null;
   }
 
   await LinkPreviewCache.instance.write(url, preview);

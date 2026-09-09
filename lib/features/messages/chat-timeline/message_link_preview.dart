@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../shared/link-preview/link_preview_data.dart';
+import '../../../shared/link-preview/link_preview_photo.dart';
 import '../../../shared/link-preview/link_safety.dart';
 import '../../../shared/widgets/link_preview.dart' show extractUrls;
 import 'message_bubble.dart';
@@ -42,7 +42,7 @@ String? messageLinkPreviewUrl({
 bool isBigImagePreview(LinkPreviewData preview) {
   final width = preview.imageWidth;
   final height = preview.imageHeight;
-  if (preview.imageUrl == null || width == null || height == null) return false;
+  if (preview.imagePath == null || width == null || height == null) return false;
   return width >= SignalBubbleMetrics.mediaMinWidthSolo && width > height;
 }
 
@@ -80,11 +80,9 @@ class MessageLinkPreviewImage extends StatelessWidget {
               SignalBubbleMetrics.mediaMinHeight,
               SignalBubbleMetrics.mediaMaxHeight,
             ),
-            child: CachedNetworkImage(
-              imageUrl: preview.imageUrl!,
-              fit: BoxFit.cover,
-              placeholder: (_, _) => ColoredBox(color: colors.muted.withValues(alpha: 0.12)),
-              errorWidget: (_, _, _) => const SizedBox.shrink(),
+            child: LinkPreviewPhoto(
+              path: preview.imagePath!,
+              fallback: const SizedBox.shrink(),
             ),
           );
         },
@@ -111,7 +109,7 @@ class MessageLinkPreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = preview.title;
     final description = preview.description;
-    final thumbnail = showThumbnail ? preview.imageUrl : null;
+    final thumbnail = showThumbnail ? preview.imagePath : null;
 
     return GestureDetector(
       onTap: () => _open(preview.url),
@@ -131,15 +129,13 @@ class MessageLinkPreviewCard extends StatelessWidget {
                 if (thumbnail != null) ...[
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: CachedNetworkImage(
-                      imageUrl: thumbnail,
+                    child: LinkPreviewPhoto(
+                      path: thumbnail,
                       width: 72,
                       height: 72,
-                      fit: BoxFit.cover,
-                      placeholder: (_, _) =>
-                          ColoredBox(color: colors.muted.withValues(alpha: 0.12)),
-                      errorWidget: (_, _, _) =>
-                          ColoredBox(color: colors.muted.withValues(alpha: 0.12)),
+                      fallback: ColoredBox(
+                        color: colors.muted.withValues(alpha: 0.12),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),

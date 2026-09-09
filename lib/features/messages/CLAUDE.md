@@ -101,20 +101,38 @@ https only, and the link must survive isValidPreviewUrl
   picture above the text when it is ≥150dp wide AND wider than tall, otherwise
   a 72dp square with the title beside it. A square `og:image` is nearly always
   a logo, and a logo stretched across the bubble reads as a rendering fault.
-- **The size is resolved at load, not in the widget.** Signal never has to —
-  the SENDER attaches the thumbnail, so its dimensions arrive with the
-  message. Measuring in `build` instead would draw the small card and snap to
-  the big one a frame later, on every scroll past.
+- **The picture is DOWNLOADED, never hotlinked** (`link_preview_image_store.dart`,
+  Signal's `LinkPreviewRepository.fetchThumbnail`). Handing an `og:image` to
+  `CachedNetworkImage` gave up three things at once: the URL skipped
+  `isValidPreviewUrl`, so a page could aim the phone at an address on its own
+  LAN; the request left with the image loader's headers instead of the crawler
+  user agent; and every device re-fetched it from the host on every cold start.
+  The bytes now come through `openPreviewStream` — the same guarded door, the
+  same redirect re-checks — are capped at 2 MB, must carry one of Signal's five
+  image content types, and land under `<app support>/link_previews/` named for
+  a hash of the URL. Signal's re-encode is NOT ported: it recompresses because
+  the thumbnail is about to be SENT, and ours is only ever drawn here.
+- **The size is resolved at load, not in the widget**, and it comes from the
+  downloaded bytes' own header (`ui.ImageDescriptor`, no pixels decoded).
+  Signal never has to — the SENDER attaches the thumbnail, so its dimensions
+  arrive with the message. Measuring in `build` instead would draw the small
+  card and snap to the big one a frame later, on every scroll past.
+- **A cached file can be gone before its cache entry is.** The folder holds 200
+  pictures and the metadata store 200 entries, pruned independently, so
+  `LinkPreviewPhoto` treats a missing file as an ordinary state and draws the
+  fallback rather than an error.
 - **The card takes the bubble's own fill**, as Signal does
   (`setBackgroundColor(getDefaultBubbleColor(...))`), and bleeds to the
   bubble's edges — which is why `MessageBubbleContent` moves the 12/7 inset off
   the column and onto the parts that still want it, the same move media-only
   bubbles already make.
 - **The cache key carries a version and MUST be bumped whenever the metadata
-  source changes** (`link_preview_cache.dart`). Misses are cached (2 h; hits
-  24 h), so every link that failed under the old source would stay blank on
-  that device even after the update that fixed it. Desktop was bitten by this
-  twice.
+  source changes** (`link_preview_cache.dart`, now `_v2`). Misses are cached
+  (2 h; hits 24 h), so every link that failed under the old source would stay
+  blank on that device even after the update that fixed it. Desktop was bitten
+  by this twice. `_v2` is the downloaded-picture shape: a `_v1` entry carries
+  only a remote URL nothing draws any more, so it would show its text and no
+  image until it aged out.
 - `LinkPreviewBuilder` is stateful on purpose: calling the loader from `build`
   hands `FutureBuilder` a new future on every rebuild, and the card blinks out
   for a frame whenever a reaction or a delivery tick rebuilds the bubble.

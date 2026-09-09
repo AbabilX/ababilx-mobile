@@ -12,12 +12,16 @@ import 'link_preview_data.dart';
 /// window — even after the update that fixed it. That has already bitten twice
 /// on desktop.
 ///
-/// v1 is the first on-device fetch (Signal-Android's approach). Before it,
+/// v2 stores the path of a DOWNLOADED picture beside the metadata; a v1 entry
+/// carries only a remote URL nothing draws any more, so every card held over
+/// from it would show its text and no image until the entry aged out.
+///
+/// v1 was the first on-device fetch (Signal-Android's approach). Before it,
 /// mobile called microlink.io, whose free tier is 25 requests per DAY per IP —
 /// past that every call is a 429 and the card silently draws nothing, which is
 /// exactly what "link previews don't work" looked like. Nothing was cached
 /// then, so there is no poisoned v0 to step over.
-const _storeKey = 'ababilx_link_preview_v1';
+const _storeKey = 'ababilx_link_preview_v2';
 
 /// A page that answered is worth remembering for a day; one that did not is
 /// retried in a couple of hours, so a host that was merely down is not
