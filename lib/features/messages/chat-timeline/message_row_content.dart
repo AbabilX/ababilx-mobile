@@ -135,6 +135,7 @@ class MessageRowContent extends ConsumerWidget {
             root: message,
             replies: replies ?? const [],
             count: message.threadCount,
+            isOwn: isOwnMessage,
             onTap: onOpenThread!,
           ),
       ],

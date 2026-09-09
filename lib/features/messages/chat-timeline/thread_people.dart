@@ -1,4 +1,5 @@
 import '../data/models/chat_models.dart';
+import '../tiptap_plain_text.dart';
 
 class ThreadPerson {
   const ThreadPerson({required this.userId, this.name, this.avatarUrl});
@@ -8,7 +9,9 @@ class ThreadPerson {
   final String? avatarUrl;
 }
 
-/// Unique reply authors (newest first), max 3. Falls back to root author.
+/// Unique authors on the thread (newest first), max 3. The root is included
+/// even when replies have not been fetched yet — that is how the card still
+/// draws a face on the main timeline.
 List<ThreadPerson> threadParticipants(
   ChatMessage root,
   List<ChatMessage> replies, {
@@ -17,6 +20,7 @@ List<ThreadPerson> threadParticipants(
   final byUser = <String, ({ThreadPerson person, int latest})>{};
 
   void consider(ChatMessage m) {
+    if (m.userId.isEmpty) return;
     final ts = DateTime.tryParse(m.createdAt)?.millisecondsSinceEpoch ?? 0;
     final existing = byUser[m.userId];
     if (existing == null || ts > existing.latest) {
@@ -31,17 +35,17 @@ List<ThreadPerson> threadParticipants(
     }
   }
 
+  consider(root);
   for (final m in replies) {
     consider(m);
   }
-  if (byUser.isEmpty) consider(root);
 
   final ranked = byUser.values.toList()
     ..sort((a, b) => b.latest.compareTo(a.latest));
   return ranked.take(max).map((e) => e.person).toList();
 }
 
-String? latestReplyAt(List<ChatMessage> replies) {
+ChatMessage? lastReplyMessage(List<ChatMessage> replies) {
   if (replies.isEmpty) return null;
   ChatMessage latest = replies.first;
   var latestTs =
@@ -53,20 +57,21 @@ String? latestReplyAt(List<ChatMessage> replies) {
       latestTs = ts;
     }
   }
-  return latest.createdAt;
+  return latest;
 }
 
-String formatRelativeAgo(String? iso) {
-  if (iso == null || iso.isEmpty) return '';
-  final dt = DateTime.tryParse(iso)?.toLocal();
-  if (dt == null) return '';
-  final diff = DateTime.now().difference(dt);
-  if (diff.inMinutes < 1) return 'just now';
-  if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
-  if (diff.inHours < 24) {
-    return '${diff.inHours} ${diff.inHours == 1 ? 'hour' : 'hours'} ago';
-  }
-  if (diff.inDays == 1) return '1 day ago';
-  if (diff.inDays < 7) return '${diff.inDays} days ago';
-  return '${dt.month}/${dt.day}';
+/// Last reply text when we already have it. Empty when the thread has not
+/// been opened — [thread_count] already said there are replies, so a
+/// "no messages" line would be a lie.
+String threadPreview(List<ChatMessage> replies) {
+  final latest = lastReplyMessage(replies);
+  if (latest == null) return '';
+  final plain = tiptapToPreviewText(latest.body);
+  if (plain.isNotEmpty) return plain;
+  if (latest.attachments.isNotEmpty) return 'Sent an attachment';
+  return '';
+}
+
+String threadReplyLabel(int replyCount) {
+  return replyCount == 1 ? '1 reply' : '$replyCount replies';
 }

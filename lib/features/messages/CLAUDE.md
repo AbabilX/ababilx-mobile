@@ -191,6 +191,19 @@ not in a widget.
   one row down per new message and comes to rest above the reader's own reply.
   Sending clears it, since a reply answers what it was marking.
 
+## Thread under a bubble is a compact reply chip
+
+A message with `thread_count > 0` draws `ThreadSummary` under the bubble,
+aligned with it: `N replies ›`, last-reply preview when already loaded,
+faces on the right. A short vertical stem (not an L) drops from the
+bubble into the chip so the two read as one item. No second copy of the
+root text — the bubble already said that. Replies are whatever is in
+`threadRepliesByRoot`; nothing is fetched just to fill the preview, so an
+unopened thread is count + faces only.
+
+Helpers live in `thread_people.dart` (`threadReplyLabel`, `threadPreview`,
+`threadParticipants`) and are tested.
+
 ## Reply means two different things, and they must never both be set
 
 The app has quotes *and* threads. `ComposerReplyTarget.resolve` is the only
