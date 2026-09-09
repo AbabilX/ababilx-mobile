@@ -124,6 +124,10 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
             threadRootId: replies,
           },
         );
+      } else if (!isDisposed) {
+        (this as _ChatThreadPrefetchMixin).prefetchThreadSummaries(
+          conversationId,
+        );
       }
     } catch (_) {
       final currentFeed = state.feeds[key] ?? const ChatFeed();

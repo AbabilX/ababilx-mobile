@@ -14,6 +14,9 @@ mixin ChatTimelineLoad on ConsumerState<ChatTimeline> {
     // This is exactly how WhatsApp loads conversations.
     n.hydrateFeedFromCache(widget.conversationId).then((_) {
       if (!mounted) return;
+      if (widget.threadRootId == null) {
+        n.prefetchThreadSummaries(widget.conversationId);
+      }
       n.loadFeed(
         widget.conversationId,
         threadRootId: widget.threadRootId,

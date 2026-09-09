@@ -12,6 +12,7 @@ import '../../notifications/chat/chat_notification_presenter.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../chat_thread_prefetch.dart';
 import '../chat_utils.dart';
 import '../data/chat_client_message_id.dart';
 import '../data/chat_message_merge.dart';
@@ -40,6 +41,7 @@ part 'chat_provider_requests.dart';
 part 'chat_provider_ws.dart';
 part 'chat_provider_cache.dart';
 part 'chat_provider_outbox.dart';
+part 'chat_provider_thread_prefetch.dart';
 
 class ChatNotifier extends Notifier<ChatState>
     with
@@ -52,7 +54,8 @@ class ChatNotifier extends Notifier<ChatState>
         _ChatRequestsMixin,
         _ChatWsMixin,
         _ChatCacheMixin,
-        _ChatOutboxMixin {
+        _ChatOutboxMixin,
+        _ChatThreadPrefetchMixin {
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
   WsClient get _ws => ref.read(wsClientProvider);
   bool _realtimeStarted = false;

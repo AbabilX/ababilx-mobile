@@ -1,5 +1,6 @@
 import 'package:ababilx/features/messages/chat-timeline/thread_people.dart';
 import 'package:ababilx/features/messages/chat-timeline/thread_summary.dart';
+import 'package:ababilx/features/messages/chat_thread_prefetch.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +11,7 @@ ChatMessage _message({
   required String body,
   required String createdAt,
   String? userName,
+  int threadCount = 0,
   List<ChatMessageAttachment> attachments = const [],
 }) => ChatMessage(
   id: id,
@@ -18,6 +20,7 @@ ChatMessage _message({
   body: body,
   createdAt: createdAt,
   userName: userName,
+  threadCount: threadCount,
   attachments: attachments,
 );
 
@@ -78,6 +81,53 @@ void main() {
           ),
         ]),
         'Sent an attachment',
+      );
+    });
+  });
+
+  group('threadRootsNeedingPreview', () {
+    test('asks for a thread that has a count but no loaded replies', () {
+      final threaded = root.copyWith(threadCount: 4);
+      expect(threadRootsNeedingPreview([threaded], const {}), [threaded]);
+    });
+
+    test('skips a thread once every reply is already loaded', () {
+      final threaded = root.copyWith(threadCount: 1);
+      expect(
+        threadRootsNeedingPreview(
+          [threaded],
+          {
+            'root': [
+              _message(
+                id: 'r1',
+                userId: 'bob',
+                body: 'hi',
+                createdAt: '2026-09-01T01:00:00Z',
+              ),
+            ],
+          },
+        ),
+        isEmpty,
+      );
+    });
+
+    test('still fetches when a live reply landed before the rest', () {
+      final threaded = root.copyWith(threadCount: 4);
+      expect(
+        threadRootsNeedingPreview(
+          [threaded],
+          {
+            'root': [
+              _message(
+                id: 'r1',
+                userId: 'bob',
+                body: 'hi',
+                createdAt: '2026-09-01T01:00:00Z',
+              ),
+            ],
+          },
+        ),
+        [threaded],
       );
     });
   });

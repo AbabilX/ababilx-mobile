@@ -60,9 +60,9 @@ ChatMessage? lastReplyMessage(List<ChatMessage> replies) {
   return latest;
 }
 
-/// Last reply text when we already have it. Empty when the thread has not
-/// been opened — [thread_count] already said there are replies, so a
-/// "no messages" line would be a lie.
+/// Last reply text when prefetch (or an opened thread) has filled the
+/// replies. Empty until then — [thread_count] already said there are
+/// replies, so a "no messages" line would be a lie.
 String threadPreview(List<ChatMessage> replies) {
   final latest = lastReplyMessage(replies);
   if (latest == null) return '';

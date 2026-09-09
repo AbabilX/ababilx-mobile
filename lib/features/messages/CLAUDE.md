@@ -196,11 +196,17 @@ not in a widget.
 A message with `thread_count > 0` draws `ThreadSummary` under the bubble:
 a 3px primary bar (left on theirs, right on yours), `N replies ›`, the
 last reply in muted gray (`onSurfaceVariant`), faces. No card, no stem.
-Replies are whatever is in `threadRepliesByRoot`; an unopened thread is
-count + the root's face only.
+
+The gray line reads `threadRepliesByRoot`, which used to fill only when
+the sheet opened. `prefetchThreadSummaries` now loads that page in the
+background (disk first, then the same thread list web already fetches)
+so the last reply shows without tapping in. Delivered-only — prefetch
+must not mark the thread read. An unopened thread with no cache and a
+failed fetch is still count + the root's face only.
 
 Helpers live in `thread_people.dart` (`threadReplyLabel`, `threadPreview`,
-`threadParticipants`) and are tested.
+`threadParticipants`) and `chat_thread_prefetch.dart`
+(`threadRootsNeedingPreview`) and are tested.
 
 ## Reply means two different things, and they must never both be set
 
