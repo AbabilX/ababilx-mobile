@@ -26,6 +26,19 @@ String _rootDateLabel(String iso) {
   return '${DateFormat('d MMM').format(dt)} at $time';
 }
 
+/// The stored copy of the thread root, so the header follows an edit. The
+/// root is a top-level message, so it lives in the conversation's main feed.
+ChatMessage _liveRoot(
+  ChatState state,
+  String conversationId,
+  ChatMessage fallback,
+) {
+  for (final message in state.feedFor(conversationId).messages) {
+    if (message.id == fallback.id) return message;
+  }
+  return fallback;
+}
+
 /// Root message header for the Thread screen — Slack-style: avatar, name,
 /// absolute date/time, body, always-on reaction row, then a "N replies"
 /// divider (forward + overflow) separating it from the reply list below.
@@ -36,15 +49,25 @@ class ThreadRootCard extends ConsumerWidget {
     required this.conversationId,
   });
 
+  /// The root as it stood when the thread was opened. It is a fallback only:
+  /// the card draws the live row below, or an edit made here (and one arriving
+  /// over the socket) would leave this header showing the old text until the
+  /// thread was closed and opened again.
   final ChatMessage message;
   final String conversationId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
-    final name = message.userName ?? 'Unknown';
+    // select() keeps this to the one row: updateFeedMessage replaces only the
+    // edited message, so every other entry keeps its identity and this does
+    // not rebuild on unrelated feed churn.
+    final root = ref.watch(
+      chatProvider.select((s) => _liveRoot(s, conversationId, message)),
+    );
+    final name = root.userName ?? 'Unknown';
     final n = ref.read(chatProvider.notifier);
-    final replyCount = message.threadCount;
+    final replyCount = root.threadCount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,15 +81,11 @@ class ThreadRootCard extends ConsumerWidget {
                 onTap: () => showUserProfileSheet(
                   context: context,
                   ref: ref,
-                  userId: message.userId,
+                  userId: root.userId,
                   userName: name,
-                  userAvatarUrl: message.userAvatarUrl,
+                  userAvatarUrl: root.userAvatarUrl,
                 ),
-                child: AppAvatar(
-                  size: 36,
-                  url: message.userAvatarUrl,
-                  name: name,
-                ),
+                child: AppAvatar(size: 36, url: root.userAvatarUrl, name: name),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -87,7 +106,7 @@ class ThreadRootCard extends ConsumerWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          _rootDateLabel(message.createdAt),
+                          _rootDateLabel(root.createdAt),
                           style: TextStyle(
                             fontSize: 12,
                             color: colors.onSurfaceVariant,
@@ -97,15 +116,15 @@ class ThreadRootCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: 3),
                     MessageBody(
-                      message: message,
+                      message: root,
                       colors: SignalBubbleColors.of(
                         colors,
                         hasWallpaper: false,
                       ),
                     ),
                     ReactionRow(
-                      reactions: message.reactions,
-                      onToggle: (emoji) => n.toggleReaction(message.id, emoji),
+                      reactions: root.reactions,
+                      onToggle: (emoji) => n.toggleReaction(root.id, emoji),
                     ),
                   ],
                 ),
@@ -116,11 +135,11 @@ class ThreadRootCard extends ConsumerWidget {
         if (replyCount > 0)
           _ReplyDivider(
             count: replyCount,
-            onForward: () => showForwardSheet(context, ref, message),
+            onForward: () => showForwardSheet(context, ref, root),
             onMore: () => showMessageActions(
               context,
               ref,
-              message,
+              root,
               conversationId: conversationId,
             ),
           ),

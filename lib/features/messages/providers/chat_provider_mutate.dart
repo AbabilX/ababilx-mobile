@@ -20,8 +20,15 @@ mixin _ChatMutateMixin
     final convId = state.activeConversationId;
     if (convId == null) return;
     final conversation = state.conversationById(convId);
+    // Encryption follows the ROW being edited, inside a conversation that may
+    // hold a key at all — never `isDm`. A personal group is E2EE too, and the
+    // DM test sent plaintext for one of its ciphertext rows, which the server
+    // refuses ('encrypted messages require an encrypted edit').
+    final existing = _findEditableMessage(convId, messageId);
+    final secure =
+        (conversation?.isEncrypted ?? false) && (existing?.isEncrypted ?? false);
     EncryptedDmPayload? encrypted;
-    if (conversation?.isDm == true && body.isNotEmpty) {
+    if (secure && body.isNotEmpty) {
       encrypted = await ref
           .read(messageVaultProvider)
           .encryptExisting(
@@ -49,6 +56,22 @@ mixin _ChatMutateMixin
       updateFeedMessage(convId, msg, threadRootId: thread);
     }
     if (msg.parentId != null) patchThreadReply(msg.parentId!, msg);
+  }
+
+  /// The stored copy of a message, from the main feed or the open thread —
+  /// whether it is ciphertext is what decides how an edit is sent.
+  ChatMessage? _findEditableMessage(String convId, String messageId) {
+    final feeds = [
+      state.feedFor(convId),
+      if (state.threadRootId != null)
+        state.feedFor(convId, threadRootId: state.threadRootId),
+    ];
+    for (final feed in feeds) {
+      for (final message in feed.messages) {
+        if (message.id == messageId) return message;
+      }
+    }
+    return null;
   }
 
   Future<void> deleteMessage(String messageId) async {

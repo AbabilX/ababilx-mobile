@@ -1,8 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../shared/widgets/app_toast.dart';
 import '../chat-forward/forward_sheet.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -88,11 +90,33 @@ Future<void> showMessageActions(
         tiptapToPlainText(msg.body),
       );
       if (edited != null) {
-        await n.editMessage(msg.id, textToTiptapJson(edited));
+        try {
+          await n.editMessage(msg.id, textToTiptapJson(edited));
+        } catch (error) {
+          // A refused edit used to reach nobody: the exception died in the
+          // gesture handler and the message simply stayed as it was, which
+          // reads as a broken button.
+          if (context.mounted) {
+            showAppToast(context, _editFailureMessage(error), isError: true);
+          }
+        }
       }
     case SignalMessageAction.delete:
       await n.deleteMessage(msg.id);
   }
+}
+
+/// The server's own words where it has any, so a refusal is diagnosable
+/// instead of "could not edit".
+String _editFailureMessage(Object error) {
+  final detail = error is DioException
+      ? (error.response?.data is Map
+                ? (error.response?.data as Map)['error']?.toString()
+                : null) ??
+            error.message
+      : error.toString();
+  final trimmed = detail?.trim() ?? '';
+  return trimmed.isEmpty ? 'Could not edit this message' : trimmed;
 }
 
 /// Double-tap action — copy message text straight to clipboard, no popup.
