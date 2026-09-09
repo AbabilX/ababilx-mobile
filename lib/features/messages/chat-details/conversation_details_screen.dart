@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -10,6 +11,7 @@ import '../nickname/nickname_sheet.dart';
 import '../providers/chat_provider.dart';
 import '../safety_number/safety_number_tile.dart';
 import 'details_danger_actions.dart';
+import 'details_floating_chrome.dart';
 import 'details_header.dart';
 import 'details_members_section.dart';
 import 'details_tile.dart';
@@ -72,71 +74,74 @@ class _ConversationDetailsScreenState
     }
     final group = conversation.isGroupConversation;
     final perms = GroupPermissions.of(ref, conversation);
+    final hasBanner = group && (conversation.bannerUrl ?? '').trim().isNotEmpty;
+    final canEdit = group && perms.canEditInfo;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        actions: [
-          if (group && perms.canEditInfo)
-            IconButton(
-              tooltip: 'Edit group',
-              icon: const ChatIcon(HugeIcons.strokeRoundedEdit02),
-              onPressed: () async {
-                final saved = await showGroupEditSheet(
-                  context,
-                  ref,
-                  conversation,
-                );
-                if (saved && mounted) setState(() {});
-              },
-            ),
-        ],
-      ),
-      body: ListView(
-        // The screen runs edge to edge, so the last red row has to clear the
-        // system navigation bar on its own.
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewPaddingOf(context).bottom + 32,
-        ),
-        children: [
-          DetailsHeader(conversation: conversation),
-          const DetailsSectionGap(),
-          ..._settingsTiles(conversation),
-          // A feed is configured before its roster: the URL is the only part
-          // of it that can be lost, and the members list is the same one every
-          // other group has.
-          if (conversation.isWebhook) ...[
-            const DetailsSectionGap(),
-            WebhookSettingsSection(conversation: conversation),
-          ],
-          if (group) ...[
-            const DetailsSectionGap(),
-            DetailsMembersSection(
+    final body = Stack(
+      children: [
+        ListView(
+          // The screen runs edge to edge, so the last red row has to clear the
+          // system navigation bar on its own.
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewPaddingOf(context).bottom + 32,
+          ),
+          children: [
+            DetailsHeader(
               conversation: conversation,
-              members: _members,
-              loading: _loadingMembers,
-              onChanged: _loadMembers,
+              immersiveBanner: hasBanner,
             ),
-          ],
-          const DetailsSectionGap(),
-          SharedMediaSection(conversationId: conversation.id),
-          // A DM only. "Groups in common" is a fact about two people, and in a
-          // group the second person is a list.
-          if (conversation.hasDmPeer) ...[
             const DetailsSectionGap(),
-            GroupsInCommonSection(
-              peerUserId: conversation.peerUserId!,
-              peerName: conversation.peerUserName ?? 'this person',
-            ),
+            ..._settingsTiles(conversation),
+            // A feed is configured before its roster: the URL is the only part
+            // of it that can be lost, and the members list is the same one every
+            // other group has.
+            if (conversation.isWebhook) ...[
+              const DetailsSectionGap(),
+              WebhookSettingsSection(conversation: conversation),
+            ],
+            if (group) ...[
+              const DetailsSectionGap(),
+              DetailsMembersSection(
+                conversation: conversation,
+                members: _members,
+                loading: _loadingMembers,
+                onChanged: _loadMembers,
+              ),
+            ],
+            const DetailsSectionGap(),
+            SharedMediaSection(conversationId: conversation.id),
+            // A DM only. "Groups in common" is a fact about two people, and in a
+            // group the second person is a list.
+            if (conversation.hasDmPeer) ...[
+              const DetailsSectionGap(),
+              GroupsInCommonSection(
+                peerUserId: conversation.peerUserId!,
+                peerName: conversation.peerUserName ?? 'this person',
+              ),
+            ],
+            const DetailsSectionGap(),
+            DetailsDangerActions(conversation: conversation),
           ],
-          const DetailsSectionGap(),
-          DetailsDangerActions(conversation: conversation),
-        ],
-      ),
+        ),
+        DetailsFloatingChrome(
+          onBanner: hasBanner,
+          onBack: () => Navigator.of(context).maybePop(),
+          onEdit: canEdit ? () => _openGroupEdit(conversation) : null,
+        ),
+      ],
     );
+
+    if (!hasBanner) return Scaffold(body: body);
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(body: body),
+    );
+  }
+
+  Future<void> _openGroupEdit(ChatConversation conversation) async {
+    final saved = await showGroupEditSheet(context, ref, conversation);
+    if (saved && mounted) setState(() {});
   }
 
   List<Widget> _settingsTiles(ChatConversation conversation) => [

@@ -25,9 +25,16 @@ import 'group_banner_header.dart';
 /// row of square actions. Signal puts the name itself on a chevron for a 1:1
 /// chat — it is a link to the person, not just a label.
 class DetailsHeader extends ConsumerWidget {
-  const DetailsHeader({super.key, required this.conversation});
+  const DetailsHeader({
+    super.key,
+    required this.conversation,
+    this.immersiveBanner = false,
+  });
 
   final ChatConversation conversation;
+
+  /// The cover runs under the status bar and the floating chrome row.
+  final bool immersiveBanner;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,14 +50,21 @@ class DetailsHeader extends ConsumerWidget {
 
     final banner = isDm ? null : conversation.bannerUrl;
 
+    final chromeInset = MediaQuery.paddingOf(context).top + 48 + 8;
+
     return Column(
       children: [
-        if ((banner ?? '').isEmpty) const SizedBox(height: 8),
+        if ((banner ?? '').isEmpty) SizedBox(height: chromeInset),
         // A group with a banner wears it behind the avatar, the way a profile
         // cover works everywhere else. Without one the header keeps its plain
         // spacing rather than reserving an empty band.
         if ((banner ?? '').isNotEmpty)
-          GroupBannerHeader(url: banner!, title: title, avatarUrl: avatar)
+          GroupBannerHeader(
+            url: banner!,
+            title: title,
+            avatarUrl: avatar,
+            extendBehindTop: immersiveBanner,
+          )
         else if (conversation.isSelf)
           const NoteToSelfAvatar(size: 96, iconSize: 40)
         else
