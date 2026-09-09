@@ -191,15 +191,13 @@ not in a widget.
   one row down per new message and comes to rest above the reader's own reply.
   Sending clears it, since a reply answers what it was marking.
 
-## Thread under a bubble is a compact reply chip
+## Thread under a bubble is a quote rail
 
-A message with `thread_count > 0` draws `ThreadSummary` under the bubble,
-aligned with it: `N replies ›`, last-reply preview when already loaded,
-faces on the right. A short vertical stem (not an L) drops from the
-bubble into the chip so the two read as one item. No second copy of the
-root text — the bubble already said that. Replies are whatever is in
-`threadRepliesByRoot`; nothing is fetched just to fill the preview, so an
-unopened thread is count + faces only.
+A message with `thread_count > 0` draws `ThreadSummary` under the bubble:
+a 3px primary bar (left on theirs, right on yours), `N replies ›`, the
+last reply in muted gray (`onSurfaceVariant`), faces. No card, no stem.
+Replies are whatever is in `threadRepliesByRoot`; an unopened thread is
+count + the root's face only.
 
 Helpers live in `thread_people.dart` (`threadReplyLabel`, `threadPreview`,
 `threadParticipants`) and are tested.

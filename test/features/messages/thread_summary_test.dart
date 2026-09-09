@@ -158,6 +158,6 @@ void main() {
     expect(find.text('4 replies'), findsOneWidget);
     expect(find.text('@Tanbir 8726'), findsOneWidget);
     expect(find.text('This Month'), findsNothing);
-    expect(find.byKey(ThreadSummary.connectorKey), findsOneWidget);
+    expect(find.byKey(ThreadSummary.railKey), findsOneWidget);
   });
 }

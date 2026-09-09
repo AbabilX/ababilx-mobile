@@ -4,8 +4,8 @@ import '../../../shared/widgets/app_avatar.dart';
 import '../data/models/chat_models.dart';
 import 'thread_people.dart';
 
-/// Compact thread entry under a bubble. Title is the bubble itself; this
-/// row only answers "how many replies, and what was last said".
+/// Quote-rail under a bubble: a 3px bar, reply count, last message in muted
+/// gray, faces. No card, no stem.
 class ThreadSummary extends StatelessWidget {
   const ThreadSummary({
     super.key,
@@ -20,12 +20,10 @@ class ThreadSummary extends StatelessWidget {
   final List<ChatMessage> replies;
   final int count;
   final VoidCallback onTap;
-
-  /// Own bubbles sit on the right, so the stem sits on the right too.
   final bool isOwn;
 
+  static const railKey = Key('thread-rail');
   static const _cardMaxWidth = 280.0;
-  static const connectorKey = Key('thread-connector');
 
   @override
   Widget build(BuildContext context) {
@@ -35,103 +33,71 @@ class ThreadSummary extends StatelessWidget {
     final people = threadParticipants(root, replies);
     final preview = threadPreview(replies);
     final label = threadReplyLabel(count);
+    final rail = _QuoteRail(color: colors.primary);
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: _cardMaxWidth),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ThreadStem(isOwn: isOwn, color: colors.outlineVariant),
-          Material(
-            color: colors.surfaceContainer,
-            borderRadius: BorderRadius.circular(10),
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(10),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.labelLarge?.copyWith(
-                                    color: colors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                size: 18,
-                                color: colors.primary,
-                              ),
-                            ],
-                          ),
-                          if (preview.isNotEmpty) ...[
-                            const SizedBox(height: 2),
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _cardMaxWidth),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!isOwn) ...[rail, const SizedBox(width: 8)],
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Column(
+                      crossAxisAlignment: isOwn
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                             Text(
-                              preview,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colors.onSurfaceVariant,
+                              label,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: colors.primary,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              size: 18,
+                              color: colors.primary,
+                            ),
                           ],
+                        ),
+                        if (preview.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            preview,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
                         ],
-                      ),
+                      ],
                     ),
-                    if (people.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      _AvatarStack(
-                        people: people,
-                        borderColor: colors.surfaceContainer,
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
+                if (people.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Align(
+                    alignment: Alignment.center,
+                    child: _AvatarStack(people: people),
+                  ),
+                ],
+                if (isOwn) ...[const SizedBox(width: 8), rail],
+              ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Short vertical stem from the bubble into the chip — a line, not an L.
-class _ThreadStem extends StatelessWidget {
-  const _ThreadStem({required this.isOwn, required this.color});
-
-  final bool isOwn;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: isOwn ? Alignment.centerRight : Alignment.centerLeft,
-      child: Padding(
-        padding: EdgeInsets.only(left: isOwn ? 0 : 14, right: isOwn ? 14 : 0),
-        child: Container(
-          key: ThreadSummary.connectorKey,
-          width: 2,
-          height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(1),
           ),
         ),
       ),
@@ -139,17 +105,35 @@ class _ThreadStem extends StatelessWidget {
   }
 }
 
+class _QuoteRail extends StatelessWidget {
+  const _QuoteRail({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: ThreadSummary.railKey,
+      width: 3,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+}
+
 class _AvatarStack extends StatelessWidget {
-  const _AvatarStack({required this.people, required this.borderColor});
+  const _AvatarStack({required this.people});
 
   final List<ThreadPerson> people;
-  final Color borderColor;
 
-  static const _size = 22.0;
+  static const _size = 20.0;
   static const _overlap = 8.0;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return SizedBox(
       width: _size + (people.length - 1) * (_size - _overlap),
       height: _size,
@@ -162,11 +146,11 @@ class _AvatarStack extends StatelessWidget {
                 size: _size,
                 url: people[i].avatarUrl,
                 name: people[i].name,
-                border: Border.all(color: borderColor, width: 1.5),
+                border: Border.all(color: colors.surface, width: 1.5),
                 letterStyle: TextStyle(
-                  fontSize: 9,
+                  fontSize: 8,
                   fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: colors.onSurface,
                 ),
               ),
             ),
