@@ -4,6 +4,7 @@ import '../../attachments/providers/attachment_providers.dart';
 import '../data/local/chat_message_store.dart';
 import '../data/local/chat_outbox_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
+import '../history-restore/history_restore_flag.dart';
 import '../providers/chat_provider.dart';
 
 // Do not let a server reset leave readable offline history or queued sends.
@@ -16,5 +17,6 @@ Future<void> clearFreshStartDevice(WidgetRef ref) async {
   await ref.read(chatOutboxCacheProvider).clearAll();
   await ref.read(chatMessageStoreProvider).clearAll();
   await ref.read(chatSidebarCacheProvider).clearAll();
+  await HistoryRestoreFlag.clearAll();
   ref.read(chatProvider.notifier).resetTeamChatState();
 }

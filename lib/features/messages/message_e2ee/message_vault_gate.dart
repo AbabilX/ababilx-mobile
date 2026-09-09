@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -81,15 +83,26 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
   /// Shared by every route into a working vault. Any DM bubble hydrated from a
   /// previous session is still showing the locked placeholder, so it is
   /// resolved here rather than in each caller.
-  Future<void> _finish() async {
+  ///
+  /// [pullHistory] is only true after the recovery code — not after a local
+  /// key load, not after minting a new identity. That is the one shot the
+  /// newest page of every chat is pulled into this phone.
+  Future<void> _finish({bool pullHistory = false}) async {
     if (_finishing) return;
     setState(() {
       _finishing = true;
       _error = null;
     });
     try {
-      await ref.read(chatProvider.notifier).fetchSidebar(silent: true);
-      await ref.read(chatProvider.notifier).redecryptFailedMessages();
+      final chat = ref.read(chatProvider.notifier);
+      await chat.fetchSidebar(silent: true);
+      await chat.redecryptFailedMessages();
+      if (pullHistory) {
+        await chat.markHistoryRestorePending();
+      }
+      // No-ops unless recovery just set the pending bit (or a killed first
+      // run left it set). Ordinary unlocks never pull.
+      unawaited(chat.startHistoryRestoreIfNeeded());
       if (mounted) widget.onUnlocked();
     } catch (error) {
       if (mounted) setState(() => _error = error);
@@ -143,7 +156,7 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
       );
     }
     return VaultGateRecoveryCode(
-      onUnlocked: _finish,
+      onUnlocked: () => _finish(pullHistory: true),
       onBack: () => setState(() => _recovering = false),
     );
   }

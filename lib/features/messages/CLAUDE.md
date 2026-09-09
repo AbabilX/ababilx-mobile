@@ -475,6 +475,24 @@ The identity is minted on the device. Its private half is stored on the server
 A correct code restores the *same* identity, so every message the account ever
 received decrypts.
 
+**The newest page of every chat is pulled once after that code, not when a
+chat is opened.** `MessageVaultGate._finish(pullHistory: true)` sets
+`HistoryRestoreFlag` and `startHistoryRestoreIfNeeded` walks the sidebar.
+It is **not** `loadFeed`: restore writes SQLite, acks delivered, follows
+auto-download, and never marks read or touches the in-memory feed. An open
+chat is skipped so the timeline keeps ownership. The list shows
+`HistoryRestoreBanner` while it runs.
+
+The flag is the whole "once" guarantee. `complete()` runs when the job
+finishes (success, failure, or nothing to pull). `mark()` is a no-op after
+that, so a later launch or opening a DM cannot start another sweep. A kill
+mid-run leaves `pending` set and bootstrap resumes **that** first restore,
+then completes. Sign-out and start-fresh call `clearAll()`. Ordinary
+`restoreTrustedIdentity` / setup never set the flag.
+
+Older pages stay on scroll-back, same as before. The server still only holds
+180 days — this is not the encrypted archive and not history-transfer.
+
 **The reversal is the lesson.** For a few hours this was server-side escrow with
 a 6-digit emailed code. Convenient, and not end-to-end: a machine with the
 server's environment key and database could read every DM. If anyone proposes

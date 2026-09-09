@@ -48,6 +48,7 @@ class AppTranslations {
           'Could not start fresh. Check your code and connection, then try again.',
       'recovery_clean_failed':
           'Your reset succeeded. Tap Continue to finish clearing this phone.',
+      'history_restore_banner': 'Restoring messages…',
       'recovery_continue': 'Continue',
       'recovery_cancel': 'Cancel',
       'recovery_saving': 'Starting fresh…',
@@ -372,6 +373,7 @@ class AppTranslations {
           'নতুনভাবে শুরু করা যায়নি। কোড ও সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
       'recovery_clean_failed':
           'রিসেট হয়েছে। এই ফোন পরিষ্কার করা শেষ করতে চালিয়ে যান চাপুন।',
+      'history_restore_banner': 'মেসেজ ফিরিয়ে আনা হচ্ছে…',
       'recovery_continue': 'চালিয়ে যান',
       'recovery_cancel': 'বাতিল',
       'recovery_saving': 'নতুনভাবে শুরু হচ্ছে…',

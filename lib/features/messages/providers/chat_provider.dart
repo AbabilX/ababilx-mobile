@@ -14,6 +14,10 @@ import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../chat_thread_prefetch.dart';
 import '../chat_utils.dart';
+import '../history-restore/history_restore_flag.dart';
+import '../history-restore/history_restore_job.dart';
+import '../history-restore/history_restore_plan.dart';
+import '../history-restore/history_restore_state.dart';
 import '../data/chat_client_message_id.dart';
 import '../data/chat_message_merge.dart';
 import '../data/chat_repository.dart';
@@ -42,6 +46,7 @@ part 'chat_provider_ws.dart';
 part 'chat_provider_cache.dart';
 part 'chat_provider_outbox.dart';
 part 'chat_provider_thread_prefetch.dart';
+part 'chat_provider_history_restore.dart';
 
 class ChatNotifier extends Notifier<ChatState>
     with
@@ -55,7 +60,8 @@ class ChatNotifier extends Notifier<ChatState>
         _ChatWsMixin,
         _ChatCacheMixin,
         _ChatOutboxMixin,
-        _ChatThreadPrefetchMixin {
+        _ChatThreadPrefetchMixin,
+        _ChatHistoryRestoreMixin {
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
   WsClient get _ws => ref.read(wsClientProvider);
   bool _realtimeStarted = false;
@@ -169,6 +175,9 @@ class ChatNotifier extends Notifier<ChatState>
     } catch (_) {}
     initRealtime();
     _bootstrapped = true;
+    // Resumes a recovery restore that was killed mid-run. No-ops when the
+    // pending flag is unset, so ordinary launches never pull again.
+    unawaited(startHistoryRestoreIfNeeded());
   }
 
   /// Best-effort user id from purely local sources — current state, whatever
@@ -240,6 +249,7 @@ class ChatNotifier extends Notifier<ChatState>
   }
 
   void resetTeamChatState({bool clearCurrentUser = false}) {
+    _restoreCancelled = true;
     _bootstrapped = false;
     state = ChatState(
       currentUserId: clearCurrentUser ? '' : state.currentUserId,

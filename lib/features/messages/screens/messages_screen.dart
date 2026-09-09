@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../chat-list/index.dart';
+import '../history-restore/history_restore_banner.dart';
+import '../history-restore/history_restore_state.dart';
 import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/message_vault_sheet.dart';
 import '../providers/chat_provider.dart';
@@ -67,19 +69,23 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   }
 }
 
-/// The chat list plus a small, dismissible-by-tap unlock banner — never a
-/// full-screen block. A user with no DMs, or channels only, never even sees
-/// this banner's target matter.
-class _MessagesBody extends StatelessWidget {
+/// The chat list plus a small header banner — unlock while the vault is
+/// locked, restoring after recovery, never both, never a full-screen block.
+class _MessagesBody extends ConsumerWidget {
   const _MessagesBody({required this.vaultUnlocked, required this.onUnlockTap});
 
   final bool vaultUnlocked;
   final VoidCallback onUnlockTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final restoring = ref.watch(historyRestoreProvider).running;
     return ChatList(
-      banner: vaultUnlocked ? null : _UnlockBanner(onTap: onUnlockTap),
+      banner: !vaultUnlocked
+          ? _UnlockBanner(onTap: onUnlockTap)
+          : restoring
+          ? const HistoryRestoreBanner()
+          : null,
     );
   }
 }
