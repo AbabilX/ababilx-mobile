@@ -37,6 +37,26 @@ class _Notifier extends ChatNotifier {
 }
 
 void main() {
+  test('DM details uses the peer cover as the header banner', () {
+    const dm = ChatConversation(
+      id: 'd1',
+      teamId: '',
+      type: 'dm',
+      createdAt: '2026-09-01T10:00:00Z',
+      peerUserId: 'u2',
+      peerUserName: 'Badhon',
+      peerUserCover: 'https://cdn.example/cover.jpg',
+    );
+    expect(dm.headerBannerUrl, 'https://cdn.example/cover.jpg');
+    expect(
+      ChatConversation.fromJson({
+        ...dm.toJson(),
+        'peer_user_cover': 'https://cdn.example/cover.jpg',
+      }).headerBannerUrl,
+      'https://cdn.example/cover.jpg',
+    );
+  });
+
   testWidgets('group details renders and tears down cleanly', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

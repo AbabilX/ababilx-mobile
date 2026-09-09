@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -81,25 +82,35 @@ Uint8List _encodeJpeg(_JpegJob job) => img.encodeJpg(
   quality: job.quality,
 );
 
-/// Paints the source image into the crop window at [destination]. The window
-/// itself is clipped by the caller, so this only has to place the picture.
-class CropPainter extends CustomPainter {
-  const CropPainter({required this.image, required this.destination});
+/// 90° clockwise. Width and height swap, so the crop window is re-covered
+/// from scratch after this returns.
+Future<ui.Image> rotateUiImage90(ui.Image source) {
+  final w = source.width.toDouble();
+  final h = source.height.toDouble();
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(recorder);
+  canvas
+    ..translate(h, 0)
+    ..rotate(math.pi / 2)
+    ..drawImage(source, Offset.zero, Paint());
+  return _finish(recorder, h.round(), w.round());
+}
 
-  final ui.Image image;
-  final Rect destination;
+/// Mirror left-right. Size stays the same.
+Future<ui.Image> flipUiImageHorizontal(ui.Image source) {
+  final w = source.width.toDouble();
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(recorder);
+  canvas
+    ..translate(w, 0)
+    ..scale(-1, 1)
+    ..drawImage(source, Offset.zero, Paint());
+  return _finish(recorder, source.width, source.height);
+}
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawImageRect(
-      image,
-      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-      destination,
-      Paint()..filterQuality = FilterQuality.medium,
-    );
-  }
-
-  @override
-  bool shouldRepaint(CropPainter old) =>
-      old.image != image || old.destination != destination;
+Future<ui.Image> _finish(ui.PictureRecorder recorder, int width, int height) async {
+  final picture = recorder.endRecording();
+  final image = await picture.toImage(width, height);
+  picture.dispose();
+  return image;
 }

@@ -13,11 +13,13 @@ class DetailsFloatingChrome extends StatelessWidget {
     required this.onBack,
     this.onEdit,
     this.onBanner = false,
+    this.title,
   });
 
   final VoidCallback onBack;
   final VoidCallback? onEdit;
   final bool onBanner;
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +35,25 @@ class DetailsFloatingChrome extends StatelessWidget {
             tooltip: 'Back',
             onPressed: onBack,
           ),
+          if ((title ?? '').isNotEmpty)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  title!,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: onBanner ? Colors.white : null,
+                  ),
+                ),
+              ),
+            )
+          else
+            const Spacer(),
           if (onEdit != null)
             DetailsFloatingButton(
               onBanner: onBanner,

@@ -48,7 +48,7 @@ class DetailsHeader extends ConsumerWidget {
       voiceCallProvider.select((state) => state.active),
     );
 
-    final banner = isDm ? null : conversation.bannerUrl;
+    final banner = conversation.headerBannerUrl;
 
     final chromeInset = MediaQuery.paddingOf(context).top + 48 + 8;
 

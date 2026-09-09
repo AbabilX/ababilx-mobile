@@ -60,6 +60,7 @@ class ChatConversation extends Equatable {
     this.peerUserId,
     this.peerUserName,
     this.peerUserAvatar,
+    this.peerUserCover,
     this.peerUserEmail,
     this.peerLeft = false,
     this.isSelf = false,
@@ -101,6 +102,10 @@ class ChatConversation extends Equatable {
   final String? peerUserId;
   final String? peerUserName;
   final String? peerUserAvatar;
+
+  /// The peer's profile cover (`users.cover_url`). Drawn behind the details
+  /// header the same way [bannerUrl] is drawn for a group.
+  final String? peerUserCover;
   final String? peerUserEmail;
   final bool peerLeft;
 
@@ -155,6 +160,10 @@ class ChatConversation extends Equatable {
   /// groups-in-common. A note to self is a DM and has no peer, which is the
   /// one case a bare `isDm` check gets wrong.
   bool get hasDmPeer => isDm && !isSelf && (peerUserId ?? '').isNotEmpty;
+
+  /// Cover behind the details header: a group's own banner, or a DM peer's
+  /// profile cover. Empty means the header stays plain.
+  String? get headerBannerUrl => isDm ? peerUserCover : bannerUrl;
 
   bool get isChannel => type == 'channel';
   bool get isDm => type == 'dm';
@@ -255,6 +264,7 @@ class ChatConversation extends Equatable {
       peerUserId: _jsonString(json['peer_user_id']),
       peerUserName: _jsonString(json['peer_user_name']),
       peerUserAvatar: _jsonString(json['peer_user_avatar']),
+      peerUserCover: _jsonString(json['peer_user_cover']),
       peerUserEmail: _jsonString(
         json['peer_user_email'] ?? json['peerUserEmail'],
       ),
@@ -327,6 +337,7 @@ class ChatConversation extends Equatable {
     peerUserId: peerUserId,
     peerUserName: peerUserName,
     peerUserAvatar: peerUserAvatar,
+    peerUserCover: peerUserCover,
     peerLeft: peerLeft,
     isSelf: isSelf,
     canMessage: canMessage,
@@ -364,6 +375,7 @@ class ChatConversation extends Equatable {
     description,
     avatarUrl,
     bannerUrl,
+    peerUserCover,
     myRole,
   ];
 }

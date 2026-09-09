@@ -74,7 +74,7 @@ class _ConversationDetailsScreenState
     }
     final group = conversation.isGroupConversation;
     final perms = GroupPermissions.of(ref, conversation);
-    final hasBanner = group && (conversation.bannerUrl ?? '').trim().isNotEmpty;
+    final hasBanner = (conversation.headerBannerUrl ?? '').trim().isNotEmpty;
     final canEdit = group && perms.canEditInfo;
 
     final body = Stack(

@@ -74,6 +74,13 @@ class ProfileMediaRepository {
       data: {'avatar_url': publicUrl},
     );
   }
+
+  Future<void> saveCover(String publicUrl) async {
+    await _client.patch(
+      ApiConstants.meProfile,
+      data: {'cover_url': publicUrl},
+    );
+  }
 }
 
 final profileMediaRepositoryProvider = Provider<ProfileMediaRepository>(

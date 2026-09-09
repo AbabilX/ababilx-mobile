@@ -13,6 +13,7 @@ class AppUser extends Equatable {
     required this.provider,
     this.username = '',
     this.avatarUrl = '',
+    this.coverUrl = '',
     this.plan = 'free',
     this.premiumUntil,
     this.effectivePlan = 'free',
@@ -36,6 +37,10 @@ class AppUser extends Equatable {
   /// for it, because a GitHub login is not an address on this app.
   final String username;
   final String avatarUrl;
+
+  /// Wide profile cover (`users.cover_url`). Same object the DM details
+  /// header draws behind the other person's avatar.
+  final String coverUrl;
   final String plan;
   final String? premiumUntil;
   final String effectivePlan;
@@ -55,6 +60,7 @@ class AppUser extends Equatable {
     provider: json['provider'] as String? ?? '',
     username: json['username'] as String? ?? '',
     avatarUrl: json['avatar_url'] as String? ?? '',
+    coverUrl: json['cover_url'] as String? ?? '',
     plan: json['plan'] as String? ?? 'free',
     premiumUntil: json['premium_until'] as String?,
     effectivePlan:
@@ -76,6 +82,7 @@ class AppUser extends Equatable {
     'provider': provider,
     'username': username,
     'avatar_url': avatarUrl,
+    'cover_url': coverUrl,
     'plan': plan,
     'premium_until': premiumUntil,
     'effective_plan': effectivePlan,
@@ -93,6 +100,7 @@ class AppUser extends Equatable {
     String? name,
     String? username,
     String? avatarUrl,
+    String? coverUrl,
     bool? acceptPolicy,
     String? policyVersion,
   }) => AppUser(
@@ -102,6 +110,7 @@ class AppUser extends Equatable {
     provider: provider,
     username: username ?? this.username,
     avatarUrl: avatarUrl ?? this.avatarUrl,
+    coverUrl: coverUrl ?? this.coverUrl,
     plan: plan,
     premiumUntil: premiumUntil,
     effectivePlan: effectivePlan,
@@ -128,6 +137,8 @@ class AppUser extends Equatable {
     id,
     name,
     username,
+    avatarUrl,
+    coverUrl,
     plan,
     slackConnected,
     acceptPolicy,

@@ -126,6 +126,26 @@ class ProfileNotifier extends AsyncNotifier<AppUser> {
     await ref.read(profileRepositoryProvider).cacheUser(updated);
   }
 
+  /// Same path as [updateAvatar]: presign → PUT → PATCH `cover_url`.
+  Future<void> updateCover(Uint8List bytes) async {
+    final media = ref.read(profileMediaRepositoryProvider);
+    final target = await media.presign(kind: 'cover', contentType: 'image/jpeg');
+    if (!target.isValid) {
+      throw StateError('Server did not return an upload URL');
+    }
+    await media.upload(target, bytes, 'image/jpeg');
+    await media.saveCover(target.publicUrl);
+
+    final current = state.valueOrNull;
+    if (current == null) {
+      await refresh();
+      return;
+    }
+    final updated = current.copyWith(coverUrl: target.publicUrl);
+    state = AsyncData(updated);
+    await ref.read(profileRepositoryProvider).cacheUser(updated);
+  }
+
   Future<void> acceptPolicy() async {
     final current = state.valueOrNull;
     await ref.read(profileRepositoryProvider).acceptPolicy();

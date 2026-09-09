@@ -17,6 +17,9 @@ class GroupBannerHeader extends StatelessWidget {
     this.bannerHeight = 148,
     this.avatarSize = 96,
     this.extendBehindTop = false,
+    this.onBannerTap,
+    this.onAvatarTap,
+    this.showEditBadges = false,
   });
 
   final String url;
@@ -29,10 +32,18 @@ class GroupBannerHeader extends StatelessWidget {
   /// chrome row, so the old AppBar band is part of the picture.
   final bool extendBehindTop;
 
+  /// Settings: tapping the strip changes the cover; tapping the photo
+  /// changes the avatar. Details only looks.
+  final VoidCallback? onBannerTap;
+  final VoidCallback? onAvatarTap;
+  final bool showEditBadges;
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final topInset = extendBehindTop ? MediaQuery.paddingOf(context).top + 48 : 0;
+    final topInset = extendBehindTop
+        ? MediaQuery.paddingOf(context).top + 48
+        : 0.0;
     final coverHeight = bannerHeight + topInset;
     return SizedBox(
       height: coverHeight + avatarSize / 2,
@@ -43,22 +54,22 @@ class GroupBannerHeader extends StatelessWidget {
             left: 0,
             right: 0,
             top: 0,
-            child: SizedBox(
-              height: coverHeight,
-              // CachedNetworkImage rather than a DecorationImage over a raw
-              // NetworkImage: the banner is the largest image in the app, and a
-              // raw one is re-fetched on every cold open of this screen and
-              // throws an uncatchable image exception on a 404 instead of
-              // falling back to the plain surface colour.
-              child: CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.cover,
-                width: double.infinity,
+            child: GestureDetector(
+              onTap: onBannerTap,
+              child: SizedBox(
                 height: coverHeight,
-                placeholder: (_, _) =>
-                    ColoredBox(color: colors.surfaceContainerHighest),
-                errorWidget: (_, _, _) =>
-                    ColoredBox(color: colors.surfaceContainerHighest),
+                child: url.trim().isEmpty
+                    ? ColoredBox(color: colors.surfaceContainerHighest)
+                    : CachedNetworkImage(
+                        imageUrl: url,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: coverHeight,
+                        placeholder: (_, _) =>
+                            ColoredBox(color: colors.surfaceContainerHighest),
+                        errorWidget: (_, _, _) =>
+                            ColoredBox(color: colors.surfaceContainerHighest),
+                      ),
               ),
             ),
           ),
@@ -66,44 +77,102 @@ class GroupBannerHeader extends StatelessWidget {
             left: 0,
             right: 0,
             top: 0,
-            child: SizedBox(
-              height: coverHeight,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: extendBehindTop ? 0.42 : 0),
-                      Colors.black.withValues(alpha: 0.35),
-                    ],
+            child: IgnorePointer(
+              child: SizedBox(
+                height: coverHeight,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(
+                          alpha: extendBehindTop ? 0.42 : 0,
+                        ),
+                        Colors.black.withValues(alpha: 0.35),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
+          if (showEditBadges)
+            Positioned(
+              right: 16,
+              top: coverHeight - 40,
+              child: _EditBadge(onTap: onBannerTap),
+            ),
           Positioned(
             left: 0,
             right: 0,
             top: coverHeight - avatarSize / 2,
             child: Center(
-              child: Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.surface,
-                ),
-                child: ClipOval(
-                  child: AppAvatar(
-                    size: avatarSize,
-                    url: avatarUrl,
-                    name: title,
-                  ),
+              child: GestureDetector(
+                onTap: onAvatarTap,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colors.surface,
+                      ),
+                      child: ClipOval(
+                        child: AppAvatar(
+                          size: avatarSize,
+                          url: avatarUrl,
+                          name: title,
+                        ),
+                      ),
+                    ),
+                    if (showEditBadges)
+                      const Positioned(
+                        right: 2,
+                        bottom: 2,
+                        child: _EditBadge(),
+                      ),
+                  ],
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _EditBadge extends StatelessWidget {
+  const _EditBadge({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final badge = Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: colors.primary,
+        shape: BoxShape.circle,
+        border: Border.all(color: colors.surface, width: 2),
+      ),
+      child: Icon(
+        Icons.photo_camera_rounded,
+        size: 14,
+        color: colors.onPrimary,
+      ),
+    );
+    if (onTap == null) return badge;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: badge,
       ),
     );
   }

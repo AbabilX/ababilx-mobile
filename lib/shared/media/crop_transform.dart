@@ -62,6 +62,11 @@ class CropTransform {
     );
   }
 
+  /// Pan that started at [start] and has moved [delta] since (current focal
+  /// minus start focal — not the per-event `focalPointDelta`, which would
+  /// snap the photo back every frame).
+  Offset offsetAfterPan(Offset start, Offset delta) => clamp(start + delta);
+
   CropTransform copyWith({double? scale, Offset? offset}) => CropTransform(
     imageSize: imageSize,
     viewport: viewport,
