@@ -3,6 +3,16 @@ part of 'chat_provider.dart';
 /// Opening the chat list's sealed previews, DMs and personal groups alike.
 /// The rules are pure and live in `message_e2ee/sidebar_preview.dart`.
 mixin _ChatPreviewMixin on Notifier<ChatState> {
+  ChatConversation visiblePreview(ChatConversation row) {
+    final cutoff = ref.read(chatMessageStoreProvider).deletions;
+    final at =
+        DateTime.tryParse(row.lastMessageAt ?? '')?.microsecondsSinceEpoch ?? 0;
+    return ref.read(messageVaultProvider).isStartingNewChat ||
+            !cutoff.allowsTime(row.id, at)
+        ? row.withoutMessagePreview()
+        : row;
+  }
+
   /// Opens every sealed preview in [rows] this device can open.
   ///
   /// One that will not open keeps the server's "Encrypted message", never
@@ -15,14 +25,16 @@ mixin _ChatPreviewMixin on Notifier<ChatState> {
     final vault = ref.read(messageVaultProvider);
     return Future.wait(
       rows.map((row) async {
-        if (!hasSealedPreview(row)) return row;
+        if (!hasSealedPreview(row)) return visiblePreview(row);
         final opened = await vault.decryptMessage(
           sealedPreviewMessage(row),
           userId,
         );
-        return isVaultPlaceholderBody(opened.body)
-            ? row
-            : row.copyWith(lastMessageBody: opened.body);
+        return visiblePreview(
+          isVaultPlaceholderBody(opened.body)
+              ? row
+              : row.copyWith(lastMessageBody: opened.body),
+        );
       }),
     );
   }

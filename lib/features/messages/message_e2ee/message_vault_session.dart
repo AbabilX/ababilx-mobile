@@ -12,16 +12,19 @@ extension MessageVaultSession on MessageVault {
     required String userId,
     required ChatRecoveryApi api,
     Map<String, dynamic>? expectedPublicKey,
+    bool clearHistory = false,
   }) => _sessionOperation ??= _startSession(
     userId,
     api,
     expectedPublicKey,
+    clearHistory,
   ).whenComplete(() => _sessionOperation = null);
 
   Future<void> _startSession(
     String userId,
     ChatRecoveryApi api,
     Map<String, dynamic>? expectedPublicKey,
+    bool clearHistory,
   ) async {
     final epoch = _recoveryEpoch;
     var saved = await _storage.readPendingRecovery(userId);
@@ -36,6 +39,7 @@ extension MessageVaultSession on MessageVault {
         'private_key': _privateJwkFromIdentity(identity),
         'recovery_code': RecoveryKey.format(code),
         'body': {
+          if (clearHistory) 'clear_history': true,
           'expected_public_key': ?expectedPublicKey,
           'public_key': _publicJwkFromIdentity(identity),
           ...wrapping.toJson(),
@@ -68,6 +72,7 @@ extension MessageVaultSession on MessageVault {
     final pending = Map<String, dynamic>.from(jsonDecode(saved) as Map);
     final body = Map<String, dynamic>.from(pending['body'] as Map);
     final public = Map<String, dynamic>.from(body['public_key'] as Map);
+    if (body['clear_history'] == true) _newChatPending = true;
     try {
       await api.startSession(body);
     } catch (_) {
@@ -90,6 +95,10 @@ extension MessageVaultSession on MessageVault {
       }
     }
     _checkRecoveryEpoch(epoch);
+    if (body['clear_history'] == true) {
+      await onHistoryReset?.call(userId);
+      _checkRecoveryEpoch(epoch);
+    }
     await _adopt(
       _identityFromJwk(
         Map<String, dynamic>.from(pending['private_key'] as Map),

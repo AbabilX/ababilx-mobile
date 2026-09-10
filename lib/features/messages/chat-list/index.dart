@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../chat_list_filters.dart';
+import '../message_e2ee/new_chat_setup.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../providers/chat_scope_provider.dart';
@@ -61,7 +62,15 @@ class _ChatListState extends ConsumerState<ChatList> {
 
   @override
   Widget build(BuildContext context) {
-    final chat = ref.watch(chatProvider);
+    final original = ref.watch(chatProvider);
+    final chat = ref.watch(newChatSetupProvider).pending
+        ? original.copyWith(
+            dms: original.dms.map((c) => c.withoutMessagePreview()).toList(),
+            channels: original.channels
+                .map((c) => c.withoutMessagePreview())
+                .toList(),
+          )
+        : original;
     final independent =
         ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
     final scope = ref.watch(chatScopeProvider);

@@ -11,6 +11,7 @@ import '../data/local/chat_key_cache.dart';
 import '../data/models/chat_message.dart';
 import '../data/models/chat_message_quote.dart';
 import 'p256_ecdh.dart';
+import 'new_chat_history_cleanup.dart';
 import 'recovery_key.dart';
 import '../data/chat_recovery_api.dart';
 
@@ -75,6 +76,8 @@ class MessageVault {
   int _recoveryEpoch = 0;
   Future<void>? _sessionOperation;
   bool _newChatPending = false;
+  bool get isStartingNewChat => _newChatPending;
+  Future<void> Function(String userId)? onHistoryReset;
 
   /// Reads the freshly generated code once and forgets it.
   String? takePendingRecoveryCode() {
@@ -154,5 +157,5 @@ final messageVaultProvider = Provider<MessageVault>(
     ref.watch(chatRepositoryProvider),
     const SecureStorage(FlutterSecureStorage()),
     ref.watch(chatKeyCacheProvider),
-  ),
+  )..onHistoryReset = (userId) => cleanNewChatHistory(ref, userId),
 );

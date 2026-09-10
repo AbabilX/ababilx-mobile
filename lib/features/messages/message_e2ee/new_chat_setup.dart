@@ -52,6 +52,7 @@ class NewChatSetup extends Notifier<NewChatSetupState> {
         userId: id,
         api: api,
         expectedPublicKey: expected,
+        clearHistory: true,
       );
     };
     retry();

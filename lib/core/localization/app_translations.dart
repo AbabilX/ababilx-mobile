@@ -63,7 +63,7 @@ class AppTranslations {
       'new_chat_setup_failed': 'Chat setup could not finish. Tap to retry.',
       'recovery_fresh': 'Start new chat',
       'recovery_fresh_hint':
-          'A new session creates a new recovery code in Settings → Backup → Recovery codes. Older encrypted messages need your previous code.',
+          'Starting a new chat clears your old messages and backup, keeps your contacts, and saves a new recovery code in Settings → Backup → Recovery codes.',
       'recovery_enter': 'Enter your recovery code',
       'recovery_help':
           'Enter the code you saved when you set up messages. Spacing and case do not matter.',
@@ -428,7 +428,7 @@ class AppTranslations {
           'চ্যাট প্রস্তুত করা যায়নি। আবার চেষ্টা করতে চাপুন।',
       'recovery_fresh': 'নতুন চ্যাট শুরু করুন',
       'recovery_fresh_hint':
-          'নতুন রিকভারি কোড থাকবে সেটিংস → ব্যাকআপ → রিকভারি কোডে। পুরোনো এনক্রিপ্টেড মেসেজের জন্য আগের কোড প্রয়োজন।',
+          'নতুন চ্যাট শুরু করলে আপনার পুরোনো মেসেজ ও ব্যাকআপ মুছে যাবে, পরিচিতিরা থাকবে। নতুন রিকভারি কোড সেভ হবে সেটিংস → ব্যাকআপ → রিকভারি কোডে।',
       'recovery_enter': 'আপনার রিকভারি কোড দিন',
       'recovery_help':
           'মেসেজ সেটআপের সময় সংরক্ষিত কোডটি দিন। স্পেস ও বড় বা ছোট হাতের অক্ষর যেকোনোভাবে লেখা যাবে।',

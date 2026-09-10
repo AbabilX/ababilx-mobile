@@ -34,8 +34,12 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
         return false;
       }
       state = state.copyWith(
-        dms: sortDms(cached.dms),
-        channels: sortChannels(cached.channels),
+        dms: sortDms(
+          cached.dms.map((this as ChatNotifier).visiblePreview).toList(),
+        ),
+        channels: sortChannels(
+          cached.channels.map((this as ChatNotifier).visiblePreview).toList(),
+        ),
         sidebarLoading: false,
       );
       return true;

@@ -103,6 +103,7 @@ void main() {
     expect(vault.isUnlocked, isTrue);
     expect(await vault.hasStoredRecoveryCode(), isTrue);
     expect(api.requests, hasLength(1));
+    expect(api.requests.single['clear_history'], isTrue);
     await tester.pumpWidget(const SizedBox());
   });
   test('background failure can retry the same saved candidate', () async {
@@ -142,5 +143,6 @@ void main() {
     expect(await storage.readPendingRecovery('u'), isNull);
     expect(await vault.hasStoredRecoveryCode(), isTrue);
     expect(api.requests, hasLength(1));
+    expect(api.requests.single['clear_history'], isTrue);
   });
 }

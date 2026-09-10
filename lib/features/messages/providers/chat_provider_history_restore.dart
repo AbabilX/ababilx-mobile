@@ -16,6 +16,17 @@ mixin _ChatHistoryRestoreMixin
     } catch (_) {}
   }
 
+  Future<void> completeHistoryReset(String userId) async {
+    await HistoryRestoreFlag.complete(userId);
+    state = state.copyWith(
+      feeds: const {},
+      threadRepliesByRoot: const {},
+      searchResults: const [],
+      dms: state.dms.map((c) => c.withoutMessagePreview()).toList(),
+      channels: state.channels.map((c) => c.withoutMessagePreview()).toList(),
+    );
+  }
+
   Future<void> markHistoryRestorePending() async {
     _restoreCancelled = false;
     await HistoryRestoreFlag.mark(

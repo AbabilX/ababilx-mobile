@@ -8,6 +8,9 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
 
   void setFeed(String key, ChatFeed feed) {
     if (isDisposed) return;
+    if (ref.read(messageVaultProvider).isStartingNewChat) {
+      feed = feed.copyWith(messages: const [], hasMore: false);
+    }
     final filtered = ref
         .read(chatMessageStoreProvider)
         .deletions

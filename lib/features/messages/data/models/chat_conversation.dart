@@ -294,6 +294,15 @@ class ChatConversation extends Equatable {
     );
   }
 
+  ChatConversation withoutMessagePreview() => copyWith(
+    unreadCount: 0,
+    lastMessageAt: '',
+    lastMessageBody: '',
+    lastMessageUserId: '',
+    clearLastMessageAttachment: true,
+    clearLastMessageEncryption: true,
+  );
+
   ChatConversation copyWith({
     int? unreadCount,
     String? lastMessageAt,

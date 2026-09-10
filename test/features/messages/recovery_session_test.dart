@@ -160,4 +160,32 @@ void main() {
       expect(await other.readVerifiedRecoveryCode(verification), code);
     },
   );
+  test(
+    'fresh-start cleanup failure resumes before unlocking and saving code',
+    () async {
+      final store = MemoryRecoveryStorage();
+      final repo = MemoryRecoveryRepo(store);
+      final api = MemoryRecoveryApi(store, repo);
+      final vault = MessageVault(repo, store)
+        ..onHistoryReset = (_) async => throw StateError('cleanup failed');
+      await expectLater(
+        vault.startSession(userId: 'u', api: api, clearHistory: true),
+        throwsStateError,
+      );
+      expect(vault.isUnlocked, isFalse);
+      expect(await store.readPendingRecovery('u'), isNotNull);
+      final first = jsonEncode(api.requests.single);
+      var cleaned = false;
+      final restarted = MessageVault(repo, store)
+        ..onHistoryReset = (id) async {
+          expect(id, 'u');
+          cleaned = true;
+        };
+      expect(await restarted.resumePendingSession('u', api), isTrue);
+      expect(cleaned, isTrue);
+      expect(jsonEncode(api.requests.last), first);
+      expect(restarted.isUnlocked, isTrue);
+      expect(await store.readPendingRecovery('u'), isNull);
+    },
+  );
 }
