@@ -5,6 +5,8 @@ import '../../../core/localization/app_translations.dart';
 import '../../messages/data/chat_recovery_api.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/message_e2ee/recovery_code_card.dart';
+import '../../messages/message_e2ee/new_chat_setup.dart';
+import '../../messages/message_e2ee/new_chat_setup_banner.dart';
 
 /// No remembered verification state. Leaving this route destroys the reveal;
 /// opening it again always creates a new, single-use email challenge.
@@ -155,79 +157,91 @@ class _State extends ConsumerState<RecoveryCodesScreen>
     String t(String key) => AppTranslations.translate(context, ref, key);
     return Scaffold(
       appBar: AppBar(title: Text(t('recovery_codes_title'))),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            Icon(
-              Icons.key_rounded,
-              size: 44,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 20),
-            Text(
-              t('recovery_codes_body'),
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            if (_code.isNotEmpty) ...[
-              RecoveryCodeCard(code: _code),
-              const SizedBox(height: 16),
-              Text(t('recovery_codes_hide_hint')),
-              TextButton(onPressed: _hide, child: Text(t('recovery_hide'))),
-            ] else if (_challenge.isEmpty)
-              FilledButton(
-                onPressed: _busy ? null : _request,
-                child: Text(t(_busy ? 'recovery_sending' : 'recovery_send')),
-              )
-            else ...[
-              Text(t('recovery_sent').replaceAll('{email}', _email)),
-              const SizedBox(height: 16),
-              if (_legacy) ...[
-                Text(t('recovery_legacy_create')),
-                const SizedBox(height: 16),
-              ],
-              TextField(
-                controller: _input,
-                enabled: !_busy,
-                autocorrect: false,
-                enableSuggestions: false,
-                maxLength: 9,
-                textCapitalization: TextCapitalization.characters,
-                decoration: InputDecoration(
-                  labelText: t('recovery_email_hint'),
-                  border: const OutlineInputBorder(),
-                ),
-                onSubmitted: (_) => _verify(),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _busy ? null : _verify,
-                child: Text(
-                  t(
-                    _busy
-                        ? 'recovery_verifying'
-                        : _legacy
-                        ? 'recovery_verify_create'
-                        : 'recovery_verify_view',
+      body: ref.watch(newChatSetupProvider).pending
+          ? const Align(
+              alignment: Alignment.topCenter,
+              child: NewChatSetupBanner(),
+            )
+          : SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  Icon(
+                    Icons.key_rounded,
+                    size: 44,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-                ),
+                  const SizedBox(height: 20),
+                  Text(
+                    t('recovery_codes_body'),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  if (_code.isNotEmpty) ...[
+                    RecoveryCodeCard(code: _code),
+                    const SizedBox(height: 16),
+                    Text(t('recovery_codes_hide_hint')),
+                    TextButton(
+                      onPressed: _hide,
+                      child: Text(t('recovery_hide')),
+                    ),
+                  ] else if (_challenge.isEmpty)
+                    FilledButton(
+                      onPressed: _busy ? null : _request,
+                      child: Text(
+                        t(_busy ? 'recovery_sending' : 'recovery_send'),
+                      ),
+                    )
+                  else ...[
+                    Text(t('recovery_sent').replaceAll('{email}', _email)),
+                    const SizedBox(height: 16),
+                    if (_legacy) ...[
+                      Text(t('recovery_legacy_create')),
+                      const SizedBox(height: 16),
+                    ],
+                    TextField(
+                      controller: _input,
+                      enabled: !_busy,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      maxLength: 9,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: InputDecoration(
+                        labelText: t('recovery_email_hint'),
+                        border: const OutlineInputBorder(),
+                      ),
+                      onSubmitted: (_) => _verify(),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: _busy ? null : _verify,
+                      child: Text(
+                        t(
+                          _busy
+                              ? 'recovery_verifying'
+                              : _legacy
+                              ? 'recovery_verify_create'
+                              : 'recovery_verify_view',
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _busy ? null : _request,
+                      child: Text(t('recovery_resend')),
+                    ),
+                  ],
+                  if (_error != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      t(_error!),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              TextButton(
-                onPressed: _busy ? null : _request,
-                child: Text(t('recovery_resend')),
-              ),
-            ],
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                t(_error!),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-          ],
-        ),
-      ),
+            ),
     );
   }
 }

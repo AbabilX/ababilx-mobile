@@ -57,9 +57,11 @@ class AppTranslations {
       'onboarding_start': 'Get started',
       'recovery_choice_title': 'Restore your messages',
       'recovery_choice_body':
-          'Enter your recovery code to restore messages from your backup and available server history, or start a new session.',
+          'Enter your recovery code to restore messages from your backup and available server history, or start a new chat.',
       'recovery_have_code': 'I have a recovery code',
-      'recovery_fresh': 'Start new session',
+      'new_chat_setup_running': 'Preparing your recovery code…',
+      'new_chat_setup_failed': 'Chat setup could not finish. Tap to retry.',
+      'recovery_fresh': 'Start new chat',
       'recovery_fresh_hint':
           'A new session creates a new recovery code in Settings → Backup → Recovery codes. Older encrypted messages need your previous code.',
       'recovery_enter': 'Enter your recovery code',
@@ -387,10 +389,10 @@ class AppTranslations {
       'recovery_check_failed':
           'মেসেজ পরীক্ষা করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
       'recovery_session_failed':
-          'নতুন সেশন শুরু করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+          'নতুন চ্যাট শুরু করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
       'recovery_retry': 'আবার চেষ্টা করুন',
       'recovery_legacy_body':
-          'এই অ্যাকাউন্টে মেসেজ আছে, তবে রিকভারি কোড নেই। চ্যাট করতে নতুন সেশন শুরু করুন।',
+          'এই অ্যাকাউন্টে মেসেজ আছে, তবে রিকভারি কোড নেই। চ্যাট করতে নতুন চ্যাট শুরু করুন।',
       'recovery_codes_title': 'রিকভারি কোড',
       'recovery_codes_body':
           'আপনার রিকভারি কোড স্বয়ংক্রিয়ভাবে তৈরি হয়। প্রতিবার দেখতে বা কপি করতে ইমেইল যাচাই করুন। অন্য ফোনে মেসেজ ফিরিয়ে আনতে কোডটি নিরাপদে রাখুন।',
@@ -419,9 +421,12 @@ class AppTranslations {
       'onboarding_start': 'শুরু করুন',
       'recovery_choice_title': 'আপনার মেসেজ ফিরিয়ে আনুন',
       'recovery_choice_body':
-          'ব্যাকআপ ও সার্ভারের উপলব্ধ মেসেজ ফিরিয়ে আনতে রিকভারি কোড দিন, অথবা নতুন সেশন শুরু করুন।',
+          'ব্যাকআপ ও সার্ভারের উপলব্ধ মেসেজ ফিরিয়ে আনতে রিকভারি কোড দিন, অথবা নতুন চ্যাট শুরু করুন।',
       'recovery_have_code': 'আমার রিকভারি কোড আছে',
-      'recovery_fresh': 'নতুন সেশন শুরু করুন',
+      'new_chat_setup_running': 'আপনার রিকভারি কোড তৈরি হচ্ছে…',
+      'new_chat_setup_failed':
+          'চ্যাট প্রস্তুত করা যায়নি। আবার চেষ্টা করতে চাপুন।',
+      'recovery_fresh': 'নতুন চ্যাট শুরু করুন',
       'recovery_fresh_hint':
           'নতুন রিকভারি কোড থাকবে সেটিংস → ব্যাকআপ → রিকভারি কোডে। পুরোনো এনক্রিপ্টেড মেসেজের জন্য আগের কোড প্রয়োজন।',
       'recovery_enter': 'আপনার রিকভারি কোড দিন',

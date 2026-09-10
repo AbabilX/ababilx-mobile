@@ -9,19 +9,13 @@ import 'message_vault.dart';
 import 'vault_gate_error.dart';
 import 'vault_gate_recovery_code.dart';
 import 'vault_gate_recovery_choice.dart';
-import '../data/chat_recovery_api.dart';
-import '../data/chat_repository.dart';
+import 'new_chat_setup.dart';
+import 'new_chat_setup_banner.dart';
 import '../archive/archive_provider.dart';
 import 'vault_gate_recovery_setup.dart';
 
-/// Stands in front of the chat until this device holds the account's message
-/// key.
-///
-/// On a first launch it mints one, wraps it under a fresh recovery code and
-/// shows that code once — the only moment it can be shown, since nothing keeps
-/// a copy. On every launch after that it loads the key and gets out of the way.
-/// It asks for the code only where the key genuinely is not here, because
-/// AbabilX has none to hand over: that is what end-to-end encryption means.
+/// Guards encrypted content until the phone holds its message identity.
+/// New-chat setup runs in the background; generated codes stay on the phone.
 class MessageVaultGate extends ConsumerStatefulWidget {
   const MessageVaultGate({super.key, required this.onUnlocked});
   final VoidCallback onUnlocked;
@@ -45,7 +39,7 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
   @override
   void initState() {
     super.initState();
-    _load();
+    if (!ref.read(newChatSetupProvider).pending) _load();
   }
 
   Future<void> _load() async {
@@ -114,36 +108,24 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
     }
   }
 
-  Future<void> _startFresh() async {
+  void _startFresh() {
     if (_resetting) return;
-    setState(() => _resetting = true);
-    try {
-      final userId = await ref
-          .read(chatProvider.notifier)
-          .ensureCurrentUserId();
-      if (!mounted) return;
-      final status = await ref.read(chatRepositoryProvider).getE2eeVault();
-      if (!mounted) return;
-      final remote = status['vault'];
-      await ref
-          .read(messageVaultProvider)
-          .startSession(
-            userId: userId,
-            api: ref.read(chatRecoveryApiProvider),
-            expectedPublicKey: remote is Map
-                ? Map<String, dynamic>.from(remote['public_key'] as Map)
-                : null,
-          );
-      if (mounted) await _finish();
-    } catch (error) {
-      if (mounted) setState(() => _error = error);
-    } finally {
-      if (mounted) setState(() => _resetting = false);
-    }
+    _resetting = true;
+    ref.read(newChatSetupProvider.notifier).start(fetchIdentity: true);
+    widget.onUnlocked();
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(newChatSetupProvider, (_, next) {
+      if (next == NewChatSetupState.ready) unawaited(_load());
+    });
+    if (ref.watch(newChatSetupProvider).pending) {
+      return const Align(
+        alignment: Alignment.topCenter,
+        child: NewChatSetupBanner(),
+      );
+    }
     if (_checking) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }

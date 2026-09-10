@@ -34,6 +34,11 @@ extension MessageVaultIdentity on MessageVault {
   /// loads it. A phone that does not has to be given the key by its owner —
   /// there is nowhere else it could come from, which is the point.
   Future<VaultIdentityState> ensureIdentity() async {
+    if (_newChatPending) {
+      await _sessionOperation;
+      if (_newChatPending) throw StateError('New chat setup is pending');
+      return VaultIdentityState.ready;
+    }
     final status = await _repo.getE2eeVault();
 
     if (status['exists'] != true) {

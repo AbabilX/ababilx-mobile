@@ -67,9 +67,10 @@ extension MessageVaultRestore on MessageVault {
   /// only a staleness check — a rotated identity simply fails the AES-GCM tag
   /// and the notification falls back to its placeholder.
   Future<bool> restoreTrustedIdentityOffline() async {
+    if (_newChatPending) return false;
     try {
       final saved = await _storage.readMessageVaultIdentity();
-      if (saved == null) return false;
+      if (_newChatPending || saved == null) return false;
       final data = Map<String, dynamic>.from(jsonDecode(saved) as Map);
       _identity = _identityFromJwk(
         Map<String, dynamic>.from(data['private_key'] as Map),

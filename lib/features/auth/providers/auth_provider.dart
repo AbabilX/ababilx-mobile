@@ -9,6 +9,7 @@ import '../../messages/data/local/chat_key_cache.dart';
 import '../../messages/data/local/chat_sidebar_cache.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/archive/archive_provider.dart';
+import '../../messages/message_e2ee/new_chat_setup.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
@@ -33,6 +34,7 @@ class AuthNotifier extends AsyncNotifier<bool> {
   }
 
   Future<void> signOut() async {
+    ref.read(newChatSetupProvider.notifier).reset();
     await ref.read(archiveProvider.notifier).cancel();
     await ref.read(chatProvider.notifier).cancelHistoryRestore();
     await ref.read(messageVaultProvider).cancelRecoverySession();

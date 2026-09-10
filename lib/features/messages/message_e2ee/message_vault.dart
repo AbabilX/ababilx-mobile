@@ -74,6 +74,7 @@ class MessageVault {
   _PendingFreshStart? _pendingFreshStart;
   int _recoveryEpoch = 0;
   Future<void>? _sessionOperation;
+  bool _newChatPending = false;
 
   /// Reads the freshly generated code once and forgets it.
   String? takePendingRecoveryCode() {
@@ -82,7 +83,7 @@ class MessageVault {
     return code;
   }
 
-  bool get isUnlocked => _identity != null;
+  bool get isUnlocked => _identity != null && !_newChatPending;
 
   /// This account's public identity, for deriving a safety number against a
   /// peer's. Public by construction — it is what the server hands out to

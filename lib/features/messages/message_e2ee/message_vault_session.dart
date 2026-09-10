@@ -1,6 +1,11 @@
 part of 'message_vault.dart';
 
 extension MessageVaultSession on MessageVault {
+  void beginNewChat() {
+    lock();
+    _newChatPending = true;
+  }
+
   /// Persist the exact candidate before any network write. A process death or
   /// lost response retries this identity, never generates an orphaned key.
   Future<void> startSession({
@@ -94,6 +99,7 @@ extension MessageVaultSession on MessageVault {
     await _storeRecoveryCode(public, pending['recovery_code'] as String);
     _backfilled.clear();
     await _storage.deletePendingRecovery(userId);
+    _newChatPending = false;
   }
 
   void _checkRecoveryEpoch(int epoch) {
@@ -106,6 +112,7 @@ extension MessageVaultSession on MessageVault {
       await _sessionOperation;
     } catch (_) {}
     lock();
+    _newChatPending = false;
   }
 
   Future<bool> adoptCurrentIdentity(Map<String, dynamic> public) =>

@@ -37,7 +37,7 @@ void main() {
     await tester.tap(find.text('I have a recovery code'));
     expect(recovered, 1);
     expect(fresh, 0);
-    await tester.tap(find.text('Start new session'));
+    await tester.tap(find.text('Start new chat'));
     expect(fresh, 1);
   });
 
@@ -51,7 +51,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('I have a recovery code'), findsOneWidget);
-      expect(find.text('Start new session'), findsOneWidget);
+      expect(find.text('Start new chat'), findsOneWidget);
     },
   );
 
@@ -64,7 +64,7 @@ void main() {
       fresh: () => calls++,
     );
     await tester.tap(find.text('I have a recovery code'));
-    await tester.tap(find.text('Start new session'));
+    await tester.tap(find.text('Start new chat'));
     expect(calls, 0);
   });
 
@@ -79,7 +79,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await show(tester, language: 'bn');
     expect(find.text('আপনার মেসেজ ফিরিয়ে আনুন'), findsOneWidget);
-    await tester.ensureVisible(find.text('নতুন সেশন শুরু করুন'));
+    await tester.ensureVisible(find.text('নতুন চ্যাট শুরু করুন'));
     expect(tester.takeException(), isNull);
   });
 }

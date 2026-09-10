@@ -7,6 +7,8 @@ import '../history-restore/recovery_progress_banner.dart';
 import '../archive/archive_provider.dart';
 import '../history-restore/history_restore_state.dart';
 import '../message_e2ee/message_vault.dart';
+import '../message_e2ee/new_chat_setup.dart';
+import '../message_e2ee/new_chat_setup_banner.dart';
 import '../message_e2ee/message_vault_sheet.dart';
 import '../providers/chat_provider.dart';
 
@@ -37,6 +39,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   }
 
   Future<void> _restoreVaultOffline() async {
+    if (ref.read(newChatSetupProvider).pending) return;
     final unlocked = await ref
         .read(messageVaultProvider)
         .restoreTrustedIdentityOffline();
@@ -53,6 +56,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   }
 
   Future<void> _openUnlockSheet() async {
+    if (ref.read(newChatSetupProvider).pending) return;
     if (_vaultSheetOpen || ref.read(messageVaultProvider).isUnlocked) return;
     _vaultSheetOpen = true;
     await showMessageVaultRecoverySheet(
@@ -75,6 +79,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     // Sealed previews (DMs and groups) carry a safe "Encrypted message"
     // placeholder until the vault is unlocked, and the vault only gates an
     // individual chat's content, in ConversationScreen.
+    ref.listen(newChatSetupProvider, (_, next) {
+      if (next == NewChatSetupState.ready) unawaited(_restoreVaultOffline());
+    });
     return _MessagesBody(
       vaultUnlocked: _vaultUnlocked,
       onUnlockTap: _openUnlockSheet,
@@ -100,7 +107,9 @@ class _MessagesBody extends ConsumerWidget {
         archive.phase == ArchivePhase.restoring ||
         archive.error.isNotEmpty;
     return ChatList(
-      banner: !vaultUnlocked
+      banner: ref.watch(newChatSetupProvider).pending
+          ? const NewChatSetupBanner()
+          : !vaultUnlocked
           ? _UnlockBanner(onTap: onUnlockTap)
           : restoring
           ? const RecoveryProgressBanner()

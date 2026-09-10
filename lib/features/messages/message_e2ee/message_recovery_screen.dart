@@ -8,6 +8,7 @@ import '../providers/chat_provider.dart';
 import '../archive/archive_provider.dart';
 import 'message_vault.dart';
 import 'message_entry_ready.dart';
+import 'new_chat_setup.dart';
 import 'vault_gate_recovery_choice.dart';
 import 'vault_gate_recovery_code.dart';
 
@@ -100,29 +101,13 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
     ref.read(messageEntryReadyProvider.notifier).state = true;
   }
 
-  Future<void> _newSession() async {
+  void _newSession() {
     if (_busy) return;
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      await ref
-          .read(messageVaultProvider)
-          .startSession(
-            userId: _userId,
-            api: ref.read(chatRecoveryApiProvider),
-            expectedPublicKey: _public,
-          );
-      if (mounted) _finish();
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _busy = false;
-          _error = 'recovery_session_failed';
-        });
-      }
-    }
+    _busy = true;
+    ref
+        .read(newChatSetupProvider.notifier)
+        .start(userId: _userId, expectedPublicKey: _public);
+    _finish();
   }
 
   Future<void> _recovered() async {
