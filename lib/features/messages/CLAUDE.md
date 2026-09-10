@@ -368,6 +368,22 @@ point — a DM takes the nickname, a group or channel never does, because nobody
 has a private name for a room. Edited from Nickname on the chat details screen,
 and searched in the people list, since a rename has to be how you find someone.
 
+## Chat search is chats, then messages
+
+`chat-list/chat_search.dart`. Signal-Android's conversation-list search
+(`ConversationListFragment.mapSearchStateToConfiguration`) draws **Chats**
+first — threads whose contact name or group title matches — and **Messages**
+under them. We keep that order and that pair only. Groups-in-common, contacts
+without a thread, and Documents/Links/Photos chips are not on this screen.
+
+Name matching is local (`chat_search_matches.dart` + `matchesNameQuery`) over
+the sidebar, including nicknames, so a hit appears before the message index
+returns. Message hits stay the existing local-then-server search. Opened from
+one chat's details, the message list is still narrowed to that conversation;
+the Chats section stays global so you can jump. The floating shell pill is
+hidden for the duration (`shellBottomBarHiddenProvider`), because `showSearch`
+does not leave the shell navigator.
+
 
 # Received media stays in the sandbox
 

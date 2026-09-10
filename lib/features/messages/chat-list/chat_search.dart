@@ -3,24 +3,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../chat_icon.dart';
 import '../providers/chat_provider.dart';
-import '../tiptap_plain_text.dart';
+import 'chat_search_results.dart';
 
-void openChatSearch(
+Future<String?> openChatSearch(
   BuildContext context,
   WidgetRef ref, {
   String? conversationId,
   String? conversationTitle,
-}) {
-  showSearch<String?>(
-    context: context,
-    delegate: ChatSearchDelegate(
-      ref,
-      conversationId: conversationId,
-      conversationTitle: conversationTitle,
-    ),
-  );
+}) async {
+  // showSearch sits on the shell navigator, so the floating pill would
+  // otherwise paint over the results — same hide as the You sheet.
+  final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
+  hidden.state = true;
+  try {
+    return await showSearch<String?>(
+      context: context,
+      delegate: ChatSearchDelegate(
+        ref,
+        conversationId: conversationId,
+        conversationTitle: conversationTitle,
+      ),
+    );
+  } finally {
+    hidden.state = false;
+  }
 }
 
 class ChatSearchDelegate extends SearchDelegate<String?> {
@@ -28,7 +37,9 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
   final WidgetRef ref;
 
   /// Opened from one chat's details screen: the server search is account-wide,
-  /// so the results are narrowed here rather than pretending to be global.
+  /// so the message hits are narrowed here rather than pretending to be global.
+  /// Name-matched sidebar chats stay global — the same two-section layout as
+  /// the list search, which is how a person jumps to another chat from here.
   final String? conversationId;
   final String? conversationTitle;
 
@@ -47,6 +58,7 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
 
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
+    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
     icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
     onPressed: () => close(context, null),
   );
@@ -56,47 +68,25 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    if (query.trim().length >= 2) {
-      ref.read(chatProvider.notifier).searchMessages(query.trim());
+    final q = query.trim();
+    // SearchDelegate rebuilds on every keystroke. Kicking the index off
+    // during build is a Riverpod write-in-layout, so wait a frame and skip
+    // a query we are already answering.
+    if (q.length >= 2 && ref.read(chatProvider).searchQuery != q) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (query.trim() != q) return;
+        ref.read(chatProvider.notifier).searchMessages(q);
+      });
     }
     return _list(context);
   }
 
-  Widget _list(BuildContext context) => Consumer(
-    builder: (_, ref, _) {
-      final chat = ref.watch(chatProvider);
-      if (query.trim().length < 2) {
-        return const Center(child: Text('Type at least 2 characters'));
-      }
-      if (chat.searchLoading) {
-        return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
-      }
-      final results = conversationId == null
-          ? chat.searchResults
-          : chat.searchResults
-                .where((m) => m.conversationId == conversationId)
-                .toList();
-      if (results.isEmpty) {
-        return const Center(child: Text('No messages found'));
-      }
-      return ListView.builder(
-        itemCount: results.length,
-        itemBuilder: (_, i) {
-          final msg = results[i];
-          return ListTile(
-            title: Text(msg.userName ?? 'Unknown'),
-            subtitle: Text(
-              tiptapToPreviewText(msg.body),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            onTap: () {
-              close(context, msg.conversationId);
-              context.push('/messages/${msg.conversationId}');
-            },
-          );
-        },
-      );
+  Widget _list(BuildContext context) => ChatSearchResults(
+    query: query,
+    conversationId: conversationId,
+    onOpenConversation: (id) {
+      close(context, id);
+      context.push('/messages/$id');
     },
   );
 }
