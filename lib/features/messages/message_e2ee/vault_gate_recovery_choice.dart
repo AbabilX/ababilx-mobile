@@ -9,9 +9,11 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
     required this.busy,
     required this.onRecover,
     required this.onStartFresh,
+    this.hasRecovery = true,
   });
 
   final bool busy;
+  final bool hasRecovery;
   final VoidCallback onRecover;
   final VoidCallback onStartFresh;
 
@@ -38,18 +40,19 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              t('recovery_choice_body'),
+              t(hasRecovery ? 'recovery_choice_body' : 'recovery_legacy_body'),
               style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: busy ? null : onRecover,
-                child: Text(t('recovery_have_code')),
+            if (hasRecovery)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: busy ? null : onRecover,
+                  child: Text(t('recovery_have_code')),
+                ),
               ),
-            ),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,

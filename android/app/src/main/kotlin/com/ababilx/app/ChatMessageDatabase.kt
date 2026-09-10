@@ -2,6 +2,7 @@ package com.ababilx.app
 
 import android.content.ContentValues
 import android.content.Context
+import org.json.JSONObject
 import net.zetetic.database.sqlcipher.SQLiteDatabase
 import net.zetetic.database.sqlcipher.SQLiteOpenHelper
 
@@ -12,6 +13,7 @@ data class StoredChatMessage(
     val threadRootId: String?,
     val payloadJson: String,
     val payloadId: String,
+    val recoverySource: String? = null,
 )
 
 /** Small encrypted database whose message id is the sole conflict key. */
@@ -53,6 +55,7 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
         database.beginTransaction()
         try {
             rows.forEach { row ->
+                if (row.recoverySource != null && keepLocalRecovery(database, row)) return@forEach
                 val values = ContentValues().apply {
                     put("id", row.id)
                     put("conversation_id", row.conversationId)
@@ -79,6 +82,27 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
             database.setTransactionSuccessful()
         } finally {
             database.endTransaction()
+        }
+    }
+
+    private fun keepLocalRecovery(database: SQLiteDatabase, row: StoredChatMessage): Boolean {
+        val incoming = JSONObject(row.payloadJson)
+        if (incoming.optBoolean("content_purged")) return true
+        return database.rawQuery(
+            "SELECT payload_json FROM messages WHERE id=? OR json_extract(payload_json, '$.id')=?",
+            arrayOf(row.id, row.payloadId),
+        ).use { cursor ->
+            var keep = false
+            while (cursor.moveToNext()) {
+                val current = JSONObject(cursor.getString(0))
+                val oldRevision = current.optLong("revision")
+                val newRevision = incoming.optLong("revision")
+                if (!current.isNull("deleted_at") && incoming.isNull("deleted_at")) keep = true
+                else if (oldRevision > 0 && newRevision > 0) {
+                    if (oldRevision >= newRevision) keep = true
+                } else if (row.recoverySource == "backup") keep = true
+            }
+            keep
         }
     }
 

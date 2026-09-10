@@ -9,7 +9,9 @@ import 'message_vault.dart';
 import 'vault_gate_error.dart';
 import 'vault_gate_recovery_code.dart';
 import 'vault_gate_recovery_choice.dart';
-import 'vault_gate_reset_dialog.dart';
+import '../data/chat_recovery_api.dart';
+import '../data/chat_repository.dart';
+import '../archive/archive_provider.dart';
 import 'vault_gate_recovery_setup.dart';
 
 /// Stands in front of the chat until this device holds the account's message
@@ -99,6 +101,7 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
       await chat.redecryptFailedMessages();
       if (pullHistory) {
         await chat.markHistoryRestorePending();
+        await ref.read(archiveProvider.notifier).markRecoveryPending();
       }
       // No-ops unless recovery just set the pending bit (or a killed first
       // run left it set). Ordinary unlocks never pull.
@@ -111,21 +114,32 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
     }
   }
 
-  void _identityReplaced(String code) {
-    if (!mounted) return;
-    setState(() {
-      _state = VaultIdentityState.setup;
-      _recoveryCode = code;
-    });
-  }
-
   Future<void> _startFresh() async {
     if (_resetting) return;
     setState(() => _resetting = true);
-    final code = await VaultGateResetDialog.show(context);
-    if (!mounted) return;
-    setState(() => _resetting = false);
-    if (code != null) _identityReplaced(code);
+    try {
+      final userId = await ref
+          .read(chatProvider.notifier)
+          .ensureCurrentUserId();
+      if (!mounted) return;
+      final status = await ref.read(chatRepositoryProvider).getE2eeVault();
+      if (!mounted) return;
+      final remote = status['vault'];
+      await ref
+          .read(messageVaultProvider)
+          .startSession(
+            userId: userId,
+            api: ref.read(chatRecoveryApiProvider),
+            expectedPublicKey: remote is Map
+                ? Map<String, dynamic>.from(remote['public_key'] as Map)
+                : null,
+          );
+      if (mounted) await _finish();
+    } catch (error) {
+      if (mounted) setState(() => _error = error);
+    } finally {
+      if (mounted) setState(() => _resetting = false);
+    }
   }
 
   @override

@@ -17,7 +17,7 @@ class HistoryRestoreFlag {
     final id = userId.trim();
     if (id.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_doneKey(id)) ?? false) return;
+    await prefs.remove(_doneKey(id));
     await prefs.setBool(_pendingKey(id), true);
   }
 

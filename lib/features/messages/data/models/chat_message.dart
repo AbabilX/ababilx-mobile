@@ -16,6 +16,8 @@ class ChatMessage extends Equatable {
     required this.userId,
     required this.body,
     this.parentId,
+    this.revision = 0,
+    this.contentPurged = false,
     required this.createdAt,
     this.editedAt,
     this.deletedAt,
@@ -49,6 +51,8 @@ class ChatMessage extends Equatable {
   final String userId;
   final String body;
   final String? parentId;
+  final int revision;
+  final bool contentPurged;
   final String createdAt;
   final String? editedAt;
   final String? deletedAt;
@@ -112,6 +116,8 @@ class ChatMessage extends Equatable {
     userId: json['user_id'] as String? ?? '',
     body: json['body'] as String? ?? '',
     parentId: json['parent_id'] as String?,
+    revision: (json['revision'] as num?)?.toInt() ?? 0,
+    contentPurged: json['content_purged'] == true,
     createdAt: json['created_at'] as String? ?? '',
     editedAt: json['edited_at'] as String?,
     deletedAt: json['deleted_at'] as String?,
@@ -159,6 +165,8 @@ class ChatMessage extends Equatable {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'revision': revision,
+    'content_purged': contentPurged,
     'conversation_id': conversationId,
     'user_id': userId,
     'body': body,
@@ -217,6 +225,8 @@ class ChatMessage extends Equatable {
     userId: userId,
     body: body ?? this.body,
     parentId: parentId,
+    revision: revision,
+    contentPurged: contentPurged,
     createdAt: createdAt,
     editedAt: editedAt ?? this.editedAt,
     deletedAt: deletedAt ?? this.deletedAt,

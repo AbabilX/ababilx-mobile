@@ -102,6 +102,7 @@ class ChatMessageStoreChannel(context: android.content.Context) {
                 createdAtMs = createdAtMs,
                 threadRootId = row["threadRootId"] as? String,
                 payloadJson = payload,
+                recoverySource = row["recoverySource"] as? String,
                 payloadId = (row["payloadId"] as? String)?.ifEmpty { id } ?: id,
             )
         }

@@ -4,14 +4,14 @@ part of 'message_vault.dart';
 ///
 /// The key is minted here and the server never sees it. What the server keeps
 /// is a copy wrapped by a 256-bit recovery code, generated on the device and
-/// shown once — ciphertext it cannot open. That is what lets a second device
+/// saved on this phone — ciphertext it cannot open. That is what lets a second device
 /// catch up without giving up end-to-end encryption.
 ///
 /// The unlock path is in `message_vault_recover.dart`; the last-resort identity
 /// swap is in `message_vault_reset.dart`.
 extension MessageVaultIdentity on MessageVault {
   /// Mints a recovery code for an identity, publishes the wrapped key, and
-  /// stages the code for the setup screen to show.
+  /// saves the code in this phone’s secure storage.
   Future<VaultIdentityState> _provisionRecovery(
     P256KeyPair identity,
     Map<String, dynamic> publicJwk,
@@ -21,10 +21,10 @@ extension MessageVaultIdentity on MessageVault {
       _privateJwkFromIdentity(identity),
       code,
     );
-    await _repo.putE2eeRecoveryVault(publicJwk, vault.toJson());
+    await _publishRecoveryCode(publicJwk, code, vault);
     await _adopt(identity, publicJwk);
-    _pendingRecoveryCode = RecoveryKey.format(code);
-    return VaultIdentityState.setup;
+    _pendingRecoveryCode = null;
+    return VaultIdentityState.ready;
   }
 
   /// Brings secure messages up, asking for nothing when it can.
@@ -109,6 +109,9 @@ extension MessageVaultIdentity on MessageVault {
   }
 
   void lock() {
+    _recoveryEpoch++;
+    _pendingRecoveryCode = null;
+    _pendingFreshStart = null;
     _identity = null;
     _publicJwk = null;
     _clearKeyMemory();

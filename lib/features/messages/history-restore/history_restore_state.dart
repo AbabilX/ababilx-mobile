@@ -7,11 +7,13 @@ class HistoryRestoreState {
     this.phase = HistoryRestorePhase.idle,
     this.done = 0,
     this.total = 0,
+    this.failed = false,
   });
 
   final HistoryRestorePhase phase;
   final int done;
   final int total;
+  final bool failed;
 
   bool get running => phase == HistoryRestorePhase.running;
 
@@ -23,6 +25,7 @@ class HistoryRestoreState {
     phase: phase ?? this.phase,
     done: done ?? this.done,
     total: total ?? this.total,
+    failed: failed,
   );
 }
 
@@ -43,8 +46,8 @@ class HistoryRestoreNotifier extends Notifier<HistoryRestoreState> {
     state = state.copyWith(done: done, total: total);
   }
 
-  void finish() {
-    state = const HistoryRestoreState();
+  void finish({bool failed = false}) {
+    state = HistoryRestoreState(failed: failed);
   }
 }
 

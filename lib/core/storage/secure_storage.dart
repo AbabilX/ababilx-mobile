@@ -37,5 +37,17 @@ class SecureStorage {
   Future<void> writeMessagingDeviceIdentity(String value) =>
       _storage.write(key: StorageKeys.messagingDeviceIdentity, value: value);
 
+  Future<String?> readRecoveryCode(String identityId) =>
+      _storage.read(key: 'message_recovery_code_$identityId');
+  Future<void> writeRecoveryCode(String identityId, String code) =>
+      _storage.write(key: 'message_recovery_code_$identityId', value: code);
+
+  Future<String?> readPendingRecovery(String userId) =>
+      _storage.read(key: 'pending_recovery_v1_$userId');
+  Future<void> writePendingRecovery(String userId, String value) =>
+      _storage.write(key: 'pending_recovery_v1_$userId', value: value);
+  Future<void> deletePendingRecovery(String userId) =>
+      _storage.delete(key: 'pending_recovery_v1_$userId');
+
   Future<void> clearAll() => _storage.deleteAll();
 }

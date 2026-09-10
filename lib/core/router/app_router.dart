@@ -46,6 +46,9 @@ import '../../features/settings/screens/my_qr_screen.dart';
 import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import 'home_shell.dart';
+import '../../features/settings/recovery-codes/recovery_codes_screen.dart';
+import '../../features/messages/message_e2ee/message_entry_ready.dart';
+import '../../features/messages/message_e2ee/message_recovery_screen.dart';
 
 /// Root navigator key — lets app-wide listeners (incoming call, incoming
 /// local-share request) show UI on top of whatever screen is current.
@@ -57,11 +60,13 @@ class _RouterRefreshNotifier extends ChangeNotifier {
 
 final _routerRefreshNotifierProvider = Provider<_RouterRefreshNotifier>((ref) {
   final notifier = _RouterRefreshNotifier();
+  ref.listen(messageEntryReadyProvider, (_, _) => notifier.refresh());
   ref.listen(authProvider, (previous, next) {
     notifier.refresh();
     final wasLoggedIn = previous?.valueOrNull ?? false;
     final isLoggedIn = next.valueOrNull ?? false;
     if (wasLoggedIn == isLoggedIn) return;
+    ref.read(messageEntryReadyProvider.notifier).state = false;
     ref.invalidate(profileProvider);
     ref.invalidate(teamGateProvider);
   });
@@ -94,7 +99,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (!isLoggedIn && !isLoginPage) return '/login';
-      if (isLoggedIn && isLoginPage) {
+      if (isLoggedIn && !ref.read(messageEntryReadyProvider)) {
+        return state.matchedLocation == '/message-recovery'
+            ? null
+            : '/message-recovery';
+      }
+      if (isLoggedIn &&
+          (isLoginPage || state.matchedLocation == '/message-recovery')) {
         // Always land on Messages first. FcmService.flushPendingNav seeds
         // the deep-link (push) so Android back returns here instead of exit.
         return '/messages';
@@ -103,6 +114,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(
+        path: '/message-recovery',
+        builder: (_, _) => const MessageRecoveryScreen(),
+      ),
       ShellRoute(
         builder: (_, _, child) => HomeShell(child: child),
         routes: [
@@ -173,6 +188,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/data-storage',
         builder: (_, _) => const DataStorageScreen(),
+      ),
+      GoRoute(
+        path: '/settings/chat-backup/recovery-codes',
+        builder: (_, _) => const RecoveryCodesScreen(),
       ),
       GoRoute(
         path: '/settings/chat-backup',

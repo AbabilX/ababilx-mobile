@@ -4,8 +4,7 @@ part of 'message_vault.dart';
 ///
 /// The code is turned into a key here and used here; it is never sent anywhere.
 /// What the server handed over was ciphertext it cannot open, so a correct code
-/// is the only thing in the world that opens it — and every message the account
-/// has ever received decrypts, because the identity is the same one.
+/// is the only thing in the world that opens it — and available messages can decrypt under the restored identity.
 extension MessageVaultRecover on MessageVault {
   Future<void> unlockWithRecoveryCode(String input) async {
     final code = RecoveryKey.parse(input);
@@ -38,14 +37,11 @@ extension MessageVaultRecover on MessageVault {
       throw StateError('The recovery backup does not match this account');
     }
     await _adopt(_identityFromJwk(privateJwk), publicJwk);
+    await _storeRecoveryCode(publicJwk, RecoveryKey.format(code));
   }
 
-  /// Issues a new recovery code for the same identity.
-  ///
-  /// This is the only way to see a code again: the old one was never stored,
-  /// here or on the server, so it can only be replaced. Re-wrapping the same
-  /// private key keeps every message readable and retires the previous code the
-  /// moment this returns.
+  /// Explicit legacy/stale-code upgrade after Settings email verification.
+  /// Rewraps the same identity and saves the new code only on this phone.
   Future<String> regenerateRecoveryCode() async {
     final identity = _identity;
     final publicJwk = _publicJwk;
@@ -57,7 +53,7 @@ extension MessageVaultRecover on MessageVault {
       _privateJwkFromIdentity(identity),
       code,
     );
-    await _repo.putE2eeRecoveryVault(publicJwk, vault.toJson());
+    await _publishRecoveryCode(publicJwk, code, vault);
     return RecoveryKey.format(code);
   }
 }

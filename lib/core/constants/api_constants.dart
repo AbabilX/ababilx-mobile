@@ -107,6 +107,10 @@ class ApiConstants {
   /// caller's id and a username, so a scan works on either build.
   static String chatHandle(String username) =>
       '/api/teams/chat/handles/${Uri.encodeComponent(username)}';
+  static const String chatRecoverySession = '/api/chat/recovery/start-session';
+  static const String chatRecoveryChallenge =
+      '/api/chat/recovery/reveal/challenge';
+  static const String chatRecoveryVerify = '/api/chat/recovery/reveal/verify';
   static const String chatE2eeVault = '/api/teams/chat/e2ee/vault';
   // Sheds the retired PIN-wrapped copy of the identity once a device holds it.
   static const String chatE2eeWrappedKey = '/api/teams/chat/e2ee/vault/wrapped';

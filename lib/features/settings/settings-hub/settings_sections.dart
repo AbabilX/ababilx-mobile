@@ -9,7 +9,6 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
-import '../../messages/message_e2ee/recovery_code_dialog.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import 'account_rows.dart';
@@ -123,9 +122,9 @@ class SettingsSections extends ConsumerWidget {
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedKey01,
-          title: t('settings_recovery'),
-          subtitle: t('settings_recovery_sub'),
-          onTap: () => RecoveryCodeDialog.show(context),
+          title: t('settings_backup'),
+          subtitle: t('settings_backup_sub'),
+          onTap: () => context.push('/settings/chat-backup'),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedShield01,

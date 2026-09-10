@@ -12,6 +12,7 @@ import '../data/models/chat_message.dart';
 import '../data/models/chat_message_quote.dart';
 import 'p256_ecdh.dart';
 import 'recovery_key.dart';
+import '../data/chat_recovery_api.dart';
 
 part 'message_vault_backfill.dart';
 part 'message_vault_decrypt.dart';
@@ -24,15 +25,12 @@ part 'message_vault_link.dart';
 part 'message_vault_recover.dart';
 part 'message_vault_restore.dart';
 part 'message_vault_reset.dart';
+part 'message_vault_session.dart';
+part 'message_vault_local_code.dart';
 
-/// What this device can do about secure messages right now.
-///
-/// [ready] is the resting state and, after the first launch, the only one a
-/// user ever sees. [setup] means a recovery code was just generated and has to
-/// be shown once — the only moment it can be, since nothing keeps a copy.
-/// [unlock] is a device that does not hold the key: it needs that code, because
-/// AbabilX has no copy of the key to hand over. That is the trade for
-/// end-to-end encryption.
+/// The device's message identity state. New accounts save a recovery code in
+/// OS secure storage and proceed directly to chat. `setup` remains only for
+/// compatibility with older gate callers; new provisioning returns `ready`.
 enum VaultIdentityState { ready, setup, unlock }
 
 class EncryptedDmPayload {
@@ -70,12 +68,12 @@ class MessageVault {
   final _keyLoads = <String, Future<_DmKey?>>{};
   P256KeyPair? _identity;
   Map<String, dynamic>? _publicJwk;
-  // A recovery code that has been generated but not yet shown to its owner.
-  // It lives here and nowhere else — never in secure storage, never on the
-  // server — because anything durable would leave a key-equivalent on disk,
-  // which is the one thing this scheme exists to avoid.
+  // Legacy gate compatibility. New sessions persist their code in this
+  // phone's secure storage and never stage a popup.
   String? _pendingRecoveryCode;
   _PendingFreshStart? _pendingFreshStart;
+  int _recoveryEpoch = 0;
+  Future<void>? _sessionOperation;
 
   /// Reads the freshly generated code once and forgets it.
   String? takePendingRecoveryCode() {
@@ -91,18 +89,8 @@ class MessageVault {
   /// anyone who may message us — so exposing it costs nothing.
   Map<String, dynamic>? get publicIdentity => _publicJwk;
 
-  /// The identity's 32-byte private scalar, for deriving the history-archive
-  /// key. Null while the vault is locked.
-  ///
-  /// This is key material and the only caller is `ArchiveKey.derive`. It is
-  /// exposed at all because the recovery code — the obvious root for a backup
-  /// — is deliberately never persisted (see [_pendingRecoveryCode]), so a
-  /// backup rooted in the code could only run while the user was typing it.
-  /// Rooting in the identity keeps the code as the transitive root and lets a
-  /// backup run unattended.
-  ///
-  /// Never log it, never send it, and never widen this to a public JWK: the
-  /// archive needs the raw scalar as HKDF input, nothing more.
+  /// Device-only root for encrypted history archives. Recovery codes are
+  /// also stored only on this phone; neither secret is sent to the server.
   List<int>? get archiveRootSecret => _identity?.d;
 
   Future<EncryptedDmPayload> encryptNew({

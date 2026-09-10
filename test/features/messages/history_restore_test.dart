@@ -28,22 +28,28 @@ void main() {
     );
   });
 
-  test('a finished restore never marks pending again', () async {
-    await HistoryRestoreFlag.mark('u1');
-    expect(await HistoryRestoreFlag.isPending('u1'), isTrue);
-    await HistoryRestoreFlag.complete('u1');
-    expect(await HistoryRestoreFlag.isPending('u1'), isFalse);
-    await HistoryRestoreFlag.mark('u1');
-    expect(await HistoryRestoreFlag.isPending('u1'), isFalse);
-  });
+  test(
+    'an explicit recovery can mark a finished restore pending again',
+    () async {
+      await HistoryRestoreFlag.mark('u1');
+      expect(await HistoryRestoreFlag.isPending('u1'), isTrue);
+      await HistoryRestoreFlag.complete('u1');
+      expect(await HistoryRestoreFlag.isPending('u1'), isFalse);
+      await HistoryRestoreFlag.mark('u1');
+      expect(await HistoryRestoreFlag.isPending('u1'), isTrue);
+    },
+  );
 
-  test('sign-out clears the done bit so a later recovery can run once', () async {
-    await HistoryRestoreFlag.mark('u1');
-    await HistoryRestoreFlag.complete('u1');
-    await HistoryRestoreFlag.clearAll();
-    await HistoryRestoreFlag.mark('u1');
-    expect(await HistoryRestoreFlag.isPending('u1'), isTrue);
-  });
+  test(
+    'sign-out clears the done bit so a later recovery can run once',
+    () async {
+      await HistoryRestoreFlag.mark('u1');
+      await HistoryRestoreFlag.complete('u1');
+      await HistoryRestoreFlag.clearAll();
+      await HistoryRestoreFlag.mark('u1');
+      expect(await HistoryRestoreFlag.isPending('u1'), isTrue);
+    },
+  );
 
   test('job reports every conversation even when one pull fails', () async {
     final pulled = <String>[];

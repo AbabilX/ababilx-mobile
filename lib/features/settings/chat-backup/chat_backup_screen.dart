@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/localization/app_translations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../notifications/data/device_identity.dart';
@@ -42,13 +44,28 @@ class _ChatBackupScreenState extends ConsumerState<ChatBackupScreen> {
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => popOrGoHome(context),
         ),
-        title: const Text('Chat backup'),
+        title: Text(AppTranslations.translate(context, ref, 'settings_backup')),
       ),
       body: SafeArea(
         top: false,
         child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
+            SettingsRow(
+              icon: const [],
+              title: AppTranslations.translate(
+                context,
+                ref,
+                'recovery_codes_title',
+              ),
+              subtitle: AppTranslations.translate(
+                context,
+                ref,
+                'recovery_codes_setting_hint',
+              ),
+              onTap: () => context.push('/settings/chat-backup/recovery-codes'),
+            ),
+            const Divider(height: 24),
             ChatBackupStatusCard(state: state),
             if (state.error.isNotEmpty)
               Padding(

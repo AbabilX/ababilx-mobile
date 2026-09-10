@@ -74,11 +74,13 @@ class ArchiveService {
 
   Future<ArchiveImportResult> restore({
     void Function(int restored)? onProgress,
+    bool Function()? shouldContinue,
   }) async {
     await syncChatDeletions(
       _ref,
       await _ref.read(chatProvider.notifier).ensureCurrentUserId(),
     );
+    if (shouldContinue?.call() == false) throw StateError('Restore cancelled');
     final manifest = await _api.fetchManifest();
     if (manifest == null) {
       throw StateError('there is no archive to restore');
@@ -88,6 +90,7 @@ class ArchiveService {
       api: _api,
       identityScalar: _identity(),
       onProgress: onProgress,
+      shouldContinue: shouldContinue,
     ).run(manifest);
   }
 

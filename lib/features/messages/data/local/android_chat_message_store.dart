@@ -11,8 +11,16 @@ class AndroidChatMessageStore {
 
   static const _channel = MethodChannel('com.ababilx.app/chat_store');
 
-  Future<void> upsert(List<ChatMessage> messages) async {
+  Future<void> upsert(
+    List<ChatMessage> messages, {
+    String? recoverySource,
+  }) async {
     final rows = _encodedRows(messages);
+    if (recoverySource != null) {
+      for (final row in rows) {
+        row['recoverySource'] = recoverySource;
+      }
+    }
     if (rows.isEmpty) return;
     await _channel.invokeMethod<void>('upsert', {'rows': rows});
   }

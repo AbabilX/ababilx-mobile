@@ -1,118 +1,126 @@
 part of 'chat_provider.dart';
 
-/// After a recovery-code unlock, pull the newest page of every sidebar chat
-/// into the local store so the user does not have to open each one.
-///
-/// Runs **once** per install after recovery (`HistoryRestoreFlag`). Deliberately
-/// not [loadFeed]: that path marks the conversation read when it is active and
-/// owns the in-memory feed. Restore writes disk, acks delivered only, and
-/// follows auto-download for media. If the user opens a chat while this runs,
-/// that conversation is skipped — [loadFeed] already has it.
+/// Recovery scans every available page, including thread replies. A cached
+/// first page is not evidence that the conversation's history is complete.
 mixin _ChatHistoryRestoreMixin
     on Notifier<ChatState>, _ChatFeedMixin, _ChatCacheMixin {
   @override
   ChatRepository get repo;
-
   Future<void>? _restoreInFlight;
   bool _restoreCancelled = false;
 
+  Future<void> cancelHistoryRestore() async {
+    _restoreCancelled = true;
+    try {
+      await _restoreInFlight;
+    } catch (_) {}
+  }
+
   Future<void> markHistoryRestorePending() async {
     _restoreCancelled = false;
-    final userId = await (this as ChatNotifier).ensureCurrentUserId();
-    await HistoryRestoreFlag.mark(userId);
+    await HistoryRestoreFlag.mark(
+      await (this as ChatNotifier).ensureCurrentUserId(),
+    );
   }
 
-  Future<void> startHistoryRestoreIfNeeded() {
-    return _restoreInFlight ??= _runHistoryRestore().whenComplete(() {
-      _restoreInFlight = null;
-    });
-  }
+  Future<void> startHistoryRestoreIfNeeded() => _restoreInFlight ??=
+      _runHistoryRestore().whenComplete(() => _restoreInFlight = null);
 
   Future<void> _runHistoryRestore() async {
-    if (isDisposed || _restoreCancelled) return;
-    if (!ref.read(messageVaultProvider).isUnlocked) return;
+    if (isDisposed ||
+        _restoreCancelled ||
+        !ref.read(messageVaultProvider).isUnlocked) {
+      return;
+    }
     final userId = state.currentUserId.trim();
-    if (userId.isEmpty) return;
-    if (!await HistoryRestoreFlag.isPending(userId)) return;
-    if (ref.read(historyRestoreProvider).running) return;
-
-    final conversations = [...state.dms, ...state.channels];
-    if (conversations.isEmpty) {
-      if (!_restoreCancelled) await HistoryRestoreFlag.complete(userId);
-      return;
-    }
-
-    final alreadyOnDisk = <String>{};
-    for (final conversation in conversations) {
-      final cached = await messageStore.page(conversation.id, limit: 1);
-      if (cached.isNotEmpty) alreadyOnDisk.add(conversation.id);
-    }
+    if (userId.isEmpty || !await HistoryRestoreFlag.isPending(userId)) return;
+    await ref.read(archiveProvider.notifier).restoreAfterRecovery();
     if (isDisposed || _restoreCancelled) return;
-
-    final alreadyLive = <String>{
-      for (final conversation in conversations)
-        if (_restoreShouldSkipLive(conversation.id)) conversation.id,
-    };
-
-    final ids = conversationIdsNeedingRestore(
-      conversations: conversations,
-      alreadyOnDisk: alreadyOnDisk,
-      alreadyLive: alreadyLive,
-    );
-    if (ids.isEmpty) {
-      if (!_restoreCancelled) await HistoryRestoreFlag.complete(userId);
-      return;
-    }
-
-    ref.read(historyRestoreProvider.notifier).begin(ids.length);
+    final public = ref.read(messageVaultProvider).publicIdentity;
+    bool stopped() =>
+        isDisposed ||
+        _restoreCancelled ||
+        state.currentUserId != userId ||
+        ref.read(messageVaultProvider).publicIdentity?['x'] != public?['x'];
+    final ids = {
+      ...state.dms.map((c) => c.id),
+      ...state.channels.map((c) => c.id),
+    }.toList();
+    // An empty sidebar may be an offline fetch, not an empty account. Retry on
+    // the next successful bootstrap rather than consuming the restore intent.
+    if (ids.isEmpty || stopped()) return;
+    final status = ref.read(historyRestoreProvider.notifier);
+    status.begin(ids.length);
+    var failed = false;
     try {
+      await syncChatDeletions(ref, userId);
       await runHistoryRestore(
         ids: ids,
-        pull: _restoreNewestPage,
-        onProgress: (done, total) {
-          if (!isDisposed) {
-            ref.read(historyRestoreProvider.notifier).progress(done, total);
+        shouldStop: stopped,
+        pull: (id) async {
+          try {
+            await _restoreConversation(id, stopped);
+          } catch (_) {
+            failed = true;
           }
         },
-        shouldStop: () => isDisposed || _restoreCancelled,
+        onProgress: (done, total) {
+          if (!stopped()) status.progress(done, total);
+        },
       );
+      if (!stopped() && !failed) await HistoryRestoreFlag.complete(userId);
+    } catch (_) {
+      failed = true;
     } finally {
-      if (!_restoreCancelled) {
-        await HistoryRestoreFlag.complete(userId);
-      }
-      if (!isDisposed) {
-        ref.read(historyRestoreProvider.notifier).finish();
-      }
+      if (!isDisposed) status.finish(failed: failed);
     }
   }
 
-  /// [loadFeed] owns any conversation the user has opened. Touching that feed
-  /// from restore races the timeline (read receipts, cursors, loading flags).
-  bool _restoreShouldSkipLive(String conversationId) {
-    if (state.activeConversationId == conversationId) return true;
-    final feed = state.feeds[feedKey(conversationId)];
-    return feed != null && (feed.messages.isNotEmpty || feed.loading);
-  }
+  Future<void> _restoreConversation(String id, bool Function() stopped) async {
+    final threads = <String>{};
+    Future<void> pages({String? thread}) async {
+      String? cursor;
+      final seen = <String>{};
+      while (!stopped()) {
+        final page = await repo
+            .listMessages(id, cursor: cursor, thread: thread, limit: 100)
+            .timeout(firstLoadNetworkTimeout);
+        if (stopped()) return;
+        final messages = await decryptIfNeeded(
+          page.messages.where((m) => !m.contentPurged).toList(),
+        );
+        if (stopped()) return;
+        await messageStore.saveRecovered(
+          canonicalChatMessages(messages),
+          fromBackup: false,
+        );
+        if (stopped()) return;
+        unawaited(
+          repo
+              .acknowledgeMessages(
+                'delivered',
+                page.messages.map((m) => m.id).toList(),
+              )
+              .catchError((_) {}),
+        );
+        unawaited(ref.read(attachmentIntakeProvider).onMessages(messages));
+        if (thread == null) {
+          threads.addAll(
+            page.messages.where((m) => m.threadCount > 0).map((m) => m.id),
+          );
+        }
+        if (!page.hasMore) break;
+        if (page.nextCursor.isEmpty || !seen.add(page.nextCursor)) {
+          throw StateError('Recovery pagination did not advance');
+        }
+        cursor = page.nextCursor;
+      }
+    }
 
-  Future<void> _restoreNewestPage(String conversationId) async {
-    if (isDisposed || _restoreCancelled || conversationId.isEmpty) return;
-    if (_restoreShouldSkipLive(conversationId)) return;
-    final cached = await messageStore.page(conversationId, limit: 1);
-    if (cached.isNotEmpty) return;
-
-    final page = await repo
-        .listMessages(conversationId, limit: 50)
-        .timeout(firstLoadNetworkTimeout);
-    final sorted = canonicalChatMessages(await decryptIfNeeded(page.messages));
-    unawaited(
-      repo
-          .acknowledgeMessages(
-            'delivered',
-            page.messages.map((message) => message.id).toList(),
-          )
-          .catchError((_) {}),
-    );
-    await persistFeed(sorted);
-    unawaited(ref.read(attachmentIntakeProvider).onMessages(sorted));
+    await pages();
+    for (final root in threads) {
+      if (stopped()) return;
+      await pages(thread: root);
+    }
   }
 }

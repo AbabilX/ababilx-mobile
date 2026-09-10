@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../providers/chat_provider.dart';
 
 import 'archive_api.dart';
 import 'archive_service.dart';
@@ -50,7 +53,39 @@ class ArchiveState {
 
 class ArchiveNotifier extends Notifier<ArchiveState> {
   @override
-  ArchiveState build() => const ArchiveState();
+  ArchiveState build() {
+    ref.onDispose(() => _cancelled = true);
+    return const ArchiveState();
+  }
+
+  bool _cancelled = false;
+  Future<void>? _recoveryRun;
+  Future<void> cancel() async {
+    _cancelled = true;
+    try {
+      await _recoveryRun;
+    } catch (_) {}
+  }
+
+  Future<void> markRecoveryPending() async {
+    final id = await ref.read(chatProvider.notifier).ensureCurrentUserId();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('archive_recovery_pending_$id', true);
+  }
+
+  Future<void> restoreAfterRecovery() => _recoveryRun ??=
+      _restoreAfterRecovery().whenComplete(() => _recoveryRun = null);
+  Future<void> _restoreAfterRecovery() async {
+    final id = await ref.read(chatProvider.notifier).ensureCurrentUserId();
+    final prefs = await SharedPreferences.getInstance();
+    if (_cancelled || prefs.getBool('archive_recovery_pending_$id') != true) {
+      return;
+    }
+    await refresh();
+    if (_cancelled || state.error.isNotEmpty) return;
+    if (state.remote != null && await restore() == null) return;
+    if (!_cancelled) await prefs.remove('archive_recovery_pending_$id');
+  }
 
   ArchiveService get _service => ref.read(archiveServiceProvider);
 
@@ -58,6 +93,7 @@ class ArchiveNotifier extends Notifier<ArchiveState> {
     try {
       final remote = await _service.manifest();
       final last = await _service.lastBackupAt();
+      if (_cancelled) return;
       state = state.copyWith(
         remote: remote,
         clearRemote: remote == null,
@@ -66,7 +102,9 @@ class ArchiveNotifier extends Notifier<ArchiveState> {
         error: '',
       );
     } catch (error) {
-      state = state.copyWith(loaded: true, error: _describe(error));
+      if (!_cancelled) {
+        state = state.copyWith(loaded: true, error: _describe(error));
+      }
     }
   }
 
@@ -101,12 +139,21 @@ class ArchiveNotifier extends Notifier<ArchiveState> {
     );
     try {
       final result = await _service.restore(
-        onProgress: (restored) => state = state.copyWith(progress: restored),
+        shouldContinue: () => !_cancelled,
+        onProgress: (restored) {
+          if (!_cancelled) state = state.copyWith(progress: restored);
+        },
       );
+      if (_cancelled) return null;
       state = state.copyWith(phase: ArchivePhase.idle);
       return result.restored;
     } catch (error) {
-      state = state.copyWith(phase: ArchivePhase.idle, error: _describe(error));
+      if (!_cancelled) {
+        state = state.copyWith(
+          phase: ArchivePhase.idle,
+          error: _describe(error),
+        );
+      }
       return null;
     }
   }

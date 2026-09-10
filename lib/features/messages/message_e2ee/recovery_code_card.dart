@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/localization/app_translations.dart';
 
-/// Shows a recovery code and the one way to keep it on a phone.
-///
-/// Nothing anywhere stores this string — not the server, not this device — so
-/// the screen it appears on is the only chance to save it. Selectable text as
-/// well as a copy button, because a password manager and a hand-written note
-/// fail differently and some people want both.
-class RecoveryCodeCard extends StatefulWidget {
+/// Code shown only after the Settings email-verification flow.
+class RecoveryCodeCard extends ConsumerStatefulWidget {
   const RecoveryCodeCard({super.key, required this.code});
   final String code;
 
   @override
-  State<RecoveryCodeCard> createState() => _RecoveryCodeCardState();
+  ConsumerState<RecoveryCodeCard> createState() => _RecoveryCodeCardState();
 }
 
-class _RecoveryCodeCardState extends State<RecoveryCodeCard> {
+class _RecoveryCodeCardState extends ConsumerState<RecoveryCodeCard> {
   bool _copied = false;
 
   Future<void> _copy() async {
@@ -54,7 +51,13 @@ class _RecoveryCodeCardState extends State<RecoveryCodeCard> {
           child: OutlinedButton.icon(
             onPressed: _copy,
             icon: Icon(_copied ? Icons.check : Icons.copy, size: 18),
-            label: Text(_copied ? 'Copied' : 'Copy code'),
+            label: Text(
+              AppTranslations.translate(
+                context,
+                ref,
+                _copied ? 'recovery_copied' : 'recovery_copy',
+              ),
+            ),
           ),
         ),
       ],

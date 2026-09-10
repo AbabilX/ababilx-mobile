@@ -135,6 +135,28 @@ class ChatMessageStore {
     return _drift.hasOlderThan(conversationId, beforeMs, beforeId: beforeId);
   }
 
+  Future<void> saveRecovered(
+    List<ChatMessage> messages, {
+    required bool fromBackup,
+  }) async {
+    messages = deletions.filter(
+      messages.where((m) => !m.contentPurged).toList(),
+    );
+    final before = deletions.revision;
+    final native = _android;
+    if (native != null) {
+      await native.upsert(
+        messages,
+        recoverySource: fromBackup ? 'backup' : 'server',
+      );
+    }
+    await _drift.saveRecovered(
+      deletions.filter(messages),
+      fromBackup: fromBackup,
+    );
+    if (before != deletions.revision) deletionCleanupComplete = false;
+  }
+
   Future<void> saveAll(List<ChatMessage> messages) async {
     messages = deletions.filter(messages);
     final deletionRevision = deletions.revision;

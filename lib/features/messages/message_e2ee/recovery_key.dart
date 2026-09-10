@@ -3,8 +3,8 @@ import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
 
-/// The recovery code: 256 bits of randomness, generated on the device, shown
-/// once, and never sent to AbabilX.
+/// The recovery code: 256 bits of randomness, generated and saved in device
+/// secure storage, and never sent to AbabilX.
 ///
 /// It is what lets end-to-end encryption survive a new phone. The identity's
 /// private key is stored on the server wrapped by a key derived from this code,

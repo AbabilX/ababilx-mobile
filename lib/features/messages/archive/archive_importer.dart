@@ -23,12 +23,17 @@ class ArchiveImporter {
     required this.api,
     required this.identityScalar,
     this.onProgress,
+    this.shouldContinue,
   });
 
   final ChatMessageStore store;
   final ArchiveApi api;
   final List<int> identityScalar;
   final void Function(int restored)? onProgress;
+  final bool Function()? shouldContinue;
+  void _checkActive() {
+    if (shouldContinue?.call() == false) throw StateError('Restore cancelled');
+  }
 
   /// How many messages are buffered before a write. Large enough that a
   /// restore is not one round trip per row, small enough that a failure loses
@@ -42,8 +47,12 @@ class ArchiveImporter {
     var restored = 0;
     final pending = <ChatMessage>[];
     Future<void> flush() async {
+      _checkActive();
       if (pending.isEmpty) return;
-      await store.saveAll(List<ChatMessage>.from(pending));
+      await store.saveRecovered(
+        List<ChatMessage>.from(pending),
+        fromBackup: true,
+      );
       restored += pending.length;
       pending.clear();
       onProgress?.call(restored);
@@ -62,7 +71,9 @@ class ArchiveImporter {
     );
 
     for (final url in manifest.chunks) {
+      _checkActive();
       final bytes = await api.getChunk(url);
+      _checkActive();
       if (bytes.length <= 12) {
         throw const ArchiveTruncatedError('archive chunk is empty');
       }

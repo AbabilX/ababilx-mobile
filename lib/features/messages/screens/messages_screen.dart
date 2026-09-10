@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../chat-list/index.dart';
-import '../history-restore/history_restore_banner.dart';
+import '../history-restore/recovery_progress_banner.dart';
+import '../archive/archive_provider.dart';
 import '../history-restore/history_restore_state.dart';
 import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/message_vault_sheet.dart';
@@ -23,10 +24,16 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(ref.read(chatProvider.notifier).ensureReady());
+    unawaited(_bootstrap());
     // Local-only restore (secure-storage read + in-memory key check, no
     // server round-trip) — never blocks this screen on the network.
     unawaited(_restoreVaultOffline());
+  }
+
+  Future<void> _bootstrap() async {
+    final chat = ref.read(chatProvider.notifier);
+    await chat.ensureReady();
+    if (mounted) await chat.startHistoryRestoreIfNeeded();
   }
 
   Future<void> _restoreVaultOffline() async {
@@ -85,12 +92,18 @@ class _MessagesBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final restoring = ref.watch(historyRestoreProvider).running;
+    final history = ref.watch(historyRestoreProvider);
+    final archive = ref.watch(archiveProvider);
+    final restoring =
+        history.running ||
+        history.failed ||
+        archive.phase == ArchivePhase.restoring ||
+        archive.error.isNotEmpty;
     return ChatList(
       banner: !vaultUnlocked
           ? _UnlockBanner(onTap: onUnlockTap)
           : restoring
-          ? const HistoryRestoreBanner()
+          ? const RecoveryProgressBanner()
           : null,
     );
   }

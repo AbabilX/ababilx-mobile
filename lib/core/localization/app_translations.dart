@@ -19,17 +19,49 @@ class AppTranslations {
 
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
+      'recovery_checking': 'Checking your messages…',
+      'recovery_check_failed':
+          'Could not check your messages. Check your connection and try again.',
+      'recovery_session_failed':
+          'Could not start your session. Check your connection and try again.',
+      'recovery_retry': 'Try again',
+      'recovery_legacy_body':
+          'This account has messages but no recovery code. Start a new session to continue chatting.',
+      'recovery_codes_title': 'Recovery codes',
+      'recovery_codes_body':
+          'Your recovery code is created automatically. Verify your email each time you want to view or copy it. Keep it safe to restore your messages on another phone.',
+      'recovery_codes_setting_hint':
+          'Verify your email to view your recovery code',
+      'recovery_codes_hide_hint':
+          'This code hides after one minute or when you leave this screen.',
+      'recovery_hide': 'Hide code',
+      'recovery_wait_resend':
+          'Please wait one minute before requesting another email.',
+      'recovery_verify_failed':
+          'The verification failed or expired. Try again, or request a new email code.',
+      'recovery_legacy_create':
+          'Your old code was not stored. Verifying and creating a code replaces your old recovery code. Your messages stay readable.',
+      'recovery_verify_create': 'Verify and create a new code',
+      'recovery_verify_view': 'Verify and view code',
+      'recovery_verifying': 'Verifying…',
+      'recovery_resend': 'Resend email code',
+      'recovery_copy': 'Copy code',
+      'recovery_copied': 'Copied',
+      'settings_backup': 'Backup',
+      'settings_backup_sub': 'Message backups and recovery codes',
+      'recovery_restore_failed':
+          'Some messages could not be restored. Tap to retry.',
       'onboarding_title': 'Your people.\nAlways close.',
       'onboarding_body':
           'Share everyday moments, catch up with family, and keep your friends a message away.',
       'onboarding_start': 'Get started',
       'recovery_choice_title': 'Restore your messages',
       'recovery_choice_body':
-          'If you saved your recovery code, use it to restore up to the last 6 months of available messages. Otherwise, you can start fresh.',
+          'Enter your recovery code to restore messages from your backup and available server history, or start a new session.',
       'recovery_have_code': 'I have a recovery code',
-      'recovery_fresh': 'Start fresh',
+      'recovery_fresh': 'Start new session',
       'recovery_fresh_hint':
-          'Start fresh removes your old chat list, messages and media from this account. Other people keep their copies.',
+          'A new session creates a new recovery code in Settings → Backup → Recovery codes. Older encrypted messages need your previous code.',
       'recovery_enter': 'Enter your recovery code',
       'recovery_help':
           'Enter the code you saved when you set up messages. Spacing and case do not matter.',
@@ -321,8 +353,7 @@ class AppTranslations {
       'settings_data_storage_sub':
           'Auto-download, media quality and space used',
       'settings_local_share': 'Local Share',
-      'settings_local_share_sub':
-          'Send files to devices on the same network',
+      'settings_local_share_sub': 'Send files to devices on the same network',
       'settings_username': 'Username',
       'settings_username_needed': 'Needed for your QR code',
       'settings_discovery': 'Discovery',
@@ -352,17 +383,47 @@ class AppTranslations {
           'You will need to sign in again on this device.',
     },
     'bn': {
+      'recovery_checking': 'আপনার মেসেজ পরীক্ষা করা হচ্ছে…',
+      'recovery_check_failed':
+          'মেসেজ পরীক্ষা করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+      'recovery_session_failed':
+          'নতুন সেশন শুরু করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+      'recovery_retry': 'আবার চেষ্টা করুন',
+      'recovery_legacy_body':
+          'এই অ্যাকাউন্টে মেসেজ আছে, তবে রিকভারি কোড নেই। চ্যাট করতে নতুন সেশন শুরু করুন।',
+      'recovery_codes_title': 'রিকভারি কোড',
+      'recovery_codes_body':
+          'আপনার রিকভারি কোড স্বয়ংক্রিয়ভাবে তৈরি হয়। প্রতিবার দেখতে বা কপি করতে ইমেইল যাচাই করুন। অন্য ফোনে মেসেজ ফিরিয়ে আনতে কোডটি নিরাপদে রাখুন।',
+      'recovery_codes_setting_hint': 'রিকভারি কোড দেখতে ইমেইল যাচাই করুন',
+      'recovery_codes_hide_hint':
+          'এক মিনিট পরে বা এই স্ক্রিন ছেড়ে গেলে কোড লুকিয়ে যাবে।',
+      'recovery_hide': 'কোড লুকান',
+      'recovery_wait_resend': 'আবার ইমেইল পাঠানোর আগে এক মিনিট অপেক্ষা করুন।',
+      'recovery_verify_failed':
+          'যাচাই হয়নি অথবা কোডের মেয়াদ শেষ। আবার চেষ্টা করুন বা নতুন ইমেইল কোড নিন।',
+      'recovery_legacy_create':
+          'আপনার পুরোনো কোড সংরক্ষিত নেই। যাচাই করে নতুন কোড তৈরি করলে পুরোনো রিকভারি কোড বদলে যাবে। মেসেজ পড়তে পারবেন আগের মতোই।',
+      'recovery_verify_create': 'যাচাই করে নতুন কোড তৈরি করুন',
+      'recovery_verify_view': 'যাচাই করে কোড দেখুন',
+      'recovery_verifying': 'যাচাই হচ্ছে…',
+      'recovery_resend': 'আবার ইমেইল কোড পাঠান',
+      'recovery_copy': 'কোড কপি করুন',
+      'recovery_copied': 'কপি হয়েছে',
+      'settings_backup': 'ব্যাকআপ',
+      'settings_backup_sub': 'মেসেজ ব্যাকআপ ও রিকভারি কোড',
+      'recovery_restore_failed':
+          'কিছু মেসেজ ফিরিয়ে আনা যায়নি। আবার চেষ্টা করতে চাপুন।',
       'onboarding_title': 'আপন মানুষ।\nসবসময় কাছে।',
       'onboarding_body':
           'প্রতিদিনের মুহূর্ত ভাগ করুন, পরিবারের খোঁজ নিন, আর বন্ধুদের সঙ্গে থাকুন এক মেসেজের দূরত্বে।',
       'onboarding_start': 'শুরু করুন',
       'recovery_choice_title': 'আপনার মেসেজ ফিরিয়ে আনুন',
       'recovery_choice_body':
-          'রিকভারি কোড সংরক্ষণ করে থাকলে সেটি দিয়ে গত ৬ মাসের উপলব্ধ মেসেজ ফিরিয়ে আনুন। কোড না থাকলে নতুনভাবে শুরু করতে পারবেন।',
+          'ব্যাকআপ ও সার্ভারের উপলব্ধ মেসেজ ফিরিয়ে আনতে রিকভারি কোড দিন, অথবা নতুন সেশন শুরু করুন।',
       'recovery_have_code': 'আমার রিকভারি কোড আছে',
-      'recovery_fresh': 'নতুনভাবে শুরু করুন',
+      'recovery_fresh': 'নতুন সেশন শুরু করুন',
       'recovery_fresh_hint':
-          'নতুনভাবে শুরু করলে এই অ্যাকাউন্ট থেকে পুরোনো চ্যাট তালিকা, মেসেজ ও মিডিয়া সরবে। অন্যদের কপি থাকবে।',
+          'নতুন রিকভারি কোড থাকবে সেটিংস → ব্যাকআপ → রিকভারি কোডে। পুরোনো এনক্রিপ্টেড মেসেজের জন্য আগের কোড প্রয়োজন।',
       'recovery_enter': 'আপনার রিকভারি কোড দিন',
       'recovery_help':
           'মেসেজ সেটআপের সময় সংরক্ষিত কোডটি দিন। স্পেস ও বড় বা ছোট হাতের অক্ষর যেকোনোভাবে লেখা যাবে।',
@@ -647,11 +708,9 @@ class AppTranslations {
       'settings_wallpaper': 'চ্যাট ওয়ালপেপার',
       'settings_wallpaper_sub': 'প্রতিটি চ্যাটের পটভূমি',
       'settings_data_storage': 'ডেটা ও সংরক্ষণ',
-      'settings_data_storage_sub':
-          'অটো-ডাউনলোড, মিডিয়ার মান ও ব্যবহৃত জায়গা',
+      'settings_data_storage_sub': 'অটো-ডাউনলোড, মিডিয়ার মান ও ব্যবহৃত জায়গা',
       'settings_local_share': 'লোকাল শেয়ার',
-      'settings_local_share_sub':
-          'একই নেটওয়ার্কের ডিভাইসে ফাইল পাঠান',
+      'settings_local_share_sub': 'একই নেটওয়ার্কের ডিভাইসে ফাইল পাঠান',
       'settings_username': 'ইউজারনেম',
       'settings_username_needed': 'আপনার QR কোডের জন্য প্রয়োজন',
       'settings_discovery': 'খুঁজে পাওয়া',
@@ -662,8 +721,7 @@ class AppTranslations {
       'settings_link_messages': 'আপনার বার্তায় একটি ডিভাইস যুক্ত করুন',
       'settings_link_messages_sub': 'অন্য ডিভাইসে দেখানো কোড স্ক্যান করুন',
       'settings_recovery': 'বার্তা রিকভারি কোড',
-      'settings_recovery_sub':
-          'নতুন ডিভাইসে বার্তা পড়ার একমাত্র উপায়',
+      'settings_recovery_sub': 'নতুন ডিভাইসে বার্তা পড়ার একমাত্র উপায়',
       'settings_privacy': 'গোপনীয়তা নীতি',
       'settings_invite': 'বন্ধুদের আমন্ত্রণ জানান',
       'settings_invite_text':
@@ -677,8 +735,7 @@ class AppTranslations {
       'settings_unknown': 'অজানা',
       'settings_plan': 'প্ল্যান',
       'settings_renews': '{date} তারিখে নবায়ন',
-      'settings_sign_out_body':
-          'এই ডিভাইসে আবার সাইন ইন করতে হবে।',
+      'settings_sign_out_body': 'এই ডিভাইসে আবার সাইন ইন করতে হবে।',
     },
   };
 

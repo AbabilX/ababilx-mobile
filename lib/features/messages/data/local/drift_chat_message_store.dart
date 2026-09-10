@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:drift/drift.dart';
+import 'recovery_message_merge.dart';
 
 import '../models/chat_message.dart';
 import 'chat_local_db.dart';
@@ -105,6 +107,52 @@ class DriftChatMessageStore {
     } catch (_) {
       return false;
     }
+  }
+
+  Future<void> saveRecovered(
+    List<ChatMessage> messages, {
+    required bool fromBackup,
+  }) async {
+    await _db.transaction(() async {
+      final accepted = <ChatMessage>[];
+      for (final message in messages) {
+        if (message.contentPurged) continue;
+        final rows = await _db
+            .customSelect(
+              "SELECT payload_json FROM cached_messages WHERE id=? OR json_extract(payload_json, '\$.id')=?",
+              variables: [
+                Variable(localMessageRowId(message)),
+                Variable(message.id),
+              ],
+            )
+            .get();
+        final keep = rows.any(
+          (row) => keepLocalDuringRecovery(
+            ChatMessage.fromJson(
+              jsonDecode(row.read<String>('payload_json'))
+                  as Map<String, dynamic>,
+            ),
+            message,
+            fromBackup: fromBackup,
+          ),
+        );
+        if (!keep) accepted.add(message);
+      }
+      // Unlike the old best-effort cache write, a restore must surface disk
+      // failure so its durable pending flag is not consumed on a failed save.
+      for (final message in accepted) {
+        await _db
+            .into(_db.cachedMessages)
+            .insert(messageRow(message), mode: InsertMode.insertOrReplace);
+        await _db.customStatement(
+          "DELETE FROM cached_messages WHERE json_extract(payload_json, '\$.id')=? AND id!=?",
+          [message.id, localMessageRowId(message)],
+        );
+      }
+      for (final id in accepted.map((m) => m.conversationId).toSet()) {
+        await _prune(id);
+      }
+    });
   }
 
   Future<void> saveAll(List<ChatMessage> messages) async {
