@@ -158,6 +158,20 @@
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Where a tap on the ongoing-call notification lands. showWhenLocked
+             is the point: SystemUI asks for the PIN before launching any
+             notification Activity not declared this way, and MainActivity must
+             never be. It holds nothing and only forwards — see
+             CallReturnActivity.kt and CallLockScreen.kt. -->
+        <activity
+            android:name=".CallReturnActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <activity-alias
             android:name=".Launcher"
             android:targetActivity=".MainActivity"

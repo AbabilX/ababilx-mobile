@@ -315,8 +315,10 @@ the server sweeper expired it.
 Two surfaces now cover that, both Signal's:
 
 - `OngoingCallService` + `OngoingCallNotification` (Kotlin) — an ongoing
-  `CallStyle.forOngoingCall` entry on its own low-importance `call_status`
-  channel. Tap the body to return, press Hang up to end it from the shade.
+  `CallStyle.forOngoingCall` entry on its own `call_ongoing` channel (DEFAULT
+  importance, silenced; it was Signal's LOW `call_status` until 2026-09-10 —
+  see "A call answered on a locked phone" below). Tap the body to return,
+  press Hang up to end it from the shade.
   Shaped after `CallNotificationBuilder.TYPE_ESTABLISHED`; it never makes a
   sound, because ringing is a different surface and belongs to CallKit +
   `call_ringer`.
@@ -666,7 +668,37 @@ audio routing:
 - `restoreForRoom()` — called before a group `Room` connects, the other half of
   that contract.
 
-Group calls need none of this: a LiveKit `Room` configures the session itself.
+Group calls need none of that: a LiveKit `Room` configures the session itself.
+
+**A call Android Telecom is hosting is routed through Telecom** (2026-09-10,
+"Speaker does nothing on a call I answered from the lock screen").
+flutter_callkit_incoming registers every ring it shows as a self-managed
+Telecom call, and Answer on its screen (lock screen, heads-up) marks it active.
+Telecom then sets `MODE_IN_COMMUNICATION` itself — `dumpsys audio` shows
+`com.android.server.telecom` setting the mode — and a privileged caller is
+always the mode owner; AudioService applies the mode owner's communication
+route and nobody else's, so LiveKit's request from this app was dropped with
+no error. The plugin's own `setAudioRoute` method is an empty stub.
+
+- `CallAudioTelecom.kt` (`com.ababilx.app/call_audio_telecom`) finds the
+  plugin's `CallkitConnection` for the call id and, only while it is ACTIVE,
+  calls `Connection.setAudioRoute`: speaker, else Bluetooth when Telecom lists
+  it, else wired-or-earpiece — where LiveKit would go. It is deprecated on 34
+  for `requestCallEndpointChange`, which needs endpoint callbacks only the
+  plugin's `Connection` subclass receives; `setAudioRoute` still reaches
+  Telecom's router.
+- `TelecomAudioRoute.route` answers false for anything Telecom is not
+  hosting — a call answered in the app (its Telecom call stays RINGING), placed
+  from it, or not Android — and then LiveKit's route is the one that counts.
+  `CallAudioRoute.setSpeaker` asks Telecom first and still sets LiveKit's
+  preference, so the two agree if Telecom lets go.
+- The DM call id is bound once in `_prepareEngine` (`CallAudioRoute.bindCall`);
+  group calls pass theirs to `CallAudioRoute.preferRoomSpeaker`, which is also
+  how a group's speaker-on default survives a lock-screen join.
+- Emulator proof, logged by `locked_call_harness.dart`: ringing → not handled,
+  accepted → handled. The emulator has no earpiece, so hearing the switch
+  still needs a real phone.
+
 iOS still routes through `Helper.setSpeakerphoneOn` — LiveKit only disables
 flutter_webrtc's manager on Android and macOS.
 
@@ -913,3 +945,68 @@ same signalling, still peer-to-peer. The parts that are not obvious:
 - Layout: remote camera full-screen (`CallVideoView`, cover fit), a shared
   screen still wins the stage, local preview is `LocalCameraPreview` with the
   flip button on it. CallKit gets `type: 1` and "Video call" as the handle.
+
+## A call answered on a locked phone keeps the phone locked
+
+Added 2026-09-10, after "my phone is locked, the call screen comes, I press
+Answer and it asks me to unlock". Two bugs on one path:
+
+```
+Accept on CallKit's lock-screen Activity
+  -> onAcceptClick: requestDismissKeyguard()   the PIN pad
+  -> TransparentActivity -> getAppIntent       no NEW_TASK: a SECOND MainActivity
+```
+
+- **The PIN pad was the plugin's own `dismissKeyguard()`.**
+  `android/patches/callkit-accept.gradle` removes it at configure time — the
+  same pinned-source approach as the manager-lifetime patch in
+  `settings.gradle.kts`, and it fails the build loudly after a plugin bump
+  rather than quietly putting the PIN pad back.
+- **Every Accept on a running app booted a second MainActivity and a second
+  FlutterEngine.** `AppUtils.getAppIntent` runs from `TransparentActivity`'s
+  own task and `cloneFilter()` drops the launch intent's NEW_TASK, so the app
+  was launched into that task instead of its own. Seen on an emulator as two
+  tasks each holding `.Launcher`. The same patch file adds NEW_TASK.
+- **The call runs over the keyguard, and only the call.** Signal's
+  `WebRtcCallActivity.setTurnScreenOnForCallState` holds `setShowWhenLocked`
+  for a whole call because that Activity holds nothing else; ours is the one
+  FlutterActivity for the entire app. `CallLockScreen.kt` raises the flag on
+  the Accept intent (waiting up to 30 s for a cold engine to boot and fetch the
+  call) and while Dart reports a live call's own screen on top —
+  `callScreenOnTop` in `call_lock_screen_host.dart`: `/call` with a non-idle
+  DM call (so "Call ended" stays for its moment), `/group-call` while joining
+  or connected. Never the lobby, never a chat.
+- **Two covers, because Dart paints before any message reaches native.** A
+  black native view over the FlutterView (`CallLockWindow`) from Accept until
+  the call's frame is on screen — a cold engine draws its whole boot sequence
+  first — and again from the moment the call screen goes until unlock; and
+  `CallLockScreenGuard`, which blacks out every non-call route in the very
+  frame it would paint. **Both exist only while the app is over the keyguard.**
+  Behind it the keyguard already hides the app, and the first version, which
+  masked whenever the phone was locked, flashed blank on every unlock.
+- **Leaving the call screen on a locked phone drops the app behind the
+  keyguard**: cover first, then the flag, so the keyguard animates back in over
+  black. Hang-up does the same once "Call ended" has shown.
+- **A dead Accept lets go at once.** `AndroidCallUi.endCall` and
+  `AndroidGroupCallUi.endCall` call `AndroidCallLockScreen.release(callId)`;
+  when that is the call an Accept is waiting for, the lock screen comes back
+  now rather than after the 30 s cap.
+- **The ongoing-call entry is on the lock screen now.** Signal's `call_status`
+  is LOW, which a locked Pixel hides; Signal gets away with it because Back and
+  Home enter PiP, which Android gates on the PIN. A DM call here has no PiP — minimising
+  pops the screen, and only `GroupCallScreen` arms `AndroidPip` — so a call answered while locked and
+  then minimised had no way back and no Hang up short of the PIN. Channel
+  `call_ongoing` is DEFAULT importance with no sound and no vibration; the old
+  channel is deleted. Its tap lands on `CallReturnActivity`, declared
+  `showWhenLocked` — SystemUI asks for the PIN before launching any
+  notification Activity that is not, and MainActivity must never be — which
+  forwards to MainActivity. `CallLockScreen` honours that return only while
+  Dart reports a live call; the entry can outlive one.
+- **Speaker on a call answered here goes through Telecom**, not LiveKit — see
+  "A call Android Telecom is hosting" under audio routing above.
+- Only those two intents lift the app over a lock screen, and even a forged one
+  shows nothing but a live call's own screen: Dart masks everything else.
+- Verified on an emulator with a PIN: `tool/audit/locked_call_harness.dart` +
+  `tool/audit/locked_call_check.py` (answer, minimise, return from the lock
+  screen, hang up; `--decline`). Never point it at a real phone.
+

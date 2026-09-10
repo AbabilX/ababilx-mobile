@@ -26,17 +26,30 @@ import androidx.core.app.Person
  */
 object OngoingCallNotification {
 
-    const val CHANNEL_ID = "call_status"
+    /**
+     * DEFAULT importance, silenced below — not Signal's LOW `call_status`.
+     *
+     * A locked Pixel hides LOW ("silent") entries from the lock screen, so a
+     * call answered there and then minimised went on with no way back and no
+     * Hang up short of the PIN. Signal never gets there: Back and Home enter
+     * PiP, which Android gates on the PIN. A DM call here has no PiP, so the
+     * entry has to be on the lock screen instead, the way a dialler's is — and
+     * its tap goes through [CallReturnActivity], which needs no PIN either.
+     * A channel's importance cannot be raised once created, hence a new id.
+     */
+    const val CHANNEL_ID = "call_ongoing"
+    private const val LEGACY_CHANNEL_ID = "call_status"
     const val NOTIFICATION_ID = 9411
 
     fun ensureChannel(context: Context) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE)
             as? NotificationManager ?: return
+        manager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
         if (manager.getNotificationChannel(CHANNEL_ID) != null) return
         val channel = NotificationChannel(
             CHANNEL_ID,
             "Ongoing calls",
-            NotificationManager.IMPORTANCE_LOW,
+            NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
             description = "Shown while you are on a call"
             setShowBadge(false)
@@ -85,11 +98,15 @@ object OngoingCallNotification {
         return builder.build()
     }
 
-    /** Taps the body: bring the existing Flutter Activity back to the call. */
+    /**
+     * Taps the body: bring the existing Flutter Activity back to the call —
+     * through [CallReturnActivity], so a tap on the lock screen reaches the
+     * call without the PIN pad.
+     */
     private fun returnToCallIntent(context: Context, callId: String): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val intent = Intent(context, CallReturnActivity::class.java).apply {
             action = OngoingCallService.ACTION_RETURN_TO_CALL
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
             putExtra(OngoingCallService.EXTRA_CALL_ID, callId)
         }
         return PendingIntent.getActivity(

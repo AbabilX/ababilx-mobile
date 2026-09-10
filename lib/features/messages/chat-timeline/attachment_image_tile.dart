@@ -26,9 +26,8 @@ class AttachmentImageTile extends StatelessWidget {
   final double maxHeight;
   final double maxWidth;
 
-  /// Floor for a solo picture, so a very narrow one is not drawn as a sliver.
-  /// Signal raises it for a captioned picture, which is what keeps the caption
-  /// off a 150-wide bubble. Album cells size themselves and ignore it.
+  /// Captioned pictures reserve a wider frame before their bytes arrive.
+  /// Album cells size themselves and ignore this floor.
   final double minWidth;
 
   final bool grid;
@@ -45,19 +44,22 @@ class AttachmentImageTile extends StatelessWidget {
       padding: EdgeInsets.only(top: solo ? 8 : 0),
       child: AttachmentGate(
         attachment: attachment,
+        reserveSpace: true,
         height: solo ? SignalBubbleMetrics.mediaDefaultSize : maxHeight,
-        width: grid ? maxWidth : minWidth,
+        width: grid
+            ? maxWidth
+            : SignalBubbleMetrics.mediaDefaultSize.clamp(minWidth, maxWidth),
         shape: _shape,
-        ready: (context, handle) => _ready(context, handle, solo),
+        ready: (context, handle) => _ready(context, handle),
       ),
     );
   }
 
   BorderRadius get _shape => radius ?? BorderRadius.circular(8);
 
-  Widget _ready(BuildContext context, AttachmentHandle handle, bool solo) {
+  Widget _ready(BuildContext context, AttachmentHandle handle) {
     return Stack(
-      fit: grid ? StackFit.expand : StackFit.loose,
+      fit: StackFit.expand,
       children: [
         Material(
           color: Colors.transparent,
@@ -66,25 +68,14 @@ class AttachmentImageTile extends StatelessWidget {
             borderRadius: _shape,
             child: ClipRRect(
               borderRadius: _shape,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: grid ? 0 : minWidth,
-                  maxWidth: maxWidth,
-                  minHeight: grid ? 0 : SignalBubbleMetrics.mediaMinHeight,
-                  maxHeight: maxHeight,
-                ),
-                // A solo picture is given no width or height of its own, so it
-                // sizes to its own aspect ratio inside those bounds and the
-                // bubble hugs it. `cover` only crops in the rare case the min
-                // floor had to widen the box past the picture's shape — the
-                // same centre crop Signal's ThumbnailView does.
-                child: Image.file(
-                  handle.file!,
-                  width: grid ? double.infinity : null,
-                  height: grid ? maxHeight : null,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => _broken(context, solo),
-                ),
+              // The model has no dimensions. Keep this fallback frame stable
+              // even after decode; the gallery still shows the original shape.
+              child: Image.file(
+                handle.file!,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _broken(context),
               ),
             ),
           ),
@@ -118,9 +109,7 @@ class AttachmentImageTile extends StatelessWidget {
   Future<void> _open(BuildContext context) =>
       showChatAttachmentGallery(context, images: gallery, index: index);
 
-  Widget _broken(BuildContext context, bool solo) => Container(
-    height: 120,
-    width: solo ? double.infinity : maxWidth,
+  Widget _broken(BuildContext context) => Container(
     color: Theme.of(context).colorScheme.surfaceContainerHighest,
     alignment: Alignment.center,
     child: const Icon(Icons.broken_image_outlined),

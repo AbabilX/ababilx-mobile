@@ -19,6 +19,7 @@ class AttachmentFileRow extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6),
       child: AttachmentGate(
         attachment: attachment,
+        reserveSpace: true,
         height: 56,
         showSize: false,
         waiting: (_, handle) => _content(context, handle: handle),

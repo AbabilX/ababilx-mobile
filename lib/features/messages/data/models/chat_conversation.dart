@@ -178,6 +178,13 @@ class ChatConversation extends Equatable {
   bool get isPersonal => scope == 'personal';
   bool get isGroupConversation => isChannel || isGroup || isWebhook;
 
+  /// Whether this conversation has a group call (the LiveKit room) to start or
+  /// join: a workspace channel or a personal group you may post into. Mirrors
+  /// the server's `groupCallConversation`, which refuses a DM (that is the
+  /// peer-to-peer `voice_calls` path) and then applies the send gate. A
+  /// webhook feed is named out as well, because the server refuses it by type.
+  bool get canGroupCall => (isChannel || isGroup) && canMessage;
+
   /// Whether this conversation's text is end-to-end encrypted.
   ///
   /// The mirror of `e2eeEligible` on the server, and it must stay one: encrypt

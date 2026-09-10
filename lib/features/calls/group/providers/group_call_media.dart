@@ -11,7 +11,7 @@ mixin GroupCallMedia on GroupCallBase {
 
   Future<void> toggleSpeaker() async {
     final next = !state.speaker;
-    await AudioManager.instance.setSpeakerOutputPreferred(next);
+    await CallAudioRoute.preferRoomSpeaker(next, callId: state.call?.id);
     state = state.copyWith(speaker: next);
   }
 

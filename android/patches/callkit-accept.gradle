@@ -1,0 +1,38 @@
+// flutter_callkit_incoming 3.1.3: Accept on a locked phone, and Accept on an
+// app that is already running. Pinned source patches, like the manager-
+// lifetime one in settings.gradle.kts — after a plugin bump, re-read both call
+// sites before relaxing these assertions.
+//
+// 1. CallkitIncomingActivity.onAcceptClick asked for the keyguard to be
+//    dismissed, so a secure phone put up the PIN pad before the call. The call
+//    now runs over the lock screen instead; MainActivity's CallLockScreen lets
+//    nothing but the call through.
+// 2. AppUtils.getAppIntent is started from TransparentActivity's own task, and
+//    its cloneFilter() drops the NEW_TASK flag the launch intent carried. An
+//    app that was already running therefore got a SECOND MainActivity — and a
+//    second FlutterEngine booting the whole app — on every Accept. With
+//    NEW_TASK, Android finds the running one and hands it onNewIntent.
+def patchSource(File file, String before, String after, String what) {
+    def source = file.text
+    if (source.contains(after)) return
+    if (!source.contains(before)) {
+        throw new GradleException("flutter_callkit_incoming $what patch no longer matches 3.1.3")
+    }
+    file.text = source.replace(before, after)
+}
+
+gradle.beforeProject { project ->
+    if (project.name != 'flutter_callkit_incoming') return
+    def dir = new File(project.projectDir,
+        'src/main/kotlin/com/hiennv/flutter_callkit_incoming')
+    patchSource(new File(dir, 'CallkitIncomingActivity.kt'),
+        '''        dismissKeyguard()
+        finish()''',
+        '''        // AbabilX: keep the device locked; the host exposes only the call UI.
+        finish()''',
+        'lock-screen')
+    patchSource(new File(dir, 'AppUtils.kt'),
+        'intent?.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or',
+        'intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or',
+        'single-engine')
+}

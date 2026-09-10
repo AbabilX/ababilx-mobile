@@ -15,7 +15,9 @@ class VoiceAttachmentPlayer extends StatelessWidget {
       padding: const EdgeInsets.only(top: 7),
       child: AttachmentGate(
         attachment: attachment,
+        reserveSpace: true,
         height: 58,
+        width: 240,
         showSize: false,
         ready: (_, handle) => VoiceUrlPlayer(
           source: AudioSourceRef.file(handle.localPath!),

@@ -7,6 +7,7 @@ import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
 import '../group/data/models/group_call.dart';
 import '../ringtone/ring_holders.dart';
+import 'android_call_lock_screen.dart';
 
 part 'android_group_call_params.dart';
 
@@ -145,6 +146,9 @@ class AndroidGroupCallUi {
     } catch (_) {}
     await CallkitSurface.dismissIncoming();
     await CallRinger.release(callRingHolderNative);
+    // An Accept on a locked phone may be waiting for this call's screen; there
+    // will be none, so the lock screen comes back now.
+    await AndroidCallLockScreen.release(callId);
   }
 
   /// Shows the native ringing UI and starts the tone that belongs to it —

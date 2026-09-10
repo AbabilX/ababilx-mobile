@@ -11,9 +11,8 @@ import 'attachment_download_badge.dart';
 ///
 /// [ready] is only ever called with a handle whose local file exists, so every
 /// renderer below this point can assume a real path and never deals with
-/// download state, remote URLs or errors. Until then the gate holds the same
-/// space the renderer will occupy — so a finished download swaps in place
-/// instead of shoving the timeline around — and shows the download badge.
+/// download state, remote URLs or errors. Timeline callers set [reserveSpace]
+/// to hold the same outer dimensions through lookup, download and rendering.
 ///
 /// This is the only widget that watches an attachment's transfer state, which
 /// is why a progress tick repaints one thumbnail rather than the message list.
@@ -28,10 +27,15 @@ class AttachmentGate extends ConsumerWidget {
     this.shape,
     this.showSize = true,
     this.waiting,
+    this.reserveSpace = false,
   });
 
   final ChatMessageAttachment attachment;
   final Widget Function(BuildContext context, AttachmentHandle handle) ready;
+
+  /// Keep timeline geometry independent of asynchronous media dimensions.
+  /// Fullscreen/gallery callers can retain their intrinsic layout.
+  final bool reserveSpace;
   final double height;
   final double? width;
   final double borderRadius;
@@ -49,14 +53,20 @@ class AttachmentGate extends ConsumerWidget {
     final async = ref.watch(attachmentHandleProvider(attachment));
     final handle = async.valueOrNull;
 
+    final Widget content;
     if (attachment.locked || handle?.isLocked == true) {
-      return LockedFilePlaceholder(fileName: attachment.fileName);
+      content = LockedFilePlaceholder(fileName: attachment.fileName);
+    } else if (handle?.isReady == true) {
+      content = ready(context, handle!);
+    } else {
+      content = waiting?.call(context, handle) ?? _placeholder(context, handle);
     }
-    if (handle == null) {
-      return waiting?.call(context, null) ?? _placeholder(context, null);
-    }
-    if (handle.isReady) return ready(context, handle);
-    return waiting?.call(context, handle) ?? _placeholder(context, handle);
+    if (!reserveSpace) return content;
+    return SizedBox(
+      width: width,
+      height: height,
+      child: ClipRect(child: Center(child: content)),
+    );
   }
 
   Widget _placeholder(BuildContext context, AttachmentHandle? handle) {

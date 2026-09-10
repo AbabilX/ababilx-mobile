@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../core/network/ws_client.dart';
 import '../../messages/data/models/chat_conversation.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../audio/call_audio_route.dart';
 import '../call_lifecycle.dart';
 import '../callkit_ended_suppress.dart';
 import '../data/models/voice_call.dart';
@@ -769,6 +770,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   Future<void> _prepareEngine(VoiceCallSession session) async {
     final call = session.call;
     final callId = call.id;
+    CallAudioRoute.bindCall(callId);
     final engine = VoicePeerEngine(
       sendSignal: (signal) => _ws.sendWhenConnected({
         'type': 'call.signal',

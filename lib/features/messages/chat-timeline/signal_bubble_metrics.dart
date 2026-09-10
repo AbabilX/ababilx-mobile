@@ -48,17 +48,16 @@ class SignalBubbleMetrics {
   /// `media_bubble_min_width_with_content` 240, `media_bubble_min_height` 100,
   /// `media_bubble_default_dimens` 210).
   ///
-  /// A picture is scaled to fit inside max, then floored at min — so a normal
-  /// photo hugs its own aspect ratio and the bubble hugs the photo. Never give
-  /// the image an infinite width: it then takes the bubble's full width cap and
-  /// `BoxFit.contain` leaves the rest of the bubble empty beside it.
+  /// Timeline thumbnails use a stable default frame because attachments do
+  /// not carry dimensions. Captions widen that frame before bytes arrive;
+  /// albums use their predetermined cells and galleries keep original ratios.
   static const mediaMaxWidth = 240.0;
   static const mediaMaxHeight = 320.0;
   static const mediaMinWidthSolo = 150.0;
   static const mediaMinWidthWithCaption = 240.0;
   static const mediaMinHeight = 100.0;
 
-  /// Placeholder square held while the file is still downloading.
+  /// Stable solo thumbnail height and default width, including after download.
   static const mediaDefaultSize = 210.0;
 
   /// Quote block (`quote_corner_radius_large` 10, `..._bottom` 4,

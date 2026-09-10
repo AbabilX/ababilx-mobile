@@ -173,7 +173,7 @@ class GroupCallNotifier extends GroupCallBase
       if (micOn && (state.lobby?.joinMuted ?? false)) {
         await room.localParticipant?.setMicrophoneEnabled(false);
       }
-      await AudioManager.instance.setSpeakerOutputPreferred(true);
+      await CallAudioRoute.preferRoomSpeaker(true, callId: call.id);
       if (_room != room || joinEpoch != _joinEpoch) return;
       state = state.copyWith(
         phase: GroupCallPhase.connected,

@@ -446,7 +446,10 @@ class VoicePeerEngine {
       // The peer's tracks changed and it may not offer. Nothing to do with
       // ICE, so this never enters the reconnect path.
       case 'renegotiate':
-        if (isOfferer) await _renegotiate();
+        if (isOfferer) {
+          await _ensureVideoRecvCapacity();
+          await _renegotiate();
+        }
       // The peer has started sharing and there is only ever one shared screen
       // in a 1:1 call. No-op unless we are the one sharing.
       case 'screen_takeover':
@@ -710,6 +713,20 @@ class VoicePeerEngine {
     if (_disposed) return;
     final sent = await sendSignal({'kind': 'restart'});
     voiceCallLog('signal.restart.send', reason: sent ? 'ok' : 'ws_unavailable');
+  }
+
+  /// `OfferToReceiveVideo` guarantees one video line, and one is not always
+  /// enough. A peer that has ever sent its camera keeps that transceiver for a
+  /// later replaceTrack, and WebRTC never reuses one that has sent — so its
+  /// screen share needs a line of its own, or it is never sent at all ("video
+  /// call, then share: the other side sees nothing"). The media map names the
+  /// stream before the request arrives, which is how this knows.
+  Future<void> _ensureVideoRecvCapacity() async {
+    if (!_remoteMedia.awaiting) return;
+    await _requirePeer().addTransceiver(
+      kind: RTCRtpMediaType.RTCRtpMediaTypeVideo,
+      init: RTCRtpTransceiverInit(direction: TransceiverDirection.RecvOnly),
+    );
   }
 
   /// The one place a mid-call offer can come from.

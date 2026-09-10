@@ -22,6 +22,7 @@ class AttachmentVideoTile extends StatelessWidget {
         ),
         child: AttachmentGate(
           attachment: attachment,
+          reserveSpace: true,
           height: SignalBubbleMetrics.mediaDefaultSize,
           width: SignalBubbleMetrics.mediaMaxWidth,
           ready: (_, handle) => NetworkVideoPlayer(

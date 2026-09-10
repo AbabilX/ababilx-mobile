@@ -2,6 +2,7 @@ package com.ababilx.app
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Bundle
 import android.provider.Settings
 import com.ababilx.app.mediasend.MediaSendChannel
 import com.ababilx.call_ringer.CallRinger
@@ -10,6 +11,21 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+
+    /** A call answered on a locked phone runs over the keyguard; nothing else does. */
+    private val callLockScreen by lazy { CallLockScreen(this) }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // After super, because its cover goes over the FlutterView. A recreated
+        // Activity still carries its old intent, and that is not a new Accept.
+        if (savedInstanceState == null) callLockScreen.handleIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        callLockScreen.refresh()
+    }
 
     /** Incoming ACTION_SEND from another app's share sheet. */
     private val shareIntake by lazy { ShareIntakeChannel(this) }
@@ -44,9 +60,16 @@ class MainActivity : FlutterActivity() {
     /** Roaming, which connectivity_plus cannot see — gates media auto-download. */
     private val networkState by lazy { NetworkStateChannel(applicationContext) }
 
+    /** An explicit Save into Downloads or the gallery — never automatic. */
+    private val mediaStore by lazy { MediaStoreChannel(this) }
+
+    /** Speaker / earpiece for a call Android Telecom hosts — a CallKit Answer. */
+    private val callAudioTelecom by lazy { CallAudioTelecom() }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
+        callLockScreen.attach(flutterEngine)
         shareIntake.attach(flutterEngine)
         // The share that launched us is already on the Activity's intent by
         // the time the engine is configured, and never arrives as onNewIntent.
@@ -58,6 +81,7 @@ class MainActivity : FlutterActivity() {
         ongoingCall.handleIntent(intent)
         pip.attach(flutterEngine)
         callScreenLock.attach(flutterEngine)
+        callAudioTelecom.attach(flutterEngine)
         mediaGallery.attach(flutterEngine)
         mediaSend.attach(flutterEngine)
         appIcon.attach(flutterEngine)
@@ -65,44 +89,7 @@ class MainActivity : FlutterActivity() {
         battery.attach(flutterEngine)
         video.attach(flutterEngine)
         networkState.attach(flutterEngine)
-        MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "com.ababilx.app/media_store",
-        ).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "saveToDownloads" -> {
-                    val sourcePath = call.argument<String>("sourcePath")
-                    val fileName = call.argument<String>("fileName")
-                    val subfolder = call.argument<String>("subfolder") ?: ""
-                    val mimeType = call.argument<String>("mimeType")
-                    val collection = call.argument<String>("collection") ?: "downloads"
-                    val deleteSource = call.argument<Boolean>("deleteSource") ?: true
-                    if (sourcePath == null || fileName == null) {
-                        result.error("bad_args", "sourcePath and fileName are required", null)
-                        return@setMethodCallHandler
-                    }
-                    Thread {
-                        val savedPath = MediaStoreBridge.saveToDownloads(
-                            applicationContext,
-                            sourcePath,
-                            fileName,
-                            subfolder,
-                            mimeType,
-                            collection,
-                            deleteSource,
-                        )
-                        runOnUiThread {
-                            if (savedPath != null) {
-                                result.success(savedPath)
-                            } else {
-                                result.error("save_failed", "Could not save file to Downloads", null)
-                            }
-                        }
-                    }.start()
-                }
-                else -> result.notImplemented()
-            }
-        }
+        mediaStore.attach(flutterEngine)
     }
 
     /**
@@ -141,6 +128,8 @@ class MainActivity : FlutterActivity() {
      * always lands here rather than building a second Flutter engine.
      */
     override fun onNewIntent(intent: Intent) {
+        // First: the flag has to be up before the Activity comes forward.
+        callLockScreen.handleIntent(intent)
         super.onNewIntent(intent)
         shareIntake.handleIntent(intent, initial = false)
         ongoingCall.handleIntent(intent)
@@ -181,6 +170,7 @@ class MainActivity : FlutterActivity() {
         // Releases the proximity lock: a wake lock outliving the Activity would
         // keep the panel dark with no call left to justify it.
         callScreenLock.dispose()
+        callLockScreen.dispose()
         mediaGallery.dispose()
         mediaSend.dispose()
         appIcon.dispose()

@@ -123,7 +123,7 @@ class DetailsHeader extends ConsumerWidget {
                     ? null
                     : () => showStartCallSheet(context, ref, conversation),
               )
-            else if (conversation.isChannel)
+            else if (conversation.canGroupCall)
               DetailsActionButton(
                 icon: const Icon(Icons.headset_mic_rounded),
                 label: 'Call',

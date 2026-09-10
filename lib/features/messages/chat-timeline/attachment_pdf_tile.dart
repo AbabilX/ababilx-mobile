@@ -15,6 +15,7 @@ class AttachmentPdfTile extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6),
       child: AttachmentGate(
         attachment: attachment,
+        reserveSpace: true,
         height: 200,
         ready: (_, handle) => PdfPreviewCard(
           source: PdfDocumentSource.file(handle.localPath!),

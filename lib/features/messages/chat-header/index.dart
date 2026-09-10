@@ -148,8 +148,9 @@ class ChatHeader extends ConsumerWidget {
                         ? null
                         : () => showStartCallSheet(context, ref, conversation),
                   ),
-                // Group calls are channel-only, same as the server gate.
-                if (conversation.isChannel)
+                // Channels and personal groups alike; the server refuses only
+                // a DM (peer-to-peer) and anything you cannot post into.
+                if (conversation.canGroupCall)
                   GroupCallAction(conversation: conversation),
               ],
             ),

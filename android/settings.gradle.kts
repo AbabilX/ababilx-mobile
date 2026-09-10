@@ -92,3 +92,5 @@ gradle.beforeProject {
         }
     }
 }
+
+apply(from = "patches/callkit-accept.gradle")

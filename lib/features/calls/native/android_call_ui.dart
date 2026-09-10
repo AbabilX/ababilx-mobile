@@ -5,6 +5,7 @@ import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
 import '../data/models/voice_call.dart';
 import '../ringtone/ring_holders.dart';
+import 'android_call_lock_screen.dart';
 import 'android_call_params.dart';
 import 'incoming_call_admission.dart';
 
@@ -42,6 +43,9 @@ class AndroidCallUi {
     // anyway (see [CallkitSurface]). Ask for that dismissal outright.
     await CallkitSurface.dismissIncoming();
     await CallRinger.release(callRingHolderNative);
+    // An Accept on a locked phone may be waiting for this call's screen; there
+    // will be none, so the lock screen comes back now.
+    await AndroidCallLockScreen.release(callId);
   }
 
   /// Clears the native incoming UI + its ringtone without ending the call and

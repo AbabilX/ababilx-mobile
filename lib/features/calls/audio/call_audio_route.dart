@@ -19,6 +19,7 @@ import 'package:livekit_client/livekit_client.dart'
         AndroidAudioAttributesContentType;
 
 import '../voice_call_log.dart';
+import 'telecom_audio_route.dart';
 
 /// Speaker / earpiece routing for a 1:1 DM call.
 ///
@@ -30,10 +31,19 @@ import '../voice_call_log.dart';
 /// why the Speaker button did nothing and every call stayed on the earpiece.
 ///
 /// LiveKit owns the Android audio session for the whole app, so a raw WebRTC
-/// call has to drive it through the same owner. Group calls need nothing here:
-/// a LiveKit `Room` configures the session on connect by itself.
+/// call has to drive it through the same owner — unless Android Telecom is
+/// hosting the call, which a CallKit Answer makes it do; then Telecom owns the
+/// route and [TelecomAudioRoute] asks it. A group `Room` configures its session
+/// on connect by itself and needs only [preferRoomSpeaker].
 class CallAudioRoute {
   const CallAudioRoute._();
+
+  /// The DM call these routes belong to, so a Telecom-hosted one can be found.
+  /// A stale id is harmless: Telecom no longer knows it, and LiveKit's route
+  /// is the one that applies.
+  static String? _callId;
+
+  static void bindCall(String callId) => _callId = callId;
 
   /// LiveKit's communication preset — the same mode, focus, stream and
   /// attributes the call used to ask flutter_webrtc for — plus forced routing,
@@ -76,11 +86,23 @@ class CallAudioRoute {
       return;
     }
     if (!Platform.isAndroid) return;
+    if (await TelecomAudioRoute.route(_callId, speaker: on)) {
+      voiceCallLog('audio.speaker.telecom', callId: _callId, reason: '$on');
+    }
+    // Set even when Telecom took it, so the two agree if Telecom lets go.
     try {
       await AudioManager.instance.setSpeakerOutputPreferred(on, force: on);
     } catch (error) {
       voiceCallLog('audio.speaker.fail', reason: error.toString());
     }
+  }
+
+  /// Speaker for a group call. The `Room` manages its own session, so this is
+  /// LiveKit's preference — plus Telecom's route when a CallKit Answer left
+  /// Telecom hosting the call, exactly as for a DM.
+  static Future<void> preferRoomSpeaker(bool on, {String? callId}) async {
+    await AudioManager.instance.setSpeakerOutputPreferred(on);
+    await TelecomAudioRoute.route(callId, speaker: on);
   }
 
   /// Ends the call's audio session: releases focus and restores the phone's

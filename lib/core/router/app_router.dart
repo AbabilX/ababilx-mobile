@@ -69,6 +69,12 @@ final _routerRefreshNotifierProvider = Provider<_RouterRefreshNotifier>((ref) {
   return notifier;
 });
 
+/// A call screen appears at once. On a locked phone a slide-in would paint the
+/// route underneath over the keyguard for its whole length — see
+/// `CallLockScreenGuard`.
+GoRouterPageBuilder _instant(Widget child) =>
+    (_, state) => NoTransitionPage(key: state.pageKey, child: child);
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refreshListenable = ref.watch(_routerRefreshNotifierProvider);
 
@@ -124,8 +130,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/board', builder: (_, _) => const BoardScreen()),
         ],
       ),
-      GoRoute(path: '/call', builder: (_, _) => const VoiceCallScreen()),
-      GoRoute(path: '/group-call', builder: (_, _) => const GroupCallScreen()),
+      GoRoute(path: '/call', pageBuilder: _instant(const VoiceCallScreen())),
+      GoRoute(
+        path: '/group-call',
+        pageBuilder: _instant(const GroupCallScreen()),
+      ),
       GoRoute(
         path: '/group-call/lobby',
         builder: (_, _) => const GroupCallLobbyScreen(),
