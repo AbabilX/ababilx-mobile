@@ -1,4 +1,6 @@
 import 'package:ababilx/core/localization/app_translations.dart';
+import 'package:ababilx/core/network/api_client.dart';
+import 'package:ababilx/features/messages/data/chat_recovery_api.dart';
 import 'package:ababilx/features/messages/message_e2ee/message_vault.dart';
 import 'package:ababilx/features/settings/recovery-codes/recovery_codes_screen.dart';
 import 'package:flutter/material.dart';
@@ -7,19 +9,34 @@ import 'package:flutter_test/flutter_test.dart';
 import '../messages/recovery_session_test.dart'
     show MemoryRecoveryStorage, MemoryRecoveryRepo, MemoryRecoveryApi;
 
-class _OfflineRepo extends MemoryRecoveryRepo {
-  _OfflineRepo(super.store);
+class _Api extends ChatRecoveryApi {
+  _Api(MemoryRecoveryStorage store, this.public) : super(ApiClient(store));
+  final Map<String, dynamic> public;
+  int challenges = 0, verifications = 0;
   @override
-  Future<Map<String, dynamic>> getE2eeVault() async =>
-      throw StateError('offline: viewing must not need the server');
+  Future<Map<String, dynamic>> challenge() async {
+    challenges++;
+    return {
+      'challenge_id': 'challenge-$challenges',
+      'email': 'm****@mail.com',
+      'retry_after': 0,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> verify(String challenge, String code) async {
+    verifications++;
+    if (code != 'ABC123456') throw StateError('wrong code');
+    return {'verified': true, 'public_key': public};
+  }
 }
 
 void main() {
   testWidgets(
-    'saved code shows offline without email and hides on background',
+    'only reveals after email verification; reopening requires another challenge',
     (tester) async {
       final store = MemoryRecoveryStorage();
-      final repo = _OfflineRepo(store);
+      final repo = MemoryRecoveryRepo(store);
       final vault = MessageVault(repo, store);
       await tester.runAsync(
         () => vault.startSession(
@@ -27,12 +44,19 @@ void main() {
           api: MemoryRecoveryApi(store, repo),
         ),
       );
-      final code = (await vault.readStoredRecoveryCode())!;
+      final api = _Api(store, vault.publicIdentity!);
+      final code = await tester.runAsync(
+        () => vault.readVerifiedRecoveryCode({
+          'verified': true,
+          'public_key': vault.publicIdentity,
+        }),
+      );
       Future<void> open() async {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
               appLanguageProvider.overrideWithValue('en'),
+              chatRecoveryApiProvider.overrideWithValue(api),
               messageVaultProvider.overrideWithValue(vault),
             ],
             child: const MaterialApp(home: RecoveryCodesScreen()),
@@ -42,9 +66,27 @@ void main() {
       }
 
       await open();
+      expect(find.text(code!), findsNothing);
+      await tester.tap(find.text('Email me a code'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'WRONG');
+      await tester.scrollUntilVisible(
+        find.text('Verify and view code'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Verify and view code'));
+      await tester.pumpAndSettle();
+      expect(find.text(code), findsNothing);
+      await tester.enterText(find.byType(TextField), 'ABC123456');
+      await tester.scrollUntilVisible(
+        find.text('Verify and view code'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Verify and view code'));
+      await tester.pumpAndSettle();
       expect(find.text(code), findsOneWidget);
-      expect(find.byType(TextField), findsNothing);
-      expect(find.text('Email me a code'), findsNothing);
       for (final state in [
         AppLifecycleState.inactive,
         AppLifecycleState.hidden,
@@ -57,12 +99,13 @@ void main() {
       }
       await tester.pumpAndSettle();
       expect(find.text(code), findsNothing);
-      await tester.tap(find.text('Show code'));
-      await tester.pumpAndSettle();
-      expect(find.text(code), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
       await open();
-      expect(find.text(code), findsOneWidget);
+      expect(find.text(code), findsNothing);
+      await tester.tap(find.text('Email me a code'));
+      await tester.pumpAndSettle();
+      expect(api.challenges, 2);
+      expect(api.verifications, 2);
       await tester.pumpWidget(const SizedBox());
     },
   );

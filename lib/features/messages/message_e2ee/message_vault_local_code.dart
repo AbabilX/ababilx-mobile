@@ -8,13 +8,53 @@ extension MessageVaultLocalCode on MessageVault {
   Future<void> _storeRecoveryCode(Map<String, dynamic> public, String code) =>
       _storage.writeRecoveryCode(_recoveryStorageId(public), code);
 
-  /// Reading an already saved code is entirely local and works offline.
-  Future<String?> readStoredRecoveryCode() async {
+  Future<bool> hasStoredRecoveryCode() async {
     final public = _publicJwk;
-    if (_identity == null || public == null) {
-      throw StateError('Unlock the current message identity first');
+    if (public != null) await _reconcileRecoveryCode(public);
+    if (public == null) return false;
+    final code = await _storage.readRecoveryCode(_recoveryStorageId(public));
+    return code != null && await _codeMatchesCurrentVault(code, public);
+  }
+
+  Future<String> readVerifiedRecoveryCode(Map<String, dynamic> response) async {
+    final public = response['public_key'];
+    if (response['verified'] != true ||
+        _identity == null ||
+        public is! Map ||
+        public['x'] != _publicJwk?['x'] ||
+        public['y'] != _publicJwk?['y']) {
+      throw StateError('Unlock and verify the current message identity first');
     }
-    return _storage.readRecoveryCode(_recoveryStorageId(public));
+    await _reconcileRecoveryCode(_publicJwk!);
+    final code = await _storage.readRecoveryCode(
+      _recoveryStorageId(_publicJwk!),
+    );
+    if (code == null || !await _codeMatchesCurrentVault(code, _publicJwk!)) {
+      throw StateError('No current recovery code saved on this phone');
+    }
+    return code;
+  }
+
+  Future<bool> _codeMatchesCurrentVault(
+    String input,
+    Map<String, dynamic> public,
+  ) async {
+    final status = await _repo.getE2eeVault();
+    final remote = status['vault'];
+    if (remote is! Map || remote['recovery'] is! Map) return false;
+    final code = RecoveryKey.parse(input);
+    if (code == null) return false;
+    try {
+      final private = await RecoveryKey.unwrap(
+        RecoveryVault.fromJson(
+          Map<String, dynamic>.from(remote['recovery'] as Map),
+        ),
+        code,
+      );
+      return private['x'] == public['x'] && private['y'] == public['y'];
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _publishRecoveryCode(

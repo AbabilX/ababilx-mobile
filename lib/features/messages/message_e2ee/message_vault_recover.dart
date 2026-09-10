@@ -40,7 +40,7 @@ extension MessageVaultRecover on MessageVault {
     await _storeRecoveryCode(publicJwk, RecoveryKey.format(code));
   }
 
-  /// Explicit code creation from Settings when this phone has no saved code.
+  /// Explicit legacy/stale-code upgrade after Settings email verification.
   /// Rewraps the same identity and saves the new code only on this phone.
   Future<String> regenerateRecoveryCode() async {
     final identity = _identity;
