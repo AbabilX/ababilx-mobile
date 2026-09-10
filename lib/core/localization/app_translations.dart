@@ -19,6 +19,10 @@ class AppTranslations {
 
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
+      'onboarding_title': 'Your people.\nAlways close.',
+      'onboarding_body':
+          'Share everyday moments, catch up with family, and keep your friends a message away.',
+      'onboarding_start': 'Get started',
       'recovery_choice_title': 'Restore your messages',
       'recovery_choice_body':
           'If you saved your recovery code, use it to restore up to the last 6 months of available messages. Otherwise, you can start fresh.',
@@ -348,6 +352,10 @@ class AppTranslations {
           'You will need to sign in again on this device.',
     },
     'bn': {
+      'onboarding_title': 'আপন মানুষ।\nসবসময় কাছে।',
+      'onboarding_body':
+          'প্রতিদিনের মুহূর্ত ভাগ করুন, পরিবারের খোঁজ নিন, আর বন্ধুদের সঙ্গে থাকুন এক মেসেজের দূরত্বে।',
+      'onboarding_start': 'শুরু করুন',
       'recovery_choice_title': 'আপনার মেসেজ ফিরিয়ে আনুন',
       'recovery_choice_body':
           'রিকভারি কোড সংরক্ষণ করে থাকলে সেটি দিয়ে গত ৬ মাসের উপলব্ধ মেসেজ ফিরিয়ে আনুন। কোড না থাকলে নতুনভাবে শুরু করতে পারবেন।',

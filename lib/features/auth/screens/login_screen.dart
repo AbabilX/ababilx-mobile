@@ -4,9 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/localization/app_translations.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/onboarding_gate.dart';
 
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      const OnboardingGate(child: _LoginContent());
+}
+
+class _LoginContent extends ConsumerWidget {
+  const _LoginContent();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
