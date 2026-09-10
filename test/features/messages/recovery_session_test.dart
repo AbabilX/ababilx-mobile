@@ -79,7 +79,7 @@ class MemoryRecoveryApi extends ChatRecoveryApi {
 
 void main() {
   test(
-    'code persists only on phone and requires verified current identity to reveal',
+    'code persists only on phone and can be read locally after unlocking',
     () async {
       final store = MemoryRecoveryStorage();
       final repo = MemoryRecoveryRepo(store);
@@ -88,27 +88,18 @@ void main() {
       await vault.startSession(userId: 'u', api: api);
       expect(vault.isUnlocked, isTrue);
       expect(vault.takePendingRecoveryCode(), isNull);
-      final verification = {
-        'verified': true,
-        'public_key': vault.publicIdentity,
-      };
-      final code = await vault.readVerifiedRecoveryCode(verification);
+      final code = (await vault.readStoredRecoveryCode())!;
       expect(RecoveryKey.parse(code)?.length, 32);
       expect(jsonEncode(api.requests.single).contains(code), isFalse);
       expect(
         api.requests.single.keys,
         unorderedEquals(['public_key', 'wrapped_key', 'salt', 'version']),
       );
-      await expectLater(
-        vault.readVerifiedRecoveryCode({
-          'verified': false,
-          'public_key': vault.publicIdentity,
-        }),
-        throwsStateError,
-      );
+      vault.lock();
+      await expectLater(vault.readStoredRecoveryCode(), throwsStateError);
       final restarted = MessageVault(repo, store);
       expect(await restarted.restoreTrustedIdentityOffline(), isTrue);
-      expect(await restarted.readVerifiedRecoveryCode(verification), code);
+      expect(await restarted.readStoredRecoveryCode(), code);
     },
   );
   test('lost response reconciles without generating another code', () async {
@@ -137,7 +128,7 @@ void main() {
       final restarted = MessageVault(repo, store);
       expect(await restarted.resumePendingSession('u', api), isTrue);
       expect(jsonEncode(api.requests.last), first);
-      expect(await restarted.hasStoredRecoveryCode(), isTrue);
+      expect(await restarted.readStoredRecoveryCode(), isNotNull);
     },
   );
   test(
@@ -150,14 +141,10 @@ void main() {
         userId: 'u',
         api: MemoryRecoveryApi(store, repo),
       );
-      final verification = {
-        'verified': true,
-        'public_key': vault.publicIdentity,
-      };
-      final code = await vault.readVerifiedRecoveryCode(verification);
+      final code = (await vault.readStoredRecoveryCode())!;
       final other = MessageVault(repo, MemoryRecoveryStorage());
       await other.unlockWithRecoveryCode(code);
-      expect(await other.readVerifiedRecoveryCode(verification), code);
+      expect(await other.readStoredRecoveryCode(), code);
     },
   );
 }

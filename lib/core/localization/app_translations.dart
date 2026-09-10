@@ -29,22 +29,18 @@ class AppTranslations {
           'This account has messages but no recovery code. Start a new session to continue chatting.',
       'recovery_codes_title': 'Recovery codes',
       'recovery_codes_body':
-          'Your recovery code is created automatically. Verify your email each time you want to view or copy it. Keep it safe to restore your messages on another phone.',
+          'Your recovery code is created automatically and stored only on this phone. Keep a safe copy to restore your messages on another phone.',
       'recovery_codes_setting_hint':
-          'Verify your email to view your recovery code',
+          'View or copy the code saved on this phone',
       'recovery_codes_hide_hint':
           'This code hides after one minute or when you leave this screen.',
       'recovery_hide': 'Hide code',
-      'recovery_wait_resend':
-          'Please wait one minute before requesting another email.',
-      'recovery_verify_failed':
-          'The verification failed or expired. Try again, or request a new email code.',
+      'recovery_code_load_failed':
+          'Could not load the recovery code. Please try again.',
       'recovery_legacy_create':
-          'Your old code was not stored. Verifying and creating a code replaces your old recovery code. Your messages stay readable.',
-      'recovery_verify_create': 'Verify and create a new code',
-      'recovery_verify_view': 'Verify and view code',
-      'recovery_verifying': 'Verifying…',
-      'recovery_resend': 'Resend email code',
+          'No recovery code is saved on this phone. Creating a new code replaces your old recovery code. Your messages stay readable.',
+      'recovery_create': 'Create a new code',
+      'recovery_view': 'Show code',
       'recovery_copy': 'Copy code',
       'recovery_copied': 'Copied',
       'settings_backup': 'Backup',
@@ -393,20 +389,16 @@ class AppTranslations {
           'এই অ্যাকাউন্টে মেসেজ আছে, তবে রিকভারি কোড নেই। চ্যাট করতে নতুন সেশন শুরু করুন।',
       'recovery_codes_title': 'রিকভারি কোড',
       'recovery_codes_body':
-          'আপনার রিকভারি কোড স্বয়ংক্রিয়ভাবে তৈরি হয়। প্রতিবার দেখতে বা কপি করতে ইমেইল যাচাই করুন। অন্য ফোনে মেসেজ ফিরিয়ে আনতে কোডটি নিরাপদে রাখুন।',
-      'recovery_codes_setting_hint': 'রিকভারি কোড দেখতে ইমেইল যাচাই করুন',
+          'আপনার রিকভারি কোড স্বয়ংক্রিয়ভাবে তৈরি হয়ে শুধু এই ফোনে থাকে। অন্য ফোনে মেসেজ ফিরিয়ে আনতে কোডটির একটি কপি নিরাপদে রাখুন।',
+      'recovery_codes_setting_hint': 'এই ফোনে রাখা কোড দেখুন বা কপি করুন',
       'recovery_codes_hide_hint':
           'এক মিনিট পরে বা এই স্ক্রিন ছেড়ে গেলে কোড লুকিয়ে যাবে।',
       'recovery_hide': 'কোড লুকান',
-      'recovery_wait_resend': 'আবার ইমেইল পাঠানোর আগে এক মিনিট অপেক্ষা করুন।',
-      'recovery_verify_failed':
-          'যাচাই হয়নি অথবা কোডের মেয়াদ শেষ। আবার চেষ্টা করুন বা নতুন ইমেইল কোড নিন।',
+      'recovery_code_load_failed': 'রিকভারি কোড পাওয়া যায়নি। আবার চেষ্টা করুন।',
       'recovery_legacy_create':
-          'আপনার পুরোনো কোড সংরক্ষিত নেই। যাচাই করে নতুন কোড তৈরি করলে পুরোনো রিকভারি কোড বদলে যাবে। মেসেজ পড়তে পারবেন আগের মতোই।',
-      'recovery_verify_create': 'যাচাই করে নতুন কোড তৈরি করুন',
-      'recovery_verify_view': 'যাচাই করে কোড দেখুন',
-      'recovery_verifying': 'যাচাই হচ্ছে…',
-      'recovery_resend': 'আবার ইমেইল কোড পাঠান',
+          'এই ফোনে রিকভারি কোড রাখা নেই। নতুন কোড তৈরি করলে পুরোনো কোড বদলে যাবে। মেসেজ আগের মতোই পড়তে পারবেন।',
+      'recovery_create': 'নতুন কোড তৈরি করুন',
+      'recovery_view': 'কোড দেখুন',
       'recovery_copy': 'কোড কপি করুন',
       'recovery_copied': 'কপি হয়েছে',
       'settings_backup': 'ব্যাকআপ',
