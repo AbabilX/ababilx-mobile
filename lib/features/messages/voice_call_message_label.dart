@@ -54,8 +54,7 @@ String voiceCallHistoryLabel(ChatMessage message, String currentUserId) {
   if (status != 'ended') {
     return voiceCallKindLabel(message, currentUserId);
   }
-  final callerId =
-      (message.meta?['caller_id'] as String?) ?? message.userId;
+  final callerId = (message.meta?['caller_id'] as String?) ?? message.userId;
   final isCaller = currentUserId.isNotEmpty && currentUserId == callerId;
   final noun = _callNoun(message.meta?['mode'] as String?);
   return isCaller ? 'Outgoing $noun' : 'Incoming $noun';

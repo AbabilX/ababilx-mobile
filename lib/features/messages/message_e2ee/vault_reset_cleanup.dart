@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../attachments/providers/attachment_providers.dart';
+import '../data/local/chat_key_cache.dart';
 import '../data/local/chat_message_store.dart';
 import '../data/local/chat_outbox_cache.dart';
 import '../data/local/chat_sidebar_cache.dart';
@@ -17,6 +18,9 @@ Future<void> clearFreshStartDevice(WidgetRef ref) async {
   await ref.read(chatOutboxCacheProvider).clearAll();
   await ref.read(chatMessageStoreProvider).clearAll();
   await ref.read(chatSidebarCacheProvider).clearAll();
+  // Every stored envelope was sealed to the identity just replaced, so none of
+  // them will ever open again.
+  await ref.read(chatKeyCacheProvider).clearAll();
   await HistoryRestoreFlag.clearAll();
   ref.read(chatProvider.notifier).resetTeamChatState();
 }

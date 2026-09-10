@@ -63,8 +63,10 @@ class ChatE2eeApi {
     final response = await _client.post(
       ApiConstants.chatE2eeReset,
       data: {
-        'code': code, 'public_key': publicJwk,
-        'recovery': recovery, 'clear_history': true,
+        'code': code,
+        'public_key': publicJwk,
+        'recovery': recovery,
+        'clear_history': true,
       },
     );
     final data = unwrapApiData<Map<String, dynamic>>(response);

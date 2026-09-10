@@ -5,6 +5,7 @@ import '../../messages/data/local/chat_message_store.dart';
 import '../../messages/history-restore/history_restore_flag.dart';
 import '../../messages/safety_number/safety_number_store.dart';
 import '../../messages/data/local/chat_outbox_cache.dart';
+import '../../messages/data/local/chat_key_cache.dart';
 import '../../messages/data/local/chat_sidebar_cache.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/providers/chat_provider.dart';
@@ -49,6 +50,10 @@ class AuthNotifier extends AsyncNotifier<bool> {
       // for channels, plain text) — it must not survive into a different
       // account signed in on this device, same as the caches above.
       await ref.read(chatOutboxCacheProvider).clearAll();
+      // Sign-out already erases this device's identity key, so every stored
+      // conversation envelope is unopenable from here on. Left behind it is
+      // dead weight carried into whichever account signs in next.
+      await ref.read(chatKeyCacheProvider).clearAll();
       await HistoryRestoreFlag.clearAll();
       // Remembered peer fingerprints belong to the account that signed out.
       // Left behind, the next account on this device would be told a key

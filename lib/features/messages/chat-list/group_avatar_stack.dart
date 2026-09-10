@@ -30,7 +30,9 @@ class GroupAvatarStack extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final own = avatarUrl?.trim() ?? '';
     if (own.isNotEmpty) {
-      return ClipOval(child: AppAvatar(size: size, url: own, name: name));
+      return ClipOval(
+        child: AppAvatar(size: size, url: own, name: name),
+      );
     }
     final pics = avatars.where((u) => u.trim().isNotEmpty).take(3).toList();
 

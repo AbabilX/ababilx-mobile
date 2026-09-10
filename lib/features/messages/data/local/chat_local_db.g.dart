@@ -1885,6 +1885,11 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
 
   /// Drives LRU eviction once the disk budget is exceeded.
   final int lastAccessMs;
+
+  /// Legacy, never written any more. A finished download used to be copied
+  /// straight into the public gallery and these recorded that copy; nothing
+  /// auto-publishes now, so they stay null. Kept only so the stored schema
+  /// does not need a migration to lose two unread columns.
   final int? exportedAtMs;
   final String? exportedPath;
 
@@ -2774,6 +2779,348 @@ class AttachmentRefsCompanion extends UpdateCompanion<AttachmentRef> {
   }
 }
 
+class $CachedConversationKeysTable extends CachedConversationKeys
+    with TableInfo<$CachedConversationKeysTable, CachedConversationKey> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedConversationKeysTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _keyVersionMeta = const VerificationMeta(
+    'keyVersion',
+  );
+  @override
+  late final GeneratedColumn<int> keyVersion = GeneratedColumn<int>(
+    'key_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _envelopeJsonMeta = const VerificationMeta(
+    'envelopeJson',
+  );
+  @override
+  late final GeneratedColumn<String> envelopeJson = GeneratedColumn<String>(
+    'envelope_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMsMeta = const VerificationMeta(
+    'updatedAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtMs = GeneratedColumn<int>(
+    'updated_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    conversationId,
+    keyVersion,
+    envelopeJson,
+    updatedAtMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_conversation_keys';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CachedConversationKey> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('key_version')) {
+      context.handle(
+        _keyVersionMeta,
+        keyVersion.isAcceptableOrUnknown(data['key_version']!, _keyVersionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyVersionMeta);
+    }
+    if (data.containsKey('envelope_json')) {
+      context.handle(
+        _envelopeJsonMeta,
+        envelopeJson.isAcceptableOrUnknown(
+          data['envelope_json']!,
+          _envelopeJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_envelopeJsonMeta);
+    }
+    if (data.containsKey('updated_at_ms')) {
+      context.handle(
+        _updatedAtMsMeta,
+        updatedAtMs.isAcceptableOrUnknown(
+          data['updated_at_ms']!,
+          _updatedAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {conversationId, keyVersion};
+  @override
+  CachedConversationKey map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedConversationKey(
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      keyVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}key_version'],
+      )!,
+      envelopeJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}envelope_json'],
+      )!,
+      updatedAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $CachedConversationKeysTable createAlias(String alias) {
+    return $CachedConversationKeysTable(attachedDatabase, alias);
+  }
+}
+
+class CachedConversationKey extends DataClass
+    implements Insertable<CachedConversationKey> {
+  final String conversationId;
+  final int keyVersion;
+  final String envelopeJson;
+  final int updatedAtMs;
+  const CachedConversationKey({
+    required this.conversationId,
+    required this.keyVersion,
+    required this.envelopeJson,
+    required this.updatedAtMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['conversation_id'] = Variable<String>(conversationId);
+    map['key_version'] = Variable<int>(keyVersion);
+    map['envelope_json'] = Variable<String>(envelopeJson);
+    map['updated_at_ms'] = Variable<int>(updatedAtMs);
+    return map;
+  }
+
+  CachedConversationKeysCompanion toCompanion(bool nullToAbsent) {
+    return CachedConversationKeysCompanion(
+      conversationId: Value(conversationId),
+      keyVersion: Value(keyVersion),
+      envelopeJson: Value(envelopeJson),
+      updatedAtMs: Value(updatedAtMs),
+    );
+  }
+
+  factory CachedConversationKey.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedConversationKey(
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      keyVersion: serializer.fromJson<int>(json['keyVersion']),
+      envelopeJson: serializer.fromJson<String>(json['envelopeJson']),
+      updatedAtMs: serializer.fromJson<int>(json['updatedAtMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'conversationId': serializer.toJson<String>(conversationId),
+      'keyVersion': serializer.toJson<int>(keyVersion),
+      'envelopeJson': serializer.toJson<String>(envelopeJson),
+      'updatedAtMs': serializer.toJson<int>(updatedAtMs),
+    };
+  }
+
+  CachedConversationKey copyWith({
+    String? conversationId,
+    int? keyVersion,
+    String? envelopeJson,
+    int? updatedAtMs,
+  }) => CachedConversationKey(
+    conversationId: conversationId ?? this.conversationId,
+    keyVersion: keyVersion ?? this.keyVersion,
+    envelopeJson: envelopeJson ?? this.envelopeJson,
+    updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+  );
+  CachedConversationKey copyWithCompanion(
+    CachedConversationKeysCompanion data,
+  ) {
+    return CachedConversationKey(
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      keyVersion: data.keyVersion.present
+          ? data.keyVersion.value
+          : this.keyVersion,
+      envelopeJson: data.envelopeJson.present
+          ? data.envelopeJson.value
+          : this.envelopeJson,
+      updatedAtMs: data.updatedAtMs.present
+          ? data.updatedAtMs.value
+          : this.updatedAtMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedConversationKey(')
+          ..write('conversationId: $conversationId, ')
+          ..write('keyVersion: $keyVersion, ')
+          ..write('envelopeJson: $envelopeJson, ')
+          ..write('updatedAtMs: $updatedAtMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(conversationId, keyVersion, envelopeJson, updatedAtMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedConversationKey &&
+          other.conversationId == this.conversationId &&
+          other.keyVersion == this.keyVersion &&
+          other.envelopeJson == this.envelopeJson &&
+          other.updatedAtMs == this.updatedAtMs);
+}
+
+class CachedConversationKeysCompanion
+    extends UpdateCompanion<CachedConversationKey> {
+  final Value<String> conversationId;
+  final Value<int> keyVersion;
+  final Value<String> envelopeJson;
+  final Value<int> updatedAtMs;
+  final Value<int> rowid;
+  const CachedConversationKeysCompanion({
+    this.conversationId = const Value.absent(),
+    this.keyVersion = const Value.absent(),
+    this.envelopeJson = const Value.absent(),
+    this.updatedAtMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CachedConversationKeysCompanion.insert({
+    required String conversationId,
+    required int keyVersion,
+    required String envelopeJson,
+    required int updatedAtMs,
+    this.rowid = const Value.absent(),
+  }) : conversationId = Value(conversationId),
+       keyVersion = Value(keyVersion),
+       envelopeJson = Value(envelopeJson),
+       updatedAtMs = Value(updatedAtMs);
+  static Insertable<CachedConversationKey> custom({
+    Expression<String>? conversationId,
+    Expression<int>? keyVersion,
+    Expression<String>? envelopeJson,
+    Expression<int>? updatedAtMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (keyVersion != null) 'key_version': keyVersion,
+      if (envelopeJson != null) 'envelope_json': envelopeJson,
+      if (updatedAtMs != null) 'updated_at_ms': updatedAtMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CachedConversationKeysCompanion copyWith({
+    Value<String>? conversationId,
+    Value<int>? keyVersion,
+    Value<String>? envelopeJson,
+    Value<int>? updatedAtMs,
+    Value<int>? rowid,
+  }) {
+    return CachedConversationKeysCompanion(
+      conversationId: conversationId ?? this.conversationId,
+      keyVersion: keyVersion ?? this.keyVersion,
+      envelopeJson: envelopeJson ?? this.envelopeJson,
+      updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (keyVersion.present) {
+      map['key_version'] = Variable<int>(keyVersion.value);
+    }
+    if (envelopeJson.present) {
+      map['envelope_json'] = Variable<String>(envelopeJson.value);
+    }
+    if (updatedAtMs.present) {
+      map['updated_at_ms'] = Variable<int>(updatedAtMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedConversationKeysCompanion(')
+          ..write('conversationId: $conversationId, ')
+          ..write('keyVersion: $keyVersion, ')
+          ..write('envelopeJson: $envelopeJson, ')
+          ..write('updatedAtMs: $updatedAtMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$ChatLocalDb extends GeneratedDatabase {
   _$ChatLocalDb(QueryExecutor e) : super(e);
   $ChatLocalDbManager get managers => $ChatLocalDbManager(this);
@@ -2785,6 +3132,8 @@ abstract class _$ChatLocalDb extends GeneratedDatabase {
     this,
   );
   late final $AttachmentRefsTable attachmentRefs = $AttachmentRefsTable(this);
+  late final $CachedConversationKeysTable cachedConversationKeys =
+      $CachedConversationKeysTable(this);
   late final Index idxCachedMessagesConvTime = Index(
     'idx_cached_messages_conv_time',
     'CREATE INDEX idx_cached_messages_conv_time ON cached_messages (conversation_id, created_at_ms)',
@@ -2815,6 +3164,7 @@ abstract class _$ChatLocalDb extends GeneratedDatabase {
     pendingOutboxMessages,
     attachmentBlobs,
     attachmentRefs,
+    cachedConversationKeys,
     idxCachedMessagesConvTime,
     idxAttachmentBlobsLru,
     idxAttachmentBlobsContentHash,
@@ -4214,6 +4564,214 @@ typedef $$AttachmentRefsTableProcessedTableManager =
       AttachmentRef,
       PrefetchHooks Function()
     >;
+typedef $$CachedConversationKeysTableCreateCompanionBuilder =
+    CachedConversationKeysCompanion Function({
+      required String conversationId,
+      required int keyVersion,
+      required String envelopeJson,
+      required int updatedAtMs,
+      Value<int> rowid,
+    });
+typedef $$CachedConversationKeysTableUpdateCompanionBuilder =
+    CachedConversationKeysCompanion Function({
+      Value<String> conversationId,
+      Value<int> keyVersion,
+      Value<String> envelopeJson,
+      Value<int> updatedAtMs,
+      Value<int> rowid,
+    });
+
+class $$CachedConversationKeysTableFilterComposer
+    extends Composer<_$ChatLocalDb, $CachedConversationKeysTable> {
+  $$CachedConversationKeysTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get keyVersion => $composableBuilder(
+    column: $table.keyVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get envelopeJson => $composableBuilder(
+    column: $table.envelopeJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CachedConversationKeysTableOrderingComposer
+    extends Composer<_$ChatLocalDb, $CachedConversationKeysTable> {
+  $$CachedConversationKeysTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get keyVersion => $composableBuilder(
+    column: $table.keyVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get envelopeJson => $composableBuilder(
+    column: $table.envelopeJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CachedConversationKeysTableAnnotationComposer
+    extends Composer<_$ChatLocalDb, $CachedConversationKeysTable> {
+  $$CachedConversationKeysTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get keyVersion => $composableBuilder(
+    column: $table.keyVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get envelopeJson => $composableBuilder(
+    column: $table.envelopeJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => column,
+  );
+}
+
+class $$CachedConversationKeysTableTableManager
+    extends
+        RootTableManager<
+          _$ChatLocalDb,
+          $CachedConversationKeysTable,
+          CachedConversationKey,
+          $$CachedConversationKeysTableFilterComposer,
+          $$CachedConversationKeysTableOrderingComposer,
+          $$CachedConversationKeysTableAnnotationComposer,
+          $$CachedConversationKeysTableCreateCompanionBuilder,
+          $$CachedConversationKeysTableUpdateCompanionBuilder,
+          (
+            CachedConversationKey,
+            BaseReferences<
+              _$ChatLocalDb,
+              $CachedConversationKeysTable,
+              CachedConversationKey
+            >,
+          ),
+          CachedConversationKey,
+          PrefetchHooks Function()
+        > {
+  $$CachedConversationKeysTableTableManager(
+    _$ChatLocalDb db,
+    $CachedConversationKeysTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedConversationKeysTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$CachedConversationKeysTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CachedConversationKeysTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> conversationId = const Value.absent(),
+                Value<int> keyVersion = const Value.absent(),
+                Value<String> envelopeJson = const Value.absent(),
+                Value<int> updatedAtMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedConversationKeysCompanion(
+                conversationId: conversationId,
+                keyVersion: keyVersion,
+                envelopeJson: envelopeJson,
+                updatedAtMs: updatedAtMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String conversationId,
+                required int keyVersion,
+                required String envelopeJson,
+                required int updatedAtMs,
+                Value<int> rowid = const Value.absent(),
+              }) => CachedConversationKeysCompanion.insert(
+                conversationId: conversationId,
+                keyVersion: keyVersion,
+                envelopeJson: envelopeJson,
+                updatedAtMs: updatedAtMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedConversationKeysTableProcessedTableManager =
+    ProcessedTableManager<
+      _$ChatLocalDb,
+      $CachedConversationKeysTable,
+      CachedConversationKey,
+      $$CachedConversationKeysTableFilterComposer,
+      $$CachedConversationKeysTableOrderingComposer,
+      $$CachedConversationKeysTableAnnotationComposer,
+      $$CachedConversationKeysTableCreateCompanionBuilder,
+      $$CachedConversationKeysTableUpdateCompanionBuilder,
+      (
+        CachedConversationKey,
+        BaseReferences<
+          _$ChatLocalDb,
+          $CachedConversationKeysTable,
+          CachedConversationKey
+        >,
+      ),
+      CachedConversationKey,
+      PrefetchHooks Function()
+    >;
 
 class $ChatLocalDbManager {
   final _$ChatLocalDb _db;
@@ -4228,4 +4786,9 @@ class $ChatLocalDbManager {
       $$AttachmentBlobsTableTableManager(_db, _db.attachmentBlobs);
   $$AttachmentRefsTableTableManager get attachmentRefs =>
       $$AttachmentRefsTableTableManager(_db, _db.attachmentRefs);
+  $$CachedConversationKeysTableTableManager get cachedConversationKeys =>
+      $$CachedConversationKeysTableTableManager(
+        _db,
+        _db.cachedConversationKeys,
+      );
 }

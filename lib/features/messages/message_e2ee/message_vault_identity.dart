@@ -10,64 +10,6 @@ part of 'message_vault.dart';
 /// The unlock path is in `message_vault_recover.dart`; the last-resort identity
 /// swap is in `message_vault_reset.dart`.
 extension MessageVaultIdentity on MessageVault {
-  /// Restores the identity protected by this device's OS secure storage.
-  /// It is intentionally erased on logout and by an app uninstall.
-  Future<bool> restoreTrustedIdentity() async {
-    try {
-      final saved = await _storage.readMessageVaultIdentity();
-      if (saved == null) {
-        lock();
-        return false;
-      }
-      final data = Map<String, dynamic>.from(jsonDecode(saved) as Map);
-      final status = await _repo.getE2eeVault();
-      if (status['exists'] != true) {
-        lock();
-        return false;
-      }
-      final serverPublic = Map<String, dynamic>.from(
-        (status['vault'] as Map)['public_key'] as Map,
-      );
-      final localPublic = Map<String, dynamic>.from(data['public_key'] as Map);
-      if (serverPublic['x'] != localPublic['x'] ||
-          serverPublic['y'] != localPublic['y']) {
-        lock();
-        await _storage.deleteMessageVaultIdentity();
-        return false;
-      }
-      _identity = _identityFromJwk(
-        Map<String, dynamic>.from(data['private_key'] as Map),
-      );
-      _publicJwk = localPublic;
-      _keys.clear();
-      return true;
-    } catch (_) {
-      lock();
-      return false;
-    }
-  }
-
-  /// Same restore without the server round-trip, for the FCM background
-  /// isolate: a push has seconds to decrypt, and the public-key comparison is
-  /// only a staleness check — a rotated identity simply fails the AES-GCM tag
-  /// and the notification falls back to its placeholder.
-  Future<bool> restoreTrustedIdentityOffline() async {
-    try {
-      final saved = await _storage.readMessageVaultIdentity();
-      if (saved == null) return false;
-      final data = Map<String, dynamic>.from(jsonDecode(saved) as Map);
-      _identity = _identityFromJwk(
-        Map<String, dynamic>.from(data['private_key'] as Map),
-      );
-      _publicJwk = Map<String, dynamic>.from(data['public_key'] as Map);
-      _keys.clear();
-      return true;
-    } catch (_) {
-      lock();
-      return false;
-    }
-  }
-
   /// Mints a recovery code for an identity, publishes the wrapped key, and
   /// stages the code for the setup screen to show.
   Future<VaultIdentityState> _provisionRecovery(
@@ -147,7 +89,7 @@ extension MessageVaultIdentity on MessageVault {
         Map<String, dynamic>.from(data['private_key'] as Map),
       );
       _publicJwk = localPublic;
-      _keys.clear();
+      _clearKeyMemory();
       return true;
     } catch (_) {
       lock();
@@ -162,14 +104,14 @@ extension MessageVaultIdentity on MessageVault {
   ) async {
     _identity = identity;
     _publicJwk = publicJwk;
-    _keys.clear();
+    _clearKeyMemory();
     await _saveTrustedIdentity(_privateJwkFromIdentity(identity), publicJwk);
   }
 
   void lock() {
     _identity = null;
     _publicJwk = null;
-    _keys.clear();
+    _clearKeyMemory();
   }
 
   Future<void> _saveTrustedIdentity(

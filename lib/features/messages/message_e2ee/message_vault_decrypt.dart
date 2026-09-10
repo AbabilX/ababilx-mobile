@@ -52,16 +52,15 @@ extension MessageVaultDecrypt on MessageVault {
       return message.copyWith(body: 'Encrypted message', quote: quote);
     }
     try {
-      var key = await _loadKey(message.conversationId, currentUserId);
-      // A newer key version means the other side rotated (usually after a PIN
-      // reset), so the cached key is stale and worth one refetch.
-      if (key != null && (message.encryptionKeyVersion ?? 0) > key.version) {
-        key = await _loadKey(
-          message.conversationId,
-          currentUserId,
-          refresh: true,
-        );
-      }
+      // Memory, then this device's own stored envelope, then the network —
+      // see [MessageVaultKeyCache._readKey]. Reading starts on the device so a
+      // phone with no connection reads its history rather than drawing
+      // "Unable to decrypt this message" over messages it already holds.
+      final key = await _readKey(
+        message.conversationId,
+        currentUserId,
+        message.encryptionKeyVersion,
+      );
       if (key == null || key.version != message.encryptionKeyVersion) {
         throw StateError('Secure message key is unavailable');
       }

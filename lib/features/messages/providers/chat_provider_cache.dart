@@ -54,18 +54,15 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
       return;
     }
     try {
-      // Cache no decrypted E2EE preview text. The encrypted metadata is kept
-      // and a live sidebar refresh restores the preview after PIN unlock.
-      final safeDms = sidebar.dms
-          .map(
-            (dm) => dm.lastMessageEncryptionVersion == 1
-                ? dm.copyWith(lastMessageBody: 'Encrypted message')
-                : dm,
-          )
-          .toList();
+      // No sealed preview text on disk, from a DM or a group. The ciphertext
+      // beside it is kept, and `openCachedPreviews` reopens it on the next
+      // launch — offline included.
       await sidebarCache.write(
         userId,
-        ChatSidebar(channels: sidebar.channels, dms: safeDms),
+        ChatSidebar(
+          channels: sidebar.channels.map(previewForDisk).toList(),
+          dms: sidebar.dms.map(previewForDisk).toList(),
+        ),
       );
     } catch (e) {
       debugPrint('[ChatCache] persistSidebar: write threw: $e');

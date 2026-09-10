@@ -74,8 +74,8 @@ UploadSourceLoader nativeFileSource(NativeMediaFile file) => () async {
 };
 
 /// A camera shot or a document the Dart pickers already read.
-UploadSourceLoader pickedFileSource(PickedMediaFile picked) => () async =>
-    UploadSource(
+UploadSourceLoader pickedFileSource(PickedMediaFile picked) =>
+    () async => UploadSource(
       fileName: picked.fileName,
       contentType: picked.contentType,
       sizeBytes: picked.sizeBytes,

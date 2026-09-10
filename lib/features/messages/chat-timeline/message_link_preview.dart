@@ -42,7 +42,8 @@ String? messageLinkPreviewUrl({
 bool isBigImagePreview(LinkPreviewData preview) {
   final width = preview.imageWidth;
   final height = preview.imageHeight;
-  if (preview.imagePath == null || width == null || height == null) return false;
+  if (preview.imagePath == null || width == null || height == null)
+    return false;
   return width >= SignalBubbleMetrics.mediaMinWidthSolo && width > height;
 }
 
@@ -164,7 +165,11 @@ class MessageLinkPreviewCard extends StatelessWidget {
                 // rather than a target.
                 maxLines: 15,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 13, height: 1.3, color: colors.muted),
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.3,
+                  color: colors.muted,
+                ),
               ),
             ],
             const SizedBox(height: 2),

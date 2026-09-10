@@ -88,7 +88,7 @@ extension MessageVaultLink on MessageVault {
     );
     _identity = _identityFromJwk(privateJwk);
     _publicJwk = Map<String, dynamic>.from(vault['public_key'] as Map);
-    _keys.clear();
+    _clearKeyMemory();
     await _saveTrustedIdentity(privateJwk, _publicJwk!);
     if (vault['wrapped_private_key'] != null) {
       try {

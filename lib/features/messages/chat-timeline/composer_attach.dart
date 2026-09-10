@@ -62,12 +62,24 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
 
   if (requested == ComposerAttachKind.camera) {
     await _settle();
-    await _uploadPicked(ref, conversationId, await pickLiveCameraFile(), onAdded, onFailed);
+    await _uploadPicked(
+      ref,
+      conversationId,
+      await pickLiveCameraFile(),
+      onAdded,
+      onFailed,
+    );
     return const ComposerAttachResult();
   }
   if (requested == ComposerAttachKind.file) {
     await _settle();
-    await _uploadPicked(ref, conversationId, await pickDeviceFile(), onAdded, onFailed);
+    await _uploadPicked(
+      ref,
+      conversationId,
+      await pickDeviceFile(),
+      onAdded,
+      onFailed,
+    );
     return const ComposerAttachResult();
   }
   if (!context.mounted) return const ComposerAttachResult();
@@ -87,7 +99,13 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
       );
     case MediaSheetAction.files:
       await _settle();
-      await _uploadPicked(ref, conversationId, await pickDeviceFile(), onAdded, onFailed);
+      await _uploadPicked(
+        ref,
+        conversationId,
+        await pickDeviceFile(),
+        onAdded,
+        onFailed,
+      );
     case MediaSheetAction.picked:
       await uploadAttachments(
         ref,

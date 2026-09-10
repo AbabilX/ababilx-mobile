@@ -128,7 +128,11 @@ class _Body extends ConsumerWidget {
           const SizedBox(height: 24),
           FilledButton(
             onPressed: () async {
-              await acknowledgeSafetyNumber(ref, peerUserId, info.peerFingerprint);
+              await acknowledgeSafetyNumber(
+                ref,
+                peerUserId,
+                info.peerFingerprint,
+              );
               if (context.mounted) Navigator.of(context).maybePop();
             },
             child: Text('I compared them — this is $peerName'),

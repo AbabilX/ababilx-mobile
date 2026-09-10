@@ -29,8 +29,7 @@ final class ChatTimelineMessage extends ChatTimelineItem {
 /// Same-day consecutive [voice_call] / [group_call] rows (≥2) fold into one
 /// disclosure. A day break or any other message type ends the run.
 final class ChatTimelineCallEvents extends ChatTimelineItem {
-  const ChatTimelineCallEvents(this.messages)
-    : assert(messages.length >= 2);
+  const ChatTimelineCallEvents(this.messages) : assert(messages.length >= 2);
 
   final List<ChatMessage> messages;
 

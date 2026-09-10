@@ -144,7 +144,11 @@ class MessageBubbleContent extends StatelessWidget {
               SignalBubbleMetrics.horizontalPadding,
               0,
             ),
-            child: MessageQuoteBlock(quote: quote, colors: colors, isOwn: isOwn),
+            child: MessageQuoteBlock(
+              quote: quote,
+              colors: colors,
+              isOwn: isOwn,
+            ),
           ),
         if (big) MessageLinkPreviewImage(preview: preview, colors: colors),
         MessageLinkPreviewCard(

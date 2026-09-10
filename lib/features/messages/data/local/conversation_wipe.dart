@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../attachments/storage/storage_providers.dart';
 import 'chat_sidebar_cache.dart' show chatLocalDbProvider;
+import 'chat_key_cache.dart';
 import 'chat_message_store.dart';
 import 'chat_outbox_cache.dart';
 
@@ -24,6 +25,9 @@ Future<void> wipeConversationLocally(Ref ref, String conversationId) async {
     await ChatOutboxCache(
       ref.read(chatLocalDbProvider),
     ).removeConversation(conversationId);
+  } catch (_) {}
+  try {
+    await ref.read(chatKeyCacheProvider).clearConversation(conversationId);
   } catch (_) {}
   try {
     await ref.read(storageManagerProvider).purgeConversation(conversationId);

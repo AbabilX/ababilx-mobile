@@ -16,13 +16,14 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
     bool? muted,
     bool? pinned,
     String? name,
+    ChatMessage? lastMessage,
   }) {
     final next = list.map((c) {
       if (c.id != id) return c;
       var unread = c.unreadCount;
       if (unreadCount != null) unread = unreadCount;
       if (bumpUnread) unread = c.unreadCount + 1;
-      return c.copyWith(
+      final patched = c.copyWith(
         unreadCount: unread,
         lastMessageAt: lastMessageAt,
         lastMessageBody: lastMessageBody,
@@ -35,6 +36,10 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
         pinned: pinned ?? c.pinned,
         name: name,
       );
+      // The row's ciphertext must describe the message its text came from.
+      return lastMessage == null
+          ? patched
+          : withLastMessageCipher(patched, lastMessage);
     }).toList();
     return list.any((c) => c.isDm) ? sortDms(next) : sortChannels(next);
   }
@@ -61,6 +66,7 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
         lastMessageAttachments: atts,
         clearLastMessageAttachment: atts.isEmpty,
         bumpUnread: bumpUnread,
+        lastMessage: msg,
       ),
       channels: patchList(
         state.channels,
@@ -73,6 +79,7 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
         lastMessageAttachments: atts,
         clearLastMessageAttachment: atts.isEmpty,
         bumpUnread: bumpUnread,
+        lastMessage: msg,
       ),
     );
   }

@@ -286,16 +286,9 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     });
     wsReconnectSub = ws.reconnects.listen((_) {
       state = state.copyWith(wsConnected: true);
-      unawaited(fetchSidebarSilent());
-      final active = state.activeConversationId;
-      if (active != null) {
-        unawaited(loadFeed(active, force: true));
-        final thread = state.threadRootId;
-        if (thread != null) {
-          unawaited(loadFeed(active, threadRootId: thread, force: true));
-        }
-      }
-      unawaited((this as _ChatActionsMixin).retryPendingMessages());
+      // A reconnect means there was a gap, whatever opened it. The same catch-up
+      // runs when the app returns to the foreground — see `_ChatResyncMixin`.
+      (this as _ChatResyncMixin).resyncNow();
     });
     wsDisconnectSub = ws.disconnects.listen((_) {
       state = state.copyWith(wsConnected: false);

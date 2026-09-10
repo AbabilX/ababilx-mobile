@@ -48,7 +48,9 @@ class DetailsDangerActions extends ConsumerWidget {
             onTap: () => _confirm(
               context,
               ref,
-              title: conversation.isSelf ? 'Delete your notes?' : 'Delete chat?',
+              title: conversation.isSelf
+                  ? 'Delete your notes?'
+                  : 'Delete chat?',
               body: conversation.isSelf
                   ? 'Every note and file you saved here is deleted from this '
                         'device and from your account. Nobody else ever had a '
@@ -84,8 +86,7 @@ class DetailsDangerActions extends ConsumerWidget {
         // Report sits with the other red rows but ends nothing: filing one
         // leaves the conversation exactly as it was unless the person also
         // chose to block. There is nobody to report in a note to self.
-        if (!conversation.isSelf)
-          DetailsReportTile(conversation: conversation),
+        if (!conversation.isSelf) DetailsReportTile(conversation: conversation),
         if (group && GroupPermissions.of(ref, conversation).canManage)
           DetailsTile(
             icon: const Icon(Icons.delete_forever_outlined),

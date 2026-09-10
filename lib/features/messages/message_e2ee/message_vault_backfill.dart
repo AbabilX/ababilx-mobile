@@ -27,10 +27,13 @@ extension MessageVaultBackfill on MessageVault {
       for (final raw in gaps) {
         final gap = Map<String, dynamic>.from(raw as Map);
         final version = (gap['key_version'] as num).toInt();
-        final key = await _unwrapKey(
-          Map<String, dynamic>.from(gap['envelope'] as Map),
-          self,
-        );
+        final envelope = Map<String, dynamic>.from(gap['envelope'] as Map);
+        final key = await _unwrapKey(envelope, self);
+        // A gap carries THIS device's envelope for an older version — the one
+        // place a retired key is handed back. `GET .../e2ee-key` never returns
+        // it, so caching it here is what makes messages from before a rotation
+        // readable offline afterwards.
+        await _cacheEnvelope(conversationId, version, envelope);
         for (final userId in (gap['user_ids'] as List? ?? const [])) {
           final id = userId.toString();
           final result = await _repo.getE2eePublicKey(id);

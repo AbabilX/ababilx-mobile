@@ -81,14 +81,13 @@ extension MessageVaultKeys on MessageVault {
       conversationId,
       envelopes,
     );
+    final envelope = Map<String, dynamic>.from(saved['envelope'] as Map);
     final entry = _DmKey(
       version: (saved['key_version'] as num).toInt(),
-      key: await _unwrapKey(
-        Map<String, dynamic>.from(saved['envelope'] as Map),
-        self,
-      ),
+      key: await _unwrapKey(envelope, self),
     );
     _keys[conversationId] = entry;
+    await _cacheEnvelope(conversationId, entry.version, envelope);
     return entry;
   }
 
@@ -129,17 +128,20 @@ extension MessageVaultKeys on MessageVault {
     // unwrapping is pure computation, so this is a corrupt or hostile row, not
     // a network blip. Reporting "no key" lets the next send mint a fresh
     // version instead of leaving the conversation unable to send at all.
+    final envelope = Map<String, dynamic>.from(key['envelope'] as Map);
     final SecretKey opened;
     try {
-      opened = await _unwrapKey(
-        Map<String, dynamic>.from(key['envelope'] as Map),
-        self,
-      );
+      opened = await _unwrapKey(envelope, self);
     } catch (_) {
       return null;
     }
+    final version = (key['key_version'] as num).toInt();
+    // Filed away before the staleness verdict below, which can involve another
+    // round trip: the envelope is good either way, and a key that reached this
+    // device once should never need the network to be read again.
+    await _cacheEnvelope(conversationId, version, envelope);
     final entry = _DmKey(
-      version: (key['key_version'] as num).toInt(),
+      version: version,
       key: opened,
       // Hand the surviving key to anyone who lost theirs BEFORE deciding this
       // key is stale: a filled gap restores their history and leaves nothing

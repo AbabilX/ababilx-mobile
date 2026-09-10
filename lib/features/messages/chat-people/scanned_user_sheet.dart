@@ -34,9 +34,9 @@ class ScannedUserSheet {
 
     ChatUserSummary? user;
     try {
-      user = await ref.read(chatRepositoryProvider).lookupUserByUsername(
-        username,
-      );
+      user = await ref
+          .read(chatRepositoryProvider)
+          .lookupUserByUsername(username);
     } catch (_) {
       if (context.mounted) {
         showAppToast(context, 'Could not look that code up.', isError: true);

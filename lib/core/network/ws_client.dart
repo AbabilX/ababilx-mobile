@@ -2,11 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../constants/api_constants.dart';
 import '../storage/secure_storage.dart';
 import 'api_client.dart';
+
+part 'ws_client_revive.dart';
 
 typedef WsEventHandler = void Function(Map<String, dynamic> event);
 typedef WsReconnectHandler = void Function();
@@ -23,6 +26,12 @@ class WsClient {
   Timer? _reconnectTimer;
   bool _closed = false;
   bool _connecting = false;
+
+  /// Whether anything has ever asked for this socket. [WsClientRevive.kick]
+  /// revives an existing intent and must never invent one: a signed-out app
+  /// that gets kicked would start a retry loop against an endpoint it has no
+  /// token for.
+  bool _started = false;
   bool _connected = false;
   int _backoffMs = 1000;
   final _events = StreamController<Map<String, dynamic>>.broadcast();
@@ -32,6 +41,16 @@ class WsClient {
   static const _minBackoffMs = 1000;
   static const _maxBackoffMs = 30000;
 
+  /// Signal's keepalive, expressed as one property.
+  ///
+  /// `dart:io` pings on this interval and closes the socket when the pong does
+  /// not come back inside it, which is the only thing that turns a radio that
+  /// died under us into an `onDone` this client can reconnect from. Signal
+  /// sends its own every 30s under a read timeout ten seconds longer
+  /// (`OkHttpWebSocketConnection.KEEPALIVE_FREQUENCY_SECONDS`).
+  static const _pingInterval = Duration(seconds: 30);
+  static const _connectTimeout = Duration(seconds: 15);
+
   Stream<Map<String, dynamic>> get events => _events.stream;
   Stream<void> get reconnects => _reconnects.stream;
   Stream<void> get disconnects => _disconnects.stream;
@@ -39,6 +58,7 @@ class WsClient {
 
   Future<void> connect() async {
     _closed = false;
+    _started = true;
     if (_connected || _connecting) return;
     await _connectOnce();
   }
@@ -102,9 +122,11 @@ class WsClient {
     _channel?.sink.close();
 
     try {
-      final channel = WebSocketChannel.connect(
+      final channel = IOWebSocketChannel.connect(
         Uri.parse(ApiConstants.notificationsWsUrl),
         protocols: [ApiConstants.wsAuthSubprotocol, token],
+        pingInterval: _pingInterval,
+        connectTimeout: _connectTimeout,
       );
       _channel = channel;
       await channel.ready;

@@ -123,10 +123,7 @@ class MessageList extends ConsumerWidget {
     required Map<String, int> idIndex,
   }) {
     if (message.isVoiceCall) {
-      return VoiceCallEventRow(
-        message: message,
-        currentUserId: currentUserId,
-      );
+      return VoiceCallEventRow(message: message, currentUserId: currentUserId);
     }
     if (message.isGroupCall) {
       return GroupCallEventRow(message: message);
@@ -150,7 +147,6 @@ class MessageList extends ConsumerWidget {
 bool _itemContainsMessageId(ChatTimelineItem item, String id) {
   return switch (item) {
     ChatTimelineMessage(:final message) => message.id == id,
-    ChatTimelineCallEvents(:final messages) =>
-      messages.any((m) => m.id == id),
+    ChatTimelineCallEvents(:final messages) => messages.any((m) => m.id == id),
   };
 }

@@ -104,7 +104,11 @@ class ChatWallpaperPaint extends StatelessWidget {
 /// painted a preset by its own rules would drift from the chat it is
 /// promising, which is the one thing a swatch has to get right.
 class ChatWallpaperPresetPaint extends StatelessWidget {
-  const ChatWallpaperPresetPaint({super.key, required this.id, this.opacity = 1});
+  const ChatWallpaperPresetPaint({
+    super.key,
+    required this.id,
+    this.opacity = 1,
+  });
 
   final String id;
 

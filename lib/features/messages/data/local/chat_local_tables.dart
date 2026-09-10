@@ -62,3 +62,31 @@ class PendingOutboxMessages extends Table {
   @override
   Set<Column<Object>> get primaryKey => {clientRef};
 }
+
+/// One row per conversation key version this device has been handed (V7).
+///
+/// What is stored is the SEALED envelope — byte-for-byte the ciphertext the
+/// server hands out, openable only by this device's identity private key,
+/// which lives in the OS keystore. So this table puts nothing readable on
+/// disk: without the identity it is the same opaque blob the server holds.
+///
+/// It exists because the conversation key lived in memory alone. Every cold
+/// start therefore had to reach the network before a single message could be
+/// read, and with no network every message in every chat rendered as "Unable
+/// to decrypt this message" — over history the device already had sitting in
+/// [CachedMessages]. Signal decrypts once on receipt and stores the plaintext;
+/// we keep ciphertext at rest and store the KEY instead, which gets to the
+/// same place without putting message text on disk.
+///
+/// Keyed by version as well as conversation, deliberately: `GET .../e2ee-key`
+/// only ever returns the newest envelope, so once a conversation rotates, a
+/// message sealed under the retired version is readable here and nowhere else.
+class CachedConversationKeys extends Table {
+  TextColumn get conversationId => text()();
+  IntColumn get keyVersion => integer()();
+  TextColumn get envelopeJson => text()();
+  IntColumn get updatedAtMs => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {conversationId, keyVersion};
+}

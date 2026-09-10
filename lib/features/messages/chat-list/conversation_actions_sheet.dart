@@ -51,8 +51,7 @@ Future<ConversationAction?> showConversationActionsSheet(
 }
 
 List<Widget> _tiles(BuildContext context, ChatConversation conversation) {
-  void choose(ConversationAction action) =>
-      Navigator.of(context).pop(action);
+  void choose(ConversationAction action) => Navigator.of(context).pop(action);
   final pinned = conversation.pinned;
   final muted = conversation.muted;
   final isGroup = conversation.isGroupConversation;
@@ -61,14 +60,16 @@ List<Widget> _tiles(BuildContext context, ChatConversation conversation) {
     _ActionTile(
       icon: pinned ? HugeIcons.strokeRoundedPinOff : HugeIcons.strokeRoundedPin,
       label: pinned ? 'Unpin chat' : 'Pin chat',
-      onTap: () => choose(pinned ? ConversationAction.unpin : ConversationAction.pin),
+      onTap: () =>
+          choose(pinned ? ConversationAction.unpin : ConversationAction.pin),
     ),
     _ActionTile(
       icon: muted
           ? HugeIcons.strokeRoundedNotification01
           : HugeIcons.strokeRoundedNotificationOff01,
       label: muted ? 'Unmute notifications' : 'Mute notifications',
-      onTap: () => choose(muted ? ConversationAction.unmute : ConversationAction.mute),
+      onTap: () =>
+          choose(muted ? ConversationAction.unmute : ConversationAction.mute),
     ),
     if (conversation.unreadCount > 0)
       _ActionTile(

@@ -29,6 +29,7 @@ import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
 import '../message_e2ee/dm_key_rotation.dart';
 import '../message_e2ee/message_vault.dart';
+import '../message_e2ee/sidebar_preview.dart';
 import '../message_e2ee/vault_placeholder.dart';
 import 'chat_access_provider.dart';
 import 'chat_state.dart';
@@ -47,6 +48,8 @@ part 'chat_provider_cache.dart';
 part 'chat_provider_outbox.dart';
 part 'chat_provider_thread_prefetch.dart';
 part 'chat_provider_history_restore.dart';
+part 'chat_provider_resync.dart';
+part 'chat_provider_preview.dart';
 
 class ChatNotifier extends Notifier<ChatState>
     with
@@ -61,7 +64,9 @@ class ChatNotifier extends Notifier<ChatState>
         _ChatCacheMixin,
         _ChatOutboxMixin,
         _ChatThreadPrefetchMixin,
-        _ChatHistoryRestoreMixin {
+        _ChatHistoryRestoreMixin,
+        _ChatResyncMixin,
+        _ChatPreviewMixin {
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
   WsClient get _ws => ref.read(wsClientProvider);
   bool _realtimeStarted = false;
@@ -158,6 +163,10 @@ class ChatNotifier extends Notifier<ChatState>
     try {
       await hydrateOutboxMessages();
     } catch (_) {}
+    // Rows painted from disk are ciphertext-only. Open them now, from this
+    // device's own identity and stored key envelopes, so the list reads before
+    // any request — and offline, where no request ever answers.
+    unawaited(openCachedPreviews());
 
     // Only now is the app allowed to touch the network: resolve/verify the
     // real user id, restore the E2EE vault, refresh the sidebar.
@@ -263,7 +272,8 @@ class ChatNotifier extends Notifier<ChatState>
       // Dio's full connect+receive timeout — cached rows (if any) stay on
       // screen either way since this only ever clears sidebarLoading, never
       // the dms/channels lists, on failure.
-      await syncChatDeletions(ref, await ensureCurrentUserId());
+      final userId = await ensureCurrentUserId();
+      await syncChatDeletions(ref, userId);
       state = state.copyWith(
         feeds: {
           for (final e in state.feeds.entries)
@@ -280,8 +290,11 @@ class ChatNotifier extends Notifier<ChatState>
       final data = await _repo.listConversations().timeout(
         firstLoadNetworkTimeout,
       );
-      final dms = sortDms(await _decryptDmPreviews(data.dms));
-      final channels = sortChannels(data.channels);
+      // Groups are sealed exactly like DMs, so both lists are opened.
+      final dms = sortDms(await decryptPreviews(data.dms, userId));
+      final channels = sortChannels(
+        await decryptPreviews(data.channels, userId),
+      );
       final active = state.activeConversationId;
       final known =
           active != null &&
@@ -330,38 +343,6 @@ class ChatNotifier extends Notifier<ChatState>
     state = state.copyWith(
       dms: patchList(state.dms, conversationId, unreadCount: 0),
       channels: patchList(state.channels, conversationId, unreadCount: 0),
-    );
-  }
-
-  Future<List<ChatConversation>> _decryptDmPreviews(
-    List<ChatConversation> dms,
-  ) async {
-    final userId = await ensureCurrentUserId();
-    return Future.wait(
-      dms.map((dm) async {
-        if (dm.lastMessageEncryptionVersion != 1 ||
-            dm.lastMessageEncryptedBody == null ||
-            dm.lastMessageUserId == null) {
-          return dm;
-        }
-        final preview = await ref
-            .read(messageVaultProvider)
-            .decryptMessage(
-              ChatMessage(
-                id: 'sidebar-${dm.id}',
-                conversationId: dm.id,
-                userId: dm.lastMessageUserId!,
-                body: dm.lastMessageBody ?? '',
-                createdAt: dm.lastMessageAt ?? '',
-                encryptedBody: dm.lastMessageEncryptedBody,
-                encryptionNonce: dm.lastMessageEncryptionNonce,
-                encryptionVersion: dm.lastMessageEncryptionVersion,
-                encryptionKeyVersion: dm.lastMessageEncryptionKeyVersion,
-              ),
-              userId,
-            );
-        return dm.copyWith(lastMessageBody: preview.body);
-      }),
     );
   }
 }

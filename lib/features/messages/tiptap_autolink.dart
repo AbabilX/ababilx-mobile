@@ -37,21 +37,20 @@ final _softTrailRe = RegExp(r'[.,;:!?]+$');
 
 /// Phone-shaped run: optional + / 00, then digits with common separators.
 /// Validated after the match so invoice IDs and years do not light up.
-final _phoneRe = RegExp(
-  r'(?<![\w])(?:\+|00)?\(?\d[\d\s().\-]{6,20}\d(?![\w])',
-);
+final _phoneRe = RegExp(r'(?<![\w])(?:\+|00)?\(?\d[\d\s().\-]{6,20}\d(?![\w])');
 
 List<AutolinkHit> detectAutolinks(String text) {
   if (text.isEmpty) return const [];
-  final candidates = <AutolinkHit>[
-    ..._scanUrls(text),
-    ..._scanEmails(text),
-    ..._scanPhones(text),
-  ]..sort((a, b) {
-    final byStart = a.start.compareTo(b.start);
-    if (byStart != 0) return byStart;
-    return b.end.compareTo(a.end);
-  });
+  final candidates =
+      <AutolinkHit>[
+        ..._scanUrls(text),
+        ..._scanEmails(text),
+        ..._scanPhones(text),
+      ]..sort((a, b) {
+        final byStart = a.start.compareTo(b.start);
+        if (byStart != 0) return byStart;
+        return b.end.compareTo(a.end);
+      });
 
   final hits = <AutolinkHit>[];
   var cursor = 0;

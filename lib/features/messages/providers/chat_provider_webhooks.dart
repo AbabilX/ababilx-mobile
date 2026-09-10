@@ -78,7 +78,11 @@ mixin _ChatWebhooksMixin
     String url, {
     required bool personal,
   }) async {
-    final saved = await repo.saveWebhookAvatar(feed.id, url, personal: personal);
+    final saved = await repo.saveWebhookAvatar(
+      feed.id,
+      url,
+      personal: personal,
+    );
     if (!isDisposed) {
       final current = state.conversationById(feed.id) ?? feed;
       upsertChannel(current.copyWith(avatarUrl: saved));

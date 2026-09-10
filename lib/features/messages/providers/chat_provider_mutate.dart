@@ -26,7 +26,8 @@ mixin _ChatMutateMixin
     // refuses ('encrypted messages require an encrypted edit').
     final existing = _findEditableMessage(convId, messageId);
     final secure =
-        (conversation?.isEncrypted ?? false) && (existing?.isEncrypted ?? false);
+        (conversation?.isEncrypted ?? false) &&
+        (existing?.isEncrypted ?? false);
     EncryptedDmPayload? encrypted;
     if (secure && body.isNotEmpty) {
       encrypted = await ref

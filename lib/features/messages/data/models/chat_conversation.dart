@@ -296,6 +296,14 @@ class ChatConversation extends Equatable {
     String? lastMessageAttachmentName,
     List<ChatLastAttachment>? lastMessageAttachments,
     bool clearLastMessageAttachment = false,
+    String? lastMessageEncryptedBody,
+    String? lastMessageEncryptionNonce,
+    int? lastMessageEncryptionVersion,
+    int? lastMessageEncryptionKeyVersion,
+    // A plaintext last message has no ciphertext, and `null` above means
+    // "keep": without this a sealed row could never say its newest message
+    // is not sealed.
+    bool clearLastMessageEncryption = false,
     bool? muted,
     bool? pinned,
     String? name,
@@ -330,10 +338,19 @@ class ChatConversation extends Equatable {
     lastMessageAttachments: clearLastMessageAttachment
         ? const []
         : (lastMessageAttachments ?? this.lastMessageAttachments),
-    lastMessageEncryptedBody: lastMessageEncryptedBody,
-    lastMessageEncryptionNonce: lastMessageEncryptionNonce,
-    lastMessageEncryptionVersion: lastMessageEncryptionVersion,
-    lastMessageEncryptionKeyVersion: lastMessageEncryptionKeyVersion,
+    lastMessageEncryptedBody: clearLastMessageEncryption
+        ? null
+        : (lastMessageEncryptedBody ?? this.lastMessageEncryptedBody),
+    lastMessageEncryptionNonce: clearLastMessageEncryption
+        ? null
+        : (lastMessageEncryptionNonce ?? this.lastMessageEncryptionNonce),
+    lastMessageEncryptionVersion: clearLastMessageEncryption
+        ? null
+        : (lastMessageEncryptionVersion ?? this.lastMessageEncryptionVersion),
+    lastMessageEncryptionKeyVersion: clearLastMessageEncryption
+        ? null
+        : (lastMessageEncryptionKeyVersion ??
+              this.lastMessageEncryptionKeyVersion),
     peerUserId: peerUserId,
     peerUserName: peerUserName,
     peerUserAvatar: peerUserAvatar,

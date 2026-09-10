@@ -35,7 +35,11 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
         .restoreTrustedIdentityOffline();
     if (!mounted) return;
     if (unlocked) {
-      unawaited(ref.read(chatProvider.notifier).fetchSidebar(silent: true));
+      final chat = ref.read(chatProvider.notifier);
+      // The fetch reopens previews only if it reaches the server; the rows
+      // already on screen are reopened from this device either way.
+      unawaited(chat.decryptSidebarPreviews());
+      unawaited(chat.fetchSidebar(silent: true));
     }
     setState(() => _vaultUnlocked = unlocked);
     if (!unlocked) _openUnlockSheet();
@@ -47,7 +51,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     await showMessageVaultRecoverySheet(
       context: context,
       onUnlocked: () {
-        if (mounted) setState(() => _vaultUnlocked = true);
+        if (!mounted) return;
+        unawaited(ref.read(chatProvider.notifier).decryptSidebarPreviews());
+        setState(() => _vaultUnlocked = true);
       },
     );
     _vaultSheetOpen = false;
@@ -59,9 +65,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     // no network gate, no E2EE gate. Chat is not a workspace feature any more,
     // so a user with no workspace gets the same header, search and composer;
     // the list under them is simply empty until they connect with someone.
-    // DM previews already carry a safe "Encrypted message" placeholder until
-    // the vault is unlocked, and the vault only gates an individual DM's
-    // content, in ConversationScreen.
+    // Sealed previews (DMs and groups) carry a safe "Encrypted message"
+    // placeholder until the vault is unlocked, and the vault only gates an
+    // individual chat's content, in ConversationScreen.
     return _MessagesBody(
       vaultUnlocked: _vaultUnlocked,
       onUnlockTap: _openUnlockSheet,

@@ -786,3 +786,178 @@ team role — are not on the conversation. `GroupPermissions.of(ref, conv)` in
 a build, `.read(ref, conv)` in a callback; `canManage` / `canEditInfo` /
 `canAddMembers` mirror `services/chat/access*.go` branch for branch. The edit
 sheet turns `not_conversation_manager` into one sentence.
+
+# Offline reading: the KEY is cached, not the plaintext
+
+Fixed 2026-09-10, from a device report — with no connection, every message in
+every chat drew **"Unable to decrypt this message"**: DMs, personal groups,
+Note to Self, and the quoted preview above a reply. The history was on the
+phone the whole time. Two independent bugs, and each hid the other.
+
+```
+BEFORE   identity  -> secure storage   (offline: fine)
+         messages  -> SQLite/SQLCipher (offline: fine)
+         conv key  -> memory only      (offline: GONE, and it opens both)
+```
+
+## 1. The conversation key had nowhere to live
+
+`MessageVault._keys` was an in-memory map, so the first message after a cold
+start had to reach `GET .../e2ee-key` before it could be read. With no network
+that call throws, `decryptMessage`'s catch turns any throw into the placeholder,
+and every bubble on screen renders the same string.
+
+`CachedConversationKeys` (drift, schema **V7**) + `data/local/chat_key_cache.dart`
+store the **sealed envelope** — byte-for-byte the ciphertext the server hands
+out, openable only by the identity private key in the OS keystore. So the
+"ciphertext only at rest" rule is intact: this adds nothing readable to the
+disk, it moves the *key* to where the messages already are.
+
+**This is deliberately not what Signal does.** Signal decrypts once on receipt
+and writes the plaintext into its SQLCipher database, which is why its chats
+have always read offline. We have the same primitive (`ChatDatabaseSecret.kt`),
+but only on Android — iOS is plain drift — so storing plaintext would have been
+a real regression on one platform to fix a bug on both. Caching the key reaches
+the same place, on both, with strictly less at rest.
+
+- **Rows are keyed by `(conversationId, keyVersion)`, and that is not tidiness.**
+  `GET .../e2ee-key` only ever returns the NEWEST envelope, so once a
+  conversation rotates, a message sealed under the retired version is readable
+  from this cache and from nowhere else — offline *or* online. `_backfillKeys`
+  caches every `gaps` envelope for the same reason: a gap is the one place the
+  server hands back an older version.
+- **`_readKeys` is separate from `_keys` on purpose.** `_keys` is the key a SEND
+  seals with and must stay the newest the server knows; populating it from disk
+  would let a send seal under a retired version. Reading uses the version-keyed
+  map, and holds retired versions quite legitimately.
+- **`_readKey` consults staleness not at all.** `rekey_required` decides what
+  the next send may seal to; it has nothing to say about reading a message
+  written months ago. Every send path still goes through `_loadKey`, unchanged.
+- Order is memory → disk → network. Disk before network also means opening a
+  chat with a connection now costs **no request at all**, which the test pins.
+- Wiped on sign-out, on Start fresh (every envelope is sealed to an identity
+  that no longer exists) and with a deleted conversation.
+
+## 2. Being offline was tearing down a valid identity
+
+`restoreTrustedIdentity` wrapped everything in one `try`, including its
+`GET .../e2ee/vault` staleness check, and its catch called `lock()`. So an
+offline launch discarded an identity sitting in this device's own keystore and
+perfectly current. `ensureReady` calls it on every bootstrap, after
+`MessagesScreen` had already restored offline — so the app unlocked itself and
+then locked itself again, seconds later, for no reason but a failed request.
+
+**An unreachable server is not a wrong key.** The check is advisory and can only
+be trusted when the server actually answers; a failed call now falls through to
+the local identity. A real answer saying the public key moved still locks and
+deletes, because that copy genuinely is dead. It lives in
+`message_vault_restore.dart`.
+
+Pinned by `test/features/messages/offline_message_decrypt_test.dart` — a message
+written online, then a fresh `MessageVault` against an unplugged repository.
+
+**Still online-only, and fine:** the FCM background isolate builds its vault by
+hand and passes no cache (`_keyCache` is optional for exactly that), so a push
+still fetches the key. A push arrives over the network anyway.
+
+# The socket died and nobody noticed
+
+Reported as "I sent messages from the web, and on the phone I have to pull to
+refresh to see them — both sides are online, this should be realtime." It is,
+and the events were being delivered on time. To a socket nobody was holding.
+
+```
+radio changes / phone sleeps / server gives up writing
+  -> TCP connection is dead
+  -> nothing closes on THIS end: no FIN can reach a phone with no route back
+  -> stream never ends, onDone never fires, _connected stays true
+  -> WsClient reconnects never, because as far as it knows it is connected
+```
+
+Pull-to-refresh worked for the reason that makes this so easy to misread: HTTP
+opens its own connection, every time. The socket beside it had been scrap since
+the screen went off.
+
+**Nothing on this side was ever asking.** `initRealtime()` ran once at bootstrap
+and that was the whole of it — no keepalive, no lifecycle hook, no connectivity
+listener. The server does its half correctly (ping every 54 s, `pongWait` 60 s,
+`writeWait` 10 s), so it drops a phone that has gone quiet and moves on; the
+phone is the one left believing.
+
+Signal's three answers, all ported:
+
+- **A keepalive, which is one property here.** `IOWebSocketChannel.connect` takes
+  `pingInterval`; `dart:io` then pings on it and closes the socket when the pong
+  does not come back inside it. That is the only thing that turns a dead radio
+  into an `onDone` this client can act on. 30 s, which is
+  `OkHttpWebSocketConnection.KEEPALIVE_FREQUENCY_SECONDS`. **It must be
+  `IOWebSocketChannel`, not `WebSocketChannel.connect`** — the platform-agnostic
+  constructor takes no `pingInterval`, which is how it went missing.
+- **Foreground reconnects immediately** (`WsLinkWatch`, mounted in `app.dart`
+  above `ChatStoreSync`). The keepalive finds a dead socket on its own inside a
+  minute, and a minute of a chat that does not move is the entire complaint.
+  Signal's `IncomingMessageObserver.onAppForegrounded` releases its connect
+  semaphore for the same reason.
+- **A connectivity change scraps the socket outright.** An interface swap kills
+  the connection without closing it, so the old socket is rubbish whether or not
+  a route exists now — `decideWsLinkAction` (pure, pinned by
+  `test/core/ws_link_decision_test.dart`) says `drop` when the network is gone
+  and `reconnect` when one is there. Signal's `NetworkConnectionListener`
+  disconnects on the same event.
+
+**Traps:**
+
+- **`kick()` revives an intent, it never invents one.** `WsClient._started` is
+  set by `connect()` alone, and `kick` returns early without it — otherwise a
+  resume on a signed-out app starts a retry loop against an endpoint it holds no
+  token for. This is why the watcher needs no auth import in `core/network`.
+- **Reconnecting is only half of catching up.** `resyncNow`
+  (`chat_provider_resync.dart`) re-reads the sidebar, the open conversation, its
+  thread and the outbox, and runs on **both** triggers: a socket that reconnected
+  has a gap by definition, and one that looked healthy the whole time may still
+  have been written to while the process was frozen. Signal does the same pair on
+  foreground — connect, then fetch. It no-ops before bootstrap, so a resume
+  during launch cannot race it.
+- **The socket is deliberately NOT dropped when the app backgrounds.** Tempting,
+  and it would make resume a clean cold path — but a 1:1 call in the background
+  (screen off, PiP) carries its ICE candidates on this same socket, and cutting
+  it would kill live calls to fix a chat refresh.
+- **Detection is still up to ~60 s** for an app sitting in the foreground when
+  the link dies, against Signal's ~40 s (it pairs a 30 s ping with a 40 s read
+  timeout; `dart:io` gives one knob, so worst case is two intervals). Foreground
+  and connectivity cover every case anyone reported; shorten the interval before
+  inventing an app-level keepalive frame.
+
+# Chat-list previews of sealed chats (2026-09-10)
+
+"Encrypted message" under a chat's name was two bugs, and both are gone:
+
+```
+group row    server sent the literal placeholder and NO ciphertext  -> nothing to open, ever
+cached row   written ciphertext-only, painted before the vault, and
+             only fetchSidebar ever opened a preview                -> offline, never opened
+```
+
+- **The group sidebar query now returns the four ciphertext columns**, from
+  the same `chatSidebarEncryptedPreviewSQL()` the DM query uses
+  (`ababilx-server/db/chat_sidebar_preview_sql.go`, pinned by
+  `chat_sidebar_preview_test.go`). Personal groups were sealed on 2026-09-05
+  and this query was never touched, so the placeholder WAS the preview.
+- **One rule for both lists**, `message_e2ee/sidebar_preview.dart` — the
+  mobile twin of web/desktop's `lib/chat-e2ee/sidebar-preview.ts`. Never test
+  `isDm` to decide whether a preview is sealed; test the row.
+- **Ciphertext at rest, text in memory.** Signal stores the decrypted snippet
+  in its encrypted database. We do not, so `previewForDisk` puts the
+  placeholder back on write, and `openCachedPreviews` (bootstrap, right after
+  the cached paint) restores the identity from secure storage and reopens the
+  rows from the stored key envelopes — no request needed.
+- **A preview that will not open keeps "Encrypted message"**, never "Unable to
+  decrypt this message". Down a whole list that reads as lost history.
+- **The row's ciphertext follows its newest message** (`withLastMessageCipher`
+  via `patchList(lastMessage:)`). A websocket message used to change the text
+  and leave the previous message's ciphertext behind, so any later preview
+  pass would have reopened the OLDER message over the newer one.
+  `previewStillCurrent` is the second guard: it only writes onto a row whose
+  ciphertext is unchanged and which still shows a placeholder.
+- Web and desktop now open `channels` as well as `dms`. Their offline sidebar
+  cache is unchanged (web blanks previews to "Message" on purpose).

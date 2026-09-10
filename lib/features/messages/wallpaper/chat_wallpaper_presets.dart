@@ -53,16 +53,12 @@ class ChatWallpaperPreset {
 /// None of them is a default: a chat with no stored choice paints no wallpaper
 /// at all, the same as before these existed.
 const List<ChatWallpaperPreset> chatWallpaperPresets = [
-  ChatWallpaperPreset(
-    chatWallpaperDewdropId,
-    [Color(0xFF9CC77E)],
-    asset: 'assets/images/wallpapers/dewdrop_field.jpg',
-  ),
-  ChatWallpaperPreset(
-    chatWallpaperRainyPaddyId,
-    [Color(0xFF4E6B4A)],
-    asset: 'assets/images/wallpapers/rainy_paddy.jpg',
-  ),
+  ChatWallpaperPreset(chatWallpaperDewdropId, [
+    Color(0xFF9CC77E),
+  ], asset: 'assets/images/wallpapers/dewdrop_field.jpg'),
+  ChatWallpaperPreset(chatWallpaperRainyPaddyId, [
+    Color(0xFF4E6B4A),
+  ], asset: 'assets/images/wallpapers/rainy_paddy.jpg'),
   ChatWallpaperPreset('slate', [Color(0xFF1F2430)]),
   ChatWallpaperPreset('ink', [Color(0xFF0F172A)]),
   ChatWallpaperPreset('sand', [Color(0xFFEFE7DA)]),

@@ -18,6 +18,7 @@ part 'chat_local_db.g.dart';
     PendingOutboxMessages,
     AttachmentBlobs,
     AttachmentRefs,
+    CachedConversationKeys,
   ],
 )
 class ChatLocalDb extends _$ChatLocalDb {
@@ -26,7 +27,7 @@ class ChatLocalDb extends _$ChatLocalDb {
   ChatLocalDb.forTesting(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,6 +81,13 @@ class ChatLocalDb extends _$ChatLocalDb {
           'CREATE INDEX IF NOT EXISTS idx_attachment_blobs_content_hash '
           'ON attachment_blobs (content_hash)',
         );
+      }
+      // V6 → V7: the conversation-key envelope cache. Additive, no backfill —
+      // there is nothing to carry forward, since the keys only ever existed in
+      // memory. Every conversation fills its row the next time it is opened
+      // with a connection, and offline reading works from then on.
+      if (from < 7) {
+        await m.createTable(cachedConversationKeys);
       }
     },
   );

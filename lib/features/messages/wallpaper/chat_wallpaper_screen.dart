@@ -100,9 +100,8 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
             value: wallpaper.drawOpacity,
             enabled: wallpaper.isSet,
             // Dragging only redraws; the write waits for the thumb to land.
-            onChanged: (value) => setState(
-              () => _draft = wallpaper.copyWith(opacity: value),
-            ),
+            onChanged: (value) =>
+                setState(() => _draft = wallpaper.copyWith(opacity: value)),
             onSettled: (value) => _apply(wallpaper.copyWith(opacity: value)),
           ),
           SwitchListTile(

@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/localization/app_translations.dart';
 
 class ComposerLocked extends ConsumerWidget {
-  const ComposerLocked({super.key, this.messageKey = 'chat_connection_required'});
+  const ComposerLocked({
+    super.key,
+    this.messageKey = 'chat_connection_required',
+  });
 
   /// Which locked copy to show. The default is the blocked-DM case; a webhook
   /// feed is locked for everyone by design, so telling its readers they

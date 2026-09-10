@@ -17,8 +17,35 @@ class ChatStoreSync extends ConsumerStatefulWidget {
   ConsumerState<ChatStoreSync> createState() => _ChatStoreSyncState();
 }
 
-class _ChatStoreSyncState extends ConsumerState<ChatStoreSync> {
+class _ChatStoreSyncState extends ConsumerState<ChatStoreSync>
+    with WidgetsBindingObserver {
   bool _booted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Coming back to the app is a catch-up, not just a reconnect.
+  ///
+  /// `WsLinkWatch` revives the socket; this re-reads what a gap in it hid. Both
+  /// are needed: a socket that reconnects has a gap by definition, and one that
+  /// looked healthy the whole time may still have been written to while the
+  /// process was frozen. Signal does the same pair on foreground — connect,
+  /// then fetch.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    // No-ops before bootstrap, so a resume during launch cannot race it.
+    ref.read(chatProvider.notifier).resyncNow();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -101,6 +101,7 @@ class ChatMessage extends Equatable {
     final trimmed = source.trim();
     return trimmed.isEmpty ? null : trimmed;
   }
+
   bool get isGroupCall => messageType == 'group_call';
   bool get isPending => sendStatus != MessageSendStatus.sent;
   bool get isEncrypted => encryptionVersion == 1 && encryptedBody != null;

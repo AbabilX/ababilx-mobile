@@ -38,10 +38,8 @@ class SafetyNumberBanner extends ConsumerWidget {
       child: InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => SafetyNumberScreen(
-              peerUserId: peerUserId,
-              peerName: peerName,
-            ),
+            builder: (_) =>
+                SafetyNumberScreen(peerUserId: peerUserId, peerName: peerName),
           ),
         ),
         child: Padding(

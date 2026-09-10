@@ -29,9 +29,9 @@ class LongMessageScreen extends StatelessWidget {
                 ClipboardData(text: tiptapToPlainText(body)),
               );
               if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Message copied')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Message copied')));
             },
           ),
         ],

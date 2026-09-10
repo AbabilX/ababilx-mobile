@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../core/storage/secure_storage.dart';
 import '../data/chat_repository.dart';
+import '../data/local/chat_key_cache.dart';
 import '../data/models/chat_message.dart';
 import '../data/models/chat_message_quote.dart';
 import 'p256_ecdh.dart';
@@ -17,9 +18,11 @@ part 'message_vault_decrypt.dart';
 part 'message_vault_envelope.dart';
 part 'message_vault_codec.dart';
 part 'message_vault_identity.dart';
+part 'message_vault_key_cache.dart';
 part 'message_vault_keys.dart';
 part 'message_vault_link.dart';
 part 'message_vault_recover.dart';
+part 'message_vault_restore.dart';
 part 'message_vault_reset.dart';
 
 /// What this device can do about secure messages right now.
@@ -44,11 +47,22 @@ class EncryptedDmPayload {
 }
 
 class MessageVault {
-  MessageVault(this._repo, this._storage);
+  MessageVault(this._repo, this._storage, [this._keyCache]);
   final ChatRepository _repo;
   final SecureStorage _storage;
+
+  /// Durable envelope cache. Optional so the FCM background isolate — which
+  /// builds a vault by hand and has no Riverpod container — keeps working
+  /// untouched; a push arrives over the network anyway, so it loses nothing.
+  final ChatKeyCache? _keyCache;
   final _aes = AesGcm.with256bits();
+  // The conversation's CURRENT key, for sending. Never populated from disk:
+  // a send must seal under the newest version the server knows about, and an
+  // old version restored from the cache would be sealed to a retired key.
   final _keys = <String, _DmKey>{};
+  // Keys for reading, keyed 'conversationId:version'. Separate from [_keys]
+  // for the reason above, and holds retired versions quite legitimately.
+  final _readKeys = <String, _DmKey>{};
   // One backfill attempt per conversation per session; a failure clears it.
   final _backfilled = <String>{};
   // A conversation with no readable key caches nothing, so a screenful of
@@ -137,11 +151,19 @@ class MessageVault {
       keyVersion: key.version,
     );
   }
+
+  /// Drops every key this process is holding in memory. Both maps go: an
+  /// identity change makes the read cache as meaningless as the send cache.
+  void _clearKeyMemory() {
+    _keys.clear();
+    _readKeys.clear();
+  }
 }
 
 final messageVaultProvider = Provider<MessageVault>(
   (ref) => MessageVault(
     ref.watch(chatRepositoryProvider),
     const SecureStorage(FlutterSecureStorage()),
+    ref.watch(chatKeyCacheProvider),
   ),
 );

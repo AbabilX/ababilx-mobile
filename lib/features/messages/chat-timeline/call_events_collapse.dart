@@ -31,11 +31,7 @@ class _CallEventsCollapseState extends State<CallEventsCollapse> {
     final chevron = AnimatedRotation(
       turns: _expanded ? 0.5 : 0,
       duration: const Duration(milliseconds: 180),
-      child: Icon(
-        Icons.expand_more_rounded,
-        size: 16,
-        color: colors.onSurface,
-      ),
+      child: Icon(Icons.expand_more_rounded, size: 16, color: colors.onSurface),
     );
 
     return Padding(
@@ -102,10 +98,7 @@ class _CallEventsCollapseState extends State<CallEventsCollapse> {
 }
 
 class _CallEventLine extends StatelessWidget {
-  const _CallEventLine({
-    required this.message,
-    required this.currentUserId,
-  });
+  const _CallEventLine({required this.message, required this.currentUserId});
 
   final ChatMessage message;
   final String currentUserId;
@@ -120,9 +113,7 @@ class _CallEventLine extends StatelessWidget {
       return _line(
         icon: Icons.headset_mic_outlined,
         color: colors.onSurfaceVariant,
-        text: time.isEmpty
-            ? 'Group call ended'
-            : 'Group call ended · $time',
+        text: time.isEmpty ? 'Group call ended' : 'Group call ended · $time',
         textTheme: textTheme,
       );
     }
@@ -157,10 +148,7 @@ class _CallEventLine extends StatelessWidget {
         Flexible(
           child: Text(
             text,
-            style: textTheme.bodySmall?.copyWith(
-              fontSize: 13,
-              color: color,
-            ),
+            style: textTheme.bodySmall?.copyWith(fontSize: 13, color: color),
           ),
         ),
       ],
