@@ -48,7 +48,7 @@ class BackgroundVoiceCallGate {
 
   static Future<VoiceCall> _lookup(String callId) async {
     const storage = SecureStorage(FlutterSecureStorage());
-    final api = VoiceCallApi(ApiClient(storage), independent: false);
+    final api = VoiceCallApi(ApiClient(storage));
     return (await api.get(callId)).call;
   }
 }

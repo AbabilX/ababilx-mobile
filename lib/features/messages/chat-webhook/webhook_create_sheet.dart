@@ -8,17 +8,12 @@ import '../../../shared/widgets/app_toast.dart';
 import '../chat-details/group_image_flow.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
-import '../providers/team_gate_provider.dart';
 import 'webhook_avatar_picker.dart';
-import 'webhook_scope_field.dart';
 import 'webhook_url_sheet.dart';
 
-/// Creates a one-way feed, in either scope.
-///
-/// A **personal** feed belongs to the account and needs no workspace at all; a
-/// **workspace** feed belongs to a team and every active member reads it. The
-/// choice is only offered to someone who actually has a workspace — for
-/// everyone else there is one answer and no question worth asking.
+/// Creates a one-way feed. It belongs to the account that makes it, starts
+/// with that person alone, and needs no workspace — since the server's
+/// migration 0145 there is no other kind to choose between.
 ///
 /// Returns the new conversation, or null if the user backed out. The secret
 /// URL is shown by this sheet before it pops — it exists for one response and
@@ -47,31 +42,7 @@ class _WebhookCreateSheet extends ConsumerStatefulWidget {
 class _WebhookCreateSheetState extends ConsumerState<_WebhookCreateSheet> {
   final _name = TextEditingController();
   Uint8List? _photo;
-  bool _isPrivate = false;
   bool _busy = false;
-
-  /// Null until the team gate answers. Personal is the floor: an account
-  /// without a workspace can still own a feed, so nothing here waits on a
-  /// team before it will let the sheet be used.
-  bool? _hasTeam;
-  bool _personal = true;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_resolveScope());
-  }
-
-  Future<void> _resolveScope() async {
-    final team = await ref.read(teamGateProvider.future);
-    if (!mounted) return;
-    setState(() {
-      _hasTeam = team?.hasTeam ?? false;
-      // A workspace feed is the more useful default where one exists: its
-      // members are already there to read it.
-      _personal = _hasTeam != true;
-    });
-  }
 
   @override
   void dispose() {
@@ -95,14 +66,6 @@ class _WebhookCreateSheetState extends ConsumerState<_WebhookCreateSheet> {
             'A group nobody can post into. Messages arrive over its URL.',
             style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
           ),
-          if (_hasTeam == true) ...[
-            const SizedBox(height: 14),
-            WebhookScopeField(
-              personal: _personal,
-              enabled: !_busy,
-              onChanged: (value) => setState(() => _personal = value),
-            ),
-          ],
           const SizedBox(height: 16),
           WebhookAvatarPicker(
             photo: _photo,
@@ -122,11 +85,12 @@ class _WebhookCreateSheetState extends ConsumerState<_WebhookCreateSheet> {
             onChanged: (_) => setState(() {}),
             onSubmitted: (_) => _create(),
           ),
-          WebhookReachField(
-            personal: _personal,
-            isPrivate: _isPrivate,
-            enabled: !_busy,
-            onPrivateChanged: (value) => setState(() => _isPrivate = value),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'Only you can read it until you add someone.',
+              style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+            ),
           ),
           const SizedBox(height: 12),
           FilledButton(
@@ -149,11 +113,7 @@ class _WebhookCreateSheetState extends ConsumerState<_WebhookCreateSheet> {
     setState(() => _busy = true);
     final chat = ref.read(chatProvider.notifier);
     try {
-      final result = await chat.createWebhookChannel(
-        name: name,
-        personal: _personal,
-        isPrivate: _isPrivate,
-      );
+      final result = await chat.createWebhookChannel(name: name);
       final conversation = result.conversation;
       // The picture is a second call and is allowed to fail on its own: the
       // feed and its URL already exist, and losing the URL to a failed avatar

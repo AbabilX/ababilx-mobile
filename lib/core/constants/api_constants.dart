@@ -187,19 +187,22 @@ class ApiConstants {
       '/api/messaging/history-transfers/deny';
 
   static const String chatDm = '/api/teams/chat/dm';
+  // Calls hang off `/api/chat/*` like the rest of chat: no call belongs to a
+  // workspace since the server's migration 0145. The team-prefixed twins stay
+  // registered server-side for builds that predate this.
   static String chatVoiceCalls(String conversationId) =>
-      '/api/teams/chat/conversations/$conversationId/calls';
-  static String chatVoiceCall(String callId) => '/api/teams/chat/calls/$callId';
+      '/api/chat/conversations/$conversationId/calls';
+  static String chatVoiceCall(String callId) => '/api/chat/calls/$callId';
   static String chatVoiceCallActions(String callId) =>
-      '/api/teams/chat/calls/$callId/actions';
+      '/api/chat/calls/$callId/actions';
   static String chatGroupCall(String conversationId) =>
-      '/api/teams/chat/conversations/$conversationId/group-call';
+      '/api/chat/conversations/$conversationId/group-call';
   static String chatGroupCallJoin(String conversationId) =>
-      '/api/teams/chat/conversations/$conversationId/group-call/join';
+      '/api/chat/conversations/$conversationId/group-call/join';
   static String chatGroupCallLeave(String callId) =>
-      '/api/teams/chat/group-calls/$callId/leave';
+      '/api/chat/group-calls/$callId/leave';
   static String chatGroupCallScreenShare(String callId) =>
-      '/api/teams/chat/group-calls/$callId/screen-share';
+      '/api/chat/group-calls/$callId/screen-share';
   static const String chatForward = '/api/teams/chat/forward';
   static String chatMessages(String conversationId) =>
       '/api/teams/chat/conversations/$conversationId/messages';

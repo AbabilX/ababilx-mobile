@@ -31,7 +31,6 @@ import '../message_e2ee/dm_key_rotation.dart';
 import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/sidebar_preview.dart';
 import '../message_e2ee/vault_placeholder.dart';
-import 'chat_access_provider.dart';
 import 'chat_state.dart';
 
 export 'chat_state.dart';
@@ -141,11 +140,6 @@ class ChatNotifier extends Notifier<ChatState>
       final id = next.valueOrNull?.id;
       if (id != null && id.isNotEmpty) {
         state = state.copyWith(currentUserId: id);
-      }
-      final wasIndependent = prev?.valueOrNull?.independentChat ?? false;
-      final isIndependent = next.valueOrNull?.independentChat ?? false;
-      if (!wasIndependent && isIndependent && _bootstrapped) {
-        unawaited(fetchSidebar(silent: true));
       }
     });
     final profile = ref.read(profileProvider).valueOrNull;

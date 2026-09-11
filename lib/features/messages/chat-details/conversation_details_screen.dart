@@ -73,7 +73,7 @@ class _ConversationDetailsScreenState
       );
     }
     final group = conversation.isGroupConversation;
-    final perms = GroupPermissions.of(ref, conversation);
+    final perms = GroupPermissions(conversation);
     final hasBanner = (conversation.headerBannerUrl ?? '').trim().isNotEmpty;
     final canEdit = group && perms.canEditInfo;
 

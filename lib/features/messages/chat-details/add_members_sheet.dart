@@ -6,7 +6,6 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/messageable_people_provider.dart';
-import '../providers/team_gate_provider.dart';
 import 'add_members_empty.dart';
 import '../../../shared/text/name_search.dart';
 
@@ -47,29 +46,16 @@ class _AddMembersSheetState extends ConsumerState<AddMembersSheet> {
     // empty, and an empty list here is indistinguishable from "nobody left".
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final connections = ref.read(chatConnectionsProvider);
-      if (widget.conversation.isPersonal &&
-          connections.connections.isEmpty &&
-          !connections.loading) {
+      if (connections.connections.isEmpty && !connections.loading) {
         ref.read(chatConnectionsProvider.notifier).refresh();
       }
     });
   }
 
   List<ChatUserSummary> get _candidates {
-    final all = widget.conversation.isPersonal
-        ? ref.watch(messageablePeopleProvider)
-        : ref
-              .watch(teamMembersProvider)
-              .map(
-                (member) => ChatUserSummary(
-                  userId: member.userId,
-                  name: member.displayName,
-                  avatarUrl: member.avatarUrl ?? '',
-                  sharedWorkspace: true,
-                  canMessage: true,
-                ),
-              )
-              .toList();
+    // Accepted connections only — the server's CanInviteToGroup. A workspace
+    // colleague is somebody to message, not somebody to put in a room.
+    final all = ref.watch(groupInvitablePeopleProvider);
     final query = _query.trim();
     return all
         .where((user) => !widget.memberIds.contains(user.userId))
@@ -96,9 +82,7 @@ class _AddMembersSheetState extends ConsumerState<AddMembersSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final loading =
-        widget.conversation.isPersonal &&
-        ref.watch(chatConnectionsProvider).loading;
+    final loading = ref.watch(chatConnectionsProvider).loading;
     final candidates = _candidates;
 
     return DraggableScrollableSheet(

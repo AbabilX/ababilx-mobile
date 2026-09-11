@@ -65,6 +65,7 @@ class ChatConversation extends Equatable {
     this.peerLeft = false,
     this.isSelf = false,
     this.canMessage = true,
+    this.plaintextUntilKeyed = false,
     this.requestState = 'none',
     this.muted = false,
     this.pinned = false,
@@ -75,7 +76,7 @@ class ChatConversation extends Equatable {
     this.description,
     this.editInfoRole = 'admin',
     this.addMembersRole = 'admin',
-    this.myRole = 'member',
+    this.myRole = '',
   });
 
   final String id;
@@ -116,11 +117,18 @@ class ChatConversation extends Equatable {
   final bool isSelf;
   final bool canMessage;
 
+  /// The server's word that this group may still take plaintext while
+  /// somebody in it cannot be sealed to yet (`plaintext_until_keyed`). True
+  /// only for a workspace channel converted by the server's migration 0145
+  /// that has never had a key. Never inferred from [type]: a group created as
+  /// a group refuses to send rather than downgrade — see `ChatKeyNotReady`.
+  final bool plaintextUntilKeyed;
+
   /// Signal-style message request, from this viewer's side:
   /// `incoming` — the peer wrote first and I have not answered, so I get
   /// Accept / Delete / Block over the thread; `outgoing` — I wrote first and
-  /// they have not answered; `none` — settled, or a workspace colleague, who
-  /// was never a request.
+  /// they have not answered; `none` — settled. A workspace colleague is
+  /// answered like anyone else since the server's migration 0145.
   final String requestState;
 
   /// A note to self can never be a request: the server reports `none`, and a
@@ -147,12 +155,11 @@ class ChatConversation extends Equatable {
   final String? description;
   final String editInfoRole; // admin | member
   final String addMembersRole; // admin | member
-  final String myRole; // admin | member
+  final String myRole; // admin | member | '' when the server did not say
 
   /// The viewer's admin row in this conversation. What may be done with it
-  /// is decided by `GroupPermissions` in chat-details, which also knows the
-  /// two things a workspace channel needs and this model does not: who is
-  /// asking, and their team role.
+  /// is decided by `GroupPermissions` in chat-details — from this row and the
+  /// group's two switches, and nothing about any team.
   bool get iAmAdmin => myRole == 'admin';
 
   /// Whether this conversation has a second person in it — the precondition
@@ -191,9 +198,10 @@ class ChatConversation extends Equatable {
   /// where the server does not expect it and the send is a 400; send plaintext
   /// where it does and the send is a 409.
   ///
-  /// DMs in either scope, and personal groups. Workspace channels never — they
-  /// are a searchable shared record and server-side search cannot read
-  /// ciphertext.
+  /// DMs, and groups. Every group is personal since the server's migration
+  /// 0145, a converted workspace channel included; one with no key yet keeps
+  /// taking plaintext until a member's device mints the first key, and what
+  /// was written before that stays plaintext (see `ChatKeyNotReady`).
   bool get isEncrypted => isDm || (isPersonal && isGroup);
 
   /// Resolved file chips for list preview (API list or legacy single fields).
@@ -278,6 +286,7 @@ class ChatConversation extends Equatable {
       peerLeft: json['peer_left'] as bool? ?? false,
       isSelf: json['is_self'] as bool? ?? false,
       canMessage: json['can_message'] as bool? ?? true,
+      plaintextUntilKeyed: json['plaintext_until_keyed'] as bool? ?? false,
       requestState: json['request_state'] as String? ?? 'none',
       muted: json['muted'] as bool? ?? false,
       pinned: json['pinned'] as bool? ?? false,
@@ -290,7 +299,7 @@ class ChatConversation extends Equatable {
       description: _jsonString(json['description']),
       editInfoRole: _jsonString(json['edit_info_role']) ?? 'admin',
       addMembersRole: _jsonString(json['add_members_role']) ?? 'admin',
-      myRole: _jsonString(json['my_role']) ?? 'member',
+      myRole: _jsonString(json['my_role']) ?? '',
     );
   }
 
@@ -374,6 +383,7 @@ class ChatConversation extends Equatable {
     peerLeft: peerLeft,
     isSelf: isSelf,
     canMessage: canMessage,
+    plaintextUntilKeyed: plaintextUntilKeyed,
     requestState: requestState ?? this.requestState,
     muted: muted ?? this.muted,
     pinned: pinned ?? this.pinned,
@@ -404,6 +414,7 @@ class ChatConversation extends Equatable {
     scope,
     isSelf,
     canMessage,
+    plaintextUntilKeyed,
     requestState,
     description,
     avatarUrl,

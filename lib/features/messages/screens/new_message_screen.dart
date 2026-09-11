@@ -5,8 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
-import '../../profile/providers/profile_provider.dart';
-import '../chat-list/create_channel_dialog.dart';
 import '../chat-people/personal_group_sheet.dart';
 import '../chat-webhook/webhook_create_sheet.dart';
 import '../data/models/chat_connection.dart';
@@ -55,8 +53,6 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final independent =
-        ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
     final connectionState = ref.watch(chatConnectionsProvider);
     final people = _visiblePeople(
       ref.watch(messageablePeopleProvider),
@@ -87,7 +83,7 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
                 NewMessageAction(
                   icon: Icons.group_outlined,
                   label: tr('chat_new_group'),
-                  onTap: () => _newGroup(independent),
+                  onTap: _newGroup,
                 ),
                 NewMessageAction(
                   icon: Icons.alternate_email_rounded,
@@ -183,10 +179,8 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
     }
   }
 
-  Future<void> _newGroup(bool independent) async {
-    final group = independent
-        ? await showPersonalGroupSheet(context, ref)
-        : await showCreateChannelDialog(context, ref);
+  Future<void> _newGroup() async {
+    final group = await showPersonalGroupSheet(context, ref);
     if (group != null && mounted) {
       context.pushReplacement('/messages/${group.id}');
     }

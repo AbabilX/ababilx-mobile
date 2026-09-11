@@ -19,12 +19,20 @@ bool isStaleChatKeyError(Object error) {
 ///
 /// Exactly one retry: a second refusal is a real problem and belongs in front
 /// of the user rather than in a loop.
+///
+/// [sendUnencrypted] is passed only for a group the server marks
+/// `plaintext_until_keyed`: a converted workspace channel that has never had a
+/// key, with somebody in it who cannot be sealed to yet ([ChatKeyNotReady]).
+/// It has been plaintext all its life, so sending as it is downgrades nothing,
+/// and the first send after they set up secure messages mints the key. Every
+/// other conversation passes none and fails instead.
 Future<T> sendEncryptedChat<T>({
   required MessageVault vault,
   required String conversationId,
   required String text,
   required String currentUserId,
   required Future<T> Function(EncryptedDmPayload) send,
+  Future<T> Function()? sendUnencrypted,
 }) async {
   try {
     return await send(
@@ -34,6 +42,9 @@ Future<T> sendEncryptedChat<T>({
         currentUserId: currentUserId,
       ),
     );
+  } on ChatKeyNotReady {
+    if (sendUnencrypted == null) rethrow;
+    return sendUnencrypted();
   } catch (error) {
     if (!isStaleChatKeyError(error)) rethrow;
     return send(

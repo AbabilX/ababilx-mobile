@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import 'models/voice_call_session.dart';
 import 'voice_call_api.dart';
-import '../../profile/providers/profile_provider.dart';
 
 class VoiceCallRepository {
   const VoiceCallRepository(this._api);
@@ -25,9 +24,5 @@ class VoiceCallRepository {
 }
 
 final voiceCallRepositoryProvider = Provider<VoiceCallRepository>((ref) {
-  final independent =
-      ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
-  return VoiceCallRepository(
-    VoiceCallApi(ref.watch(apiClientProvider), independent: independent),
-  );
+  return VoiceCallRepository(VoiceCallApi(ref.watch(apiClientProvider)));
 });

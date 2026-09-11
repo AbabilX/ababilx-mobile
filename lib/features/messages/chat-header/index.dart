@@ -62,8 +62,7 @@ class ChatHeader extends ConsumerWidget {
               // Signal: the name is a link to the conversation's own settings
               // screen, not a sheet over the thread.
               onTap: () async {
-                if (conversation.isGroupConversation &&
-                    conversation.isPersonal) {
+                if (conversation.isGroupConversation) {
                   // The Add-members picker on that screen reads this list.
                   await ref.read(chatConnectionsProvider.notifier).refresh();
                   if (!context.mounted) return;

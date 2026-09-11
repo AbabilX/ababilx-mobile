@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../messages/data/chat_endpoints.dart';
-import '../../profile/providers/profile_provider.dart';
 import 'models/call_log_entry.dart';
 
 /// Reads call history. Which path it hits follows the same capability rule as
@@ -45,10 +44,5 @@ class CallLogRepository {
 }
 
 final callLogRepositoryProvider = Provider<CallLogRepository>((ref) {
-  final independent =
-      ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
-  return CallLogRepository(
-    ref.watch(apiClientProvider),
-    ChatEndpoints(independent: independent),
-  );
+  return CallLogRepository(ref.watch(apiClientProvider), const ChatEndpoints());
 });

@@ -21,20 +21,30 @@ Future<List<Map<String, dynamic>>> buildForwardTargets({
 }) async {
   final targets = <Map<String, dynamic>>[];
   for (final conversation in conversations) {
+    Map<String, dynamic>? sealed;
+    if (conversation.isEncrypted) {
+      try {
+        sealed = await _encryptedTarget(
+          vault: vault,
+          conversationId: conversation.id,
+          currentUserId: currentUserId,
+          text: text,
+          caption: caption,
+        );
+      } on ChatKeyNotReady {
+        // The same rule as an ordinary send: only a group the server marks
+        // plaintext_until_keyed may take the text as it is. Anything else —
+        // a DM, a group created as a group — refuses.
+        if (!conversation.plaintextUntilKeyed) rethrow;
+      }
+    }
     targets.add(
-      conversation.isEncrypted
-          ? await _encryptedTarget(
-              vault: vault,
-              conversationId: conversation.id,
-              currentUserId: currentUserId,
-              text: text,
-              caption: caption,
-            )
-          : {
-              'conversation_id': conversation.id,
-              'message': {'body': text},
-              if (caption.isNotEmpty) 'caption': {'body': caption},
-            },
+      sealed ??
+          {
+            'conversation_id': conversation.id,
+            'message': {'body': text},
+            if (caption.isNotEmpty) 'caption': {'body': caption},
+          },
     );
   }
   return targets;

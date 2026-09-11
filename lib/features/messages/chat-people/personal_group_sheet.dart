@@ -36,7 +36,7 @@ class _PersonalGroupSheetState extends ConsumerState<PersonalGroupSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final candidates = ref.watch(messageablePeopleProvider);
+    final candidates = ref.watch(groupInvitablePeopleProvider);
 
     return DraggableScrollableSheet(
       expand: false,

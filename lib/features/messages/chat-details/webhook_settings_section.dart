@@ -63,7 +63,7 @@ class _WebhookSettingsSectionState
 
   @override
   Widget build(BuildContext context) {
-    if (!GroupPermissions.of(ref, widget.conversation).canManage) {
+    if (!GroupPermissions(widget.conversation).canManage) {
       return const SizedBox.shrink();
     }
     final avatar = _currentAvatar;

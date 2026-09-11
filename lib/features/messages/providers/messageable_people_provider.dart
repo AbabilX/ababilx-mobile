@@ -18,6 +18,10 @@ import 'team_gate_provider.dart';
 ///
 ///   accepted connection · open DM · request I sent · workspace colleague
 ///
+/// A workspace colleague is a suggestion and nothing more: opening the DM is
+/// free, and the first message in it is a request they answer like anyone
+/// else's. Sharing a workspace settles nothing (the server's migration 0145).
+///
 /// Blocked peers are excluded, and the richest summary wins where a person
 /// arrives from more than one source — a connection carries a username and a
 /// real avatar, a DM row carries only what the sidebar needed.
@@ -69,3 +73,18 @@ ChatUserSummary? _dmPeer(ChatConversation dm, String? me) {
     canMessage: true,
   );
 }
+
+/// Everyone a group can take: accepted connections, and nobody else.
+///
+/// Narrower than [messageablePeopleProvider] on purpose, and the server
+/// enforces it (`CanInviteToGroup`): a DM to a stranger is a request they can
+/// refuse, but nobody gets a prompt before landing in a group. Offering a
+/// workspace colleague here only to have the add answer `connection_required`
+/// would be a dead row.
+final groupInvitablePeopleProvider = Provider<List<ChatUserSummary>>((ref) {
+  final me = ref.watch(chatProvider.select((s) => s.currentUserId));
+  return [
+    for (final connection in ref.watch(chatConnectionsProvider).connections)
+      if (connection.user.userId != me) connection.user,
+  ]..sort((a, b) => a.name.compareTo(b.name));
+});

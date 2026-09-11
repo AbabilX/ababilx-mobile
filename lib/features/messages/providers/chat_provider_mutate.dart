@@ -140,10 +140,6 @@ mixin _ChatMutateMixin
     if (local.isNotEmpty) {
       state = state.copyWith(searchResults: local, searchLoading: false);
     }
-    if (!ref.read(chatEnabledProvider)) {
-      state = state.copyWith(searchResults: local, searchLoading: false);
-      return;
-    }
     try {
       final results = await repo.searchMessages(q);
       if (state.searchQuery != q) return;
@@ -183,12 +179,6 @@ mixin _ChatMutateMixin
   Future<void> discardUpload(String conversationId, String fileUrl) =>
       repo.discardUpload(conversationId, fileUrl);
 
-  Future<ChatConversation> renameChannel(String id, String name) async {
-    final updated = await repo.patchChannel(id, name: name);
-    upsertChannel(updated);
-    return updated;
-  }
-
   Future<void> muteConversation(String id, bool muted) async {
     await repo.muteConversation(id, muted);
     state = state.copyWith(
@@ -209,8 +199,8 @@ mixin _ChatMutateMixin
     );
   }
 
-  /// Personal groups only — name, description, picture, banner in one call. A
-  /// workspace channel renames through [renameChannel].
+  /// Name, description, picture, banner in one call — for every group, a
+  /// converted workspace channel included.
   Future<ChatConversation> updateGroupInfo(
     String id, {
     String? name,

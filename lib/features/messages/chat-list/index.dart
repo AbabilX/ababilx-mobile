@@ -8,8 +8,6 @@ import '../chat_list_filters.dart';
 import '../message_e2ee/new_chat_setup.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
-import '../providers/chat_scope_provider.dart';
-import '../../profile/providers/profile_provider.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_title.dart';
 import 'camera_send_flow.dart';
@@ -71,29 +69,12 @@ class _ChatListState extends ConsumerState<ChatList> {
                 .toList(),
           )
         : original;
-    final independent =
-        ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
-    final scope = ref.watch(chatScopeProvider);
-    final unscopedRows = unifiedConversations(
+    final rows = unifiedConversations(
       dms: chat.dms,
       channels: chat.channels,
       filter: _filter,
     );
-    final rows = !independent || scope == ChatScopeFilter.all
-        ? unscopedRows
-        : unscopedRows.where((conversation) {
-            return scope == ChatScopeFilter.personal
-                ? conversation.isPersonal
-                : !conversation.isPersonal;
-          }).toList();
-    final scopedDms = !independent || scope == ChatScopeFilter.all
-        ? chat.dms
-        : chat.dms.where((conversation) {
-            return scope == ChatScopeFilter.personal
-                ? conversation.isPersonal
-                : !conversation.isPersonal;
-          }).toList();
-    final recentDms = recentDmsForStrip(scopedDms);
+    final recentDms = recentDmsForStrip(chat.dms);
     return Scaffold(
       body: SafeArea(
         child: Column(

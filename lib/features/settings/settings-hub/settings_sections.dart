@@ -95,13 +95,12 @@ class SettingsSections extends ConsumerWidget {
           subtitle: t('settings_discovery_sub'),
           onTap: () => context.push('/settings/discovery'),
         ),
-        if (user.independentChat)
-          SettingsRow(
-            icon: HugeIcons.strokeRoundedUserGroup,
-            title: t('chat_people'),
-            subtitle: t('settings_people_sub'),
-            onTap: () => context.push('/messages/people'),
-          ),
+        SettingsRow(
+          icon: HugeIcons.strokeRoundedUserGroup,
+          title: t('chat_people'),
+          subtitle: t('settings_people_sub'),
+          onTap: () => context.push('/messages/people'),
+        ),
         const Divider(height: 24),
         SettingsRow(
           icon: HugeIcons.strokeRoundedQrCode,

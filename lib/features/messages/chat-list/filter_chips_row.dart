@@ -5,20 +5,13 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../core/localization/app_translations.dart';
 import '../chat_icon.dart';
 import '../chat_list_filters.dart';
-import '../providers/chat_scope_provider.dart';
-import '../../profile/providers/profile_provider.dart';
 
-/// One horizontally scrollable row of pills above the conversation list,
-/// Slack-style: All | Unread messages | Personal | Workspaces.
+/// One horizontally scrollable row of pills above the conversation list:
+/// All | Unread messages.
 ///
-/// Selection is single, not two orthogonal toggles. Unread-inside-Workspaces
-/// would need a second selected pill and there is nowhere on a phone row to
-/// show which of the two is active, so picking any pill resets the other axis
-/// — the same trade Slack makes with VIP/External.
-///
-/// The scope pills only exist for a user whose account has independent chat;
-/// without it every conversation is a workspace one and the pills would filter
-/// nothing.
+/// Personal and Workspaces pills used to sit here too. Since the server's
+/// migration 0145 every conversation is personal — no workspace owns one — so
+/// Personal would always equal All and Workspaces would always be empty.
 class FilterChipsRow extends ConsumerWidget {
   const FilterChipsRow({
     super.key,
@@ -31,13 +24,9 @@ class FilterChipsRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scope = ref.watch(chatScopeProvider);
-    final independent =
-        ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
     final unread = filter == ChatListFilter.unread;
 
-    void select(ChatListFilter next, ChatScopeFilter nextScope) {
-      ref.read(chatScopeProvider.notifier).state = nextScope;
+    void select(ChatListFilter next) {
       if (next != filter) onChanged(next);
     }
 
@@ -49,33 +38,16 @@ class FilterChipsRow extends ConsumerWidget {
         children: [
           _Chip(
             label: AppTranslations.translate(context, ref, 'chat_all'),
-            selected: !unread && scope == ChatScopeFilter.all,
-            onTap: () => select(ChatListFilter.all, ChatScopeFilter.all),
+            selected: !unread,
+            onTap: () => select(ChatListFilter.all),
           ),
           const SizedBox(width: 8),
           _Chip(
             label: AppTranslations.translate(context, ref, 'chat_unread'),
             icon: HugeIcons.strokeRoundedMailOpen01,
             selected: unread,
-            onTap: () => select(ChatListFilter.unread, ChatScopeFilter.all),
+            onTap: () => select(ChatListFilter.unread),
           ),
-          if (independent) const SizedBox(width: 8),
-          if (independent)
-            _Chip(
-              label: AppTranslations.translate(context, ref, 'chat_personal'),
-              icon: HugeIcons.strokeRoundedUser,
-              selected: !unread && scope == ChatScopeFilter.personal,
-              onTap: () => select(ChatListFilter.all, ChatScopeFilter.personal),
-            ),
-          if (independent) const SizedBox(width: 8),
-          if (independent)
-            _Chip(
-              label: AppTranslations.translate(context, ref, 'chat_workspaces'),
-              icon: HugeIcons.strokeRoundedBuilding03,
-              selected: !unread && scope == ChatScopeFilter.workspaces,
-              onTap: () =>
-                  select(ChatListFilter.all, ChatScopeFilter.workspaces),
-            ),
         ],
       ),
     );

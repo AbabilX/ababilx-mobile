@@ -123,6 +123,6 @@ Widget? groupEditPictures(
         ? WebhookEditPhoto(conversation: conversation)
         : null;
   }
-  if (!conversation.isPersonal || !perms.canEditInfo) return null;
+  if (!perms.canEditInfo) return null;
   return GroupEditImages(conversation: conversation);
 }

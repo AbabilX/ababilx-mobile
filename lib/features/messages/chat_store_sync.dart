@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/providers/auth_provider.dart';
-import 'providers/chat_access_provider.dart';
 import 'providers/chat_provider.dart';
 
 /// Bootstraps the chat sidebar + WS for any account that can chat at all.
@@ -50,24 +49,16 @@ class _ChatStoreSyncState extends ConsumerState<ChatStoreSync>
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = ref.watch(authProvider).valueOrNull ?? false;
-    final canChat = ref.watch(chatEnabledProvider);
-
-    if (isLoggedIn && canChat && !_booted) {
+    if (isLoggedIn && !_booted) {
       _booted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(chatProvider.notifier).ensureReady();
       });
     }
 
-    if (!isLoggedIn || !canChat) {
+    if (!isLoggedIn) {
       _booted = false;
     }
-
-    ref.listen(chatEnabledProvider, (prev, next) {
-      if (next && prev != next) {
-        ref.read(chatProvider.notifier).ensureReady();
-      }
-    });
 
     return widget.child;
   }

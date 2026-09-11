@@ -776,16 +776,12 @@ recognise a device, and a relative age answers neither question. The drawing is
 widgets (`devices_hero.dart`), not an asset, so it needs no dark variant.
 
 **Group permissions come from `chat-details/group_permissions.dart`, never
-from the model** (2026-09-08). `ChatConversation` used to carry
-`canEditGroupInfo` / `canAddGroupMembers` / `canConfigureGroup` as
-`!isPersonal || …` — every member of a workspace channel got the pencil, and
-the server's `CanManageConversation` (creator, admin row, or team leader)
-answered the rename with a 403 the sheet then printed as Dio's paragraph. The
-model cannot decide this: two of the three inputs — who is asking, and their
-team role — are not on the conversation. `GroupPermissions.of(ref, conv)` in
-a build, `.read(ref, conv)` in a callback; `canManage` / `canEditInfo` /
-`canAddMembers` mirror `services/chat/access*.go` branch for branch. The edit
-sheet turns `not_conversation_manager` into one sentence.
+from the model** (2026-09-08, simplified 2026-09-12). `GroupPermissions(conv)`
+reads the viewer's role on the row and the group's two switches — nothing
+else. It used to take the team leader flag too, because a workspace channel was
+run by its team; since the server's migration `0145` a converted channel is an
+ordinary group and no team role reaches into chat. The edit sheet turns
+`not_conversation_manager` into one sentence.
 
 # Offline reading: the KEY is cached, not the plaintext
 
@@ -961,3 +957,37 @@ cached row   written ciphertext-only, painted before the vault, and
   ciphertext is unchanged and which still shows a placeholder.
 - Web and desktop now open `channels` as well as `dms`. Their offline sidebar
   cache is unchanged (web blanks previews to "Message" on purpose).
+
+# Chat is independent of workspaces (2026-09-12)
+
+The server's migration `0145` turned every workspace conversation into a
+personal one in place (same ids). What that changed here:
+
+- **One route set.** `ChatEndpoints` has no `independent` switch, and the call
+  constants (`chatVoiceCall*`, `chatGroupCall*`) point at `/api/chat/*` too.
+  This build needs a server with `0145`: an older one with the flag off answers
+  every chat call with 404.
+- **No chat gate.** `chatEnabledProvider` is gone — every signed-in account
+  chats and every signed-in phone can ring. No Personal/Workspaces pills
+  (Personal would equal All, Workspaces would be empty), no reload on a flag
+  flip, and People is always in Settings.
+- **The full editor for every group.** A converted channel gets name,
+  description, photo and banner through `/info`; `renameChannel` is gone. A
+  reply that carries no `my_role` never demotes the row (`upsertChannel`) —
+  `my_role` now parses to `''` when absent, which is what makes that
+  distinguishable.
+- **Group pickers offer accepted connections only**
+  (`groupInvitablePeopleProvider`), the server's `CanInviteToGroup`. Workspace
+  colleagues stay in New message as suggestions: the DM opens and the first
+  message is a request.
+- **Feeds are one kind.** The create sheet has no scope field and every feed
+  call takes the `/api/chat/*` path.
+- **Plaintext until keyed is the server's call, never the type's.**
+  `ChatConversation.plaintextUntilKeyed` (sidebar `plaintext_until_keyed`) is
+  true only for a converted workspace channel that has never had a key. Only
+  then do the send path (`sendEncryptedChat(sendUnencrypted:)`) and
+  `buildForwardTargets` send as-is on `ChatKeyNotReady`; a DM, a group created
+  as a group, and any group once keyed fail rather than downgrade. The first
+  cut gated this on `isGroup`, which leaked the converted-channel exception
+  into every new group. Pinned by `group_key_not_ready_test.dart`; the rest by
+  `converted_group_test.dart`.

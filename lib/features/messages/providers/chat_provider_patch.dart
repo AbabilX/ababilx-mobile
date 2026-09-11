@@ -135,7 +135,12 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
                         description: channel.description,
                         editInfoRole: channel.editInfoRole,
                         addMembersRole: channel.addMembersRole,
-                        myRole: channel.myRole,
+                        // A reply that carries no role — an older server's
+                        // rename answered without one — must not demote the
+                        // admin who just made it; keep what the list said.
+                        myRole: channel.myRole.isEmpty
+                            ? c.myRole
+                            : channel.myRole,
                       )
                     : c,
               )

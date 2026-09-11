@@ -19,9 +19,7 @@ Future<void> showGroupMemberSheet({
   required ChatMember member,
   required VoidCallback onChanged,
 }) async {
-  final canManage =
-      conversation.isPersonal &&
-      GroupPermissions.read(ref, conversation).canManage;
+  final canManage = GroupPermissions(conversation).canManage;
   final isSelf = member.userId == ref.read(chatProvider).currentUserId;
 
   await showModalBottomSheet<void>(

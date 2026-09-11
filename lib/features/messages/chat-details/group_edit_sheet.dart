@@ -8,18 +8,17 @@ import 'group_edit_images.dart';
 import 'group_permissions.dart';
 
 /// The pencil in the details app bar: banner, photo, name and description in
-/// one sheet.
+/// one sheet, saved through the group info endpoint.
 ///
-/// A workspace channel has no identity of its own — it takes one from the team
-/// — so it only gets the name field, saved through the channel rename endpoint
-/// rather than the personal-group info one.
+/// Every group gets all of it. A workspace channel used to get the name field
+/// alone, because it took its identity from the team; since the server's
+/// migration 0145 a converted channel is an ordinary group and its identity is
+/// its own.
 Future<bool> showGroupEditSheet(
   BuildContext context,
   WidgetRef ref,
   ChatConversation conversation,
 ) async {
-  final personal = conversation.isPersonal;
-
   final saved = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -54,25 +53,18 @@ Future<bool> showGroupEditSheet(
         // than to the conversation, and nobody may upload an attachment to a
         // conversation nobody may post into — so the group flow's presign is a
         // 403 there no matter who asks.
-        images: groupEditPictures(
-          conversation,
-          GroupPermissions.read(ref, conversation),
-        ),
+        images: groupEditPictures(conversation, GroupPermissions(conversation)),
         initialName: conversation.name ?? '',
         initialDescription: conversation.description ?? '',
-        showDescription: personal,
         onSave: (name, description) async {
           if (name.isEmpty) return;
-          final notifier = ref.read(chatProvider.notifier);
-          if (personal) {
-            await notifier.updateGroupInfo(
-              conversation.id,
-              name: name,
-              description: description,
-            );
-          } else {
-            await notifier.renameChannel(conversation.id, name);
-          }
+          await ref
+              .read(chatProvider.notifier)
+              .updateGroupInfo(
+                conversation.id,
+                name: name,
+                description: description,
+              );
           if (sheet.mounted) Navigator.pop(sheet, true);
         },
       ),
@@ -87,14 +79,12 @@ class _EditForm extends StatefulWidget {
     required this.images,
     required this.initialName,
     required this.initialDescription,
-    required this.showDescription,
     required this.onSave,
   });
 
   final Widget? images;
   final String initialName;
   final String initialDescription;
-  final bool showDescription;
   final Future<void> Function(String name, String description) onSave;
 
   @override
@@ -170,16 +160,14 @@ class _EditFormState extends State<_EditForm> {
         decoration: const InputDecoration(labelText: 'Group name'),
         textCapitalization: TextCapitalization.sentences,
       ),
-      if (widget.showDescription) ...[
-        const SizedBox(height: 12),
-        TextField(
-          controller: _descCtrl,
-          maxLines: 3,
-          minLines: 1,
-          decoration: const InputDecoration(labelText: 'Description'),
-          textCapitalization: TextCapitalization.sentences,
-        ),
-      ],
+      const SizedBox(height: 12),
+      TextField(
+        controller: _descCtrl,
+        maxLines: 3,
+        minLines: 1,
+        decoration: const InputDecoration(labelText: 'Description'),
+        textCapitalization: TextCapitalization.sentences,
+      ),
       if (_error != null) ...[
         const SizedBox(height: 12),
         Text(

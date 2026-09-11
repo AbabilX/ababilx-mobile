@@ -25,7 +25,7 @@ void main() {
     });
 
     test('generic endpoint set never falls back to a team route', () {
-      const endpoints = ChatEndpoints(independent: true);
+      const endpoints = ChatEndpoints();
 
       expect(endpoints.conversations, '/api/chat/conversations');
       expect(endpoints.messages('c1'), '/api/chat/conversations/c1/messages');

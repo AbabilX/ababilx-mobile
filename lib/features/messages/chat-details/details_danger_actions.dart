@@ -87,7 +87,7 @@ class DetailsDangerActions extends ConsumerWidget {
         // leaves the conversation exactly as it was unless the person also
         // chose to block. There is nobody to report in a note to self.
         if (!conversation.isSelf) DetailsReportTile(conversation: conversation),
-        if (group && GroupPermissions.of(ref, conversation).canManage)
+        if (group && GroupPermissions(conversation).canManage)
           DetailsTile(
             icon: const Icon(Icons.delete_forever_outlined),
             title: 'Delete group',

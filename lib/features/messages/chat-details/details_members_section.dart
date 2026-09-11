@@ -38,7 +38,7 @@ class DetailsMembersSection extends ConsumerWidget {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
-        if (GroupPermissions.of(ref, conversation).canAddMembers)
+        if (GroupPermissions(conversation).canAddMembers)
           ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 20),
             leading: Container(

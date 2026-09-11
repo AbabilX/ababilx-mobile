@@ -15,30 +15,6 @@ class ChatConversationsApi {
     return ChatSidebar.fromJson(data);
   }
 
-  Future<ChatConversation> createChannel({
-    required String name,
-    String? slug,
-    bool isPrivate = false,
-  }) async {
-    final res = await _client.post(
-      ApiConstants.chatChannels,
-      data: {'name': name, 'slug': ?slug, 'is_private': isPrivate},
-    );
-    return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));
-  }
-
-  Future<ChatConversation> patchChannel(
-    String id, {
-    String? name,
-    bool? archive,
-  }) async {
-    final res = await _client.patch(
-      _endpoints.action(id, ''),
-      data: {'name': ?name, 'archive': ?archive},
-    );
-    return ChatConversation.fromJson(unwrapApiData<Map<String, dynamic>>(res));
-  }
-
   Future<void> addChannelMember(String channelId, String userId) async {
     await _client.post(
       _endpoints.action(channelId, 'members'),
@@ -54,13 +30,8 @@ class ChatConversationsApi {
         .toList();
   }
 
-  /// Personal-group management. These three hang off `/api/chat/*` on
-  /// purpose, not off [ChatEndpoints]: they exist for personal groups only, so
-  /// there is no workspace twin to route to.
-  ///
-  /// Personal-group identity: name, description, picture, banner. Workspace
-  /// channels keep [patchChannel] — a channel takes management from its team,
-  /// so there is nothing here for it to set.
+  /// Group identity: name, description, picture, banner — for every group,
+  /// a converted workspace channel included.
   ///
   /// An omitted field is left alone and an empty string clears it, which is why
   /// every argument is nullable rather than defaulted.

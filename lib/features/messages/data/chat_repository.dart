@@ -9,23 +9,13 @@ import 'chat_conversations_api.dart';
 import 'chat_messages_api.dart';
 import 'chat_webhooks_api.dart';
 import 'models/chat_models.dart';
-import '../../profile/providers/profile_provider.dart';
 
 class ChatRepository {
-  ChatRepository(ApiClient client, {bool independent = false})
-    : _conversations = ChatConversationsApi(
-        client,
-        ChatEndpoints(independent: independent),
-      ),
-      _messages = ChatMessagesApi(
-        client,
-        ChatEndpoints(independent: independent),
-      ),
-      _e2ee = ChatE2eeApi(client, ChatEndpoints(independent: independent)),
-      _attachments = ChatAttachmentsApi(
-        client,
-        ChatEndpoints(independent: independent),
-      ),
+  ChatRepository(ApiClient client)
+    : _conversations = ChatConversationsApi(client, const ChatEndpoints()),
+      _messages = ChatMessagesApi(client, const ChatEndpoints()),
+      _e2ee = ChatE2eeApi(client, const ChatEndpoints()),
+      _attachments = ChatAttachmentsApi(client, const ChatEndpoints()),
       _devices = ChatDeviceRepository(client),
       _connections = ChatConnectionsApi(client),
       _webhooks = ChatWebhooksApi(client);
@@ -40,64 +30,28 @@ class ChatRepository {
 
   Future<ChatSidebar> listConversations() => _conversations.listConversations();
 
-  Future<ChatConversation> createChannel({
-    required String name,
-    String? slug,
-    bool isPrivate = false,
-  }) => _conversations.createChannel(
-    name: name,
-    slug: slug,
-    isPrivate: isPrivate,
-  );
-
   /// A webhook feed is an ordinary group in every way except that nobody may
   /// post into it, so it is created here and then managed through the same
   /// conversation calls above.
-  ///
-  /// [personal] picks the scope, and for everything after creation it is the
-  /// CONVERSATION's own scope, not the app's independent-chat flag: an account
-  /// can hold a workspace feed and a personal one at the same time.
   Future<({ChatConversation conversation, ChatWebhookCreated created})>
-  createWebhookChannel({
-    required String name,
-    required bool personal,
-    String? slug,
-    bool isPrivate = false,
-  }) => _webhooks.createWebhookChannel(
-    name: name,
-    personal: personal,
-    slug: slug,
-    isPrivate: isPrivate,
-  );
+  createWebhookChannel({required String name}) =>
+      _webhooks.createWebhookChannel(name: name);
 
-  Future<ChatWebhookCreated> regenerateWebhook(
-    String conversationId, {
-    required bool personal,
-  }) => _webhooks.regenerate(conversationId, personal: personal);
+  Future<ChatWebhookCreated> regenerateWebhook(String conversationId) =>
+      _webhooks.regenerate(conversationId);
 
   Future<ChatPresignResult> presignWebhookAvatar(
     String conversationId, {
     required String contentType,
     required int sizeBytes,
-    required bool personal,
   }) => _webhooks.presignAvatar(
     conversationId,
     contentType: contentType,
     sizeBytes: sizeBytes,
-    personal: personal,
   );
 
-  Future<String> saveWebhookAvatar(
-    String conversationId,
-    String avatarUrl, {
-    required bool personal,
-  }) => _webhooks.saveAvatar(conversationId, avatarUrl, personal: personal);
-
-  Future<ChatConversation> patchChannel(
-    String id, {
-    String? name,
-    bool? archive,
-  }) => _conversations.patchChannel(id, name: name, archive: archive);
+  Future<String> saveWebhookAvatar(String conversationId, String avatarUrl) =>
+      _webhooks.saveAvatar(conversationId, avatarUrl);
 
   Future<void> addChannelMember(String channelId, String userId) =>
       _conversations.addChannelMember(channelId, userId);
@@ -314,7 +268,5 @@ class ChatRepository {
 }
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {
-  final independent =
-      ref.watch(profileProvider).valueOrNull?.independentChat ?? false;
-  return ChatRepository(ref.watch(apiClientProvider), independent: independent);
+  return ChatRepository(ref.watch(apiClientProvider));
 });

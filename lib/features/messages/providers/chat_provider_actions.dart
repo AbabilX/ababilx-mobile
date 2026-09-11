@@ -151,6 +151,13 @@ mixin _ChatActionsMixin
           text: body,
           currentUserId: currentUser,
           send: deliver,
+          // Only a group the SERVER marks may stay plaintext until everyone
+          // in it can be sealed to — a converted workspace channel that has
+          // never had a key. Every other conversation fails the send rather
+          // than downgrade it; see ChatKeyNotReady.
+          sendUnencrypted: conv!.plaintextUntilKeyed
+              ? () => deliver(null)
+              : null,
         );
       } else {
         msg = await deliver(null);
@@ -387,19 +394,6 @@ mixin _ChatActionsMixin
         repo.acknowledgeMessages('read', ids.toList()).catchError((_) {}),
       );
     }
-  }
-
-  Future<ChatConversation> createChannel({
-    required String name,
-    bool isPrivate = false,
-  }) async {
-    final channel = await repo.createChannel(
-      name: name,
-      slug: slugifyChannel(name),
-      isPrivate: isPrivate,
-    );
-    upsertChannel(channel);
-    return channel;
   }
 
   Future<ChatConversation> startDm(String userId) async {
