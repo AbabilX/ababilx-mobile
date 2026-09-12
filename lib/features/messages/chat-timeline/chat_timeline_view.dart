@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../chat-select/message_selection.dart';
+import '../chat-select/selection_bar.dart';
+import '../chat-select/selection_top_bar.dart';
 import '../data/models/chat_models.dart';
 import '../safety_number/safety_number_banner.dart';
 import 'message_list.dart';
@@ -9,7 +13,7 @@ import 'timeline_composer.dart';
 /// The chat's layout: collapsing header, message list with the jump-to-bottom
 /// button floating over it, composer underneath. All state lives in
 /// [ChatTimeline]; this only arranges it.
-class ChatTimelineView extends StatelessWidget {
+class ChatTimelineView extends ConsumerWidget {
   const ChatTimelineView({
     super.key,
     required this.conversationId,
@@ -50,16 +54,31 @@ class ChatTimelineView extends StatelessWidget {
   final VoidCallback onMessageSubmitted;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selection = ref.watch(messageSelectionProvider);
+    // A thread panel has no header and no room for the two bars, so selection
+    // is a main-timeline mode only — see the menu's `showSelect`.
+    final selecting =
+        threadRootId == null && selection.isActiveIn(conversationId);
+    final selectedCount = selection.ids.length;
+    // The header auto-hides on scroll; the selection bar must not, or the only
+    // way out of the mode scrolls off the top.
+    final showHeader = headerVisible || selecting;
+
     return Column(
       children: [
-        if (header != null)
+        if (selecting)
+          SelectionTopBar(
+            count: selectedCount,
+            onClose: () => ref.read(messageSelectionProvider.notifier).clear(),
+          )
+        else if (header != null)
           ClipRect(
             child: AnimatedAlign(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
               alignment: Alignment.topCenter,
-              heightFactor: headerVisible ? 1 : 0,
+              heightFactor: showHeader ? 1 : 0,
               child: header,
             ),
           ),
@@ -71,7 +90,7 @@ class ChatTimelineView extends StatelessWidget {
             // under the status bar/notch the moment that happened. Only add
             // this back while the header is actually gone.
             padding: EdgeInsets.only(
-              top: headerVisible ? 0 : MediaQuery.paddingOf(context).top,
+              top: showHeader ? 0 : MediaQuery.paddingOf(context).top,
             ),
             child: Stack(
               children: [
@@ -105,11 +124,14 @@ class ChatTimelineView extends StatelessWidget {
         // sits above the composer, not in the collapsing header, because a
         // warning that scrolls away is a warning nobody reads.
         SafetyNumberBanner(conversationId: conversationId),
-        TimelineComposer(
-          conversationId: conversationId,
-          parentId: threadRootId,
-          onMessageSubmitted: onMessageSubmitted,
-        ),
+        if (selecting)
+          SelectionBar(conversationId: conversationId)
+        else
+          TimelineComposer(
+            conversationId: conversationId,
+            parentId: threadRootId,
+            onMessageSubmitted: onMessageSubmitted,
+          ),
       ],
     );
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../chat-select/message_selection.dart';
+import '../chat-select/selectable_message_row.dart';
 import '../data/models/chat_models.dart';
 import '../chat_utils.dart';
 import '../providers/chat_provider.dart';
@@ -138,20 +140,50 @@ class _MessageRowState extends ConsumerState<MessageRow>
         isOwnMessage && widget.message.sendStatus == MessageSendStatus.sending;
     final isFailed =
         isOwnMessage && widget.message.sendStatus == MessageSendStatus.failed;
+    final selection = ref.watch(messageSelectionProvider);
+    // Selection is a main-timeline mode; a thread panel has nowhere to put
+    // its bars, so rows there never enter it.
+    final selecting =
+        widget.threadRootId == null &&
+        selection.isActiveIn(widget.conversationId);
+    final selected = selecting && selection.contains(widget.message.id);
+    final hasWallpaper = ref
+        .watch(chatWallpaperProvider)
+        .forChat(widget.conversationId)
+        .isSet;
+
+    void toggleSelection() => ref
+        .read(messageSelectionProvider.notifier)
+        .toggle(
+          conversationId: widget.conversationId,
+          messageId: widget.message.id,
+        );
 
     return MessageSwipeReply(
       // A deleted message has nothing to quote, and a bubble that has not
-      // reached the server yet has no id to reply to.
-      enabled: !widget.message.isDeleted && !isSending && !isFailed,
+      // reached the server yet has no id to reply to. Swiping is also off
+      // while selecting — Signal's `SwipeAvailabilityProvider` checks
+      // `isActionModeStarted()` first, and a swipe that answers a message the
+      // user is picking out is never what was meant.
+      enabled:
+          !selecting && !widget.message.isDeleted && !isSending && !isFailed,
       onReply: () =>
           ref.read(chatProvider.notifier).setReplyToMessage(widget.message),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onLongPressStart: (d) => _showActions(d.globalPosition),
-        onLongPressMoveUpdate: (d) => _pointer?.moveTo(d.globalPosition),
-        onLongPressEnd: (_) => _pointer?.release(),
-        onLongPressCancel: () => _pointer?.release(),
-        onTap: isFailed
+        // While selecting, a press picks rows and nothing else: the overlay
+        // menu would offer Select on top of an open selection.
+        onLongPressStart: selecting
+            ? null
+            : (d) => _showActions(d.globalPosition),
+        onLongPressMoveUpdate: selecting
+            ? null
+            : (d) => _pointer?.moveTo(d.globalPosition),
+        onLongPressEnd: selecting ? null : (_) => _pointer?.release(),
+        onLongPressCancel: selecting ? null : () => _pointer?.release(),
+        onTap: selecting
+            ? toggleSelection
+            : isFailed
             ? () => _onRetry(context)
             : widget.threadRootId == null && !widget.message.isDeleted
             ? () => openThreadSheet(
@@ -161,21 +193,28 @@ class _MessageRowState extends ConsumerState<MessageRow>
               )
             : null,
         onDoubleTap:
-            widget.threadRootId == null &&
+            !selecting &&
+                widget.threadRootId == null &&
                 !isFailed &&
                 !widget.message.isDeleted
             ? () => copyMessageText(context, ref, widget.message)
             : null,
-        child: KeyedSubtree(
-          key: _messageKey,
-          // The lifted copy is the only one on screen: Signal hides the
-          // original so it does not sit under the scrim behind its own double.
-          child: Visibility(
-            visible: !_actionsOpen,
-            maintainSize: true,
-            maintainAnimation: true,
-            maintainState: true,
-            child: _content(focused: false),
+        child: SelectableMessageRow(
+          selecting: selecting,
+          selected: selected,
+          hasWallpaper: hasWallpaper,
+          child: KeyedSubtree(
+            key: _messageKey,
+            // The lifted copy is the only one on screen: Signal hides the
+            // original so it does not sit under the scrim behind its own
+            // double.
+            child: Visibility(
+              visible: !_actionsOpen,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: _content(focused: false),
+            ),
           ),
         ),
       ),

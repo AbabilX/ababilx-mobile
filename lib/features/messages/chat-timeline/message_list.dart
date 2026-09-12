@@ -64,12 +64,11 @@ class MessageList extends ConsumerWidget {
     return ListView.builder(
       controller: scrollController,
       reverse: true,
-      padding: const EdgeInsets.fromLTRB(
-        SignalBubbleMetrics.listSideGutter,
-        8,
-        SignalBubbleMetrics.listSideGutter,
-        12,
-      ),
+      // No horizontal padding: a selected row's shade has to reach both
+      // screen edges, and the check-circle gutter has to start at the edge
+      // too. Every item carries the side inset itself — for a message row it
+      // is [SelectableMessageRow], which grows it while selecting.
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
       itemCount: items.length + (loadingMore ? 1 : 0),
       itemBuilder: (context, i) {
         if (loadingMore && i == items.length) {
@@ -95,15 +94,19 @@ class MessageList extends ConsumerWidget {
         return Column(
           children: [
             if (showDate)
-              ChatDateDivider(
-                label: formatDateDivider(item.anchor.createdAt),
-                hasWallpaper: hasWallpaper,
+              _inset(
+                ChatDateDivider(
+                  label: formatDateDivider(item.anchor.createdAt),
+                  hasWallpaper: hasWallpaper,
+                ),
               ),
-            if (showUnread) UnreadDivider(count: unreadCount),
+            if (showUnread) _inset(UnreadDivider(count: unreadCount)),
             switch (item) {
-              ChatTimelineCallEvents(:final messages) => CallEventsCollapse(
-                messages: messages,
-                currentUserId: currentUserId,
+              ChatTimelineCallEvents(:final messages) => _inset(
+                CallEventsCollapse(
+                  messages: messages,
+                  currentUserId: currentUserId,
+                ),
               ),
               ChatTimelineMessage(:final message) => _buildMessage(
                 context: context,
@@ -123,10 +126,12 @@ class MessageList extends ConsumerWidget {
     required Map<String, int> idIndex,
   }) {
     if (message.isVoiceCall) {
-      return VoiceCallEventRow(message: message, currentUserId: currentUserId);
+      return _inset(
+        VoiceCallEventRow(message: message, currentUserId: currentUserId),
+      );
     }
     if (message.isGroupCall) {
-      return GroupCallEventRow(message: message);
+      return _inset(GroupCallEventRow(message: message));
     }
     final idx = idIndex[message.id] ?? 0;
     final prev = idx > 0 ? messages[idx - 1] : null;
@@ -143,6 +148,15 @@ class MessageList extends ConsumerWidget {
     );
   }
 }
+
+/// The side inset the ListView used to carry. Call events and dividers are
+/// never selectable, so they keep it as plain padding.
+Widget _inset(Widget child) => Padding(
+  padding: const EdgeInsets.symmetric(
+    horizontal: SignalBubbleMetrics.listSideGutter,
+  ),
+  child: child,
+);
 
 bool _itemContainsMessageId(ChatTimelineItem item, String id) {
   return switch (item) {

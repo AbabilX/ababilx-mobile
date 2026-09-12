@@ -193,6 +193,15 @@ class AppTranslations {
       'chat_copy': 'Copy',
       'chat_save_to_phone': 'Save',
       'chat_reply_thread': 'Reply in thread',
+      'chat_select': 'Select',
+      'chat_selected': 'selected',
+      'chat_more': 'More',
+      'chat_delete_selected_title': 'Delete messages?',
+      'chat_delete_selected_one':
+          'This message will be deleted for everyone. This cannot be undone.',
+      'chat_delete_selected_many':
+          '{n} messages will be deleted for everyone. This cannot be undone.',
+      'chat_delete_selected_failed': 'Some messages could not be deleted.',
       'chat_edit': 'Edit',
       'chat_delete': 'Delete',
       'chat_copied_clipboard': 'Copied to clipboard',
@@ -603,6 +612,15 @@ class AppTranslations {
       'chat_copy': 'কপি করুন',
       'chat_save_to_phone': 'ফোনে সংরক্ষণ করুন',
       'chat_reply_thread': 'থ্রেডে উত্তর দিন',
+      'chat_select': 'নির্বাচন করুন',
+      'chat_selected': 'নির্বাচিত',
+      'chat_more': 'আরও',
+      'chat_delete_selected_title': 'বার্তা মুছবেন?',
+      'chat_delete_selected_one':
+          'বার্তাটি সবার জন্য মুছে যাবে। এটি ফেরানো যাবে না।',
+      'chat_delete_selected_many':
+          '{n}টি বার্তা সবার জন্য মুছে যাবে। এটি ফেরানো যাবে না।',
+      'chat_delete_selected_failed': 'কিছু বার্তা মোছা যায়নি।',
       'chat_edit': 'সম্পাদনা করুন',
       'chat_delete': 'মুছুন',
       'chat_copied_clipboard': 'ক্লিপবোর্ডে কপি হয়েছে',

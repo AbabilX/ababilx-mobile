@@ -5,7 +5,16 @@ import 'signal_message_menu_geometry.dart';
 import 'signal_message_menu_items.dart';
 import 'signal_message_menu_surface.dart';
 
-enum SignalMessageAction { reply, forward, save, copy, thread, edit, delete }
+enum SignalMessageAction {
+  reply,
+  forward,
+  save,
+  copy,
+  thread,
+  select,
+  edit,
+  delete,
+}
 
 sealed class SignalMessageMenuResult {
   const SignalMessageMenuResult();
@@ -36,6 +45,7 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
   required bool isMine,
   required bool showThread,
   required bool showSave,
+  required bool showSelect,
   required Map<String, String> labels,
   SignalMenuPointer? pointer,
 }) {
@@ -55,6 +65,7 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
         isMine: isMine,
         showThread: showThread,
         showSave: showSave,
+        showSelect: showSelect,
         labels: labels,
       ),
       moreLabel: labels['moreReactions']!,

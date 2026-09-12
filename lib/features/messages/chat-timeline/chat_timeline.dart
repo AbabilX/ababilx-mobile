@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../chat-select/message_selection.dart';
+import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'chat_timeline_load.dart';
 import 'chat_timeline_unread.dart';
@@ -130,6 +132,21 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
     super.dispose();
   }
 
+  /// Drops selected ids the feed no longer carries — a message deleted from
+  /// another device, or one that fell out of the loaded page. Signal does the
+  /// same on `onItemRangeRemoved`; without it the count keeps promising rows
+  /// no action can reach. Deferred a frame because it writes to a provider.
+  void _pruneSelection(List<ChatMessage> messages) {
+    if (!ref.read(messageSelectionProvider).isActiveIn(widget.conversationId)) {
+      return;
+    }
+    final present = messages.map((m) => m.id).toSet();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(messageSelectionProvider.notifier).retain(present);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final chat = ref.watch(chatProvider);
@@ -150,6 +167,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     }
     _previousNewestMessageId = newestMessageId;
+    _pruneSelection(feed.messages);
 
     return ChatTimelineView(
       conversationId: widget.conversationId,

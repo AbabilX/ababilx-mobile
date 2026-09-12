@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../chat-forward/forward_sheet.dart';
+import '../chat-select/message_selection.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
@@ -46,6 +47,10 @@ Future<void> showMessageActions(
     isMine: isMine,
     showThread: !isDm && threadRootId == null,
     showSave: canSaveMessageAttachments(msg),
+    // Selection has a top bar and an action bar of its own, and a thread
+    // panel has room for neither — so the door only opens on the main
+    // timeline, where those bars replace the header and the composer.
+    showSelect: threadRootId == null,
     labels: {
       'dismiss': tr('chat_dismiss_message_actions'),
       'reply': tr('chat_reply'),
@@ -53,6 +58,7 @@ Future<void> showMessageActions(
       'save': tr('chat_save_to_phone'),
       'copy': tr('chat_copy'),
       'thread': tr('chat_reply_thread'),
+      'select': tr('chat_select'),
       'edit': tr('chat_edit'),
       'delete': tr('chat_delete'),
       'moreReactions': tr('chat_more_reactions'),
@@ -83,26 +89,37 @@ Future<void> showMessageActions(
       } else {
         openThreadSheet(context, conversationId, msg);
       }
+    case SignalMessageAction.select:
+      ref
+          .read(messageSelectionProvider.notifier)
+          .start(conversationId: conversationId, messageId: msg.id);
     case SignalMessageAction.edit:
-      final edited = await _editDialog(
-        context,
-        ref,
-        tiptapToPlainText(msg.body),
-      );
-      if (edited != null) {
-        try {
-          await n.editMessage(msg.id, textToTiptapJson(edited));
-        } catch (error) {
-          // A refused edit used to reach nobody: the exception died in the
-          // gesture handler and the message simply stayed as it was, which
-          // reads as a broken button.
-          if (context.mounted) {
-            showAppToast(context, _editFailureMessage(error), isError: true);
-          }
-        }
-      }
+      await editMessageFlow(context, ref, msg);
     case SignalMessageAction.delete:
       await n.deleteMessage(msg.id);
+  }
+}
+
+/// The edit dialog and the send behind it, shared by the long-press menu and
+/// the selection bar.
+Future<void> editMessageFlow(
+  BuildContext context,
+  WidgetRef ref,
+  ChatMessage msg,
+) async {
+  final edited = await _editDialog(context, ref, tiptapToPlainText(msg.body));
+  if (edited == null) return;
+  try {
+    await ref
+        .read(chatProvider.notifier)
+        .editMessage(msg.id, textToTiptapJson(edited));
+  } catch (error) {
+    // A refused edit used to reach nobody: the exception died in the gesture
+    // handler and the message simply stayed as it was, which reads as a
+    // broken button.
+    if (context.mounted) {
+      showAppToast(context, _editFailureMessage(error), isError: true);
+    }
   }
 }
 

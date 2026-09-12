@@ -992,3 +992,75 @@ personal one in place (same ids). What that changed here:
   cut gated this on `isGroup`, which leaked the converted-channel exception
   into every new group. Pinned by `group_key_not_ready_test.dart`; the rest by
   `converted_group_test.dart`.
+
+# Multi-select: hold a bubble, then Select (2026-09-12)
+
+Signal's action mode, ported. `chat-select/`, and the whole of it hangs off one
+entry point: **long press → the overlay menu → Select**. A long press never
+enters the mode by itself, because the long press already means something here
+(the reaction bar and the message menu), and that is Signal's own arrangement —
+`onItemLongClick` opens the reaction overlay for anything reactable, and only
+its `MULTISELECT` item calls `handleEnterMultiselect`.
+
+```
+long press -> menu -> Select   enter, that message selected
+tap a row                      toggle it
+last one off / X / back        leave
+header  -> "N selected" + X    (SelectionTopBar)
+composer-> icon+label bar      (SelectionActionBar)
+```
+
+- **Ids only, resolved every build** (`MessageSelection`). Storing the messages
+  would freeze what the bar may offer: an edit, a send confirmation or somebody
+  else's delete all land in the feed first, and `selectedMessagesIn` re-reads
+  them from it. `retain` drops ids the feed no longer holds, which is Signal's
+  `onItemRangeRemoved` — without it the count promises rows no action can act
+  on, and an emptied selection would leave both bars up over nothing.
+- **What the bar offers is one pure function**, `selectionMenuState`, which is
+  `MenuState.getMenuState` with our own rules substituted. The load-bearing
+  half is Signal's: **more than one message drops reply, edit and save**, and
+  forward, copy and delete are what survive. Ours differ where the app does —
+  delete is withheld unless every selected message is the caller's, because we
+  have no delete-for-me and the server refuses somebody else's row; a pending
+  send has no server id, so it can be neither forwarded nor deleted; and a body
+  this device never opened (`isVaultPlaceholderBody`) is neither forwarded nor
+  copied, or the placeholder string itself gets sent. The 32-message forward
+  cap is Signal's `MAX_FORWARDABLE_COUNT`.
+- **The gutter is real layout, not a decoration.** Signal draws the circle and
+  the shade in a `RecyclerView.ItemDecoration` over an untouched item and
+  translates the item by `max(0, 48dp - itemStart)`. Flutter has no equivalent,
+  so `SelectableMessageRow` **owns the list's side inset** — 16dp at rest, 48dp
+  while selecting — which is why `MessageList` now passes no horizontal padding
+  and every non-message item (`_inset`) carries its own. A shade inset by the
+  list's padding would stop short of both screen edges.
+- **An outgoing row does not move, and that is correct**:
+  `getHorizontalTranslationTarget()` returns null for it, and a right-aligned
+  bubble has nowhere to go. Only incoming rows shift. The widget test asserts
+  both.
+- Circle 22dp at 17dp from the screen edge, 1.5dp ring unselected, filled check
+  selected, 150ms in and out; the shade is transparent-black over a wallpaper,
+  transparent-white in dark, a wash of the accent in light —
+  `MultiselectItemDecoration`'s own values.
+- **Swiping is off while selecting** (`SwipeAvailabilityProvider` checks
+  `isActionModeStarted()` first) and so is the long-press menu: a press picks
+  rows, or the menu would offer Select on top of an open selection.
+- **Back leaves the mode before it leaves the chat** — Signal's
+  `handleBackPressed`, where `isInActionMode` is handled above the pop. Leaving
+  the screen clears it too; the bars belong to this screen.
+- **Thread panels never enter it.** They have no header and no composer slot,
+  so there is nowhere to put the two bars — hence `showSelect: threadRootId ==
+  null` on the menu and the same test in the row and the view.
+- **Forwarding many is the single forward, looped in timeline order**
+  (`chat-forward/forward_send.dart`, split out of `forward_sheet.dart`).
+  Destinations are resolved **once**, or a DM created for the first message
+  would be created again for the second, and the count reported is the fewest
+  destinations any one message reached.
+- Copy joins the bodies with newlines, oldest first — Signal's
+  `copyToClipboard`, which sorts by date. Delete confirms once for the batch and
+  reports a partial failure rather than stopping at the first refusal.
+- Deliberately absent: Signal's Details, star/pin and "select all". We have no
+  message-details screen and nothing stores a star, and a dead row is worse than
+  a missing one.
+- Tests: `test/features/messages/message_selection_test.dart` (the provider and
+  every menu rule) and `message_multiselect_test.dart` (Select in the menu, the
+  shift, the checks, and the two bars swapping in).

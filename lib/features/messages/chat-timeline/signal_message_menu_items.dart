@@ -16,6 +16,7 @@ List<SignalMenuItem> signalMenuItems({
   required bool isMine,
   required bool showThread,
   required bool showSave,
+  required bool showSelect,
   required Map<String, String> labels,
 }) => [
   SignalMenuItem(
@@ -44,6 +45,15 @@ List<SignalMenuItem> signalMenuItems({
       SignalMessageAction.thread,
       Icons.forum_outlined,
       labels['thread']!,
+    ),
+  // Signal puts multi-select right after the per-message actions and before
+  // the ones that open another screen — it is the door out of this menu into
+  // the selection bars, not an action on this message.
+  if (showSelect)
+    SignalMenuItem(
+      SignalMessageAction.select,
+      Icons.check_circle_outline,
+      labels['select']!,
     ),
   if (isMine)
     SignalMenuItem(

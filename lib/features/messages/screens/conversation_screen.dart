@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../chat-header/index.dart';
+import '../chat-select/message_selection.dart';
 import '../chat-timeline/index.dart';
 import '../data/models/chat_models.dart';
 import '../nav_back.dart';
@@ -90,6 +91,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     }
     ref.read(chatProvider.notifier).setActiveConversation(null);
     ref.read(chatProvider.notifier).setThreadRootId(null);
+    // Leaving the chat leaves the mode: the bars belong to this screen, and a
+    // selection that survived it would be waiting on the next visit.
+    ref.read(messageSelectionProvider.notifier).clear();
     super.dispose();
   }
 
@@ -102,10 +106,20 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     // Prefer stack pop when list→chat push; else Messages home (notification go).
     final canPop =
         GoRouter.maybeOf(context)?.canPop() ?? Navigator.of(context).canPop();
+    // Back leaves multi-select before it leaves the conversation — Signal's
+    // `handleBackPressed`, where `isInActionMode` is handled above the pop.
+    final selecting = ref
+        .watch(messageSelectionProvider)
+        .isActiveIn(widget.conversationId);
     return PopScope(
-      canPop: canPop,
+      canPop: canPop && !selecting,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) popOrGoMessages(context);
+        if (didPop) return;
+        if (selecting) {
+          ref.read(messageSelectionProvider.notifier).clear();
+          return;
+        }
+        popOrGoMessages(context);
       },
       // The wallpaper paints inside the body, on top of the Scaffold's own
       // background and under the chat — so with no wallpaper set nothing
