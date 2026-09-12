@@ -1010,3 +1010,77 @@ Accept on CallKit's lock-screen Activity
   `tool/audit/locked_call_check.py` (answer, minimise, return from the lock
   screen, hang up; `--decline`). Never point it at a real phone.
 
+
+## One Telecom call per call id
+
+Added 2026-09-12, after "the phone says I am in a call and the SIM dialer
+refuses to place one", cleared only by uninstalling the app. Reproduced on an
+emulator: presenting one incoming call id twice, close together, left two
+Android Telecom connections behind.
+
+```
+showCallkitIncoming x2   (UI isolate and the FCM background isolate)
+  -> find(callId) == null on BOTH    Telecom creates connections asynchronously
+  -> addNewIncomingCall x2           two connections, one map slot
+  -> hangup destroys the LAST one    TC@8 DESTROYED, TC@7 still RINGING
+                                     audio mode stuck at MODE_RINGTONE
+```
+
+The WebRTC call, the microphone, the UI and the notification were all gone. The
+orphan was invisible and outlived everything except a force-stop.
+
+- **Reserve before requesting, attach afterwards.**
+  `CallkitCallLifecycle.begin(id)` inserts the id under one lock *before*
+  `addNewIncomingCall`, so the second presentation loses; `attach()` never
+  overwrites an owner — it disconnects the late or duplicate `Connection` it
+  was handed instead of dropping the reference to the live one. The plugin's
+  `ConcurrentHashMap` was correct per entry and useless across an asynchronous
+  create: the whole race lives between the check and the callback.
+- **This is Signal's shape.** Only `IdleActionProcessor` accepts a new incoming
+  call and every other state ignores one; each system call has its own
+  `TelecomCallController`, and a disconnect goes through that controller rather
+  than a global `callId -> one Connection` lookup.
+- **An Answer or a Hangup that arrives before the connection exists is kept,
+  not dropped.** `accept()` sets a flag `attach()` replays; `end()` before the
+  callback tombstones the id, so the connection Telecom creates a moment later
+  is disconnected the instant it arrives. Both happen for real — a killed app's
+  Accept, and a caller cancelling inside the same second.
+- **Ended ids are remembered (256, FIFO) and cannot be presented again.** Call
+  ids are per-call UUIDs, and Dart already refuses to re-ring an id it has
+  answered or withdrawn (`GroupCallInvites._answered`), so this only closes a
+  re-entry the app never wants. It lives in one process; a restart forgets it,
+  which is right — the connection it was guarding died with the process.
+- **`hideIncoming` is not an end.** Handing a ringing call to the Flutter screen
+  keeps the owner, so `canPresent` still says yes and the native surface can be
+  shown again. Accepted and ended calls cannot.
+- **Telecom is released BEFORE media teardown**, in `finishLocal` and in
+  `shutdown` (`voice_call_provider.dart`). It used to run after
+  `_resetResources`, so a WebRTC dispose that threw or hung was enough to keep
+  the phone busy for the SIM dialer.
+- **The patch is applied to the pinned plugin source at configure time**,
+  `android/patches/callkit-lifecycle.gradle` — same approach as
+  `callkit-accept.gradle`, and it throws a `GradleException` on a plugin bump
+  rather than quietly not applying. That is why `pubspec.yaml` pins
+  `flutter_callkit_incoming: 3.1.3` exactly, with no caret.
+  `CallkitConnection`'s companion forwards to the owner, and `unregister` now
+  takes the connection so a stale object cannot evict a live one.
+- `onCreateOutgoingConnection` carries the same admission guard, but nothing
+  reaches it: the plugin never places an outgoing Telecom call, and Dart's
+  `startCall` only raises the ongoing notification and its service.
+- Verified on an emulator, `android/app/src/androidTest/kotlin/com/ababilx/app/`:
+  `CallkitLifecycleTest` (7 tests over real `Connection` objects — 16 threads
+  racing `begin`, duplicate attach, hangup-before-callback, answer-before-
+  callback, `endAll` over a call that has no connection yet) and
+  `CallkitTelecomTest` (5 sessions through the real `ConnectionService`,
+  asserting exactly one `[Call id=` in `dumpsys telecom` and `MODE_NORMAL`
+  after each end).
+
+  ```
+  adb shell am instrument -w com.ababilx.app.test/androidx.test.runner.AndroidJUnitRunner
+  ```
+
+  Needs an **idle** emulator: the Telecom test asserts `mCalls:` is empty before
+  it starts, and it reads `dumpsys` rather than a mock. Never point it at a
+  phone with a SIM.
+- Not reproduced on a real device — the emulator's orphan matches the reported
+  symptom exactly, but the device case was only ever seen once, by hand.

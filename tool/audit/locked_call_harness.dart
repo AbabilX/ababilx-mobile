@@ -11,8 +11,9 @@ import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+import 'package:uuid/uuid.dart';
 
-const _callId = '00000000-0000-4000-8000-000000000001';
+String _callId = const Uuid().v4();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized().ensureSemantics();
@@ -92,6 +93,7 @@ class _FixtureState extends State<Fixture> {
 
   Future<void> _ring() async {
     await FlutterCallkitIncoming.endAllCalls();
+    _callId = const Uuid().v4();
     await Future<void>.delayed(const Duration(seconds: 5));
     await FlutterCallkitIncoming.showCallkitIncoming(
       CallKitParams(

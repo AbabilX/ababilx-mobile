@@ -116,8 +116,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _foregroundPushSub = null;
     final callId = state.call?.id;
     final currentUserId = state.currentUserId;
-    await _resetResources();
     if (callId != null) await _endNative(callId, source: 'shutdown');
+    await _resetResources();
     _suppressCallKitEnded.clear();
     _finishedCallIds.clear();
     state = VoiceCallState(currentUserId: currentUserId);
@@ -1046,6 +1046,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _ringTimer?.cancel();
     _connectWatchdog?.cancel();
     _renegotiateTimer?.cancel();
+    // Release Android's call ownership before awaiting media cleanup: a slow
+    // or failed WebRTC dispose must not leave the SIM dialer busy.
+    if (id != null) {
+      await _endNative(id, source: 'finishLocal.$reason');
+    }
     await IncomingCallRingtone.stop();
     await _reconnect?.dispose();
     _reconnect = null;
@@ -1053,9 +1058,6 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _engine = null;
     _pendingSignals.clear();
     _offerResent = false;
-    if (id != null) {
-      await _endNative(id, source: 'finishLocal.$reason');
-    }
     state = state.copyWith(
       phase: phase,
       clearReconnectingSince: true,

@@ -1,0 +1,116 @@
+// Pinned 3.1.3 patches: reserve an owner before asynchronous Telecom creation,
+// replay early actions, and release Telecom independently of saved UI records.
+def lifecycleSource = new File(settingsDir, 'patches/callkit')
+
+def replaceLifecycle(File file, String before, String after) {
+    def source = file.text
+    if (source.contains(after)) return
+    if (!source.contains(before)) {
+        throw new GradleException("CallKit lifecycle patch no longer matches: ${file.name}")
+    }
+    file.text = source.replace(before, after)
+}
+
+gradle.beforeProject { project ->
+    if (project.name != 'flutter_callkit_incoming') return
+    def dir = new File(project.projectDir, 'src/main/kotlin/com/hiennv/flutter_callkit_incoming')
+    new File(dir, 'CallkitCallLifecycle.kt').text = new File(lifecycleSource, 'CallkitCallLifecycle.kt').text
+
+    def connection = new File(dir, 'CallkitConnection.kt')
+    replaceLifecycle(connection,
+        'private val activeConnections = ConcurrentHashMap<String, CallkitConnection>()',
+        '// CallkitCallLifecycle owns pending and connected calls across engines.')
+    replaceLifecycle(connection,
+        'fun find(callId: String): CallkitConnection? = activeConnections[callId]',
+        'fun find(callId: String): CallkitConnection? = CallkitCallLifecycle.find(callId)')
+    replaceLifecycle(connection,
+        'activeConnections[callId] = conn',
+        'CallkitCallLifecycle.attach(callId, conn)')
+    replaceLifecycle(connection,
+        '''        fun unregister(callId: String) {
+            activeConnections.remove(callId)
+        }''',
+        '''        fun unregister(callId: String, connection: CallkitConnection) {
+            CallkitCallLifecycle.finished(callId, connection)
+        }''')
+    replaceLifecycle(connection, 'activeConnections.clear()', 'CallkitCallLifecycle.endAll()')
+    replaceLifecycle(connection, 'fun activeCount(): Int = activeConnections.size',
+        'fun activeCount(): Int = CallkitCallLifecycle.activeCount()')
+    replaceLifecycle(connection, '        register(callId, this)',
+        '        // Attach only after the service initializes RINGING/DIALING.')
+    replaceLifecycle(connection, '    private fun finishWithCause(cause: Int)',
+        '    internal fun finishWithCause(cause: Int)')
+    replaceLifecycle(connection, '        unregister(callId)', '        unregister(callId, this)')
+
+    def service = new File(dir, 'CallkitConnectionService.kt')
+    replaceLifecycle(service, '        return connection',
+        '''        CallkitCallLifecycle.attach(callId, connection)
+        return connection''')
+    replaceLifecycle(service,
+        '        Log.d(TAG, "onCreateOutgoingConnection id=$callId callee=${data.nameCaller}")',
+        '''        if (!CallkitCallLifecycle.begin(callId)) return failed("Duplicate or ended call")
+        Log.d(TAG, "onCreateOutgoingConnection id=$callId callee=${data.nameCaller}")''')
+    replaceLifecycle(service,
+        '        Log.w(TAG, "onCreateIncomingConnectionFailed")',
+        '''        extractCallBundle(request?.extras)?.let {
+            CallkitCallLifecycle.end(Data.fromBundle(it).id, DisconnectCause.ERROR)
+        }
+        Log.w(TAG, "onCreateIncomingConnectionFailed")''')
+
+    def receiver = new File(dir, 'CallkitIncomingBroadcastReceiver.kt')
+    // Upgrade the earlier local patch if this cache was built during development.
+    def priorAdmission = '''                    // One owner even when two Flutter engines present together.
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                        !CallkitCallLifecycle.begin(Data.fromBundle(data).id)) return
+                    registerTelecomIncomingCall(context, data)'''
+    if (receiver.text.contains(priorAdmission)) {
+        receiver.text = receiver.text.replace(priorAdmission,
+            '                    registerTelecomIncomingCall(context, data)')
+    }
+    replaceLifecycle(receiver, '                    registerTelecomIncomingCall(context, data)',
+        '''                    // A hidden ringing surface can be shown again; ended/accepted calls cannot.
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                        !CallkitCallLifecycle.canPresent(Data.fromBundle(data).id)) return
+                    registerTelecomIncomingCall(context, data)''')
+    replaceLifecycle(receiver, '        if (CallkitConnection.find(parsed.id) != null) {',
+        '        if (!CallkitCallLifecycle.begin(parsed.id)) {')
+    replaceLifecycle(receiver,
+        '''        val conn = CallkitConnection.find(parsed.id) ?: return
+        when (action) {
+            CallkitConstants.ACTION_CALL_ACCEPT -> conn.markAccepted()
+            CallkitConstants.ACTION_CALL_DECLINE -> conn.markDeclined(context)
+            CallkitConstants.ACTION_CALL_ENDED -> conn.markEnded()
+            CallkitConstants.ACTION_CALL_TIMEOUT -> conn.markMissed()
+        }''',
+        '''        when (action) {
+            CallkitConstants.ACTION_CALL_ACCEPT -> CallkitCallLifecycle.accept(parsed.id)
+            CallkitConstants.ACTION_CALL_DECLINE -> CallkitCallLifecycle.end(parsed.id, android.telecom.DisconnectCause.REJECTED)
+            CallkitConstants.ACTION_CALL_ENDED -> CallkitCallLifecycle.end(parsed.id)
+            CallkitConstants.ACTION_CALL_TIMEOUT -> CallkitCallLifecycle.end(parsed.id, android.telecom.DisconnectCause.MISSED)
+        }''')
+
+    def plugin = new File(dir, 'FlutterCallkitIncomingPlugin.kt')
+    replaceLifecycle(plugin,
+        '''                "endCall" -> {
+                    val calls = getDataActiveCalls(context)
+                    val data = Data(call.arguments() ?: HashMap())''',
+        '''                "endCall" -> {
+                    val calls = getDataActiveCalls(context)
+                    val data = Data(call.arguments() ?: HashMap())
+                    // Saved notification records are not Telecom ownership.
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) CallkitCallLifecycle.end(data.id)''')
+    replaceLifecycle(plugin,
+        '''                "endAllCalls" -> {
+                    val calls = getDataActiveCalls(context)''',
+        '''                "endAllCalls" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) CallkitCallLifecycle.endAll()
+                    val calls = getDataActiveCalls(context)''')
+    replaceLifecycle(plugin,
+        '''                "callConnected" -> {
+                    val calls = getDataActiveCalls(context)
+                    val data = Data(call.arguments() ?: HashMap())''',
+        '''                "callConnected" -> {
+                    val calls = getDataActiveCalls(context)
+                    val data = Data(call.arguments() ?: HashMap())
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) CallkitCallLifecycle.accept(data.id)''')
+}
