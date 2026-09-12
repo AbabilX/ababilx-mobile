@@ -232,9 +232,7 @@ class ChatMessageStore {
   Future<void> clearAll() async {
     final native = _android;
     if (native != null) {
-      try {
-        await native.clearAll();
-      } catch (_) {}
+      await native.clearAll();
     }
     await _drift.clearAll();
   }

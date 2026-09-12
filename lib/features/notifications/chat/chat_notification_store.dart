@@ -145,4 +145,15 @@ class ChatNotificationStore {
       await _prefs.remove(_key(conversationId));
     } catch (_) {}
   }
+
+  static Future<void> clearAll({bool strict = false}) async {
+    try {
+      final keys = await _prefs.getKeys();
+      for (final key in keys.where((value) => value.startsWith(_prefix))) {
+        await _prefs.remove(key);
+      }
+    } catch (_) {
+      if (strict) rethrow;
+    }
+  }
 }

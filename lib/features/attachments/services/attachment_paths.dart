@@ -78,12 +78,10 @@ class AttachmentPaths {
     return out;
   }
 
-  /// Wipes every downloaded byte — sign-out, or a "clear storage" action.
+  /// Wipes app-private downloads for account reset or "clear storage".
   Future<void> deleteAll() async {
-    try {
-      final base = await root();
-      if (await base.exists()) await base.delete(recursive: true);
-      _root = null;
-    } catch (_) {}
+    final base = await root();
+    if (await base.exists()) await base.delete(recursive: true);
+    _root = null;
   }
 }

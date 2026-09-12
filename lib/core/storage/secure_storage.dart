@@ -37,6 +37,11 @@ class SecureStorage {
   Future<void> writeMessagingDeviceIdentity(String value) =>
       _storage.write(key: StorageKeys.messagingDeviceIdentity, value: value);
 
+  Future<String?> readLocalDataOwnerUserId() =>
+      _storage.read(key: StorageKeys.localDataOwnerUserId);
+  Future<void> writeLocalDataOwnerUserId(String userId) =>
+      _storage.write(key: StorageKeys.localDataOwnerUserId, value: userId);
+
   Future<String?> readRecoveryCode(String identityId) =>
       _storage.read(key: 'message_recovery_code_$identityId');
   Future<void> writeRecoveryCode(String identityId, String code) =>
@@ -49,5 +54,13 @@ class SecureStorage {
   Future<void> deletePendingRecovery(String userId) =>
       _storage.delete(key: 'pending_recovery_v1_$userId');
 
-  Future<void> clearAll() => _storage.deleteAll();
+  /// Ends authentication without destroying this phone's message archive.
+  Future<void> clearAuthSession() async {
+    await deleteJwt();
+    await deleteRefreshToken();
+  }
+
+  /// Account switch / explicit full reset only. Exported MediaStore and Files
+  /// copies are outside secure storage and deliberately survive this.
+  Future<void> clearAllPrivateData() => _storage.deleteAll();
 }

@@ -94,6 +94,10 @@ class AppTranslations {
       'login_subtitle':
           'Stay close to friends and family—with privacy and end-to-end encryption built in.',
       'continue_google': 'Continue with Google',
+      'account_switch_title': 'Switch accounts on this phone?',
+      'account_switch_body':
+          'Signing in as {account} will permanently remove the previous account’s messages, private media and message keys from this phone. Files saved to AbabilXStorage will stay.',
+      'account_switch_confirm': 'Delete local data and continue',
       'messages': 'Messages',
       'calls': 'Calls',
       'wall': 'Wall',
@@ -505,6 +509,10 @@ class AppTranslations {
       'login_subtitle':
           'বন্ধু ও পরিবারের কাছাকাছি থাকুন—গোপনীয়তা ও এন্ড-টু-এন্ড এনক্রিপশনসহ।',
       'continue_google': 'গুগল অ্যাকাউন্ট দিয়ে এগিয়ে যান',
+      'account_switch_title': 'এই ফোনে অ্যাকাউন্ট বদলাবেন?',
+      'account_switch_body':
+          '{account} হিসেবে ঢুকলে আগের অ্যাকাউন্টের বার্তা, ব্যক্তিগত মিডিয়া ও মেসেজ কী এই ফোন থেকে স্থায়ীভাবে মুছে যাবে। AbabilXStorage-এ সেভ করা ফাইল থাকবে।',
+      'account_switch_confirm': 'লোকাল ডেটা মুছে এগিয়ে যান',
       'messages': 'বার্তা',
       'calls': 'কল',
       'wall': 'ওয়াল',

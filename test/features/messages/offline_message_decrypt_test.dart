@@ -83,6 +83,8 @@ class _Repository implements ChatRepository {
 
 class _Storage implements SecureStorage {
   String? identity;
+  final pendingRecovery = <String, String>{};
+  final recoveryCodes = <String, String>{};
   @override
   Future<String?> readMessageVaultIdentity() async => identity;
   @override
@@ -90,6 +92,21 @@ class _Storage implements SecureStorage {
       identity = value;
   @override
   Future<void> deleteMessageVaultIdentity() async => identity = null;
+  @override
+  Future<String?> readPendingRecovery(String userId) async =>
+      pendingRecovery[userId];
+  @override
+  Future<void> writePendingRecovery(String userId, String value) async =>
+      pendingRecovery[userId] = value;
+  @override
+  Future<void> deletePendingRecovery(String userId) async =>
+      pendingRecovery.remove(userId);
+  @override
+  Future<String?> readRecoveryCode(String identityId) async =>
+      recoveryCodes[identityId];
+  @override
+  Future<void> writeRecoveryCode(String identityId, String code) async =>
+      recoveryCodes[identityId] = code;
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

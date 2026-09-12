@@ -66,8 +66,7 @@ class AttachmentQueue {
     _tokens.remove(urlKey)?.cancel('cancelled by user');
   }
 
-  /// Sign-out barrier: no prior-account transfer may finish after its files
-  /// and database rows have been cleared.
+  /// Session barrier: no transfer may keep writing after logout/reset starts.
   Future<void> cancelAll() async {
     for (final token in _tokens.values.toList()) {
       token.cancel('session ended');

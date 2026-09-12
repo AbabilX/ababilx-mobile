@@ -36,7 +36,7 @@ class AttachmentSweeper {
     }
   }
 
-  /// Whole-store sweep, throttled to [sweepInterval].
+  /// Cold-launch cleanup: only abandoned rows/files, never retained media.
   Future<void> sweepIfDue() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -44,11 +44,16 @@ class AttachmentSweeper {
       final now = DateTime.now().millisecondsSinceEpoch;
       if (now - last < sweepInterval.inMilliseconds) return;
       await prefs.setInt(_lastSweepKey, now);
-      await sweep();
+      await _cleanupOrphans();
     } catch (_) {}
   }
 
   Future<void> sweep() async {
+    await _cleanupOrphans();
+    await _enforceBudget();
+  }
+
+  Future<void> _cleanupOrphans() async {
     for (final urlKey in await _refs.orphanUrlKeys()) {
       await _deleteBlob(urlKey);
     }
@@ -58,7 +63,6 @@ class AttachmentSweeper {
       } catch (_) {}
     }
     await _reclaimLeakedDuplicates();
-    await _enforceBudget();
   }
 
   /// A dedupe commit writes the row's canonical path before deleting the
@@ -127,7 +131,7 @@ class AttachmentSweeper {
     } catch (_) {}
   }
 
-  /// Sign-out: every downloaded byte and every row goes.
+  /// Account reset: every private downloaded byte and every row goes.
   Future<void> clearAll() async {
     await _blobs.clearAll();
     await _refs.clearAll();

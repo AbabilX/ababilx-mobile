@@ -168,9 +168,7 @@ class AttachmentBlobStore {
   }
 
   Future<void> clearAll() async {
-    try {
-      await _db.delete(_db.attachmentBlobs).go();
-    } catch (_) {}
+    await _db.delete(_db.attachmentBlobs).go();
   }
 
   Future<void> _update(String urlKey, AttachmentBlobsCompanion patch) async {

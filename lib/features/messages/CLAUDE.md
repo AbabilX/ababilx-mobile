@@ -503,7 +503,8 @@ The flag is the whole "once" guarantee. `complete()` runs when the job
 finishes (success, failure, or nothing to pull). `mark()` is a no-op after
 that, so a later launch or opening a DM cannot start another sweep. A kill
 mid-run leaves `pending` set and bootstrap resumes **that** first restore,
-then completes. Sign-out and start-fresh call `clearAll()`. Ordinary
+then completes. Account switch and start-fresh call `clearAll()`; normal
+sign-out preserves it with the rest of the local archive. Ordinary
 `restoreTrustedIdentity` / setup never set the flag.
 
 Older pages stay on scroll-back, same as before. The server still only holds
@@ -635,10 +636,10 @@ manifest   seal and commit the index of what was sent — and what was missing
   of re-sealing under it; the notification quick reply uses `encryptNew` with
   the push's `sender_id` so it can rotate. Messages written before the reset
   stay unreadable — that half is the trade, not a bug.
-- **Logging out still erases the key on that device** (`SecureStorage.clearAll`)
-  — signing back in costs the recovery code, not the account's history. Without
-  the code it is a real loss, which is why the setup screen makes people tick a
-  box rather than letting them swipe past.
+- **Logging out preserves the key and local archive on that device.** A
+  same-account Google relogin reopens it without a recovery ceremony. Switching
+  to a different backend `user.id` requires an explicit destructive warning;
+  only the confirmed account switch or a full vault reset removes the key.
 - The reset (`POST /api/teams/chat/e2ee/reset`, 9-character emailed code) now
   carries the replacement identity's `recovery` blob in the same request. The
   emailed code is spent by then, so a client that stopped between two calls
@@ -769,7 +770,7 @@ divider, **My linked devices**, then the end-to-end-encryption footer. Rename
 and Sign out moved into each row's ⋮, and "sign out all other devices" into the
 app-bar overflow — a rare, heavy action does not belong under the list as a red
 button. The current session never offers Sign out here; that is Settings →
-Sign out, which also clears this device's message key.
+Sign out, which ends authentication but preserves this device's message key.
 
 Rows show **dates** ("Linked 26/08/26"), not "3 days ago": the list is read to
 recognise a device, and a relative age answers neither question. The drawing is
@@ -831,8 +832,8 @@ the same place, on both, with strictly less at rest.
   written months ago. Every send path still goes through `_loadKey`, unchanged.
 - Order is memory → disk → network. Disk before network also means opening a
   chat with a connection now costs **no request at all**, which the test pins.
-- Wiped on sign-out, on Start fresh (every envelope is sealed to an identity
-  that no longer exists) and with a deleted conversation.
+- Wiped on confirmed account switch, on Start fresh (every envelope is sealed
+  to an identity that no longer exists) and with a deleted conversation.
 
 ## 2. Being offline was tearing down a valid identity
 

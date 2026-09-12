@@ -5,6 +5,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../firebase_options.dart';
+import 'auth_session.dart';
 
 class AuthRepository {
   AuthRepository(this._client, this._storage);
@@ -24,14 +25,14 @@ class AuthRepository {
   ///   1. Google Sign-In → get Google credentials
   ///   2. Sign into Firebase with those credentials
   ///   3. Get Google ID token → send to our backend → receive app JWT
-  Future<Map<String, dynamic>> signInWithGoogle() async {
+  Future<PreparedAuthSession?> prepareGoogleSignIn() async {
     // Disconnect any cached account to force a fresh account picker
     // and ensure a valid idToken is issued every time.
     await _googleSignIn.signOut();
 
     // Trigger Google Sign-In picker
     final googleAccount = await _googleSignIn.signIn();
-    if (googleAccount == null) throw Exception('Google sign-in cancelled');
+    if (googleAccount == null) return null;
 
     final googleAuth = await googleAccount.authentication;
     final accessToken = googleAuth.accessToken;
@@ -71,14 +72,46 @@ class AuthRepository {
         body['data']?['token'] as String?;
     if (jwt == null) throw Exception('No token in server response');
 
-    final refreshToken = body['refresh_token'] as String?;
-    await _storage.writeJwt(jwt);
-    if (refreshToken != null) {
-      await _storage.writeRefreshToken(refreshToken);
-    }
+    final rawUser = body['user'];
+    final user = rawUser is Map
+        ? Map<String, dynamic>.from(rawUser)
+        : <String, dynamic>{};
+    final userId = user['id']?.toString().trim() ?? '';
+    if (userId.isEmpty) throw Exception('No user id in server response');
+    return PreparedAuthSession(
+      accessToken: jwt,
+      refreshToken: body['refresh_token'] as String?,
+      userId: userId,
+      user: user,
+    );
+  }
 
-    final user = body['user'] as Map<String, dynamic>?;
-    return user ?? {};
+  /// The access token is written last. A partial write can therefore never
+  /// make the router treat an unowned or half-switched session as signed in.
+  Future<void> commitSession(PreparedAuthSession session) async {
+    try {
+      final refresh = session.refreshToken;
+      if (refresh == null || refresh.isEmpty) {
+        await _storage.deleteRefreshToken();
+      } else {
+        await _storage.writeRefreshToken(refresh);
+      }
+      await _storage.writeLocalDataOwnerUserId(session.userId);
+      await _storage.writeJwt(session.accessToken);
+    } catch (_) {
+      await _storage.clearAuthSession();
+      rethrow;
+    }
+  }
+
+  Future<void> cancelPreparedSignIn() async {
+    try {
+      await _firebaseAuth.signOut();
+    } catch (_) {}
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
+    await _storage.clearAuthSession();
   }
 
   /// Ending the local session is the part that must not fail. Firebase and
@@ -92,7 +125,7 @@ class AuthRepository {
     try {
       await _googleSignIn.signOut();
     } catch (_) {}
-    await _storage.clearAll();
+    await _storage.clearAuthSession();
   }
 
   Future<String?> readToken() => _storage.readJwt();

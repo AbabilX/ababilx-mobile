@@ -54,11 +54,13 @@ class TeamRepository {
     } catch (_) {}
   }
 
-  Future<void> clearCache() async {
+  Future<void> clearCache({bool strict = false}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_cacheKey);
-    } catch (_) {}
+    } catch (_) {
+      if (strict) rethrow;
+    }
   }
 }
 

@@ -50,6 +50,8 @@ class _Repository implements ChatRepository {
 class _Storage implements SecureStorage {
   String? identity;
   bool failWrite = false;
+  final pendingRecovery = <String, String>{};
+  final recoveryCodes = <String, String>{};
   @override
   Future<String?> readMessageVaultIdentity() async => identity;
   @override
@@ -57,6 +59,22 @@ class _Storage implements SecureStorage {
     if (failWrite) throw StateError('device storage unavailable');
     identity = value;
   }
+
+  @override
+  Future<String?> readPendingRecovery(String userId) async =>
+      pendingRecovery[userId];
+  @override
+  Future<void> writePendingRecovery(String userId, String value) async =>
+      pendingRecovery[userId] = value;
+  @override
+  Future<void> deletePendingRecovery(String userId) async =>
+      pendingRecovery.remove(userId);
+  @override
+  Future<String?> readRecoveryCode(String identityId) async =>
+      recoveryCodes[identityId];
+  @override
+  Future<void> writeRecoveryCode(String identityId, String code) async =>
+      recoveryCodes[identityId] = code;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -67,9 +85,10 @@ void main() {
     'new account sets up; another phone offers recovery and restores identity',
     () async {
       final repo = _Repository();
-      final first = MessageVault(repo, _Storage());
-      expect(await first.ensureIdentity(), VaultIdentityState.setup);
-      final code = first.takePendingRecoveryCode()!;
+      final firstStorage = _Storage();
+      final first = MessageVault(repo, firstStorage);
+      expect(await first.ensureIdentity(), VaultIdentityState.ready);
+      final code = firstStorage.recoveryCodes.values.single;
       final second = MessageVault(repo, _Storage());
       expect(await second.ensureIdentity(), VaultIdentityState.unlock);
       await second.unlockWithRecoveryCode(code);

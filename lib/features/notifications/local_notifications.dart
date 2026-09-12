@@ -6,12 +6,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'chat/chat_notification_actions.dart';
 import 'notification_channels.dart';
 
-/// Shows local notifications while the app is in the foreground.
-///
-/// One instance per isolate, deliberately: the underlying plugin is a native
-/// singleton, so a second instance re-running `initialize` would replace the
-/// tap callback the app wired at startup. Notification actions construct this
-/// freely and get whatever is already initialised here.
+/// One instance per isolate: a second initialization would replace the
+/// app tap callback; notification actions reuse this initialized singleton.
 class LocalNotifications {
   factory LocalNotifications() => _instance;
 
@@ -164,11 +160,19 @@ class LocalNotifications {
     try {
       await _plugin.cancel(id: id);
     } catch (_) {
-      // Cancelling an entry that is already gone is not a failure.
+      // Already gone is fine.
     }
   }
 
-  /// Encodes a navigation path (and optional data) as notification payload.
+  Future<void> cancelAll({bool strict = false}) async {
+    if (!_ready) return;
+    try {
+      await _plugin.cancelAll();
+    } catch (_) {
+      if (strict) rethrow;
+    }
+  }
+
   static String encodePayload(String path, [Map<String, dynamic>? data]) {
     return jsonEncode({'path': path, 'data': data ?? {}});
   }

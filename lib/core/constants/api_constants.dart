@@ -335,4 +335,5 @@ class StorageKeys {
   static const String messageVaultIdentity = 'ababilx_message_vault_identity';
   static const String messagingDeviceIdentity =
       'ababilx_messaging_device_identity';
+  static const String localDataOwnerUserId = 'ababilx_local_data_owner_user_id';
 }

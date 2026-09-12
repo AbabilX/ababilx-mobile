@@ -34,14 +34,14 @@ class ApiClient {
           final path = error.requestOptions.path;
           if (path == ApiConstants.authRefresh ||
               error.requestOptions.extra['retried'] == true) {
-            await _storage.clearAll();
+            await _storage.clearAuthSession();
             handler.next(error);
             return;
           }
 
           final refreshed = await _tryRefreshToken();
           if (!refreshed) {
-            await _storage.clearAll();
+            await _storage.clearAuthSession();
             handler.next(error);
             return;
           }

@@ -56,9 +56,7 @@ class SafetyNumberStore {
     await prefs.setString(_key(ownerUserId, peerUserId), fingerprint);
   }
 
-  /// Drops every remembered fingerprint. Called on sign-out: these belong to
-  /// the account that left, and leaving them behind would tell the next account
-  /// on this device that a key "changed" when it had simply never seen it.
+  /// Drops every fingerprint during account switch or a full vault reset.
   Future<void> forgetAll() async {
     final prefs = await SharedPreferences.getInstance();
     final doomed = prefs.getKeys().where((k) => k.startsWith(_prefix)).toList();

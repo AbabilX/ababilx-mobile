@@ -113,9 +113,7 @@ class ChatOutboxCache {
   }
 
   Future<void> clearAll() async {
-    try {
-      await _db.delete(_db.pendingOutboxMessages).go();
-    } catch (_) {}
+    await _db.delete(_db.pendingOutboxMessages).go();
   }
 
   OutboxEntry _toEntry(PendingOutboxMessage row) {

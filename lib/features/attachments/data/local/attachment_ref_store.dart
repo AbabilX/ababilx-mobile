@@ -94,9 +94,7 @@ class AttachmentRefStore {
   }
 
   Future<void> clearAll() async {
-    try {
-      await _db.delete(_db.attachmentRefs).go();
-    } catch (_) {}
+    await _db.delete(_db.attachmentRefs).go();
   }
 }
 
