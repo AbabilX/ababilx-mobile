@@ -59,7 +59,15 @@ Future<void> _forward(
   int sent;
   try {
     final conversations = await _resolveConversations(ref, message, targets);
-    if (conversations.isEmpty) return;
+    // Every pick dropped out — a conversation the list no longer holds, or all
+    // of them the message's own. Returning quietly here left Send doing
+    // nothing visible, which is the one outcome this flow must never have.
+    if (conversations.isEmpty) {
+      if (context.mounted) {
+        _toast(context, ref, 'chat_forward_failed', isError: true);
+      }
+      return;
+    }
     final prepared = await buildForwardTargets(
       vault: vault,
       currentUserId: ref.read(chatProvider).currentUserId,

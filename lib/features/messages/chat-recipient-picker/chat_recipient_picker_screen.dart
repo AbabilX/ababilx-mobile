@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../shared/widgets/app_toast.dart';
 import '../chat_list_filters.dart';
 import '../providers/chat_provider.dart';
 import '../providers/messageable_people_provider.dart';
 import 'chat_recipient_list.dart';
+import 'chat_recipient_sections.dart';
 import 'chat_recipient_search_field.dart';
 import 'chat_recipient_target.dart';
-import '../../../shared/text/name_search.dart';
 
 typedef ChatRecipientSubmit =
     Future<void> Function(List<ChatRecipientTarget> recipients, String caption);
@@ -58,10 +59,9 @@ class _ChatRecipientPickerScreenState
   @override
   Widget build(BuildContext context) {
     final chat = ref.watch(chatProvider);
-    final contacts = ref
+    final people = ref
         .watch(messageablePeopleProvider)
         .where((person) => person.canMessage)
-        .map(ChatRecipientTarget.person)
         .toList();
     final conversations =
         unifiedConversations(dms: chat.dms, channels: chat.channels)
@@ -73,18 +73,12 @@ class _ChatRecipientPickerScreenState
             )
             .toList();
     final query = _search.text.trim();
-    final recent = conversations
-        .take(7)
-        .map((c) => ChatRecipientTarget.conversation(c, chat.currentUserId))
-        .toList();
-    final remainingGroups = conversations
-        .skip(7)
-        .where((c) => c.isGroupConversation)
-        .map((c) => ChatRecipientTarget.conversation(c, chat.currentUserId))
-        .toList();
-    final shownContacts = _filter(contacts, query);
-    final shownRecent = _filter(recent, query);
-    final shownGroups = _filter(remainingGroups, query);
+    final sections = buildChatRecipientSections(
+      conversations: conversations,
+      people: people,
+      currentUserId: chat.currentUserId,
+      query: query,
+    );
     // The send bar sits in the body, not in `bottomNavigationBar`: Scaffold
     // lays that slot out against the full screen height and never lifts it for
     // the keyboard, so the caption field ended up behind the IME with no way
@@ -102,9 +96,9 @@ class _ChatRecipientPickerScreenState
             ),
             Expanded(
               child: ChatRecipientList(
-                recent: shownRecent,
-                groups: shownGroups,
-                contacts: shownContacts,
+                recent: sections.recent,
+                groups: sections.groups,
+                contacts: sections.contacts,
                 selected: _selected.keys.toSet(),
                 enabled: !_sending,
                 onToggle: _toggle,
@@ -121,16 +115,6 @@ class _ChatRecipientPickerScreenState
         ),
       ),
     );
-  }
-
-  List<ChatRecipientTarget> _filter(
-    List<ChatRecipientTarget> items,
-    String query,
-  ) {
-    if (query.isEmpty) return items;
-    return items
-        .where((item) => matchesNameQuery(query, [item.name, item.subtitle]))
-        .toList();
   }
 
   // The enclosing SafeArea already holds the gesture inset, so this only
@@ -171,14 +155,20 @@ class _ChatRecipientPickerScreenState
 
   /// The spinner must come back for ANY outcome, including one nobody
   /// anticipated. A submit that threw used to leave the button spinning with
-  /// the exception going nowhere, so the screen simply stopped — reporting
-  /// failure is the caller's job, but not hanging is this one's.
+  /// the exception going nowhere, so the screen simply stopped.
+  ///
+  /// Reporting failure is the caller's job and every `onSubmit` does it — but
+  /// this catch is the last thing standing between an unforeseen throw and a
+  /// Send that says nothing at all, which is exactly how the share flow's
+  /// `startDm` failure stayed invisible. It swallowed silently until now.
   Future<void> _submit() async {
     setState(() => _sending = true);
     try {
       await widget.onSubmit(_selected.values.toList(), _caption.text.trim());
     } catch (_) {
-      // Swallowed on purpose: every onSubmit surfaces its own message.
+      if (mounted) {
+        showAppToast(context, _tr('chat_send_failed'), isError: true);
+      }
     } finally {
       if (mounted) setState(() => _sending = false);
     }

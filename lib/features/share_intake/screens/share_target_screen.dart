@@ -75,10 +75,26 @@ class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
     List<ChatRecipientTarget> targets,
     String body,
   ) async {
-    if (!payload.hasFiles && body.isEmpty) return;
-    final conversationIds = await _resolveConversationIds(targets);
+    if (!payload.hasFiles && body.isEmpty) {
+      ShareResultReport.nothingToSend(context);
+      return;
+    }
+    // Resolving is inside the reporting, not before it. A picked person with
+    // no chat yet is opened with `startDm` here, and that is a network call:
+    // its throw used to escape `_send` entirely, into the picker's own
+    // `catch (_)`, so Send spun once and did nothing at all.
+    List<String> conversationIds;
+    try {
+      conversationIds = await _resolveConversationIds(targets);
+    } catch (error) {
+      if (mounted) ShareResultReport.error(context, error);
+      return;
+    }
     if (!mounted) return;
-    if (conversationIds.isEmpty) return;
+    if (conversationIds.isEmpty) {
+      ShareResultReport.noRecipients(context);
+      return;
+    }
     ShareSendResult result;
     try {
       result = await sendSharedPayload(

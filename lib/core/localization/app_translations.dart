@@ -172,6 +172,7 @@ class AppTranslations {
       'chat_dismiss_message_actions': 'Dismiss message actions',
       'chat_reply': 'Reply',
       'chat_forward': 'Forward',
+      'chat_send_failed': 'Could not send. Try again.',
       'chat_forward_failed': 'Could not forward this message.',
       'chat_forward_offline':
           'No internet connection. Please try again once you are back online.',
@@ -577,6 +578,7 @@ class AppTranslations {
       'chat_dismiss_message_actions': 'বার্তার অপশন বন্ধ করুন',
       'chat_reply': 'উত্তর দিন',
       'chat_forward': 'ফরওয়ার্ড করুন',
+      'chat_send_failed': 'পাঠানো যায়নি। আবার চেষ্টা করুন।',
       'chat_forward_failed': 'বার্তাটি ফরওয়ার্ড করা যায়নি।',
       'chat_forward_offline':
           'ইন্টারনেট সংযোগ নেই। অনলাইনে ফিরে এসে আবার চেষ্টা করুন।',
