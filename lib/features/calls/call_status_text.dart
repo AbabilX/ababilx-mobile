@@ -1,42 +1,49 @@
+import '../../core/localization/app_translations.dart';
 import 'providers/voice_call_state.dart';
 
 /// The one line under the caller's name.
 ///
 /// Pure so it can be tested without a widget tree, and so the call screen and
 /// the picture-in-picture window can never disagree about what a call is
-/// currently doing.
-String voiceCallStatusText(VoiceCallState state) {
+/// currently doing. That is why the language arrives as a string instead of a
+/// BuildContext: a widget-bound lookup here would force every caller to be a
+/// Consumer, and the return bar is rebuilt from a router listener.
+String voiceCallStatusText(VoiceCallState state, {String lang = 'en'}) {
+  String t(String key) => AppTranslations.of(lang, key);
+
   switch (state.phase) {
     case VoiceCallPhase.idle:
-      return 'Call finished';
+      return t('call_status_finished');
     case VoiceCallPhase.starting:
-      return 'Starting call…';
+      return t('call_status_starting');
     case VoiceCallPhase.outgoingRinging:
-      return 'Calling…';
+      return t('call_status_calling');
     case VoiceCallPhase.incomingRinging:
-      return 'Incoming call…';
+      return t('call_status_incoming');
     case VoiceCallPhase.connecting:
-      return 'Connecting…';
+      return t('call_status_connecting');
     case VoiceCallPhase.connected:
       // Still "connected" during a recovery on purpose — the call has not
       // ended, it is re-gathering candidates. Showing the frozen timer instead
       // would read as a live call with dead audio.
       final since = state.reconnectingSince;
-      if (since != null) return voiceReconnectText(since);
+      if (since != null) return voiceReconnectText(since, lang: lang);
       return formatCallDuration(state.connectedAt);
     case VoiceCallPhase.ended:
       final status = state.call?.status;
       // Caller sees a formal busy message when the peer declines.
       if (status == 'declined' && state.outgoing) {
-        return '${state.peerName} is busy right now';
+        return t('call_status_busy').replaceAll('{name}', state.peerName);
       }
-      if (status == 'declined') return 'Call declined';
-      if (status == 'cancelled') return 'Call cancelled';
-      if (status == 'missed') return 'No answer';
+      if (status == 'declined') return t('call_status_declined');
+      if (status == 'cancelled') return t('call_status_cancelled');
+      if (status == 'missed') return t('call_status_no_answer');
       final lasted = formatCallDuration(state.connectedAt);
-      return lasted == '00:00' ? 'Call ended' : 'Call ended · $lasted';
+      return lasted == '00:00'
+          ? t('call_status_ended')
+          : t('call_status_ended_lasted').replaceAll('{duration}', lasted);
     case VoiceCallPhase.failed:
-      return 'Call failed';
+      return t('call_status_failed');
   }
 }
 
@@ -46,16 +53,19 @@ String voiceCallStatusText(VoiceCallState state) {
 /// the app hanging. Softening the wording twice tells the truth — it is still
 /// trying, and it is going badly — without ending the call early or touching
 /// the audio route.
-String voiceReconnectText(DateTime since, {DateTime? now}) {
+String voiceReconnectText(DateTime since, {DateTime? now, String lang = 'en'}) {
   final elapsed = (now ?? DateTime.now()).difference(since);
-  if (elapsed < const Duration(seconds: 15)) return 'Reconnecting…';
-  if (elapsed < const Duration(seconds: 45)) {
-    return 'Poor connection. Still trying…';
+  if (elapsed < const Duration(seconds: 15)) {
+    return AppTranslations.of(lang, 'call_reconnecting');
   }
-  return 'Connection lost. Trying to restore…';
+  if (elapsed < const Duration(seconds: 45)) {
+    return AppTranslations.of(lang, 'call_reconnect_poor');
+  }
+  return AppTranslations.of(lang, 'call_reconnect_lost');
 }
 
-/// mm:ss, or hh:mm:ss once a call passes an hour.
+/// mm:ss, or hh:mm:ss once a call passes an hour. Digits only, so it needs no
+/// translation.
 String formatCallDuration(DateTime? started, {DateTime? now}) {
   if (started == null) return '00:00';
   final duration = (now ?? DateTime.now()).difference(started);

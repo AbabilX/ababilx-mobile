@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../../core/router/router_path.dart';
 import '../call_status_text.dart';
 import '../group/providers/group_call_provider.dart';
@@ -29,6 +30,7 @@ class ActiveCallBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dm = ref.watch(voiceCallProvider);
+    final lang = ref.watch(appLanguageProvider);
     final group = ref.watch(groupCallProvider);
     final dmActive = dm.active;
     final groupActive = group.phase == GroupCallPhase.connected;
@@ -60,7 +62,13 @@ class ActiveCallBanner extends ConsumerWidget {
             // same inset from the screen underneath, both would pay for it and
             // the content would sit a whole status bar too low.
             if (show)
-              _bar(dm: dm, dmActive: dmActive, group: group, target: target)
+              _bar(
+                dm: dm,
+                dmActive: dmActive,
+                group: group,
+                target: target,
+                lang: lang,
+              )
             else
               const SizedBox.shrink(),
             Expanded(
@@ -81,12 +89,13 @@ class ActiveCallBanner extends ConsumerWidget {
     required bool dmActive,
     required GroupCallState group,
     required String target,
+    required String lang,
   }) => dmActive
       ? CallReturnBar(
           title: dm.peerName,
           // The same line the call screen and the PiP window show, so the
           // three can never disagree about what the call is doing.
-          status: () => voiceCallStatusText(dm),
+          status: () => voiceCallStatusText(dm, lang: lang),
           ticking: dm.phase == VoiceCallPhase.connected,
           alerting: dm.reconnecting,
           onTap: () => router.go(target),

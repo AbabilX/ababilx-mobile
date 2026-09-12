@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../providers/call_log_provider.dart';
 import '../providers/voice_call_provider.dart';
+import 'call_log_cluster.dart';
 import 'call_log_row.dart';
 import 'calls_empty.dart';
 
@@ -60,9 +62,16 @@ class _CallsListState extends ConsumerState<CallsList> {
   @override
   Widget build(BuildContext context) {
     final log = ref.watch(callLogProvider);
+    final lang = ref.watch(appLanguageProvider);
+
+    // Clustered over the whole accumulated list, not per page: a run split
+    // across a page boundary merges by itself once the next page lands. This
+    // rebuilds only when the log changes — ListView.builder scrolling does not
+    // rebuild this widget.
+    final rows = clusterCallLog(log.calls);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Calls')),
+      appBar: AppBar(title: Text(AppTranslations.of(lang, 'calls_title'))),
       body: log.loading && log.calls.isEmpty
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
           : log.calls.isEmpty
@@ -81,6 +90,7 @@ class _CallsListState extends ConsumerState<CallsList> {
                       height: box.maxHeight,
                       child: CallsEmpty(
                         error: log.error,
+                        lang: lang,
                         // Calls start from a conversation, so the first-run
                         // button hands the user to the tab that has one.
                         // go(), not push(): Messages is a sibling shell tab.
@@ -98,9 +108,9 @@ class _CallsListState extends ConsumerState<CallsList> {
                 padding: EdgeInsets.only(
                   bottom: ShellPillMetrics.contentBottom(context),
                 ),
-                itemCount: log.calls.length + (log.loadingMore ? 1 : 0),
+                itemCount: rows.length + (log.loadingMore ? 1 : 0),
                 itemBuilder: (context, i) {
-                  if (i >= log.calls.length) {
+                  if (i >= rows.length) {
                     return const Padding(
                       padding: EdgeInsets.all(16),
                       child: Center(
@@ -112,9 +122,12 @@ class _CallsListState extends ConsumerState<CallsList> {
                       ),
                     );
                   }
-                  final entry = log.calls[i];
+                  final cluster = rows[i];
+                  final entry = cluster.lead;
                   return CallLogRow(
                     entry: entry,
+                    count: cluster.count,
+                    lang: lang,
                     onTap: () =>
                         context.push('/messages/${entry.conversationId}'),
                     onCall: () => _call(entry.conversationId, entry.isGroup),

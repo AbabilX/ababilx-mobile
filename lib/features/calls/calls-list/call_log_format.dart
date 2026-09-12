@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../data/models/call_log_entry.dart';
 
 /// Arrow that says which way the call went, Signal-style: missed calls get the
@@ -13,20 +14,23 @@ IconData callDirectionIcon(CallLogEntry entry) {
 }
 
 /// "Missed · 3:05 PM", "Outgoing · 4:12", "Yesterday 21:40".
-String callSubtitle(CallLogEntry entry) {
-  final when = callTimestamp(entry.startedAt);
+///
+/// Pure, and takes the language as a string for the same reason the call
+/// status line does — the row that draws it is a plain StatelessWidget.
+String callSubtitle(CallLogEntry entry, {String lang = 'en'}) {
+  final when = callTimestamp(entry.startedAt, lang: lang);
   final what = entry.missed
-      ? 'Missed'
+      ? AppTranslations.of(lang, 'calls_missed')
       : entry.connected
-      ? callDuration(entry.durationSec)
+      ? callDuration(entry.durationSec, lang: lang)
       : entry.isOutgoing
-      ? 'No answer'
-      : 'Not answered';
+      ? AppTranslations.of(lang, 'calls_no_answer')
+      : AppTranslations.of(lang, 'calls_not_answered');
   return '$what · $when';
 }
 
-String callDuration(int seconds) {
-  if (seconds <= 0) return 'Answered';
+String callDuration(int seconds, {String lang = 'en'}) {
+  if (seconds <= 0) return AppTranslations.of(lang, 'calls_answered');
   final h = seconds ~/ 3600;
   final m = (seconds % 3600) ~/ 60;
   final s = seconds % 60;
@@ -36,7 +40,7 @@ String callDuration(int seconds) {
 }
 
 /// Time for today, weekday for this week, date beyond that.
-String callTimestamp(DateTime at) {
+String callTimestamp(DateTime at, {String lang = 'en'}) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final day = DateTime(at.year, at.month, at.day);
@@ -45,9 +49,24 @@ String callTimestamp(DateTime at) {
       '${at.minute.toString().padLeft(2, '0')}';
   final diff = today.difference(day).inDays;
   if (diff == 0) return clock;
-  if (diff == 1) return 'Yesterday $clock';
-  if (diff < 7) return '${_weekdays[at.weekday - 1]} $clock';
+  if (diff == 1) {
+    return AppTranslations.of(
+      lang,
+      'calls_yesterday',
+    ).replaceAll('{time}', clock);
+  }
+  if (diff < 7) {
+    return '${AppTranslations.of(lang, _weekdayKeys[at.weekday - 1])} $clock';
+  }
   return '${at.day}/${at.month}/${at.year}';
 }
 
-const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const _weekdayKeys = [
+  'calls_mon',
+  'calls_tue',
+  'calls_wed',
+  'calls_thu',
+  'calls_fri',
+  'calls_sat',
+  'calls_sun',
+];

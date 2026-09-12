@@ -10,6 +10,7 @@ import '../providers/voice_call_provider.dart';
 import '../widgets/call_controls_row.dart';
 import '../widgets/connected_call_body.dart';
 import 'incoming_call_view.dart';
+import '../../../core/localization/app_translations.dart';
 
 /// The 1:1 call screen.
 ///
@@ -108,6 +109,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     });
     final call = ref.watch(voiceCallProvider);
     final notifier = ref.read(voiceCallProvider.notifier);
+    final lang = ref.watch(appLanguageProvider);
 
     if (call.phase == VoiceCallPhase.incomingRinging) {
       return Scaffold(
@@ -143,6 +145,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
         backgroundColor: Colors.black,
         body: ConnectedCallBody(
           call: call,
+          lang: lang,
           onMinimize: _leave,
           onSwitchCamera: notifier.switchCamera,
           controls: CallControlsRow(

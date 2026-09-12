@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_translations.dart';
+
 /// Nothing to show yet — or the first page failed. Both land here, because an
 /// empty history and an unreachable server look identical to the user until
 /// the message says otherwise.
@@ -10,7 +12,7 @@ import 'package:flutter/material.dart';
 /// tab; a failed one has nothing to offer but the pull-to-refresh already
 /// under it, and a call button there would just fail again.
 class CallsEmpty extends StatelessWidget {
-  const CallsEmpty({super.key, this.error, this.onStart});
+  const CallsEmpty({super.key, this.error, this.onStart, this.lang = 'en'});
 
   final String? error;
 
@@ -18,11 +20,14 @@ class CallsEmpty extends StatelessWidget {
   /// hides the button, so the widget stays usable without a router.
   final VoidCallback? onStart;
 
+  final String lang;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final failed = error != null;
+    String t(String key) => AppTranslations.of(lang, key);
 
     return Center(
       child: Padding(
@@ -37,22 +42,19 @@ class CallsEmpty extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              failed ? 'Call history unavailable' : 'Start your first call',
+              t(failed ? 'calls_error_title' : 'calls_empty_title'),
               style: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             Text(
-              failed
-                  ? 'Check your connection and pull to refresh.'
-                  : 'Open a chat and tap the call button. Calls you make and '
-                        'receive show up here.',
+              t(failed ? 'calls_error_body' : 'calls_empty_body'),
               textAlign: TextAlign.center,
               style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
             // Debug builds print what actually came back. "Call history
             // unavailable" is the same sentence for a dead socket, a 500 and
             // a parse failure, which is fine for a user and useless while
-            // diagnosing one. Never shown in release.
+            // diagnosing one. Never shown in release, so never translated.
             if (failed && kDebugMode) ...[
               const SizedBox(height: 10),
               Text(
@@ -68,7 +70,7 @@ class CallsEmpty extends StatelessWidget {
               FilledButton.tonalIcon(
                 onPressed: onStart,
                 icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                label: const Text('Go to chats'),
+                label: Text(t('calls_empty_action')),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,

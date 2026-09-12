@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/providers/auth_provider.dart';
+import '../messages/message_e2ee/message_entry_ready.dart';
 import 'data/shared_payload.dart';
 import 'providers/share_intake_provider.dart';
 
@@ -60,6 +61,10 @@ class _ShareIntakeSyncState extends ConsumerState<ShareIntakeSync> {
     }
     if (identical(_routedFor, pending)) return;
     if (!(ref.read(authProvider).valueOrNull ?? false)) return;
+    // The router redirects any push away from `/share` to `/message-recovery`
+    // while this is false, then on to `/messages` once it flips — dropping the
+    // share with no retry, since `_routedFor` below would already be set.
+    if (!ref.read(messageEntryReadyProvider)) return;
 
     _routing = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -77,10 +82,12 @@ class _ShareIntakeSyncState extends ConsumerState<ShareIntakeSync> {
 
   @override
   Widget build(BuildContext context) {
-    // Both are watched: a share can land before sign-in, and a sign-in can
-    // land after the share.
+    // All three are watched: a share can land before sign-in, a sign-in can
+    // land after the share, and the recovery gate can still be mid-flight
+    // when both of those are already satisfied.
     ref.watch(shareIntakeProvider);
     ref.watch(authProvider);
+    ref.watch(messageEntryReadyProvider);
     _openPickerIfPending();
     return widget.child;
   }

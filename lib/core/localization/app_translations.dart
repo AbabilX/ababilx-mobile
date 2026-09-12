@@ -383,6 +383,51 @@ class AppTranslations {
       'settings_renews': 'Renews {date}',
       'settings_sign_out_body':
           'You will need to sign in again on this device.',
+      // Calls tab. The subtitle pieces are assembled by call_log_format.dart,
+      // which is pure and takes a language rather than a BuildContext.
+      'calls_title': 'Calls',
+      'calls_unknown': 'Unknown',
+      'calls_missed': 'Missed',
+      'calls_no_answer': 'No answer',
+      'calls_not_answered': 'Not answered',
+      'calls_answered': 'Answered',
+      'calls_yesterday': 'Yesterday {time}',
+      // Signal's "(3) Missed · 4:12" — the count prefixes the state, and the
+      // time still follows it.
+      'calls_stacked': '({n}) {what}',
+      'calls_back': 'Call back',
+      'calls_open': 'Open call',
+      'calls_empty_title': 'Start your first call',
+      'calls_empty_body':
+          'Open a chat and tap the call button. Calls you make and receive '
+          'show up here.',
+      'calls_empty_action': 'Go to chats',
+      'calls_error_title': 'Call history unavailable',
+      'calls_error_body': 'Check your connection and pull to refresh.',
+      'calls_mon': 'Mon',
+      'calls_tue': 'Tue',
+      'calls_wed': 'Wed',
+      'calls_thu': 'Thu',
+      'calls_fri': 'Fri',
+      'calls_sat': 'Sat',
+      'calls_sun': 'Sun',
+      // The one line under the caller's name — call screen, return bar and
+      // PiP all read it, so it must never disagree between them.
+      'call_status_finished': 'Call finished',
+      'call_status_starting': 'Starting call…',
+      'call_status_calling': 'Calling…',
+      'call_status_incoming': 'Incoming call…',
+      'call_status_connecting': 'Connecting…',
+      'call_status_busy': '{name} is busy right now',
+      'call_status_declined': 'Call declined',
+      'call_status_cancelled': 'Call cancelled',
+      'call_status_no_answer': 'No answer',
+      'call_status_ended': 'Call ended',
+      'call_status_ended_lasted': 'Call ended · {duration}',
+      'call_status_failed': 'Call failed',
+      'call_reconnecting': 'Reconnecting…',
+      'call_reconnect_poor': 'Poor connection. Still trying…',
+      'call_reconnect_lost': 'Connection lost. Trying to restore…',
     },
     'bn': {
       'recovery_checking': 'আপনার মেসেজ পরীক্ষা করা হচ্ছে…',
@@ -741,13 +786,58 @@ class AppTranslations {
       'settings_plan': 'প্ল্যান',
       'settings_renews': '{date} তারিখে নবায়ন',
       'settings_sign_out_body': 'এই ডিভাইসে আবার সাইন ইন করতে হবে।',
+      'calls_title': 'কল',
+      'calls_unknown': 'অজানা',
+      'calls_missed': 'মিসড কল',
+      'calls_no_answer': 'কেউ ধরেনি',
+      'calls_not_answered': 'ধরা হয়নি',
+      'calls_answered': 'ধরা হয়েছে',
+      'calls_yesterday': 'গতকাল {time}',
+      'calls_stacked': '({n}) {what}',
+      'calls_back': 'আবার কল করুন',
+      'calls_open': 'কল খুলুন',
+      'calls_empty_title': 'আপনার প্রথম কল শুরু করুন',
+      'calls_empty_body':
+          'একটি চ্যাট খুলে কল বোতামে চাপ দিন। আপনার করা ও পাওয়া কল এখানে দেখা যাবে।',
+      'calls_empty_action': 'চ্যাটে যান',
+      'calls_error_title': 'কল ইতিহাস পাওয়া যাচ্ছে না',
+      'calls_error_body': 'সংযোগ পরীক্ষা করে টেনে রিফ্রেশ করুন।',
+      'calls_mon': 'সোম',
+      'calls_tue': 'মঙ্গল',
+      'calls_wed': 'বুধ',
+      'calls_thu': 'বৃহঃ',
+      'calls_fri': 'শুক্র',
+      'calls_sat': 'শনি',
+      'calls_sun': 'রবি',
+      'call_status_finished': 'কল শেষ',
+      'call_status_starting': 'কল শুরু হচ্ছে…',
+      'call_status_calling': 'কল করা হচ্ছে…',
+      'call_status_incoming': 'ইনকামিং কল…',
+      'call_status_connecting': 'সংযোগ হচ্ছে…',
+      'call_status_busy': '{name} এখন ব্যস্ত আছেন',
+      'call_status_declined': 'কল প্রত্যাখ্যান করা হয়েছে',
+      'call_status_cancelled': 'কল বাতিল করা হয়েছে',
+      'call_status_no_answer': 'কেউ ধরেনি',
+      'call_status_ended': 'কল শেষ হয়েছে',
+      'call_status_ended_lasted': 'কল শেষ · {duration}',
+      'call_status_failed': 'কল ব্যর্থ হয়েছে',
+      'call_reconnecting': 'আবার সংযোগ হচ্ছে…',
+      'call_reconnect_poor': 'দুর্বল সংযোগ। চেষ্টা চলছে…',
+      'call_reconnect_lost': 'সংযোগ বিচ্ছিন্ন। ফিরে পাওয়ার চেষ্টা চলছে…',
     },
   };
 
-  static String translate(BuildContext context, WidgetRef ref, String key) {
-    final lang = ref.watch(appLanguageProvider);
-    return _localizedValues[lang]?[key] ?? _localizedValues['en']?[key] ?? key;
-  }
+  static String translate(BuildContext context, WidgetRef ref, String key) =>
+      of(ref.watch(appLanguageProvider), key);
+
+  /// The same lookup without a widget tree.
+  ///
+  /// The call-status and call-log formatters are pure on purpose — the call
+  /// screen, the return bar and the PiP window all read them and must never
+  /// disagree — so they take a language string rather than a BuildContext.
+  /// Falling back to `en` keeps a key that exists in only one map readable.
+  static String of(String lang, String key) =>
+      _localizedValues[lang]?[key] ?? _localizedValues['en']?[key] ?? key;
 
   /// Keys present for a locale. Used to keep `en` and `bn` in lockstep.
   static Set<String> keysOf(String lang) =>

@@ -25,12 +25,18 @@ class ConnectedCallBody extends StatelessWidget {
     required this.onMinimize,
     required this.onSwitchCamera,
     required this.controls,
+    this.lang = 'en',
   });
 
   final VoiceCallState call;
   final VoidCallback onMinimize;
   final VoidCallback onSwitchCamera;
   final Widget controls;
+
+  /// Passed down rather than read from a provider: this widget and the two
+  /// below it are plain StatelessWidgets, and the status line they draw is
+  /// the same pure function the return bar and the PiP window read.
+  final String lang;
 
   bool get _sharing => call.remoteScreenStream != null;
 
@@ -84,7 +90,7 @@ class ConnectedCallBody extends StatelessWidget {
                 const SizedBox(height: 20),
                 _Name(name: call.peerName),
                 const SizedBox(height: 10),
-                _Status(call: call),
+                _Status(call: call, lang: lang),
               ],
               if (call.error != null) _Note(text: call.error!, error: true),
               if (call.screenSharing)
@@ -109,7 +115,7 @@ class ConnectedCallBody extends StatelessWidget {
         CallTopBar(
           onMinimize: onMinimize,
           title: _stage ? call.peerName : null,
-          subtitle: _stage ? voiceCallStatusText(call) : null,
+          subtitle: _stage ? voiceCallStatusText(call, lang: lang) : null,
         ),
       ],
     );
@@ -141,16 +147,17 @@ class _Name extends StatelessWidget {
 }
 
 class _Status extends StatelessWidget {
-  const _Status({required this.call});
+  const _Status({required this.call, required this.lang});
 
   final VoiceCallState call;
+  final String lang;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final connected = call.phase == VoiceCallPhase.connected;
     return Text(
-      voiceCallStatusText(call),
+      voiceCallStatusText(call, lang: lang),
       textAlign: TextAlign.center,
       style: connected
           ? textTheme.titleLarge?.copyWith(
