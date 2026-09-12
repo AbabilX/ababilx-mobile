@@ -37,6 +37,7 @@ class _ChatBackupScreenState extends ConsumerState<ChatBackupScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(archiveProvider);
     final colors = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -51,6 +52,49 @@ class _ChatBackupScreenState extends ConsumerState<ChatBackupScreen> {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
+            // A trust pitch, not a status line: every account already gets six
+            // months of message history kept free in the cloud, end-to-end
+            // encrypted the whole time. The status card below is about THIS
+            // phone's own optional backup of everything older than that.
+            Container(
+              margin: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colors.primaryContainer.withValues(alpha: 0.28),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.verified_user_rounded, color: colors.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Free secure cloud history, built in',
+                          style: text.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Your last 6 months of messages already live safely in '
+                          'our cloud at no cost — sealed with end-to-end '
+                          'encryption the whole time, so only your own devices '
+                          'ever hold the key. The backup below is for keeping '
+                          'everything older than that, right here on your phone.',
+                          style: text.bodySmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             SettingsRow(
               icon: const [],
               title: AppTranslations.translate(

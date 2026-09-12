@@ -63,7 +63,7 @@ class ChatBackupStatusCard extends StatelessWidget {
     ArchivePhase.backingUp => 'Backing up…',
     ArchivePhase.restoring => 'Restoring…',
     ArchivePhase.idle =>
-      state.remote == null ? 'No backup yet' : 'Backup ready',
+      state.remote == null ? 'No phone backup yet' : 'Backup ready',
   };
 
   /// A count, never a percentage. The total is unknown until the export
@@ -78,7 +78,8 @@ class ChatBackupStatusCard extends StatelessWidget {
     if (!state.loaded) return 'Checking…';
     final last = state.lastBackupAt;
     if (state.remote == null) {
-      return 'This phone holds the only copy of your older history.';
+      return 'Your last 6 months already live free in our cloud, end-to-end '
+          'encrypted. Back up this phone to also keep everything older.';
     }
     if (last == null) return 'Backed up from another device.';
     return 'Last backup ${DateFormat.yMMMd().add_jm().format(last)}';

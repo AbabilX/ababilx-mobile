@@ -25,6 +25,7 @@ class AppUser extends Equatable {
     this.acceptPolicy = true,
     this.policyVersion = '',
     this.independentChat = false,
+    this.isNewAccount = false,
   });
 
   final String id;
@@ -53,6 +54,12 @@ class AppUser extends Equatable {
   final String policyVersion;
   final bool independentChat;
 
+  /// True only inside the server's onboarding window right after signup
+  /// (`db.NewAccountWindow`, server). Gates a permission ask that would
+  /// otherwise read as a blitz on a brand-new sign-up — never re-derive this
+  /// from local state, it has to be the server's own clock.
+  final bool isNewAccount;
+
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
     id: json['id'] as String? ?? '',
     name: json['name'] as String? ?? '',
@@ -73,6 +80,7 @@ class AppUser extends Equatable {
     acceptPolicy: json['accept_policy'] as bool? ?? true,
     policyVersion: json['policy_version'] as String? ?? '',
     independentChat: json['independent_chat'] as bool? ?? false,
+    isNewAccount: json['is_new_account'] as bool? ?? false,
   );
 
   Map<String, dynamic> toJson() => {
@@ -94,6 +102,7 @@ class AppUser extends Equatable {
     'accept_policy': acceptPolicy,
     'policy_version': policyVersion,
     'independent_chat': independentChat,
+    'is_new_account': isNewAccount,
   };
 
   AppUser copyWith({
@@ -122,6 +131,7 @@ class AppUser extends Equatable {
     acceptPolicy: acceptPolicy ?? this.acceptPolicy,
     policyVersion: policyVersion ?? this.policyVersion,
     independentChat: independentChat,
+    isNewAccount: isNewAccount,
   );
 
   /// Merges split GET /api/me/* payloads (same order as web `mergeMeUser`).
@@ -144,6 +154,7 @@ class AppUser extends Equatable {
     acceptPolicy,
     policyVersion,
     independentChat,
+    isNewAccount,
   ];
 }
 

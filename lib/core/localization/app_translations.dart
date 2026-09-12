@@ -346,7 +346,10 @@ class AppTranslations {
           'Still restricted — enable Unrestricted in battery settings',
 
       'policy_title': 'Privacy & Policy',
-      'policy_subtitle': 'A quick summary before you continue.',
+      'policy_subtitle':
+          'World-class secured messaging, built so you can trust it. A quick summary before you continue.',
+      'policy_bullet_secure':
+          'Your messages are end-to-end encrypted — sealed on your device with a key only you hold. We could not read them even if asked to.',
       'policy_bullet_1':
           'We store your profile, connected accounts, and the content you create (messages, posts, tasks).',
       'policy_bullet_2': 'No ads, no trackers, no selling your data — ever.',
@@ -766,7 +769,10 @@ class AppTranslations {
           'এখনো সীমিত — ব্যাটারি সেটিংসে Unrestricted চালু করুন',
 
       'policy_title': 'গোপনীয়তা ও নীতিমালা',
-      'policy_subtitle': 'চালিয়ে যাওয়ার আগে একটি সংক্ষিপ্ত সারাংশ।',
+      'policy_subtitle':
+          'বিশ্বমানের সুরক্ষিত মেসেজিং, যাতে আপনি ভরসা রাখতে পারেন। চালিয়ে যাওয়ার আগে একটি সংক্ষিপ্ত সারাংশ।',
+      'policy_bullet_secure':
+          'আপনার বার্তা এন্ড-টু-এন্ড এনক্রিপ্টেড — আপনার ডিভাইসে এমন একটি চাবি দিয়ে সিল করা যা শুধু আপনিই রাখেন। চাইলেও আমরা তা পড়তে পারব না।',
       'policy_bullet_1':
           'আমরা আপনার প্রোফাইল, সংযুক্ত অ্যাকাউন্ট এবং আপনার তৈরি কন্টেন্ট (বার্তা, পোস্ট, টাস্ক) সংরক্ষণ করি।',
       'policy_bullet_2':

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/providers/auth_provider.dart';
+import '../profile/providers/profile_provider.dart';
 import 'fcm_log.dart';
 import 'providers/fcm_provider.dart';
 
@@ -59,15 +60,36 @@ class _FcmBootstrapState extends ConsumerState<FcmBootstrap> {
     fcmLog('bootstrap.boot.begin');
     final fcm = ref.read(fcmServiceProvider);
     fcm.router = widget.router;
+    // A brand-new sign-up gets no permission dialogs here — see
+    // FcmService.start's skipPermissionPrompt. Best-effort: a profile that
+    // has not loaded yet (or errors) is treated as not-new, which is the
+    // existing behaviour for every account today.
+    var isNewAccount = false;
     try {
-      final granted = await fcm.start();
-      fcmLog('bootstrap.boot.done', 'permissionGranted=$granted');
+      final user = await ref
+          .read(profileProvider.future)
+          .timeout(const Duration(seconds: 3));
+      isNewAccount = user.isNewAccount;
+    } catch (_) {}
+    if (!mounted) return;
+    try {
+      final granted = await fcm.start(skipPermissionPrompt: isNewAccount);
+      fcmLog(
+        'bootstrap.boot.done',
+        'permissionGranted=$granted isNewAccount=$isNewAccount',
+      );
       if (!mounted) return;
-      ref.read(notificationPermissionProvider.notifier).setGranted(granted);
+      // Deferred, not denied: leave the tile in Settings → Notifications
+      // silent for a new account rather than showing it as already refused.
+      if (!isNewAccount) {
+        ref.read(notificationPermissionProvider.notifier).setGranted(granted);
+      }
     } catch (e, st) {
       fcmLog('bootstrap.boot.fail', '$e\n$st');
       if (!mounted) return;
-      ref.read(notificationPermissionProvider.notifier).setGranted(false);
+      if (!isNewAccount) {
+        ref.read(notificationPermissionProvider.notifier).setGranted(false);
+      }
     }
   }
 }

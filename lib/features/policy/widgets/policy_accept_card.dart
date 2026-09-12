@@ -84,6 +84,7 @@ class _PolicyAcceptCardState extends ConsumerState<PolicyAcceptCard> {
                     ),
                     const SizedBox(height: 16),
                     for (final key in [
+                      'policy_bullet_secure',
                       'policy_bullet_1',
                       'policy_bullet_2',
                       'policy_bullet_3',
@@ -94,12 +95,22 @@ class _PolicyAcceptCardState extends ConsumerState<PolicyAcceptCard> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.circle, size: 6, color: colors.primary),
+                            Icon(
+                              key == 'policy_bullet_secure'
+                                  ? Icons.lock_outline
+                                  : Icons.circle,
+                              size: key == 'policy_bullet_secure' ? 16 : 6,
+                              color: colors.primary,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 AppTranslations.translate(context, ref, key),
-                                style: theme.textTheme.bodyMedium,
+                                style: key == 'policy_bullet_secure'
+                                    ? theme.textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      )
+                                    : theme.textTheme.bodyMedium,
                               ),
                             ),
                           ],
