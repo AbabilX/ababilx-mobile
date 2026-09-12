@@ -1064,3 +1064,44 @@ composer-> icon+label bar      (SelectionActionBar)
 - Tests: `test/features/messages/message_selection_test.dart` (the provider and
   every menu rule) and `message_multiselect_test.dart` (Select in the menu, the
   shift, the checks, and the two bars swapping in).
+
+# The privacy policy is asked BEFORE the recovery gate (2026-09-12)
+
+A brand-new account signed in, skipped the recovery choice (right — nothing to
+restore) and then sat on **"Could not check your messages. Check your
+connection and try again."** with a Retry that could never work. Nothing was
+wrong with the network:
+
+```
+server  middleware.PolicyGate -> 403 policy_not_accepted on EVERY
+        authenticated route but /api/me, /api/me/plan, /api/me/connections,
+        /api/me/accept-policy, /api/me/delete-account
+mobile  PolicyGateOverlay lives in HomeShell
+router  /message-recovery is OUTSIDE the ShellRoute, and every logged-in user
+        is redirected through it before the shell ever builds
+```
+
+So the one screen that must run before the shell was the one screen the policy
+card could not cover, and it is the screen whose two calls — `GET
+.../e2ee/vault` and `POST /api/chat/recovery/start-session` — the gate refuses
+first. The account was stuck at the door with the key on the other side of it.
+
+- **`features/policy/policy_precheck.dart` is the fix**, and it is deliberately
+  two answers, not one. `policyPending(ref)` reads `/api/me` (exempt, so it
+  answers) before anything else runs; `isPolicyRefusal(error)` reads the 403
+  off a failure that already happened, because the profile can come from this
+  phone's cache and predate a bump of `policy.CurrentVersion`. Either one puts
+  `PolicyAcceptCard` on screen and re-runs `_check()` when acceptance lands.
+- **A profile that cannot be read counts as accepted.** Offline is a different
+  answer from "you have not accepted", and the card has no dismiss — showing it
+  to somebody with no network replaces one dead end with a worse one. Their own
+  request fails a moment later and reports the real reason, with a Retry that
+  means something.
+- **The card is wrapped in a `Scaffold` here.** It is built as an overlay (a
+  70%-black `Material` scrim over the shell) and this route has nothing
+  underneath it.
+- The 403s in the log were not only the vault: `[ChatCache] fetchSidebar:
+  network threw: … 403` is the same gate. One refusal, every call.
+- Web and desktop were never exposed — their policy dialog sits in the user
+  shell, and neither has a screen in front of it.
+- Test: `test/features/policy/policy_precheck_test.dart`.

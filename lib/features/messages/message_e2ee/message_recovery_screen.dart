@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../policy/policy_precheck.dart';
+import '../../policy/widgets/policy_accept_card.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../data/chat_repository.dart';
 import '../data/chat_recovery_api.dart';
 import '../providers/chat_provider.dart';
@@ -22,6 +25,7 @@ class MessageRecoveryScreen extends ConsumerStatefulWidget {
 
 class _State extends ConsumerState<MessageRecoveryScreen> {
   bool _checking = true, _busy = false, _enterCode = false;
+  bool _needsPolicy = false;
   String? _error;
   Map<String, dynamic>? _public;
   bool _hasRecovery = false;
@@ -30,7 +34,18 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(_check());
+    unawaited(_start());
+  }
+
+  /// Nothing this screen does survives an unaccepted privacy policy — the
+  /// gate 403s the vault status and the session write alike — and this route
+  /// sits outside the shell that normally carries the policy card.
+  Future<void> _start() async {
+    if (await policyPending(ref)) {
+      if (mounted) setState(() => _needsPolicy = true);
+      return;
+    }
+    await _check();
   }
 
   Future<void> _check() async {
@@ -87,13 +102,18 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
           _checking = false;
         });
       }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _checking = false;
-          _error = 'recovery_check_failed';
-        });
+    } catch (error) {
+      if (!mounted) return;
+      // A cached profile can predate a bump of the policy version, so the
+      // refusal is still worth reading off the failure itself.
+      if (isPolicyRefusal(error)) {
+        setState(() => _needsPolicy = true);
+        return;
       }
+      setState(() {
+        _checking = false;
+        _error = 'recovery_check_failed';
+      });
     }
   }
 
@@ -122,6 +142,14 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
   @override
   Widget build(BuildContext context) {
     String t(String key) => AppTranslations.translate(context, ref, key);
+    ref.listen(profileProvider, (_, next) {
+      if (!_needsPolicy || next.valueOrNull?.acceptPolicy != true) return;
+      setState(() => _needsPolicy = false);
+      unawaited(_check());
+    });
+    // Standalone here, not an overlay: this route has no shell under it,
+    // so it supplies its own surface behind the card's scrim.
+    if (_needsPolicy) return const Scaffold(body: PolicyAcceptCard());
     return PopScope(
       canPop: false,
       child: Scaffold(
