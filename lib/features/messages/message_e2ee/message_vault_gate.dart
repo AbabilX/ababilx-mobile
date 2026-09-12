@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/first_load_timeout.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import 'message_vault.dart';
 import 'vault_gate_error.dart';
@@ -108,6 +109,19 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
     }
   }
 
+  /// Signs out, keeping this phone's archive, and clears the Google session so
+  /// the next sign-in offers the account chooser instead of silently reusing
+  /// the one that landed here.
+  Future<void> _wrongAccount() async {
+    if (_resetting) return;
+    setState(() => _resetting = true);
+    try {
+      await ref.read(authProvider.notifier).signOut();
+    } finally {
+      if (mounted) setState(() => _resetting = false);
+    }
+  }
+
   void _startFresh() {
     if (_resetting) return;
     _resetting = true;
@@ -149,6 +163,7 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
         busy: _resetting,
         onRecover: () => setState(() => _recovering = true),
         onStartFresh: _startFresh,
+        onWrongAccount: _wrongAccount,
       );
     }
     return VaultGateRecoveryCode(

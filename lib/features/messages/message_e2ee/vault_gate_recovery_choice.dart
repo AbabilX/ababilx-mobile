@@ -9,6 +9,7 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
     required this.busy,
     required this.onRecover,
     required this.onStartFresh,
+    this.onWrongAccount,
     this.hasRecovery = true,
   });
 
@@ -16,6 +17,12 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
   final bool hasRecovery;
   final VoidCallback onRecover;
   final VoidCallback onStartFresh;
+
+  /// Signed in as somebody else — the gate is the first screen that names the
+  /// account's messages, so it is where that is noticed, and without a way out
+  /// the only escape was Settings behind this very gate. Null where the screen
+  /// was reached FROM Settings, which is already past that question.
+  final VoidCallback? onWrongAccount;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -67,6 +74,22 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
               style: theme.textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
+            if (onWrongAccount != null) ...[
+              const SizedBox(height: 4),
+              // A quiet line, not a third button: the two above are the
+              // choice, and this is the way out of a choice that does not
+              // apply.
+              TextButton(
+                onPressed: busy ? null : onWrongAccount,
+                child: Text(
+                  t('recovery_wrong_account'),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

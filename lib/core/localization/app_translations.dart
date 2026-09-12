@@ -64,6 +64,7 @@ class AppTranslations {
       'recovery_fresh': 'Start new chat',
       'recovery_fresh_hint':
           'Starting a new chat clears your old messages and backup, keeps your contacts, and saves a new recovery code in Settings → Backup → Recovery codes.',
+      'recovery_wrong_account': 'Wrong account? Sign in with another',
       'recovery_enter': 'Enter your recovery code',
       'recovery_help':
           'Enter the code you saved when you set up messages. Spacing and case do not matter.',
@@ -488,6 +489,7 @@ class AppTranslations {
       'recovery_fresh': 'নতুন চ্যাট শুরু করুন',
       'recovery_fresh_hint':
           'নতুন চ্যাট শুরু করলে আপনার পুরোনো মেসেজ ও ব্যাকআপ মুছে যাবে, পরিচিতিরা থাকবে। নতুন রিকভারি কোড সেভ হবে সেটিংস → ব্যাকআপ → রিকভারি কোডে।',
+      'recovery_wrong_account': 'ভুল অ্যাকাউন্ট? অন্য একটি দিয়ে সাইন ইন করুন',
       'recovery_enter': 'আপনার রিকভারি কোড দিন',
       'recovery_help':
           'মেসেজ সেটআপের সময় সংরক্ষিত কোডটি দিন। স্পেস ও বড় বা ছোট হাতের অক্ষর যেকোনোভাবে লেখা যাবে।',

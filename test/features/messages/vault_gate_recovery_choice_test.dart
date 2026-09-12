@@ -11,6 +11,7 @@ void main() {
     String language = 'en',
     VoidCallback? recover,
     VoidCallback? fresh,
+    VoidCallback? wrongAccount,
   }) => tester.pumpWidget(
     ProviderScope(
       overrides: [appLanguageProvider.overrideWithValue(language)],
@@ -20,6 +21,7 @@ void main() {
             busy: busy,
             onRecover: recover ?? () {},
             onStartFresh: fresh ?? () {},
+            onWrongAccount: wrongAccount,
           ),
         ),
       ),
@@ -81,5 +83,30 @@ void main() {
     expect(find.text('আপনার মেসেজ ফিরিয়ে আনুন'), findsOneWidget);
     await tester.ensureVisible(find.text('নতুন চ্যাট শুরু করুন'));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a wrong account has a quiet way out, not a third button', (
+    tester,
+  ) async {
+    var signedOut = 0;
+    await show(tester, wrongAccount: () => signedOut++);
+    final line = find.text('Wrong account? Sign in with another');
+    expect(line, findsOneWidget);
+    // The two choices stay the only buttons; this is a line under them.
+    expect(find.byType(FilledButton), findsOneWidget);
+    expect(find.byType(OutlinedButton), findsOneWidget);
+    expect(find.byType(TextButton), findsOneWidget);
+    await tester.tap(line);
+    expect(signedOut, 1);
+  });
+
+  testWidgets('reached from Settings, the sign-out line is not offered', (
+    tester,
+  ) async {
+    // The recovery screen behind Settings is already past the question of
+    // which account this is, so it passes no callback and draws no line.
+    await show(tester);
+    expect(find.text('Wrong account? Sign in with another'), findsNothing);
+    expect(find.byType(TextButton), findsNothing);
   });
 }
