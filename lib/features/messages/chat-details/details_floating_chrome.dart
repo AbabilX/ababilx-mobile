@@ -31,7 +31,7 @@ class DetailsFloatingChrome extends StatelessWidget {
         children: [
           DetailsFloatingButton(
             onBanner: onBanner,
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
             tooltip: 'Back',
             onPressed: onBack,
           ),

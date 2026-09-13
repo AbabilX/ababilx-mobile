@@ -6,11 +6,20 @@ typedef PreviewGlyph = List<List<dynamic>>;
 
 /// Thin [HugeIcon] so preview chrome reads like an [Icon].
 class PreviewIcon extends StatelessWidget {
-  const PreviewIcon(this.icon, {super.key, this.size = 22, this.color});
+  const PreviewIcon(
+    this.icon, {
+    super.key,
+    this.size = 22,
+    this.color,
+    this.strokeWidth = 1.2,
+  });
 
   final PreviewGlyph icon;
   final double size;
   final Color? color;
+
+  /// Thinner than the package default (1.5) so chrome reads light, not bold.
+  final double strokeWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +27,7 @@ class PreviewIcon extends StatelessWidget {
       icon: icon,
       size: size,
       color: color ?? IconTheme.of(context).color ?? Colors.white,
+      strokeWidth: strokeWidth,
     );
   }
 }

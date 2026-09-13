@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../chat_icon.dart';
 import 'chat_search.dart';
 import 'header_profile_pill.dart';
 import 'you-sheet/index.dart';
@@ -52,12 +54,18 @@ class ChatListHeader extends ConsumerWidget {
             ),
             IconButton(
               onPressed: () => openChatSearch(context, ref),
-              icon: const Icon(Icons.search_rounded),
+              icon: ChatIcon(
+                HugeIcons.strokeRoundedSearch01,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               tooltip: MaterialLocalizations.of(context).searchFieldLabel,
             ),
             IconButton(
               onPressed: () => QrLoginFlow.start(context, ref),
-              icon: const Icon(Icons.qr_code_scanner_rounded),
+              icon: ChatIcon(
+                HugeIcons.strokeRoundedQrCode,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               tooltip: 'Scan QR code',
             ),
           ],

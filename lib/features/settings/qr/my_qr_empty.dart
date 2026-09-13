@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+import '../../messages/chat_icon.dart';
 
 /// No handle, no code. The screen says what is missing and offers the one
 /// action that fixes it, rather than drawing an empty frame.
@@ -17,8 +20,8 @@ class MyQrEmpty extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.qr_code_2_rounded,
+            ChatIcon(
+              HugeIcons.strokeRoundedQrCode,
               size: 72,
               color: colors.onSurfaceVariant,
             ),

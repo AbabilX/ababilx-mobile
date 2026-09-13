@@ -55,7 +55,7 @@ class ChatHeader extends ConsumerWidget {
           height: kToolbarHeight,
           child: NavigationToolbar(
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
               onPressed: () => popOrGoMessages(context),
             ),
             middle: InkWell(

@@ -864,6 +864,8 @@ show.
 chat list header  ->  scanner        (the thing that reads a code)
 Settings, beside your name -> /settings/qr   (the thing you hold up)
 Settings -> Local Share, You sheet -> Local Share  (unchanged, both kept)
+QR glyph is always HugeIcons.strokeRoundedQrCode (header, Settings, empty
+state, scan button). ChatIcon / PreviewIcon stroke is 1.2 so they stay light.
 ```
 
 `QrLoginFlow.start` now dispatches on the `ababilx://` host and handles three

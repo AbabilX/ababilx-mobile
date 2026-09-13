@@ -67,7 +67,7 @@ class SettingsBioRow extends ConsumerWidget {
                   child: ChatIcon(
                     HugeIcons.strokeRoundedQrCode,
                     size: 20,
-                    color: colors.onSurface,
+                    color: colors.onSurfaceVariant,
                   ),
                 ),
               ),

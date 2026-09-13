@@ -6,6 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../../../../core/theme/theme_mode_provider.dart';
 import '../../../auth/providers/auth_provider.dart';
+import '../../chat_icon.dart';
 import 'you_menu_item.dart';
 import 'you_sheet_action.dart';
 
@@ -35,8 +36,8 @@ class YouMenu extends ConsumerWidget {
                   color: colors.errorContainer,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(
-                  Icons.logout_rounded,
+                child: ChatIcon(
+                  HugeIcons.strokeRoundedLogout01,
                   color: colors.error,
                   size: 28,
                 ),

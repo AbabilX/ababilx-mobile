@@ -155,7 +155,7 @@ class DetailsHeader extends ConsumerWidget {
             ),
             const SizedBox(width: 16),
             DetailsActionButton(
-              icon: const Icon(Icons.search_rounded),
+              icon: const ChatIcon(HugeIcons.strokeRoundedSearch01),
               label: 'Search',
               onTap: () => openChatSearch(
                 context,

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/router/root_back.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../../messages/chat-people/user_qr_payload.dart';
+import '../../messages/chat_icon.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../qr/my_qr_card.dart';
 import '../qr/my_qr_empty.dart';
@@ -34,7 +36,7 @@ class MyQrScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
           onPressed: () => popOrGoHome(context),
         ),
         title: const Text('QR code'),
@@ -42,7 +44,7 @@ class MyQrScreen extends ConsumerWidget {
           if (username.isNotEmpty)
             IconButton(
               tooltip: 'Change username',
-              icon: const Icon(Icons.edit_rounded),
+              icon: const ChatIcon(HugeIcons.strokeRoundedEdit02),
               onPressed: () => context.push('/settings/username'),
             ),
         ],
@@ -84,7 +86,7 @@ class _Code extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () => _copy(context),
-                icon: const Icon(Icons.copy_rounded),
+                icon: const ChatIcon(HugeIcons.strokeRoundedCopy01, size: 18),
                 label: const Text('Copy'),
               ),
             ),
@@ -92,7 +94,7 @@ class _Code extends StatelessWidget {
             Expanded(
               child: FilledButton.icon(
                 onPressed: () => _share(),
-                icon: const Icon(Icons.ios_share_rounded),
+                icon: const ChatIcon(HugeIcons.strokeRoundedShare01, size: 18),
                 label: const Text('Share'),
               ),
             ),
@@ -102,7 +104,7 @@ class _Code extends StatelessWidget {
         Consumer(
           builder: (context, ref, _) => TextButton.icon(
             onPressed: () => QrLoginFlow.start(context, ref),
-            icon: const Icon(Icons.qr_code_scanner_rounded),
+            icon: const ChatIcon(HugeIcons.strokeRoundedQrCode, size: 18),
             label: const Text('Scan someone else’s code'),
           ),
         ),
