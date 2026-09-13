@@ -1,7 +1,7 @@
 name: ababilx
 description: "AbabilX — All-in-one team collaboration platform featuring messaging, calls, CRM, Kanban boards, and local sharing."
 publish_to: "none"
-version: 5.1.0+21
+version: 5.1.0+22
 
 environment:
   sdk: ^3.12.0
