@@ -71,9 +71,10 @@ extension MessageVaultKeyCache on MessageVault {
   /// [MessageVaultKeys._loadKey], which is unchanged.
   ///
   /// Matching on the exact version also fixes reading across a rotation:
-  /// `GET .../e2ee-key` only ever returns the newest envelope, so a message
-  /// sealed under a retired version is readable from this cache and from
-  /// nowhere else.
+  /// `GET .../e2ee-key` only ever returns the newest envelope, so a version
+  /// older than that comes from this cache or, when this device never stored
+  /// it (a reinstall, a phone closed while it was current), from
+  /// [MessageVaultKeyVersions._fetchKeyVersion].
   Future<_DmKey?> _readKey(
     String conversationId,
     String self,
@@ -94,6 +95,13 @@ extension MessageVaultKeyCache on MessageVault {
         key = await _loadKey(conversationId, self, refresh: true);
       }
       if (key != null && key.version == version) return key;
+      // Older than the newest version, or no newest one this device can open:
+      // either way the envelope for exactly this version may still be waiting
+      // on the server. Newer than the newest after a refresh is a version the
+      // server has never heard of, and asking again would not change that.
+      if (key == null || version < key.version) {
+        return await _fetchKeyVersion(conversationId, self, version);
+      }
     } catch (_) {
       // Offline, or the server is unreachable. Nothing more to try — the disk
       // was already asked, and asking it twice would answer the same.

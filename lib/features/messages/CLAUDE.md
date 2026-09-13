@@ -819,10 +819,14 @@ the same place, on both, with strictly less at rest.
 
 - **Rows are keyed by `(conversationId, keyVersion)`, and that is not tidiness.**
   `GET .../e2ee-key` only ever returns the NEWEST envelope, so once a
-  conversation rotates, a message sealed under the retired version is readable
-  from this cache and from nowhere else — offline *or* online. `_backfillKeys`
-  caches every `gaps` envelope for the same reason: a gap is the one place the
-  server hands back an older version.
+  conversation rotates, a message sealed under the retired version needs its
+  own. Until 2026-09-13 this cache was the only place one could come from, so a
+  reinstall restored with the recovery code lost the start of every rotated
+  group. Now a miss asks `GET .../e2ee-keys?versions=N`
+  (`message_vault_key_versions.dart`, pinned by `key_version_history_test.dart`)
+  and stores what comes back; one request per version however many messages
+  name it, and a "none held" answer is believed for a minute. `_backfillKeys`
+  still caches every `gaps` envelope it sees.
 - **`_readKeys` is separate from `_keys` on purpose.** `_keys` is the key a SEND
   seals with and must stay the newest the server knows; populating it from disk
   would let a send seal under a retired version. Reading uses the version-keyed

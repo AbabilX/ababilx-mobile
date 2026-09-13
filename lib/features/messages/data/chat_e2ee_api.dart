@@ -123,6 +123,25 @@ class ChatE2eeApi {
     return unwrapApiData<Map<String, dynamic>>(res);
   }
 
+  /// This account's own envelopes at exactly [versions], as
+  /// `{envelopes: [{key_version, envelope}]}`. A version it holds none for is
+  /// absent from the list.
+  ///
+  /// [getConversationKey] returns the newest version only, which is what a
+  /// send needs. A message sealed before a rotation needs the version it was
+  /// sealed under, and this is the only place the server hands a retired one
+  /// back.
+  Future<Map<String, dynamic>> getConversationKeyVersions(
+    String conversationId,
+    List<int> versions,
+  ) async {
+    final res = await _client.get(
+      _endpoints.action(conversationId, 'e2ee-keys'),
+      queryParameters: {'versions': versions.join(',')},
+    );
+    return unwrapApiData<Map<String, dynamic>>(res);
+  }
+
   /// Every member of a conversation with the public identity a key must be
   /// sealed to, plus `unready_member_ids` — members with no identity at all.
   ///

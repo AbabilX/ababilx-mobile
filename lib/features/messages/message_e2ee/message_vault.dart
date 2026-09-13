@@ -21,6 +21,7 @@ part 'message_vault_envelope.dart';
 part 'message_vault_codec.dart';
 part 'message_vault_identity.dart';
 part 'message_vault_key_cache.dart';
+part 'message_vault_key_versions.dart';
 part 'message_vault_keys.dart';
 part 'message_vault_link.dart';
 part 'message_vault_recover.dart';
@@ -67,6 +68,11 @@ class MessageVault {
   // A conversation with no readable key caches nothing, so a screenful of
   // messages would fire one identical GET each without this.
   final _keyLoads = <String, Future<_DmKey?>>{};
+  // Exact-version fetches in flight, keyed like [_readKeys], so a page of
+  // messages sealed under one retired version asks the server once.
+  final _versionLoads = <String, Future<_DmKey?>>{};
+  // When the server last said this account holds no envelope for a version.
+  final _versionMisses = <String, DateTime>{};
   P256KeyPair? _identity;
   Map<String, dynamic>? _publicJwk;
   // Legacy gate compatibility. New sessions persist their code in this
@@ -149,6 +155,11 @@ class MessageVault {
   void _clearKeyMemory() {
     _keys.clear();
     _readKeys.clear();
+    // A miss is an answer about one identity's envelopes; the next may hold
+    // them. A fetch still in flight checks the identity before it lands, but
+    // must not be joined by the next identity's first read either.
+    _versionMisses.clear();
+    _versionLoads.clear();
   }
 }
 
