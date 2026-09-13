@@ -1,64 +1,68 @@
 import 'package:flutter/material.dart';
 
-import 'media_preview_actions.dart';
-import 'preview_image.dart';
+import 'image_preview_chrome.dart';
 
-/// Signal's media toolbar: what you are looking at on the left, where you are
-/// in the album on the right, and the overflow that holds Save.
+/// Back + the file name. Sender / time sit on the second line when we have
+/// them — never an asset type like "Photo".
 class ImagePreviewTopBar extends StatelessWidget {
-  const ImagePreviewTopBar({
-    super.key,
-    required this.image,
-    required this.index,
-    required this.total,
-    required this.allowRemoteFallback,
-  });
+  const ImagePreviewTopBar({super.key, required this.fileName, this.detail});
 
-  final PreviewImage image;
-  final int index;
-  final int total;
-
-  /// True for the wall and CRM viewers, which render straight from the URL —
-  /// so saving may fetch it. Chat passes false and stays on its own pipeline.
-  final bool allowRemoteFallback;
-
-  static const _shadow = [Shadow(blurRadius: 8, color: Colors.black87)];
+  final String fileName;
+  final String? detail;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const SizedBox(width: 16),
-        Expanded(
-          child: Text(
-            image.fileName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              shadows: _shadow,
-            ),
+    final name = fileName.trim();
+    final sub = detail?.trim();
+    return Material(
+      color: ImagePreviewChrome.bar,
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: 56,
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: 'Back',
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (name.isNotEmpty)
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25,
+                        ),
+                      ),
+                    if (sub != null && sub.isNotEmpty)
+                      Text(
+                        sub,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          height: 1.2,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+            ],
           ),
         ),
-        if (total > 1) ...[
-          const SizedBox(width: 8),
-          Text(
-            '${index + 1}/$total',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              shadows: _shadow,
-            ),
-          ),
-        ],
-        MediaPreviewOverflow(
-          localPath: image.localPath,
-          remoteUrl: allowRemoteFallback ? image.fileUrl : null,
-          fileName: image.fileName,
-        ),
-      ],
+      ),
     );
   }
 }

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
+import 'image_preview_chrome.dart';
+import 'image_preview_dock.dart';
 import 'image_preview_top_bar.dart';
 import 'image_preview_zoom.dart';
-import 'media_preview_actions.dart';
 import 'preview_image.dart';
 
 export 'preview_image.dart';
 
-/// Fullscreen pinch-zoom gallery — same UX as wall image preview.
+/// Fullscreen pinch-zoom gallery — Signal-Android chrome, same as chat.
 Future<void> showImagePreview(
   BuildContext context, {
   required List<PreviewImage> images,
@@ -17,7 +18,7 @@ Future<void> showImagePreview(
   if (images.isEmpty) return Future.value();
   return showDialog<void>(
     context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.92),
+    barrierColor: ImagePreviewChrome.background,
     builder: (ctx) => _ImagePreviewDialog(
       images: images,
       initialIndex: initialIndex,
@@ -44,6 +45,7 @@ class _ImagePreviewDialog extends StatefulWidget {
 class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
   late final PageController _page;
   late int _index;
+  bool _chrome = true;
 
   @override
   void initState() {
@@ -58,76 +60,60 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
     super.dispose();
   }
 
+  void _toggleChrome() => setState(() => _chrome = !_chrome);
+
   @override
   Widget build(BuildContext context) {
     final img = widget.images[_index];
     final localPath = img.localPath;
-    final hasBytes =
-        (localPath != null && localPath.isNotEmpty) ||
-        (widget.allowRemoteFallback && img.fileUrl.isNotEmpty);
+    final remoteUrl = widget.allowRemoteFallback ? img.fileUrl : null;
     return Dialog.fullscreen(
-      backgroundColor: Colors.black,
+      backgroundColor: ImagePreviewChrome.background,
       // A Scaffold so the save/share confirmation lands *inside* the viewer —
       // a SnackBar addressed to the screen underneath would be drawn behind
       // this dialog and never seen.
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Stack(
-            children: [
-              PageView.builder(
-                controller: _page,
-                itemCount: widget.images.length,
-                onPageChanged: (i) => setState(() => _index = i),
-                itemBuilder: (_, i) {
-                  final a = widget.images[i];
-                  return ZoomablePreviewImage(
-                    image: a,
-                    allowRemoteFallback: widget.allowRemoteFallback,
-                  );
-                },
-              ),
-              Positioned(
-                top: 8,
-                left: 0,
-                right: 0,
-                child: ImagePreviewTopBar(
-                  image: img,
-                  index: _index,
-                  total: widget.images.length,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            PageView.builder(
+              controller: _page,
+              itemCount: widget.images.length,
+              onPageChanged: (i) => setState(() => _index = i),
+              itemBuilder: (_, i) {
+                final a = widget.images[i];
+                return ZoomablePreviewImage(
+                  image: a,
                   allowRemoteFallback: widget.allowRemoteFallback,
+                  onTap: _toggleChrome,
+                );
+              },
+            ),
+            Align(
+              alignment: Alignment.topCenter,
+              child: ImagePreviewChrome.layer(
+                visible: _chrome,
+                child: ImagePreviewTopBar(
+                  fileName: img.fileName,
+                  detail: widget.images.length > 1
+                      ? '${_index + 1} / ${widget.images.length}'
+                      : null,
                 ),
               ),
-              if (hasBytes)
-                Positioned(
-                  left: 16,
-                  bottom: 16,
-                  child: MediaPreviewCircleButton(
-                    icon: Icons.ios_share_rounded,
-                    tooltip: 'Share',
-                    onTap: () => runMediaPreviewAction(
-                      context,
-                      MediaPreviewAction.share,
-                      localPath: localPath,
-                      remoteUrl: widget.allowRemoteFallback
-                          ? img.fileUrl
-                          : null,
-                      fileName: img.fileName,
-                    ),
-                  ),
-                ),
-              // High-contrast B/W close — always bottom-right.
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: MediaPreviewCircleButton(
-                  icon: Icons.close_rounded,
-                  tooltip: 'Close',
-                  onTap: () => Navigator.pop(context),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: ImagePreviewChrome.layer(
+                visible: _chrome,
+                child: ImagePreviewDockBar(
+                  fileName: img.fileName,
+                  localPath: localPath,
+                  remoteUrl: remoteUrl,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

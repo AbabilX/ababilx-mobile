@@ -518,6 +518,32 @@ actually opened.
 - The bubble is bounded by the same `SignalBubbleMetrics.media*` values a photo
   uses, so a mixed album does not step in and out.
 
+## Photo viewer — Signal-Android MediaPreview
+
+Tapping a photo opens `showChatAttachmentGallery`
+(`chat-timeline/attachment_gallery.dart`), built to Signal-Android's
+`MediaPreviewFragment`, not the old filename + white close circles.
+
+```
+tap photo -> dark surface, photo edge to edge
+chrome    toolbar (back · file name · You/sender · time)
+          caption · album rail · dock (Save · Share — no ⋮)
+tap again chrome hides; pinch-zoom and swipe stay
+```
+
+- **The file name is the title.** Asset types (`Photo`) and the 3-dot overflow
+  are gone — Save and Share sit on a labeled dock. `ChatMediaPreviewMeta.of`
+  only fills the second line (`You · 10:00 AM`). Shared-media cells have no
+  sender, so that line is the album index or empty.
+- **The rail is the album, not the conversation.** Signal can load every photo
+  in the thread; we only have this message's images, and that is enough to
+  reach the ones behind `+N`. One photo has no rail.
+- **Bytes still go through `AttachmentGate`.** Chrome is paint. A page that is
+  not on disk still offers the same download badge the bubble did.
+- Wall / CRM reuse the same toolbar + tap-to-hide through
+  `showImagePreview` (`shared/widgets/image_preview.dart`). Forward / Edit /
+  Delete stay out of the viewer — those actions already live on the message.
+
 ## The viewer
 
 `video_fullscreen_dialog.dart` + `video_fullscreen_controls.dart`. It used to

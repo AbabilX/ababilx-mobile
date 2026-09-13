@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/models/chat_models.dart';
 import 'attachment_album_geometry.dart';
 import 'attachment_image_tile.dart';
+import 'media-preview/chat_media_preview_meta.dart';
 import 'signal_bubble_metrics.dart';
 
 /// Signal's album: one image drawn full width, several laid out by
@@ -16,6 +17,7 @@ class AttachmentImageGrid extends StatelessWidget {
     super.key,
     required this.images,
     this.withCaption = false,
+    this.preview,
   });
 
   final List<ChatMessageAttachment> images;
@@ -23,6 +25,8 @@ class AttachmentImageGrid extends StatelessWidget {
   /// A picture carrying text is held to a wider floor, so the caption is not
   /// squeezed into a narrow bubble beneath it.
   final bool withCaption;
+
+  final ChatMediaPreviewMeta? preview;
 
   static const double _corner = 14;
   static const double _maxWidth = SignalBubbleMetrics.mediaMaxWidth;
@@ -40,6 +44,7 @@ class AttachmentImageGrid extends StatelessWidget {
         minWidth: withCaption
             ? SignalBubbleMetrics.mediaMinWidthWithCaption
             : SignalBubbleMetrics.mediaMinWidthSolo,
+        preview: preview,
       );
     }
     return Padding(
@@ -71,6 +76,7 @@ class AttachmentImageGrid extends StatelessWidget {
                       maxWidth: cell.rect.width,
                       grid: true,
                       radius: cell.radius,
+                      preview: preview,
                       overlayText:
                           layout.overflow > 0 &&
                               cell.index == layout.cells.last.index

@@ -4,6 +4,7 @@ import '../../attachments/data/models/attachment_handle.dart';
 import '../../attachments/widgets/attachment_gate.dart';
 import '../data/models/chat_models.dart';
 import 'attachment_gallery.dart';
+import 'media-preview/chat_media_preview_meta.dart';
 import 'signal_bubble_metrics.dart';
 
 class AttachmentImageTile extends StatelessWidget {
@@ -18,6 +19,7 @@ class AttachmentImageTile extends StatelessWidget {
     this.grid = false,
     this.overlayText,
     this.radius,
+    this.preview,
   });
 
   final ChatMessageAttachment attachment;
@@ -36,6 +38,10 @@ class AttachmentImageTile extends StatelessWidget {
   /// Album cells share cut corners so the group reads as one rounded block.
   /// Null means the standalone shape.
   final BorderRadius? radius;
+
+  /// Sender + time + caption for the fullscreen viewer. Shared-media cells
+  /// leave this null; the viewer titles itself "Photo".
+  final ChatMediaPreviewMeta? preview;
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +112,12 @@ class AttachmentImageTile extends StatelessWidget {
     );
   }
 
-  Future<void> _open(BuildContext context) =>
-      showChatAttachmentGallery(context, images: gallery, index: index);
+  Future<void> _open(BuildContext context) => showChatAttachmentGallery(
+    context,
+    images: gallery,
+    index: index,
+    preview: preview,
+  );
 
   Widget _broken(BuildContext context) => Container(
     color: Theme.of(context).colorScheme.surfaceContainerHighest,

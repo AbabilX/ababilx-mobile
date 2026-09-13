@@ -9,10 +9,14 @@ class ZoomablePreviewImage extends StatefulWidget {
     super.key,
     required this.image,
     required this.allowRemoteFallback,
+    this.onTap,
   });
 
   final PreviewImage image;
   final bool allowRemoteFallback;
+
+  /// Single tap — Signal toggles the chrome. Double-tap still zooms.
+  final VoidCallback? onTap;
 
   @override
   State<ZoomablePreviewImage> createState() => _ZoomablePreviewImageState();
@@ -49,6 +53,7 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
   Widget build(BuildContext context) {
     super.build(context);
     return GestureDetector(
+      onTap: widget.onTap,
       onDoubleTapDown: (details) => _doubleTapDetails = details,
       onDoubleTap: _onDoubleTap,
       child: InteractiveViewer(

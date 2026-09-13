@@ -6,6 +6,7 @@ import 'attachment_file_row.dart';
 import 'attachment_image_grid.dart';
 import 'attachment_pdf_tile.dart';
 import 'attachment_video_tile.dart';
+import 'media-preview/chat_media_preview_meta.dart';
 import 'voice_attachment_player.dart';
 
 /// Local-first attachment assembly. Transfer progress is watched only by the
@@ -15,12 +16,15 @@ class MessageAttachments extends StatelessWidget {
     super.key,
     required this.attachments,
     this.withCaption = false,
+    this.preview,
   });
 
   final List<ChatMessageAttachment> attachments;
 
   /// Whether the message also carries body text, which widens a solo picture.
   final bool withCaption;
+
+  final ChatMediaPreviewMeta? preview;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +41,11 @@ class MessageAttachments extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (images.isNotEmpty)
-          AttachmentImageGrid(images: images, withCaption: withCaption),
+          AttachmentImageGrid(
+            images: images,
+            withCaption: withCaption,
+            preview: preview,
+          ),
         for (final attachment in videos)
           AttachmentVideoTile(attachment: attachment),
         for (final attachment in audio)

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/chat_models.dart';
+import '../nickname/contact_nickname_provider.dart';
+import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 import '../tiptap_viewer.dart';
+import 'media-preview/chat_media_preview_meta.dart';
 import 'message_attachments.dart';
 import 'message_bubble.dart';
 import 'message_long_body.dart';
@@ -34,6 +37,17 @@ class MessageBody extends ConsumerWidget {
     }
     final plain = tiptapToPlainText(message.body);
     final long = MessageLongBody.isLong(plain);
+    final isOwn =
+        message.userId ==
+        ref.watch(chatProvider.select((s) => s.currentUserId));
+    final senderName = ref
+        .watch(contactNicknamesProvider)
+        .resolve(userId: message.userId, name: message.userName);
+    final preview = ChatMediaPreviewMeta.of(
+      message: message,
+      isOwn: isOwn,
+      senderName: senderName,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -56,6 +70,7 @@ class MessageBody extends ConsumerWidget {
           MessageAttachments(
             attachments: message.attachments,
             withCaption: plain.isNotEmpty,
+            preview: preview,
           ),
         if (message.isPending && message.pendingAttachments.isNotEmpty)
           PendingMessageAttachments(
