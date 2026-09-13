@@ -39,22 +39,13 @@ class FilePreviewFooter extends StatelessWidget {
             child: _Caption(text: captionText),
           ),
         if (hasDock)
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: ImagePreviewDock(
-                    fileName: fileName,
-                    localPath: localPath,
-                    remoteUrl: remoteUrl,
-                    contentType: contentType,
-                    onOpen: onOpen,
-                  ),
-                ),
-              ),
+          ImagePreviewDockSlot(
+            child: ImagePreviewDock(
+              fileName: fileName,
+              localPath: localPath,
+              remoteUrl: remoteUrl,
+              contentType: contentType,
+              onOpen: onOpen,
             ),
           ),
       ],

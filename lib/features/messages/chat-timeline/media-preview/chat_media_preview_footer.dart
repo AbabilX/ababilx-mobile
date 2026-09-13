@@ -60,17 +60,11 @@ class ChatMediaPreviewFooter extends StatelessWidget {
             ),
           ),
         if (hasDock)
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-              child: Center(
-                child: ImagePreviewDock(
-                  fileName: fileName,
-                  localPath: localPath,
-                  onRotate: onRotate,
-                ),
-              ),
+          ImagePreviewDockSlot(
+            child: ImagePreviewDock(
+              fileName: fileName,
+              localPath: localPath,
+              onRotate: onRotate,
             ),
           ),
       ],

@@ -118,6 +118,36 @@ void main() {
     );
   });
 
+  testWidgets('avatar preview capsule sits bottom-center, not mid-photo', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(
+          width: 400,
+          height: 800,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: ImagePreviewDockBar(
+                  fileName: 'me.jpg',
+                  remoteUrl: 'https://example.invalid/me.jpg',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    final dock = tester.getRect(find.byType(ImagePreviewDock));
+    final box = tester.getRect(find.byType(Stack).first);
+    expect(dock.center.dy, greaterThan(box.center.dy));
+    expect((dock.center.dx - box.center.dx).abs(), lessThan(8));
+    expect(box.bottom - dock.bottom, lessThan(40));
+  });
+
   testWidgets('album rail stays away from a single photo', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

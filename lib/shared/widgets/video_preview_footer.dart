@@ -60,23 +60,14 @@ class VideoPreviewFooter extends StatelessWidget {
           ),
         ),
         if (hasDock)
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: ImagePreviewDock(
-                    fileName: fileName,
-                    localPath: localPath,
-                    remoteUrl: remoteUrl,
-                    muted: muted,
-                    onMute: onMute,
-                    onRotate: onRotate,
-                  ),
-                ),
-              ),
+          ImagePreviewDockSlot(
+            child: ImagePreviewDock(
+              fileName: fileName,
+              localPath: localPath,
+              remoteUrl: remoteUrl,
+              muted: muted,
+              onMute: onMute,
+              onRotate: onRotate,
             ),
           )
         else
