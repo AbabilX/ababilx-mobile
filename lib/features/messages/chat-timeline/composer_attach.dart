@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../shared/media/device_gallery.dart';
 import '../../../shared/media/media_grid_sheet.dart';
 import '../../../shared/media/media_quality.dart';
 import '../../../shared/media/native_media_send.dart';
@@ -11,6 +10,7 @@ import '../data/models/chat_models.dart';
 import 'composer_upload.dart';
 
 export 'composer_pending_previews.dart' show ComposerPendingPreviews;
+export 'composer_upload_source.dart' show ChatAttachmentSizeException;
 
 enum ComposerAttachKind { gallery, camera, file }
 
@@ -45,6 +45,8 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
   required String conversationId,
   required ValueChanged<ChatAttachmentInput> onAdded,
   required ValueChanged<String> onFailed,
+  UploadProgress? onProgress,
+  ValueChanged<String>? onNativeSendReady,
   ImageSource? source,
   ComposerAttachKind? kind,
 }) async {
@@ -57,7 +59,15 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
   // Availability is asked first so backing out of the native screen ends the
   // attach rather than falling through to the old sheet.
   if (await NativeMediaSend.isAvailable()) {
-    return _nativeAttach(ref, conversationId, requested, onAdded, onFailed);
+    return _nativeAttach(
+      ref,
+      conversationId,
+      requested,
+      onAdded,
+      onFailed,
+      onProgress,
+      onNativeSendReady,
+    );
   }
 
   if (requested == ComposerAttachKind.camera) {
@@ -68,6 +78,7 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
       await pickLiveCameraFile(),
       onAdded,
       onFailed,
+      onProgress,
     );
     return const ComposerAttachResult();
   }
@@ -76,9 +87,10 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
     await _uploadPicked(
       ref,
       conversationId,
-      await pickDeviceFile(),
+      await deviceFileSource()(),
       onAdded,
       onFailed,
+      onProgress,
     );
     return const ComposerAttachResult();
   }
@@ -96,15 +108,17 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
         await pickLiveCameraFile(),
         onAdded,
         onFailed,
+        onProgress,
       );
     case MediaSheetAction.files:
       await _settle();
       await _uploadPicked(
         ref,
         conversationId,
-        await pickDeviceFile(),
+        await deviceFileSource()(),
         onAdded,
         onFailed,
+        onProgress,
       );
     case MediaSheetAction.picked:
       await uploadAttachments(
@@ -113,6 +127,7 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
         sources: result.items.map(libraryItemSource).toList(),
         onAdded: onAdded,
         onFailed: onFailed,
+        onProgress: onProgress,
       );
   }
   return const ComposerAttachResult();
@@ -129,6 +144,8 @@ Future<ComposerAttachResult> _nativeAttach(
   ComposerAttachKind kind,
   ValueChanged<ChatAttachmentInput> onAdded,
   ValueChanged<String> onFailed,
+  UploadProgress? onProgress,
+  ValueChanged<String>? onNativeSendReady,
 ) async {
   final native = await NativeMediaSend.open(
     start: switch (kind) {
@@ -146,42 +163,36 @@ Future<ComposerAttachResult> _nativeAttach(
     sources: native.files.map(nativeFileSource).toList(),
     onAdded: onAdded,
     onFailed: onFailed,
+    onProgress: onProgress,
+    onReady: onNativeSendReady == null
+        ? null
+        : () => onNativeSendReady(native.caption),
   );
-  return ComposerAttachResult(sendRequested: true, caption: native.caption);
+  return onNativeSendReady == null
+      ? ComposerAttachResult(sendRequested: true, caption: native.caption)
+      : const ComposerAttachResult();
 }
-
-/// A tap straight on the attachment keyboard's rail: one library item, no
-/// picker in between. The bytes are materialised first because a
-/// `content://` grant does not outlive the panel that handed it over.
-Future<void> uploadDeviceMediaItem(
-  WidgetRef ref, {
-  required String conversationId,
-  required DeviceMediaItem item,
-  required ValueChanged<ChatAttachmentInput> onAdded,
-  required ValueChanged<String> onFailed,
-}) => uploadAttachments(
-  ref,
-  conversationId: conversationId,
-  sources: [libraryItemSource(item)],
-  onAdded: onAdded,
-  onFailed: onFailed,
-);
 
 /// One file the pickers already read for us — a camera shot, a document.
 Future<void> _uploadPicked(
   WidgetRef ref,
   String conversationId,
-  PickedMediaFile? picked,
+  Object? picked,
   ValueChanged<ChatAttachmentInput> onAdded,
   ValueChanged<String> onFailed,
+  UploadProgress? onProgress,
 ) async {
   if (picked == null) return;
   await uploadAttachments(
     ref,
     conversationId: conversationId,
-    sources: [pickedFileSource(picked)],
+    sources: [
+      if (picked is PickedMediaFile) pickedFileSource(picked),
+      if (picked is UploadSource) () async => picked,
+    ],
     onAdded: onAdded,
     onFailed: onFailed,
+    onProgress: onProgress,
   );
 }
 
@@ -203,6 +214,8 @@ Future<ComposerAttachResult> pickAndUploadImage(
   required String conversationId,
   required ValueChanged<ChatAttachmentInput> onAdded,
   required ValueChanged<String> onFailed,
+  UploadProgress? onProgress,
+  ValueChanged<String>? onNativeSendReady,
   ImageSource? source,
   ComposerAttachKind? kind,
 }) => pickAndUploadAttachment(
@@ -211,6 +224,8 @@ Future<ComposerAttachResult> pickAndUploadImage(
   conversationId: conversationId,
   onAdded: onAdded,
   onFailed: onFailed,
+  onProgress: onProgress,
+  onNativeSendReady: onNativeSendReady,
   source: source,
   kind: kind,
 );

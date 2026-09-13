@@ -166,13 +166,36 @@ mixin _ChatMutateMixin
   Future<void> uploadAttachmentBytes(
     ChatPresignResult presign,
     List<int> bytes,
-    String contentType,
-  ) async {
+    String contentType, {
+    ProgressCallback? onProgress,
+  }) async {
     final dio = Dio();
     await dio.put(
       presign.uploadUrl,
       data: bytes,
       options: Options(headers: {'Content-Type': contentType}),
+      onSendProgress: onProgress,
+    );
+  }
+
+  Future<void> uploadAttachmentFile(
+    ChatPresignResult presign,
+    File file,
+    String contentType,
+    int sizeBytes, {
+    ProgressCallback? onProgress,
+  }) async {
+    final dio = Dio();
+    await dio.put(
+      presign.uploadUrl,
+      data: file.openRead(),
+      options: Options(
+        headers: {
+          'Content-Type': contentType,
+          Headers.contentLengthHeader: sizeBytes,
+        },
+      ),
+      onSendProgress: onProgress,
     );
   }
 

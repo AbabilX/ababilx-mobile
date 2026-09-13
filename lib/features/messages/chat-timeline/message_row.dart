@@ -121,7 +121,8 @@ class _MessageRowState extends ConsumerState<MessageRow>
       pulse: _pulseAnim,
       isSending:
           isOwnMessage &&
-          widget.message.sendStatus == MessageSendStatus.sending,
+          (widget.message.sendStatus == MessageSendStatus.sending ||
+              widget.message.sendStatus == MessageSendStatus.uploading),
       isFailed:
           isOwnMessage && widget.message.sendStatus == MessageSendStatus.failed,
       isOwnMessage: isOwnMessage,
@@ -137,7 +138,9 @@ class _MessageRowState extends ConsumerState<MessageRow>
     final chat = ref.watch(chatProvider);
     final isOwnMessage = widget.message.userId == chat.currentUserId;
     final isSending =
-        isOwnMessage && widget.message.sendStatus == MessageSendStatus.sending;
+        isOwnMessage &&
+        (widget.message.sendStatus == MessageSendStatus.sending ||
+            widget.message.sendStatus == MessageSendStatus.uploading);
     final isFailed =
         isOwnMessage && widget.message.sendStatus == MessageSendStatus.failed;
     final selection = ref.watch(messageSelectionProvider);

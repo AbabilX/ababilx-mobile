@@ -30,4 +30,12 @@ class ComposerUploads {
       await Future.wait(_live.toList());
     }
   }
+
+  /// Waits only for runs that belong to the message being submitted now.
+  /// A new attachment picked while that bubble uploads belongs to the next
+  /// message and must not delay or leak into the current one.
+  Future<void> settleCurrent() async {
+    final current = _live.toList();
+    if (current.isNotEmpty) await Future.wait(current);
+  }
 }

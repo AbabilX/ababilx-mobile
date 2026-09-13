@@ -1,9 +1,25 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
+
 import '../../../shared/media/device_gallery.dart';
 import '../../../shared/media/native_media_send.dart';
 import '../../../shared/media/picked_media_file.dart';
+
+const int maxChatAttachmentBytes = 350 * 1024 * 1024;
+
+class ChatAttachmentSizeException implements Exception {
+  const ChatAttachmentSizeException(this.sizeBytes);
+
+  final int sizeBytes;
+}
+
+void validateChatAttachmentSize(int sizeBytes) {
+  if (sizeBytes <= 0 || sizeBytes > maxChatAttachmentBytes) {
+    throw ChatAttachmentSizeException(sizeBytes);
+  }
+}
 
 /// One file to be attached, described without its bytes.
 ///
@@ -47,6 +63,27 @@ class UploadSource {
 /// Resolves one pick to a description — a disk copy at worst, never a read
 /// into memory. Returns null for a file that has gone.
 typedef UploadSourceLoader = Future<UploadSource?> Function();
+
+/// Documents stay on disk so a 350 MB attachment never occupies the Dart
+/// heap in one allocation. Mobile FilePicker supplies a temporary local path.
+UploadSourceLoader deviceFileSource() => () async {
+  final result = await FilePicker.platform.pickFiles(
+    allowMultiple: false,
+    withData: false,
+  );
+  if (result == null || result.files.isEmpty) return null;
+  final picked = result.files.first;
+  final path = picked.path;
+  if (path == null || path.isEmpty) return null;
+  final file = File(path);
+  if (!await file.exists()) return null;
+  return UploadSource(
+    fileName: picked.name,
+    contentType: contentTypeForFileName(picked.name),
+    sizeBytes: await file.length(),
+    localPath: path,
+  );
+};
 
 /// A library item: copied out of MediaStore first, because a `content://`
 /// grant does not outlive the panel that handed it over.

@@ -13,9 +13,15 @@ import '../../../shared/media/media_thumbnail.dart';
 /// be read: on iOS, or with media permission denied, the shortcut row below
 /// is the whole panel and the system picker is one tap away inside it.
 class ComposerMediaRail extends StatefulWidget {
-  const ComposerMediaRail({super.key, required this.onPick, this.height = 132});
+  const ComposerMediaRail({
+    super.key,
+    required this.onPick,
+    this.selectedUris = const [],
+    this.height = 132,
+  });
 
   final ValueChanged<DeviceMediaItem> onPick;
+  final List<String> selectedUris;
   final double height;
 
   @override
@@ -49,7 +55,12 @@ class _ComposerMediaRailState extends State<ComposerMediaRail> {
         separatorBuilder: (_, _) => const SizedBox(width: 6),
         itemBuilder: (_, index) {
           final item = _items[index];
-          return _RailTile(item: item, onTap: () => widget.onPick(item));
+          final selection = widget.selectedUris.indexOf(item.uri);
+          return _RailTile(
+            item: item,
+            selection: selection < 0 ? null : selection + 1,
+            onTap: () => widget.onPick(item),
+          );
         },
       ),
     );
@@ -63,10 +74,15 @@ class _ComposerMediaRailState extends State<ComposerMediaRail> {
 /// sheet and the folder gallery. Closing the "+" panel and opening it again
 /// used to re-decode every tile from scratch.
 class _RailTile extends StatelessWidget {
-  const _RailTile({required this.item, required this.onTap});
+  const _RailTile({
+    required this.item,
+    required this.onTap,
+    required this.selection,
+  });
 
   final DeviceMediaItem item;
   final VoidCallback onTap;
+  final int? selection;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +99,33 @@ class _RailTile extends StatelessWidget {
             children: [
               ColoredBox(color: colors.surfaceContainerHighest),
               MediaThumbnail(item: item, maxPx: 320),
+              if (selection != null)
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: .18),
+                      border: Border.all(color: colors.primary, width: 3),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              if (selection != null)
+                Positioned(
+                  top: 7,
+                  right: 7,
+                  child: CircleAvatar(
+                    radius: 12,
+                    backgroundColor: colors.primary,
+                    foregroundColor: colors.onPrimary,
+                    child: Text(
+                      '$selection',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
               if (item.isVideo)
                 Positioned(
                   left: 6,

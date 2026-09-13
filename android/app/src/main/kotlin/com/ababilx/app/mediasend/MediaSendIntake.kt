@@ -49,6 +49,7 @@ class MediaSendIntake(
         if (request.uris.isEmpty()) return false
         val items = selection.itemsFrom(context, request.uris, request.names, request.mimes)
         if (items.isEmpty()) return false
+        review.setCaption(request.caption)
         documentsPicked(items)
         return true
     }

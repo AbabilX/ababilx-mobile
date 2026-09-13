@@ -29,6 +29,10 @@ class MessageDeliveryStatus extends StatelessWidget {
         opacity: pulse,
         child: Icon(Icons.schedule_rounded, size: 13, color: muted),
       ),
+      MessageSendStatus.uploading => FadeTransition(
+        opacity: pulse,
+        child: Icon(Icons.upload_rounded, size: 13, color: muted),
+      ),
       MessageSendStatus.failed => Icon(
         Icons.error_outline_rounded,
         size: 14,

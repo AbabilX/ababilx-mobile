@@ -32,6 +32,7 @@ class _ComposerNotifier extends ChatNotifier {
     String? quotedMessageId,
     ChatMessageQuote? quotePreview,
     String? clientMessageId,
+    bool reusePending = false,
   }) async => _message('sent', 'me', body: body);
 }
 
@@ -76,6 +77,7 @@ class _TimelineNotifier extends _ComposerNotifier {
     String? quotedMessageId,
     ChatMessageQuote? quotePreview,
     String? clientMessageId,
+    bool reusePending = false,
   }) async {
     final id = conversationId ?? state.activeConversationId!;
     final key = feedKey(id, threadRootId: parentId);

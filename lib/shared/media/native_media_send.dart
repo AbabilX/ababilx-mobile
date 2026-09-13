@@ -109,6 +109,7 @@ class NativeMediaSend {
     NativeMediaStart start = NativeMediaStart.gallery,
     MediaQuality quality = MediaQuality.standard,
     List<NativeMediaInput> inputs = const [],
+    String initialCaption = '',
   }) async {
     if (!supported) return null;
     try {
@@ -120,6 +121,7 @@ class NativeMediaSend {
         'uris': [for (final input in inputs) input.uri],
         'names': [for (final input in inputs) input.fileName],
         'mimes': [for (final input in inputs) input.contentType],
+        'caption': initialCaption,
       });
       if (raw == null) return null;
       final items = (raw['items'] as List<dynamic>? ?? const []);

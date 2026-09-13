@@ -6,6 +6,7 @@ import '../tiptap_viewer.dart';
 import 'message_attachments.dart';
 import 'message_bubble.dart';
 import 'message_long_body.dart';
+import 'pending_message_attachments.dart';
 import 'signal_bubble_metrics.dart';
 
 class MessageBody extends StatelessWidget {
@@ -53,6 +54,14 @@ class MessageBody extends StatelessWidget {
           MessageAttachments(
             attachments: message.attachments,
             withCaption: plain.isNotEmpty,
+          ),
+        if (message.isPending && message.pendingAttachments.isNotEmpty)
+          PendingMessageAttachments(
+            attachments: message.pendingAttachments,
+            foreground: colors.foreground,
+            muted: colors.muted,
+            uploading: message.sendStatus == MessageSendStatus.uploading,
+            progress: message.uploadProgress,
           ),
       ],
     );

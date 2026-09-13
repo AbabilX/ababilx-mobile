@@ -36,6 +36,70 @@ mixin _ChatActionsMixin
     return true;
   }
 
+  /// Inserts the attachment bubble before its bytes finish uploading.
+  Future<String?> beginUploadingMessage({
+    required String conversationId,
+    required String body,
+    required List<ChatAttachmentInput> attachments,
+    List<String> mentionedUserIds = const [],
+    String? parentId,
+    String? quotedMessageId,
+    ChatMessageQuote? quotePreview,
+  }) async {
+    final clientRef = newChatClientMessageId();
+    final String currentUser;
+    try {
+      currentUser = await (this as ChatNotifier).ensureCurrentUserId();
+    } catch (_) {
+      return null;
+    }
+    final conv = state.conversationById(conversationId);
+    final pending = ChatMessage(
+      id: clientRef,
+      conversationId: conversationId,
+      userId: currentUser,
+      body: body,
+      parentId: parentId,
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+      sendStatus: MessageSendStatus.uploading,
+      uploadProgress: 0,
+      clientRef: clientRef,
+      pendingAttachments: List.unmodifiable(attachments),
+      pendingParentId: parentId,
+      pendingQuotedMessageId: quotedMessageId,
+      pendingMentionedUserIds: List.unmodifiable(mentionedUserIds),
+      quote: quotePreview,
+      userName: conv?.peerUserName,
+    );
+    _appendPendingMessage(conversationId, pending, parentId: parentId);
+    applyIncomingMessage(conversationId, pending, bumpUnread: false);
+    return clientRef;
+  }
+
+  void updatePendingUploadProgress(
+    String conversationId,
+    String clientRef,
+    double progress, {
+    String? parentId,
+  }) {
+    _patchInFeed(
+      conversationId,
+      (m) => m.id == clientRef && m.isPending
+          ? m.copyWith(uploadProgress: progress.clamp(0.0, 1.0))
+          : m,
+      threadRootId: parentId,
+    );
+  }
+
+  void removeUploadingMessage(
+    String conversationId,
+    String clientRef, {
+    String? parentId,
+  }) {
+    _removePendingFromFeed(conversationId, clientRef, parentId: parentId);
+    (this as ChatNotifier).fetchSidebarSilent().ignore();
+  }
+
   void patchThreadReply(String rootId, ChatMessage msg) {
     final list = state.threadRepliesByRoot[rootId];
     if (list == null) return;
@@ -76,6 +140,7 @@ mixin _ChatActionsMixin
     String? quotedMessageId,
     ChatMessageQuote? quotePreview,
     String? clientMessageId,
+    bool reusePending = false,
   }) async {
     final convId = conversationId ?? state.activeConversationId;
     if (convId == null) return null;
@@ -113,7 +178,15 @@ mixin _ChatActionsMixin
     );
 
     // Inject into feed immediately so user sees it at once.
-    _appendPendingMessage(convId, pendingMsg, parentId: parentId);
+    if (reusePending) {
+      _patchInFeed(
+        convId,
+        (m) => m.id == clientRef && m.isPending ? pendingMsg : m,
+        threadRootId: parentId,
+      );
+    } else {
+      _appendPendingMessage(convId, pendingMsg, parentId: parentId);
+    }
     // Update sidebar preview with optimistic body.
     applyIncomingMessage(convId, pendingMsg, bumpUnread: false);
 

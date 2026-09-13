@@ -23,6 +23,7 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
     required this.onFile,
     required this.onContact,
     required this.onPickMedia,
+    this.selectedMediaUris = const [],
   });
 
   final String galleryLabel;
@@ -36,6 +37,7 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
 
   /// A tap straight on the rail, which skips the picker entirely.
   final ValueChanged<DeviceMediaItem> onPickMedia;
+  final List<String> selectedMediaUris;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +51,10 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
           children: [
             Divider(height: 1, color: colors.outlineVariant),
             const SizedBox(height: 10),
-            ComposerMediaRail(onPick: onPickMedia),
+            ComposerMediaRail(
+              onPick: onPickMedia,
+              selectedUris: selectedMediaUris,
+            ),
             const SizedBox(height: 14),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,

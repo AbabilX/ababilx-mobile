@@ -19,6 +19,7 @@ class MediaSendRequest(
     val uris: List<String>,
     val names: List<String>,
     val mimes: List<String>,
+    val caption: String,
 ) {
     val startsAtGallery: Boolean get() = start == START_GALLERY
 
@@ -30,6 +31,7 @@ class MediaSendRequest(
         const val EXTRA_URIS = "uris"
         const val EXTRA_NAMES = "names"
         const val EXTRA_MIMES = "mimes"
+        const val EXTRA_CAPTION = "caption"
 
         const val START_GALLERY = "gallery"
         const val START_CAMERA = "camera"
@@ -46,6 +48,7 @@ class MediaSendRequest(
             uris = intent.getStringArrayListExtra(EXTRA_URIS).orEmpty(),
             names = intent.getStringArrayListExtra(EXTRA_NAMES).orEmpty(),
             mimes = intent.getStringArrayListExtra(EXTRA_MIMES).orEmpty(),
+            caption = intent.getStringExtra(EXTRA_CAPTION).orEmpty(),
         )
     }
 }

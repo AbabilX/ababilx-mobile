@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import 'message_bubble.dart';
@@ -8,7 +10,7 @@ import 'signal_bubble_metrics.dart';
 
 /// Time and delivery state, inside the bubble on its last line — where Signal
 /// puts them, rather than on a row of their own below the message.
-class MessageBubbleFooter extends StatelessWidget {
+class MessageBubbleFooter extends ConsumerWidget {
   const MessageBubbleFooter({
     super.key,
     required this.message,
@@ -27,12 +29,16 @@ class MessageBubbleFooter extends StatelessWidget {
   final Animation<double> pulse;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final error = Theme.of(context).colorScheme.error;
+    String tr(String key) => AppTranslations.translate(context, ref, key);
+    final percent = ((message.uploadProgress ?? 0) * 100).round();
     final label = isFailed
-        ? 'Tap to retry'
+        ? tr('chat_tap_to_retry')
+        : message.sendStatus == MessageSendStatus.uploading
+        ? '${tr('chat_uploading')} $percent%'
         : isSending
-        ? 'Sending…'
+        ? tr('chat_sending')
         : formatChatTime(message.createdAt);
 
     return Padding(

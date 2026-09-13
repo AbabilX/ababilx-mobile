@@ -152,6 +152,11 @@ class ReviewView @JvmOverloads constructor(
 
     fun selection(): List<PickedItem> = items.toList()
 
+    fun setCaption(text: String) {
+        caption.setText(text)
+        caption.setSelection(text.length)
+    }
+
     private fun removeCurrent() {
         val position = pager.currentItem
         if (position !in items.indices) return

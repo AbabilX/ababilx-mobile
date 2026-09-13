@@ -160,6 +160,47 @@ void main() {
   });
 
   test(
+    'attachment send keeps one bubble through upload and delivery',
+    () async {
+      final notifier = container.read(chatProvider.notifier);
+      const attachment = ChatAttachmentInput(
+        fileUrl: 'https://cdn.example/file.pdf',
+        fileName: 'file.pdf',
+        contentType: 'application/pdf',
+        sizeBytes: 350 * 1024 * 1024,
+      );
+
+      final clientRef = await notifier.beginUploadingMessage(
+        conversationId: _conversationId,
+        body: '',
+        attachments: const [attachment],
+      );
+      expect(clientRef, isNotNull);
+      expect(feedMessages().single.sendStatus, MessageSendStatus.uploading);
+      expect(feedMessages().single.pendingAttachments, const [attachment]);
+
+      notifier.updatePendingUploadProgress(_conversationId, clientRef!, .5);
+      expect(feedMessages().single.uploadProgress, .5);
+
+      final send = notifier.sendMessage(
+        conversationId: _conversationId,
+        clientMessageId: clientRef,
+        body: '',
+        attachments: const [attachment],
+        reusePending: true,
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(feedMessages(), hasLength(1));
+      expect(feedMessages().single.sendStatus, MessageSendStatus.sending);
+
+      repo.sendCall.complete(_serverCopy());
+      await send;
+      expect(feedMessages(), hasLength(1));
+      expect(feedMessages().single.id, _serverId);
+    },
+  );
+
+  test(
     'a lost response never marks a socket-confirmed message failed',
     () async {
       final notifier = container.read(chatProvider.notifier);

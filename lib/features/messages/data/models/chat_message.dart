@@ -7,7 +7,7 @@ import 'chat_reaction.dart';
 
 /// Send-state for optimistic messages. Server-confirmed messages are [sent].
 /// [sending] = in-flight, [failed] = network/server error, user can retry.
-enum MessageSendStatus { sent, sending, failed }
+enum MessageSendStatus { sent, uploading, sending, failed }
 
 class ChatMessage extends Equatable {
   const ChatMessage({
@@ -39,6 +39,7 @@ class ChatMessage extends Equatable {
     this.quote,
     // Optimistic-send fields — not present in server JSON.
     this.sendStatus = MessageSendStatus.sent,
+    this.uploadProgress,
     this.clientRef,
     this.pendingAttachments = const [],
     this.pendingParentId,
@@ -78,6 +79,10 @@ class ChatMessage extends Equatable {
 
   /// Optimistic UI: current send state.
   final MessageSendStatus sendStatus;
+
+  /// Transient aggregate progress for this device's active attachment upload.
+  /// It is deliberately not persisted; interrupted uploads reopen as failed.
+  final double? uploadProgress;
 
   /// Stable sender-generated ID used to match a pending send, HTTP response,
   /// and WebSocket event. New server-confirmed messages preserve it.
@@ -211,6 +216,9 @@ class ChatMessage extends Equatable {
     List<ChatReactionGroup>? reactions,
     int? threadCount,
     MessageSendStatus? sendStatus,
+    double? uploadProgress,
+    bool clearUploadProgress = false,
+    List<ChatAttachmentInput>? pendingAttachments,
     String? clientRef,
     bool clearClientRef = false,
     ChatDeliverySummary? delivery,
@@ -247,8 +255,11 @@ class ChatMessage extends Equatable {
     delivery: delivery ?? this.delivery,
     quote: quote ?? this.quote,
     sendStatus: sendStatus ?? this.sendStatus,
+    uploadProgress: clearUploadProgress
+        ? null
+        : (uploadProgress ?? this.uploadProgress),
     clientRef: clearClientRef ? null : (clientRef ?? this.clientRef),
-    pendingAttachments: pendingAttachments,
+    pendingAttachments: pendingAttachments ?? this.pendingAttachments,
     pendingParentId: pendingParentId,
     pendingQuotedMessageId: pendingQuotedMessageId,
     pendingMentionedUserIds: pendingMentionedUserIds,
@@ -263,6 +274,7 @@ class ChatMessage extends Equatable {
     reactions,
     threadCount,
     sendStatus,
+    uploadProgress,
     delivery,
     quote,
   ];
@@ -296,6 +308,7 @@ MessageSendStatus _sendStatusFromJson(Object? raw) {
   if (raw is! String) return MessageSendStatus.sent;
   return switch (raw) {
     'sending' => MessageSendStatus.sending,
+    'uploading' => MessageSendStatus.uploading,
     'failed' => MessageSendStatus.failed,
     _ => MessageSendStatus.sent,
   };

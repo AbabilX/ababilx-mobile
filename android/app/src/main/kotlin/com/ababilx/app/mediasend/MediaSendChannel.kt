@@ -33,6 +33,7 @@ class MediaSendChannel(private val activity: Activity) {
                         uris = call.argument<List<String>>("uris").orEmpty(),
                         names = call.argument<List<String>>("names").orEmpty(),
                         mimes = call.argument<List<String>>("mimes").orEmpty(),
+                        caption = call.argument<String>("caption").orEmpty(),
                         result = result,
                     )
                     else -> result.notImplemented()
@@ -68,6 +69,7 @@ class MediaSendChannel(private val activity: Activity) {
         uris: List<String>,
         names: List<String>,
         mimes: List<String>,
+        caption: String,
         result: MethodChannel.Result,
     ) {
         // A second open while one is up would strand the first call.
@@ -78,6 +80,7 @@ class MediaSendChannel(private val activity: Activity) {
             .putExtra(MediaSendRequest.EXTRA_ALLOW_VIDEO, allowVideo)
             .putExtra(MediaSendRequest.EXTRA_START, start)
             .putExtra(MediaSendRequest.EXTRA_QUALITY, quality)
+            .putExtra(MediaSendRequest.EXTRA_CAPTION, caption)
         if (uris.isNotEmpty()) {
             intent
                 .putStringArrayListExtra(MediaSendRequest.EXTRA_URIS, ArrayList(uris))

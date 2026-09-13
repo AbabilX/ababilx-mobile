@@ -13,12 +13,10 @@ import 'pending_preview_cache.dart';
 
 export 'composer_upload_source.dart';
 
-/// How many attachments are transferred at once.
-///
-/// Three fills a mobile uplink without opening a connection per photo on a
-/// network that may only sustain a few, and without starving the websocket the
-/// conversation itself runs on.
+/// Three transfers fill a mobile uplink without starving the websocket.
 const int _uploadConcurrency = 3;
+
+typedef UploadProgress = void Function(String fileUrl, int sent, int total);
 
 /// Attaches [sources] and reports each one **in the order picked**.
 ///
@@ -43,17 +41,26 @@ Future<void> uploadAttachments(
   required List<UploadSourceLoader> sources,
   required ValueChanged<ChatAttachmentInput> onAdded,
   required ValueChanged<String> onFailed,
+  UploadProgress? onProgress,
+  VoidCallback? onReady,
 }) async {
-  final reserved = <_Reserved>[];
+  final loaded = <UploadSource>[];
   for (final load in sources) {
     final source = await load();
     if (source == null) continue;
+    validateChatAttachmentSize(source.sizeBytes);
+    loaded.add(source);
+  }
+
+  final reserved = <_Reserved>[];
+  for (final source in loaded) {
     final slot = await _reserve(ref, conversationId, source);
     if (slot == null) continue;
     reserved.add(slot);
     onAdded(slot.input);
   }
   if (reserved.isEmpty) return;
+  onReady?.call();
 
   var next = 0;
   Future<void> lane() async {
@@ -62,7 +69,7 @@ Future<void> uploadAttachments(
       if (index >= reserved.length) return;
       next += 1;
       final slot = reserved[index];
-      if (!await _transfer(ref, conversationId, slot)) {
+      if (!await _transfer(ref, conversationId, slot, onProgress: onProgress)) {
         onFailed(slot.input.fileUrl);
       }
     }
@@ -74,7 +81,6 @@ Future<void> uploadAttachments(
   await Future.wait(List.generate(lanes, (_) => lane()));
 }
 
-/// One presigned destination and the local file that will fill it.
 class _Reserved {
   const _Reserved(this.presign, this.source, this.input);
 
@@ -83,7 +89,6 @@ class _Reserved {
   final ChatAttachmentInput input;
 }
 
-/// Claims a URL and gets the preview on screen. No bytes are read here.
 Future<_Reserved?> _reserve(
   WidgetRef ref,
   String conversationId,
@@ -116,30 +121,41 @@ Future<_Reserved?> _reserve(
   );
 }
 
-/// Reads the file and PUTs it. A failure discards the object it reserved, so
-/// the conversation's storage is not charged for bytes nobody will ever see.
 Future<bool> _transfer(
   WidgetRef ref,
   String conversationId,
-  _Reserved slot,
-) async {
+  _Reserved slot, {
+  UploadProgress? onProgress,
+}) async {
   final notifier = ref.read(chatProvider.notifier);
-  final bytes = await slot.source.read();
-  if (bytes == null) {
-    await notifier.discardUpload(conversationId, slot.presign.publicUrl);
-    return false;
-  }
+  Uint8List? bytes;
   try {
-    await notifier.uploadAttachmentBytes(
-      slot.presign,
-      bytes,
-      slot.source.contentType,
-    );
+    final path = slot.source.localPath;
+    if (path != null && path.isNotEmpty) {
+      await notifier.uploadAttachmentFile(
+        slot.presign,
+        File(path),
+        slot.source.contentType,
+        slot.source.sizeBytes,
+        onProgress: (sent, total) =>
+            onProgress?.call(slot.input.fileUrl, sent, total),
+      );
+    } else {
+      bytes = await slot.source.read();
+      if (bytes == null) throw const FileSystemException('File unavailable');
+      await notifier.uploadAttachmentBytes(
+        slot.presign,
+        bytes,
+        slot.source.contentType,
+        onProgress: (sent, total) =>
+            onProgress?.call(slot.input.fileUrl, sent, total),
+      );
+    }
   } catch (_) {
     await notifier.discardUpload(conversationId, slot.presign.publicUrl);
     return false;
   }
-  if (slot.source.localPath == null) {
+  if (slot.source.localPath == null && bytes != null) {
     await _cacheBytesForPreview(slot.presign.publicUrl, slot.source, bytes);
   }
   await _adopt(ref, slot, bytes);
@@ -149,7 +165,7 @@ Future<bool> _transfer(
 /// The bytes we just uploaded are already on this device, so file them in the
 /// attachment store under the URL they landed at. Without this the sender is
 /// shown a download button for their own photo the moment the message renders.
-Future<void> _adopt(WidgetRef ref, _Reserved slot, Uint8List bytes) async {
+Future<void> _adopt(WidgetRef ref, _Reserved slot, Uint8List? bytes) async {
   final adopter = ref.read(attachmentAdopterProvider);
   final localPath = slot.source.localPath;
   if (localPath != null && localPath.isNotEmpty) {
@@ -161,6 +177,7 @@ Future<void> _adopt(WidgetRef ref, _Reserved slot, Uint8List bytes) async {
     );
     return;
   }
+  if (bytes == null) return;
   await adopter.adoptBytes(
     fileUrl: slot.input.fileUrl,
     fileName: slot.input.fileName,

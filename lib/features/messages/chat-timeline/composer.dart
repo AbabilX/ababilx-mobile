@@ -20,6 +20,8 @@ import 'composer_expanded_shell.dart';
 import 'composer_input_bar.dart';
 import 'composer_mention_picker.dart';
 import 'composer_recording_bar.dart';
+import 'composer_recent_review.dart';
+import 'composer_recent_selection.dart';
 import 'composer_reply_banner.dart';
 import 'composer_reply_target.dart';
 import 'reaction_emoji_picker.dart';
@@ -53,11 +55,15 @@ class MessageComposer extends ConsumerStatefulWidget {
 }
 
 class _MessageComposerState extends ConsumerState<MessageComposer> {
+  static const int _maxAttachments = 10;
   late final TextEditingController _ctrl;
   late final FocusNode _focus;
   final _voiceRecorder = VoiceMessageRecorder();
   final _recordStopwatch = Stopwatch();
   final _pending = <ChatAttachmentInput>[];
+  final _progressByUrl = <String, (int, int)>{};
+  final _uploadBubbleByUrl = <String, _UploadBubble>{};
+  List<DeviceMediaItem> _selectedRecent = const [];
 
   /// Attachment uploads still travelling. A tile is drawn as soon as its URL
   /// is reserved, so the send path has to wait these out or it would post a
@@ -86,7 +92,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   String get _hint =>
       widget.parentId != null ? 'Add a reply' : 'Message ${widget.hintName}';
-  bool get _hasDraft => _ctrl.text.trim().isNotEmpty || _pending.isNotEmpty;
+  bool get _hasDraft =>
+      _ctrl.text.trim().isNotEmpty ||
+      _pending.isNotEmpty ||
+      _selectedRecent.isNotEmpty;
   bool get _voiceSheetOpen => _recording || _recordPreparing || _uploadingVoice;
 
   List<MentionCandidate> _channelMembers = [];
@@ -238,15 +247,13 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   }
 
   Future<void> _send() async {
+    if (_selectedRecent.isNotEmpty) {
+      await _reviewSelectedRecents();
+      return;
+    }
     final plain = _ctrl.text.trim();
     if (plain.isEmpty && _pending.isEmpty) return;
-    // Every pending tile owns a reserved URL, and some of those objects may
-    // still be uploading. Sending now would hand the conversation a message
-    // whose photos never load, for everyone, permanently.
-    if (_uploads.busy) {
-      await _uploads.settle();
-      if (!mounted) return;
-    }
+    final uploading = _uploads.busy;
     final reply = ComposerReplyTarget.resolve(
       replyTo: ref.read(chatProvider).replyToMessage,
       threadRootId: widget.parentId,
@@ -258,6 +265,30 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     final attachments = List<ChatAttachmentInput>.of(_pending);
     final mentionedIds = _mentionedUserIds.toList();
 
+    final notifier = ref.read(chatProvider.notifier);
+    String? clientRef;
+    _UploadBubble? uploadBubble;
+    if (uploading) {
+      clientRef = await notifier.beginUploadingMessage(
+        conversationId: widget.conversationId,
+        body: body,
+        attachments: attachments,
+        mentionedUserIds: mentionedIds,
+        parentId: reply.parentId,
+        quotedMessageId: reply.quotedMessageId,
+        quotePreview: reply.preview,
+      );
+      if (clientRef == null || !mounted) return;
+      uploadBubble = _UploadBubble(
+        clientRef: clientRef,
+        parentId: reply.parentId,
+        attachments: attachments,
+      );
+      for (final attachment in attachments) {
+        _uploadBubbleByUrl[attachment.fileUrl] = uploadBubble;
+      }
+      _publishUploadProgress(uploadBubble);
+    }
     _mentionedUserIds.clear();
     _mentionByLabel.clear();
     if (!mounted) return;
@@ -272,21 +303,39 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     // The conversation id must be the one on screen: sendMessage falls back to
     // the shared activeConversationId, which a background fetchSidebar can
     // null out, and a null id drops the send with no bubble and no error.
-    final sendFuture = ref
-        .read(chatProvider.notifier)
-        .sendMessage(
-          conversationId: widget.conversationId,
-          body: body,
-          attachments: attachments,
-          mentionedUserIds: mentionedIds,
-          parentId: reply.parentId,
-          quotedMessageId: reply.quotedMessageId,
-          quotePreview: reply.preview,
-        );
     widget.onMessageSubmitted?.call();
     if (!_focus.hasFocus) _focus.requestFocus();
-    final sentMsg = await sendFuture;
-
+    if (uploading) {
+      await _uploads.settleCurrent();
+      for (final attachment in attachments) {
+        _uploadBubbleByUrl.remove(attachment.fileUrl);
+        _progressByUrl.remove(attachment.fileUrl);
+      }
+      if (!mounted) return;
+      if (uploadBubble!.attachments.isEmpty && body.isEmpty) {
+        notifier.removeUploadingMessage(
+          widget.conversationId,
+          clientRef!,
+          parentId: reply.parentId,
+        );
+        _showMessage(
+          'Could not upload this file. Please select it again.',
+          'ফাইল আপলোড করা যায়নি। আবার ফাইলটি নির্বাচন করুন।',
+        );
+        return;
+      }
+    }
+    final sentMsg = await notifier.sendMessage(
+      conversationId: widget.conversationId,
+      body: body,
+      attachments: uploadBubble?.attachments ?? attachments,
+      mentionedUserIds: mentionedIds,
+      parentId: reply.parentId,
+      quotedMessageId: reply.quotedMessageId,
+      quotePreview: reply.preview,
+      clientMessageId: clientRef,
+      reusePending: uploading,
+    );
     // Slack parity: Check if any mentioned users are not members of this channel/group
     if (widget.isGroup &&
         sentMsg != null &&
@@ -325,7 +374,36 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   /// optimistically against a reserved URL, and that object will never exist.
   void _dropPending(String fileUrl) {
     if (!mounted) return;
-    setState(() => _pending.removeWhere((a) => a.fileUrl == fileUrl));
+    final bubble = _uploadBubbleByUrl.remove(fileUrl);
+    bubble?.attachments.removeWhere((a) => a.fileUrl == fileUrl);
+    if (bubble != null) _publishUploadProgress(bubble);
+    setState(() {
+      _pending.removeWhere((a) => a.fileUrl == fileUrl);
+    });
+  }
+
+  void _onUploadProgress(String fileUrl, int sent, int total) {
+    _progressByUrl[fileUrl] = (sent, total);
+    final bubble = _uploadBubbleByUrl[fileUrl];
+    if (bubble != null) _publishUploadProgress(bubble);
+  }
+
+  void _publishUploadProgress(_UploadBubble bubble) {
+    var sent = 0;
+    var total = 0;
+    for (final attachment in bubble.attachments) {
+      final sample = _progressByUrl[attachment.fileUrl];
+      sent += sample?.$1 ?? 0;
+      total += sample?.$2 ?? attachment.sizeBytes;
+    }
+    ref
+        .read(chatProvider.notifier)
+        .updatePendingUploadProgress(
+          widget.conversationId,
+          bubble.clientRef,
+          total == 0 ? 0 : sent / total,
+          parentId: bubble.parentId,
+        );
   }
 
   Future<void> _attach({ImageSource? source, ComposerAttachKind? kind}) async {
@@ -343,6 +421,12 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           _focus.requestFocus();
         },
         onFailed: _dropPending,
+        onProgress: _onUploadProgress,
+        onNativeSendReady: (caption) {
+          if (!mounted) return;
+          if (caption.isNotEmpty) _ctrl.text = caption;
+          unawaited(_send());
+        },
       );
       _uploads.track(run);
       final outcome = await run;
@@ -352,6 +436,12 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         if (outcome.caption.isNotEmpty) _ctrl.text = outcome.caption;
         await _send();
       }
+    } on ChatAttachmentSizeException {
+      if (!mounted) return;
+      _showMessage(
+        'Files must be 350 MB or smaller.',
+        'ফাইল ৩৫০ MB বা তার কম হতে হবে।',
+      );
     } catch (_) {
       if (!mounted) return;
       _showMessage('Could not attach this file.', 'ফাইল সংযুক্ত করা যায়নি।');
@@ -372,20 +462,61 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     unawaited(_attach(kind: kind));
   }
 
-  /// Rail tap: straight into the pending strip, no picker screen.
+  /// Rail taps only select. Upload starts after the native review/edit step.
   void _pickFromRail(DeviceMediaItem item) {
-    _closeAttachmentPanel();
-    final run = uploadDeviceMediaItem(
-      ref,
-      conversationId: widget.conversationId,
-      item: item,
-      onAdded: (a) {
-        if (mounted) setState(() => _pending.add(a));
-      },
-      onFailed: _dropPending,
+    if (!_selectedRecent.contains(item) &&
+        _pending.length + _selectedRecent.length >= _maxAttachments) {
+      _showMessage(
+        'You can attach up to 10 files.',
+        'সর্বোচ্চ ১০টি ফাইল সংযুক্ত করা যাবে।',
+      );
+      return;
+    }
+    setState(
+      () => _selectedRecent = toggleRecentSelection(_selectedRecent, item),
     );
-    _uploads.track(run);
-    unawaited(run);
+  }
+
+  Future<void> _reviewSelectedRecents() async {
+    final selected = List<DeviceMediaItem>.of(_selectedRecent);
+    if (selected.isEmpty) return;
+    try {
+      final run = reviewAndUploadRecentMedia(
+        ref,
+        conversationId: widget.conversationId,
+        items: selected,
+        maxSelection: _maxAttachments - _pending.length,
+        initialCaption: _ctrl.text,
+        onAccepted: (caption) {
+          if (!mounted) return;
+          setState(() {
+            _selectedRecent = const [];
+            _attachmentPanelOpen = false;
+          });
+          _ctrl.text = caption;
+        },
+        onAdded: (attachment) {
+          if (!mounted) return;
+          setState(() => _pending.add(attachment));
+        },
+        onFailed: _dropPending,
+        onProgress: _onUploadProgress,
+        onReady: () => unawaited(_send()),
+      );
+      _uploads.track(run);
+      await run;
+    } on ChatAttachmentSizeException {
+      _showMessage(
+        'Files must be 350 MB or smaller.',
+        'ফাইল ৩৫০ MB বা তার কম হতে হবে।',
+      );
+    } catch (_) {
+      _showMessage('Could not attach this file.', 'ফাইল সংযুক্ত করা যায়নি।');
+    }
+  }
+
+  void _removePendingAt(int index) {
+    setState(() => _pending.removeAt(index));
   }
 
   Future<void> _pickEmoji() async {
@@ -657,7 +788,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
     final composer = ComposerExpandedShell(
       pending: _pending,
-      onRemove: (i) => setState(() => _pending.removeAt(i)),
+      onRemove: _removePendingAt,
       onReorder: (oldIndex, newIndex) => setState(() {
         _pending.insert(newIndex, _pending.removeAt(oldIndex));
       }),
@@ -691,7 +822,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         cameraTooltip: tr('chat_camera'),
         voiceTooltip: tr('chat_tap_to_record'),
         attachTooltip: tr('chat_attach'),
-        sendLabel: tr('chat_send'),
+        sendLabel: tr(_selectedRecent.isEmpty ? 'chat_send' : 'chat_next'),
       ),
     );
 
@@ -720,6 +851,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                     onFile: () => _selectAttachment(ComposerAttachKind.file),
                     onContact: _selectContact,
                     onPickMedia: _pickFromRail,
+                    selectedMediaUris: [
+                      for (final item in _selectedRecent) item.uri,
+                    ],
                   )
                 : const SizedBox.shrink(),
           ),
@@ -727,6 +861,18 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       ),
     );
   }
+}
+
+class _UploadBubble {
+  _UploadBubble({
+    required this.clientRef,
+    required this.parentId,
+    required List<ChatAttachmentInput> attachments,
+  }) : attachments = List.of(attachments);
+
+  final String clientRef;
+  final String? parentId;
+  final List<ChatAttachmentInput> attachments;
 }
 
 Future<void> _showNotInChannelDialog(
