@@ -104,44 +104,41 @@ class GroupBannerHeader extends StatelessWidget {
               child: _EditBadge(onTap: onBannerTap),
             ),
           Positioned(
-            left: 0,
-            right: 0,
+            left: 20,
             top: coverHeight - avatarSize / 2,
-            child: Center(
-              child: GestureDetector(
-                key: onAvatarTap == null
-                    ? null
-                    : const ValueKey('header-avatar-preview'),
-                onTap: onAvatarTap,
-                child: Semantics(
-                  button: onAvatarTap != null,
-                  label: onAvatarTap != null ? 'View photo' : null,
-                  excludeSemantics: onAvatarTap != null,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: colors.surface,
-                        ),
-                        child: ClipOval(
-                          child: AppAvatar(
-                            size: avatarSize,
-                            url: avatarUrl,
-                            name: title,
-                          ),
+            child: GestureDetector(
+              key: onAvatarTap == null
+                  ? null
+                  : const ValueKey('header-avatar-preview'),
+              onTap: onAvatarTap,
+              child: Semantics(
+                button: onAvatarTap != null,
+                label: onAvatarTap != null ? 'View photo' : null,
+                excludeSemantics: onAvatarTap != null,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(
+                          AppAvatar.radius + 3,
                         ),
                       ),
-                      if (showEditBadges)
-                        const Positioned(
-                          right: 2,
-                          bottom: 2,
-                          child: _EditBadge(),
-                        ),
-                    ],
-                  ),
+                      child: AppAvatar(
+                        size: avatarSize,
+                        url: avatarUrl,
+                        name: title,
+                      ),
+                    ),
+                    if (showEditBadges)
+                      const Positioned(
+                        right: 2,
+                        bottom: 2,
+                        child: _EditBadge(),
+                      ),
+                  ],
                 ),
               ),
             ),

@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../messages/chat_icon.dart';
 import '../../profile/data/profile_repository.dart';
+import 'account_link_badge.dart';
 
 /// Identity under the cover: name, handles, QR. The picture lives on the
 /// cover itself now — tapping the name still edits the name.
@@ -38,6 +39,11 @@ class SettingsBioRow extends ConsumerWidget {
                   ref,
                   'settings_you',
                 ),
+                linkedTooltip: (brand) => AppTranslations.translate(
+                  context,
+                  ref,
+                  'settings_linked_via',
+                ).replaceAll('{provider}', brand),
               ),
             ),
           ),
@@ -74,10 +80,15 @@ class SettingsBioRow extends ConsumerWidget {
 }
 
 class _Identity extends StatelessWidget {
-  const _Identity({required this.user, required this.youLabel});
+  const _Identity({
+    required this.user,
+    required this.youLabel,
+    required this.linkedTooltip,
+  });
 
   final AppUser user;
   final String youLabel;
+  final String Function(String brand) linkedTooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +119,10 @@ class _Identity extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            for (final link in accountLinks(user)) ...[
+              const SizedBox(width: 6),
+              AccountLinkBadge(link: link, tooltip: linkedTooltip(link.brand)),
+            ],
             const SizedBox(width: 6),
             ChatIcon(
               HugeIcons.strokeRoundedEdit02,

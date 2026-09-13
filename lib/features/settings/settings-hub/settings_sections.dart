@@ -11,7 +11,6 @@ import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
-import 'account_rows.dart';
 import 'language_dialog.dart';
 import 'settings_row.dart';
 import 'sign_out_dialog.dart';
@@ -29,7 +28,6 @@ class SettingsSections extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AccountRows(user: user),
         SettingsRow(
           icon: HugeIcons.strokeRoundedComputerPhoneSync,
           title: t('devices_title'),

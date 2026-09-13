@@ -20,6 +20,7 @@ class AppUser extends Equatable {
     this.planExpired = false,
     this.showPlanExpiredDialog = false,
     this.slackConnected = false,
+    this.githubConnected = false,
     this.githubUsername = '',
     this.appLanguage = 'en',
     this.acceptPolicy = true,
@@ -48,6 +49,7 @@ class AppUser extends Equatable {
   final bool planExpired;
   final bool showPlanExpiredDialog;
   final bool slackConnected;
+  final bool githubConnected;
   final String githubUsername;
   final String appLanguage;
   final bool acceptPolicy;
@@ -75,6 +77,7 @@ class AppUser extends Equatable {
     planExpired: json['plan_expired'] as bool? ?? false,
     showPlanExpiredDialog: json['show_plan_expired_dialog'] as bool? ?? false,
     slackConnected: json['slack_connected'] as bool? ?? false,
+    githubConnected: json['github_connected'] as bool? ?? false,
     githubUsername: json['github_username'] as String? ?? '',
     appLanguage: json['app_language'] as String? ?? 'en',
     acceptPolicy: json['accept_policy'] as bool? ?? true,
@@ -97,6 +100,7 @@ class AppUser extends Equatable {
     'plan_expired': planExpired,
     'show_plan_expired_dialog': showPlanExpiredDialog,
     'slack_connected': slackConnected,
+    'github_connected': githubConnected,
     'github_username': githubUsername,
     'app_language': appLanguage,
     'accept_policy': acceptPolicy,
@@ -126,6 +130,7 @@ class AppUser extends Equatable {
     planExpired: planExpired,
     showPlanExpiredDialog: showPlanExpiredDialog,
     slackConnected: slackConnected,
+    githubConnected: githubConnected,
     githubUsername: githubUsername,
     appLanguage: appLanguage,
     acceptPolicy: acceptPolicy ?? this.acceptPolicy,
@@ -151,6 +156,7 @@ class AppUser extends Equatable {
     coverUrl,
     plan,
     slackConnected,
+    githubConnected,
     acceptPolicy,
     policyVersion,
     independentChat,

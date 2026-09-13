@@ -42,5 +42,10 @@ void main() {
     expect(find.text('অ্যাপ্লিকেশনের ভাষা'), findsOneWidget);
     expect(find.text('Settings'), findsNothing);
     expect(find.text('Notifications'), findsNothing);
+    expect(find.text('যে মাধ্যমে সাইন ইন'), findsNothing);
+    expect(find.text('গিটহাব সংযোগ'), findsNothing);
+    expect(find.text('স্ল্যাক কার্যক্ষেত্র'), findsNothing);
+    expect(find.text('Murad'), findsOneWidget);
+    expect(find.text('প্ল্যান'), findsNothing);
   });
 }

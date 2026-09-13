@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../local_share/widgets/qr_scan_sheet.dart';
 import '../../messages/chat-people/scanned_user_sheet.dart';
 import '../../messages/chat-people/user_qr_payload.dart';
@@ -28,6 +29,19 @@ class QrLoginFlow {
   QrLoginFlow._();
 
   static Future<void> start(BuildContext context, WidgetRef ref) async {
+    // Home's floating pill is painted over this navigator, so a sheet from
+    // the chat list (camera or the person it just scanned) sits underneath
+    // it unless the bar is hidden — same as the You sheet.
+    final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
+    hidden.state = true;
+    try {
+      await _dispatch(context, ref);
+    } finally {
+      hidden.state = false;
+    }
+  }
+
+  static Future<void> _dispatch(BuildContext context, WidgetRef ref) async {
     final repo = ref.read(qrLoginRepositoryProvider);
     final payload = await QrScanSheet.show(context);
     if (payload == null || !context.mounted) return;

@@ -797,7 +797,11 @@ Settings -> Local Share, You sheet -> Local Share  (unchanged, both kept)
 payloads: **desktop-login** (approve a sign-in), **link-messages** (hand this
 account's message key to a new device), and **user** (somebody's handle →
 `ScannedUserSheet` → `startDm`). The first two approve something and show what;
-a user code approves nothing, because a handle is public.
+a user code approves nothing, because a handle is public. The floating shell
+pill is hidden for the whole scan (`shellBottomBarHiddenProvider`) — the
+camera sheet and the person-connect sheet are raised on the home navigator,
+and the pill would otherwise sit on top of them the way it did on the You
+sheet.
 
 - **The payload is a handle, never a user id.** A UUID cannot be read aloud,
   cannot be revoked once a code is on a poster, and would resolve forever for

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -53,11 +54,17 @@ class ScannedUserSheet {
     }
 
     final found = user;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => _ScannedUserBody(user: found),
-    );
+    final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
+    hidden.state = true;
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => _ScannedUserBody(user: found),
+      );
+    } finally {
+      hidden.state = false;
+    }
   }
 }
 
