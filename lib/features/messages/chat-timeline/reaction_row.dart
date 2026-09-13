@@ -8,17 +8,17 @@ import '../data/models/chat_models.dart';
 ///
 /// There is no "add" button on the pill — reacting starts from the emoji bar
 /// on the long-press overlay ([SignalReactionBar]), same as Signal. Tapping an
-/// emoji here toggles your own.
+/// emoji here opens who reacted, not a toggle.
 class ReactionRow extends StatelessWidget {
   const ReactionRow({
     super.key,
     required this.reactions,
-    required this.onToggle,
+    required this.onOpen,
     this.hasWallpaper = false,
   });
 
   final List<ChatReactionGroup> reactions;
-  final ValueChanged<String> onToggle;
+  final ValueChanged<String> onOpen;
   final bool hasWallpaper;
 
   /// How far the pill rides up over the bubble's bottom edge.
@@ -52,7 +52,7 @@ class ReactionRow extends StatelessWidget {
             children: [
               for (final r in reactions) ...[
                 InkWell(
-                  onTap: () => onToggle(r.emoji),
+                  onTap: () => onOpen(r.emoji),
                   customBorder: const StadiumBorder(),
                   child: Text(
                     r.emoji,

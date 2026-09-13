@@ -9,6 +9,7 @@ import '../providers/chat_provider.dart';
 import 'message_actions.dart';
 import 'message_body.dart';
 import 'message_bubble.dart';
+import 'reaction_details_sheet.dart';
 import 'reaction_row.dart';
 import 'user_profile_sheet.dart';
 
@@ -66,7 +67,6 @@ class ThreadRootCard extends ConsumerWidget {
       chatProvider.select((s) => _liveRoot(s, conversationId, message)),
     );
     final name = root.userName ?? 'Unknown';
-    final n = ref.read(chatProvider.notifier);
     final replyCount = root.threadCount;
 
     return Column(
@@ -124,7 +124,11 @@ class ThreadRootCard extends ConsumerWidget {
                     ),
                     ReactionRow(
                       reactions: root.reactions,
-                      onToggle: (emoji) => n.toggleReaction(root.id, emoji),
+                      onOpen: (emoji) => showReactionDetailsSheet(
+                        context: context,
+                        messageId: root.id,
+                        initialEmoji: emoji,
+                      ),
                     ),
                   ],
                 ),

@@ -367,6 +367,12 @@ carries those global positions across, and the overlay opens on
 Release over a slot reacts and closes. Release anywhere else leaves the menu
 open to be tapped; closing there would make it unreachable.
 
+Tapping the reaction pill on a DM or a group opens `showReactionDetailsSheet`
+(`reaction_details_sheet.dart`): All (when there is more than one emoji) plus
+one tab per emoji, people underneath. The server already sends `users` with
+`user_name`; a tap on **You** toggles that emoji off, a tap on anyone else
+opens their profile. Adding a reaction still starts from the long-press bar.
+
 The scrubbed emoji grows to 1.5 and lifts 25 with a light haptic per slot
 entered, and the lifted message unpinches from Signal's 0.95
 `LONG_PRESS_SCALE_FACTOR`. Numbers live in `signal_menu_metrics.dart`.

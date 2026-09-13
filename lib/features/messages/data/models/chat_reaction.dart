@@ -10,7 +10,7 @@ class ChatReactionUser extends Equatable {
   factory ChatReactionUser.fromJson(Map<String, dynamic> json) =>
       ChatReactionUser(
         userId: json['user_id'] as String? ?? '',
-        name: json['name'] as String?,
+        name: json['name'] as String? ?? json['user_name'] as String?,
         avatarUrl: json['avatar_url'] as String?,
       );
 

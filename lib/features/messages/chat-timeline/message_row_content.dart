@@ -7,6 +7,7 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'message_bubble.dart';
 import 'message_bubble_content.dart';
+import 'reaction_details_sheet.dart';
 import 'reaction_row.dart';
 import 'sender_name_color.dart';
 import 'signal_bubble_metrics.dart';
@@ -60,7 +61,6 @@ class MessageRowContent extends ConsumerWidget {
         : ref
               .watch(contactNicknamesProvider)
               .resolve(userId: message.userId, name: message.userName);
-    final notifier = ref.read(chatProvider.notifier);
     final chat = ref.watch(chatProvider);
     final replies = chat.threadRepliesByRoot[message.id];
     // A feed's picture belongs to the feed, not to one of its messages. The
@@ -128,7 +128,11 @@ class MessageRowContent extends ConsumerWidget {
           ReactionRow(
             reactions: message.reactions,
             hasWallpaper: hasWallpaper,
-            onToggle: (emoji) => notifier.toggleReaction(message.id, emoji),
+            onOpen: (emoji) => showReactionDetailsSheet(
+              context: context,
+              messageId: message.id,
+              initialEmoji: emoji,
+            ),
           ),
         if (onOpenThread != null)
           ThreadSummary(
