@@ -125,7 +125,7 @@ void main() {
     stream.add(ready);
     await tester.pump();
     expect(tester.getRect(row), before);
-    expect(find.byIcon(Icons.open_in_new_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
     await stream.close();

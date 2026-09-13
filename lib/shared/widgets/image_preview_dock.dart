@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'image_preview_chrome.dart';
 import 'media_preview_actions.dart';
 
-/// Floating capsule: Save · Rotate/Mute · Share. No overflow, no full-width bar.
+/// Floating capsule that hugs its actions — no fixed slot width.
 class ImagePreviewDock extends StatelessWidget {
   const ImagePreviewDock({
     super.key,
@@ -14,6 +14,7 @@ class ImagePreviewDock extends StatelessWidget {
     this.onRotate,
     this.onMute,
     this.muted = false,
+    this.onOpen,
   });
 
   final String fileName;
@@ -27,6 +28,9 @@ class ImagePreviewDock extends StatelessWidget {
   /// Video viewer. Null hides the control.
   final VoidCallback? onMute;
   final bool muted;
+
+  /// Documents / PDF — open in another app. Null hides the control.
+  final VoidCallback? onOpen;
 
   static bool hasSource({String? localPath, String? remoteUrl}) {
     return (localPath != null && localPath.isNotEmpty) ||
@@ -45,7 +49,7 @@ class ImagePreviewDock extends StatelessWidget {
       shape: const StadiumBorder(),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -74,6 +78,12 @@ class ImagePreviewDock extends StatelessWidget {
                     : Icons.volume_up_rounded,
                 label: muted ? 'Unmute' : 'Mute',
                 onTap: onMute!,
+              ),
+            if (onOpen != null)
+              _DockAction(
+                icon: Icons.open_in_new_rounded,
+                label: 'Open',
+                onTap: onOpen!,
               ),
             _DockAction(
               icon: Icons.ios_share_rounded,
@@ -110,26 +120,23 @@ class _DockAction extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       customBorder: const StadiumBorder(),
-      child: SizedBox(
-        width: 72,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: Colors.white, size: 22),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  height: 1,
-                ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                height: 1,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

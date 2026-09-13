@@ -52,8 +52,8 @@ class MessageAttachments extends StatelessWidget {
           VoiceAttachmentPlayer(attachment: attachment),
         for (final attachment in files)
           attachment.isPdf
-              ? AttachmentPdfTile(attachment: attachment)
-              : AttachmentFileRow(attachment: attachment),
+              ? AttachmentPdfTile(attachment: attachment, preview: preview)
+              : AttachmentFileRow(attachment: attachment, preview: preview),
         if (locked.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 6),

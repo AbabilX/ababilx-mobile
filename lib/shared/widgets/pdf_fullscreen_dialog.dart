@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:pdfx/pdfx.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import 'media_preview_actions.dart';
+import 'file_preview_footer.dart';
+import 'file_preview_open.dart';
+import 'image_preview_chrome.dart';
+import 'image_preview_top_bar.dart';
 import 'pdf_document_source.dart';
 
 class PdfFullscreenDialog extends StatefulWidget {
@@ -11,10 +12,14 @@ class PdfFullscreenDialog extends StatefulWidget {
     super.key,
     required this.source,
     required this.fileName,
+    this.detail,
+    this.caption,
   });
 
   final PdfDocumentSource source;
   final String fileName;
+  final String? detail;
+  final String? caption;
 
   @override
   State<PdfFullscreenDialog> createState() => _PdfFullscreenDialogState();
@@ -23,6 +28,9 @@ class PdfFullscreenDialog extends StatefulWidget {
 class _PdfFullscreenDialogState extends State<PdfFullscreenDialog> {
   PdfControllerPinch? _controller;
   String? _error;
+
+  String? get _localPath => widget.source.isLocal ? widget.source.value : null;
+  String? get _remoteUrl => widget.source.isLocal ? null : widget.source.value;
 
   @override
   void initState() {
@@ -43,32 +51,6 @@ class _PdfFullscreenDialogState extends State<PdfFullscreenDialog> {
     }
   }
 
-  Future<void> _run(MediaPreviewAction action) {
-    final local = widget.source.isLocal;
-    return runMediaPreviewAction(
-      context,
-      action,
-      localPath: local ? widget.source.value : null,
-      remoteUrl: local ? null : widget.source.value,
-      fileName: widget.fileName,
-      contentType: 'application/pdf',
-    );
-  }
-
-  Future<void> _openExternal() async {
-    final ok = widget.source.isLocal
-        ? (await OpenFilex.open(widget.source.value)).type == ResultType.done
-        : await launchUrl(
-            Uri.parse(widget.source.value),
-            mode: LaunchMode.externalApplication,
-          );
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open PDF externally')),
-      );
-    }
-  }
-
   @override
   void dispose() {
     _controller?.dispose();
@@ -77,82 +59,59 @@ class _PdfFullscreenDialogState extends State<PdfFullscreenDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Dialog.fullscreen(
-      backgroundColor: colors.surface,
-      // Scaffold so the save confirmation is drawn inside the viewer rather
-      // than on the screen hidden behind it.
+      backgroundColor: ImagePreviewChrome.background,
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                  Expanded(
-                    child: Text(
-                      widget.fileName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ),
-                  MediaPreviewOverflow(
-                    localPath: widget.source.isLocal
-                        ? widget.source.value
-                        : null,
-                    remoteUrl: widget.source.isLocal
-                        ? null
-                        : widget.source.value,
-                    fileName: widget.fileName,
-                    contentType: 'application/pdf',
-                    onDark: false,
-                  ),
-                ],
-              ),
-              const Divider(height: 1),
-              Expanded(child: _body()),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    TextButton.icon(
-                      onPressed: _openExternal,
-                      icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                      label: const Text('Open externally'),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      tooltip: 'Share',
-                      onPressed: () => _run(MediaPreviewAction.share),
-                      icon: const Icon(Icons.ios_share_rounded),
-                    ),
-                    IconButton(
-                      tooltip: 'Save',
-                      onPressed: () => _run(MediaPreviewAction.save),
-                      icon: const Icon(Icons.save_alt_rounded),
-                    ),
-                  ],
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Column(
+              children: [
+                ImagePreviewTopBar(
+                  fileName: widget.fileName,
+                  detail: widget.detail,
+                ),
+                Expanded(child: _body()),
+              ],
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: FilePreviewFooter(
+                fileName: widget.fileName,
+                localPath: _localPath,
+                remoteUrl: _remoteUrl,
+                contentType: 'application/pdf',
+                caption: widget.caption,
+                onOpen: () => openPreviewExternally(
+                  context,
+                  localPath: _localPath,
+                  remoteUrl: _remoteUrl,
+                  contentType: 'application/pdf',
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _body() {
-    if (_error != null) return Center(child: Text(_error!));
+    if (_error != null) {
+      return Center(
+        child: Text(_error!, style: const TextStyle(color: Colors.white70)),
+      );
+    }
     final controller = _controller;
     if (controller == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
     }
-    return PdfViewPinch(controller: controller);
+    return ColoredBox(
+      color: ImagePreviewChrome.background,
+      child: PdfViewPinch(controller: controller),
+    );
   }
 }

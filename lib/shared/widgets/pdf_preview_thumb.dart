@@ -6,14 +6,12 @@ import 'package:pdfx/pdfx.dart';
 import 'pdf_document_source.dart';
 
 class PdfPreviewThumb extends StatefulWidget {
-  const PdfPreviewThumb({
-    super.key,
-    required this.source,
-    required this.height,
-  });
+  const PdfPreviewThumb({super.key, required this.source, this.height});
 
   final PdfDocumentSource source;
-  final double height;
+
+  /// Null means fill the parent — the card already owns the height.
+  final double? height;
 
   @override
   State<PdfPreviewThumb> createState() => _PdfPreviewThumbState();
@@ -80,25 +78,29 @@ class _PdfPreviewThumbState extends State<PdfPreviewThumb> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final plate = ColoredBox(
+      color: colors.surface,
+      child: !_done
+          ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+          : _thumb != null
+          ? Image.memory(
+              _thumb!,
+              fit: BoxFit.cover,
+              alignment: Alignment.topLeft,
+              width: double.infinity,
+              height: double.infinity,
+            )
+          : Icon(
+              Icons.picture_as_pdf_outlined,
+              size: 40,
+              color: colors.onSurfaceVariant,
+            ),
+    );
+    if (widget.height == null) return SizedBox.expand(child: plate);
     return SizedBox(
       height: widget.height,
       width: double.infinity,
-      child: ColoredBox(
-        color: colors.surface,
-        child: !_done
-            ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-            : _thumb != null
-            ? Image.memory(
-                _thumb!,
-                fit: BoxFit.cover,
-                alignment: Alignment.topLeft,
-              )
-            : Icon(
-                Icons.picture_as_pdf_outlined,
-                size: 40,
-                color: colors.onSurfaceVariant,
-              ),
-      ),
+      child: plate,
     );
   }
 }

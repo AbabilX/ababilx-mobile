@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../shared/media/picked_media_file.dart';
+import '../../../shared/widgets/file_preview.dart';
 import '../../../shared/widgets/locked_file_placeholder.dart';
-import '../../../shared/widgets/pdf_preview.dart';
 import '../../../shared/widgets/voice_url_player.dart';
 import '../data/crm_repository.dart';
 import '../data/models/crm_models.dart';
@@ -95,17 +94,13 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
 
   Future<void> _open(CrmDocument d) async {
     if (d.locked || d.fileUrl.isEmpty) return;
-    if (d.isPdf) {
-      await showPdfPreview(
-        context,
-        source: PdfDocumentSource.url(d.fileUrl),
-        fileName: d.fileName,
-      );
-      return;
-    }
-    final uri = Uri.tryParse(d.fileUrl);
-    if (uri == null) return;
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    await showFilePreview(
+      context,
+      fileName: d.fileName,
+      contentType: d.mimeType,
+      remoteUrl: d.fileUrl,
+      sizeBytes: d.sizeBytes,
+    );
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'image_preview_chrome.dart';
 import 'pdf_document_source.dart';
 import 'pdf_fullscreen_dialog.dart';
 import 'pdf_preview_thumb.dart';
@@ -10,11 +11,18 @@ Future<void> showPdfPreview(
   BuildContext context, {
   required PdfDocumentSource source,
   required String fileName,
+  String? detail,
+  String? caption,
 }) {
   return showDialog<void>(
     context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.92),
-    builder: (_) => PdfFullscreenDialog(source: source, fileName: fileName),
+    barrierColor: ImagePreviewChrome.background,
+    builder: (_) => PdfFullscreenDialog(
+      source: source,
+      fileName: fileName,
+      detail: detail,
+      caption: caption,
+    ),
   );
 }
 
@@ -25,12 +33,16 @@ class PdfPreviewCard extends StatelessWidget {
     required this.fileName,
     this.hideFileName = false,
     this.height = 260,
+    this.detail,
+    this.caption,
   });
 
   final PdfDocumentSource source;
   final String fileName;
   final bool hideFileName;
   final double height;
+  final String? detail;
+  final String? caption;
 
   @override
   Widget build(BuildContext context) {
@@ -40,14 +52,22 @@ class PdfPreviewCard extends StatelessWidget {
       borderRadius: hideFileName ? null : BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () =>
-            showPdfPreview(context, source: source, fileName: fileName),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (!hideFileName) _header(context),
-            PdfPreviewThumb(source: source, height: height),
-          ],
+        onTap: () => showPdfPreview(
+          context,
+          source: source,
+          fileName: fileName,
+          detail: detail,
+          caption: caption,
+        ),
+        child: SizedBox(
+          height: height,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!hideFileName) _header(context),
+              Expanded(child: PdfPreviewThumb(source: source)),
+            ],
+          ),
         ),
       ),
     );

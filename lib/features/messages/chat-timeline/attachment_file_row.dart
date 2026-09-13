@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import '../../../shared/widgets/file_preview_kind.dart';
 import '../../attachments/data/models/attachment_handle.dart';
 import '../../attachments/widgets/attachment_download_badge.dart';
 import '../../attachments/widgets/attachment_gate.dart';
-import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import 'chat_file_preview.dart';
+import 'media-preview/chat_media_preview_meta.dart';
 
 class AttachmentFileRow extends StatelessWidget {
-  const AttachmentFileRow({super.key, required this.attachment});
+  const AttachmentFileRow({super.key, required this.attachment, this.preview});
 
   final ChatMessageAttachment attachment;
+  final ChatMediaPreviewMeta? preview;
 
   @override
   Widget build(BuildContext context) {
@@ -36,20 +37,25 @@ class AttachmentFileRow extends StatelessWidget {
   }) {
     final colors = Theme.of(context).colorScheme;
     final isReady = localPath != null && localPath.isNotEmpty;
+    final kind = FilePreviewKind.of(
+      fileName: attachment.fileName,
+      contentType: attachment.contentType,
+    );
     return InkWell(
       onTap: isReady
-          ? () => openChatAttachment(context, attachment, localPath: localPath)
+          ? () => openChatAttachment(
+              context,
+              attachment,
+              localPath: localPath,
+              preview: preview,
+            )
           : null,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
-            ChatIcon(
-              HugeIcons.strokeRoundedFile01,
-              size: 18,
-              color: colors.onSurfaceVariant,
-            ),
+            Icon(kind.icon, size: 22, color: colors.onSurfaceVariant),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -62,8 +68,8 @@ class AttachmentFileRow extends StatelessWidget {
             const SizedBox(width: 8),
             if (isReady)
               Icon(
-                Icons.open_in_new_rounded,
-                size: 18,
+                Icons.chevron_right_rounded,
+                size: 22,
                 color: colors.onSurfaceVariant,
               )
             else if (handle != null)

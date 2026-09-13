@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../shared/widgets/pdf_preview.dart';
 import '../../attachments/widgets/attachment_gate.dart';
 import '../data/models/chat_models.dart';
+import 'media-preview/chat_media_preview_meta.dart';
 
 class AttachmentPdfTile extends StatelessWidget {
-  const AttachmentPdfTile({super.key, required this.attachment});
+  const AttachmentPdfTile({super.key, required this.attachment, this.preview});
 
   final ChatMessageAttachment attachment;
+  final ChatMediaPreviewMeta? preview;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +23,8 @@ class AttachmentPdfTile extends StatelessWidget {
           source: PdfDocumentSource.file(handle.localPath!),
           fileName: attachment.fileName,
           height: 200,
+          detail: preview?.detail,
+          caption: preview?.caption,
         ),
       ),
     );

@@ -577,6 +577,27 @@ tap again chrome hides while playing; a pause brings it back
   the scrubber through a `ValueListenableBuilder` so the video surface is
   not rebuilt on every tick.
 
+## Document viewer — same chrome, PDF renders, office opens out
+
+Tapping a PDF, Word, sheet, slides or zip in chat opens `showFilePreview`
+(`shared/widgets/file_preview.dart`), not another app.
+
+```
+tap file  -> dark surface, same toolbar + capsule as a photo
+PDF       pages pinch-zoom in place
+office    kind icon + name + size; Open hands it to another app
+chrome    back · file name · You/sender · time
+          caption · capsule (Save · Open · Share)
+```
+
+- Chat used to `OpenFilex` straight from the bubble, so a doc never had a
+  preview. `openChatAttachment` now routes through `showFilePreview`.
+  Shared-media Files tab is the same row, so it gets the viewer too.
+- Wall chips and CRM documents use the same entry. A PDF still renders;
+  everything else is the office card. There is no Word/Excel engine here.
+- The 3-dot overflow and "Open externally" bar on the old PDF dialog are
+  gone.
+
 `FLAG_KEEP_SCREEN_ON` is held only while the video is actually playing
 (`VideoThumbnails.keepScreenOn`, same `com.ababilx.app/video` channel) and
 released on pause and on dispose. A paused video has no claim on the screen.

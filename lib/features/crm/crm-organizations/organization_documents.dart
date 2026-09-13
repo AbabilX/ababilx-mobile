@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/network/friendly_error.dart';
 
 import '../../../shared/media/picked_media_file.dart';
+import '../../../shared/widgets/file_preview.dart';
 import '../../../shared/widgets/locked_file_placeholder.dart';
-import '../../../shared/widgets/pdf_preview.dart';
 import '../../../shared/widgets/voice_url_player.dart';
 import '../../messages/chat-timeline/voice_message_recorder.dart';
 import '../data/crm_repository.dart';
@@ -91,19 +90,15 @@ class _OrganizationDocumentsState extends ConsumerState<OrganizationDocuments> {
 
   Future<void> _open(CrmOrganizationDocument document) async {
     if (document.locked || document.url.isEmpty) return;
-    if (document.isPdf) {
-      await showPdfPreview(
-        context,
-        source: PdfDocumentSource.url(document.url),
-        fileName: document.fileName.isNotEmpty
-            ? document.fileName
-            : document.title,
-      );
-      return;
-    }
-    final uri = Uri.tryParse(document.url);
-    if (uri == null) return;
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    await showFilePreview(
+      context,
+      fileName: document.fileName.isNotEmpty
+          ? document.fileName
+          : document.title,
+      contentType: document.mimeType,
+      remoteUrl: document.url,
+      sizeBytes: document.sizeBytes,
+    );
   }
 
   @override
