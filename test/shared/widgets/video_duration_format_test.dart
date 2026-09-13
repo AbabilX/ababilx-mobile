@@ -28,4 +28,30 @@ void main() {
       expect(formatVideoDuration(const Duration(seconds: -5)), '0:00');
     });
   });
+
+  group('formatVideoRemaining', () {
+    test('prefixes an en-dash and never goes negative', () {
+      expect(
+        formatVideoRemaining(
+          const Duration(seconds: 7),
+          const Duration(seconds: 70),
+        ),
+        '–1:03',
+      );
+      expect(
+        formatVideoRemaining(
+          const Duration(seconds: 70),
+          const Duration(seconds: 70),
+        ),
+        '–0:00',
+      );
+      expect(
+        formatVideoRemaining(
+          const Duration(seconds: 80),
+          const Duration(seconds: 70),
+        ),
+        '–0:00',
+      );
+    });
+  });
 }

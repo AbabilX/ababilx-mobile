@@ -545,15 +545,37 @@ tap again chrome hides; pinch-zoom and swipe stay
   `showImagePreview` (`shared/widgets/image_preview.dart`). Forward / Edit /
   Delete stay out of the viewer — those actions already live on the message.
 
-## The viewer
+## Video viewer — same chrome as the photo viewer
 
-`video_fullscreen_dialog.dart` + `video_fullscreen_controls.dart`. It used to
-`setState` the entire dialog on every controller tick; the position now reaches
-the scrubber through a `ValueListenableBuilder` and the video surface is not
-rebuilt. Chrome auto-hides after 3 s of playback and returns on a tap anywhere,
-including the letterbox (`HitTestBehavior.opaque` — the tap target is the
-screen, not the video rect). It does **not** loop any more: a finished video
-stops and shows its play badge.
+Tapping a video opens `showVideoPreview` (`shared/widgets/video_preview.dart`),
+built to the same MediaPreview chrome as a photo: dark surface, filename
+toolbar, capsule dock. The 3-dot overflow is gone.
+
+```
+tap video -> dark surface, video letterboxed
+chrome    toolbar (back · file name · You/sender · time)
+          caption · scrubber (play/pause · elapsed · slider · remaining)
+          capsule dock (Save · Rotate · Mute · Share)
+tap again chrome hides while playing; a pause brings it back
+```
+
+- **The file name is the title**, same as a photo. `ChatMediaPreviewMeta.of`
+  fills the second line and the caption. Shared-media / wall / CRM have no
+  sender, so that line is empty.
+- **Rotate and Mute sit on the capsule**, not the toolbar — the toolbar stays
+  identical to the photo viewer. Rotate is view-only (90° via `RotatedBox`);
+  Save / Share still write the original file. An empty name hides the dock
+  rather than writing `null.mp4`.
+- **Pause / Play sit on the scrubber and the centre disc.** Chrome hidden
+  while playing keeps the frame clean; a tap brings chrome back with a
+  pause button.
+- **Scrub pauses, then resumes if it was playing** — Signal's TimeBar rule.
+  Remaining time is `–1:23`, not the total. A finished video seeks to zero
+  on the next play; it does **not** loop.
+- Chrome auto-hides after 3 s of playback and returns on a tap anywhere,
+  including the letterbox (`HitTestBehavior.opaque`). The position reaches
+  the scrubber through a `ValueListenableBuilder` so the video surface is
+  not rebuilt on every tick.
 
 `FLAG_KEEP_SCREEN_ON` is held only while the video is actually playing
 (`VideoThumbnails.keepScreenOn`, same `com.ababilx.app/video` channel) and

@@ -5,22 +5,25 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
 import '../media/video_thumbnail.dart';
-import 'video_fullscreen_controls.dart';
-import 'video_fullscreen_top_bar.dart';
+import 'image_preview_chrome.dart';
+import 'image_preview_top_bar.dart';
+import 'video_preview_footer.dart';
 import 'video_source.dart';
 import 'video_thumb_states.dart';
 
 /// The viewer a tapped video opens into.
 ///
-/// Chrome (top bar, scrubber) fades out while the video plays and comes back
-/// on a tap, the way every player does. It does **not** loop: a video that has
-/// run out should stop and offer its play button, not start over behind a
-/// viewer who has already looked away.
+/// Chrome (toolbar, scrubber, capsule) fades out while the video plays and
+/// comes back on a tap, the way every player does. It does **not** loop: a
+/// video that has run out should stop and offer its play button, not start
+/// over behind a viewer who has already looked away.
 class FullscreenVideoDialog extends StatefulWidget {
   const FullscreenVideoDialog({
     super.key,
     required this.source,
     this.fileName = '',
+    this.detail,
+    this.caption,
   });
 
   final VideoSource source;
@@ -28,6 +31,12 @@ class FullscreenVideoDialog extends StatefulWidget {
   /// Empty means the caller has no name for these bytes, so the viewer offers
   /// no Save/Share — a file saved as "null.mp4" is worse than no button.
   final String fileName;
+
+  /// Second toolbar line — chat passes `You · 10:00 AM`.
+  final String? detail;
+
+  /// Plain body under the video. Null when the message is media-only.
+  final String? caption;
 
   @override
   State<FullscreenVideoDialog> createState() => FullscreenVideoDialogState();
@@ -40,6 +49,7 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
   bool _showControls = true;
   bool _screenHeld = false;
   bool _muted = false;
+  int _turns = 0;
   Timer? _hideTimer;
 
   @override
@@ -108,6 +118,27 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
     _revealControls();
   }
 
+  void _rotate() {
+    setState(() => _turns = (_turns + 1) % 4);
+    _revealControls();
+  }
+
+  void _togglePlay() {
+    final c = _controller;
+    if (c == null || !_ready) return;
+    if (c.value.isPlaying) {
+      c.pause();
+      _revealControls();
+      return;
+    }
+    final value = c.value;
+    if (value.duration > Duration.zero && value.position >= value.duration) {
+      c.seekTo(Duration.zero);
+    }
+    c.play();
+    _scheduleHide();
+  }
+
   @override
   void dispose() {
     _hideTimer?.cancel();
@@ -122,7 +153,7 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
   Widget build(BuildContext context) {
     final c = _controller;
     return Dialog.fullscreen(
-      backgroundColor: Colors.black,
+      backgroundColor: ImagePreviewChrome.background,
       // Scaffold so a save confirmation is drawn over the video rather than on
       // the screen hidden behind this dialog.
       child: Scaffold(
@@ -149,34 +180,45 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
                 // has to bring the chrome back too.
                 behavior: HitTestBehavior.opaque,
                 child: Center(
-                  child: AspectRatio(
-                    aspectRatio: c.value.aspectRatio == 0
-                        ? 16 / 9
-                        : c.value.aspectRatio,
-                    child: VideoPlayer(c),
+                  child: RotatedBox(
+                    quarterTurns: _turns,
+                    child: AspectRatio(
+                      aspectRatio: c.value.aspectRatio == 0
+                          ? 16 / 9
+                          : c.value.aspectRatio,
+                      child: VideoPlayer(c),
+                    ),
                   ),
                 ),
               ),
             if (_ready && c != null) _centreButton(c),
-            _chrome(
+            Align(
               alignment: Alignment.topCenter,
-              child: SafeArea(
-                bottom: false,
-                child: VideoFullscreenTopBar(
-                  source: widget.source,
+              child: ImagePreviewChrome.layer(
+                visible: _showControls,
+                child: ImagePreviewTopBar(
                   fileName: widget.fileName,
-                  ready: _ready,
-                  muted: _muted,
-                  onToggleMute: _toggleMute,
+                  detail: widget.detail,
                 ),
               ),
             ),
             if (_ready && c != null)
-              _chrome(
+              Align(
                 alignment: Alignment.bottomCenter,
-                child: VideoFullscreenControls(
-                  controller: c,
-                  onInteract: _revealControls,
+                child: ImagePreviewChrome.layer(
+                  visible: _showControls,
+                  child: VideoPreviewFooter(
+                    controller: c,
+                    onInteract: _revealControls,
+                    fileName: widget.fileName,
+                    localPath: widget.source.path,
+                    remoteUrl: widget.source.url,
+                    caption: widget.caption,
+                    muted: _muted,
+                    onMute: _toggleMute,
+                    onRotate: _rotate,
+                    onTogglePlay: _togglePlay,
+                  ),
                 ),
               ),
           ],
@@ -185,36 +227,20 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
     );
   }
 
-  /// Only while paused: a playing video should be the whole screen.
+  /// Play while paused; pause while chrome is up. A playing video with chrome
+  /// hidden stays the whole screen.
   Widget _centreButton(VideoPlayerController c) {
     return ValueListenableBuilder<VideoPlayerValue>(
       valueListenable: c,
       builder: (context, value, _) {
-        if (value.isPlaying) return const SizedBox.shrink();
+        if (value.isPlaying && !_showControls) return const SizedBox.shrink();
         return Center(
           child: GestureDetector(
-            onTap: () {
-              c.play();
-              _scheduleHide();
-            },
-            child: const VideoPlayBadge(size: 64),
+            onTap: _togglePlay,
+            child: VideoPlayBadge(size: 72, playing: value.isPlaying),
           ),
         );
       },
-    );
-  }
-
-  Widget _chrome({required Alignment alignment, required Widget child}) {
-    return Align(
-      alignment: alignment,
-      child: IgnorePointer(
-        ignoring: !_showControls,
-        child: AnimatedOpacity(
-          opacity: _showControls ? 1 : 0,
-          duration: const Duration(milliseconds: 180),
-          child: child,
-        ),
-      ),
     );
   }
 }

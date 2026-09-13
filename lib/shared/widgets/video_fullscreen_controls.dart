@@ -3,82 +3,137 @@ import 'package:video_player/video_player.dart';
 
 import 'video_thumb_states.dart';
 
-/// The scrubber row: play/pause, elapsed, seek bar, total.
+/// Elapsed · slider · remaining. Listens on its own so the video surface is
+/// not rebuilt on every position tick.
 ///
-/// Listens to the controller on its own so the video surface above it is not
-/// rebuilt on every position tick — that used to rebuild the whole viewer
-/// several times a second.
-class VideoFullscreenControls extends StatelessWidget {
+/// Scrub pauses, then resumes if it was playing — Signal's TimeBar rule.
+class VideoFullscreenControls extends StatefulWidget {
   const VideoFullscreenControls({
     super.key,
     required this.controller,
     required this.onInteract,
+    required this.onTogglePlay,
   });
 
   final VideoPlayerController controller;
-
-  /// Any touch here counts as "still watching", so the chrome does not fade
-  /// out from under a finger on the seek bar.
   final VoidCallback onInteract;
+  final VoidCallback onTogglePlay;
+
+  @override
+  State<VideoFullscreenControls> createState() =>
+      _VideoFullscreenControlsState();
+}
+
+class _VideoFullscreenControlsState extends State<VideoFullscreenControls> {
+  bool _wasPlaying = false;
+
+  VideoPlayerController get _controller => widget.controller;
+
+  void _seekFraction(double value, Duration duration) {
+    final ms = (duration.inMilliseconds * value.clamp(0.0, 1.0)).round();
+    _controller.seekTo(Duration(milliseconds: ms));
+  }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ColoredBox(
-      color: Colors.black54,
-      child: SafeArea(
-        top: false,
-        child: ValueListenableBuilder<VideoPlayerValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(4, 4, 12, 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      onInteract();
-                      value.isPlaying ? controller.pause() : controller.play();
-                    },
-                    icon: Icon(
-                      value.isPlaying
-                          ? Icons.pause_rounded
-                          : Icons.play_arrow_rounded,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(formatVideoDuration(value.position), style: _timeStyle),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Listener(
-                        onPointerDown: (_) => onInteract(),
-                        child: VideoProgressIndicator(
-                          controller,
-                          allowScrubbing: true,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          colors: VideoProgressColors(
-                            playedColor: scheme.primary,
-                            bufferedColor: Colors.white38,
-                            backgroundColor: Colors.white24,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Text(formatVideoDuration(value.duration), style: _timeStyle),
-                ],
+    return ValueListenableBuilder<VideoPlayerValue>(
+      valueListenable: _controller,
+      builder: (context, value, _) {
+        final duration = value.duration;
+        final hasDuration = duration > Duration.zero;
+        final progress = !hasDuration
+            ? 0.0
+            : (value.position.inMilliseconds / duration.inMilliseconds).clamp(
+                0.0,
+                1.0,
+              );
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 12, 10),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: value.isPlaying ? 'Pause' : 'Play',
+                onPressed: () {
+                  widget.onInteract();
+                  widget.onTogglePlay();
+                },
+                icon: Icon(
+                  value.isPlaying
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
-            );
-          },
+              _TimeLabel(formatVideoDuration(value.position)),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 3,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 6,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 14,
+                    ),
+                    activeTrackColor: Colors.white,
+                    inactiveTrackColor: Colors.white24,
+                    thumbColor: Colors.white,
+                    overlayColor: Colors.white24,
+                    trackShape: const RoundedRectSliderTrackShape(),
+                  ),
+                  child: Slider(
+                    value: progress,
+                    onChanged: hasDuration
+                        ? (next) {
+                            widget.onInteract();
+                            _seekFraction(next, duration);
+                          }
+                        : null,
+                    onChangeStart: hasDuration
+                        ? (_) {
+                            widget.onInteract();
+                            _wasPlaying = value.isPlaying;
+                            _controller.pause();
+                          }
+                        : null,
+                    onChangeEnd: hasDuration
+                        ? (next) {
+                            _seekFraction(next, duration);
+                            if (_wasPlaying) _controller.play();
+                          }
+                        : null,
+                  ),
+                ),
+              ),
+              _TimeLabel(formatVideoRemaining(value.position, duration)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TimeLabel extends StatelessWidget {
+  const _TimeLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 44,
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          fontFeatures: [FontFeature.tabularFigures()],
         ),
       ),
     );
   }
 }
-
-const _timeStyle = TextStyle(
-  color: Colors.white,
-  fontSize: 12,
-  fontFeatures: [FontFeature.tabularFigures()],
-);

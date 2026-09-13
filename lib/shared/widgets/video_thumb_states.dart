@@ -43,12 +43,14 @@ class VideoThumbPlaceholder extends StatelessWidget {
   }
 }
 
-/// Signal's play affordance: a light disc over the frame, big enough to read
-/// as the tap target for the whole tile.
+/// Signal's play / pause affordance: a light disc over the frame.
 class VideoPlayBadge extends StatelessWidget {
-  const VideoPlayBadge({super.key, this.size = 48});
+  const VideoPlayBadge({super.key, this.size = 48, this.playing = false});
 
   final double size;
+
+  /// Pause glyph while the video is running. Posters always leave this false.
+  final bool playing;
 
   @override
   Widget build(BuildContext context) {
@@ -58,9 +60,16 @@ class VideoPlayBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.92),
         shape: BoxShape.circle,
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Icon(
-        Icons.play_arrow_rounded,
+        playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
         color: Colors.black87,
         size: size * 0.62,
       ),
@@ -106,4 +115,10 @@ String formatVideoDuration(Duration duration) {
   final rest = (seconds % 60).toString().padLeft(2, '0');
   if (hours > 0) return '$hours:${minutes.toString().padLeft(2, '0')}:$rest';
   return '$minutes:$rest';
+}
+
+/// Signal's remaining label: `–1:23`. Never negative.
+String formatVideoRemaining(Duration position, Duration duration) {
+  final left = duration - position;
+  return '–${formatVideoDuration(left.isNegative ? Duration.zero : left)}';
 }

@@ -47,7 +47,7 @@ class MessageAttachments extends StatelessWidget {
             preview: preview,
           ),
         for (final attachment in videos)
-          AttachmentVideoTile(attachment: attachment),
+          AttachmentVideoTile(attachment: attachment, preview: preview),
         for (final attachment in audio)
           VoiceAttachmentPlayer(attachment: attachment),
         for (final attachment in files)

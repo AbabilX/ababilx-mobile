@@ -2,10 +2,10 @@ import '../../chat_utils.dart';
 import '../../data/models/chat_message.dart';
 import '../../tiptap_plain_text.dart';
 
-/// Who sent the photo and what they wrote — Signal's toolbar + caption.
+/// Who sent the media and what they wrote — Signal's toolbar + caption.
 ///
-/// Shared-media cells omit this; the viewer then titles the page "Photo"
-/// rather than inventing a sender it does not have.
+/// Shared-media cells omit this; the viewer then titles the page with the
+/// file name rather than inventing a sender it does not have.
 class ChatMediaPreviewMeta {
   const ChatMediaPreviewMeta({
     required this.title,

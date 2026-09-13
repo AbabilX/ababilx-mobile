@@ -21,6 +21,8 @@ class NetworkVideoPlayer extends StatefulWidget {
     super.key,
     required this.source,
     this.fileName = '',
+    this.detail,
+    this.caption,
     this.maxHeight = 288,
     this.borderRadius = 8,
   });
@@ -30,6 +32,12 @@ class NetworkVideoPlayer extends StatefulWidget {
   /// Passed to the fullscreen viewer so it can offer Save/Share. Empty when
   /// the caller has no name for the file.
   final String fileName;
+
+  /// Second toolbar line — chat passes `You · 10:00 AM`.
+  final String? detail;
+
+  /// Plain body under the video. Null when the message is media-only.
+  final String? caption;
   final double maxHeight;
   final double borderRadius;
 
@@ -65,6 +73,8 @@ class _NetworkVideoPlayerState extends State<NetworkVideoPlayer> {
     context,
     source: widget.source,
     fileName: widget.fileName,
+    detail: widget.detail,
+    caption: widget.caption,
   );
 
   @override

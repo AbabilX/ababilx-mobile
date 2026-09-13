@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'image_preview_chrome.dart';
 import 'media_preview_actions.dart';
 
-/// Floating capsule: Save · Rotate · Share. No overflow, no full-width bar.
+/// Floating capsule: Save · Rotate/Mute · Share. No overflow, no full-width bar.
 class ImagePreviewDock extends StatelessWidget {
   const ImagePreviewDock({
     super.key,
@@ -12,6 +12,8 @@ class ImagePreviewDock extends StatelessWidget {
     this.remoteUrl,
     this.contentType = '',
     this.onRotate,
+    this.onMute,
+    this.muted = false,
   });
 
   final String fileName;
@@ -21,6 +23,10 @@ class ImagePreviewDock extends StatelessWidget {
 
   /// View-only quarter turn. Null hides the control.
   final VoidCallback? onRotate;
+
+  /// Video viewer. Null hides the control.
+  final VoidCallback? onMute;
+  final bool muted;
 
   static bool hasSource({String? localPath, String? remoteUrl}) {
     return (localPath != null && localPath.isNotEmpty) ||
@@ -60,6 +66,14 @@ class ImagePreviewDock extends StatelessWidget {
                 icon: Icons.rotate_right_rounded,
                 label: 'Rotate',
                 onTap: onRotate!,
+              ),
+            if (onMute != null)
+              _DockAction(
+                icon: muted
+                    ? Icons.volume_off_rounded
+                    : Icons.volume_up_rounded,
+                label: muted ? 'Unmute' : 'Mute',
+                onTap: onMute!,
               ),
             _DockAction(
               icon: Icons.ios_share_rounded,

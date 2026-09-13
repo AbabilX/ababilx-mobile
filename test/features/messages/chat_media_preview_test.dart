@@ -4,6 +4,7 @@ import 'package:ababilx/features/messages/chat-timeline/media-preview/chat_media
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/shared/widgets/image_preview_dock.dart';
 import 'package:ababilx/shared/widgets/image_preview_top_bar.dart';
+import 'package:ababilx/shared/widgets/video_thumb_states.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -127,6 +128,42 @@ void main() {
       ),
     );
     expect(find.byType(ListView), findsNothing);
+  });
+
+  testWidgets('play badge becomes pause while playing', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: VideoPlayBadge(playing: true))),
+    );
+    expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
+  });
+
+  testWidgets('video capsule dock shows Save, Rotate, Mute and Share', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ImagePreviewDock(
+            fileName: 'clip.mp4',
+            localPath: '/tmp/clip.mp4',
+            onRotate: () {},
+            onMute: () {},
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Rotate'), findsOneWidget);
+    expect(find.text('Mute'), findsOneWidget);
+    expect(find.text('Share'), findsOneWidget);
+    expect(find.byIcon(Icons.more_vert_rounded), findsNothing);
+    expect(
+      tester
+          .widgetList<Material>(find.byType(Material))
+          .any((m) => m.shape is StadiumBorder),
+      isTrue,
+    );
   });
 
   testWidgets('caption expands on tap', (tester) async {
