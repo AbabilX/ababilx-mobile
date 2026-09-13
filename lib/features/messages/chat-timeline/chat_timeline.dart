@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../chat-select/message_selection.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
+import 'chat_timeline_jump.dart';
 import 'chat_timeline_load.dart';
 import 'chat_timeline_unread.dart';
 import 'chat_timeline_view.dart';
@@ -28,8 +29,11 @@ class ChatTimeline extends ConsumerStatefulWidget {
 }
 
 class _ChatTimelineState extends ConsumerState<ChatTimeline>
-    with ChatTimelineLoad, ChatTimelineUnread {
+    with ChatTimelineLoad, ChatTimelineUnread, ChatTimelineJump {
   final _scrollCtrl = ScrollController();
+
+  @override
+  ScrollController get timelineScrollController => _scrollCtrl;
   bool _headerVisible = true;
   bool _showJumpPill = false;
   double _lastPixels = 0;
@@ -128,6 +132,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
 
   @override
   void dispose() {
+    disposeJump();
     _scrollCtrl.dispose();
     super.dispose();
   }
@@ -169,24 +174,26 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
     _previousNewestMessageId = newestMessageId;
     _pruneSelection(feed.messages);
 
-    return ChatTimelineView(
-      conversationId: widget.conversationId,
-      threadRootId: widget.threadRootId,
-      header: widget.header,
-      headerVisible: _headerVisible,
-      messages: feed.messages,
-      loading: feed.loading,
-      loadingMore: feed.loadingMore,
-      currentUserId: chat.currentUserId,
-      error: feed.error,
-      scrollController: _scrollCtrl,
-      unreadAnchorId: unreadAnchorId,
-      unreadCount: unreadCount,
-      unreadPillCount: unreadPillCount,
-      showJumpPill: _showJumpPill,
-      onJumpToBottom: _jumpToBottom,
-      onRetry: loadFeed,
-      onMessageSubmitted: _revealSubmittedMessage,
+    return jumpScope(
+      child: ChatTimelineView(
+        conversationId: widget.conversationId,
+        threadRootId: widget.threadRootId,
+        header: widget.header,
+        headerVisible: _headerVisible,
+        messages: feed.messages,
+        loading: feed.loading,
+        loadingMore: feed.loadingMore,
+        currentUserId: chat.currentUserId,
+        error: feed.error,
+        scrollController: _scrollCtrl,
+        unreadAnchorId: unreadAnchorId,
+        unreadCount: unreadCount,
+        unreadPillCount: unreadPillCount,
+        showJumpPill: _showJumpPill,
+        onJumpToBottom: _jumpToBottom,
+        onRetry: loadFeed,
+        onMessageSubmitted: _revealSubmittedMessage,
+      ),
     );
   }
 }

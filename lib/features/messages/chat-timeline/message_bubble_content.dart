@@ -9,6 +9,7 @@ import 'message_bubble.dart';
 import 'message_bubble_footer.dart';
 import 'message_link_preview.dart';
 import 'message_quote_block.dart';
+import 'quoted_bubble_layout.dart';
 import 'signal_bubble_metrics.dart';
 
 /// What sits inside a bubble, and how much padding it takes.
@@ -109,20 +110,29 @@ class MessageBubbleContent extends StatelessWidget {
       );
     }
 
-    return Padding(
-      padding: _inset,
-      child: Column(
-        crossAxisAlignment: _footerSide,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (quote != null)
-            MessageQuoteBlock(quote: quote, colors: colors, isOwn: isOwn),
-          body,
-          ?footer,
-        ],
-      ),
+    final column = Column(
+      crossAxisAlignment: _footerSide,
+      mainAxisSize: MainAxisSize.min,
+      children: [body, ?footer],
+    );
+    if (quote == null) return Padding(padding: _inset, child: column);
+    return _quoted(
+      quote: quote,
+      content: Padding(padding: _inset.copyWith(top: 0), child: column),
     );
   }
+
+  /// The quote above, everything else below, both exactly as wide as each
+  /// other. A Column cannot express that without deciding the bubble's width
+  /// first — see [QuotedBubbleLayout].
+  Widget _quoted({required ChatMessageQuote quote, required Widget content}) =>
+      QuotedBubbleLayout(
+        quote: Padding(
+          padding: _inset.copyWith(bottom: 0),
+          child: MessageQuoteBlock(quote: quote, colors: colors, isOwn: isOwn),
+        ),
+        content: content,
+      );
 
   /// Quote, then the card, then the author's own text under it — Signal's
   /// order. The card is what the message is about; the text is the comment on
@@ -132,24 +142,10 @@ class MessageBubbleContent extends StatelessWidget {
     final big = isBigImagePreview(preview);
     final footer = _footer();
 
-    return Column(
+    final content = Column(
       crossAxisAlignment: _footerSide,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (quote != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              SignalBubbleMetrics.horizontalPadding,
-              SignalBubbleMetrics.topPadding,
-              SignalBubbleMetrics.horizontalPadding,
-              0,
-            ),
-            child: MessageQuoteBlock(
-              quote: quote,
-              colors: colors,
-              isOwn: isOwn,
-            ),
-          ),
         if (big) MessageLinkPreviewImage(preview: preview, colors: colors),
         MessageLinkPreviewCard(
           preview: preview,
@@ -174,5 +170,7 @@ class MessageBubbleContent extends StatelessWidget {
         ),
       ],
     );
+    if (quote == null) return content;
+    return _quoted(quote: quote, content: content);
   }
 }

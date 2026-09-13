@@ -13,6 +13,7 @@ import 'message_row.dart';
 import 'thread_sheet.dart';
 import 'group_call_event_row.dart';
 import 'timeline_items.dart';
+import 'timeline_jump_target.dart';
 import 'voice_call_event_row.dart';
 
 class MessageList extends ConsumerWidget {
@@ -137,14 +138,19 @@ class MessageList extends ConsumerWidget {
     final prev = idx > 0 ? messages[idx - 1] : null;
     final next = idx + 1 < messages.length ? messages[idx + 1] : null;
     final clusterPosition = chatMessageClusterPosition(prev, message, next);
-    return MessageRow(
-      message: message,
-      conversationId: conversationId,
-      threadRootId: threadRootId,
-      clusterPosition: clusterPosition,
-      onOpenThread: threadRootId == null && message.threadCount > 0
-          ? () => openThreadSheet(context, conversationId, message)
-          : null,
+    // Wrapped, not keyed from here: a row is what a tapped quote jumps to, and
+    // the wash that lands on it has to reach both screen edges.
+    return TimelineJumpTarget(
+      messageId: message.id,
+      child: MessageRow(
+        message: message,
+        conversationId: conversationId,
+        threadRootId: threadRootId,
+        clusterPosition: clusterPosition,
+        onOpenThread: threadRootId == null && message.threadCount > 0
+            ? () => openThreadSheet(context, conversationId, message)
+            : null,
+      ),
     );
   }
 }

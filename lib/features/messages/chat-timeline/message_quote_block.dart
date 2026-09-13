@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/app_toast.dart';
 import '../data/models/chat_models.dart';
 import '../tiptap_plain_text.dart';
 import 'message_bubble.dart';
 import 'sender_name_color.dart';
 import 'signal_bubble_metrics.dart';
+import 'timeline_jump.dart';
 
 /// Signal's quote block: the message being answered, inset at the top of the
 /// bubble behind a coloured bar in the quoted sender's own name colour.
 ///
-/// Tapping it does nothing yet — jumping to the original needs scroll-to-message
-/// in the list, which does not exist here.
+/// Tapping it walks the timeline back to the message being answered — see
+/// [TimelineJumpController]. There is nowhere to walk when the original is gone,
+/// and no controller at all when a bubble is drawn outside a timeline (the
+/// long-press overlay's floating copy), so the tap is simply absent there.
 class MessageQuoteBlock extends StatelessWidget {
   const MessageQuoteBlock({
     super.key,
@@ -51,13 +55,27 @@ class MessageQuoteBlock extends StatelessWidget {
     return null;
   }
 
+  /// Walks to the original, and says so when it cannot be reached — a tap that
+  /// does nothing reads as a broken control.
+  Future<void> _open(BuildContext context, TimelineJumpController jump) async {
+    // The row this quote sits in can be recycled out from under the walk, so
+    // the toast is anchored to the navigator rather than to this element.
+    final host = Navigator.maybeOf(context)?.context ?? context;
+    final reached = await jump.jumpTo(quote.messageId);
+    if (reached || !host.mounted) return;
+    showAppToast(host, 'Original message not found', isError: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final accent = senderNameColor(quote.userId);
     final icon = _icon;
+    final jump = TimelineJumpScope.maybeOf(context);
+    final canOpen =
+        jump != null && !quote.deleted && quote.messageId.isNotEmpty;
 
-    return Container(
+    final block = Container(
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHighest.withValues(alpha: 0.7),
@@ -117,6 +135,12 @@ class MessageQuoteBlock extends StatelessWidget {
             ),
         ],
       ),
+    );
+    if (!canOpen) return block;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _open(context, jump),
+      child: block,
     );
   }
 }
