@@ -74,6 +74,51 @@ List<ReactionDetailRow> reactionDetailRows({
   return rows;
 }
 
+/// Avatars the device already holds: senders in the feed, the DM peer, you.
+Map<String, String> reactorAvatarIndex(
+  ChatState chat, {
+  String? selfAvatar,
+  Map<String, String> extra = const {},
+}) {
+  final out = <String, String>{};
+  void put(String? id, String? url) {
+    if (id == null || id.isEmpty) return;
+    final src = url?.trim() ?? '';
+    if (src.isEmpty) return;
+    out.putIfAbsent(id, () => src);
+  }
+
+  for (final e in extra.entries) {
+    put(e.key, e.value);
+  }
+  for (final feed in chat.feeds.values) {
+    for (final m in feed.messages) {
+      put(m.userId, m.userAvatarUrl);
+    }
+  }
+  for (final replies in chat.threadRepliesByRoot.values) {
+    for (final m in replies) {
+      put(m.userId, m.userAvatarUrl);
+    }
+  }
+  final conv = chat.conversationById(chat.activeConversationId);
+  put(conv?.peerUserId, conv?.peerUserAvatar);
+  put(chat.currentUserId, selfAvatar);
+  return out;
+}
+
+String? reactorAvatarUrl({
+  required String userId,
+  String? fromReaction,
+  Map<String, String> known = const {},
+}) {
+  final direct = fromReaction?.trim() ?? '';
+  if (direct.isNotEmpty) return direct;
+  final hit = known[userId];
+  if (hit != null && hit.isNotEmpty) return hit;
+  return null;
+}
+
 ChatMessage? findChatMessage(ChatState chat, String messageId) {
   if (messageId.isEmpty) return null;
   for (final feed in chat.feeds.values) {

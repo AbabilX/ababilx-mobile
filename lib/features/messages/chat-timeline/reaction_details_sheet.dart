@@ -141,7 +141,16 @@ class _ReactorList extends ConsumerWidget {
         ),
       );
     }
-    final me = ref.watch(chatProvider).currentUserId;
+    final chat = ref.watch(chatProvider);
+    final me = chat.currentUserId;
+    final known = reactorAvatarIndex(
+      chat,
+      selfAvatar: ref.watch(profileProvider).valueOrNull?.avatarUrl,
+      extra: {
+        for (final m in ref.watch(teamMembersProvider))
+          if ((m.avatarUrl ?? '').isNotEmpty) m.userId: m.avatarUrl!,
+      },
+    );
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
       itemCount: rows.length,
@@ -150,7 +159,11 @@ class _ReactorList extends ConsumerWidget {
         final row = rows[i];
         final isMe = row.userId == me;
         final name = _displayName(ref, row, isMe);
-        final avatar = _avatarUrl(ref, row, isMe);
+        final avatar = reactorAvatarUrl(
+          userId: row.userId,
+          fromReaction: row.avatarUrl,
+          known: known,
+        );
         return ListTile(
           leading: AppAvatar(size: 40, url: avatar, name: name),
           title: Text(
@@ -200,26 +213,5 @@ class _ReactorList extends ConsumerWidget {
       return conv.peerUserName!.trim();
     }
     return 'Someone';
-  }
-
-  String? _avatarUrl(WidgetRef ref, ReactionDetailRow row, bool isMe) {
-    if ((row.avatarUrl ?? '').isNotEmpty) return row.avatarUrl;
-    if (isMe) {
-      final mine = ref.read(profileProvider).valueOrNull?.avatarUrl;
-      return (mine ?? '').isEmpty ? null : mine;
-    }
-    final team = ref
-        .read(teamMembersProvider)
-        .where((m) => m.userId == row.userId)
-        .firstOrNull;
-    if ((team?.avatarUrl ?? '').isNotEmpty) return team!.avatarUrl;
-    final chat = ref.read(chatProvider);
-    final conv = chat.conversationById(chat.activeConversationId);
-    if (conv != null &&
-        conv.peerUserId == row.userId &&
-        (conv.peerUserAvatar ?? '').isNotEmpty) {
-      return conv.peerUserAvatar;
-    }
-    return null;
   }
 }

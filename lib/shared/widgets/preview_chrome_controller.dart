@@ -10,10 +10,7 @@ import 'image_preview_chrome.dart';
 /// Scroll into the content hides chrome. Idle of [idle] does the same.
 /// A tap toggles. Touching the dock / scrubber shows it and restarts the timer.
 class PreviewChrome {
-  PreviewChrome({
-    required this.onChanged,
-    this.idle = ImagePreviewChrome.idle,
-  });
+  PreviewChrome({required this.onChanged, this.idle = ImagePreviewChrome.idle});
 
   final VoidCallback onChanged;
   final Duration idle;

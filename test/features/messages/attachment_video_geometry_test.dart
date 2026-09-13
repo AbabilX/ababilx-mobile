@@ -89,7 +89,8 @@ void main() {
         size == Size.zero
             ? find.byWidgetPredicate(
                 (w) =>
-                    w is PreviewIcon && identical(w.icon, PreviewIcons.videoOff),
+                    w is PreviewIcon &&
+                    identical(w.icon, PreviewIcons.videoOff),
               )
             : find.byType(AspectRatio),
         findsOneWidget,

@@ -23,9 +23,42 @@ void main() {
     final user = ChatReactionUser.fromJson({
       'user_id': 'u1',
       'user_name': 'Ada',
+      'avatar_url': 'https://cdn.example/ada.jpg',
     });
     expect(user.userId, 'u1');
     expect(user.name, 'Ada');
+    expect(user.avatarUrl, 'https://cdn.example/ada.jpg');
+  });
+
+  test('reactor avatar prefers the reaction payload, then the feed', () {
+    expect(
+      reactorAvatarUrl(
+        userId: 'a',
+        fromReaction: 'https://cdn.example/react.jpg',
+        known: const {'a': 'https://cdn.example/feed.jpg'},
+      ),
+      'https://cdn.example/react.jpg',
+    );
+    const msg = ChatMessage(
+      id: 'm1',
+      conversationId: 'c1',
+      userId: 'a',
+      userAvatarUrl: 'https://cdn.example/feed.jpg',
+      body: 'hi',
+      createdAt: '2026-09-14T10:00:00Z',
+    );
+    final known = reactorAvatarIndex(
+      ChatState(
+        feeds: {
+          feedKey('c1'): const ChatFeed(messages: [msg]),
+        },
+      ),
+    );
+    expect(
+      reactorAvatarUrl(userId: 'a', known: known),
+      'https://cdn.example/feed.jpg',
+    );
+    expect(reactorAvatarUrl(userId: 'missing', known: known), isNull);
   });
 
   test('one emoji has no All tab', () {

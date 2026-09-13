@@ -66,9 +66,11 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
     super.initState();
     _index = widget.initialIndex.clamp(0, widget.images.length - 1);
     _page = PageController(initialPage: _index);
-    _chrome = PreviewChrome(onChanged: () {
-      if (mounted) setState(() {});
-    })..reveal();
+    _chrome = PreviewChrome(
+      onChanged: () {
+        if (mounted) setState(() {});
+      },
+    )..reveal();
   }
 
   @override
