@@ -182,6 +182,8 @@ class ChatNotifier extends Notifier<ChatState>
     // Resumes a recovery restore that was killed mid-run. No-ops when the
     // pending flag is unset, so ordinary launches never pull again.
     unawaited(startHistoryRestoreIfNeeded());
+    // Gives back keys other members lost, without waiting for a chat to open.
+    unawaited(ref.read(messageVaultProvider).fillKeyGaps(state.currentUserId));
   }
 
   /// Best-effort user id from purely local sources — current state, whatever

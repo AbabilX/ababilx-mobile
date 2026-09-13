@@ -65,9 +65,12 @@ extension MessageVaultKeyVersions on MessageVault {
       try {
         key = await _unwrapKey(envelope, self);
       } catch (_) {
-        // Sealed to an identity this device does not hold. Pure computation,
-        // so asking again in a second would answer the same.
+        // Sealed to an identity this account does not hold. Pure computation,
+        // so asking again in a second would answer the same — but reporting it
+        // lets a member who still holds the key re-wrap it, and the miss runs
+        // out in time to pick that up.
         _versionMisses[id] = DateTime.now();
+        await _reportUnreadableEnvelope(conversationId, version, identity);
         return null;
       }
       if (!identical(identity, _identity)) return null;

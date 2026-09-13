@@ -94,6 +94,12 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
       final chat = ref.read(chatProvider.notifier);
       await chat.fetchSidebar(silent: true);
       await chat.redecryptFailedMessages();
+      // Unlocked after bootstrap ran locked, which skipped this there.
+      unawaited(
+        ref
+            .read(messageVaultProvider)
+            .fillKeyGaps(ref.read(chatProvider).currentUserId),
+      );
       if (pullHistory) {
         await chat.markHistoryRestorePending();
         await ref.read(archiveProvider.notifier).markRecoveryPending();

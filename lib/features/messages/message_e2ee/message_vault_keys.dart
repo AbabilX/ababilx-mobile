@@ -106,10 +106,17 @@ extension MessageVaultKeys on MessageVault {
       envelopes,
     );
     final envelope = Map<String, dynamic>.from(saved['envelope'] as Map);
-    final entry = _DmKey(
-      version: (saved['key_version'] as num).toInt(),
-      key: await _unwrapKey(envelope, self),
-    );
+    final version = (saved['key_version'] as num).toInt();
+    final SecretKey opened;
+    try {
+      opened = await _unwrapKey(envelope, self);
+    } catch (_) {
+      // A rival's key won the race and its envelope for us does not open. This
+      // send fails; the report makes the next one rotate.
+      await _reportUnreadableEnvelope(conversationId, version, identity);
+      rethrow;
+    }
+    final entry = _DmKey(version: version, key: opened);
     _keys[conversationId] = entry;
     await _cacheEnvelope(conversationId, entry.version, envelope);
     return entry;
@@ -149,34 +156,41 @@ extension MessageVaultKeys on MessageVault {
     final missing = (status['missing_member_ids'] as List?) ?? const [];
     final spent = status['rekey_required'] as bool? ?? missing.isNotEmpty;
     // An envelope that will not open is indistinguishable from having none:
-    // unwrapping is pure computation, so this is a corrupt or hostile row, not
-    // a network blip. Reporting "no key" lets the next send mint a fresh
-    // version instead of leaving the conversation unable to send at all.
+    // unwrapping is pure computation, so this is a corrupt or mis-sealed row,
+    // not a network blip. Reporting it drops the row server-side, so "no key"
+    // here really does let the next send mint a fresh version instead of being
+    // handed the same row and leaving the conversation unable to send.
     final envelope = Map<String, dynamic>.from(key['envelope'] as Map);
+    final version = (key['key_version'] as num).toInt();
+    final identity = _identity;
     final SecretKey opened;
     try {
       opened = await _unwrapKey(envelope, self);
     } catch (_) {
+      // Reported before answering, so the send this is about to fall back to
+      // finds the version stale and rotates instead of being handed the same
+      // row again.
+      await _reportUnreadableEnvelope(conversationId, version, identity);
       return null;
     }
-    final version = (key['key_version'] as num).toInt();
     // Filed away before the staleness verdict below, which can involve another
     // round trip: the envelope is good either way, and a key that reached this
     // device once should never need the network to be read again.
     await _cacheEnvelope(conversationId, version, envelope);
+    // Hand the surviving key to anyone who lost theirs BEFORE deciding this key
+    // is stale: a filled gap restores their history and leaves nothing to
+    // rotate. Run whether or not the key is spent — a gap at an OLDER version
+    // (somebody reset, and a rotation already happened) is the history they
+    // lost, and `spent && await ...` used to skip exactly that case.
+    final repaired = await _backfillKeys(
+      conversationId,
+      self,
+      (status['gaps'] as List?) ?? const [],
+    );
     final entry = _DmKey(
       version: version,
       key: opened,
-      // Hand the surviving key to anyone who lost theirs BEFORE deciding this
-      // key is stale: a filled gap restores their history and leaves nothing
-      // to rotate.
-      stale:
-          spent &&
-          !await _backfillKeys(
-            conversationId,
-            self,
-            (status['gaps'] as List?) ?? const [],
-          ),
+      stale: spent && !repaired,
     );
     _keys[conversationId] = entry;
     return entry;

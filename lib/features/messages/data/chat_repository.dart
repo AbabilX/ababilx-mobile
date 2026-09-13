@@ -5,6 +5,7 @@ import 'chat_connections_api.dart';
 import 'chat_device_repository.dart';
 import 'chat_endpoints.dart';
 import 'chat_e2ee_api.dart';
+import 'chat_e2ee_history_api.dart';
 import 'chat_conversations_api.dart';
 import 'chat_messages_api.dart';
 import 'chat_webhooks_api.dart';
@@ -15,6 +16,7 @@ class ChatRepository {
     : _conversations = ChatConversationsApi(client, const ChatEndpoints()),
       _messages = ChatMessagesApi(client, const ChatEndpoints()),
       _e2ee = ChatE2eeApi(client, const ChatEndpoints()),
+      _e2eeHistory = ChatE2eeHistoryApi(client, const ChatEndpoints()),
       _attachments = ChatAttachmentsApi(client, const ChatEndpoints()),
       _devices = ChatDeviceRepository(client),
       _connections = ChatConnectionsApi(client),
@@ -23,6 +25,7 @@ class ChatRepository {
   final ChatConversationsApi _conversations;
   final ChatMessagesApi _messages;
   final ChatE2eeApi _e2ee;
+  final ChatE2eeHistoryApi _e2eeHistory;
   final ChatAttachmentsApi _attachments;
   final ChatDeviceRepository _devices;
   final ChatConnectionsApi _connections;
@@ -226,7 +229,18 @@ class ChatRepository {
   Future<Map<String, dynamic>> getE2eeConversationKeyVersions(
     String conversationId,
     List<int> versions,
-  ) => _e2ee.getConversationKeyVersions(conversationId, versions);
+  ) => _e2eeHistory.getConversationKeyVersions(conversationId, versions);
+  Future<Map<String, dynamic>> reportUnreadableE2eeEnvelope(
+    String conversationId,
+    int keyVersion,
+    Map<String, dynamic> publicJwk,
+  ) => _e2eeHistory.reportUnreadableEnvelope(
+    conversationId,
+    keyVersion,
+    publicJwk,
+  );
+  Future<Map<String, dynamic>> getE2eeFillableGaps() =>
+      _e2eeHistory.getFillableGaps();
   Future<Map<String, dynamic>> getE2eeConversationMembers(
     String conversationId,
   ) => _e2ee.getConversationMembers(conversationId);

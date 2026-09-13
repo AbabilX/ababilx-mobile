@@ -826,7 +826,12 @@ the same place, on both, with strictly less at rest.
   (`message_vault_key_versions.dart`, pinned by `key_version_history_test.dart`)
   and stores what comes back; one request per version however many messages
   name it, and a "none held" answer is believed for a minute. `_backfillKeys`
-  still caches every `gaps` envelope it sees.
+  still caches every `gaps` envelope it sees, and now runs on EVERY key fetch
+  (it used to hide behind `spent && ...`, so a past version was never refilled
+  from a phone). An envelope that will not open is reported
+  (`message_vault_repair.dart`) so the server takes it out of use and
+  rotation/backfill heal it; `fillKeyGaps` refills other members once per
+  identity at bootstrap and unlock. Pinned by `key_repair_test.dart`.
 - **`_readKeys` is separate from `_keys` on purpose.** `_keys` is the key a SEND
   seals with and must stay the newest the server knows; populating it from disk
   would let a send seal under a retired version. Reading uses the version-keyed

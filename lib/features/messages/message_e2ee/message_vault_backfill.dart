@@ -22,13 +22,23 @@ extension MessageVaultBackfill on MessageVault {
   ) async {
     if (gaps.isEmpty || _backfilled.contains(conversationId)) return false;
     _backfilled.add(conversationId);
+    final identity = _identity;
     try {
       final envelopes = <Map<String, dynamic>>[];
       for (final raw in gaps) {
         final gap = Map<String, dynamic>.from(raw as Map);
         final version = (gap['key_version'] as num).toInt();
         final envelope = Map<String, dynamic>.from(gap['envelope'] as Map);
-        final key = await _unwrapKey(envelope, self);
+        final SecretKey key;
+        try {
+          key = await _unwrapKey(envelope, self);
+        } catch (_) {
+          // Our own copy of this version is the broken one. Nothing to hand
+          // on from it; reporting it lets somebody else hand it to us, and
+          // the other versions in this list are still worth filling.
+          await _reportUnreadableEnvelope(conversationId, version, identity);
+          continue;
+        }
         // A gap carries THIS device's envelope for an older version — the one
         // place a retired key is handed back. `GET .../e2ee-key` never returns
         // it, so caching it here is what makes messages from before a rotation

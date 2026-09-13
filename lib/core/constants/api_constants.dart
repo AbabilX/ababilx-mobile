@@ -127,6 +127,9 @@ class ApiConstants {
   static const String chatE2eeLinkApprove = '/api/chat/e2ee/link/approve';
   static const String chatE2eeLinkDeny = '/api/chat/e2ee/link/deny';
   static const String chatE2eeLinkPoll = '/api/chat/e2ee/link/poll';
+
+  /// Conversations where this account holds a key another member lost.
+  static const String chatE2eeFillableGaps = '/api/chat/e2ee/gaps';
   // Start fresh: an emailed code buys a brand-new identity for someone with no
   // device left that holds the old one. Path is /api/teams even without a
   // workspace — the identity belongs to the account, not to a team.

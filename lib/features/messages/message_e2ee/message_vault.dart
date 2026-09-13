@@ -25,6 +25,7 @@ part 'message_vault_key_versions.dart';
 part 'message_vault_keys.dart';
 part 'message_vault_link.dart';
 part 'message_vault_recover.dart';
+part 'message_vault_repair.dart';
 part 'message_vault_restore.dart';
 part 'message_vault_reset.dart';
 part 'message_vault_session.dart';
@@ -73,6 +74,10 @@ class MessageVault {
   final _versionLoads = <String, Future<_DmKey?>>{};
   // When the server last said this account holds no envelope for a version.
   final _versionMisses = <String, DateTime>{};
+  // Envelopes already reported as unopenable this session, 'conversation:version'.
+  final _reportedUnreadable = <String>{};
+  // This identity's one pass over the conversations it can refill for others.
+  Future<void>? _gapFill;
   P256KeyPair? _identity;
   Map<String, dynamic>? _publicJwk;
   // Legacy gate compatibility. New sessions persist their code in this
@@ -160,6 +165,8 @@ class MessageVault {
     // must not be joined by the next identity's first read either.
     _versionMisses.clear();
     _versionLoads.clear();
+    _reportedUnreadable.clear();
+    _gapFill = null;
   }
 }
 

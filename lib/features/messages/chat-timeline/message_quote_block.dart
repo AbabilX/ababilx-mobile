@@ -23,8 +23,15 @@ class MessageQuoteBlock extends StatelessWidget {
   final SignalBubbleColors colors;
   final bool isOwn;
 
+  bool get _unavailable =>
+      quote.isEncrypted && quote.body == 'Unable to decrypt this message';
+
   String get _preview {
     if (quote.deleted) return 'Original message not found';
+    // Sealed under a key this account was never given — typically written
+    // before we joined the group. Not a failure worth alarming anyone over:
+    // the reply itself reads fine.
+    if (_unavailable) return 'Original message not available';
     // The body is TipTap JSON, and a quote is a one-or-two-line preview, not a
     // rendered body — without this the block showed the raw `{"type":"doc"…`.
     final preview = tiptapToPreviewText(quote.body);
@@ -99,7 +106,7 @@ class MessageQuoteBlock extends StatelessWidget {
                         fontSize: 13,
                         height: 1.25,
                         color: colors.muted,
-                        fontStyle: quote.deleted
+                        fontStyle: quote.deleted || _unavailable
                             ? FontStyle.italic
                             : FontStyle.normal,
                       ),
