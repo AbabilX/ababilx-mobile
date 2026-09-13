@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../media/video_thumbnail.dart';
+import 'preview_icon.dart';
 import 'video_thumb_states.dart';
 
 /// A video bubble drawn from one extracted frame: an image, a play badge and
@@ -42,8 +43,8 @@ class VideoPosterFrame extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => const ColoredBox(
                       color: Colors.black,
-                      child: Icon(
-                        Icons.videocam_off_outlined,
+                      child: PreviewIcon(
+                        PreviewIcons.videoOff,
                         color: Colors.white54,
                       ),
                     ),

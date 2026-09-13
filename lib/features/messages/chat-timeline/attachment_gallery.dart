@@ -5,6 +5,7 @@ import '../../../shared/widgets/image_preview.dart';
 import '../../../shared/widgets/image_preview_chrome.dart';
 import '../../../shared/widgets/image_preview_top_bar.dart';
 import '../../../shared/widgets/image_preview_zoom.dart';
+import '../../../shared/widgets/preview_chrome_controller.dart';
 import '../../attachments/data/models/attachment_handle.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../../attachments/widgets/attachment_download_badge.dart';
@@ -56,8 +57,8 @@ class _ChatGalleryDialog extends ConsumerStatefulWidget {
 
 class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
   late final PageController _page;
+  late final PreviewChrome _chrome;
   late int _index;
-  bool _chrome = true;
   final _turns = <int, int>{};
 
   @override
@@ -65,18 +66,21 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
     super.initState();
     _index = widget.initialIndex.clamp(0, widget.images.length - 1);
     _page = PageController(initialPage: _index);
+    _chrome = PreviewChrome(onChanged: () {
+      if (mounted) setState(() {});
+    })..reveal();
   }
 
   @override
   void dispose() {
+    _chrome.dispose();
     _page.dispose();
     super.dispose();
   }
 
-  void _toggleChrome() => setState(() => _chrome = !_chrome);
-
   void _rotate() {
     setState(() => _turns[_index] = ((_turns[_index] ?? 0) + 1) % 4);
+    _chrome.reveal();
   }
 
   void _jumpTo(int i) {
@@ -107,14 +111,17 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
             PageView.builder(
               controller: _page,
               itemCount: widget.images.length,
-              onPageChanged: (i) => setState(() => _index = i),
+              onPageChanged: (i) {
+                setState(() => _index = i);
+                _chrome.reveal();
+              },
               itemBuilder: (_, i) =>
                   _buildPage(widget.images[i], _turns[i] ?? 0),
             ),
             Align(
               alignment: Alignment.topCenter,
               child: ImagePreviewChrome.layer(
-                visible: _chrome,
+                visible: _chrome.visible,
                 child: ImagePreviewTopBar(
                   fileName: current.fileName,
                   detail:
@@ -128,7 +135,7 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
             Align(
               alignment: Alignment.bottomCenter,
               child: ImagePreviewChrome.layer(
-                visible: _chrome,
+                visible: _chrome.visible,
                 child: ChatMediaPreviewFooter(
                   images: widget.images,
                   index: _index,
@@ -158,7 +165,8 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
           ),
           allowRemoteFallback: false,
           quarterTurns: quarterTurns,
-          onTap: _toggleChrome,
+          onTap: _chrome.toggle,
+          onPan: _chrome.onContentPan,
         ),
       );
 
@@ -171,7 +179,7 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
   ) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: _toggleChrome,
+      onTap: _chrome.toggle,
       child: Center(
         child: handle == null
             ? const SizedBox(

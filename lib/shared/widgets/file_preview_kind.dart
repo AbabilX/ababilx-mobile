@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'preview_icon.dart';
 
 /// What kind of file the document viewer is holding.
 enum FilePreviewKind {
@@ -57,13 +57,13 @@ enum FilePreviewKind {
     other => 'File',
   };
 
-  IconData get icon => switch (this) {
-    pdf => Icons.picture_as_pdf_rounded,
-    word => Icons.description_outlined,
-    sheet => Icons.grid_on_outlined,
-    slides => Icons.slideshow_outlined,
-    zip => Icons.folder_zip_outlined,
-    other => Icons.insert_drive_file_outlined,
+  PreviewGlyph get icon => switch (this) {
+    pdf => PreviewIcons.pdf,
+    word => PreviewIcons.word,
+    sheet => PreviewIcons.sheet,
+    slides => PreviewIcons.slides,
+    zip => PreviewIcons.zip,
+    other => PreviewIcons.file,
   };
 }
 

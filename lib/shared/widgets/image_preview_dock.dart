@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'image_preview_chrome.dart';
 import 'media_preview_actions.dart';
+import 'preview_icon.dart';
 
 /// Floating capsule that hugs its actions — no fixed slot width.
 class ImagePreviewDock extends StatelessWidget {
@@ -54,7 +55,7 @@ class ImagePreviewDock extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _DockAction(
-              icon: Icons.save_alt_rounded,
+              icon: PreviewIcons.save,
               label: 'Save',
               onTap: () => runMediaPreviewAction(
                 context,
@@ -67,26 +68,24 @@ class ImagePreviewDock extends StatelessWidget {
             ),
             if (onRotate != null)
               _DockAction(
-                icon: Icons.rotate_right_rounded,
+                icon: PreviewIcons.rotate,
                 label: 'Rotate',
                 onTap: onRotate!,
               ),
             if (onMute != null)
               _DockAction(
-                icon: muted
-                    ? Icons.volume_off_rounded
-                    : Icons.volume_up_rounded,
+                icon: muted ? PreviewIcons.mute : PreviewIcons.unmute,
                 label: muted ? 'Unmute' : 'Mute',
                 onTap: onMute!,
               ),
             if (onOpen != null)
               _DockAction(
-                icon: Icons.open_in_new_rounded,
+                icon: PreviewIcons.open,
                 label: 'Open',
                 onTap: onOpen!,
               ),
             _DockAction(
-              icon: Icons.ios_share_rounded,
+              icon: PreviewIcons.share,
               label: 'Share',
               onTap: () => runMediaPreviewAction(
                 context,
@@ -111,7 +110,7 @@ class _DockAction extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final PreviewGlyph icon;
   final String label;
   final VoidCallback onTap;
 
@@ -125,7 +124,7 @@ class _DockAction extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
+            PreviewIcon(icon, color: Colors.white, size: 22),
             const SizedBox(height: 3),
             Text(
               label,

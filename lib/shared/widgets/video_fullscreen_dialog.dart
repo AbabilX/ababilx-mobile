@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
@@ -7,8 +5,10 @@ import 'package:video_player/video_player.dart';
 import '../media/video_thumbnail.dart';
 import 'image_preview_chrome.dart';
 import 'image_preview_top_bar.dart';
+import 'preview_chrome_controller.dart';
 import 'video_preview_footer.dart';
 import 'video_source.dart';
+import 'preview_icon.dart';
 import 'video_thumb_states.dart';
 
 /// The viewer a tapped video opens into.
@@ -46,16 +46,20 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
   VideoPlayerController? _controller;
   bool _ready = false;
   bool _failed = false;
-  bool _showControls = true;
   bool _screenHeld = false;
   bool _muted = false;
   int _turns = 0;
-  Timer? _hideTimer;
+  late final PreviewChrome _chrome;
 
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _chrome = PreviewChrome(
+      onChanged: () {
+        if (mounted) setState(() {});
+      },
+    );
     _init();
   }
 
@@ -69,7 +73,7 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
       if (!mounted) return;
       controller.addListener(_onPlaybackChanged);
       setState(() => _ready = true);
-      _scheduleHide();
+      _chrome.reveal();
     } catch (_) {
       if (!mounted) return;
       setState(() => _failed = true);
@@ -84,27 +88,7 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
     if (playing == _screenHeld) return;
     _screenHeld = playing;
     VideoThumbnails.keepScreenOn(playing);
-    if (!playing && mounted) _revealControls();
-  }
-
-  void _revealControls() {
-    _hideTimer?.cancel();
-    if (!_showControls) setState(() => _showControls = true);
-    _scheduleHide();
-  }
-
-  void _scheduleHide() {
-    _hideTimer?.cancel();
-    if (!(_controller?.value.isPlaying ?? false)) return;
-    _hideTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _showControls = false);
-    });
-  }
-
-  void _toggleChrome() {
-    _hideTimer?.cancel();
-    setState(() => _showControls = !_showControls);
-    if (_showControls) _scheduleHide();
+    if (!playing && mounted) _chrome.reveal();
   }
 
   void _toggleMute() {
@@ -115,12 +99,12 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
     final next = !_muted;
     c.setVolume(next ? 0 : 1);
     setState(() => _muted = next);
-    _revealControls();
+    _chrome.reveal();
   }
 
   void _rotate() {
     setState(() => _turns = (_turns + 1) % 4);
-    _revealControls();
+    _chrome.reveal();
   }
 
   void _togglePlay() {
@@ -128,7 +112,7 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
     if (c == null || !_ready) return;
     if (c.value.isPlaying) {
       c.pause();
-      _revealControls();
+      _chrome.reveal();
       return;
     }
     final value = c.value;
@@ -136,12 +120,12 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
       c.seekTo(Duration.zero);
     }
     c.play();
-    _scheduleHide();
+    _chrome.reveal();
   }
 
   @override
   void dispose() {
-    _hideTimer?.cancel();
+    _chrome.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     if (_screenHeld) VideoThumbnails.keepScreenOn(false);
     _controller?.removeListener(_onPlaybackChanged);
@@ -163,8 +147,8 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
           children: [
             if (_failed)
               const Center(
-                child: Icon(
-                  Icons.videocam_off_outlined,
+                child: PreviewIcon(
+                  PreviewIcons.videoOff,
                   color: Colors.white54,
                   size: 48,
                 ),
@@ -175,7 +159,7 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
               )
             else
               GestureDetector(
-                onTap: _toggleChrome,
+                onTap: _chrome.toggle,
                 // The video rarely fills the screen; a tap on the letterbox
                 // has to bring the chrome back too.
                 behavior: HitTestBehavior.opaque,
@@ -195,7 +179,7 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
             Align(
               alignment: Alignment.topCenter,
               child: ImagePreviewChrome.layer(
-                visible: _showControls,
+                visible: _chrome.visible,
                 child: ImagePreviewTopBar(
                   fileName: widget.fileName,
                   detail: widget.detail,
@@ -206,10 +190,10 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
               Align(
                 alignment: Alignment.bottomCenter,
                 child: ImagePreviewChrome.layer(
-                  visible: _showControls,
+                  visible: _chrome.visible,
                   child: VideoPreviewFooter(
                     controller: c,
-                    onInteract: _revealControls,
+                    onInteract: _chrome.reveal,
                     fileName: widget.fileName,
                     localPath: widget.source.path,
                     remoteUrl: widget.source.url,
@@ -233,7 +217,7 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
     return ValueListenableBuilder<VideoPlayerValue>(
       valueListenable: c,
       builder: (context, value, _) {
-        if (value.isPlaying && !_showControls) return const SizedBox.shrink();
+        if (value.isPlaying && !_chrome.visible) return const SizedBox.shrink();
         return Center(
           child: GestureDetector(
             onTap: _togglePlay,

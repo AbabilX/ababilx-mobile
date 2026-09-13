@@ -9,6 +9,7 @@ abstract final class ImagePreviewChrome {
   static const bar = Color(0xDE1B1C1F);
   static const capsule = Color(0xF21B1C1F);
   static const fadeDuration = Duration(milliseconds: 180);
+  static const idle = Duration(seconds: 3);
   static const railSize = 46.0;
   static const railThumb = 44.0;
   static const railGap = 8.0;

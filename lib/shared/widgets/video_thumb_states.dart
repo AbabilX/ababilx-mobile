@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'preview_icon.dart';
+
 /// The two non-playing states of an inline video: a controller that failed to
 /// open, and one still opening. Both hold the same shape the player will take
 /// so a ready video swaps in without shoving the timeline around.
@@ -13,7 +15,7 @@ class VideoThumbPlaceholder extends StatelessWidget {
 
   const VideoThumbPlaceholder.failed({super.key, required this.borderRadius})
     : height = 160,
-      child = const Icon(Icons.videocam_off_outlined, size: 36);
+      child = const PreviewIcon(PreviewIcons.videoOff, size: 36);
 
   const VideoThumbPlaceholder.loading({
     super.key,
@@ -68,8 +70,8 @@ class VideoPlayBadge extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(
-        playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+      child: PreviewIcon(
+        playing ? PreviewIcons.pause : PreviewIcons.play,
         color: Colors.black87,
         size: size * 0.62,
       ),

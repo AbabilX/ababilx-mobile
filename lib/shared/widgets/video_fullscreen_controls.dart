@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+import 'preview_icon.dart';
 import 'video_thumb_states.dart';
 
 /// Elapsed · slider · remaining. Listens on its own so the video surface is
@@ -57,10 +58,8 @@ class _VideoFullscreenControlsState extends State<VideoFullscreenControls> {
                   widget.onInteract();
                   widget.onTogglePlay();
                 },
-                icon: Icon(
-                  value.isPlaying
-                      ? Icons.pause_rounded
-                      : Icons.play_arrow_rounded,
+                icon: PreviewIcon(
+                  value.isPlaying ? PreviewIcons.pause : PreviewIcons.play,
                   color: Colors.white,
                   size: 28,
                 ),

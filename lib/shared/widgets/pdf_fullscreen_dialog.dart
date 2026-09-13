@@ -6,6 +6,7 @@ import 'file_preview_open.dart';
 import 'image_preview_chrome.dart';
 import 'image_preview_top_bar.dart';
 import 'pdf_document_source.dart';
+import 'preview_chrome_controller.dart';
 
 class PdfFullscreenDialog extends StatefulWidget {
   const PdfFullscreenDialog({
@@ -28,6 +29,7 @@ class PdfFullscreenDialog extends StatefulWidget {
 class _PdfFullscreenDialogState extends State<PdfFullscreenDialog> {
   PdfControllerPinch? _controller;
   String? _error;
+  late final PreviewChrome _chrome;
 
   String? get _localPath => widget.source.isLocal ? widget.source.value : null;
   String? get _remoteUrl => widget.source.isLocal ? null : widget.source.value;
@@ -35,6 +37,11 @@ class _PdfFullscreenDialogState extends State<PdfFullscreenDialog> {
   @override
   void initState() {
     super.initState();
+    _chrome = PreviewChrome(
+      onChanged: () {
+        if (mounted) setState(() {});
+      },
+    )..reveal();
     _open();
   }
 
@@ -53,6 +60,7 @@ class _PdfFullscreenDialogState extends State<PdfFullscreenDialog> {
 
   @override
   void dispose() {
+    _chrome.dispose();
     _controller?.dispose();
     super.dispose();
   }
@@ -66,28 +74,43 @@ class _PdfFullscreenDialogState extends State<PdfFullscreenDialog> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            Column(
-              children: [
-                ImagePreviewTopBar(
+            NotificationListener<ScrollNotification>(
+              onNotification: _chrome.onScroll,
+              child: GestureDetector(
+                onTap: _chrome.toggle,
+                behavior: HitTestBehavior.opaque,
+                child: _body(),
+              ),
+            ),
+            Align(
+              alignment: Alignment.topCenter,
+              child: ImagePreviewChrome.layer(
+                visible: _chrome.visible,
+                child: ImagePreviewTopBar(
                   fileName: widget.fileName,
                   detail: widget.detail,
                 ),
-                Expanded(child: _body()),
-              ],
+              ),
             ),
             Align(
               alignment: Alignment.bottomCenter,
-              child: FilePreviewFooter(
-                fileName: widget.fileName,
-                localPath: _localPath,
-                remoteUrl: _remoteUrl,
-                contentType: 'application/pdf',
-                caption: widget.caption,
-                onOpen: () => openPreviewExternally(
-                  context,
+              child: ImagePreviewChrome.layer(
+                visible: _chrome.visible,
+                child: FilePreviewFooter(
+                  fileName: widget.fileName,
                   localPath: _localPath,
                   remoteUrl: _remoteUrl,
                   contentType: 'application/pdf',
+                  caption: widget.caption,
+                  onOpen: () {
+                    _chrome.reveal();
+                    openPreviewExternally(
+                      context,
+                      localPath: _localPath,
+                      remoteUrl: _remoteUrl,
+                      contentType: 'application/pdf',
+                    );
+                  },
                 ),
               ),
             ),

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'preview_icon.dart';
 import 'preview_image.dart';
 
 class ZoomablePreviewImage extends StatefulWidget {
@@ -11,6 +12,7 @@ class ZoomablePreviewImage extends StatefulWidget {
     required this.allowRemoteFallback,
     this.quarterTurns = 0,
     this.onTap,
+    this.onPan,
   });
 
   final PreviewImage image;
@@ -21,6 +23,9 @@ class ZoomablePreviewImage extends StatefulWidget {
 
   /// Single tap — Signal toggles the chrome. Double-tap still zooms.
   final VoidCallback? onTap;
+
+  /// Pinch or drag — chrome hides so the photo owns the screen.
+  final VoidCallback? onPan;
 
   @override
   State<ZoomablePreviewImage> createState() => _ZoomablePreviewImageState();
@@ -73,6 +78,11 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
         minScale: 1,
         maxScale: 5,
         clipBehavior: Clip.none,
+        onInteractionUpdate: (details) {
+          if (details.scale != 1 || details.focalPointDelta.distance > 1.5) {
+            widget.onPan?.call();
+          }
+        },
         child: AnimatedRotation(
           turns: widget.quarterTurns / 4,
           duration: const Duration(milliseconds: 220),
@@ -102,6 +112,9 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
     );
   }
 
-  Widget _error() =>
-      const Icon(Icons.broken_image_outlined, color: Colors.white54, size: 48);
+  Widget _error() => const PreviewIcon(
+    PreviewIcons.brokenImage,
+    color: Colors.white54,
+    size: 48,
+  );
 }

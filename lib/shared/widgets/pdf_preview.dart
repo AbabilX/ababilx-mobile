@@ -4,6 +4,7 @@ import 'image_preview_chrome.dart';
 import 'pdf_document_source.dart';
 import 'pdf_fullscreen_dialog.dart';
 import 'pdf_preview_thumb.dart';
+import 'preview_icon.dart';
 
 export 'pdf_document_source.dart';
 
@@ -83,7 +84,7 @@ class PdfPreviewCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.picture_as_pdf_rounded, color: colors.error),
+          PreviewIcon(PreviewIcons.pdf, color: colors.error),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

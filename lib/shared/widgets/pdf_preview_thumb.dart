@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 
 import 'pdf_document_source.dart';
+import 'preview_icon.dart';
 
 class PdfPreviewThumb extends StatefulWidget {
   const PdfPreviewThumb({super.key, required this.source, this.height});
@@ -90,8 +91,8 @@ class _PdfPreviewThumbState extends State<PdfPreviewThumb> {
               width: double.infinity,
               height: double.infinity,
             )
-          : Icon(
-              Icons.picture_as_pdf_outlined,
+          : PreviewIcon(
+              PreviewIcons.pdf,
               size: 40,
               color: colors.onSurfaceVariant,
             ),

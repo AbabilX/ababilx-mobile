@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/file_preview_kind.dart';
+import '../../../shared/widgets/preview_icon.dart';
 import '../../attachments/data/models/attachment_handle.dart';
 import '../../attachments/widgets/attachment_download_badge.dart';
 import '../../attachments/widgets/attachment_gate.dart';
@@ -55,7 +56,7 @@ class AttachmentFileRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
-            Icon(kind.icon, size: 22, color: colors.onSurfaceVariant),
+            PreviewIcon(kind.icon, size: 22, color: colors.onSurfaceVariant),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -67,8 +68,8 @@ class AttachmentFileRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             if (isReady)
-              Icon(
-                Icons.chevron_right_rounded,
+              PreviewIcon(
+                PreviewIcons.chevron,
                 size: 22,
                 color: colors.onSurfaceVariant,
               )

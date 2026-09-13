@@ -4,6 +4,7 @@ import 'package:ababilx/features/messages/chat-timeline/media-preview/chat_media
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/shared/widgets/image_preview_dock.dart';
 import 'package:ababilx/shared/widgets/image_preview_top_bar.dart';
+import 'package:ababilx/shared/widgets/preview_icon.dart';
 import 'package:ababilx/shared/widgets/video_thumb_states.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -90,7 +91,7 @@ void main() {
     expect(find.text('You · 10:00 AM'), findsOneWidget);
     expect(find.text('Photo'), findsNothing);
     expect(find.byIcon(Icons.more_vert_rounded), findsNothing);
-    expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
+    expect(_findPreviewIcon(PreviewIcons.back), findsOneWidget);
   });
 
   testWidgets('capsule dock shows Save, Rotate and Share', (tester) async {
@@ -134,8 +135,8 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(home: Scaffold(body: VideoPlayBadge(playing: true))),
     );
-    expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
+    expect(_findPreviewIcon(PreviewIcons.pause), findsOneWidget);
+    expect(_findPreviewIcon(PreviewIcons.play), findsNothing);
   });
 
   testWidgets('video capsule dock shows Save, Rotate, Mute and Share', (
@@ -183,4 +184,10 @@ void main() {
       findsOneWidget,
     );
   });
+}
+
+Finder _findPreviewIcon(PreviewGlyph icon) {
+  return find.byWidgetPredicate(
+    (w) => w is PreviewIcon && identical(w.icon, icon),
+  );
 }

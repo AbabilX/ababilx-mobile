@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'preview_icon.dart';
+
 /// Compact square thumb for pending-attachment strips (composer previews).
 /// No controller, no bytes — just a placeholder while a video uploads.
 class VideoPendingThumb extends StatelessWidget {
@@ -20,7 +22,7 @@ class VideoPendingThumb extends StatelessWidget {
         width: size,
         height: size,
         child: const Center(
-          child: Icon(Icons.play_circle_outline_rounded, size: 32),
+          child: PreviewIcon(PreviewIcons.playCircle, size: 32),
         ),
       ),
     );

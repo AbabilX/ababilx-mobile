@@ -11,6 +11,7 @@ import 'package:ababilx/features/attachments/providers/attachment_providers.dart
 import 'package:ababilx/features/messages/chat-timeline/attachment_video_tile.dart';
 import 'package:ababilx/features/messages/chat-timeline/attachment_file_row.dart';
 import 'package:ababilx/features/messages/data/models/chat_attachment.dart';
+import 'package:ababilx/shared/widgets/preview_icon.dart';
 
 const attachment = ChatMessageAttachment(
   id: 'video',
@@ -86,7 +87,10 @@ void main() {
       expect(tester.getRect(tile), before);
       expect(
         size == Size.zero
-            ? find.byIcon(Icons.videocam_off_outlined)
+            ? find.byWidgetPredicate(
+                (w) =>
+                    w is PreviewIcon && identical(w.icon, PreviewIcons.videoOff),
+              )
             : find.byType(AspectRatio),
         findsOneWidget,
       );
@@ -125,7 +129,12 @@ void main() {
     stream.add(ready);
     await tester.pump();
     expect(tester.getRect(row), before);
-    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is PreviewIcon && identical(w.icon, PreviewIcons.chevron),
+      ),
+      findsOneWidget,
+    );
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
     await stream.close();

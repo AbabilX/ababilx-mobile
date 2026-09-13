@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'image_preview_chrome.dart';
+import 'preview_icon.dart';
 
 /// Back + the file name. Sender / time sit on the second line when we have
 /// them — never an asset type like "Photo".
@@ -25,7 +26,7 @@ class ImagePreviewTopBar extends StatelessWidget {
               IconButton(
                 tooltip: 'Back',
                 onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                icon: const PreviewIcon(PreviewIcons.back, color: Colors.white),
               ),
               Expanded(
                 child: Column(

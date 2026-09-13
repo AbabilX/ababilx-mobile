@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../media/save_to_phone.dart';
 import '../media/save_to_phone_action.dart';
+import 'preview_icon.dart';
 
 /// Signal's media-viewer actions, in Signal's two places.
 ///
@@ -43,13 +44,7 @@ class MediaPreviewOverflow extends StatelessWidget {
         : Theme.of(context).colorScheme.onSurface;
     return PopupMenuButton<MediaPreviewAction>(
       tooltip: 'More options',
-      icon: Icon(
-        Icons.more_vert_rounded,
-        color: tint,
-        shadows: onDark
-            ? const [Shadow(blurRadius: 8, color: Colors.black87)]
-            : null,
-      ),
+      icon: PreviewIcon(PreviewIcons.more, color: tint),
       onSelected: (action) => runMediaPreviewAction(
         context,
         action,
@@ -64,7 +59,7 @@ class MediaPreviewOverflow extends StatelessWidget {
           child: ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.save_alt_rounded),
+            leading: PreviewIcon(PreviewIcons.save),
             title: Text('Save'),
           ),
         ),
@@ -73,7 +68,7 @@ class MediaPreviewOverflow extends StatelessWidget {
           child: ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.ios_share_rounded),
+            leading: PreviewIcon(PreviewIcons.share),
             title: Text('Share'),
           ),
         ),

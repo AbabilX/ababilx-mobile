@@ -534,6 +534,9 @@ tap again chrome hides; pinch-zoom and swipe stay
 - **The file name is the title.** Asset types (`Photo`) and the 3-dot overflow
   are gone — Save, Rotate and Share sit on a floating capsule. Rotate is
   view-only (90°); Save/Share still write the original file.
+- **Icons are Hugeicons free stroke-rounded** (`PreviewIcon` /
+  `PreviewIcons` in `shared/widgets/preview_icon.dart`). Shared preview
+  widgets must not import `ChatIcon` from messages.
   `ChatMediaPreviewMeta.of` only fills the second line (`You · 10:00 AM`).
   Shared-media cells have no sender, so that line is the album index or empty.
 - **The rail is the album, not the conversation.** Signal can load every photo
