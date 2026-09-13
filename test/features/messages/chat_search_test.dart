@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:ababilx/core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import 'package:ababilx/features/messages/chat-list/chat_search.dart';
-import 'package:ababilx/features/messages/data/models/chat_message.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/features/messages/providers/chat_provider.dart';
 import 'package:flutter/material.dart';

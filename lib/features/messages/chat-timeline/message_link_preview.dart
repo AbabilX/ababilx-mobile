@@ -42,8 +42,9 @@ String? messageLinkPreviewUrl({
 bool isBigImagePreview(LinkPreviewData preview) {
   final width = preview.imageWidth;
   final height = preview.imageHeight;
-  if (preview.imagePath == null || width == null || height == null)
+  if (preview.imagePath == null || width == null || height == null) {
     return false;
+  }
   return width >= SignalBubbleMetrics.mediaMinWidthSolo && width > height;
 }
 

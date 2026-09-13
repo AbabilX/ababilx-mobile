@@ -115,6 +115,7 @@ void main() {
         final afterSize = tester.getSize(
           find.byType(AttachmentImageGrid).first,
         );
+        // ignore: avoid_print
         print(
           'AUDIT reserveSpace=$reserveSpace image size $beforeSize -> $afterSize; marker y $before -> $after; scroll $beforeOffset -> ${scroll.offset}',
         );

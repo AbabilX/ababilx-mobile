@@ -72,8 +72,9 @@ class _CallVideoViewState extends State<CallVideoView> {
   @override
   Widget build(BuildContext context) {
     if (!_ready) return const ColoredBox(color: Colors.black);
-    if (!widget.cover)
+    if (!widget.cover) {
       return _view(RTCVideoViewObjectFit.RTCVideoViewObjectFitContain);
+    }
     // The renderer reports the frame size, and it changes mid-call — the peer
     // flips their camera, or rotates the phone — so the box is recomputed from
     // it rather than measured once.

@@ -52,7 +52,7 @@ void main() {
     });
 
     test('a nickname is sanitised like any other name', () {
-      const nicknames = ContactNicknames({'peer': 'Boss‮man'});
+      const nicknames = ContactNicknames({'peer': 'Boss\u202Eman'});
       expect(nicknames.resolve(userId: 'peer', name: 'x'), 'Bossman');
     });
 
