@@ -12,13 +12,22 @@ import '../../../core/localization/app_translations.dart';
 /// tab; a failed one has nothing to offer but the pull-to-refresh already
 /// under it, and a call button there would just fail again.
 class CallsEmpty extends StatelessWidget {
-  const CallsEmpty({super.key, this.error, this.onStart, this.lang = 'en'});
+  const CallsEmpty({
+    super.key,
+    this.error,
+    this.onStart,
+    this.missedOnly = false,
+    this.lang = 'en',
+  });
 
   final String? error;
 
   /// Opens the place a call is started from — the conversation list. Null
   /// hides the button, so the widget stays usable without a router.
   final VoidCallback? onStart;
+
+  /// The history exists, but the active Missed filter has no matches.
+  final bool missedOnly;
 
   final String lang;
 
@@ -36,18 +45,34 @@ class CallsEmpty extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              failed ? Icons.cloud_off_rounded : Icons.call_rounded,
+              failed
+                  ? Icons.cloud_off_rounded
+                  : missedOnly
+                  ? Icons.phone_in_talk_rounded
+                  : Icons.call_rounded,
               size: 44,
               color: scheme.onSurfaceVariant,
             ),
             const SizedBox(height: 14),
             Text(
-              t(failed ? 'calls_error_title' : 'calls_empty_title'),
+              t(
+                failed
+                    ? 'calls_error_title'
+                    : missedOnly
+                    ? 'calls_no_missed_title'
+                    : 'calls_empty_title',
+              ),
               style: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             Text(
-              t(failed ? 'calls_error_body' : 'calls_empty_body'),
+              t(
+                failed
+                    ? 'calls_error_body'
+                    : missedOnly
+                    ? 'calls_no_missed_body'
+                    : 'calls_empty_body',
+              ),
               textAlign: TextAlign.center,
               style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
@@ -65,7 +90,7 @@ class CallsEmpty extends StatelessWidget {
                 style: text.bodySmall?.copyWith(color: scheme.error),
               ),
             ],
-            if (!failed && onStart != null) ...[
+            if (!failed && !missedOnly && onStart != null) ...[
               const SizedBox(height: 20),
               FilledButton.tonalIcon(
                 onPressed: onStart,

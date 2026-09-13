@@ -61,6 +61,20 @@ String callTimestamp(DateTime at, {String lang = 'en'}) {
   return '${at.day}/${at.month}/${at.year}';
 }
 
+/// Date-only heading used to break the call log into scannable sections.
+String callDateHeading(DateTime at, {String lang = 'en'}) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final day = DateTime(at.year, at.month, at.day);
+  final diff = today.difference(day).inDays;
+  if (diff == 0) return AppTranslations.of(lang, 'calls_today');
+  if (diff == 1) return AppTranslations.of(lang, 'calls_yesterday_heading');
+  if (diff > 1 && diff < 7) {
+    return AppTranslations.of(lang, _weekdayKeys[at.weekday - 1]);
+  }
+  return '${at.day}/${at.month}/${at.year}';
+}
+
 const _weekdayKeys = [
   'calls_mon',
   'calls_tue',

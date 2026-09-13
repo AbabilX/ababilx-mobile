@@ -113,5 +113,14 @@ void main() {
       expect(callTimestamp(yesterday), startsWith('Yesterday '));
       expect(callTimestamp(DateTime(2020, 5, 6, 8, 9)), '6/5/2020');
     });
+
+    test('date headings separate today and yesterday', () {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day, 10);
+      final yesterday = today.subtract(const Duration(days: 1));
+      expect(callDateHeading(today), 'Today');
+      expect(callDateHeading(yesterday), 'Yesterday');
+      expect(callDateHeading(today, lang: 'bn'), 'আজ');
+    });
   });
 }

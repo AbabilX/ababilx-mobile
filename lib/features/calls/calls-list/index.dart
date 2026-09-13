@@ -8,8 +8,25 @@ import '../../messages/providers/chat_provider.dart';
 import '../providers/call_log_provider.dart';
 import '../providers/voice_call_provider.dart';
 import 'call_log_cluster.dart';
+import 'call_log_format.dart';
 import 'call_log_row.dart';
 import 'calls_empty.dart';
+
+enum _CallFilter { all, missed }
+
+sealed class _CallListItem {
+  const _CallListItem();
+}
+
+class _CallSectionItem extends _CallListItem {
+  const _CallSectionItem(this.title);
+  final String title;
+}
+
+class _CallRowItem extends _CallListItem {
+  const _CallRowItem(this.cluster);
+  final CallLogCluster cluster;
+}
 
 /// Call history tab. Bootstraps itself the way the chat screens do, so a cold
 /// open straight onto /calls works with nothing else having run first.
@@ -22,6 +39,7 @@ class CallsList extends ConsumerStatefulWidget {
 
 class _CallsListState extends ConsumerState<CallsList> {
   final _scroll = ScrollController();
+  _CallFilter _filter = _CallFilter.all;
 
   @override
   void initState() {
@@ -59,6 +77,20 @@ class _CallsListState extends ConsumerState<CallsList> {
     context.push('/messages/$conversationId');
   }
 
+  List<_CallListItem> _items(List<CallLogCluster> rows, String lang) {
+    final items = <_CallListItem>[];
+    String? lastSection;
+    for (final cluster in rows) {
+      final section = callDateHeading(cluster.lead.startedAt, lang: lang);
+      if (section != lastSection) {
+        items.add(_CallSectionItem(section));
+        lastSection = section;
+      }
+      items.add(_CallRowItem(cluster));
+    }
+    return items;
+  }
+
   @override
   Widget build(BuildContext context) {
     final log = ref.watch(callLogProvider);
@@ -68,12 +100,53 @@ class _CallsListState extends ConsumerState<CallsList> {
     // across a page boundary merges by itself once the next page lands. This
     // rebuilds only when the log changes — ListView.builder scrolling does not
     // rebuild this widget.
-    final rows = clusterCallLog(log.calls);
+    final allRows = clusterCallLog(log.calls);
+    final rows = _filter == _CallFilter.missed
+        ? allRows.where((row) => row.lead.missed).toList()
+        : allRows;
+    final items = _items(rows, lang);
+    final missedCount = allRows.where((row) => row.lead.missed).length;
+    String t(String key) => AppTranslations.of(lang, key);
 
     return Scaffold(
-      appBar: AppBar(title: Text(AppTranslations.of(lang, 'calls_title'))),
+      appBar: AppBar(
+        title: Text(t('calls_title')),
+        actions: [
+          _CallFilterAction(
+            icon: Icons.call_rounded,
+            label: t('calls_all'),
+            selected: _filter == _CallFilter.all,
+            onPressed: () => setState(() => _filter = _CallFilter.all),
+          ),
+          Badge(
+            isLabelVisible: missedCount > 0,
+            label: Text('$missedCount'),
+            child: _CallFilterAction(
+              icon: Icons.call_missed_rounded,
+              label: t('calls_missed_filter'),
+              selected: _filter == _CallFilter.missed,
+              onPressed: () => setState(() => _filter = _CallFilter.missed),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: log.loading && log.calls.isEmpty
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(strokeWidth: 2.5),
+                  const SizedBox(height: 16),
+                  Text(
+                    t('calls_loading'),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            )
           : log.calls.isEmpty
           // Both states pull to refresh — the failure copy says so, and it
           // was the one screen where it was not true: the empty branch sat
@@ -101,40 +174,120 @@ class _CallsListState extends ConsumerState<CallsList> {
                 ),
               ),
             )
-          : RefreshIndicator(
-              onRefresh: () => ref.read(callLogProvider.notifier).load(),
-              child: ListView.builder(
-                controller: _scroll,
-                padding: EdgeInsets.only(
-                  bottom: ShellPillMetrics.contentBottom(context),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () => ref.read(callLogProvider.notifier).load(),
+                    child: rows.isEmpty
+                        ? LayoutBuilder(
+                            builder: (context, box) => ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  height: box.maxHeight,
+                                  child: CallsEmpty(
+                                    missedOnly: true,
+                                    lang: lang,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            controller: _scroll,
+                            padding: EdgeInsets.only(
+                              bottom: ShellPillMetrics.contentBottom(context),
+                            ),
+                            itemCount: items.length + (log.loadingMore ? 1 : 0),
+                            itemBuilder: (context, i) {
+                              if (i >= items.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(
+                                    child: SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                              final item = items[i];
+                              if (item is _CallSectionItem) {
+                                return _CallSectionHeader(title: item.title);
+                              }
+                              final cluster = (item as _CallRowItem).cluster;
+                              final entry = cluster.lead;
+                              return Column(
+                                children: [
+                                  CallLogRow(
+                                    entry: entry,
+                                    count: cluster.count,
+                                    lang: lang,
+                                    onTap: () => context.push(
+                                      '/messages/${entry.conversationId}',
+                                    ),
+                                    onCall: () => _call(
+                                      entry.conversationId,
+                                      entry.isGroup,
+                                    ),
+                                  ),
+                                  const Divider(height: 1, indent: 84),
+                                ],
+                              );
+                            },
+                          ),
+                  ),
                 ),
-                itemCount: rows.length + (log.loadingMore ? 1 : 0),
-                itemBuilder: (context, i) {
-                  if (i >= rows.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(
-                        child: SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                    );
-                  }
-                  final cluster = rows[i];
-                  final entry = cluster.lead;
-                  return CallLogRow(
-                    entry: entry,
-                    count: cluster.count,
-                    lang: lang,
-                    onTap: () =>
-                        context.push('/messages/${entry.conversationId}'),
-                    onCall: () => _call(entry.conversationId, entry.isGroup),
-                  );
-                },
-              ),
+              ],
             ),
     );
   }
+}
+
+class _CallFilterAction extends StatelessWidget {
+  const _CallFilterAction({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (selected) {
+      return IconButton.filledTonal(
+        onPressed: onPressed,
+        tooltip: label,
+        icon: Icon(icon),
+      );
+    }
+    return IconButton(onPressed: onPressed, tooltip: label, icon: Icon(icon));
+  }
+}
+
+class _CallSectionHeader extends StatelessWidget {
+  const _CallSectionHeader({required this.title});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+    child: Text(
+      title,
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
 }

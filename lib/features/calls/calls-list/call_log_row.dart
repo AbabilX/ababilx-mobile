@@ -42,55 +42,79 @@ class CallLogRow extends StatelessWidget {
           ).replaceAll('{n}', '$count').replaceAll('{what}', state)
         : state;
 
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: entry.isGroup
-          ? CircleAvatar(
-              backgroundColor: scheme.surfaceContainerHighest,
-              child: Icon(Icons.groups_rounded, color: scheme.onSurfaceVariant),
-            )
-          : AppAvatar(size: 44, url: entry.avatarUrl, name: entry.title),
-      title: Text(
-        entry.title.isEmpty
-            ? AppTranslations.of(lang, 'calls_unknown')
-            : entry.title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: text.titleMedium?.copyWith(
-          fontWeight: entry.missed ? FontWeight.w700 : FontWeight.w600,
-          color: entry.missed ? scheme.error : scheme.onSurface,
+    final title = entry.title.isEmpty
+        ? AppTranslations.of(lang, 'calls_unknown')
+        : entry.title;
+    final actionLabel = AppTranslations.of(
+      lang,
+      entry.isGroup ? 'calls_open' : 'calls_back',
+    );
+
+    return Semantics(
+      button: true,
+      label: '$title, $subtitle',
+      child: ListTile(
+        onTap: onTap,
+        minTileHeight: 72,
+        contentPadding: const EdgeInsets.fromLTRB(20, 6, 12, 6),
+        leading: entry.isGroup
+            ? CircleAvatar(
+                radius: 24,
+                backgroundColor: scheme.secondaryContainer,
+                child: Icon(
+                  Icons.groups_rounded,
+                  color: scheme.onSecondaryContainer,
+                ),
+              )
+            : AppAvatar(size: 48, url: entry.avatarUrl, name: title),
+        title: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: text.titleMedium?.copyWith(
+            fontWeight: entry.missed ? FontWeight.w700 : FontWeight.w600,
+            color: entry.missed ? scheme.error : scheme.onSurface,
+          ),
         ),
-      ),
-      subtitle: Row(
-        children: [
-          Icon(callDirectionIcon(entry), size: 15, color: accent),
-          const SizedBox(width: 5),
-          Expanded(
-            child: Text(
-              subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: text.bodySmall?.copyWith(color: accent),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 3),
+          child: Row(
+            children: [
+              Icon(callDirectionIcon(entry), size: 15, color: accent),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.bodyMedium?.copyWith(color: accent),
+                ),
+              ),
+            ],
+          ),
+        ),
+        trailing: Semantics(
+          button: true,
+          label: actionLabel,
+          excludeSemantics: true,
+          child: IconButton.filledTonal(
+            onPressed: onCall,
+            icon: Icon(
+              entry.isGroup
+                  ? Icons.arrow_forward_rounded
+                  : entry.isScreenShare
+                  ? Icons.screen_share_outlined
+                  : entry.isVideo
+                  ? Icons.videocam_rounded
+                  : Icons.call_rounded,
+            ),
+            tooltip: actionLabel,
+            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+            style: IconButton.styleFrom(
+              foregroundColor: scheme.primary,
+              backgroundColor: scheme.primaryContainer,
             ),
           ),
-        ],
-      ),
-      trailing: IconButton(
-        onPressed: onCall,
-        icon: Icon(
-          entry.isGroup
-              ? Icons.video_call_rounded
-              : entry.isScreenShare
-              ? Icons.screen_share_outlined
-              : entry.isVideo
-              ? Icons.videocam_rounded
-              : Icons.call_rounded,
-          color: scheme.primary,
-        ),
-        tooltip: AppTranslations.of(
-          lang,
-          entry.isGroup ? 'calls_open' : 'calls_back',
         ),
       ),
     );
