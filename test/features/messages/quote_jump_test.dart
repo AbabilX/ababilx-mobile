@@ -168,8 +168,11 @@ void main() {
       scroll.jumpTo(200);
       await tester.pump();
 
-      expect(await jump.jumpTo('missing'), isFalse);
+      // Started, not awaited: the walk waits for frames, and only the test
+      // pumps them.
+      final walk = jump.jumpTo('missing');
       await tester.pumpAndSettle();
+      expect(await walk, isFalse);
       expect(scroll.position.pixels, 200);
       jump.dispose();
     });

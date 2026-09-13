@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/chat_models.dart';
 import '../tiptap_plain_text.dart';
@@ -8,8 +9,9 @@ import 'message_bubble.dart';
 import 'message_long_body.dart';
 import 'pending_message_attachments.dart';
 import 'signal_bubble_metrics.dart';
+import 'user_profile_sheet.dart';
 
-class MessageBody extends StatelessWidget {
+class MessageBody extends ConsumerWidget {
   const MessageBody({super.key, required this.message, required this.colors});
 
   final ChatMessage message;
@@ -19,7 +21,7 @@ class MessageBody extends StatelessWidget {
   final SignalBubbleColors colors;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (message.isDeleted) {
       return Text(
         'This message was deleted',
@@ -43,7 +45,7 @@ class MessageBody extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: colors.muted),
             ),
           ),
-        if (plain.isNotEmpty) _text(collapsed: long),
+        if (plain.isNotEmpty) _text(context, ref, collapsed: long),
         if (long)
           ReadMoreRow(
             body: message.body,
@@ -70,9 +72,17 @@ class MessageBody extends StatelessWidget {
   /// The body itself. A collapsed one is clipped and faded out, and drops the
   /// "(edited)" marker with it — the marker trails the last block, which is
   /// exactly the part being cut off, and the full-screen view carries it.
-  Widget _text({required bool collapsed}) {
+  Widget _text(BuildContext context, WidgetRef ref, {required bool collapsed}) {
     final viewer = TiptapViewer(
       content: message.body,
+      // A mention is the one part of a body that names a person, so it opens
+      // them — the same sheet the avatar and the sender line already open.
+      onMentionTap: (userId, label) => showUserProfileSheet(
+        context: context,
+        ref: ref,
+        userId: userId,
+        userName: label,
+      ),
       maxHeight: collapsed ? MessageLongBody.collapsedHeight : null,
       style: TextStyle(
         color: colors.foreground,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import 'add_members_sheet.dart';
 import '../data/models/chat_models.dart';
+import 'avatar_preview.dart';
 import 'details_member_sheet.dart';
 import 'group_permissions.dart';
 
@@ -64,13 +65,7 @@ class DetailsMembersSection extends ConsumerWidget {
         ...members.map(
           (member) => ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-            leading: ClipOval(
-              child: AppAvatar(
-                size: 44,
-                url: member.avatarUrl,
-                name: member.name,
-              ),
-            ),
+            leading: _memberAvatar(context, member),
             title: Text(
               member.name,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -94,6 +89,30 @@ class DetailsMembersSection extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  /// The face opens the picture; the rest of the row still opens the
+  /// member sheet. A letter fallback has no photo, so it stays on the row.
+  Widget _memberAvatar(BuildContext context, ChatMember member) {
+    final photo = ClipOval(
+      child: AppAvatar(size: 44, url: member.avatarUrl, name: member.name),
+    );
+    if (previewPhotoUrl(member.avatarUrl) == null) return photo;
+    return Semantics(
+      button: true,
+      label: 'View photo',
+      excludeSemantics: true,
+      child: GestureDetector(
+        key: ValueKey('member-avatar-preview-${member.userId}'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => openAvatarPreview(
+          context,
+          url: member.avatarUrl,
+          name: member.name,
+        ),
+        child: photo,
+      ),
     );
   }
 

@@ -246,6 +246,69 @@ The outbox needed no schema change: history rows carry the whole message JSON,
 and `PendingOutboxMessages` is only a fallback for sends written before pending
 messages lived in the history store — rows that predate quotes entirely.
 
+## A quote is as wide as the message under it, and it jumps (2026-09-14)
+
+Reported off a screenshot: a two-word reply drew a 75%-wide bubble because the
+quote above it was one long line, and in the next bubble the quote card was
+visibly NARROWER than the text under it. Tapping a quote also did nothing.
+
+```
+quote    asks for at most 224dp, then wraps — it never decides the width
+content  the body and footer decide it
+both     laid out again at the result, so the two edges line up
+```
+
+- **`QuotedBubbleLayout` is a render object, and it has to be.** A Column
+  cannot do "same width as my sibling": `CrossAxisAlignment.stretch` stretches
+  to the incoming constraint, which here is the bubble's cap, so every quoted
+  message would be full width. `IntrinsicWidth` would answer it, but it
+  measures through the whole body — and an album grid
+  (`attachment_image_grid.dart`) and a link preview card are LayoutBuilders,
+  which throw when asked for intrinsics. So the measuring happens in
+  `performLayout`, where a second `layout()` call is legal and cheap.
+- **The 224dp ask is the fix for the width complaint.** Left at its natural
+  width a long quote pulled the bubble out to the cap; capped, it wraps to its
+  two lines and the bubble stays the size of the reply. A short quote ("Photo")
+  asks for less and changes nothing.
+- **Only a quoted message pays for the extra layout** — an unquoted bubble is
+  the same Column it always was.
+
+Jumping is `timeline_jump.dart` + `timeline_jump_target.dart`, wired by
+`ChatTimelineJump` and `MessageList`.
+
+- **There is no scroll-to-index here.** `ListView.builder` holds only what is
+  on screen and no row's height is known in advance, so the walk uses the one
+  fact that is always true — a quoted message is OLDER than the reply, which in
+  a `reverse: true` list means a LARGER offset. It jumps 80% of a viewport at a
+  time, asks `loadMoreFeed` for another page whenever it reaches the end, and
+  stops when the row registers its key. **Jumps, not animates**: animating each
+  screen turns a month of history into a ten-second ride; only the last hop
+  (`Scrollable.ensureVisible`, alignment 0.35) is animated.
+- **A walk that finds nothing puts the list back where it started** and says
+  "Original message not found". A tap that silently moves somebody out of their
+  place in a conversation is worse than one that does nothing.
+- **The wash is a colour, not a rebuild.** Every built row listens to one
+  `ValueNotifier`; the row itself is passed through `ValueListenableBuilder`'s
+  `child`. It reaches both screen edges for the same reason the selection shade
+  does.
+- **`endOfFrame` is what paces the walk**, and it schedules its own frame when
+  the scheduler is idle — so this works in the app. In a widget test nothing
+  pumps unless the test does: start the future, `pumpAndSettle`, then await it.
+- A quote with no controller above it (the long-press overlay's floating copy)
+  is not tappable at all, rather than tappable and inert.
+
+## A mention opens the person (2026-09-14)
+
+`TiptapViewer.onMentionTap` → `TiptapInline`, which wraps the chip — and only a
+`mention` chip carrying an id, never a `wallCategory` — in a `GestureDetector`.
+Chat passes the same `showUserProfileSheet` the avatar and the sender line
+open, from `MessageBody` and `LongMessageScreen`.
+
+The callback is optional on purpose: the wall and the board draw the same chip
+and have no profile sheet, and a chip that swallows a tap without doing
+anything is worse than a chip that lets the row underneath have it. Pinned by
+`test/features/messages/mention_tap_test.dart`.
+
 ## Swipe-to-reply mechanics
 
 `MessageSwipeReply` builds its `AnimationController`s in `initState`, not as

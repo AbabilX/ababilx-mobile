@@ -18,6 +18,7 @@ import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../note_to_self_avatar.dart';
 import '../providers/chat_provider.dart';
+import 'avatar_preview.dart';
 import 'details_action_button.dart';
 import 'group_banner_header.dart';
 
@@ -64,13 +65,15 @@ class DetailsHeader extends ConsumerWidget {
             title: title,
             avatarUrl: avatar,
             extendBehindTop: immersiveBanner,
+            onBannerTap: () =>
+                openAvatarPreview(context, url: banner, name: title),
+            onAvatarTap: () =>
+                openAvatarPreview(context, url: avatar, name: title),
           )
         else if (conversation.isSelf)
           const NoteToSelfAvatar(size: 96, iconSize: 40)
         else
-          ClipOval(
-            child: AppAvatar(size: 96, url: avatar, name: title),
-          ),
+          _tappableAvatar(context, url: avatar, name: title),
         const SizedBox(height: 14),
         InkWell(
           borderRadius: BorderRadius.circular(10),
@@ -208,4 +211,27 @@ class DetailsHeader extends ConsumerWidget {
       child: UserStatusBadge(status: status),
     );
   }
+}
+
+/// The header photo. Tapping a real picture opens the fullscreen viewer;
+/// a letter fallback has nothing to show, so it stays still.
+Widget _tappableAvatar(
+  BuildContext context, {
+  required String? url,
+  required String name,
+}) {
+  final photo = ClipOval(
+    child: AppAvatar(size: 96, url: url, name: name),
+  );
+  if (previewPhotoUrl(url) == null) return photo;
+  return Semantics(
+    button: true,
+    label: 'View photo',
+    excludeSemantics: true,
+    child: GestureDetector(
+      key: const ValueKey('header-avatar-preview'),
+      onTap: () => openAvatarPreview(context, url: url, name: name),
+      child: photo,
+    ),
+  );
 }

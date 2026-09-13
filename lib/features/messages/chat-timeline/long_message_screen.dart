@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../tiptap_plain_text.dart';
 import '../tiptap_viewer.dart';
+import 'user_profile_sheet.dart';
 
 /// The whole of a message that was too long for its bubble — Signal's
 /// `LongMessageFragment`. Plain scaffold on purpose: this is a reading surface,
 /// so it gets the page background rather than a bubble fill, full width, and
 /// selectable text.
-class LongMessageScreen extends StatelessWidget {
+class LongMessageScreen extends ConsumerWidget {
   const LongMessageScreen({super.key, required this.body, this.editedAt});
 
   final String? body;
   final String? editedAt;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
@@ -46,6 +48,12 @@ class LongMessageScreen extends StatelessWidget {
                 TiptapViewer(
                   content: body,
                   style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
+                  onMentionTap: (userId, label) => showUserProfileSheet(
+                    context: context,
+                    ref: ref,
+                    userId: userId,
+                    userName: label,
+                  ),
                 ),
                 if (editedAt != null)
                   Padding(

@@ -109,31 +109,39 @@ class GroupBannerHeader extends StatelessWidget {
             top: coverHeight - avatarSize / 2,
             child: Center(
               child: GestureDetector(
+                key: onAvatarTap == null
+                    ? null
+                    : const ValueKey('header-avatar-preview'),
                 onTap: onAvatarTap,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: colors.surface,
-                      ),
-                      child: ClipOval(
-                        child: AppAvatar(
-                          size: avatarSize,
-                          url: avatarUrl,
-                          name: title,
+                child: Semantics(
+                  button: onAvatarTap != null,
+                  label: onAvatarTap != null ? 'View photo' : null,
+                  excludeSemantics: onAvatarTap != null,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: colors.surface,
+                        ),
+                        child: ClipOval(
+                          child: AppAvatar(
+                            size: avatarSize,
+                            url: avatarUrl,
+                            name: title,
+                          ),
                         ),
                       ),
-                    ),
-                    if (showEditBadges)
-                      const Positioned(
-                        right: 2,
-                        bottom: 2,
-                        child: _EditBadge(),
-                      ),
-                  ],
+                      if (showEditBadges)
+                        const Positioned(
+                          right: 2,
+                          bottom: 2,
+                          child: _EditBadge(),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

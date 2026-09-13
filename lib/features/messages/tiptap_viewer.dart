@@ -21,6 +21,7 @@ class TiptapViewer extends StatefulWidget {
     this.emptyPlaceholder,
     this.trailing,
     this.maxHeight,
+    this.onMentionTap,
   });
 
   final String? content;
@@ -35,6 +36,9 @@ class TiptapViewer extends StatefulWidget {
 
   /// Clips the body to this height, for collapsed cards.
   final double? maxHeight;
+
+  /// Tapping an @mention. See [TiptapInline.onMentionTap].
+  final void Function(String userId, String label)? onMentionTap;
 
   @override
   State<TiptapViewer> createState() => _TiptapViewerState();
@@ -77,6 +81,7 @@ class _TiptapViewerState extends State<TiptapViewer> {
       context: context,
       baseStyle: base,
       onRecognizer: _recognizers.add,
+      onMentionTap: widget.onMentionTap,
     );
     final blocks = TiptapBlocks(
       context: context,

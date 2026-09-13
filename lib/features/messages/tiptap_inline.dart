@@ -13,6 +13,7 @@ class TiptapInline {
     required this.context,
     required this.baseStyle,
     required this.onRecognizer,
+    this.onMentionTap,
   });
 
   final BuildContext context;
@@ -20,6 +21,12 @@ class TiptapInline {
 
   /// Handed every recognizer built here so the owning widget can dispose them.
   final ValueChanged<TapGestureRecognizer> onRecognizer;
+
+  /// Opens the person a mention names. Absent on surfaces with nobody to open
+  /// — the wall and the board draw the same chip and have no profile sheet —
+  /// and a chip with no handler is deliberately inert rather than a control
+  /// that swallows a tap.
+  final void Function(String userId, String label)? onMentionTap;
 
   List<InlineSpan>? spansOf(dynamic content) {
     if (content is! List || content.isEmpty) return null;
@@ -104,19 +111,28 @@ class TiptapInline {
     final label = attrs is Map
         ? (attrs['label'] ?? attrs['id'] ?? '').toString()
         : '';
+    final userId = attrs is Map ? (attrs['id'] ?? '').toString() : '';
+    final onTap = onMentionTap;
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        '${mention ? '@' : '#'}$label',
+        style: baseStyle.copyWith(color: tint, fontWeight: FontWeight.w700),
+      ),
+    );
     return WidgetSpan(
       alignment: PlaceholderAlignment.middle,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-        decoration: BoxDecoration(
-          color: tint.withValues(alpha: 0.16),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          '${mention ? '@' : '#'}$label',
-          style: baseStyle.copyWith(color: tint, fontWeight: FontWeight.w700),
-        ),
-      ),
+      child: mention && onTap != null && userId.isNotEmpty
+          ? GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onTap(userId, label),
+              child: chip,
+            )
+          : chip,
     );
   }
 
