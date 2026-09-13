@@ -96,12 +96,7 @@ class AttachmentAdopter {
         contentType: contentType,
         expectedBytes: bytes,
       );
-      await _blobs.markReady(
-        urlKey,
-        resolution.path,
-        bytes,
-        contentHash: hash,
-      );
+      await _blobs.markReady(urlKey, resolution.path, bytes, contentHash: hash);
       final redundant = resolution.redundantFile;
       if (redundant != null) {
         try {

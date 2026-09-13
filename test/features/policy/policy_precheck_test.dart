@@ -30,7 +30,10 @@ class _Unreadable extends ProfileNotifier {
 
 /// Runs [policyPending] with a real WidgetRef, which is the only kind the
 /// call sites have.
-Future<bool> _ask(WidgetTester tester, ProfileNotifier Function() profile) async {
+Future<bool> _ask(
+  WidgetTester tester,
+  ProfileNotifier Function() profile,
+) async {
   late Future<bool> answer;
   await tester.pumpWidget(
     ProviderScope(

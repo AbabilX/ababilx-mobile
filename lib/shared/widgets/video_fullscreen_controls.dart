@@ -47,10 +47,7 @@ class VideoFullscreenControls extends StatelessWidget {
                       color: Colors.white,
                     ),
                   ),
-                  Text(
-                    formatVideoDuration(value.position),
-                    style: _timeStyle,
-                  ),
+                  Text(formatVideoDuration(value.position), style: _timeStyle),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -69,10 +66,7 @@ class VideoFullscreenControls extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Text(
-                    formatVideoDuration(value.duration),
-                    style: _timeStyle,
-                  ),
+                  Text(formatVideoDuration(value.duration), style: _timeStyle),
                 ],
               ),
             );

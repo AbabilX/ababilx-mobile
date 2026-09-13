@@ -16,8 +16,10 @@ void main() {
   test('derivation is pinned', () async {
     final key = await ArchiveKey.derive(_scalar, _salt);
     final bytes = await key.extractBytes();
-    expect(base64Url.encode(bytes).replaceAll('=', ''),
-        'MjdX0GdM-AqPntXg2Wm5X1Ag_DEUqMhx5kxT96e45Xs');
+    expect(
+      base64Url.encode(bytes).replaceAll('=', ''),
+      'MjdX0GdM-AqPntXg2Wm5X1Ag_DEUqMhx5kxT96e45Xs',
+    );
   });
 
   test('a wrong-sized scalar is refused, not silently padded', () {

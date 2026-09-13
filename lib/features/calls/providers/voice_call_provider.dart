@@ -44,7 +44,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   /// Proof of life for the server, so an accepted call cannot outlive the two
   /// devices on it. See [VoiceCallHeartbeat].
   late final VoiceCallHeartbeat _heartbeat = VoiceCallHeartbeat(
-    send: (callId) async => (await _repository.action(callId, 'heartbeat')).call,
+    send: (callId) async =>
+        (await _repository.action(callId, 'heartbeat')).call,
     onEndedRemotely: (call) => unawaited(
       _finishLocal(
         call.status == 'ended' ? VoiceCallPhase.ended : VoiceCallPhase.failed,

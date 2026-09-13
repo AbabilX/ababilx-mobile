@@ -74,7 +74,11 @@ void main() {
         createdAt: '2026-09-08T14:00:00Z',
         type: 'voice_call',
         userId: 'caller',
-        meta: {'status': 'ended', 'caller_id': 'caller', 'duration_seconds': 12},
+        meta: {
+          'status': 'ended',
+          'caller_id': 'caller',
+          'duration_seconds': 12,
+        },
       );
       expect(voiceCallHistoryLabel(ended, 'caller'), 'Outgoing voice call');
       expect(voiceCallHistoryLabel(ended, 'peer'), 'Incoming voice call');

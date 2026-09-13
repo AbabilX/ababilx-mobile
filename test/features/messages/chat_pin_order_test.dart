@@ -24,7 +24,11 @@ void main() {
     final rows = unifiedConversations(
       dms: [
         _conv('newest', lastMessageAt: '2026-09-09T12:00:00Z'),
-        _conv('pinned-old', lastMessageAt: '2026-01-01T00:00:00Z', pinned: true),
+        _conv(
+          'pinned-old',
+          lastMessageAt: '2026-01-01T00:00:00Z',
+          pinned: true,
+        ),
         _conv('older', lastMessageAt: '2026-09-08T12:00:00Z'),
       ],
       channels: const [],
@@ -52,7 +56,11 @@ void main() {
     final rows = unifiedConversations(
       dms: [
         _conv('pin-read', lastMessageAt: '2026-09-09T12:00:00Z', pinned: true),
-        _conv('loose-unread', lastMessageAt: '2026-09-08T12:00:00Z', unreadCount: 2),
+        _conv(
+          'loose-unread',
+          lastMessageAt: '2026-09-08T12:00:00Z',
+          unreadCount: 2,
+        ),
       ],
       channels: const [],
       filter: ChatListFilter.unread,

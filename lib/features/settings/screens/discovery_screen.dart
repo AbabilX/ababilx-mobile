@@ -52,7 +52,8 @@ class DiscoveryScreen extends ConsumerWidget {
             const Divider(height: 24),
             _Toggle(
               title: 'Find me by username',
-              subtitle: 'A handle is short and matches as a prefix, so it can '
+              subtitle:
+                  'A handle is short and matches as a prefix, so it can '
                   'be guessed. Off by default.',
               value: data.byUsername,
               onChanged: (v) =>

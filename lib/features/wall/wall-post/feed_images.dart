@@ -574,9 +574,7 @@ class _FeedTileState extends State<_FeedTile> {
             widget.borderRadiusGeometry ??
             BorderRadius.circular(widget.borderRadius),
         child: Stack(
-          fit: widget.mode == _TileMode.fill
-              ? StackFit.expand
-              : StackFit.loose,
+          fit: widget.mode == _TileMode.fill ? StackFit.expand : StackFit.loose,
           children: [
             image,
             if (widget.overflowLabel != null)

@@ -32,10 +32,7 @@ void main() {
     test('matches the cross-platform vector', () {
       expect(identityFingerprint(_alice), _aliceFingerprint);
       expect(identityFingerprint(_bob), _bobFingerprint);
-      expect(
-        safetyNumber(_alice, _bob),
-        '$_aliceFingerprint$_bobFingerprint',
-      );
+      expect(safetyNumber(_alice, _bob), '$_aliceFingerprint$_bobFingerprint');
     });
 
     test('reads the same from either side', () {
@@ -69,7 +66,12 @@ void main() {
 
     test('reads in groups of five', () {
       expect(safetyNumberGroups(_aliceFingerprint), [
-        '36874', '84912', '45674', '92896', '68467', '53175',
+        '36874',
+        '84912',
+        '45674',
+        '92896',
+        '68467',
+        '53175',
       ]);
     });
   });

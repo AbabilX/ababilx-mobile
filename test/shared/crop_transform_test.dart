@@ -26,10 +26,7 @@ void main() {
     final t = transform(image: const Size(400, 400), scale: 2);
     // Two events of +10 from the start must land at +20, not snap back to +10.
     expect(t.offsetAfterPan(Offset.zero, const Offset(20, 0)).dx, 20);
-    expect(
-      t.offsetAfterPan(const Offset(10, 0), const Offset(10, 0)).dx,
-      20,
-    );
+    expect(t.offsetAfterPan(const Offset(10, 0), const Offset(10, 0)).dx, 20);
   });
 
   test('panning cannot expose a gap', () {

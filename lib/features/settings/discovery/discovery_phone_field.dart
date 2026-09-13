@@ -71,8 +71,8 @@ class _DiscoveryPhoneFieldState extends State<DiscoveryPhoneField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final malformed = _value.trim().isNotEmpty &&
-        normalizePhoneNumber(_value) == null;
+    final malformed =
+        _value.trim().isNotEmpty && normalizePhoneNumber(_value) == null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
@@ -93,7 +93,8 @@ class _DiscoveryPhoneFieldState extends State<DiscoveryPhoneField> {
                     labelText: 'Phone number',
                     hintText: '+8801712345678',
                     border: const OutlineInputBorder(),
-                    errorText: _error ??
+                    errorText:
+                        _error ??
                         (malformed
                             ? 'Include the country code, e.g. +880'
                             : null),

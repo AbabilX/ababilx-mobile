@@ -109,7 +109,10 @@ class ProfileNotifier extends AsyncNotifier<AppUser> {
   /// Throws on failure so the caller can surface the reason.
   Future<void> updateAvatar(Uint8List bytes) async {
     final media = ref.read(profileMediaRepositoryProvider);
-    final target = await media.presign(kind: 'avatar', contentType: 'image/jpeg');
+    final target = await media.presign(
+      kind: 'avatar',
+      contentType: 'image/jpeg',
+    );
     if (!target.isValid) {
       throw StateError('Server did not return an upload URL');
     }
@@ -129,7 +132,10 @@ class ProfileNotifier extends AsyncNotifier<AppUser> {
   /// Same path as [updateAvatar]: presign → PUT → PATCH `cover_url`.
   Future<void> updateCover(Uint8List bytes) async {
     final media = ref.read(profileMediaRepositoryProvider);
-    final target = await media.presign(kind: 'cover', contentType: 'image/jpeg');
+    final target = await media.presign(
+      kind: 'cover',
+      contentType: 'image/jpeg',
+    );
     if (!target.isValid) {
       throw StateError('Server did not return an upload URL');
     }

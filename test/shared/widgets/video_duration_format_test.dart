@@ -6,7 +6,10 @@ void main() {
     test('reads like a player, not like a timestamp', () {
       expect(formatVideoDuration(const Duration(seconds: 7)), '0:07');
       expect(formatVideoDuration(const Duration(seconds: 62)), '1:02');
-      expect(formatVideoDuration(const Duration(minutes: 12, seconds: 5)), '12:05');
+      expect(
+        formatVideoDuration(const Duration(minutes: 12, seconds: 5)),
+        '12:05',
+      );
     });
 
     test('grows an hours field only when there is one', () {
@@ -14,7 +17,10 @@ void main() {
         formatVideoDuration(const Duration(hours: 1, minutes: 2, seconds: 3)),
         '1:02:03',
       );
-      expect(formatVideoDuration(const Duration(minutes: 59, seconds: 59)), '59:59');
+      expect(
+        formatVideoDuration(const Duration(minutes: 59, seconds: 59)),
+        '59:59',
+      );
     });
 
     test('a video whose duration is unknown reads as zero, never negative', () {

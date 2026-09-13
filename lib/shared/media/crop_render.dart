@@ -108,7 +108,11 @@ Future<ui.Image> flipUiImageHorizontal(ui.Image source) {
   return _finish(recorder, source.width, source.height);
 }
 
-Future<ui.Image> _finish(ui.PictureRecorder recorder, int width, int height) async {
+Future<ui.Image> _finish(
+  ui.PictureRecorder recorder,
+  int width,
+  int height,
+) async {
   final picture = recorder.endRecording();
   final image = await picture.toImage(width, height);
   picture.dispose();

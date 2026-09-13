@@ -42,10 +42,8 @@ class VoiceMediaMap {
 
   /// The peer has named a stream we are not receiving yet: it has just added
   /// a track, and that track may need a transceiver of ours to arrive on.
-  bool get awaiting => [
-    cameraId,
-    screenId,
-  ].any((id) => id != null && !streams.containsKey(id));
+  bool get awaiting =>
+      [cameraId, screenId].any((id) => id != null && !streams.containsKey(id));
 
   void clear() {
     streams.clear();

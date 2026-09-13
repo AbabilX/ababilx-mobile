@@ -33,7 +33,11 @@ class SettingsBioRow extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 8, 20),
               child: _Identity(
                 user: user,
-                youLabel: AppTranslations.translate(context, ref, 'settings_you'),
+                youLabel: AppTranslations.translate(
+                  context,
+                  ref,
+                  'settings_you',
+                ),
               ),
             ),
           ),
@@ -41,7 +45,11 @@ class SettingsBioRow extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.only(right: 20),
           child: Tooltip(
-            message: AppTranslations.translate(context, ref, 'settings_your_qr'),
+            message: AppTranslations.translate(
+              context,
+              ref,
+              'settings_your_qr',
+            ),
             child: Material(
               color: colors.surfaceContainerHigh,
               shape: const CircleBorder(),

@@ -11,7 +11,9 @@ void main() {
       ProviderScope(
         overrides: [appLanguageProvider.overrideWithValue(language)],
         child: const MaterialApp(
-          home: OnboardingGate(child: Scaffold(body: Text('Login destination'))),
+          home: OnboardingGate(
+            child: Scaffold(body: Text('Login destination')),
+          ),
         ),
       ),
     );

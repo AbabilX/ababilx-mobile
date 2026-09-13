@@ -30,7 +30,11 @@ const ready = AttachmentHandle(
 );
 
 void main() {
-  for (final size in [const Size(1920, 1080), const Size(1080, 1920), Size.zero]) {
+  for (final size in [
+    const Size(1920, 1080),
+    const Size(1080, 1920),
+    Size.zero,
+  ]) {
     testWidgets('video frame stays fixed through loading and metadata $size', (
       tester,
     ) async {
@@ -62,20 +66,30 @@ void main() {
       await tester.pump();
       expect(tester.getRect(tile), before);
       if (size == Size.zero) {
-        platform.events.addError(PlatformException(code: 'decode_failed', message: 'Fixture decode failure'));
+        platform.events.addError(
+          PlatformException(
+            code: 'decode_failed',
+            message: 'Fixture decode failure',
+          ),
+        );
       } else {
-        platform.events.add(VideoEvent(
-          eventType: VideoEventType.initialized,
-          duration: const Duration(seconds: 5),
-          size: size,
-        ));
+        platform.events.add(
+          VideoEvent(
+            eventType: VideoEventType.initialized,
+            duration: const Duration(seconds: 5),
+            size: size,
+          ),
+        );
       }
       await tester.pump();
       await tester.pump();
       expect(tester.getRect(tile), before);
-      expect(size == Size.zero
-          ? find.byIcon(Icons.videocam_off_outlined)
-          : find.byType(AspectRatio), findsOneWidget);
+      expect(
+        size == Size.zero
+            ? find.byIcon(Icons.videocam_off_outlined)
+            : find.byType(AspectRatio),
+        findsOneWidget,
+      );
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
       await stream.close();

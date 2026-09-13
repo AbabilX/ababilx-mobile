@@ -59,8 +59,15 @@ class PreviewImageFile {
 
 /// Returns null whenever the picture cannot be had. A card with a title and no
 /// image is a card; a card is never withheld over its picture.
-Future<PreviewImageFile?> downloadPreviewImage(String url, {Dio? client}) async {
-  final opened = await openPreviewStream(url, accept: 'image/*', client: client);
+Future<PreviewImageFile?> downloadPreviewImage(
+  String url, {
+  Dio? client,
+}) async {
+  final opened = await openPreviewStream(
+    url,
+    accept: 'image/*',
+    client: client,
+  );
   if (opened == null) return null;
 
   final contentType = previewContentType(opened.response);

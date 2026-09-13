@@ -27,8 +27,9 @@ ChatConversation _group(String id, String name) => ChatConversation(
 ChatUserSummary _person(String id, String name) =>
     ChatUserSummary(userId: id, name: name, canMessage: true);
 
-List<String> _names(List<ChatRecipientTarget> targets) =>
-    [for (final t in targets) t.name];
+List<String> _names(List<ChatRecipientTarget> targets) => [
+  for (final t in targets) t.name,
+];
 
 void main() {
   group('buildChatRecipientSections', () {

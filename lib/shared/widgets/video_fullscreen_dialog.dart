@@ -139,7 +139,9 @@ class FullscreenVideoDialogState extends State<FullscreenVideoDialog> {
                 ),
               )
             else if (!_ready || c == null)
-              const Center(child: CircularProgressIndicator(color: Colors.white))
+              const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
             else
               GestureDetector(
                 onTap: _toggleChrome,

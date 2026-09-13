@@ -56,7 +56,9 @@ LinkPreviewData parseLinkPreview(String url, String html) {
     url: url,
     title: _tidy(tags['og:title'] ?? tags['twitter:title'] ?? htmlTitle),
     description: _tidy(
-      tags['og:description'] ?? tags['twitter:description'] ?? tags['description'],
+      tags['og:description'] ??
+          tags['twitter:description'] ??
+          tags['description'],
       limit: _maxDescription,
     ),
     // Signal falls back to the favicon when there is no og:image, and so do we:
@@ -83,9 +85,9 @@ Map<String, String> _attributes(String tag) {
 String? _tidy(String? value, {int limit = 200}) {
   if (value == null) return null;
   // Signal decodes twice: plenty of pages emit `&amp;quot;` in a meta tag.
-  final text = decodeEntities(decodeEntities(value))
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
+  final text = decodeEntities(
+    decodeEntities(value),
+  ).replaceAll(RegExp(r'\s+'), ' ').trim();
   if (text.isEmpty) return null;
   return text.length <= limit ? text : '${text.substring(0, limit)}…';
 }
@@ -109,7 +111,9 @@ const _namedEntities = {
   'nbsp': ' ',
 };
 
-final _entity = RegExp(r'&(#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]{1,30});');
+final _entity = RegExp(
+  r'&(#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]{1,30});',
+);
 
 /// Named and numeric HTML entities. Anything unrecognised is left as written —
 /// a literal `&foo;` in a title is better than losing the rest of the string.

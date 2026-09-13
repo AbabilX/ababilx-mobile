@@ -27,7 +27,10 @@ void main() {
   test('measurePreviewImage refuses bytes that are not an image', () async {
     // The decode is the last check that a picture is a picture: the content
     // type was a claim by the same host that wrote the link.
-    expect(await measurePreviewImage(Uint8List.fromList('<html>'.codeUnits)), isNull);
+    expect(
+      await measurePreviewImage(Uint8List.fromList('<html>'.codeUnits)),
+      isNull,
+    );
     expect(await measurePreviewImage(Uint8List(0)), isNull);
   });
 }

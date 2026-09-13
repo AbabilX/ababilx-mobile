@@ -16,10 +16,7 @@ List<ChatMessage> _feed(int count) =>
 void main() {
   group('unreadDividerAnchorId', () {
     test('pins the bar to the oldest unread message', () {
-      expect(
-        unreadDividerAnchorId(unreadCount: 2, messages: _feed(5)),
-        'm4',
-      );
+      expect(unreadDividerAnchorId(unreadCount: 2, messages: _feed(5)), 'm4');
     });
 
     test('a read conversation draws no bar', () {

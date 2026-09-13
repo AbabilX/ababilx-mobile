@@ -13,9 +13,7 @@ class CropOverlayPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final hole = circle
-        ? (Path()..addOval(crop))
-        : (Path()..addRRect(_frame));
+    final hole = circle ? (Path()..addOval(crop)) : (Path()..addRRect(_frame));
 
     canvas.drawPath(
       Path()

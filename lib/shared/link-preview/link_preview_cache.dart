@@ -126,7 +126,10 @@ class _Entry {
     return age > (data == null ? _missTtl : _hitTtl).inMilliseconds;
   }
 
-  Map<String, dynamic> toJson() => {'at': at, if (data != null) 'data': data!.toJson()};
+  Map<String, dynamic> toJson() => {
+    'at': at,
+    if (data != null) 'data': data!.toJson(),
+  };
 
   static _Entry? fromJson(Object? raw) {
     if (raw is! Map) return null;

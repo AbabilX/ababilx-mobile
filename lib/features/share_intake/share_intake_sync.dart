@@ -20,11 +20,7 @@ import 'providers/share_intake_provider.dart';
 ///     in, with the router mounted. A share received while signed out sits in
 ///     the provider and opens the moment the user finishes logging in.
 class ShareIntakeSync extends ConsumerStatefulWidget {
-  const ShareIntakeSync({
-    super.key,
-    required this.router,
-    required this.child,
-  });
+  const ShareIntakeSync({super.key, required this.router, required this.child});
 
   final GoRouter router;
   final Widget child;

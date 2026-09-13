@@ -65,7 +65,10 @@ void main() {
     });
 
     test('an empty StateError does not surface as a blank toast', () {
-      expect(shareErrorMessage(StateError('   ')), 'Could not send. Try again.');
+      expect(
+        shareErrorMessage(StateError('   ')),
+        'Could not send. Try again.',
+      );
     });
   });
 }

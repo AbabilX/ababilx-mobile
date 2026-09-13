@@ -40,8 +40,11 @@ void main() {
 
     test('a group you cannot post into has none', () {
       expect(
-        _conversation('group', scope: 'personal', canMessage: false)
-            .canGroupCall,
+        _conversation(
+          'group',
+          scope: 'personal',
+          canMessage: false,
+        ).canGroupCall,
         isFalse,
       );
     });

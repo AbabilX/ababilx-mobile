@@ -47,34 +47,29 @@ void main() {
     expect(hits.map((c) => c.id).toList(), ['1', '3']);
   });
 
-  test('a nickname finds the chat even when the account name does not match', () {
-    const named = ContactNicknames({'p1': 'Junayed'});
-    final conversations = [
-      _dm(id: 'p1', name: 'Someone Else'),
-    ];
+  test(
+    'a nickname finds the chat even when the account name does not match',
+    () {
+      const named = ContactNicknames({'p1': 'Junayed'});
+      final conversations = [_dm(id: 'p1', name: 'Someone Else')];
 
-    expect(
-      matchingSearchConversations(
-        conversations,
-        'Jun',
-        nicknames: named,
-      ).single.id,
-      'p1',
-    );
-  });
+      expect(
+        matchingSearchConversations(
+          conversations,
+          'Jun',
+          nicknames: named,
+        ).single.id,
+        'p1',
+      );
+    },
+  );
 
   test('the original name still matches after a nickname is set', () {
     const named = ContactNicknames({'p1': 'Boss'});
-    final conversations = [
-      _dm(id: 'p1', name: 'Junayed'),
-    ];
+    final conversations = [_dm(id: 'p1', name: 'Junayed')];
 
     expect(
-      matchingSearchConversations(
-        conversations,
-        'Junayed',
-        nicknames: named,
-      ),
+      matchingSearchConversations(conversations, 'Junayed', nicknames: named),
       isNotEmpty,
     );
   });

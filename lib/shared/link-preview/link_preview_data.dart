@@ -20,6 +20,7 @@ class LinkPreviewData {
   final String url;
   final String? title;
   final String? description;
+
   /// Where the picture came from. Kept for the record only — nothing draws it,
   /// because a remote URL in an image widget is the request this design exists
   /// to avoid (see `link_preview_image_store.dart`).

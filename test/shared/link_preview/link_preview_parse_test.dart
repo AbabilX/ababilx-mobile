@@ -60,7 +60,7 @@ void main() {
       final preview = parseLinkPreview(
         'https://ababilx.com',
         '<meta property="og:title" content="T">'
-        '<meta property="og:image" content="javascript:alert(1)">',
+            '<meta property="og:image" content="javascript:alert(1)">',
       );
       expect(preview.imageUrl, isNull);
     });

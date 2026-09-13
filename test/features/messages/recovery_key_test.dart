@@ -49,7 +49,9 @@ void main() {
   });
 
   test('the wrong code does not open the vault', () async {
-    final vault = await RecoveryKey.wrap({'d': 'secret'}, RecoveryKey.generateCode());
+    final vault = await RecoveryKey.wrap({
+      'd': 'secret',
+    }, RecoveryKey.generateCode());
     await expectLater(
       RecoveryKey.unwrap(vault, RecoveryKey.generateCode()),
       throwsA(isA<Object>()),
