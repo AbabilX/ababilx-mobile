@@ -92,20 +92,28 @@ void main() {
     expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
   });
 
-  testWidgets('dock shows Save and Share instead of a menu', (tester) async {
+  testWidgets('capsule dock shows Save, Rotate and Share', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Scaffold(
           body: ImagePreviewDock(
             fileName: 'holiday.jpg',
             localPath: '/tmp/holiday.jpg',
+            onRotate: () {},
           ),
         ),
       ),
     );
     expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Rotate'), findsOneWidget);
     expect(find.text('Share'), findsOneWidget);
     expect(find.byIcon(Icons.more_vert_rounded), findsNothing);
+    expect(
+      tester
+          .widgetList<Material>(find.byType(Material))
+          .any((m) => m.shape is StadiumBorder),
+      isTrue,
+    );
   });
 
   testWidgets('album rail stays away from a single photo', (tester) async {

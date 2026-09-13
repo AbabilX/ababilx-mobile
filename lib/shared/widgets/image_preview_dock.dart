@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'image_preview_chrome.dart';
 import 'media_preview_actions.dart';
 
-/// Visible Save + Share — no overflow menu. The row is the dock; the parent
-/// paints the dark bar so caption / rail can sit above it in chat.
+/// Floating capsule: Save · Rotate · Share. No overflow, no full-width bar.
 class ImagePreviewDock extends StatelessWidget {
   const ImagePreviewDock({
     super.key,
@@ -12,12 +11,16 @@ class ImagePreviewDock extends StatelessWidget {
     this.localPath,
     this.remoteUrl,
     this.contentType = '',
+    this.onRotate,
   });
 
   final String fileName;
   final String? localPath;
   final String? remoteUrl;
   final String contentType;
+
+  /// View-only quarter turn. Null hides the control.
+  final VoidCallback? onRotate;
 
   static bool hasSource({String? localPath, String? remoteUrl}) {
     return (localPath != null && localPath.isNotEmpty) ||
@@ -29,35 +32,49 @@ class ImagePreviewDock extends StatelessWidget {
     if (!hasSource(localPath: localPath, remoteUrl: remoteUrl)) {
       return const SizedBox.shrink();
     }
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 2, 8, 6),
-      child: Row(
-        children: [
-          _DockAction(
-            icon: Icons.save_alt_rounded,
-            label: 'Save',
-            onTap: () => runMediaPreviewAction(
-              context,
-              MediaPreviewAction.save,
-              localPath: localPath,
-              remoteUrl: remoteUrl,
-              fileName: fileName,
-              contentType: contentType,
+    return Material(
+      color: ImagePreviewChrome.capsule,
+      elevation: 8,
+      shadowColor: Colors.black54,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _DockAction(
+              icon: Icons.save_alt_rounded,
+              label: 'Save',
+              onTap: () => runMediaPreviewAction(
+                context,
+                MediaPreviewAction.save,
+                localPath: localPath,
+                remoteUrl: remoteUrl,
+                fileName: fileName,
+                contentType: contentType,
+              ),
             ),
-          ),
-          _DockAction(
-            icon: Icons.ios_share_rounded,
-            label: 'Share',
-            onTap: () => runMediaPreviewAction(
-              context,
-              MediaPreviewAction.share,
-              localPath: localPath,
-              remoteUrl: remoteUrl,
-              fileName: fileName,
-              contentType: contentType,
+            if (onRotate != null)
+              _DockAction(
+                icon: Icons.rotate_right_rounded,
+                label: 'Rotate',
+                onTap: onRotate!,
+              ),
+            _DockAction(
+              icon: Icons.ios_share_rounded,
+              label: 'Share',
+              onTap: () => runMediaPreviewAction(
+                context,
+                MediaPreviewAction.share,
+                localPath: localPath,
+                remoteUrl: remoteUrl,
+                fileName: fileName,
+                contentType: contentType,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -76,22 +93,23 @@ class _DockAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+    return InkWell(
+      onTap: onTap,
+      customBorder: const StadiumBorder(),
+      child: SizedBox(
+        width: 72,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, color: Colors.white, size: 22),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text(
                 label,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                   height: 1,
                 ),
@@ -104,35 +122,42 @@ class _DockAction extends StatelessWidget {
   }
 }
 
-/// Wall / CRM wrapper: the dock sitting on Signal's dark bar.
+/// Wall / CRM: capsule over the photo, not a full-width strip.
 class ImagePreviewDockBar extends StatelessWidget {
   const ImagePreviewDockBar({
     super.key,
     required this.fileName,
     this.localPath,
     this.remoteUrl,
+    this.onRotate,
   });
 
   final String fileName;
   final String? localPath;
   final String? remoteUrl;
+  final VoidCallback? onRotate;
 
   @override
   Widget build(BuildContext context) {
-    final dock = ImagePreviewDock(
-      fileName: fileName,
-      localPath: localPath,
-      remoteUrl: remoteUrl,
-    );
     if (!ImagePreviewDock.hasSource(
       localPath: localPath,
       remoteUrl: remoteUrl,
     )) {
       return const SizedBox.shrink();
     }
-    return Material(
-      color: ImagePreviewChrome.bar,
-      child: SafeArea(top: false, child: dock),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        child: Center(
+          child: ImagePreviewDock(
+            fileName: fileName,
+            localPath: localPath,
+            remoteUrl: remoteUrl,
+            onRotate: onRotate,
+          ),
+        ),
+      ),
     );
   }
 }

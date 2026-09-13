@@ -46,6 +46,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
   late final PageController _page;
   late int _index;
   bool _chrome = true;
+  final _turns = <int, int>{};
 
   @override
   void initState() {
@@ -61,6 +62,10 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
   }
 
   void _toggleChrome() => setState(() => _chrome = !_chrome);
+
+  void _rotate() {
+    setState(() => _turns[_index] = ((_turns[_index] ?? 0) + 1) % 4);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +91,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                 return ZoomablePreviewImage(
                   image: a,
                   allowRemoteFallback: widget.allowRemoteFallback,
+                  quarterTurns: _turns[i] ?? 0,
                   onTap: _toggleChrome,
                 );
               },
@@ -110,6 +116,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                   fileName: img.fileName,
                   localPath: localPath,
                   remoteUrl: remoteUrl,
+                  onRotate: _rotate,
                 ),
               ),
             ),

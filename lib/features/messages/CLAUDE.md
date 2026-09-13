@@ -527,14 +527,15 @@ Tapping a photo opens `showChatAttachmentGallery`
 ```
 tap photo -> dark surface, photo edge to edge
 chrome    toolbar (back · file name · You/sender · time)
-          caption · album rail · dock (Save · Share — no ⋮)
+          caption · album rail · capsule dock (Save · Rotate · Share)
 tap again chrome hides; pinch-zoom and swipe stay
 ```
 
 - **The file name is the title.** Asset types (`Photo`) and the 3-dot overflow
-  are gone — Save and Share sit on a labeled dock. `ChatMediaPreviewMeta.of`
-  only fills the second line (`You · 10:00 AM`). Shared-media cells have no
-  sender, so that line is the album index or empty.
+  are gone — Save, Rotate and Share sit on a floating capsule. Rotate is
+  view-only (90°); Save/Share still write the original file.
+  `ChatMediaPreviewMeta.of` only fills the second line (`You · 10:00 AM`).
+  Shared-media cells have no sender, so that line is the album index or empty.
 - **The rail is the album, not the conversation.** Signal can load every photo
   in the thread; we only have this message's images, and that is enough to
   reach the ones behind `+N`. One photo has no rail.

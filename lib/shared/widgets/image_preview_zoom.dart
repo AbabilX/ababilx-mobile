@@ -9,11 +9,15 @@ class ZoomablePreviewImage extends StatefulWidget {
     super.key,
     required this.image,
     required this.allowRemoteFallback,
+    this.quarterTurns = 0,
     this.onTap,
   });
 
   final PreviewImage image;
   final bool allowRemoteFallback;
+
+  /// View-only 90° steps. Save / Share still write the original file.
+  final int quarterTurns;
 
   /// Single tap — Signal toggles the chrome. Double-tap still zooms.
   final VoidCallback? onTap;
@@ -29,6 +33,14 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
 
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void didUpdateWidget(ZoomablePreviewImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.quarterTurns != widget.quarterTurns) {
+      _transform.value = Matrix4.identity();
+    }
+  }
 
   @override
   void dispose() {
@@ -61,7 +73,12 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
         minScale: 1,
         maxScale: 5,
         clipBehavior: Clip.none,
-        child: SizedBox.expand(child: _image()),
+        child: AnimatedRotation(
+          turns: widget.quarterTurns / 4,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          child: SizedBox.expand(child: _image()),
+        ),
       ),
     );
   }

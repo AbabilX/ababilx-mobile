@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 abstract final class ImagePreviewChrome {
   static const background = Color(0xFF1B1C1F);
   static const bar = Color(0xDE1B1C1F);
+  static const capsule = Color(0xF21B1C1F);
   static const fadeDuration = Duration(milliseconds: 180);
   static const railSize = 46.0;
   static const railThumb = 44.0;

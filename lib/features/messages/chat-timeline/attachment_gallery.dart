@@ -58,6 +58,7 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
   late final PageController _page;
   late int _index;
   bool _chrome = true;
+  final _turns = <int, int>{};
 
   @override
   void initState() {
@@ -73,6 +74,10 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
   }
 
   void _toggleChrome() => setState(() => _chrome = !_chrome);
+
+  void _rotate() {
+    setState(() => _turns[_index] = ((_turns[_index] ?? 0) + 1) % 4);
+  }
 
   void _jumpTo(int i) {
     if (i == _index) return;
@@ -103,7 +108,8 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
               controller: _page,
               itemCount: widget.images.length,
               onPageChanged: (i) => setState(() => _index = i),
-              itemBuilder: (_, i) => _buildPage(widget.images[i]),
+              itemBuilder: (_, i) =>
+                  _buildPage(widget.images[i], _turns[i] ?? 0),
             ),
             Align(
               alignment: Alignment.topCenter,
@@ -130,6 +136,7 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
                   fileName: current.fileName,
                   caption: meta?.caption,
                   onSelect: _jumpTo,
+                  onRotate: _rotate,
                 ),
               ),
             ),
@@ -139,19 +146,21 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
     );
   }
 
-  Widget _buildPage(ChatMessageAttachment attachment) => AttachmentGate(
-    attachment: attachment,
-    waiting: (context, handle) => _waiting(context, attachment, handle),
-    ready: (context, handle) => ZoomablePreviewImage(
-      image: PreviewImage(
-        fileUrl: attachment.fileUrl,
-        fileName: attachment.fileName,
-        localPath: handle.localPath,
-      ),
-      allowRemoteFallback: false,
-      onTap: _toggleChrome,
-    ),
-  );
+  Widget _buildPage(ChatMessageAttachment attachment, int quarterTurns) =>
+      AttachmentGate(
+        attachment: attachment,
+        waiting: (context, handle) => _waiting(context, attachment, handle),
+        ready: (context, handle) => ZoomablePreviewImage(
+          image: PreviewImage(
+            fileUrl: attachment.fileUrl,
+            fileName: attachment.fileName,
+            localPath: handle.localPath,
+          ),
+          allowRemoteFallback: false,
+          quarterTurns: quarterTurns,
+          onTap: _toggleChrome,
+        ),
+      );
 
   /// The gate's own placeholder is sized for a timeline tile and drawn on a
   /// light surface; on a dark fullscreen page it needs its own shell.
