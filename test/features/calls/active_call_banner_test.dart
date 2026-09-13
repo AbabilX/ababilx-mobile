@@ -68,6 +68,14 @@ void main() {
 
     expect(wrapper(), findsOneWidget);
 
+    call.setPhase(GroupCallPhase.joining);
+    await tester.pump();
+    expect(
+      find.byType(CallReturnBar),
+      findsOneWidget,
+      reason: 'A minimized join must remain reachable.',
+    );
+
     call.setPhase(GroupCallPhase.connected);
     await tester.pump();
     expect(tester.takeException(), isNull);

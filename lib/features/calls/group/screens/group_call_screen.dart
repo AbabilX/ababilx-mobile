@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/router/root_back.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../group_call_status.dart';
 import '../../native/android_call_screen_lock.dart';
 import '../../native/android_pip.dart';
 import '../../widgets/pip_call_view.dart';
@@ -58,17 +60,18 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(groupCallProvider);
+    final lang = ref.watch(appLanguageProvider);
 
     return ValueListenableBuilder<bool>(
       valueListenable: AndroidPip.inPip,
       builder: (context, inPip, _) {
         if (inPip) {
           return Scaffold(
-            backgroundColor: Colors.black,
+            backgroundColor: CallColors.of(context).backdrop,
             body: PipCallView(
-              name: state.title,
+              name: groupCallTitle(state, lang),
               avatarUrl: null,
-              status: '${state.participants.length} in call',
+              status: groupCallStatus(state, lang),
             ),
           );
         }
@@ -95,7 +98,7 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
               state: state,
               view: _view,
               onView: (next) => setState(() => _view = next),
-              onParticipants: () => showParticipantsSheet(context, state),
+              onParticipants: () => showParticipantsSheet(context),
               onToggleSpeaker: () =>
                   ref.read(groupCallProvider.notifier).toggleSpeaker(),
               onMinimize: _minimize,
@@ -128,11 +131,11 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
   );
 }
 
-class _Joining extends StatelessWidget {
+class _Joining extends ConsumerWidget {
   const _Joining();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final palette = CallColors.of(context);
     return Center(
       child: Column(
@@ -140,7 +143,11 @@ class _Joining extends StatelessWidget {
         children: [
           CircularProgressIndicator(color: palette.accent),
           const SizedBox(height: 16),
-          Text('Joining group call…', style: TextStyle(color: palette.faint)),
+          Text(
+            AppTranslations.translate(context, ref, 'group_call_joining'),
+            style: TextStyle(color: palette.faint),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );

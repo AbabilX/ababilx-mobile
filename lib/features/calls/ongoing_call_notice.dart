@@ -19,3 +19,10 @@ String? ongoingCallSubtitle(VoiceCallPhase phase) => switch (phase) {
 /// in progress.
 bool ongoingCallUsesChronometer(VoiceCallPhase phase) =>
     phase == VoiceCallPhase.connected;
+
+/// Backoff for a foreground-service start rejected during an Android lifecycle
+/// transition. The call remains usable and app resume retries immediately.
+Duration ongoingCallRetryDelay(int attempt) {
+  const seconds = [2, 5, 15, 30];
+  return Duration(seconds: seconds[attempt.clamp(0, seconds.length - 1)]);
+}

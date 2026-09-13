@@ -35,8 +35,13 @@ class OngoingCallSync extends ConsumerStatefulWidget {
   ConsumerState<OngoingCallSync> createState() => _OngoingCallSyncState();
 }
 
-class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
+class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
+    with WidgetsBindingObserver {
   StreamSubscription<OngoingCallAction>? _actions;
+  Timer? _notificationRetry;
+  String _pendingKey = '';
+  int _notificationEpoch = 0;
+  int _retryAttempt = 0;
 
   /// What the notification is currently saying — call id and subtitle — so a
   /// state change that alters neither does not re-post it.
@@ -57,6 +62,7 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _actions = AndroidOngoingCall.actions.listen(_onAction);
     // Deliberately `listenManual` and not `ref.watch` in `build`: this sync
     // has to run while the app is in the background, and a backgrounded
@@ -74,10 +80,25 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _notificationRetry?.cancel();
     unawaited(_actions?.cancel());
     unawaited(AndroidOngoingCall.stop());
     unawaited(AndroidCallScreenLock.setEarpieceCall(false));
     super.dispose();
+  }
+
+  /// Android can revoke a foreground entry or stop its service while the app
+  /// is away. Resume is the reliable reconciliation boundary: re-state the
+  /// still-live call even when Riverpod state itself did not change.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    _shownKey = '';
+    _pendingKey = '';
+    _notificationRetry?.cancel();
+    _notificationRetry = null;
+    _sync();
   }
 
   void _onAction(OngoingCallAction action) {
@@ -106,7 +127,7 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
           // The entry outlived the call it was posted for. Take it down rather
           // than open a call screen with no call behind it.
           voiceCallLog('ongoing.notification.orphan');
-          _shownKey = '';
+          _clearNotificationState();
           unawaited(AndroidOngoingCall.stop(force: true));
         }
     }
@@ -144,7 +165,7 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
     }
     if (_shownKey.isEmpty && _clearedOrphan) return;
     _clearedOrphan = true;
-    _shownKey = '';
+    _clearNotificationState();
     unawaited(AndroidOngoingCall.stop(force: true));
   }
 
@@ -169,17 +190,63 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync> {
     String subtitle, {
     required bool connected,
   }) {
-    final key = '$callId|$subtitle';
-    if (_shownKey == key) return;
-    _shownKey = key;
+    final key = '$callId|$title|$subtitle|$connected';
+    if (_shownKey == key || _pendingKey == key) return;
+    _notificationRetry?.cancel();
+    _notificationRetry = null;
+    _pendingKey = key;
+    final epoch = ++_notificationEpoch;
     unawaited(
-      AndroidOngoingCall.start(
+      _postNotification(
+        epoch: epoch,
+        key: key,
         callId: callId,
         title: title,
         subtitle: subtitle,
         connected: connected,
       ),
     );
+  }
+
+  Future<void> _postNotification({
+    required int epoch,
+    required String key,
+    required String callId,
+    required String title,
+    required String subtitle,
+    required bool connected,
+  }) async {
+    final ready = await AndroidOngoingCall.start(
+      callId: callId,
+      title: title,
+      subtitle: subtitle,
+      connected: connected,
+    );
+    if (!mounted || epoch != _notificationEpoch) return;
+    _pendingKey = '';
+    if (ready) {
+      _shownKey = key;
+      _retryAttempt = 0;
+      _clearedOrphan = false;
+      return;
+    }
+
+    // Foreground starts may be rejected during a lifecycle transition. Retry
+    // while the call remains live, with a ceiling to avoid a hot background
+    // loop. Resume always resets this and retries immediately.
+    final delay = ongoingCallRetryDelay(_retryAttempt);
+    _retryAttempt++;
+    voiceCallLog('ongoing.notification.retry attempt=$_retryAttempt');
+    _notificationRetry = Timer(delay, _sync);
+  }
+
+  void _clearNotificationState() {
+    _notificationEpoch++;
+    _notificationRetry?.cancel();
+    _notificationRetry = null;
+    _pendingKey = '';
+    _shownKey = '';
+    _retryAttempt = 0;
   }
 
   @override

@@ -128,6 +128,7 @@ class GroupCallNotifier extends GroupCallBase
       participants: const [],
       clearError: true,
       microphoneUnavailable: false,
+      reconnecting: false,
       sharingScreen: false,
     );
     GroupCall? call;
@@ -233,6 +234,10 @@ class GroupCallNotifier extends GroupCallBase
       room,
       sync: syncRoom,
       onDisconnected: () => unawaited(onRoomDisconnected(room)),
+      onReconnecting: (value) {
+        if (_room != room) return;
+        state = state.copyWith(reconnecting: value);
+      },
       onLocalTrackUnpublished: (source) =>
           unawaited(onLocalTrackUnpublished(source)),
       onData: onSignalData,

@@ -50,15 +50,18 @@ class OngoingCallService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START, ACTION_UPDATE -> {
+                val requestId = intent.getLongExtra(EXTRA_REQUEST_ID, 0L)
                 callId = intent.getStringExtra(EXTRA_CALL_ID) ?: callId
                 title = intent.getStringExtra(EXTRA_TITLE) ?: title
                 subtitle = intent.getStringExtra(EXTRA_SUBTITLE) ?: subtitle
                 screenSharing = intent.getBooleanExtra(EXTRA_SCREEN_SHARING, screenSharing)
                 connected = intent.getBooleanExtra(EXTRA_CONNECTED, connected)
                 if (!enterForeground()) {
+                    OngoingCallBridge.completeForeground(requestId, false)
                     stopSelf()
                     return START_NOT_STICKY
                 }
+                OngoingCallBridge.completeForeground(requestId, true)
             }
 
             ACTION_HANG_UP -> {
@@ -80,16 +83,16 @@ class OngoingCallService : Service() {
     }
 
     /**
-     * Returns false when the service must not run — a call without microphone
-     * permission cannot claim the microphone service type, and there is no
-     * honest type left to start with.
+     * A receive-only call remains a real self-managed Telecom call, so it uses
+     * phoneCall even when RECORD_AUDIO is unavailable. Microphone is added only
+     * when granted; the service never claims capture it cannot perform.
      */
     private fun enterForeground(): Boolean {
         val notification =
             OngoingCallNotification.build(this, callId, title, subtitle, connected)
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val type = serviceType() ?: return false
+                val type = serviceType()
                 startForeground(OngoingCallNotification.NOTIFICATION_ID, notification, type)
             } else {
                 startForeground(OngoingCallNotification.NOTIFICATION_ID, notification)
@@ -108,16 +111,10 @@ class OngoingCallService : Service() {
      * The type mask, rebuilt on every start/update so the projection type is
      * added when sharing begins and dropped when it ends.
      */
-    private fun serviceType(): Int? {
-        var type = 0
-        if (hasPermission(Manifest.permission.RECORD_AUDIO)) {
-            type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-        }
-        if (screenSharing) {
-            type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-        }
-        return if (type == 0) null else type
-    }
+    private fun serviceType(): Int = serviceTypeFor(
+        hasMicrophone = hasPermission(Manifest.permission.RECORD_AUDIO),
+        screenSharing = screenSharing,
+    )
 
     private fun hasPermission(permission: String): Boolean =
         ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
@@ -150,24 +147,38 @@ class OngoingCallService : Service() {
         const val EXTRA_SUBTITLE = "subtitle"
         const val EXTRA_SCREEN_SHARING = "screen_sharing"
         const val EXTRA_CONNECTED = "connected"
+        const val EXTRA_REQUEST_ID = "request_id"
+
+        internal fun serviceTypeFor(hasMicrophone: Boolean, screenSharing: Boolean): Int {
+            var type = ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
+            if (hasMicrophone) type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            if (screenSharing) type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            return type
+        }
 
         fun start(
             context: Context,
+            requestId: Long,
             callId: String,
             title: String,
             subtitle: String,
             screenSharing: Boolean,
             connected: Boolean,
-        ) = send(context, ACTION_START, callId, title, subtitle, screenSharing, connected)
+        ) = send(
+            context, ACTION_START, requestId, callId, title, subtitle, screenSharing, connected,
+        )
 
         fun update(
             context: Context,
+            requestId: Long,
             callId: String,
             title: String,
             subtitle: String,
             screenSharing: Boolean,
             connected: Boolean,
-        ) = send(context, ACTION_UPDATE, callId, title, subtitle, screenSharing, connected)
+        ) = send(
+            context, ACTION_UPDATE, requestId, callId, title, subtitle, screenSharing, connected,
+        )
 
         fun stop(context: Context) {
             val intent = Intent(context, OngoingCallService::class.java)
@@ -182,14 +193,16 @@ class OngoingCallService : Service() {
         private fun send(
             context: Context,
             action: String,
+            requestId: Long,
             callId: String,
             title: String,
             subtitle: String,
             screenSharing: Boolean,
             connected: Boolean,
-        ) {
+        ): Boolean {
             val intent = Intent(context, OngoingCallService::class.java)
                 .setAction(action)
+                .putExtra(EXTRA_REQUEST_ID, requestId)
                 .putExtra(EXTRA_CALL_ID, callId)
                 .putExtra(EXTRA_TITLE, title)
                 .putExtra(EXTRA_SUBTITLE, subtitle)
@@ -197,8 +210,10 @@ class OngoingCallService : Service() {
                 .putExtra(EXTRA_CONNECTED, connected)
             try {
                 ContextCompat.startForegroundService(context, intent)
+                return true
             } catch (error: Exception) {
                 Log.w(TAG, "$action failed", error)
+                return false
             }
         }
     }

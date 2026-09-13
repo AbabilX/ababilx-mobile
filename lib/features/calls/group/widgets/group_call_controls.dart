@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/localization/app_translations.dart';
 import '../call-ui/call_round_button.dart';
 import '../call-ui/call_surface.dart';
 import '../call-ui/reaction_picker.dart';
@@ -20,6 +21,8 @@ class GroupCallControls extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(groupCallProvider.notifier);
+    final lang = ref.watch(appLanguageProvider);
+    String tr(String key) => AppTranslations.of(lang, key);
     final palette = CallColors.of(context);
     final connected = state.phase == GroupCallPhase.connected;
     final otherSharing =
@@ -35,11 +38,13 @@ class GroupCallControls extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (state.microphoneUnavailable)
-          _Hint('Listening only — no microphone was detected.', palette.hand),
+          _Hint(tr('group_listening_hint'), palette.hand),
         if (otherSharing)
           _Hint(
-            '${state.call?.screenSharerName ?? "Someone"} is sharing — '
-            'you can take over',
+            tr('group_sharing_hint').replaceAll(
+              '{name}',
+              state.call?.screenSharerName ?? tr('group_someone'),
+            ),
             palette.faint,
           ),
         const SizedBox(height: 8),
@@ -51,10 +56,10 @@ class GroupCallControls extends ConsumerWidget {
                 diameter: diameter,
                 icon: state.muted ? CallIcons.micMuted : CallIcons.micOn,
                 label: state.microphoneUnavailable
-                    ? 'Microphone unavailable'
+                    ? tr('group_mic_unavailable')
                     : state.muted
-                    ? 'Unmute'
-                    : 'Mute',
+                    ? tr('group_unmute')
+                    : tr('group_mute'),
                 tone: state.muted
                     ? CallButtonTone.active
                     : CallButtonTone.neutral,
@@ -65,39 +70,44 @@ class GroupCallControls extends ConsumerWidget {
                 diameter: diameter,
                 icon: CallIcons.screenShare,
                 label: state.sharingScreen
-                    ? 'Stop sharing'
+                    ? tr('group_stop_sharing')
                     : otherSharing
-                    ? 'Take over screen'
-                    : 'Share screen',
+                    ? tr('group_take_over')
+                    : tr('group_share_screen'),
                 tone: state.sharingScreen
                     ? CallButtonTone.active
                     : CallButtonTone.neutral,
                 busy: state.screenSharePending,
+                enabled: !state.reconnecting,
                 onTap: notifier.toggleScreenShare,
               ),
               CallRoundButton(
                 diameter: diameter,
                 icon: CallIcons.raiseHand,
-                label: handRaised ? 'Lower hand' : 'Raise hand',
+                label: handRaised
+                    ? tr('group_lower_hand')
+                    : tr('group_raise_hand'),
                 tone: handRaised
                     ? CallButtonTone.active
                     : CallButtonTone.neutral,
+                enabled: !state.reconnecting,
                 onTap: notifier.toggleHand,
               ),
               CallRoundButton(
                 diameter: diameter,
                 icon: CallIcons.reaction,
-                label: 'Send a reaction',
+                label: tr('group_reaction'),
+                enabled: !state.reconnecting,
                 onTap: () => showReactionPicker(context, notifier.sendReaction),
               ),
             ],
             CallRoundButton(
               diameter: diameter,
               icon: CallIcons.leave,
-              label: 'Leave call',
+              label: tr('group_leave'),
               tone: CallButtonTone.danger,
               onTap: () async {
-                if (!await confirmLeaveGroupCall(context)) return;
+                if (!await confirmLeaveGroupCall(context, lang: lang)) return;
                 await notifier.leave();
               },
             ),

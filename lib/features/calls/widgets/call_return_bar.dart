@@ -21,9 +21,11 @@ class CallReturnBar extends StatefulWidget {
     required this.onTap,
     this.ticking = false,
     this.alerting = false,
+    this.returnLabel,
   });
 
   final String title;
+  final String? returnLabel;
 
   /// Read once per second while [ticking], and on every rebuild otherwise.
   final String Function() status;
@@ -81,48 +83,72 @@ class _CallReturnBarState extends State<CallReturnBar> {
     final background = widget.alerting ? colors.error : colors.primary;
     final foreground = widget.alerting ? colors.onError : colors.onPrimary;
 
+    final status = widget.status();
     return Material(
       color: background,
       child: SafeArea(
         bottom: false,
-        child: InkWell(
+        child: Semantics(
+          button: true,
+          label: '${widget.title}, $status',
+          hint: widget.returnLabel,
+          excludeSemantics: true,
           onTap: widget.onTap,
-          child: SizedBox(
-            height: 30,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.phone_in_talk_rounded,
-                    size: 14,
-                    color: foreground,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.labelMedium?.copyWith(
-                        color: foreground,
-                        fontWeight: FontWeight.w600,
+          child: InkWell(
+            onTap: widget.onTap,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      widget.alerting
+                          ? Icons.sync_rounded
+                          : Icons.phone_in_talk_rounded,
+                      size: 20,
+                      color: foreground,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelLarge?.copyWith(
+                              color: foreground,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            status,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelMedium?.copyWith(
+                              color: foreground,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    widget.status(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelMedium?.copyWith(
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.chevron_right_rounded,
                       color: foreground,
-                      fontWeight: FontWeight.w700,
-                      // Tabular so a ticking duration does not jitter the row.
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                      size: 20,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

@@ -6,14 +6,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/router_path.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../messages/providers/team_gate_provider.dart';
 import 'providers/group_call_provider.dart';
 
 /// App-level lifecycle for channel group calls: boots the socket listener once
-/// the user has a team, and drives navigation in and out of `/group-call`.
+/// the user is authenticated, and drives navigation in and out of `/group-call`.
 ///
 /// The 1:1 DM equivalent is [CallStoreSync]; the two stay separate because the
-/// DM path also has to coordinate CallKit, which group calls never use.
+/// DM path coordinates a separate peer-to-peer media lifecycle.
 class GroupCallSync extends ConsumerStatefulWidget {
   const GroupCallSync({super.key, required this.router, required this.child});
 
@@ -59,20 +58,24 @@ class _GroupCallSyncState extends ConsumerState<GroupCallSync>
 
   @override
   Widget build(BuildContext context) {
-    final loggedIn = ref.watch(authProvider).valueOrNull ?? false;
-    final hasTeam = ref.watch(hasTeamProvider);
+    final auth = ref.watch(authProvider);
+    final loggedIn = auth.valueOrNull == true;
 
-    if (loggedIn && hasTeam && !_booted) {
+    if (loggedIn && !_booted) {
       _booted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+        if (!mounted ||
+            !_booted ||
+            ref.read(authProvider).valueOrNull != true) {
+          return;
+        }
         unawaited(ref.read(groupCallProvider.notifier).bootstrap());
       });
     }
-    if ((!loggedIn || !hasTeam) && _booted) {
+    if (auth is AsyncData<bool> && auth.value == false && _booted) {
       _booted = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+        if (!mounted || _booted) return;
         unawaited(ref.read(groupCallProvider.notifier).shutdown());
       });
     }

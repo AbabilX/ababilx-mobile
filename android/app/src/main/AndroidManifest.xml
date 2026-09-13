@@ -290,7 +290,7 @@
             android:name=".OngoingCallService"
             android:exported="false"
             android:stopWithTask="true"
-            android:foregroundServiceType="microphone|mediaProjection" />
+            android:foregroundServiceType="phoneCall|microphone|mediaProjection" />
 
         <!-- FCM defaults: channel + white status-bar icon + brand tint -->
         <meta-data

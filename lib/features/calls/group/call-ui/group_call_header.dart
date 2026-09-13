@@ -1,17 +1,15 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/localization/app_translations.dart';
 import '../call_icons.dart';
+import '../group_call_status.dart';
 import '../providers/group_call_state.dart';
 import 'call_stage_view.dart';
 import 'call_surface.dart';
 
-/// Name, how long this has been going, layout switch, and speaker routing.
-///
-/// Speaker lives here (beside participants) instead of the bottom bar — that
-/// bar is for in-call actions; earpiece/loudspeaker is device routing.
-class GroupCallHeader extends StatefulWidget {
+/// Keep the title readable independently of the call's routing/layout actions.
+class GroupCallHeader extends ConsumerWidget {
   const GroupCallHeader({
     super.key,
     required this.state,
@@ -30,94 +28,90 @@ class GroupCallHeader extends StatefulWidget {
   final VoidCallback onMinimize;
 
   @override
-  State<GroupCallHeader> createState() => _GroupCallHeaderState();
-}
-
-class _GroupCallHeaderState extends State<GroupCallHeader> {
-  Timer? _tick;
-
-  @override
-  void initState() {
-    super.initState();
-    // A running duration is not a state change, so nothing else rebuilds for it.
-    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _tick?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final palette = CallColors.of(context);
-    final state = widget.state;
-    final elapsed = callElapsedLabel(state.call?.startedAt);
-    final subtitle = state.phase == GroupCallPhase.joining
-        ? 'Joining…'
-        : [
-            callPresenceLabel(state.participants.length),
-            if (elapsed.isNotEmpty) elapsed,
-            if (state.muted) 'You are muted',
-          ].join(' · ');
-
-    return Row(
+    final lang = ref.watch(appLanguageProvider);
+    String tr(String key) => AppTranslations.of(lang, key);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _HeaderButton(
-          icon: CallIcons.minimize,
-          label: 'Minimize call',
-          onTap: widget.onMinimize,
+        Row(
+          children: [
+            _HeaderButton(
+              icon: CallIcons.minimize,
+              label: tr('group_call_minimize'),
+              onTap: onMinimize,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    groupCallTitle(state, lang),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: palette.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    groupCallStatus(state, lang),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: state.reconnecting
+                          ? palette.danger
+                          : palette.faint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        Expanded(
-          child: Column(
+        Align(
+          alignment: Alignment.centerRight,
+          child: Wrap(
+            spacing: 4,
             children: [
-              Text(
-                state.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: palette.onSurface,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+              _HeaderButton(
+                icon: view == CallStageView.grid
+                    ? CallIcons.speakerView
+                    : CallIcons.gridView,
+                label: tr(
+                  view == CallStageView.grid
+                      ? 'group_call_speaker_view'
+                      : 'group_call_grid_view',
+                ),
+                onTap: () => onView(
+                  view == CallStageView.grid
+                      ? CallStageView.speaker
+                      : CallStageView.grid,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: palette.faint, fontSize: 12),
+              if (state.phase == GroupCallPhase.connected)
+                _HeaderButton(
+                  icon: state.speaker
+                      ? CallIcons.speakerOn
+                      : CallIcons.speakerOff,
+                  label: tr(
+                    state.speaker
+                        ? 'group_call_speaker'
+                        : 'group_call_earpiece',
+                  ),
+                  active: state.speaker,
+                  onTap: onToggleSpeaker,
+                ),
+              _HeaderButton(
+                icon: CallIcons.participants,
+                label: tr('group_call_participants'),
+                onTap: onParticipants,
               ),
             ],
           ),
-        ),
-        _HeaderButton(
-          icon: widget.view == CallStageView.grid
-              ? CallIcons.speakerView
-              : CallIcons.gridView,
-          label: widget.view == CallStageView.grid
-              ? 'Speaker view'
-              : 'Grid view',
-          onTap: () => widget.onView(
-            widget.view == CallStageView.grid
-                ? CallStageView.speaker
-                : CallStageView.grid,
-          ),
-        ),
-        if (state.phase == GroupCallPhase.connected)
-          _HeaderButton(
-            icon: state.speaker ? CallIcons.speakerOn : CallIcons.speakerOff,
-            label: state.speaker ? 'Speaker on' : 'Earpiece',
-            active: state.speaker,
-            onTap: widget.onToggleSpeaker,
-          ),
-        _HeaderButton(
-          icon: CallIcons.participants,
-          label: 'Participants',
-          onTap: widget.onParticipants,
         ),
       ],
     );
@@ -145,6 +139,7 @@ class _HeaderButton extends StatelessWidget {
       tooltip: label,
       onPressed: onTap,
       style: IconButton.styleFrom(
+        minimumSize: const Size(48, 48),
         backgroundColor: active ? palette.onSurface : null,
         foregroundColor: fg,
       ),

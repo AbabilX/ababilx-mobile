@@ -47,6 +47,7 @@ mixin GroupCallLifecycle on GroupCallBase {
       hands: const {},
       reactions: const [],
       muted: false,
+      reconnecting: false,
       sharingScreen: false,
       screenSharePending: false,
       microphoneUnavailable: false,

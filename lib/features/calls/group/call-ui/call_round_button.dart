@@ -13,7 +13,7 @@ enum CallButtonTone { neutral, active, danger, accent }
 /// dropped on the backdrop rather than one bar. 50 leaves room for the pill
 /// [CallControlBar] draws behind them and for a margin either side of it.
 const double callButtonDiameter = 50;
-const double callButtonMinDiameter = 36;
+const double callButtonMinDiameter = 48;
 
 /// One round control on the call bar. "On" states invert to the theme's own
 /// text colour, so mute, sharing and a raised hand read without a label.
@@ -69,9 +69,12 @@ class CallRoundButton extends StatelessWidget {
 
     return Semantics(
       button: true,
+      enabled: live,
+      selected: tone == CallButtonTone.active,
       label: label,
       child: Tooltip(
         message: label,
+        excludeFromSemantics: true,
         child: Material(
           color: fill,
           elevation: live ? 2 : 0,

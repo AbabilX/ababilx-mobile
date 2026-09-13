@@ -34,5 +34,13 @@ void main() {
       );
       expect(ongoingCallUsesChronometer(VoiceCallPhase.connecting), isFalse);
     });
+
+    test('foreground start retries back off with a ceiling', () {
+      expect(ongoingCallRetryDelay(0), const Duration(seconds: 2));
+      expect(ongoingCallRetryDelay(1), const Duration(seconds: 5));
+      expect(ongoingCallRetryDelay(2), const Duration(seconds: 15));
+      expect(ongoingCallRetryDelay(3), const Duration(seconds: 30));
+      expect(ongoingCallRetryDelay(20), const Duration(seconds: 30));
+    });
   });
 }

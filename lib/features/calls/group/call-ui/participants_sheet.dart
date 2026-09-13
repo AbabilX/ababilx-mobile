@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/group_call_provider.dart';
 
 import '../../../../shared/widgets/app_avatar.dart';
 import '../call_icons.dart';
-import '../providers/group_call_state.dart';
 import '../signals/call_signals.dart';
 import 'call_surface.dart';
 
 /// The roster. Hands come first and in the order they went up — that ordering
 /// is the only thing turning raised hands into an actual queue.
-Future<void> showParticipantsSheet(
-  BuildContext context,
-  GroupCallState state,
-) => showModalBottomSheet<void>(
-  context: context,
-  backgroundColor: CallColors.of(context).panel,
-  showDragHandle: true,
-  isScrollControlled: true,
-  builder: (_) => SafeArea(child: ParticipantsSheet(state: state)),
-);
+Future<void> showParticipantsSheet(BuildContext context) =>
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: CallColors.of(context).panel,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => Consumer(
+        builder: (_, ref, _) => SafeArea(
+          child: ParticipantsSheet(state: ref.watch(groupCallProvider)),
+        ),
+      ),
+    );
 
 class ParticipantsSheet extends StatelessWidget {
   const ParticipantsSheet({super.key, required this.state});

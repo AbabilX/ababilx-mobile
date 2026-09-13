@@ -5,6 +5,33 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   Widget host(Widget bar) => MaterialApp(home: Scaffold(body: bar));
 
+  testWidgets('large text fits a narrow bar with an accessible touch target', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: Scaffold(
+            body: SizedBox(
+              width: 280,
+              child: CallReturnBar(
+                title: 'A long group conversation name',
+                status: () => 'Reconnecting to the group call…',
+                onTap: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getSize(find.byType(InkWell)).height,
+      greaterThanOrEqualTo(48),
+    );
+  });
+
   testWidgets('shows who the call is with and what it is doing', (
     tester,
   ) async {

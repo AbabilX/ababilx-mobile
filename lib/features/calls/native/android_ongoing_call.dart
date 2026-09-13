@@ -63,13 +63,13 @@ class AndroidOngoingCall {
   /// ringing has nothing to count. The CallKit plugin used to post its own
   /// "calling" entry for that phase and no longer does (see
   /// `AndroidCallParams`), so this covers it.
-  static Future<void> start({
+  static Future<bool> start({
     required String callId,
     required String title,
     String subtitle = 'Ongoing call',
     bool connected = true,
   }) async {
-    if (!_supported) return;
+    if (!_supported) return false;
     final sameCall = _running && callId == _callId;
     _callId = callId;
     _title = title;
@@ -78,7 +78,7 @@ class AndroidOngoingCall {
     // Only a different call resets the share flag; a phase change on the same
     // call must not drop the media-projection type mid-share.
     if (!sameCall) _screenSharing = false;
-    await _send(sameCall ? 'update' : 'start');
+    return _send(sameCall ? 'update' : 'start');
   }
 
   /// Add or drop the media-projection service type as a screen share starts
@@ -114,22 +114,25 @@ class AndroidOngoingCall {
     }
   }
 
-  static Future<void> _send(String method) async {
+  static Future<bool> _send(String method) async {
     try {
-      await _methods.invokeMethod<bool>(method, {
+      final ready = await _methods.invokeMethod<bool>(method, {
         'callId': _callId,
         'title': _title,
         'subtitle': _screenSharing ? 'Sharing your screen' : _subtitle,
         'screenSharing': _screenSharing,
         'connected': _connected,
       });
-      _running = true;
+      _running = ready == true;
+      return _running;
     } on PlatformException {
       // A foreground service the OS refused to start must not take the call
       // with it — the call simply runs without a tray entry.
       _running = false;
+      return false;
     } on MissingPluginException {
       _running = false;
+      return false;
     }
   }
 }

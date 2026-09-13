@@ -16,6 +16,7 @@ class GroupRoomBinding {
     Room room, {
     required void Function() sync,
     required void Function() onDisconnected,
+    required void Function(bool) onReconnecting,
     required void Function(TrackSource source) onLocalTrackUnpublished,
     required void Function(DataReceivedEvent event) onData,
     required void Function() onParticipantJoined,
@@ -30,6 +31,8 @@ class GroupRoomBinding {
 
     listener
       ..on<RoomDisconnectedEvent>((_) => onDisconnected())
+      ..on<RoomReconnectingEvent>((_) => onReconnecting(true))
+      ..on<RoomReconnectedEvent>((_) => onReconnecting(false))
       ..on<LocalTrackUnpublishedEvent>(
         (event) => onLocalTrackUnpublished(event.publication.source),
       )

@@ -8,6 +8,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Where the ongoing-call notification meets Dart.
@@ -74,12 +75,20 @@ class OngoingCallChannel(private val activity: Activity) {
                 val subtitle = call.argument<String>("subtitle") ?: "Ongoing call"
                 val sharing = call.argument<Boolean>("screenSharing") ?: false
                 val connected = call.argument<Boolean>("connected") ?: true
-                if (call.method == "start") {
-                    OngoingCallService.start(activity, callId, title, subtitle, sharing, connected)
+                val requestId = nextRequestId.incrementAndGet()
+                OngoingCallBridge.awaitForeground(requestId, result)
+                val queued = if (call.method == "start") {
+                    OngoingCallService.start(
+                        activity, requestId, callId, title, subtitle, sharing, connected,
+                    )
                 } else {
-                    OngoingCallService.update(activity, callId, title, subtitle, sharing, connected)
+                    OngoingCallService.update(
+                        activity, requestId, callId, title, subtitle, sharing, connected,
+                    )
                 }
-                result.success(true)
+                if (!queued) {
+                    OngoingCallBridge.completeForeground(requestId, false)
+                }
             }
 
             "stop" -> {
@@ -94,6 +103,7 @@ class OngoingCallChannel(private val activity: Activity) {
     companion object {
         private const val METHOD_CHANNEL = "com.ababilx.app/ongoing_call"
         private const val EVENT_CHANNEL = "com.ababilx.app/ongoing_call/events"
+        private val nextRequestId = AtomicLong()
     }
 }
 
@@ -108,6 +118,20 @@ object OngoingCallBridge {
     private val main = Handler(Looper.getMainLooper())
     private val pending = mutableListOf<Map<String, Any?>>()
     private var sink: EventChannel.EventSink? = null
+    private val foregroundResults = mutableMapOf<Long, MethodChannel.Result>()
+
+    /** Completes only after Service.startForeground itself succeeds or fails. */
+    @Synchronized
+    fun awaitForeground(requestId: Long, result: MethodChannel.Result) {
+        foregroundResults[requestId] = result
+        main.postDelayed({ completeForeground(requestId, false) }, FOREGROUND_TIMEOUT_MS)
+    }
+
+    @Synchronized
+    fun completeForeground(requestId: Long, ready: Boolean) {
+        val result = foregroundResults.remove(requestId) ?: return
+        main.post { result.success(ready) }
+    }
 
     @Synchronized
     fun attach(next: EventChannel.EventSink?) {
@@ -132,4 +156,6 @@ object OngoingCallBridge {
         }
         main.post { target.success(event) }
     }
+
+    private const val FOREGROUND_TIMEOUT_MS = 5_000L
 }

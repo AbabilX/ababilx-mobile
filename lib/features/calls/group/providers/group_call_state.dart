@@ -93,6 +93,7 @@ class GroupCallState {
     this.participants = const [],
     this.screen,
     this.muted = false,
+    this.reconnecting = false,
     this.speaker = true,
     this.microphoneUnavailable = false,
     this.sharingScreen = false,
@@ -110,6 +111,7 @@ class GroupCallState {
   final List<GroupParticipantView> participants;
   final GroupScreenView? screen;
   final bool muted;
+  final bool reconnecting;
   final bool speaker;
   final bool microphoneUnavailable;
   final bool sharingScreen;
@@ -148,6 +150,7 @@ class GroupCallState {
     GroupScreenView? screen,
     bool clearScreen = false,
     bool? muted,
+    bool? reconnecting,
     bool? speaker,
     bool? microphoneUnavailable,
     bool? sharingScreen,
@@ -166,6 +169,7 @@ class GroupCallState {
     participants: participants ?? this.participants,
     screen: clearScreen ? null : (screen ?? this.screen),
     muted: muted ?? this.muted,
+    reconnecting: reconnecting ?? this.reconnecting,
     speaker: speaker ?? this.speaker,
     microphoneUnavailable: microphoneUnavailable ?? this.microphoneUnavailable,
     sharingScreen: sharingScreen ?? this.sharingScreen,
