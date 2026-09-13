@@ -22,10 +22,36 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.327297150133-p1t4oadh1e50gcop047u9mbg3ppku19n</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_localsend._tcp</string>
+		<string>_localsend._udp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>AbabilX needs camera access to take photos for messages and posts.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>AbabilX needs local network access to discover and share files with nearby devices.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AbabilX needs microphone access to record and send voice messages.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AbabilX needs photo library access to attach images and videos.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -49,6 +75,8 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -66,22 +94,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>AbabilX needs microphone access to record and send voice messages.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>AbabilX needs camera access to take photos for messages and posts.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>AbabilX needs photo library access to attach images and videos.</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>AbabilX needs local network access to discover and share files with nearby devices.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_localsend._tcp</string>
-		<string>_localsend._udp</string>
-	</array>
-	<key>UIFileSharingEnabled</key>
-	<true/>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
 </dict>
 </plist>

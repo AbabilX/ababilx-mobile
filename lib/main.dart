@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'dart:ui' show DartPluginRegistrant;
 
 import 'package:firebase_core/firebase_core.dart';
@@ -137,9 +138,12 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  await FlutterCallkitIncoming.onBackgroundMessage(
-    androidCallkitBackgroundHandler,
-  );
+  // Android-only plugin method; iOS has no implementation and throws.
+  if (Platform.isAndroid) {
+    await FlutterCallkitIncoming.onBackgroundMessage(
+      androidCallkitBackgroundHandler,
+    );
+  }
 
   runApp(const ProviderScope(child: AbabilXApp()));
 }
