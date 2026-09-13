@@ -48,19 +48,10 @@ class FcmService {
   /// Permission currently granted (Android POST_NOTIFICATIONS / FCM).
   bool permissionGranted = false;
 
-  /// `skipPermissionPrompt` holds off the OS notification / full-screen-intent
-  /// dialogs while true — the device still registers (calls and encrypted
-  /// chat pushes are data-only and reach it regardless) but the account is not
-  /// asked to grant anything yet. For a brand-new sign-up, popping straight
-  /// into three system dialogs before the person has sent a single message is
-  /// a permission blitz, not onboarding — the "Enable notifications" tile in
-  /// Settings → Notifications does the real, once-earned ask (via
-  /// [retryPermission]), and so does the very next cold start once the
-  /// server's onboarding window closes.
-  Future<bool> start({bool skipPermissionPrompt = false}) async {
+  Future<bool> start() async {
     fcmLog(
       'start.begin',
-      'api=${ApiConstants.baseUrl} alreadyStarted=$_started granted=$permissionGranted skipPrompt=$skipPermissionPrompt',
+      'api=${ApiConstants.baseUrl} alreadyStarted=$_started granted=$permissionGranted',
     );
     if (_started && permissionGranted) {
       fcmLog('start.skip', 'already running with permission');
@@ -91,34 +82,29 @@ class FcmService {
       fcmLog('local_notif.init.fail', e);
     }
 
-    if (skipPermissionPrompt) {
-      fcmLog('permission.deferred', 'new account — asking nothing yet');
-      permissionGranted = false;
-    } else {
-      try {
-        final settings = await _messaging.requestPermission(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-        fcmLog(
-          'permission.firebase',
-          'authorizationStatus=${settings.authorizationStatus}',
-        );
+    try {
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      fcmLog(
+        'permission.firebase',
+        'authorizationStatus=${settings.authorizationStatus}',
+      );
 
-        final localGranted = await _local.requestPermission();
-        fcmLog('permission.android', 'granted=$localGranted');
+      final localGranted = await _local.requestPermission();
+      fcmLog('permission.android', 'granted=$localGranted');
 
-        permissionGranted =
-            localGranted &&
-            settings.authorizationStatus != AuthorizationStatus.denied;
-        if (permissionGranted) {
-          await FlutterCallkitIncoming.requestFullIntentPermission();
-        }
-      } catch (e) {
-        fcmLog('permission.fail', e);
-        permissionGranted = false;
+      permissionGranted =
+          localGranted &&
+          settings.authorizationStatus != AuthorizationStatus.denied;
+      if (permissionGranted) {
+        await FlutterCallkitIncoming.requestFullIntentPermission();
       }
+    } catch (e) {
+      fcmLog('permission.fail', e);
+      permissionGranted = false;
     }
 
     // Register before the permission gate, and whatever it decided.

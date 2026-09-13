@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/providers/auth_provider.dart';
-import '../profile/providers/profile_provider.dart';
 import 'fcm_log.dart';
 import 'providers/fcm_provider.dart';
 
@@ -36,7 +35,7 @@ class _FcmBootstrapState extends ConsumerState<FcmBootstrap> {
       final nowIn = next.valueOrNull ?? false;
       if (!wasIn && nowIn) {
         fcmLog('bootstrap.auth.login → start FCM');
-        _boot();
+        _startForSession();
       }
       if (wasIn && !nowIn) {
         fcmLog('bootstrap.auth.logout');
@@ -48,48 +47,40 @@ class _FcmBootstrapState extends ConsumerState<FcmBootstrap> {
     });
 
     if (isLoggedIn && !isLoading && !_startedForSession) {
-      _startedForSession = true;
       fcmLog('bootstrap.cold_start → start FCM');
-      WidgetsBinding.instance.addPostFrameCallback((_) => _boot());
+      _startForSession();
     }
 
     return widget.child;
+  }
+
+  void _startForSession() {
+    // build() and the auth listener can observe the same login transition.
+    // Claim it synchronously so Android receives one permission request.
+    if (_startedForSession) return;
+    _startedForSession = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !(ref.read(authProvider).valueOrNull ?? false)) return;
+      _boot();
+    });
   }
 
   Future<void> _boot() async {
     fcmLog('bootstrap.boot.begin');
     final fcm = ref.read(fcmServiceProvider);
     fcm.router = widget.router;
-    // A brand-new sign-up gets no permission dialogs here — see
-    // FcmService.start's skipPermissionPrompt. Best-effort: a profile that
-    // has not loaded yet (or errors) is treated as not-new, which is the
-    // existing behaviour for every account today.
-    var isNewAccount = false;
     try {
-      final user = await ref
-          .read(profileProvider.future)
-          .timeout(const Duration(seconds: 3));
-      isNewAccount = user.isNewAccount;
-    } catch (_) {}
-    if (!mounted) return;
-    try {
-      final granted = await fcm.start(skipPermissionPrompt: isNewAccount);
-      fcmLog(
-        'bootstrap.boot.done',
-        'permissionGranted=$granted isNewAccount=$isNewAccount',
-      );
+      // Every signed-in device needs an explicit answer. Deferring the ask for
+      // new accounts left them unable to receive visible message and ongoing
+      // call notifications during their first session.
+      final granted = await fcm.start();
+      fcmLog('bootstrap.boot.done', 'permissionGranted=$granted');
       if (!mounted) return;
-      // Deferred, not denied: leave the tile in Settings → Notifications
-      // silent for a new account rather than showing it as already refused.
-      if (!isNewAccount) {
-        ref.read(notificationPermissionProvider.notifier).setGranted(granted);
-      }
+      ref.read(notificationPermissionProvider.notifier).setGranted(granted);
     } catch (e, st) {
       fcmLog('bootstrap.boot.fail', '$e\n$st');
       if (!mounted) return;
-      if (!isNewAccount) {
-        ref.read(notificationPermissionProvider.notifier).setGranted(false);
-      }
+      ref.read(notificationPermissionProvider.notifier).setGranted(false);
     }
   }
 }

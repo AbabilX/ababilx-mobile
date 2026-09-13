@@ -210,32 +210,18 @@ Android delivers those whether or not the app may draw a notification. What
 stays gated is everything that *draws*: foreground presentation options and the
 message listeners.
 
-## A brand-new sign-up is not asked for anything yet (2026-09-13)
+## Every signed-in device asks for notification permission (2026-09-13)
 
-`FcmBootstrap._boot()` runs on the exact same login transition for a fresh
-sign-up and for an existing account signing into a new device — so a person
-who just created an account saw the notification permission dialog and then
-the full-screen-intent dialog before they had sent a single message. That is
-a permission blitz, not onboarding, and it is the same lesson as the battery
-prompt below: **ask only once there is something to justify it.**
+`FcmBootstrap._boot()` requests notification permission on the first signed-in
+session for both new and existing accounts. Do not gate this with
+`is_new_account`: doing so leaves a newly-created account without visible chat
+or ongoing-call notifications until a later cold start.
 
-`FcmService.start(skipPermissionPrompt: true)` skips the `requestPermission`
-/ `_local.requestPermission` / `requestFullIntentPermission` block entirely —
-`permissionGranted` is just set `false` and everything downstream (token
-registration, the `!permissionGranted` early return) is the same path an
-ordinary refusal already takes. `FcmBootstrap` passes it from `is_new_account`
-on `/api/me` (`db.NewAccountWindow`, server — 15 minutes from signup, long
-enough to cover policy-accept and recovery-code setup and never true again
-after). `notificationPermissionProvider` is deliberately left at its default
-`null` rather than set to `false` for a skipped ask, so `NotificationPermissionTile`
-in Settings → Notifications stays hidden instead of reading as an already-
-denied permission — showing "Enable notifications" for something nobody was
-ever asked would be its own kind of lie.
-
-**Nothing here needs a second trigger.** The account's window closes in 15
-minutes; the very next cold start after that runs `start()` with no skip and
-asks for real. A user who wants it sooner already has the manual path: the
-Settings tile's `retryPermission()` always runs the full, real prompt.
+The token is still registered when permission is refused or the dialog is
+dismissed. `notificationPermissionProvider` records the result so Settings →
+Notifications shows the recovery tile. If Android reports a permanent denial,
+tapping that tile opens this app's system notification settings because Android
+will no longer display the runtime dialog.
 
 ## The battery prompt has to be earned
 

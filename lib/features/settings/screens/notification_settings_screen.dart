@@ -47,7 +47,21 @@ class _NotificationSettingsScreenState
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(batteryRestrictionsProvider);
+      _refreshNotificationPermission();
     }
+  }
+
+  Future<void> _refreshNotificationPermission() async {
+    var granted = await Permission.notification.isGranted;
+    if (!mounted) return;
+    if (granted && ref.read(notificationPermissionProvider) != true) {
+      // Permission may have been enabled in Android settings while FCM's
+      // foreground listeners were still gated. Start them immediately instead
+      // of waiting for the next app launch.
+      granted = await ref.read(fcmServiceProvider).retryPermission();
+      if (!mounted) return;
+    }
+    ref.read(notificationPermissionProvider.notifier).setGranted(granted);
   }
 
   @override

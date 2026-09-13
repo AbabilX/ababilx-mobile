@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../providers/fcm_provider.dart';
@@ -27,6 +28,15 @@ class NotificationPermissionTile extends ConsumerWidget {
             final ok = await ref.read(fcmServiceProvider).retryPermission();
             ref.read(notificationPermissionProvider.notifier).setGranted(ok);
             if (!context.mounted) return;
+            // Android stops showing its dialog after a permanent denial. In
+            // that state the only recovery path is this app's system settings.
+            final permanentlyDenied =
+                !ok && await Permission.notification.isPermanentlyDenied;
+            if (!context.mounted) return;
+            if (permanentlyDenied) {
+              await openAppSettings();
+              return;
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
