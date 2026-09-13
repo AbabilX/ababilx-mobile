@@ -58,12 +58,16 @@ class CallLogRow extends StatelessWidget {
         minTileHeight: 72,
         contentPadding: const EdgeInsets.fromLTRB(20, 6, 12, 6),
         leading: entry.isGroup
-            ? CircleAvatar(
-                radius: 24,
-                backgroundColor: scheme.secondaryContainer,
-                child: Icon(
-                  Icons.groups_rounded,
-                  color: scheme.onSecondaryContainer,
+            ? ClipOval(
+                child: AppAvatar(
+                  size: 48,
+                  url: entry.avatarUrl,
+                  name: title,
+                  backgroundColor: scheme.secondaryContainer,
+                  fallback: Icon(
+                    Icons.groups_rounded,
+                    color: scheme.onSecondaryContainer,
+                  ),
                 ),
               )
             : AppAvatar(size: 48, url: entry.avatarUrl, name: title),
