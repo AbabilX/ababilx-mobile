@@ -22,9 +22,13 @@ class TimelineComposer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chat = ref.watch(chatProvider);
     final conversation = chat.conversationById(conversationId);
-    if (conversation?.canMessage == false) {
+    // A webhook feed's top level is read-only, but every delivered message
+    // opens a thread members reply in with the ordinary group composer.
+    final webhook = conversation?.isWebhook == true;
+    final feedThread = webhook && parentId != null;
+    if (!feedThread && (webhook || conversation?.canMessage == false)) {
       return ComposerLocked(
-        messageKey: conversation?.isWebhook == true
+        messageKey: webhook
             ? 'chat_webhook_read_only'
             : 'chat_connection_required',
       );

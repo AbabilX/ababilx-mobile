@@ -66,7 +66,12 @@ class ThreadRootCard extends ConsumerWidget {
     final root = ref.watch(
       chatProvider.select((s) => _liveRoot(s, conversationId, message)),
     );
-    final name = root.userName ?? 'Unknown';
+    // A webhook message has no author — it is named by its feed, and there is
+    // no profile to open.
+    final webhook = root.isWebhook;
+    final name = webhook
+        ? (root.webhookSourceName ?? 'Webhook')
+        : (root.userName ?? 'Unknown');
     final replyCount = root.threadCount;
 
     return Column(
@@ -78,13 +83,15 @@ class ThreadRootCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GestureDetector(
-                onTap: () => showUserProfileSheet(
-                  context: context,
-                  ref: ref,
-                  userId: root.userId,
-                  userName: name,
-                  userAvatarUrl: root.userAvatarUrl,
-                ),
+                onTap: webhook
+                    ? null
+                    : () => showUserProfileSheet(
+                        context: context,
+                        ref: ref,
+                        userId: root.userId,
+                        userName: name,
+                        userAvatarUrl: root.userAvatarUrl,
+                      ),
                 child: AppAvatar(size: 36, url: root.userAvatarUrl, name: name),
               ),
               const SizedBox(width: 12),

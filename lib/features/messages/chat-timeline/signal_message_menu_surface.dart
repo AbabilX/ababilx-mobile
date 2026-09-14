@@ -158,7 +158,17 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
                 child: Transform.scale(
                   scale: scale,
                   alignment: Alignment.topLeft,
-                  child: IgnorePointer(child: child),
+                  // The copy is laid out again here and can come out a few
+                  // pixels taller than the row it was measured from — a long
+                  // collapsed body with "Read more", a link preview that
+                  // resolved in between. A tight height turned that into an
+                  // overflow stripe; let it take its own height instead.
+                  child: OverflowBox(
+                    alignment: Alignment.topLeft,
+                    minHeight: 0,
+                    maxHeight: double.infinity,
+                    child: IgnorePointer(child: child),
+                  ),
                 ),
               );
             },

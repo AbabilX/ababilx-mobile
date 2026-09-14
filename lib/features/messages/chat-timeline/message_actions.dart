@@ -76,7 +76,13 @@ Future<void> showMessageActions(
   final action = (result as SignalMessageCommand).action;
   switch (action) {
     case SignalMessageAction.reply:
-      n.setReplyToMessage(msg);
+      // A feed's own composer is locked, so a quote would go nowhere: the
+      // reply to a delivered message is its thread.
+      if (conversation?.isWebhook == true && threadRootId == null) {
+        openThreadSheet(context, conversationId, msg);
+      } else {
+        n.setReplyToMessage(msg);
+      }
     case SignalMessageAction.forward:
       await showForwardSheet(context, ref, msg);
     case SignalMessageAction.save:
