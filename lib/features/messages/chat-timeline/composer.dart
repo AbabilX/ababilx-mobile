@@ -10,6 +10,7 @@ import '../../../core/localization/app_translations.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../../../shared/media/device_gallery.dart';
 import '../data/models/chat_models.dart';
+import '../data/local/composer_draft_store.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_encode.dart';
 import '../providers/team_gate_provider.dart';
@@ -58,6 +59,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   static const int _maxAttachments = 10;
   late final TextEditingController _ctrl;
   late final FocusNode _focus;
+  late final ComposerDraftStore _draftStore;
+  String _draftOwnerId = '';
   final _voiceRecorder = VoiceMessageRecorder();
   final _recordStopwatch = Stopwatch();
   final _pending = <ChatAttachmentInput>[];
@@ -78,6 +81,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   bool _paused = false;
   bool _viewOnce = false;
   bool _attachmentPanelOpen = false;
+  bool _restoringDraft = true;
+  bool _persistTextChanges = true;
+  bool _sendInFlight = false;
+  int _draftRevision = 0;
 
   List<MentionCandidate> _mentionCandidates = [];
   final Set<String> _mentionedUserIds = {};
@@ -103,10 +110,52 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   @override
   void initState() {
     super.initState();
+    _draftStore = ref.read(composerDraftStoreProvider);
+    _draftOwnerId = ref.read(chatProvider).currentUserId;
     _loadChannelMembers();
     _ctrl = TextEditingController(text: widget.initialText)
       ..addListener(_onTextChanged);
     _focus = FocusNode()..addListener(_onFocus);
+    unawaited(_restoreDraft());
+  }
+
+  Future<void> _restoreDraft() async {
+    if (widget.initialText.isNotEmpty) {
+      _restoringDraft = false;
+      return;
+    }
+    if (_draftOwnerId.isEmpty) {
+      final ownerId = await ref.read(chatProvider.notifier).localUserId();
+      if (!mounted) return;
+      _draftOwnerId = ownerId;
+    }
+    final draft = await _draftStore.read(
+      _draftOwnerId,
+      widget.conversationId,
+      parentId: widget.parentId,
+    );
+    if (!mounted) return;
+    _restoringDraft = false;
+    // Never replace text the user entered while the disk read was in flight.
+    if (_ctrl.text.isEmpty && draft.isNotEmpty) {
+      _persistTextChanges = false;
+      _ctrl.value = TextEditingValue(
+        text: draft,
+        selection: TextSelection.collapsed(offset: draft.length),
+      );
+      _persistTextChanges = true;
+    } else if (_ctrl.text.isNotEmpty && _ctrl.text != draft) {
+      // The user typed before the async read completed. Persist their newer
+      // value now; waiting for another keystroke would lose it on a quick kill.
+      unawaited(
+        _draftStore.write(
+          _draftOwnerId,
+          widget.conversationId,
+          _ctrl.text,
+          parentId: widget.parentId,
+        ),
+      );
+    }
   }
 
   Future<void> _loadChannelMembers() async {
@@ -129,6 +178,17 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   void _onTextChanged() {
     setState(() {});
     final text = _ctrl.text;
+    if (_persistTextChanges) _draftRevision++;
+    if (!_restoringDraft && _persistTextChanges) {
+      unawaited(
+        _draftStore.write(
+          _draftOwnerId,
+          widget.conversationId,
+          text,
+          parentId: widget.parentId,
+        ),
+      );
+    }
     final sel = _ctrl.selection;
 
     if (!sel.isValid || !sel.isCollapsed) {
@@ -241,6 +301,18 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   void dispose() {
     _recordClock?.cancel();
     unawaited(_voiceRecorder.dispose());
+    // An empty controller during restore does not mean an empty draft; nor
+    // does the optimistic clear while a send is still unresolved.
+    if (!((_restoringDraft || _sendInFlight) && _ctrl.text.isEmpty)) {
+      unawaited(
+        _draftStore.write(
+          _draftOwnerId,
+          widget.conversationId,
+          _ctrl.text,
+          parentId: widget.parentId,
+        ),
+      );
+    }
     _ctrl.dispose();
     _focus.dispose();
     super.dispose();
@@ -264,6 +336,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         : encodeTiptapBody(plain: plain, mentionByLabel: _mentionByLabel);
     final attachments = List<ChatAttachmentInput>.of(_pending);
     final mentionedIds = _mentionedUserIds.toList();
+    final sentDraftRevision = _draftRevision;
 
     final notifier = ref.read(chatProvider.notifier);
     String? clientRef;
@@ -292,7 +365,13 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     _mentionedUserIds.clear();
     _mentionByLabel.clear();
     if (!mounted) return;
+    // Clear the visible composer immediately, but retain the durable draft
+    // until delivery succeeds. If the send fails, recreation restores the
+    // text; if the user starts another draft meanwhile, that newer text wins.
+    _persistTextChanges = false;
+    _sendInFlight = true;
     _ctrl.clear();
+    _persistTextChanges = true;
     setState(() {
       _pending.clear();
       _showMentions = false;
@@ -313,6 +392,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       }
       if (!mounted) return;
       if (uploadBubble!.attachments.isEmpty && body.isEmpty) {
+        _sendInFlight = false;
         notifier.removeUploadingMessage(
           widget.conversationId,
           clientRef!,
@@ -336,6 +416,17 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       clientMessageId: clientRef,
       reusePending: uploading,
     );
+    _sendInFlight = false;
+    if (sentMsg != null && _draftRevision == sentDraftRevision) {
+      unawaited(
+        _draftStore.write(
+          _draftOwnerId,
+          widget.conversationId,
+          '',
+          parentId: widget.parentId,
+        ),
+      );
+    }
     // Slack parity: Check if any mentioned users are not members of this channel/group
     if (widget.isGroup &&
         sentMsg != null &&

@@ -1,0 +1,77 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Durable text drafts, one per conversation/thread composer.
+///
+/// A controller belongs to one widget lifetime. Android may recreate that
+/// widget after Home, memory pressure, or an external intent, so it cannot be
+/// the draft's owner.
+class ComposerDraftStore {
+  static const _prefix = 'message_composer_draft.v1.';
+  final Map<String, Future<void>> _pendingWrites = {};
+
+  String _segment(String value) => Uri.encodeComponent(value);
+
+  String _conversationPrefix(String ownerId, String conversationId) =>
+      '$_prefix${_segment(ownerId)}.${_segment(conversationId)}.';
+
+  String _key(String ownerId, String conversationId, String? parentId) =>
+      '${_conversationPrefix(ownerId, conversationId)}'
+      '${parentId == null ? 'root' : _segment(parentId)}';
+
+  Future<String> read(
+    String ownerId,
+    String conversationId, {
+    String? parentId,
+  }) async {
+    if (ownerId.isEmpty) return '';
+    final key = _key(ownerId, conversationId, parentId);
+    await (_pendingWrites[key] ?? Future<void>.value());
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(key) ?? '';
+  }
+
+  Future<void> write(
+    String ownerId,
+    String conversationId,
+    String text, {
+    String? parentId,
+  }) async {
+    if (ownerId.isEmpty) return;
+    final key = _key(ownerId, conversationId, parentId);
+    final previous = _pendingWrites[key] ?? Future<void>.value();
+    final write = previous.then((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      if (text.isEmpty) {
+        await prefs.remove(key);
+      } else {
+        await prefs.setString(key, text);
+      }
+    });
+    _pendingWrites[key] = write;
+    await write;
+    if (identical(_pendingWrites[key], write)) _pendingWrites.remove(key);
+  }
+
+  Future<void> clearConversation(String ownerId, String conversationId) async {
+    if (ownerId.isEmpty) return;
+    await Future.wait(_pendingWrites.values.toList());
+    final prefs = await SharedPreferences.getInstance();
+    final prefix = _conversationPrefix(ownerId, conversationId);
+    for (final key in prefs.getKeys().where((key) => key.startsWith(prefix))) {
+      await prefs.remove(key);
+    }
+  }
+
+  Future<void> clearAll() async {
+    await Future.wait(_pendingWrites.values.toList());
+    final prefs = await SharedPreferences.getInstance();
+    for (final key in prefs.getKeys().where((key) => key.startsWith(_prefix))) {
+      await prefs.remove(key);
+    }
+  }
+}
+
+final composerDraftStoreProvider = Provider<ComposerDraftStore>(
+  (ref) => ComposerDraftStore(),
+);

@@ -5,6 +5,7 @@ import 'chat_sidebar_cache.dart' show chatLocalDbProvider;
 import 'chat_key_cache.dart';
 import 'chat_message_store.dart';
 import 'chat_outbox_cache.dart';
+import 'composer_draft_store.dart';
 
 /// Erases every local trace of a conversation the user deleted.
 ///
@@ -16,7 +17,11 @@ import 'chat_outbox_cache.dart';
 ///
 /// Best-effort by design: a failure here must not make the delete itself look
 /// like it failed, since the server has already carried it out.
-Future<void> wipeConversationLocally(Ref ref, String conversationId) async {
+Future<void> wipeConversationLocally(
+  Ref ref,
+  String conversationId, {
+  required String ownerId,
+}) async {
   if (conversationId.isEmpty) return;
   try {
     await ref.read(chatMessageStoreProvider).clearConversation(conversationId);
@@ -28,6 +33,11 @@ Future<void> wipeConversationLocally(Ref ref, String conversationId) async {
   } catch (_) {}
   try {
     await ref.read(chatKeyCacheProvider).clearConversation(conversationId);
+  } catch (_) {}
+  try {
+    await ref
+        .read(composerDraftStoreProvider)
+        .clearConversation(ownerId, conversationId);
   } catch (_) {}
   try {
     await ref.read(storageManagerProvider).purgeConversation(conversationId);

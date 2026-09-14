@@ -291,7 +291,7 @@ mixin _ChatMutateMixin
   Future<void> leaveChannel(String channelId) async {
     await repo.leaveChannel(channelId);
     _forgetConversationInMemory(channelId);
-    await wipeConversationLocally(ref, channelId);
+    await wipeConversationLocally(ref, channelId, ownerId: state.currentUserId);
     await (this as ChatNotifier).fetchSidebar(silent: true);
   }
 
@@ -317,14 +317,18 @@ mixin _ChatMutateMixin
       return;
     }
     _forgetConversationInMemory(conversationId);
-    await wipeConversationLocally(ref, conversationId);
+    await wipeConversationLocally(
+      ref,
+      conversationId,
+      ownerId: state.currentUserId,
+    );
     await syncChatDeletions(ref, state.currentUserId);
   }
 
   Future<void> deleteChannel(String channelId) async {
     await repo.deleteChannel(channelId);
     _forgetConversationInMemory(channelId);
-    await wipeConversationLocally(ref, channelId);
+    await wipeConversationLocally(ref, channelId, ownerId: state.currentUserId);
     await (this as ChatNotifier).fetchSidebar(silent: true);
   }
 }

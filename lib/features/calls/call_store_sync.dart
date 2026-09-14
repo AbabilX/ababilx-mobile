@@ -27,6 +27,11 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
   bool _shutdownScheduled = false;
   AppLifecycleState _lifecycle = AppLifecycleState.resumed;
 
+  /// True once this call has occupied `/call`. Leaving that route while the
+  /// call remains live is a presentation choice (minimise, share, deep link),
+  /// not permission for lifecycle resume to expand it again.
+  bool _callScreenWasPresented = false;
+
   String get _currentPath => currentRoutePath(widget.router);
 
   /// Flutter route/UI can update while resumed or in the brief inactive
@@ -44,13 +49,23 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
   @override
   void initState() {
     super.initState();
+    _callScreenWasPresented = _currentPath == '/call';
+    widget.router.routerDelegate.addListener(_onRouteChanged);
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    widget.router.routerDelegate.removeListener(_onRouteChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _onRouteChanged() {
+    final path = _currentPath;
+    if (path == '/call' && ref.read(voiceCallProvider).active) {
+      _callScreenWasPresented = true;
+    }
   }
 
   @override
@@ -91,7 +106,12 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
   }
 
   void _openCallScreenIfNeeded(VoiceCallState next) {
-    if (!next.shouldOpenCallScreen || _currentPath == '/call') return;
+    if (!next.shouldOpenCallScreen) return;
+    if (_currentPath == '/call') {
+      _callScreenWasPresented = true;
+      return;
+    }
+    if (_callScreenWasPresented) return;
     if (!_canOpenFlutterCallScreen) {
       // Still prepare the route so Accept / resume lands on /call immediately.
       if (next.phase == VoiceCallPhase.incomingRinging ||
@@ -116,6 +136,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
         phase: next.phase.name,
         source: 'CallStoreSync',
       );
+      _callScreenWasPresented = true;
       widget.router.go('/call');
     });
   }
@@ -150,6 +171,9 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
 
     ref.listen(voiceCallProvider, (previous, next) {
       if (next.shouldOpenCallScreen) {
+        if (previous?.shouldOpenCallScreen != true) {
+          _callScreenWasPresented = false;
+        }
         if (_canOpenFlutterCallScreen) {
           _openCallScreenIfNeeded(next);
         } else if (next.phase == VoiceCallPhase.incomingRinging) {
@@ -170,6 +194,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
           (wasLive ||
               previous?.phase == VoiceCallPhase.ended ||
               previous?.phase == VoiceCallPhase.failed);
+      if (!next.shouldOpenCallScreen) _callScreenWasPresented = false;
       if (!shouldLeave) return;
       final conversationId = next.conversationId ?? previous?.conversationId;
       final delay = terminal

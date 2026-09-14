@@ -7,6 +7,7 @@ import 'chat_key_cache.dart';
 import 'chat_message_store.dart';
 import 'chat_outbox_cache.dart';
 import 'chat_sidebar_cache.dart';
+import 'composer_draft_store.dart';
 
 /// Clears only app-private chat state. User-exported MediaStore/Files copies
 /// live outside [AttachmentSweeper] and are intentionally unreachable here.
@@ -24,6 +25,7 @@ class ChatArchiveWiper {
     await _ref.read(chatMessageStoreProvider).clearAll();
     await _ref.read(chatSidebarCacheProvider).clearAll();
     await _ref.read(chatKeyCacheProvider).clearAll();
+    await _ref.read(composerDraftStoreProvider).clearAll();
     await HistoryRestoreFlag.clearAll();
     _ref
         .read(chatProvider.notifier)
