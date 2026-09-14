@@ -17,6 +17,7 @@ class SelectionMenuState {
     this.save = false,
     this.edit = false,
     this.delete = false,
+    this.deleteForEveryone = false,
   });
 
   final bool reply;
@@ -25,6 +26,9 @@ class SelectionMenuState {
   final bool save;
   final bool edit;
   final bool delete;
+
+  /// Only the caller's own rows can go for everyone; anything can go for me.
+  final bool deleteForEveryone;
 
   bool get isEmpty => !reply && !forward && !copy && !save && !edit && !delete;
 }
@@ -73,9 +77,9 @@ SelectionMenuState selectionMenuState({
         !anyPending &&
         !anySealed &&
         anyText,
-    // Deleting is a server call for the sender's own row; ours has no
-    // delete-for-me, so a message somebody else sent is not the caller's to
-    // remove and the action is withheld rather than offered and refused.
-    delete: allMine && !anyDeleted && !anyPending,
+    // Anything can be deleted for me; only the sender's own rows for
+    // everyone — the server refuses anybody else's.
+    delete: !anyDeleted && !anyPending,
+    deleteForEveryone: allMine && !anyDeleted && !anyPending,
   );
 }

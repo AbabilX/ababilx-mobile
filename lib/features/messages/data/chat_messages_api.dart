@@ -105,6 +105,11 @@ class ChatMessagesApi {
     await _client.delete(_endpoints.message(messageId));
   }
 
+  /// "Delete for me" — hidden for this account only.
+  Future<void> hideMessage(String messageId) async {
+    await _client.post('${_endpoints.message(messageId)}/hide');
+  }
+
   Future<List<ChatReactionGroup>> toggleReaction(
     String messageId,
     String emoji,

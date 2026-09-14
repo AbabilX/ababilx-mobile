@@ -181,14 +181,14 @@ void main() {
     await tester.pump();
 
     // Two messages: Signal drops everything that only means anything against
-    // one of them — and the incoming one takes Delete with it, since a
-    // message somebody else sent is not ours to remove.
+    // one of them. Delete stays: an incoming message can still be deleted
+    // for me, the dialog just withholds "for everyone".
     expect(find.text('2 selected'), findsOneWidget);
     expect(find.text('Reply'), findsNothing);
     expect(find.text('Edit'), findsNothing);
     expect(find.text('Forward'), findsOneWidget);
     expect(find.text('Copy'), findsOneWidget);
-    expect(find.text('Delete'), findsNothing);
+    expect(find.text('Delete'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.close));
     await tester.pump();

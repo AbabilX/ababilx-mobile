@@ -182,6 +182,9 @@ class ChatRepository {
   Future<void> deleteMessage(String messageId) =>
       _messages.deleteMessage(messageId);
 
+  Future<void> hideMessage(String messageId) =>
+      _messages.hideMessage(messageId);
+
   Future<List<ChatReactionGroup>> toggleReaction(
     String messageId,
     String emoji,

@@ -242,6 +242,13 @@ class AppTranslations {
       'chat_delete_selected_failed': 'Some messages could not be deleted.',
       'chat_edit': 'Edit',
       'chat_delete': 'Delete',
+      'chat_delete_message_title': 'Delete message?',
+      'chat_delete_for_me': 'Delete for me',
+      'chat_delete_for_everyone': 'Delete for everyone',
+      'chat_delete_scope_hint':
+          'Delete for me removes it only from your devices. Delete for everyone removes it for the whole chat.',
+      'chat_delete_for_me_hint':
+          'It will be removed from your devices only. Others in the chat will still see it.',
       'chat_copied_clipboard': 'Copied to clipboard',
       'chat_edit_message': 'Edit message',
       'chat_save': 'Save',
@@ -701,6 +708,13 @@ class AppTranslations {
       'chat_delete_selected_failed': 'কিছু বার্তা মোছা যায়নি।',
       'chat_edit': 'সম্পাদনা করুন',
       'chat_delete': 'মুছুন',
+      'chat_delete_message_title': 'বার্তা মুছবেন?',
+      'chat_delete_for_me': 'আমার জন্য মুছুন',
+      'chat_delete_for_everyone': 'সবার জন্য মুছুন',
+      'chat_delete_scope_hint':
+          '"আমার জন্য মুছুন" শুধু আপনার ডিভাইস থেকে সরাবে। "সবার জন্য মুছুন" পুরো চ্যাট থেকে সরাবে।',
+      'chat_delete_for_me_hint':
+          'শুধু আপনার ডিভাইস থেকে সরানো হবে। চ্যাটের অন্যরা এখনও দেখতে পাবেন।',
       'chat_copied_clipboard': 'ক্লিপবোর্ডে কপি হয়েছে',
       'chat_edit_message': 'বার্তা সম্পাদনা করুন',
       'chat_save': 'সংরক্ষণ করুন',

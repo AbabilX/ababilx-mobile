@@ -61,12 +61,12 @@ List<SignalMenuItem> signalMenuItems({
       Icons.edit_outlined,
       labels['edit']!,
     ),
-  if (isMine)
-    SignalMenuItem(
-      SignalMessageAction.delete,
-      Icons.delete_outline_rounded,
-      labels['delete']!,
-    ),
+  // Every message: somebody else's can still be deleted for me.
+  SignalMenuItem(
+    SignalMessageAction.delete,
+    Icons.delete_outline_rounded,
+    labels['delete']!,
+  ),
 ];
 
 /// The panel is `wrap_content` with a 200dp floor in Signal, so the width has

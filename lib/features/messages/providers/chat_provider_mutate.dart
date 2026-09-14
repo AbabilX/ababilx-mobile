@@ -76,8 +76,19 @@ mixin _ChatMutateMixin
   }
 
   Future<void> deleteMessage(String messageId) async {
-    final deletingConversation = state.activeConversationId;
     await repo.deleteMessage(messageId);
+    await _forgetMessage(messageId);
+  }
+
+  /// "Delete for me": gone on this account's devices, untouched for the rest
+  /// of the conversation. Locally it is the same forgetting as a delete.
+  Future<void> hideMessage(String messageId) async {
+    await repo.hideMessage(messageId);
+    await _forgetMessage(messageId);
+  }
+
+  Future<void> _forgetMessage(String messageId) async {
+    final deletingConversation = state.activeConversationId;
     if (deletingConversation != null) {
       await ref
           .read(chatMessageStoreProvider)

@@ -10,6 +10,7 @@ import '../chat-select/message_selection.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
+import 'delete_message_dialog.dart';
 import 'reaction_emoji_picker.dart';
 import 'save_message_attachments.dart';
 import 'signal_menu_pointer.dart';
@@ -102,7 +103,26 @@ Future<void> showMessageActions(
     case SignalMessageAction.edit:
       await editMessageFlow(context, ref, msg);
     case SignalMessageAction.delete:
-      await n.deleteMessage(msg.id);
+      final scope = await showDeleteMessageDialog(
+        context,
+        ref,
+        count: 1,
+        canDeleteForEveryone: isMine && !msg.isPending,
+      );
+      if (scope == null) return;
+      try {
+        scope == MessageDeleteScope.everyone
+            ? await n.deleteMessage(msg.id)
+            : await n.hideMessage(msg.id);
+      } catch (_) {
+        if (context.mounted) {
+          showAppToast(
+            context,
+            tr('chat_delete_selected_failed'),
+            isError: true,
+          );
+        }
+      }
   }
 }
 

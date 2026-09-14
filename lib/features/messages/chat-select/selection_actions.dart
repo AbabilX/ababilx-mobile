@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../chat-forward/forward_sheet.dart';
+import '../chat-timeline/delete_message_dialog.dart';
 import '../chat-timeline/message_actions.dart';
 import '../chat-timeline/save_message_attachments.dart';
 import '../data/models/chat_models.dart';
@@ -87,7 +88,12 @@ List<SelectionAction> selectionActions({
         icon: Icons.delete_outline_rounded,
         label: tr('chat_delete'),
         onPressed: () async {
-          final deleted = await deleteSelectedMessages(context, ref, selected);
+          final deleted = await deleteSelectedMessages(
+            context,
+            ref,
+            selected,
+            canDeleteForEveryone: menu.deleteForEveryone,
+          );
           if (deleted) done();
         },
       ),
@@ -116,41 +122,30 @@ Future<void> copySelectedMessages(
   );
 }
 
-/// Confirms, then deletes one by one. Returns false when the user backed out,
-/// so the selection stays up rather than quietly emptying.
+/// Asks for me / for everyone, then deletes one by one. Returns false when the
+/// user backed out, so the selection stays up rather than quietly emptying.
 Future<bool> deleteSelectedMessages(
   BuildContext context,
   WidgetRef ref,
-  List<ChatMessage> selected,
-) async {
+  List<ChatMessage> selected, {
+  required bool canDeleteForEveryone,
+}) async {
   String tr(String key) => AppTranslations.translate(context, ref, key);
-  final body = selected.length == 1
-      ? tr('chat_delete_selected_one')
-      : tr('chat_delete_selected_many').replaceAll('{n}', '${selected.length}');
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(tr('chat_delete_selected_title')),
-      content: Text(body),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: Text(tr('cancel')),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: Text(tr('chat_delete')),
-        ),
-      ],
-    ),
+  final scope = await showDeleteMessageDialog(
+    context,
+    ref,
+    count: selected.length,
+    canDeleteForEveryone: canDeleteForEveryone,
   );
-  if (confirmed != true) return false;
+  if (scope == null) return false;
 
   final notifier = ref.read(chatProvider.notifier);
   var failed = 0;
   for (final message in selected) {
     try {
-      await notifier.deleteMessage(message.id);
+      scope == MessageDeleteScope.everyone
+          ? await notifier.deleteMessage(message.id)
+          : await notifier.hideMessage(message.id);
     } catch (_) {
       // One refusal must not abandon the rest of the batch; the count is
       // reported once at the end.

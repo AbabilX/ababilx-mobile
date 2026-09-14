@@ -84,6 +84,7 @@ void main() {
       expect(menu.forward, isTrue);
       expect(menu.copy, isTrue);
       expect(menu.delete, isTrue);
+      expect(menu.deleteForEveryone, isTrue);
     });
 
     test('two messages drop reply, edit and save — Signal\'s rule', () {
@@ -103,13 +104,14 @@ void main() {
       expect(menu.delete, isTrue);
     });
 
-    test('someone else\'s message cannot be deleted or edited', () {
+    test('someone else\'s message is deleted for me only, never edited', () {
       final menu = selectionMenuState(
         selected: [_message(userId: 'them')],
         currentUserId: 'me',
         canMessage: true,
       );
-      expect(menu.delete, isFalse);
+      expect(menu.delete, isTrue);
+      expect(menu.deleteForEveryone, isFalse);
       expect(menu.edit, isFalse);
       expect(menu.forward, isTrue);
       expect(menu.copy, isTrue);
