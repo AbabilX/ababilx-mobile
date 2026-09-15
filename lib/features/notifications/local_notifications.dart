@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:ui' show Color;
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -21,14 +22,27 @@ class LocalNotifications {
   bool _ready = false;
   void Function(String payload)? onTap;
 
+  static const _iosDetails = DarwinNotificationDetails(
+    presentAlert: true,
+    presentBadge: true,
+    presentSound: true,
+  );
+
   Future<void> init({required void Function(String payload) onTap}) async {
     this.onTap = onTap;
     if (_ready) return;
 
     // White silhouette status-bar icon (Android requires alpha-only small icon).
     const androidInit = AndroidInitializationSettings('ic_stat_ababilx');
+    // iOS: do not prompt here. FcmService already asks once via Firebase,
+    // matching Signal's single requestAuthorization. Android ignores this.
+    const iosInit = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
     await _plugin.initialize(
-      settings: const InitializationSettings(android: androidInit),
+      settings: const InitializationSettings(android: androidInit, iOS: iosInit),
       onDidReceiveNotificationResponse: (response) async {
         // A reply or mark-read press is not a tap: it must run the action and
         // leave the user where they are, not open the conversation.
@@ -72,8 +86,13 @@ class LocalNotifications {
   Future<void> initForBackground() async {
     if (_ready) return;
     const androidInit = AndroidInitializationSettings('ic_stat_ababilx');
+    const iosInit = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
     await _plugin.initialize(
-      settings: const InitializationSettings(android: androidInit),
+      settings: const InitializationSettings(android: androidInit, iOS: iosInit),
       onDidReceiveBackgroundNotificationResponse:
           chatNotificationBackgroundAction,
     );
@@ -90,6 +109,19 @@ class LocalNotifications {
   }
 
   Future<bool> requestPermission() async {
+    if (Platform.isIOS) {
+      final ios = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      final granted = await ios?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      // A missing plugin must not wipe a Firebase grant on iOS.
+      return granted ?? true;
+    }
     final android = _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -124,6 +156,7 @@ class LocalNotifications {
         // Same full-color app icon as the launcher (home screen).
         largeIcon: const DrawableResourceAndroidBitmap('ic_launcher'),
       ),
+      iOS: _iosDetails,
     );
 
     await _plugin.show(
@@ -150,7 +183,7 @@ class LocalNotifications {
       id: id,
       title: title,
       body: body,
-      notificationDetails: NotificationDetails(android: android),
+      notificationDetails: NotificationDetails(android: android, iOS: _iosDetails),
       payload: payload,
     );
   }

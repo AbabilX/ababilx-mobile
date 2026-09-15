@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
@@ -99,7 +100,10 @@ class FcmService {
       permissionGranted =
           localGranted &&
           settings.authorizationStatus != AuthorizationStatus.denied;
-      if (permissionGranted) {
+      // Android 14 full-screen-intent only. Calling it on iOS throws and the
+      // catch below used to mark permission denied, so the iOS prompt could
+      // never stick.
+      if (permissionGranted && !Platform.isIOS) {
         await FlutterCallkitIncoming.requestFullIntentPermission();
       }
     } catch (e) {
@@ -127,7 +131,7 @@ class FcmService {
       fcmLog('token.refresh', fcmTokenPreview(token));
       await _storage.writeFcmToken(token);
       try {
-        await _devices.register(token);
+        await _devices.register(token, platform: _pushPlatform);
         fcmLog('token.refresh.register.ok');
       } catch (e) {
         fcmLog('token.refresh.register.fail', e);
@@ -266,6 +270,18 @@ class FcmService {
 
   Future<void> _syncToken() async {
     fcmLog('token.sync.begin');
+    if (Platform.isIOS) {
+      try {
+        var apns = await _messaging.getAPNSToken();
+        if (apns == null) {
+          await Future<void>.delayed(const Duration(seconds: 2));
+          apns = await _messaging.getAPNSToken();
+        }
+        fcmLog('token.apns', apns == null ? 'null' : 'ok');
+      } catch (e) {
+        fcmLog('token.apns.fail', e);
+      }
+    }
     String? token;
     try {
       token = await _messaging.getToken();
@@ -286,7 +302,7 @@ class FcmService {
     await _storage.writeFcmToken(token);
 
     try {
-      await _devices.register(token);
+      await _devices.register(token, platform: _pushPlatform);
       fcmLog('token.sync.done', 'registered with API');
     } catch (e) {
       fcmLog(
@@ -453,6 +469,8 @@ class FcmService {
         return 'general';
     }
   }
+
+  String get _pushPlatform => Platform.isIOS ? 'ios' : 'android';
 
   bool get isStarted => _started;
 }

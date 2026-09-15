@@ -322,3 +322,24 @@ adb shell dumpsys deviceidle whitelist | grep ababilx
 ```
 
 An app on that list is exempt, and the prompt must then stay silent.
+
+## iOS (2026-09-15)
+
+Android above is unchanged. iOS is a separate, incomplete path:
+
+- Permission is `UNUserNotificationCenter.requestAuthorization` (Signal:
+  `UserNotificationsPresenter.registerNotificationSettings`), asked once from
+  `FcmService.start` via Firebase + Darwin. The Android full-screen-intent
+  call is skipped on iOS — it threw and used to mark permission as denied.
+- `AppDelegate` sets `UNUserNotificationCenter.current().delegate` before
+  launch returns (Signal's tap rule). A notification tap then reaches
+  `FirebaseMessaging.onMessageOpenedApp` / local-notification `onTap`.
+- Device registration sends `platform: ios` so the server keeps the
+  placeholder notification block (no NSE yet). Android still sends `android`
+  and still gets data-only.
+- No `aps-environment` entitlement yet: a free Personal Team cannot sign
+  Push Notifications. Remote FCM needs a paid Apple team + that capability.
+  Local banners and the Allow prompt work without it.
+- Do not add a `UNNotificationServiceExtension` in this pass. That is the
+  follow-up that lets iOS decrypt like Android; until then iOS keeps the
+  server placeholder.
