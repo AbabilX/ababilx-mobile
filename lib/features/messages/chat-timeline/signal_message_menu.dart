@@ -48,6 +48,9 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
   required bool showSelect,
   required Map<String, String> labels,
   SignalMenuPointer? pointer,
+  bool showForward = true,
+  bool showCopy = true,
+  bool showEdit = true,
 }) {
   return showGeneralDialog<SignalMessageMenuResult>(
     context: context,
@@ -67,6 +70,9 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
         showSave: showSave,
         showSelect: showSelect,
         labels: labels,
+        showForward: showForward,
+        showCopy: showCopy,
+        showEdit: showEdit,
       ),
       moreLabel: labels['moreReactions']!,
     ),

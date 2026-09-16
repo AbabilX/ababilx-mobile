@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../jpack/data/jpack_payload.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../chat-forward/forward_sheet.dart';
 import '../chat-select/message_selection.dart';
@@ -31,6 +32,9 @@ Future<void> showMessageActions(
   final isMine = msg.userId == ref.read(chatProvider).currentUserId;
   final conversation = ref.read(chatProvider).conversationById(conversationId);
   final isDm = conversation?.isDm ?? true;
+  // A JPack is money: forwarding would copy it, editing would overwrite it,
+  // and its body is a payload rather than text worth copying.
+  final isJPack = JPackPayload.tryParse(msg.body) != null;
 
   String tr(String key) => AppTranslations.translate(context, ref, key);
   final result = await showSignalMessageMenu(
@@ -52,6 +56,9 @@ Future<void> showMessageActions(
     // panel has room for neither — so the door only opens on the main
     // timeline, where those bars replace the header and the composer.
     showSelect: threadRootId == null,
+    showForward: !isJPack,
+    showCopy: !isJPack,
+    showEdit: !isJPack,
     labels: {
       'dismiss': tr('chat_dismiss_message_actions'),
       'reply': tr('chat_reply'),

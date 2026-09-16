@@ -1,3 +1,4 @@
+import '../../jpack/data/jpack_payload.dart';
 import '../chat-timeline/save_message_attachments.dart';
 import '../data/models/chat_models.dart';
 import '../message_e2ee/vault_placeholder.dart';
@@ -58,17 +59,20 @@ SelectionMenuState selectionMenuState({
     (m) => !m.isDeleted && tiptapToPlainText(m.body).trim().isNotEmpty,
   );
   final allMine = selected.every((m) => m.userId == currentUserId);
+  // A JPack is money: never forwarded, copied or edited.
+  final anyJPack = selected.any((m) => JPackPayload.tryParse(m.body) != null);
 
   final forward =
       !anyDeleted &&
       !anyPending &&
       !anySealed &&
+      !anyJPack &&
       selected.length <= maxForwardableMessages;
 
   return SelectionMenuState(
     reply: single != null && !anyDeleted && !anyPending && canMessage,
     forward: forward,
-    copy: anyText && !anySealed,
+    copy: anyText && !anySealed && !anyJPack,
     save: single != null && canSaveMessageAttachments(single),
     edit:
         single != null &&
@@ -76,6 +80,7 @@ SelectionMenuState selectionMenuState({
         !anyDeleted &&
         !anyPending &&
         !anySealed &&
+        !anyJPack &&
         anyText,
     // Anything can be deleted for me; only the sender's own rows for
     // everyone — the server refuses anybody else's.

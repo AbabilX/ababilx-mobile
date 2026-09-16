@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../jpack/screens/jpack_cover_gallery_screen.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../../../shared/media/device_gallery.dart';
 import '../data/models/chat_models.dart';
@@ -651,6 +652,26 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     unawaited(_shareContact());
   }
 
+  /// JPack is one sender, one receiver: offered in a DM with a peer, on the
+  /// main timeline only.
+  VoidCallback? get _jpackAction {
+    if (widget.parentId != null) return null;
+    final conv = ref.read(chatProvider).conversationById(widget.conversationId);
+    if (conv == null || !conv.hasDmPeer) return null;
+    return () {
+      _closeAttachmentPanel();
+      unawaited(
+        openJPackFlow(
+          context,
+          conversationId: widget.conversationId,
+          recipientName: conv.displayTitle(
+            ref.read(chatProvider).currentUserId,
+          ),
+        ),
+      );
+    };
+  }
+
   Future<void> _startVoiceRecording() async {
     if (_voiceSheetOpen || _recordFinishing || ref.read(chatProvider).sending) {
       return;
@@ -970,6 +991,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                         _selectAttachment(ComposerAttachKind.camera),
                     onFile: () => _selectAttachment(ComposerAttachKind.file),
                     onContact: _selectContact,
+                    jpackLabel: tr('jpack_chip'),
+                    onJPack: _jpackAction,
                     onPickMedia: _pickFromRail,
                     selectedMediaUris: [
                       for (final item in _selectedRecent) item.uri,

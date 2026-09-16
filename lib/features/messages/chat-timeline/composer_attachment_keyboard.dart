@@ -24,6 +24,8 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
     required this.onContact,
     required this.onPickMedia,
     this.selectedMediaUris = const [],
+    this.jpackLabel = 'JPack',
+    this.onJPack,
   });
 
   final String galleryLabel;
@@ -34,6 +36,10 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
   final VoidCallback onCamera;
   final VoidCallback onFile;
   final VoidCallback onContact;
+
+  /// JPack gift money. Null hides the chip — it is offered in a DM only.
+  final String jpackLabel;
+  final VoidCallback? onJPack;
 
   /// A tap straight on the rail, which skips the picker entirely.
   final ValueChanged<DeviceMediaItem> onPickMedia;
@@ -81,6 +87,12 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
                     icon: HugeIcons.strokeRoundedUserCircle,
                     onTap: onContact,
                   ),
+                  if (onJPack != null)
+                    AttachChip(
+                      label: jpackLabel,
+                      icon: HugeIcons.strokeRoundedGift,
+                      onTap: onJPack!,
+                    ),
                 ],
               ),
             ),
