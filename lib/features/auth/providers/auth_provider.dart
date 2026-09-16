@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../attachments/providers/attachment_providers.dart';
+import '../../messages/message_e2ee/message_entry_quiet.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/archive/archive_provider.dart';
 import '../../messages/message_e2ee/new_chat_setup.dart';
@@ -23,6 +24,9 @@ class AuthNotifier extends AsyncNotifier<bool> {
     final token = await ref.read(authRepositoryProvider).readToken();
     if (token == null) return false;
     await _bootstrapLegacyOwner();
+    // Decided before auth resolves, so a returning launch routes straight to
+    // chats instead of passing through the message check screen.
+    await tryQuietMessageEntry(ref);
     return true;
   }
 

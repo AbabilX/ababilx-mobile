@@ -15,8 +15,7 @@ import 'new_chat_setup.dart';
 import 'vault_gate_recovery_choice.dart';
 import 'vault_gate_recovery_code.dart';
 
-/// The one post-login decision screen. New sessions never show an OTP or a
-/// save-code screen. Restore continues in chat once the identity is unlocked.
+/// The one post-login decision screen; restore continues in chat after unlock.
 class MessageRecoveryScreen extends ConsumerStatefulWidget {
   const MessageRecoveryScreen({super.key});
   @override
@@ -37,9 +36,9 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
     unawaited(_start());
   }
 
-  /// Nothing this screen does survives an unaccepted privacy policy — the
-  /// gate 403s the vault status and the session write alike — and this route
-  /// sits outside the shell that normally carries the policy card.
+  /// Policy first: this route sits outside the shell and its policy card, and
+  /// the gate 403s every call below. (A phone holding its key never gets
+  /// here on launch — see `tryQuietMessageEntry`.)
   Future<void> _start() async {
     if (await policyPending(ref)) {
       if (mounted) setState(() => _needsPolicy = true);
@@ -54,8 +53,7 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
       _error = null;
     });
     try {
-      final chat = ref.read(chatProvider.notifier);
-      _userId = await chat.ensureCurrentUserId();
+      _userId = await ref.read(chatProvider.notifier).ensureCurrentUserId();
       if (!mounted) return;
       final vault = ref.read(messageVaultProvider);
       final api = ref.read(chatRecoveryApiProvider);
@@ -67,7 +65,7 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
       try {
         status = await ref.read(chatRepositoryProvider).getE2eeVault();
       } catch (_) {
-        // A failed status request does not invalidate this phone's trusted key.
+        // A failed request does not invalidate this phone's trusted key.
         if (await vault.restoreTrustedIdentityOffline()) {
           if (mounted) _finish();
           return;
@@ -104,8 +102,7 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
       }
     } catch (error) {
       if (!mounted) return;
-      // A cached profile can predate a bump of the policy version, so the
-      // refusal is still worth reading off the failure itself.
+      // A cached profile can predate a policy bump; read the refusal too.
       if (isPolicyRefusal(error)) {
         setState(() => _needsPolicy = true);
         return;
@@ -117,9 +114,7 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
     }
   }
 
-  void _finish() {
-    ref.read(messageEntryReadyProvider.notifier).state = true;
-  }
+  void _finish() => ref.read(messageEntryReadyProvider.notifier).state = true;
 
   void _newSession() {
     if (_busy) return;
@@ -131,7 +126,7 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
   }
 
   Future<void> _recovered() async {
-    // Persist the restore intent before navigating, so a killed app resumes.
+    // Persisted before navigating, so a killed app resumes.
     await ref.read(chatProvider.notifier).markHistoryRestorePending();
     if (!mounted) return;
     await ref.read(archiveProvider.notifier).markRecoveryPending();
@@ -147,8 +142,7 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
       setState(() => _needsPolicy = false);
       unawaited(_check());
     });
-    // Standalone here, not an overlay: this route has no shell under it,
-    // so it supplies its own surface behind the card's scrim.
+    // No shell under this route, so the card gets its own surface.
     if (_needsPolicy) return const Scaffold(body: PolicyAcceptCard());
     return PopScope(
       canPop: false,

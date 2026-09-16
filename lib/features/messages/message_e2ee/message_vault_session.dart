@@ -52,6 +52,10 @@ extension MessageVaultSession on MessageVault {
     await _commitSession(userId, saved, api);
   }
 
+  /// A restore that was killed mid-run, still waiting to be committed.
+  Future<bool> hasPendingSession(String userId) async =>
+      await _storage.readPendingRecovery(userId) != null;
+
   Future<bool> resumePendingSession(String userId, ChatRecoveryApi api) async {
     final saved = await _storage.readPendingRecovery(userId);
     if (saved == null) return false;

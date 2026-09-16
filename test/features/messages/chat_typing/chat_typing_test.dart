@@ -18,7 +18,11 @@ void main() {
       );
       expect(
         typingLabel(const ['A', 'B', 'C'], isGroup: true),
-        '3 people are typing…',
+        'A, B and C are typing…',
+      );
+      expect(
+        typingLabel(const ['A', 'B', 'C', 'D', 'E'], isGroup: true),
+        'A, B and 3 others are typing…',
       );
       expect(typingLabel(const ['  '], isGroup: true), 'Someone is typing…');
     });

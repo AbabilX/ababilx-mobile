@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/ws_client.dart';
 
 /// Reports this device's draft state for one conversation.
@@ -35,9 +37,14 @@ class ChatTypingSender {
     _send(false);
   }
 
-  void _send(bool typing) => ws.send({
-    'type': 'chat.typing',
-    'conversation_id': conversationId,
-    'typing': typing,
-  });
+  void _send(bool typing) {
+    final sent = ws.send({
+      'type': 'chat.typing',
+      'conversation_id': conversationId,
+      'typing': typing,
+    });
+    if (kDebugMode) {
+      debugPrint('[typing] send conv=$conversationId typing=$typing ok=$sent');
+    }
+  }
 }

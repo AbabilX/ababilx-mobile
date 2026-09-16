@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/ws_client.dart';
@@ -38,6 +39,12 @@ class ChatTypingNotifier extends Notifier<Map<String, Map<String, Typist>>> {
     final convId = ev['conversation_id'] as String? ?? '';
     if (convId.isEmpty) return;
     if (type == 'chat.typing') {
+      if (kDebugMode) {
+        debugPrint(
+          '[typing] recv conv=$convId from=${ev['from_user_id']} '
+          'typing=${ev['typing']} enabled=${ref.read(typingIndicatorsProvider)}',
+        );
+      }
       if (!ref.read(typingIndicatorsProvider)) return;
       final userId = ev['from_user_id'] as String? ?? '';
       if (userId.isEmpty) return;

@@ -66,7 +66,9 @@ final _routerRefreshNotifierProvider = Provider<_RouterRefreshNotifier>((ref) {
     final wasLoggedIn = previous?.valueOrNull ?? false;
     final isLoggedIn = next.valueOrNull ?? false;
     if (wasLoggedIn == isLoggedIn) return;
-    ref.read(messageEntryReadyProvider.notifier).state = false;
+    // Only a sign-out clears it: a launch sets it during auth's own load
+    // (tryQuietMessageEntry), and clearing on that transition would undo it.
+    if (!isLoggedIn) ref.read(messageEntryReadyProvider.notifier).state = false;
     ref.invalidate(profileProvider);
     ref.invalidate(teamGateProvider);
   });

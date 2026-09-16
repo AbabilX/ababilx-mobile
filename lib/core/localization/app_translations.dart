@@ -482,7 +482,8 @@ class AppTranslations {
       'chat_typing': 'typing…',
       'chat_typing_one': '{name} is typing…',
       'chat_typing_two': '{a} and {b} are typing…',
-      'chat_typing_many': '{count} people are typing…',
+      'chat_typing_three': '{a}, {b} and {c} are typing…',
+      'chat_typing_many': '{a}, {b} and {count} others are typing…',
       'chat_typing_someone': 'Someone',
       'typing_indicators_title': 'Typing indicators',
       'typing_indicators_hint':
@@ -949,7 +950,8 @@ class AppTranslations {
       'chat_typing': 'টাইপ করছে…',
       'chat_typing_one': '{name} টাইপ করছে…',
       'chat_typing_two': '{a} ও {b} টাইপ করছে…',
-      'chat_typing_many': '{count} জন টাইপ করছে…',
+      'chat_typing_three': '{a}, {b} ও {c} টাইপ করছে…',
+      'chat_typing_many': '{a}, {b} ও আরও {count} জন টাইপ করছে…',
       'chat_typing_someone': 'কেউ',
       'typing_indicators_title': 'টাইপিং ইন্ডিকেটর',
       'typing_indicators_hint':

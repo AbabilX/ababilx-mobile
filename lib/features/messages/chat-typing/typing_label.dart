@@ -23,5 +23,11 @@ String typingLabel(
       'chat_typing_two',
     ).replaceAll('{a}', shown[0]).replaceAll('{b}', shown[1]);
   }
-  return t('chat_typing_many').replaceAll('{count}', '${shown.length}');
+  final named = t(
+    shown.length == 3 ? 'chat_typing_three' : 'chat_typing_many',
+  ).replaceAll('{a}', shown[0]).replaceAll('{b}', shown[1]);
+  // Three still fit on one line by name; past that the rest become a count.
+  return shown.length == 3
+      ? named.replaceAll('{c}', shown[2])
+      : named.replaceAll('{count}', '${shown.length - 2}');
 }
