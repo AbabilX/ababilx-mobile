@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../jpack/data/jpack_preview.dart';
 import 'data/models/chat_models.dart';
 import 'tiptap_plain_text.dart';
 
@@ -86,7 +87,10 @@ ChatListPreview chatListPreview(ChatConversation conv, String? currentUserId) {
   final hasBody = rawBody.isNotEmpty && !isTiptapEmpty(rawBody);
   var text = '';
 
-  if (hasBody) {
+  final jpack = hasBody ? jpackPreviewText(rawBody) : null;
+  if (jpack != null) {
+    text = jpack;
+  } else if (hasBody) {
     text = tiptapToPreviewText(rawBody);
     if (text.isEmpty || _looksLikeJson(text)) {
       text = extractFromBrokenTiptapJson(rawBody).trim();

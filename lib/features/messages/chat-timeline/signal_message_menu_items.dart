@@ -18,28 +18,33 @@ List<SignalMenuItem> signalMenuItems({
   required bool showSave,
   required bool showSelect,
   required Map<String, String> labels,
+  bool showForward = true,
+  bool showCopy = true,
+  bool showEdit = true,
 }) => [
   SignalMenuItem(
     SignalMessageAction.reply,
     Icons.reply_rounded,
     labels['reply']!,
   ),
-  SignalMenuItem(
-    SignalMessageAction.forward,
-    Icons.shortcut_rounded,
-    labels['forward']!,
-  ),
+  if (showForward)
+    SignalMenuItem(
+      SignalMessageAction.forward,
+      Icons.shortcut_rounded,
+      labels['forward']!,
+    ),
   if (showSave)
     SignalMenuItem(
       SignalMessageAction.save,
       Icons.save_alt_rounded,
       labels['save']!,
     ),
-  SignalMenuItem(
-    SignalMessageAction.copy,
-    Icons.content_copy_outlined,
-    labels['copy']!,
-  ),
+  if (showCopy)
+    SignalMenuItem(
+      SignalMessageAction.copy,
+      Icons.content_copy_outlined,
+      labels['copy']!,
+    ),
   if (showThread)
     SignalMenuItem(
       SignalMessageAction.thread,
@@ -55,7 +60,7 @@ List<SignalMenuItem> signalMenuItems({
       Icons.check_circle_outline,
       labels['select']!,
     ),
-  if (isMine)
+  if (isMine && showEdit)
     SignalMenuItem(
       SignalMessageAction.edit,
       Icons.edit_outlined,
