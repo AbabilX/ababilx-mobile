@@ -39,7 +39,7 @@ class JPackPayload {
   /// The line every client that does not know JPack shows instead.
   String get fallbackText {
     final text = message.trim();
-    return text.isEmpty ? '🧧 JPack' : '🧧 JPack — $text';
+    return text.isEmpty ? '💌 JPack' : '💌 JPack · $text';
   }
 
   static final _cache = <String, JPackPayload?>{};

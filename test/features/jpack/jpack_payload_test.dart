@@ -26,7 +26,7 @@ void main() {
   test('clients without JPack read the fallback line', () {
     expect(
       tiptapToPlainText(encodeJPackBody(payload)),
-      '🧧 JPack — ঈদ মোবারক!',
+      '💌 JPack · ঈদ মোবারক!',
     );
     expect(
       const JPackPayload(
@@ -34,7 +34,7 @@ void main() {
         coverId: 'classic',
         message: ' ',
       ).fallbackText,
-      '🧧 JPack',
+      '💌 JPack',
     );
   });
 
