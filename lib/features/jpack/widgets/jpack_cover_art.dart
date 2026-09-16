@@ -55,7 +55,7 @@ class JPackCoverArt extends StatelessWidget {
     required this.width,
     this.part = JPackCoverPart.full,
     this.showSeal = true,
-    this.sealLabel = '৳',
+    this.sealLabel = '✉',
     this.radius,
     this.child,
   });
@@ -111,7 +111,7 @@ class JPackCoverArt extends StatelessWidget {
   }
 }
 
-/// The round gold button on the flap — WeChat's 開, ours says ৳ or "খুলুন".
+/// The round gold button on the flap — WeChat's 開, ours says ✉ or "খুলুন".
 class JPackSeal extends StatelessWidget {
   const JPackSeal({super.key, required this.cover, required this.label});
 
@@ -248,7 +248,7 @@ class JPackCoverPainter extends CustomPainter {
     ..strokeWidth = width
     ..strokeCap = StrokeCap.round;
 
-  // ── classic: gold lattice and a few coins ────────────────────────────────
+  // ── classic: gold lattice and a few medallions ────────────────────────────────
   void _classic(Canvas canvas, Rect r, double w) {
     final step = w / 6;
     final lattice = _stroke(cover.accent, w * 0.006, 0.28);
@@ -256,12 +256,16 @@ class JPackCoverPainter extends CustomPainter {
       canvas.drawLine(Offset(x, 0), Offset(x + r.height, r.height), lattice);
       canvas.drawLine(Offset(x, r.height), Offset(x + r.height, 0), lattice);
     }
-    final coins = [(0.22, 0.2, 0.09), (0.74, 0.32, 0.12), (0.36, 0.5, 0.07)];
-    for (final (cx, cy, cr) in coins) {
+    final medallions = [
+      (0.22, 0.2, 0.09),
+      (0.74, 0.32, 0.12),
+      (0.36, 0.5, 0.07),
+    ];
+    for (final (cx, cy, cr) in medallions) {
       final c = Offset(r.width * cx, r.height * cy);
       canvas.drawCircle(c, w * cr, _fill(cover.accent, 0.9));
       canvas.drawCircle(c, w * cr * 0.72, _stroke(cover.bottom, w * 0.01, 0.5));
-      _text(canvas, '৳', c, w * cr * 1.1, cover.bottom.withValues(alpha: 0.7));
+      _text(canvas, '✦', c, w * cr * 1.1, cover.bottom.withValues(alpha: 0.7));
     }
   }
 

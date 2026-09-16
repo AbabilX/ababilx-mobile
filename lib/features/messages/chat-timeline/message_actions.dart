@@ -32,8 +32,8 @@ Future<void> showMessageActions(
   final isMine = msg.userId == ref.read(chatProvider).currentUserId;
   final conversation = ref.read(chatProvider).conversationById(conversationId);
   final isDm = conversation?.isDm ?? true;
-  // A JPack is money: forwarding would copy it, editing would overwrite it,
-  // and its body is a payload rather than text worth copying.
+  // A JPack is a card: a forwarded copy would share its id (and its opened
+  // state), editing would overwrite it, and its body is a payload, not text.
   final isJPack = JPackPayload.tryParse(msg.body) != null;
 
   String tr(String key) => AppTranslations.translate(context, ref, key);

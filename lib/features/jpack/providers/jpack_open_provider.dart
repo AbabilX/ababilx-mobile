@@ -13,9 +13,6 @@ enum JPackOpenPhase {
 
   /// Opened just now, or opened before, or ours.
   revealed,
-
-  /// Nobody may open it any more.
-  expired,
 }
 
 class JPackOpenState {
@@ -26,8 +23,8 @@ class JPackOpenState {
 
   final JPackOpenPhase phase;
 
-  /// True only for the open that just credited — confetti and the count-up
-  /// play once, never on a revisit.
+  /// True only for the open that just happened — confetti plays once, never
+  /// on a revisit.
   final bool celebrate;
 }
 
@@ -68,41 +65,26 @@ class JPackOpenNotifier
   }
 
   Future<void> _load(JPackOpenArgs args) async {
-    final claimed = await ref
-        .read(jpackClaimsStoreProvider)
-        .isClaimed(args.payload.id);
+    final opened = await ref
+        .read(jpackOpenedStoreProvider)
+        .isOpened(args.payload.id);
     if (_disposed) return;
-    final status = jpackStatus(
-      isOwn: args.isOwn,
-      claimed: claimed,
-      expired: jpackIsExpired(args.message),
-    );
+    final status = jpackStatus(isOwn: args.isOwn, opened: opened);
     state = JPackOpenState(
-      phase: switch (status) {
-        JPackStatus.claimable => JPackOpenPhase.sealed,
-        JPackStatus.opened || JPackStatus.sent => JPackOpenPhase.revealed,
-        JPackStatus.expired ||
-        JPackStatus.claimClosed => JPackOpenPhase.expired,
-      },
+      phase: status == JPackStatus.unopened
+          ? JPackOpenPhase.sealed
+          : JPackOpenPhase.revealed,
     );
   }
 
-  /// The swipe finished. Expiry is checked again here: the envelope may have
-  /// sat on screen across the 48-hour mark.
-  Future<void> claim() async {
+  /// The swipe finished.
+  Future<void> open() async {
     if (state.phase != JPackOpenPhase.sealed) return;
-    final args = arg;
-    if (jpackIsExpired(args.message)) {
-      state = const JPackOpenState(phase: JPackOpenPhase.expired);
-      return;
-    }
-    final p = args.payload;
-    // Credit and mark before the screen changes, so leaving mid-animation
-    // cannot lose the money or pay it again on the next tap.
-    await ref.read(walletBalanceProvider.notifier).credit(p.amount, ref: p.id);
-    await ref.read(jpackClaimsStoreProvider).markClaimed(p.id);
+    final id = arg.payload.id;
+    // Mark before the screen changes, so leaving mid-animation still counts.
+    await ref.read(jpackOpenedStoreProvider).markOpened(id);
     if (_disposed) return;
-    ref.invalidate(jpackClaimedProvider(p.id));
+    ref.invalidate(jpackOpenedProvider(id));
     state = const JPackOpenState(
       phase: JPackOpenPhase.revealed,
       celebrate: true,

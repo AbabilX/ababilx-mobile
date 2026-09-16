@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'jpack_money.dart';
-
 /// A JPack as it travels: inside the message body, not beside it.
 ///
+/// A JPack is a greeting card — a cover and a message — and carries no money.
+///
 /// The send API carries `body` and nothing else a client chooses — no
-/// `message_type`, no `meta` — and in a DM only `body` is sealed. So the gift
+/// `message_type`, no `meta` — and in a DM only `body` is sealed. So the card
 /// rides as a TipTap doc whose `attrs.jpack` holds the data, and whose one
 /// paragraph is a readable line. Everything that reads a body as text
 /// (`tiptapToPlainText`: chat-list previews, notifications, search, web,
@@ -15,20 +15,16 @@ class JPackPayload {
   const JPackPayload({
     required this.id,
     required this.coverId,
-    required this.amount,
     required this.message,
-    this.currency = 'BDT',
     this.lang = 'bn',
   });
 
-  static const version = 1;
+  /// 2 dropped the amount. A v1 body still parses; its amount is ignored.
+  static const version = 2;
 
-  /// Stable across devices; the receiver's credit is keyed on it, so opening
-  /// the same JPack twice can never pay twice.
+  /// Stable across devices; "opened" is remembered by it.
   final String id;
   final String coverId;
-  final double amount;
-  final String currency;
   final String message;
   final String lang;
 
@@ -36,17 +32,14 @@ class JPackPayload {
     'v': version,
     'id': id,
     'cover': coverId,
-    'amount': amount,
-    'currency': currency,
     'message': message,
     'lang': lang,
   };
 
   /// The line every client that does not know JPack shows instead.
   String get fallbackText {
-    final head = '🧧 JPack · ${formatTaka(amount)}';
     final text = message.trim();
-    return text.isEmpty ? head : '$head — $text';
+    return text.isEmpty ? '🧧 JPack' : '🧧 JPack — $text';
   }
 
   static final _cache = <String, JPackPayload?>{};
@@ -73,15 +66,10 @@ class JPackPayload {
       final j = attrs['jpack'];
       if (j is! Map) return null;
       final id = j['id'];
-      final amount = j['amount'];
-      if (id is! String || id.isEmpty || amount is! num || amount <= 0) {
-        return null;
-      }
+      if (id is! String || id.isEmpty) return null;
       return JPackPayload(
         id: id,
         coverId: j['cover'] is String ? j['cover'] as String : 'classic',
-        amount: amount.toDouble(),
-        currency: j['currency'] is String ? j['currency'] as String : 'BDT',
         message: j['message'] is String ? j['message'] as String : '',
         lang: j['lang'] is String ? j['lang'] as String : 'bn',
       );

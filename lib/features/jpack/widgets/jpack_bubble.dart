@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,12 +5,10 @@ import '../../../core/localization/app_translations.dart';
 import '../../messages/chat-select/message_selection.dart';
 import '../../messages/data/models/chat_models.dart';
 import '../data/jpack_covers.dart';
-import '../data/jpack_money.dart';
 import '../data/jpack_payload.dart';
 import '../data/jpack_status.dart';
 import '../providers/jpack_providers.dart';
-import '../screens/jpack_open_screen.dart';
-import 'ababil_pay_sheet.dart';
+import '../screens/jpack_open_route.dart';
 import 'jpack_cover_art.dart';
 
 /// A JPack in the timeline. Fills the bubble edge to edge, like media; the
@@ -35,37 +31,18 @@ class JPackBubbleCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     String t(String key) => AppTranslations.translate(context, ref, key);
     final cover = jpackCoverById(payload.coverId);
-    final claimed =
-        ref.watch(jpackClaimedProvider(payload.id)).valueOrNull ?? false;
+    final opened =
+        ref.watch(jpackOpenedProvider(payload.id)).valueOrNull ?? false;
     final selecting = ref.watch(messageSelectionProvider).isActive;
     final failed = message.sendStatus == MessageSendStatus.failed;
-    // Read at build: a bubble on screen across the 48-hour mark updates on
-    // its next rebuild, and the open screen checks again before it pays.
-    final left = jpackTimeLeft(message);
-    final state = jpackStatus(
-      isOwn: isOwn,
-      claimed: claimed,
-      expired: left == Duration.zero,
-    );
-    final expired =
-        state == JPackStatus.expired || state == JPackStatus.claimClosed;
-    final dim = state == JPackStatus.opened;
+    final state = jpackStatus(isOwn: isOwn, opened: opened);
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
     final status = switch (state) {
       JPackStatus.sent => t('jpack_sent'),
       JPackStatus.opened => t('jpack_opened'),
-      JPackStatus.expired => t('jpack_expired'),
-      JPackStatus.claimClosed => t('jpack_claim_closed'),
-      // The last 12 hours count down, so "tap to open" gains some urgency.
-      JPackStatus.claimable when left != null && left.inHours < 12 =>
-        left.inHours >= 1
-            ? t('jpack_expires_in_hours').replaceAll('{n}', '${left.inHours}')
-            : t(
-                'jpack_expires_in_minutes',
-              ).replaceAll('{n}', '${math.max(1, left.inMinutes)}'),
-      JPackStatus.claimable => t('jpack_tap_to_open'),
+      JPackStatus.unopened => t('jpack_tap_to_open'),
     };
 
     final card = SizedBox(
@@ -76,78 +53,42 @@ class JPackBubbleCard extends ConsumerWidget {
         children: [
           AnimatedOpacity(
             duration: const Duration(milliseconds: 200),
-            opacity: expired ? 0.5 : (dim ? 0.62 : 1),
-            child: ColorFiltered(
-              colorFilter: expired ? _desaturate : _identity,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color.lerp(cover.flap, Colors.white, 0.12)!,
-                      cover.flap,
-                    ],
-                  ),
+            opacity: state == JPackStatus.opened ? 0.62 : 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color.lerp(cover.flap, Colors.white, 0.12)!,
+                    cover.flap,
+                  ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: JPackCoverArt(
-                          cover: cover,
-                          width: 44,
-                          radius: 4,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: JPackCoverArt(cover: cover, width: 44, radius: 4),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        payload.message.trim().isEmpty
+                            ? 'JPack'
+                            : payload.message,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              payload.message.trim().isEmpty
-                                  ? 'JPack'
-                                  : payload.message,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                height: 1.25,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: cover.accent.withValues(alpha: 0.95),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                formatTaka(payload.amount),
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: Color.lerp(
-                                    cover.flap,
-                                    Colors.black,
-                                    0.35,
-                                  ),
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -157,7 +98,7 @@ class JPackBubbleCard extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             child: Row(
               children: [
-                const AbabilPayMark(size: 14),
+                Icon(Icons.mail_rounded, size: 14, color: cover.flap),
                 const SizedBox(width: 6),
                 Text(
                   'JPack',
@@ -170,11 +111,9 @@ class JPackBubbleCard extends ConsumerWidget {
                 Text(
                   status,
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: switch (state) {
-                      JPackStatus.claimable => cover.flap,
-                      JPackStatus.expired => colors.error,
-                      _ => colors.onSurfaceVariant,
-                    },
+                    color: state == JPackStatus.unopened
+                        ? cover.flap
+                        : colors.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -203,18 +142,4 @@ class JPackBubbleCard extends ConsumerWidget {
       ),
     );
   }
-
-  static const _identity = ColorFilter.matrix(<double>[
-    1, 0, 0, 0, 0, //
-    0, 1, 0, 0, 0, //
-    0, 0, 1, 0, 0, //
-    0, 0, 0, 1, 0,
-  ]);
-
-  static const _desaturate = ColorFilter.matrix(<double>[
-    0.2126, 0.7152, 0.0722, 0, 0, //
-    0.2126, 0.7152, 0.0722, 0, 0, //
-    0.2126, 0.7152, 0.0722, 0, 0, //
-    0, 0, 0, 1, 0,
-  ]);
 }

@@ -5,8 +5,11 @@ import '../../../core/localization/app_translations.dart';
 import '../../../shared/text/name_search.dart';
 import '../data/jpack_covers.dart';
 import '../providers/jpack_compose_provider.dart';
-import '../widgets/jpack_balance_chip.dart';
+import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
+import '../widgets/jpack_bottom_bar.dart';
 import '../widgets/jpack_cover_art.dart';
+import '../widgets/jpack_cover_tile.dart';
+import '../widgets/jpack_search_field.dart';
 import 'jpack_compose_screen.dart';
 
 /// The chip in the chat's + panel lands here: pick a cover, then fill it in.
@@ -25,7 +28,7 @@ Future<void> openJPackFlow(
 
 /// Every cover, two to a row. Opened from the chat it leads on to the compose
 /// screen; opened from the compose screen ([picking]) it hands a cover back.
-class JPackCoverGalleryScreen extends ConsumerWidget {
+class JPackCoverGalleryScreen extends ConsumerStatefulWidget {
   const JPackCoverGalleryScreen({
     super.key,
     required this.conversationId,
@@ -39,17 +42,39 @@ class JPackCoverGalleryScreen extends ConsumerWidget {
   final String? selectedId;
   final bool picking;
 
+  @override
+  ConsumerState<JPackCoverGalleryScreen> createState() =>
+      _JPackCoverGalleryScreenState();
+}
+
+class _JPackCoverGalleryScreenState
+    extends ConsumerState<JPackCoverGalleryScreen> {
+  late final TextEditingController _searchCtrl = TextEditingController(
+    text: ref.read(jpackCoverQueryProvider(widget.picking)),
+  );
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _setQuery(String v) {
+    ref.read(jpackCoverQueryProvider(widget.picking).notifier).state = v.trim();
+    setState(() {});
+  }
+
   Future<void> _choose(BuildContext context, JPackCover cover) async {
     final navigator = Navigator.of(context);
-    if (picking) {
+    if (widget.picking) {
       navigator.pop(cover);
       return;
     }
     final sent = await navigator.push<bool>(
       MaterialPageRoute(
         builder: (_) => JPackComposeScreen(
-          conversationId: conversationId,
-          recipientName: recipientName,
+          conversationId: widget.conversationId,
+          recipientName: widget.recipientName,
           initialCover: cover,
         ),
       ),
@@ -58,9 +83,9 @@ class JPackCoverGalleryScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     String t(String key) => AppTranslations.translate(context, ref, key);
-    final query = ref.watch(jpackCoverQueryProvider(picking));
+    final query = ref.watch(jpackCoverQueryProvider(widget.picking));
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final covers = [
@@ -69,133 +94,78 @@ class JPackCoverGalleryScreen extends ConsumerWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t('jpack_covers_title')),
-        centerTitle: true,
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: JPackBalanceChip(),
-          ),
-        ],
-      ),
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: TextField(
-              onChanged: (v) =>
-                  ref.read(jpackCoverQueryProvider(picking).notifier).state = v
-                      .trim(),
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: t('jpack_search_hint'),
-                prefixIcon: const Icon(Icons.search_rounded),
-                filled: true,
-                fillColor: colors.surfaceContainerHigh,
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, box) {
+                const pad = 12.0;
+                const gap = 10.0;
+                final tileWidth = (box.maxWidth - pad * 2 - gap) / 2;
+                final artWidth = tileWidth - 20;
+                return CustomScrollView(
+                  slivers: [
+                    SliverAppBar(
+                      title: Text(t('jpack_covers_title')),
+                      centerTitle: true,
+                      floating: true,
+                      snap: true,
+                    ),
+                    if (covers.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Text(
+                            t('jpack_no_covers'),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(
+                          pad,
+                          4,
+                          pad,
+                          ShellPillMetrics.contentBottom(context),
+                        ),
+                        sliver: SliverGrid.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: gap,
+                                mainAxisSpacing: gap,
+                                mainAxisExtent:
+                                    artWidth / jpackCoverAspect + 34,
+                              ),
+                          itemCount: covers.length,
+                          itemBuilder: (_, i) => JPackCoverTile(
+                            cover: covers[i],
+                            name: t(covers[i].nameKey),
+                            artWidth: artWidth,
+                            selected: covers[i].id == widget.selectedId,
+                            onTap: () => _choose(context, covers[i]),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
-          Expanded(
-            child: covers.isEmpty
-                ? Center(
-                    child: Text(
-                      t('jpack_no_covers'),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  )
-                : LayoutBuilder(
-                    builder: (context, box) {
-                      const pad = 16.0;
-                      const gap = 12.0;
-                      final tileWidth = (box.maxWidth - pad * 2 - gap) / 2;
-                      final artWidth = tileWidth - 36;
-                      return GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(pad, 0, pad, 24),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: gap,
-                          mainAxisSpacing: gap,
-                          mainAxisExtent: artWidth / jpackCoverAspect + 70,
-                        ),
-                        itemCount: covers.length,
-                        itemBuilder: (_, i) => _CoverTile(
-                          cover: covers[i],
-                          name: t(covers[i].nameKey),
-                          artWidth: artWidth,
-                          selected: covers[i].id == selectedId,
-                          onTap: () => _choose(context, covers[i]),
-                        ),
-                      );
-                    },
-                  ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: JPackBottomBar(
+              child: JPackSearchField(
+                controller: _searchCtrl,
+                hintText: t('jpack_search_hint'),
+                onChanged: _setQuery,
+              ),
+            ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CoverTile extends StatelessWidget {
-  const _CoverTile({
-    required this.cover,
-    required this.name,
-    required this.artWidth,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final JPackCover cover;
-  final String name;
-  final double artWidth;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return Material(
-      color: colors.surfaceContainer,
-      borderRadius: BorderRadius.circular(18),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: selected ? colors.primary : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
-              Hero(
-                tag: 'jpack-cover-${cover.id}',
-                child: JPackCoverArt(cover: cover, width: artWidth),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

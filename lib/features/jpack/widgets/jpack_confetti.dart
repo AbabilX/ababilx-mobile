@@ -72,7 +72,7 @@ class _JPackConfettiState extends State<JPackConfetti>
   }
 }
 
-enum _Shape { rect, circle, taka }
+enum _Shape { rect, circle }
 
 class _Particle {
   const _Particle({
@@ -142,19 +142,6 @@ class _ConfettiPainter extends CustomPainter {
           );
         case _Shape.circle:
           canvas.drawCircle(Offset.zero, p.size * 0.32, paint);
-        case _Shape.taka:
-          final tp = TextPainter(
-            text: TextSpan(
-              text: '৳',
-              style: TextStyle(
-                color: paint.color,
-                fontSize: p.size * 1.3,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            textDirection: TextDirection.ltr,
-          )..layout();
-          tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
       }
       canvas.restore();
     }

@@ -59,7 +59,7 @@ SelectionMenuState selectionMenuState({
     (m) => !m.isDeleted && tiptapToPlainText(m.body).trim().isNotEmpty,
   );
   final allMine = selected.every((m) => m.userId == currentUserId);
-  // A JPack is money: never forwarded, copied or edited.
+  // A JPack is a card, not text: never forwarded, copied or edited.
   final anyJPack = selected.any((m) => JPackPayload.tryParse(m.body) != null);
 
   final forward =

@@ -37,7 +37,7 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
   final VoidCallback onFile;
   final VoidCallback onContact;
 
-  /// JPack gift money. Null hides the chip — it is offered in a DM only.
+  /// JPack greeting card. Null hides the chip — it is offered in a DM only.
   final String jpackLabel;
   final VoidCallback? onJPack;
 
