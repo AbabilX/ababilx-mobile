@@ -20,6 +20,7 @@ import 'group_call_action.dart';
 import 'start_call_sheet.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_title.dart';
+import '../chat-typing/typing_text.dart';
 
 /// Conversation top bar — used inside the scroll shell (auto-hides on scroll).
 class ChatHeader extends ConsumerWidget {
@@ -45,6 +46,15 @@ class ChatHeader extends ConsumerWidget {
     final peerStatus = conversation.hasDmPeer && !peerInCall
         ? ref.watch(userStatusForProvider(conversation.peerUserId))
         : null;
+    // Typing wins the subtitle while it lasts: it is the most current thing
+    // anyone in the chat is doing.
+    final typingText = conversation.isSelf || conversation.isWebhook
+        ? ''
+        : watchTypingText(
+            ref,
+            conversation.id,
+            isGroup: conversation.isGroupConversation,
+          );
 
     return Material(
       color: surface,
@@ -96,7 +106,21 @@ class ChatHeader extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                           ),
-                          if (peerInCall)
+                          if (typingText.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                typingText,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: colors.primary,
+                                ),
+                              ),
+                            )
+                          else if (peerInCall)
                             const Padding(
                               padding: EdgeInsets.only(top: 2),
                               child: InCallLabel(compact: true),

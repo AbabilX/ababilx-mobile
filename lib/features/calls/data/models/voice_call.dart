@@ -17,6 +17,7 @@ class VoiceCall {
     this.endedBy,
     this.endReason,
     required this.createdAt,
+    this.calleeRingingAt,
   });
 
   final String id;
@@ -39,6 +40,10 @@ class VoiceCall {
   final String? endReason;
   final DateTime createdAt;
 
+  /// First moment a callee device reported it is ringing. The caller says
+  /// "Ringing…" from then on instead of "Calling…".
+  final DateTime? calleeRingingAt;
+
   bool get isTerminal => const {
     'declined',
     'cancelled',
@@ -55,7 +60,7 @@ class VoiceCall {
   String? peerAvatar(String currentUserId) =>
       callerId == currentUserId ? calleeAvatarUrl : callerAvatarUrl;
 
-  VoiceCall copyWith({String? status}) => VoiceCall(
+  VoiceCall copyWith({String? status, DateTime? calleeRingingAt}) => VoiceCall(
     id: id,
     teamId: teamId,
     conversationId: conversationId,
@@ -73,6 +78,7 @@ class VoiceCall {
     endedBy: endedBy,
     endReason: endReason,
     createdAt: createdAt,
+    calleeRingingAt: calleeRingingAt ?? this.calleeRingingAt,
   );
 
   factory VoiceCall.fromJson(Map<String, dynamic> json) => VoiceCall(
@@ -93,6 +99,7 @@ class VoiceCall {
     endedBy: json['ended_by'] as String?,
     endReason: json['end_reason'] as String?,
     createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
+    calleeRingingAt: _date(json['callee_ringing_at']),
   );
 
   static DateTime? _date(dynamic value) {

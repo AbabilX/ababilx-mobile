@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:call_ringer/call_ringer.dart';
 import 'package:call_ringer/callkit_surface.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
@@ -7,6 +9,7 @@ import '../data/models/voice_call.dart';
 import '../ringtone/ring_holders.dart';
 import 'android_call_lock_screen.dart';
 import 'android_call_params.dart';
+import 'call_ringing_ack.dart';
 import 'incoming_call_admission.dart';
 
 class AndroidCallUi {
@@ -119,6 +122,10 @@ class AndroidCallUi {
             requireNotificationUi: true,
           );
           await FlutterCallkitIncoming.showCallkitIncoming(params);
+          // Group invites have no caller waiting on a "Ringing…" line.
+          if (params.extra?['type'] != 'group_call') {
+            unawaited(postVoiceCallRingingAck(params.id));
+          }
           return;
       }
     } finally {

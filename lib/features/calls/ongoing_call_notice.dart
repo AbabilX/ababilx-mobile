@@ -7,8 +7,11 @@ import 'providers/voice_call_state.dart';
 /// and a second entry beside it is the duplicate this whole path exists to
 /// avoid. The ringing-out phases *are* here because the CallKit plugin no
 /// longer posts its own "calling" notification — see `AndroidCallParams`.
-String? ongoingCallSubtitle(VoiceCallPhase phase) => switch (phase) {
-  VoiceCallPhase.outgoingRinging => 'Calling…',
+String? ongoingCallSubtitle(
+  VoiceCallPhase phase, {
+  bool remoteRinging = false,
+}) => switch (phase) {
+  VoiceCallPhase.outgoingRinging => remoteRinging ? 'Ringing…' : 'Calling…',
   VoiceCallPhase.connecting => 'Connecting…',
   VoiceCallPhase.connected => 'Ongoing call',
   _ => null,

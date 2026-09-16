@@ -23,6 +23,7 @@ import '../native/android_group_call_ui.dart';
 import '../native/incoming_call_admission.dart';
 import '../native/answered_elsewhere.dart';
 import '../native/call_answered_guard.dart';
+import '../native/call_ringing_ack.dart';
 import '../native/voice_call_ended_guard.dart';
 import '../ringtone/callkit_ring_events.dart';
 import '../voice_call_heartbeat.dart';
@@ -64,6 +65,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   bool _transitioning = false;
   bool _offerResent = false;
   final Set<String> _finishedCallIds = {};
+  final Set<String> _remoteRingingCallIds = {};
   final CallKitEndedSuppress _suppressCallKitEnded = CallKitEndedSuppress();
 
   VoiceCallRepository get _repository => ref.read(voiceCallRepositoryProvider);
@@ -163,9 +165,12 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         callId: session.call.id,
         phase: 'outgoingRinging',
       );
+      final ringingEarly = _remoteRingingCallIds.remove(session.call.id);
       state = VoiceCallState(
         phase: VoiceCallPhase.outgoingRinging,
-        call: session.call,
+        call: ringingEarly && session.call.calleeRingingAt == null
+            ? session.call.copyWith(calleeRingingAt: DateTime.now())
+            : session.call,
         iceServers: session.iceServers,
         currentUserId: state.currentUserId,
       );
@@ -593,6 +598,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     switch (type) {
       case 'call.incoming':
         unawaited(_onIncoming(call));
+      case 'call.ringing':
+        _onRemoteRinging(call);
       case 'call.accepted':
         unawaited(_onAccepted(call));
       case 'call.declined':
@@ -626,6 +633,26 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
   }
 
+  /// Caller side: a callee device is ringing. The event can beat the start
+  /// response that names the call, so an unknown id is remembered for it.
+  void _onRemoteRinging(VoiceCall call) {
+    final current = state.call;
+    if (current == null || current.id != call.id) {
+      // Only while this device is placing a call — an idle device of the
+      // same account must not accumulate ids.
+      if (state.phase == VoiceCallPhase.starting) {
+        _remoteRingingCallIds.add(call.id);
+      }
+      return;
+    }
+    if (state.phase != VoiceCallPhase.outgoingRinging) return;
+    state = state.copyWith(
+      call: current.copyWith(
+        calleeRingingAt: call.calleeRingingAt ?? DateTime.now(),
+      ),
+    );
+  }
+
   Future<void> _onIncoming(VoiceCall call) async {
     if (_wasFinished(call.id) || call.isTerminal) {
       await _endNative(call.id, source: 'incoming.finished');
@@ -639,6 +666,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       currentUserId: state.currentUserId,
     );
     _startRingTimer(call);
+    // This device rings from here on — the Flutter screen or CallKit.
+    unawaited(postVoiceCallRingingAck(call.id));
     // Foreground (resumed): CallStoreSync opens Flutter /call.
     // Background / no-focus: native CallKit full-screen is the visible UI.
     await ensureNativeIncomingUi();
@@ -1569,6 +1598,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   }
 
   Future<void> _resetResources() async {
+    _remoteRingingCallIds.clear();
     _heartbeat.stop();
     _ringTimer?.cancel();
     _resetTimer?.cancel();

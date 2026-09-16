@@ -17,7 +17,10 @@ String voiceCallStatusText(VoiceCallState state, {String lang = 'en'}) {
     case VoiceCallPhase.starting:
       return t('call_status_starting');
     case VoiceCallPhase.outgoingRinging:
-      return t('call_status_calling');
+      // "Calling…" until a callee device reports it is ringing.
+      return state.call?.calleeRingingAt != null
+          ? t('call_status_ringing')
+          : t('call_status_calling');
     case VoiceCallPhase.incomingRinging:
       return t('call_status_incoming');
     case VoiceCallPhase.connecting:

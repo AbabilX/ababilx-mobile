@@ -30,6 +30,9 @@ import 'composer_share_contact.dart';
 import 'composer_text_actions.dart';
 import 'voice_message_recorder.dart';
 import '../../../shared/text/name_search.dart';
+import '../../../core/network/ws_client.dart';
+import '../../settings/typing-indicators/typing_indicators_provider.dart';
+import '../chat-typing/typing_sender.dart';
 
 class MessageComposer extends ConsumerStatefulWidget {
   const MessageComposer({
@@ -107,6 +110,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   List<MentionCandidate> _channelMembers = [];
 
+  /// Top-level composer only: typing is scoped to the conversation, and a
+  /// thread reply announcing itself there would point at the wrong place.
+  ChatTypingSender? _typing;
+
+  /// Leaving the app mid-draft stops "typing…" at once instead of leaving it
+  /// to the receivers' 5 s expiry — web does the same on visibilitychange.
+  AppLifecycleListener? _typingLifecycle;
+
   @override
   void initState() {
     super.initState();
@@ -116,6 +127,17 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     _ctrl = TextEditingController(text: widget.initialText)
       ..addListener(_onTextChanged);
     _focus = FocusNode()..addListener(_onFocus);
+    if (widget.parentId == null) {
+      _typing = ChatTypingSender(
+        ws: ref.read(wsClientProvider),
+        conversationId: widget.conversationId,
+        enabled: () => ref.read(typingIndicatorsProvider),
+      );
+      _typingLifecycle = AppLifecycleListener(
+        onHide: () => _typing?.stop(),
+        onPause: () => _typing?.stop(),
+      );
+    }
     unawaited(_restoreDraft());
   }
 
@@ -178,7 +200,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   void _onTextChanged() {
     setState(() {});
     final text = _ctrl.text;
-    if (_persistTextChanges) _draftRevision++;
+    if (_persistTextChanges) {
+      _draftRevision++;
+      // Only a person's edit announces typing — never a restored draft.
+      if (!_restoringDraft) _typing?.onText(text);
+    }
     if (!_restoringDraft && _persistTextChanges) {
       unawaited(
         _draftStore.write(
@@ -299,6 +325,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
 
   @override
   void dispose() {
+    _typing?.stop();
+    _typingLifecycle?.dispose();
     _recordClock?.cancel();
     unawaited(_voiceRecorder.dispose());
     // An empty controller during restore does not mean an empty draft; nor
@@ -370,6 +398,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     // text; if the user starts another draft meanwhile, that newer text wins.
     _persistTextChanges = false;
     _sendInFlight = true;
+    _typing?.stop();
     _ctrl.clear();
     _persistTextChanges = true;
     setState(() {

@@ -5,6 +5,7 @@ import '../../../core/network/friendly_error.dart';
 import '../../../core/router/root_back.dart';
 import '../discovery/discovery_phone_field.dart';
 import '../discovery/discovery_provider.dart';
+import '../typing-indicators/typing_indicators_tile.dart';
 
 /// How people can find you in search.
 ///
@@ -75,6 +76,8 @@ class DiscoveryScreen extends ConsumerWidget {
               onChanged: (v) =>
                   ref.read(discoveryProvider.notifier).setToggle(byPhone: v),
             ),
+            const Divider(height: 24),
+            const TypingIndicatorsTile(),
           ],
         ),
       ),

@@ -24,6 +24,7 @@ class ApiConstants {
   static const String meSessions = '/api/me/sessions';
   static const String meSessionsRevokeOthers = '/api/me/sessions/revoke-others';
   static const String meDiscovery = '/api/me/discovery';
+  static const String meTypingIndicators = '/api/me/typing-indicators';
 
   /// The caller's own live 1:1 call, for a client that lost track of one.
   static const String meActiveCall = '/api/me/active-call';

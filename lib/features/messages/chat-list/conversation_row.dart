@@ -16,6 +16,7 @@ import '../note_to_self_avatar.dart';
 import 'group_avatar_stack.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_title.dart';
+import '../chat-typing/typing_text.dart';
 
 class ConversationRow extends ConsumerWidget {
   const ConversationRow({
@@ -41,6 +42,13 @@ class ConversationRow extends ConsumerWidget {
         .watch(contactNicknamesProvider)
         .titleFor(conversation, currentUserId);
     final preview = chatListPreview(conversation, currentUserId);
+    final typingText = conversation.isSelf || conversation.isWebhook
+        ? ''
+        : watchTypingText(
+            ref,
+            conversation.id,
+            isGroup: conversation.isGroupConversation,
+          );
     final time = relativeChatTime(conversation.lastMessageAt);
     final unread = conversation.unreadCount > 0;
     final peerInCall =
@@ -156,15 +164,25 @@ class ConversationRow extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _PreviewLine(
-                          preview: preview,
-                          style: previewStyle,
-                          youStyle: previewStyle.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colors.onSurface,
-                          ),
-                          currentUserId: currentUserId,
-                        ),
+                        child: typingText.isNotEmpty
+                            ? Text(
+                                typingText,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: previewStyle.copyWith(
+                                  color: colors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              )
+                            : _PreviewLine(
+                                preview: preview,
+                                style: previewStyle,
+                                youStyle: previewStyle.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: colors.onSurface,
+                                ),
+                                currentUserId: currentUserId,
+                              ),
                       ),
                       // Signal puts the pin where the unread badge goes and
                       // lets the badge win: a pinned chat with something to

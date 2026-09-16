@@ -141,7 +141,10 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     final group = ref.read(groupCallProvider);
     _syncProximity(dm, group);
     final dmCall = dm.call;
-    final dmSubtitle = ongoingCallSubtitle(dm.phase);
+    final dmSubtitle = ongoingCallSubtitle(
+      dm.phase,
+      remoteRinging: dmCall?.calleeRingingAt != null,
+    );
     if (dmCall != null && dmSubtitle != null) {
       _show(
         dmCall.id,
