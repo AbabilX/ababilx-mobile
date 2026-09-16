@@ -44,15 +44,17 @@ class SignalBubbleMetrics {
   static const footerTextSize = 12.0;
 
   /// Media inside a bubble (`media_bubble_max_width` 240,
-  /// `media_bubble_max_height` 320, `media_bubble_min_width_solo` 150,
+  /// `media_bubble_max_height` 420, `media_bubble_min_width_solo` 150,
   /// `media_bubble_min_width_with_content` 240, `media_bubble_min_height` 100,
   /// `media_bubble_default_dimens` 210).
   ///
   /// Timeline thumbnails use a stable default frame because attachments do
   /// not carry dimensions. Captions widen that frame before bytes arrive;
   /// albums use their predetermined cells and galleries keep original ratios.
+  /// A caption-less solo photo/video fills [mediaMaxWidth]; so does one with
+  /// a caption. [mediaMaxHeight] is a ceiling, not a size to always reach.
   static const mediaMaxWidth = 240.0;
-  static const mediaMaxHeight = 320.0;
+  static const mediaMaxHeight = 420.0;
   static const mediaMinWidthSolo = 150.0;
   static const mediaMinWidthWithCaption = 240.0;
   static const mediaMinHeight = 100.0;

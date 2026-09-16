@@ -45,10 +45,11 @@ class AttachmentImageGrid extends StatelessWidget {
             ? SignalBubbleMetrics.mediaMinWidthWithCaption
             : SignalBubbleMetrics.mediaMinWidthSolo,
         preview: preview,
+        inset: withCaption,
       );
     }
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: EdgeInsets.only(top: withCaption ? 8 : 0),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final available = constraints.hasBoundedWidth

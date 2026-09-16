@@ -20,6 +20,7 @@ class AttachmentImageTile extends StatelessWidget {
     this.overlayText,
     this.radius,
     this.preview,
+    this.inset = true,
   });
 
   final ChatMessageAttachment attachment;
@@ -43,47 +44,54 @@ class AttachmentImageTile extends StatelessWidget {
   /// leave this null; the viewer titles itself "Photo".
   final ChatMediaPreviewMeta? preview;
 
+  /// Caption / quoted pictures keep an 8dp gap and inner radius so they sit
+  /// inside the bubble. Overlay bubbles turn this off so the photo *is* the
+  /// bubble and the time sits on the image, not in a chrome strip.
+  final bool inset;
+
+  /// Solo photo in an overlay bubble: fill [maxWidth], height follows the
+  /// file, stop at [maxHeight]. Albums keep a fixed cell.
+  bool get _fillWidth => !grid && !inset;
+
   @override
   Widget build(BuildContext context) {
     final solo = !grid;
     return Padding(
-      padding: EdgeInsets.only(top: solo ? 8 : 0),
+      padding: EdgeInsets.only(top: solo && inset ? 8 : 0),
       child: AttachmentGate(
         attachment: attachment,
-        reserveSpace: true,
+        reserveSpace: !_fillWidth,
         height: solo ? SignalBubbleMetrics.mediaDefaultSize : maxHeight,
         width: grid
             ? maxWidth
-            : SignalBubbleMetrics.mediaDefaultSize.clamp(minWidth, maxWidth),
+            : inset
+            ? SignalBubbleMetrics.mediaDefaultSize.clamp(minWidth, maxWidth)
+            : maxWidth,
         shape: _shape,
         ready: (context, handle) => _ready(context, handle),
       ),
     );
   }
 
-  BorderRadius get _shape => radius ?? BorderRadius.circular(8);
+  BorderRadius get _shape =>
+      radius ?? (inset ? BorderRadius.circular(8) : BorderRadius.zero);
 
   Widget _ready(BuildContext context, AttachmentHandle handle) {
+    final photo = ClipRRect(
+      borderRadius: _shape,
+      child: _fillWidth
+          ? _sizedPhoto(context, handle)
+          : _framedPhoto(context, handle),
+    );
     return Stack(
-      fit: StackFit.expand,
+      fit: _fillWidth ? StackFit.loose : StackFit.expand,
       children: [
         Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: () => _open(context),
             borderRadius: _shape,
-            child: ClipRRect(
-              borderRadius: _shape,
-              // The model has no dimensions. Keep this fallback frame stable
-              // even after decode; the gallery still shows the original shape.
-              child: Image.file(
-                handle.file!,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _broken(context),
-              ),
-            ),
+            child: photo,
           ),
         ),
         if (overlayText != null)
@@ -109,6 +117,38 @@ class AttachmentImageTile extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  /// Decode-driven height. Width is tight at [maxWidth]; [maxHeight] only
+  /// clips a tall file, it is not a size to fill.
+  Widget _sizedPhoto(BuildContext context, AttachmentHandle handle) {
+    return SizedBox(
+      width: maxWidth,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: SignalBubbleMetrics.mediaMinHeight,
+          maxHeight: maxHeight,
+        ),
+        child: Image.file(
+          handle.file!,
+          width: maxWidth,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _broken(context),
+        ),
+      ),
+    );
+  }
+
+  /// Albums and captioned tiles: the model has no dimensions, so keep the
+  /// fallback frame stable after decode. The gallery still shows the original.
+  Widget _framedPhoto(BuildContext context, AttachmentHandle handle) {
+    return Image.file(
+      handle.file!,
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => _broken(context),
     );
   }
 

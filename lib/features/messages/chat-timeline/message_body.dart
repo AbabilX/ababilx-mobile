@@ -15,13 +15,28 @@ import 'signal_bubble_metrics.dart';
 import 'user_profile_sheet.dart';
 
 class MessageBody extends ConsumerWidget {
-  const MessageBody({super.key, required this.message, required this.colors});
+  const MessageBody({
+    super.key,
+    required this.message,
+    required this.colors,
+    this.bleedMedia = false,
+    this.mediaFooter,
+  });
 
   final ChatMessage message;
 
   /// Text sits on the bubble's fill, so every colour here comes from the
   /// bubble rather than straight off the scheme.
   final SignalBubbleColors colors;
+
+  /// Picture/video bubbles: media fills the bubble, caption keeps the inset
+  /// under it. Attachments then size like a caption-less tile (max width,
+  /// height follows the file).
+  final bool bleedMedia;
+
+  /// Time + ticks drawn on the media, not under it. Null when the parent
+  /// hides the footer.
+  final Widget? mediaFooter;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,30 +63,67 @@ class MessageBody extends ConsumerWidget {
       isOwn: isOwn,
       senderName: senderName,
     );
+    final text = <Widget>[
+      if (message.forwardedFromName != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text(
+            'Forwarded from ${message.forwardedFromName}',
+            style: TextStyle(fontSize: 12, color: colors.muted),
+          ),
+        ),
+      if (plain.isNotEmpty) _text(context, ref, collapsed: long),
+      if (long)
+        ReadMoreRow(
+          body: message.body,
+          colors: colors,
+          editedAt: message.editedAt,
+        ),
+    ];
+    final caption = text.isEmpty
+        ? null
+        : bleedMedia
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SignalBubbleMetrics.horizontalPadding,
+              6,
+              SignalBubbleMetrics.horizontalPadding,
+              SignalBubbleMetrics.bottomPadding,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: text,
+            ),
+          )
+        : Column(crossAxisAlignment: CrossAxisAlignment.start, children: text);
+
+    Widget? media;
+    if (message.attachments.isNotEmpty) {
+      final tiles = MessageAttachments(
+        attachments: message.attachments,
+        withCaption: !bleedMedia && plain.isNotEmpty,
+        preview: preview,
+      );
+      final overlay = mediaFooter;
+      media = overlay == null
+          ? tiles
+          : Stack(
+              children: [
+                tiles,
+                Positioned(
+                  right: 8,
+                  bottom: 6,
+                  child: IgnorePointer(child: overlay),
+                ),
+              ],
+            );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        if (message.forwardedFromName != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              'Forwarded from ${message.forwardedFromName}',
-              style: TextStyle(fontSize: 12, color: colors.muted),
-            ),
-          ),
-        if (plain.isNotEmpty) _text(context, ref, collapsed: long),
-        if (long)
-          ReadMoreRow(
-            body: message.body,
-            colors: colors,
-            editedAt: message.editedAt,
-          ),
-        if (message.attachments.isNotEmpty)
-          MessageAttachments(
-            attachments: message.attachments,
-            withCaption: plain.isNotEmpty,
-            preview: preview,
-          ),
+        if (bleedMedia) ...[?media, ?caption] else ...[?caption, ?media],
         if (message.isPending && message.pendingAttachments.isNotEmpty)
           PendingMessageAttachments(
             attachments: message.pendingAttachments,

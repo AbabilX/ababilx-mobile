@@ -14,12 +14,13 @@ import 'signal_bubble_metrics.dart';
 
 /// What sits inside a bubble, and how much padding it takes.
 ///
-/// Signal lets a picture with no caption fill the bubble corner to corner and
-/// pads only the footer under it; anything with text keeps the 12/7 inset on
-/// every side. A link preview is the third case: it bleeds to the edges like
-/// media and carries its own padding, so the inset moves off the column and
-/// onto the parts that still want it. The bubble itself is always clipped, so
-/// all three work with the same container.
+/// A picture or video fills the bubble corner to corner and draws the time on
+/// the image (bottom-right) instead of a strip under it — caption or not. The
+/// caption, if any, keeps the 12/7 inset below the media. Anything else with
+/// text keeps the inset on every side. A link preview is the third case: it
+/// bleeds to the edges like media and carries its own padding, so the inset
+/// moves off the column and onto the parts that still want it. The bubble
+/// itself is always clipped, so all three work with the same container.
 class MessageBubbleContent extends StatelessWidget {
   const MessageBubbleContent({
     super.key,
@@ -47,13 +48,12 @@ class MessageBubbleContent extends StatelessWidget {
     SignalBubbleMetrics.bottomPadding,
   );
 
-  /// A caption-less picture or video — the only case that loses its padding.
-  /// A quote needs the inset, so a quoted photo keeps it.
-  bool get _isMediaOnly {
+  /// Picture/video bubble — caption or not. Time sits on the media. A quote
+  /// needs the inset, so a quoted photo keeps the text-bubble path.
+  bool get _isMediaBubble {
     if (message.isDeleted) return false;
     if (message.quote != null) return false;
     if (message.attachments.isEmpty) return false;
-    if (tiptapToPlainText(message.body).trim().isNotEmpty) return false;
     return message.attachments.every((a) => a.isImage || a.isVideo);
   }
 
@@ -63,7 +63,7 @@ class MessageBubbleContent extends StatelessWidget {
   CrossAxisAlignment get _footerSide =>
       isOwn ? CrossAxisAlignment.end : CrossAxisAlignment.start;
 
-  Widget? _footer() => showFooter
+  Widget? _footer({bool onMedia = false}) => showFooter
       ? MessageBubbleFooter(
           message: message,
           colors: colors,
@@ -71,6 +71,7 @@ class MessageBubbleContent extends StatelessWidget {
           isSending: isSending,
           isFailed: isFailed,
           pulse: pulse,
+          onMedia: onMedia,
         )
       : null;
 
@@ -91,25 +92,19 @@ class MessageBubbleContent extends StatelessWidget {
   }
 
   Widget _plain() {
-    final body = MessageBody(message: message, colors: colors);
-    final footer = _footer();
-    final quote = message.quote;
-
-    if (_isMediaOnly) {
-      return Column(
-        crossAxisAlignment: _footerSide,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          body,
-          if (footer != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 2, 12, 6),
-              child: footer,
-            ),
-        ],
+    if (_isMediaBubble) {
+      return MessageBody(
+        message: message,
+        colors: colors,
+        bleedMedia: true,
+        mediaFooter: _footer(onMedia: true),
       );
     }
 
+    final body = MessageBody(message: message, colors: colors);
+
+    final footer = _footer();
+    final quote = message.quote;
     final column = Column(
       crossAxisAlignment: _footerSide,
       mainAxisSize: MainAxisSize.min,

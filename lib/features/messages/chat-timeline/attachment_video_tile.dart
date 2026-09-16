@@ -13,22 +13,27 @@ class AttachmentVideoTile extends StatelessWidget {
     super.key,
     required this.attachment,
     this.preview,
+    this.inset = true,
   });
 
   final ChatMessageAttachment attachment;
   final ChatMediaPreviewMeta? preview;
 
+  /// Caption / quoted clips keep an 8dp gap above. Media-only fills the bubble.
+  final bool inset;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: EdgeInsets.only(top: inset ? 8 : 0),
       child: ConstrainedBox(
         constraints: const BoxConstraints(
+          minWidth: SignalBubbleMetrics.mediaMaxWidth,
           maxWidth: SignalBubbleMetrics.mediaMaxWidth,
         ),
         child: AttachmentGate(
           attachment: attachment,
-          reserveSpace: true,
+          reserveSpace: inset,
           height: SignalBubbleMetrics.mediaDefaultSize,
           width: SignalBubbleMetrics.mediaMaxWidth,
           ready: (_, handle) => NetworkVideoPlayer(
@@ -37,6 +42,7 @@ class AttachmentVideoTile extends StatelessWidget {
             detail: preview?.detail,
             caption: preview?.caption,
             maxHeight: SignalBubbleMetrics.mediaMaxHeight,
+            borderRadius: inset ? 8 : 0,
           ),
         ),
       ),

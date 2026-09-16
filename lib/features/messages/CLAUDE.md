@@ -172,11 +172,21 @@ not in a widget.
   directly.** Text on the outgoing bubble sits on the accent fill, so
   `onSurfaceVariant` is invisible on it. `MessageBody`, `MessageBubbleFooter`
   and `MessageDeliveryStatus` all take the pairing as a parameter for this
-  reason.
+  reason. The one exception is a picture or video (caption or not): the footer
+  sits on the photo, so it takes a light overlay colour (`onMedia`) rather
+  than the bubble's muted foreground.
+- **A picture or video overlays the footer on the image** (bottom-right, no
+  scrim), including when it has a caption. Do not pad a strip under the media
+  for time + ticks, and do not paint a gradient behind them — the photo is
+  the surface. The caption sits below with the usual inset. Quotes and
+  text-only bubbles keep the footer under the content.
+  The tile fills `mediaMaxWidth`; height follows the file and stops at
+  `mediaMaxHeight` — never stretch every photo to the ceiling.
 - **Do not wrap bubble content in an `Align`.** An `Align` stretches its parent
   to the full width cap and every bubble reaches the far edge. The footer picks
   its side through the content column's `crossAxisAlignment` instead — right on
-  yours, left on theirs, exactly as Signal does.
+  yours, left on theirs, exactly as Signal does. Media bubbles use `Positioned`
+  on the image, not an `Align`.
 - **The avatar hangs off the bottom of a run, not the top**, and only in a
   group. A DM shows no avatar and no sender name at all. The slot is held for
   every message of the run so the bubbles stay in one column.
