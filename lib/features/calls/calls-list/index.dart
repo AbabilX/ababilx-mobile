@@ -128,8 +128,8 @@ class _CallsListState extends ConsumerState<CallsList> {
     final missedCount = _lastSeenMissedAt == null
         ? unseenMissed.length
         : unseenMissed
-            .where((row) => row.lead.startedAt.isAfter(_lastSeenMissedAt!))
-            .length;
+              .where((row) => row.lead.startedAt.isAfter(_lastSeenMissedAt!))
+              .length;
     String t(String key) => AppTranslations.of(lang, key);
 
     return Scaffold(

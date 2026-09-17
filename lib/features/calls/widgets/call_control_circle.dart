@@ -144,9 +144,9 @@ class _CallControlCircleState extends State<CallControlCircle> {
               // "Take over" must not ellipsise into "Take…".
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: colors.onSurfaceVariant,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: colors.onSurfaceVariant),
             ),
           ],
         ],

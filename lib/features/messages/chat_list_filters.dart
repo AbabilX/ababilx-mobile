@@ -122,7 +122,9 @@ ChatListPreview chatListPreview(ChatConversation conv, String? currentUserId) {
   final fromMe =
       !looksLikeCall && me.isNotEmpty && sender.isNotEmpty && sender == me;
 
-  final mentionLabels = hasBody ? tiptapMentionLabels(rawBody) : const <String>[];
+  final mentionLabels = hasBody
+      ? tiptapMentionLabels(rawBody)
+      : const <String>[];
 
   return ChatListPreview(
     text: text,

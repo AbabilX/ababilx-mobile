@@ -17,7 +17,9 @@ String recentSelectionBadgeLabel({
       return photos == 1 ? '১টি ছবি যোগ হয়েছে' : '$photosটি ছবি যোগ হয়েছে';
     }
     if (photos == 0) {
-      return videos == 1 ? '১টি ভিডিও যোগ হয়েছে' : '$videosটি ভিডিও যোগ হয়েছে';
+      return videos == 1
+          ? '১টি ভিডিও যোগ হয়েছে'
+          : '$videosটি ভিডিও যোগ হয়েছে';
     }
     return '$totalটি আইটেম যোগ হয়েছে';
   }

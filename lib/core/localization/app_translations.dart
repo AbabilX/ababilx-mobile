@@ -416,7 +416,8 @@ class AppTranslations {
       'settings_load_error': 'Could not load settings',
       'settings_notifications': 'Notifications',
       'settings_app_icon': 'App icon',
-      'settings_app_icon_sub': 'Hide AbabilX behind a calendar, calculator or notes icon',
+      'settings_app_icon_sub':
+          'Hide AbabilX behind a calendar, calculator or notes icon',
       'settings_wallpaper': 'Chat wallpaper',
       'settings_wallpaper_sub': 'Background for every chat',
       'settings_data_storage': 'Data and storage',
@@ -979,7 +980,8 @@ class AppTranslations {
       'settings_load_error': 'সেটিংস লোড করা যায়নি',
       'settings_notifications': 'বিজ্ঞপ্তি',
       'settings_app_icon': 'অ্যাপ আইকন',
-      'settings_app_icon_sub': 'ক্যালেন্ডার, ক্যালকুলেটর বা নোটসের আইকনের আড়ালে AbabilX লুকান',
+      'settings_app_icon_sub':
+          'ক্যালেন্ডার, ক্যালকুলেটর বা নোটসের আইকনের আড়ালে AbabilX লুকান',
       'settings_wallpaper': 'চ্যাট ওয়ালপেপার',
       'settings_wallpaper_sub': 'প্রতিটি চ্যাটের পটভূমি',
       'settings_data_storage': 'ডেটা ও সংরক্ষণ',

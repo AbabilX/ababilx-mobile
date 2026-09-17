@@ -42,7 +42,10 @@ class LocalNotifications {
       requestSoundPermission: false,
     );
     await _plugin.initialize(
-      settings: const InitializationSettings(android: androidInit, iOS: iosInit),
+      settings: const InitializationSettings(
+        android: androidInit,
+        iOS: iosInit,
+      ),
       onDidReceiveNotificationResponse: (response) async {
         // A reply or mark-read press is not a tap: it must run the action and
         // leave the user where they are, not open the conversation.
@@ -92,7 +95,10 @@ class LocalNotifications {
       requestSoundPermission: false,
     );
     await _plugin.initialize(
-      settings: const InitializationSettings(android: androidInit, iOS: iosInit),
+      settings: const InitializationSettings(
+        android: androidInit,
+        iOS: iosInit,
+      ),
       onDidReceiveBackgroundNotificationResponse:
           chatNotificationBackgroundAction,
     );
@@ -183,7 +189,10 @@ class LocalNotifications {
       id: id,
       title: title,
       body: body,
-      notificationDetails: NotificationDetails(android: android, iOS: _iosDetails),
+      notificationDetails: NotificationDetails(
+        android: android,
+        iOS: _iosDetails,
+      ),
       payload: payload,
     );
   }

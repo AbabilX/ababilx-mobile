@@ -93,6 +93,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   bool _restoringDraft = true;
   bool _persistTextChanges = true;
   bool _sendInFlight = false;
+
   /// Set when the user cancels an uploading bubble mid-flight.
   bool _sendCancelled = false;
 
@@ -442,17 +443,16 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         _sendInFlight = false;
         notifier.removeUploadingMessage(
           widget.conversationId,
-          clientRef as String,
+          clientRef,
           parentId: reply.parentId,
         );
         return;
       }
       // Dio often never reports 100% — pin the bar before the API send so the
       // footer does not sit on a stale ~70% while encrypting / posting.
-      final uploadRef = clientRef as String;
       notifier.updatePendingUploadProgress(
         widget.conversationId,
-        uploadRef,
+        clientRef,
         1,
         parentId: reply.parentId,
       );
@@ -460,7 +460,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         _sendInFlight = false;
         notifier.removeUploadingMessage(
           widget.conversationId,
-          uploadRef,
+          clientRef,
           parentId: reply.parentId,
         );
         _showMessage(
@@ -1001,8 +1001,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         _pending.insert(newIndex, _pending.removeAt(oldIndex));
       }),
       onAddPhoto: () => _attach(kind: ComposerAttachKind.gallery),
-      selectionBadge:
-          !_attachmentPanelOpen && _selectedRecent.isNotEmpty
+      selectionBadge: !_attachmentPanelOpen && _selectedRecent.isNotEmpty
           ? ComposerRecentSelectionBadge(
               label: recentSelectionBadgeLabel(
                 photoCount: _selectedRecent.where((i) => !i.isVideo).length,
