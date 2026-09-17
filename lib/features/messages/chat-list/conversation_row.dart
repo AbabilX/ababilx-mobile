@@ -10,6 +10,7 @@ import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
 import '../chat_icon.dart';
 import '../chat_list_filters.dart';
+import '../chat_list_preview_highlights.dart';
 import '../chat_unread_badge.dart';
 import '../data/models/chat_models.dart';
 import '../note_to_self_avatar.dart';
@@ -283,21 +284,21 @@ class _PreviewLine extends StatelessWidget {
       return spans;
     }
 
-    // Pattern to match URLs (http:// or https://) or @mentions
-    final pattern = RegExp(
-      r'(https?://[^\s]+|@[A-Za-z0-9_\-\u0980-\u09FF]+(?:\s+-\s+[\u0980-\u09FF]+)?)',
-    );
+    // Prefer TipTap mention labels so "@John Doe" paints as one chip; a
+    // character-class regex used to stop at the first space.
     int lastIndex = 0;
-
-    for (final match in pattern.allMatches(text)) {
-      if (match.start > lastIndex) {
+    for (final hit in findPreviewHighlights(
+      text,
+      mentionLabels: preview.mentionLabels,
+    )) {
+      if (hit.start > lastIndex) {
         spans.add(
-          TextSpan(text: text.substring(lastIndex, match.start), style: style),
+          TextSpan(text: text.substring(lastIndex, hit.start), style: style),
         );
       }
 
-      final token = match.group(0)!;
-      if (token.startsWith('http://') || token.startsWith('https://')) {
+      final token = text.substring(hit.start, hit.end);
+      if (hit.isUrl) {
         spans.add(
           TextSpan(
             text: token,
@@ -307,7 +308,7 @@ class _PreviewLine extends StatelessWidget {
             ),
           ),
         );
-      } else if (token.startsWith('@')) {
+      } else {
         final isMeMention =
             currentUserId != null &&
             token.toLowerCase().contains(currentUserId!.toLowerCase());
@@ -337,7 +338,7 @@ class _PreviewLine extends StatelessWidget {
         );
       }
 
-      lastIndex = match.end;
+      lastIndex = hit.end;
     }
 
     if (lastIndex < text.length) {

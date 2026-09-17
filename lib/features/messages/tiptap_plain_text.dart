@@ -30,6 +30,65 @@ bool isTiptapEmpty(String? value) {
 String tiptapToPreviewText(String? value) =>
     tiptapToPlainText(value).replaceAll(RegExp(r'\s+'), ' ').trim();
 
+/// Display labels of every `mention` node, longest first.
+///
+/// The chat-list preview flattens TipTap to plain `@Label` text, then has to
+/// re-colour those tokens. A character-class regex stops at the first space,
+/// so a name like "John Doe" only paints `@John`. Matching the labels TipTap
+/// already stored — longest first, same order as [encodeTiptapBody] — keeps
+/// the whole chip one colour without guessing where a name ends.
+List<String> tiptapMentionLabels(String? value) {
+  final trimmed = value?.trim() ?? '';
+  if (trimmed.isEmpty || !_looksLikeTiptapJson(trimmed)) return const [];
+  try {
+    final decoded = jsonDecode(trimmed);
+    if (decoded is! Map) return _mentionLabelsFromBroken(trimmed);
+    final labels = <String>[];
+    _collectMentionLabels(Map<String, dynamic>.from(decoded), labels);
+    if (labels.isEmpty) return _mentionLabelsFromBroken(trimmed);
+    labels.sort((a, b) => b.length.compareTo(a.length));
+    return labels;
+  } catch (_) {
+    return _mentionLabelsFromBroken(trimmed);
+  }
+}
+
+void _collectMentionLabels(Map<String, dynamic> node, List<String> out) {
+  if (node['type'] == 'mention') {
+    final attrs = node['attrs'];
+    if (attrs is Map) {
+      final label = (attrs['label'] ?? '').toString().trim();
+      if (label.isNotEmpty && !out.contains(label)) out.add(label);
+    }
+  }
+  final content = node['content'];
+  if (content is! List) return;
+  for (final child in content) {
+    if (child is Map) {
+      _collectMentionLabels(Map<String, dynamic>.from(child), out);
+    }
+  }
+}
+
+/// Sidebar truncates TipTap JSON; harvest every `"label"` that survives.
+List<String> _mentionLabelsFromBroken(String body) {
+  final labels = <String>[];
+  final re = RegExp(r'"label"\s*:\s*"((?:\\.|[^"\\])*)"');
+  for (final match in re.allMatches(body)) {
+    final raw = match.group(1) ?? '';
+    String label;
+    try {
+      label = jsonDecode('"$raw"') as String;
+    } catch (_) {
+      label = raw;
+    }
+    label = label.trim();
+    if (label.isNotEmpty && !labels.contains(label)) labels.add(label);
+  }
+  labels.sort((a, b) => b.length.compareTo(a.length));
+  return labels;
+}
+
 /// TipTap/ProseMirror JSON → plain text (mirrors web `tiptapToPlainText`).
 /// Paragraph breaks survive as newlines, exactly as on web.
 String tiptapToPlainText(String? value) {

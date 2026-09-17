@@ -66,11 +66,16 @@ class ChatListPreview {
     required this.text,
     this.fromMe = false,
     this.files = const [],
+    this.mentionLabels = const [],
   });
 
   final String text;
   final bool fromMe;
   final List<ChatLastAttachment> files;
+
+  /// TipTap mention labels for this preview body — used to colour spaced
+  /// display names as one chip (`@John Doe`), not only `@John`.
+  final List<String> mentionLabels;
 
   bool get hasText => text.trim().isNotEmpty;
   bool get hasFiles => files.isNotEmpty;
@@ -117,7 +122,14 @@ ChatListPreview chatListPreview(ChatConversation conv, String? currentUserId) {
   final fromMe =
       !looksLikeCall && me.isNotEmpty && sender.isNotEmpty && sender == me;
 
-  return ChatListPreview(text: text, fromMe: fromMe, files: files);
+  final mentionLabels = hasBody ? tiptapMentionLabels(rawBody) : const <String>[];
+
+  return ChatListPreview(
+    text: text,
+    fromMe: fromMe,
+    files: files,
+    mentionLabels: mentionLabels,
+  );
 }
 
 bool _looksLikeVoiceCallPreview(String text) {
