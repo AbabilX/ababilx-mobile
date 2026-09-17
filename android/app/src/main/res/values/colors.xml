@@ -23,4 +23,6 @@
     <color name="media_send_muted">#FFB0B0B0</color>
     <color name="media_send_scrim">#99000000</color>
     <color name="media_send_quality_selected">#FF4A4E69</color>
+    <!-- Review top-right: remove current photo/video from the send. -->
+    <color name="media_send_remove">#FFE11D48</color>
 </resources>
