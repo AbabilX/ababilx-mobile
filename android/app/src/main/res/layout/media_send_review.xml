@@ -32,13 +32,24 @@
             android:layout_height="1dp"
             android:layout_weight="1" />
 
-        <ImageButton
+        <TextView
             android:id="@+id/review_remove"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="@drawable/ms_circle_button"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@drawable/ms_remove_pill"
+            android:clickable="true"
             android:contentDescription="@string/media_send_remove"
-            android:src="@drawable/ic_ms_close" />
+            android:drawableStart="@drawable/ic_ms_hi_delete"
+            android:drawablePadding="6dp"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:minWidth="72dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="12dp"
+            android:text="@string/media_send_remove"
+            android:textColor="@color/media_send_on_dark"
+            android:textSize="13sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <LinearLayout

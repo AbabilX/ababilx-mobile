@@ -26,6 +26,8 @@ import 'composer_mention_picker.dart';
 import 'composer_recording_bar.dart';
 import 'composer_recent_review.dart';
 import 'composer_recent_selection.dart';
+import 'composer_recent_selection_badge.dart';
+import 'composer_recent_selection_label.dart';
 import 'composer_reply_banner.dart';
 import 'composer_reply_target.dart';
 import 'reaction_emoji_picker.dart';
@@ -583,6 +585,18 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     if (_attachmentPanelOpen) setState(() => _attachmentPanelOpen = false);
   }
 
+  void _openAttachmentPanel() {
+    _focus.unfocus();
+    if (!_attachmentPanelOpen) {
+      setState(() => _attachmentPanelOpen = true);
+    }
+  }
+
+  void _clearRecentSelection() {
+    if (_selectedRecent.isEmpty) return;
+    setState(() => _selectedRecent = const []);
+  }
+
   void _selectAttachment(ComposerAttachKind kind) {
     _closeAttachmentPanel();
     unawaited(_attach(kind: kind));
@@ -957,6 +971,19 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         _pending.insert(newIndex, _pending.removeAt(oldIndex));
       }),
       onAddPhoto: () => _attach(kind: ComposerAttachKind.gallery),
+      selectionBadge:
+          !_attachmentPanelOpen && _selectedRecent.isNotEmpty
+          ? ComposerRecentSelectionBadge(
+              label: recentSelectionBadgeLabel(
+                photoCount: _selectedRecent.where((i) => !i.isVideo).length,
+                videoCount: _selectedRecent.where((i) => i.isVideo).length,
+                bengali: language == 'bn',
+              ),
+              onTap: _openAttachmentPanel,
+              onClear: _clearRecentSelection,
+              clearTooltip: tr('chat_clear_selection'),
+            )
+          : null,
       mentionPicker: _showMentions
           ? ComposerMentionPicker(
               candidates: _mentionCandidates,

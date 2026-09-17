@@ -13,6 +13,7 @@ class ComposerExpandedShell extends StatelessWidget {
     this.onReorder,
     this.replyBanner,
     this.mentionPicker,
+    this.selectionBadge,
   });
 
   final List<ChatAttachmentInput> pending;
@@ -24,6 +25,10 @@ class ComposerExpandedShell extends StatelessWidget {
   final Widget field;
   final Widget? replyBanner;
   final Widget? mentionPicker;
+
+  /// Recents still staged while the text keyboard is up — see
+  /// [ComposerRecentSelectionBadge].
+  final Widget? selectionBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +45,7 @@ class ComposerExpandedShell extends StatelessWidget {
           children: [
             ?mentionPicker,
             ?replyBanner,
+            ?selectionBadge,
             if (pending.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),

@@ -31,6 +31,12 @@ MediaSendActivity          lifecycle only: permissions, picker results, export
  └─ editor/EditorView      pen / highlighter / blur / crop / rotate / undo
 ```
 
+Review chrome icons (`ic_ms_back`, `ic_ms_send`, `ic_ms_draw`, `ic_ms_add`,
+`ic_ms_play`, plus Add-sheet camera/gallery/file) are **HugeIcons strokeRounded**
+path data exported as Android stroke vectors — same glyphs the Flutter composer
+uses — not Material filled icons. Top-right is a red **Remove** pill
+(`ms_remove_pill` + `ic_ms_hi_delete`), not a close X.
+
 Back walks that stack; cancel returns `RESULT_CANCELED`.
 
 **The picker opens on ALBUMS, not on a flat recent grid.** The composer's "+"

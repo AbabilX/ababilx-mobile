@@ -82,7 +82,7 @@ class ReviewView @JvmOverloads constructor(
         editButton.setOnClickListener {
             current()?.let { onEditRequested?.invoke(it) }
         }
-        findViewById<ImageButton>(R.id.review_remove).setOnClickListener { removeCurrent() }
+        findViewById<TextView>(R.id.review_remove).setOnClickListener { removeCurrent() }
         findViewById<ImageButton>(R.id.review_send).setOnClickListener {
             if (items.isNotEmpty()) {
                 onSend?.invoke(items.toList(), caption.text.toString().trim(), quality)
