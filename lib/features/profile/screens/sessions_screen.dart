@@ -76,7 +76,6 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
             buttonLabel: _t('devices_link_new'),
             onLink: () => QrLoginFlow.start(context, ref),
           ),
-          const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
             child: Text(
