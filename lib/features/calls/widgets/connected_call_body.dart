@@ -76,7 +76,9 @@ class ConnectedCallBody extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 68, 16, 20),
+                  // A 12dp gutter, not 16: the control deck is the screen's
+                  // widest element and Expressive wants it near the edges.
+                  padding: const EdgeInsets.fromLTRB(12, 68, 12, 16),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -116,11 +118,21 @@ class ConnectedCallBody extends StatelessWidget {
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 28),
+                        // Done takes the deck's own footprint, so the screen
+                        // does not collapse to a small centred button the
+                        // moment the call ends.
                         child: ended
-                            ? FilledButton.tonal(
-                                onPressed: onMinimize,
-                                child: Text(
-                                  AppTranslations.of(lang, 'call_done'),
+                            ? SizedBox(
+                                width: double.infinity,
+                                height: 76,
+                                child: FilledButton.tonal(
+                                  onPressed: onMinimize,
+                                  style: FilledButton.styleFrom(
+                                    shape: const StadiumBorder(),
+                                  ),
+                                  child: Text(
+                                    AppTranslations.of(lang, 'call_done'),
+                                  ),
                                 ),
                               )
                             : controls,
