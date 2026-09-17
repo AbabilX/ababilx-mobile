@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Header call affordance: icon + label, so the action reads as "Talk" instead
-/// of a bare glyph. Deliberately compact — the header uses a centred title, and
-/// a wide trailing widget eats the name.
+/// Header call affordance: icon + label ("Talk" on DMs, "Meet" on groups)
+/// instead of a bare glyph. Deliberately compact — the header uses a centred
+/// title, and a wide trailing widget eats the name.
 class CallActionPill extends StatelessWidget {
   const CallActionPill({
     super.key,

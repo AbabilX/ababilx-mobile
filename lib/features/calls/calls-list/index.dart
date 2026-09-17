@@ -72,6 +72,17 @@ class _CallsListState extends ConsumerState<CallsList> {
     if (left < 400) ref.read(callLogProvider.notifier).loadMore();
   }
 
+  /// Opening the Missed filter means those calls are seen — clear the badge
+  /// now, not only when the tab is disposed.
+  void _openMissedFilter() {
+    final now = DateTime.now();
+    setState(() {
+      _filter = _CallFilter.missed;
+      _lastSeenMissedAt = now;
+    });
+    markMissedCallsSeen(now);
+  }
+
   /// Redial a 1:1 call when the conversation is still in the sidebar;
   /// otherwise just open it, which is also the only sane action for a group.
   void _call(String conversationId, bool isGroup) {
@@ -138,7 +149,7 @@ class _CallsListState extends ConsumerState<CallsList> {
               icon: Icons.call_missed_rounded,
               label: t('calls_missed_filter'),
               selected: _filter == _CallFilter.missed,
-              onPressed: () => setState(() => _filter = _CallFilter.missed),
+              onPressed: _openMissedFilter,
             ),
           ),
           const SizedBox(width: 8),

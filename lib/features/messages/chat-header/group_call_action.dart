@@ -72,11 +72,12 @@ class _GroupCallActionState extends ConsumerState<GroupCallAction> {
     final busyElsewhere =
         state.active && !inThisCall && !joiningThis && !inLobbyForThis;
 
+    // Groups use "Meet" (not DM "Talk") — a multi-person room, not a 1:1.
     final label = inThisCall
         ? AppTranslations.translate(context, ref, 'chat_call_in')
         : active != null
         ? AppTranslations.translate(context, ref, 'chat_call_join')
-        : AppTranslations.translate(context, ref, 'chat_call');
+        : AppTranslations.translate(context, ref, 'chat_meet');
 
     return CallActionPill(
       icon: Icons.headset_mic_rounded,

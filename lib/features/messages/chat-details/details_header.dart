@@ -130,7 +130,7 @@ class DetailsHeader extends ConsumerWidget {
             else if (conversation.canGroupCall)
               DetailsActionButton(
                 icon: const Icon(Icons.headset_mic_rounded),
-                label: AppTranslations.translate(context, ref, 'chat_call'),
+                label: AppTranslations.translate(context, ref, 'chat_meet'),
                 onTap: callActive
                     ? null
                     : () => unawaited(
