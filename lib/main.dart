@@ -16,6 +16,7 @@ import 'features/calls/native/background_voice_call_gate.dart';
 import 'features/calls/native/answered_elsewhere.dart';
 import 'features/calls/native/call_answered_guard.dart';
 import 'features/calls/native/voice_call_ended_guard.dart';
+import 'features/ghost/ghost_push.dart';
 import 'features/notifications/chat_push_notification.dart';
 import 'features/notifications/local_notifications.dart';
 import 'features/notifications/vitals/push_latency_store.dart';
@@ -85,6 +86,15 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     case 'chat_message':
     case 'chat_mention':
       await _handleChatPushInBackground(data);
+    case 'ghost_invite':
+    case 'ghost_closed':
+      try {
+        final local = LocalNotifications();
+        await local.initForBackground();
+        await handleGhostPush(local, data, appOnScreen: false);
+      } catch (_) {
+        // Best effort: a background isolate must never throw.
+      }
   }
 }
 

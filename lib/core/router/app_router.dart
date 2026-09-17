@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/ghost/screens/ghost_chat_screen.dart';
+import '../../features/ghost/screens/ghost_invite_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/board/screens/board_screen.dart';
@@ -148,6 +150,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/call', pageBuilder: _instant(const VoiceCallScreen())),
+      // Ghost Chat. `GhostSync` is the only thing that pushes or pops these.
+      GoRoute(path: '/ghost', builder: (_, _) => const GhostChatScreen()),
+      GoRoute(
+        path: '/ghost/invite',
+        pageBuilder: _instant(const GhostInviteScreen()),
+      ),
       GoRoute(
         path: '/group-call',
         pageBuilder: _instant(const GroupCallScreen()),

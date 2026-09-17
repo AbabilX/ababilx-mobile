@@ -17,6 +17,7 @@ import 'chat_push_notification.dart';
 import 'data/device_repository.dart';
 import 'fcm_log.dart';
 import 'local_notifications.dart';
+import '../ghost/ghost_push.dart';
 import 'notification_router.dart';
 
 /// Owns FCM permission, token sync, and foreground display.
@@ -320,6 +321,10 @@ class FcmService {
     final channel = _channelFor(data['type']?.toString());
 
     final type = data['type'];
+    if (isGhostPush(data)) {
+      await handleGhostPush(_local, data, appOnScreen: flutterOwnsRingingUi);
+      return;
+    }
     if (type == 'voice_call_ended') {
       // Silent terminal push for a call whose WS cannot reach this process.
       final callId = data['call_id']?.toString() ?? '';

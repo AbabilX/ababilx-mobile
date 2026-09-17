@@ -145,6 +145,15 @@
                 android:resource="@xml/ms_file_paths" />
         </provider>
 
+        <!-- Ghost Chat files, served from memory so they never reach disk.
+             Not exported: the only way in is a read permission this app grants
+             on the chooser intent, for one launch of one viewer. -->
+        <provider
+            android:name=".GhostBlobProvider"
+            android:authorities="${applicationId}.ghostblob"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+
         <!-- The native media-send flow: gallery grid, review pager, editor.
              Same task as MainActivity (taskAffinity="" is not inherited, so it
              is repeated here) — otherwise picking a photo would push a second

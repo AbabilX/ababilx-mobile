@@ -273,6 +273,14 @@ class ApiConstants {
       : '$independentChatConversations/$conversationId/$action';
   static String independentChatVoiceCalls(String conversationId) =>
       '$independentChatConversations/$conversationId/calls';
+  // Ghost Chat: invite, then act on the session. No message endpoint exists —
+  // content travels phone to phone and never reaches the server.
+  static String ghostChatStart(String conversationId) =>
+      '$independentChatConversations/$conversationId/ghost';
+  static String ghostChatSession(String sessionId) =>
+      '$independentChatRoot/ghost/$sessionId';
+  static String ghostChatActions(String sessionId) =>
+      '$independentChatRoot/ghost/$sessionId/actions';
   static String independentChatMessage(String messageId) =>
       '$independentChatRoot/messages/$messageId';
   static String independentChatMessageReactions(String messageId) =>

@@ -66,6 +66,12 @@ class MainActivity : FlutterActivity() {
     /** Speaker / earpiece for a call Android Telecom hosts — a CallKit Answer. */
     private val callAudioTelecom by lazy { CallAudioTelecom() }
 
+    /** FLAG_SECURE while a Ghost Chat is on screen. */
+    private val secureWindow by lazy { SecureWindowChannel(this) }
+
+    /** Ghost Chat files, held in memory and opened without touching disk. */
+    private val ghostBlobs by lazy { GhostBlobChannel(this) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
@@ -90,6 +96,8 @@ class MainActivity : FlutterActivity() {
         video.attach(flutterEngine)
         networkState.attach(flutterEngine)
         mediaStore.attach(flutterEngine)
+        secureWindow.attach(flutterEngine)
+        ghostBlobs.attach(flutterEngine)
     }
 
     /**

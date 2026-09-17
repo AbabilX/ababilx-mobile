@@ -26,6 +26,8 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
     this.selectedMediaUris = const [],
     this.jpackLabel = 'JPack',
     this.onJPack,
+    this.ghostLabel = 'Ghost Chat',
+    this.onGhost,
   });
 
   final String galleryLabel;
@@ -40,6 +42,10 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
   /// JPack greeting card. Null hides the chip — it is offered in a DM only.
   final String jpackLabel;
   final VoidCallback? onJPack;
+
+  /// Ghost Chat. Null hides the chip — a DM with an accepted connection only.
+  final String ghostLabel;
+  final VoidCallback? onGhost;
 
   /// A tap straight on the rail, which skips the picker entirely.
   final ValueChanged<DeviceMediaItem> onPickMedia;
@@ -92,6 +98,12 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
                       label: jpackLabel,
                       icon: HugeIcons.strokeRoundedGift,
                       onTap: onJPack!,
+                    ),
+                  if (onGhost != null)
+                    AttachChip(
+                      label: ghostLabel,
+                      icon: HugeIcons.strokeRoundedIncognito,
+                      onTap: onGhost!,
                     ),
                 ],
               ),

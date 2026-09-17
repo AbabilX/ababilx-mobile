@@ -18,6 +18,7 @@ import '../data/chat_recovery_api.dart';
 part 'message_vault_backfill.dart';
 part 'message_vault_decrypt.dart';
 part 'message_vault_envelope.dart';
+part 'message_vault_ghost.dart';
 part 'message_vault_codec.dart';
 part 'message_vault_identity.dart';
 part 'message_vault_key_cache.dart';

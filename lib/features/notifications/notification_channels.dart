@@ -54,6 +54,14 @@ const notificationChannels = <AndroidNotificationChannel>[
   // demote the notification to `general`, and that is not a trap worth
   // leaving armed. The tone itself never comes from here: `call_ringer` owns
   // it (see features/calls/CLAUDE.md).
+  // Ghost Chat invites. Its own channel so a user can silence invites
+  // without silencing chat — and the reverse.
+  AndroidNotificationChannel(
+    'ghost_chat',
+    'Ghost Chat',
+    description: 'Ghost Chat invites',
+    importance: Importance.high,
+  ),
   AndroidNotificationChannel(
     'voice_calls',
     'Voice calls',

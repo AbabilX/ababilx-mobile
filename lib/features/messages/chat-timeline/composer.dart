@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../jpack/screens/jpack_cover_gallery_screen.dart';
+import '../../ghost/widgets/ghost_intro_sheet.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../../../shared/media/device_gallery.dart';
 import '../data/models/chat_models.dart';
@@ -455,7 +456,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     _sendInFlight = false;
     if (sentMsg != null) {
       await _draftStore.completeSend(
-        _draftOwnerId, widget.conversationId, clientRef,
+        _draftOwnerId,
+        widget.conversationId,
+        clientRef,
         parentId: widget.parentId,
       );
     }
@@ -670,6 +673,24 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
             ref.read(chatProvider).currentUserId,
           ),
         ),
+      );
+    };
+  }
+
+  /// Ghost Chat: a DM with an accepted connection, main timeline only. The
+  /// server refuses anything else; hiding the chip keeps a pending request
+  /// from offering a button that can only fail. `requestState` is `none` for
+  /// an accepted connection and for a thread nobody answered, so the server
+  /// still has the final word on the second.
+  VoidCallback? get _ghostAction {
+    if (widget.parentId != null) return null;
+    final conv = ref.read(chatProvider).conversationById(widget.conversationId);
+    if (conv == null || !conv.hasDmPeer || !conv.canMessage) return null;
+    if (conv.requestState != 'none') return null;
+    return () {
+      _closeAttachmentPanel();
+      unawaited(
+        showGhostIntroSheet(context, conversationId: widget.conversationId),
       );
     };
   }
@@ -995,6 +1016,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                     onContact: _selectContact,
                     jpackLabel: tr('jpack_chip'),
                     onJPack: _jpackAction,
+                    ghostLabel: tr('ghost_chip'),
+                    onGhost: _ghostAction,
                     onPickMedia: _pickFromRail,
                     selectedMediaUris: [
                       for (final item in _selectedRecent) item.uri,
