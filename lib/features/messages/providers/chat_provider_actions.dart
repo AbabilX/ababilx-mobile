@@ -5,6 +5,10 @@ mixin _ChatActionsMixin
   @override
   ChatRepository get repo;
 
+  /// How to abort the in-flight attachment PUTs for an optimistic uploading
+  /// bubble — registered by the composer, invoked from the Cancel control.
+  final Map<String, VoidCallback> _uploadCancels = {};
+
   void incrementThreadCount(String conversationId, String rootId) {
     final key = feedKey(conversationId);
     final feed = state.feeds[key];
@@ -96,6 +100,24 @@ mixin _ChatActionsMixin
     String clientRef, {
     String? parentId,
   }) {
+    _uploadCancels.remove(clientRef);
+    _removePendingFromFeed(conversationId, clientRef, parentId: parentId);
+    (this as ChatNotifier).fetchSidebarSilent().ignore();
+  }
+
+  /// Composer registers how to abort the PUTs behind this optimistic bubble.
+  void registerUploadingCancel(String clientRef, VoidCallback cancel) {
+    _uploadCancels[clientRef] = cancel;
+  }
+
+  /// User tapped Cancel on an uploading bubble — stop the PUTs and drop it.
+  void cancelUploadingMessage(
+    String conversationId,
+    String clientRef, {
+    String? parentId,
+  }) {
+    final cancel = _uploadCancels.remove(clientRef);
+    cancel?.call();
     _removePendingFromFeed(conversationId, clientRef, parentId: parentId);
     (this as ChatNotifier).fetchSidebarSilent().ignore();
   }
@@ -179,6 +201,7 @@ mixin _ChatActionsMixin
 
     // Inject into feed immediately so user sees it at once.
     if (reusePending) {
+      _uploadCancels.remove(clientRef);
       _patchInFeed(
         convId,
         (m) => m.id == clientRef && m.isPending ? pendingMsg : m,

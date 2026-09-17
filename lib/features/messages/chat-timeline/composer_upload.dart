@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,9 +44,11 @@ Future<void> uploadAttachments(
   required ValueChanged<String> onFailed,
   UploadProgress? onProgress,
   VoidCallback? onReady,
+  CancelToken? cancelToken,
 }) async {
   final loaded = <UploadSource>[];
   for (final load in sources) {
+    if (cancelToken?.isCancelled == true) return;
     final source = await load();
     if (source == null) continue;
     validateChatAttachmentSize(source.sizeBytes);
@@ -54,6 +57,7 @@ Future<void> uploadAttachments(
 
   final reserved = <_Reserved>[];
   for (final source in loaded) {
+    if (cancelToken?.isCancelled == true) return;
     final slot = await _reserve(ref, conversationId, source);
     if (slot == null) continue;
     reserved.add(slot);
@@ -65,11 +69,18 @@ Future<void> uploadAttachments(
   var next = 0;
   Future<void> lane() async {
     while (true) {
+      if (cancelToken?.isCancelled == true) return;
       final index = next;
       if (index >= reserved.length) return;
       next += 1;
       final slot = reserved[index];
-      if (!await _transfer(ref, conversationId, slot, onProgress: onProgress)) {
+      if (!await _transfer(
+        ref,
+        conversationId,
+        slot,
+        onProgress: onProgress,
+        cancelToken: cancelToken,
+      )) {
         onFailed(slot.input.fileUrl);
       }
     }
@@ -126,19 +137,32 @@ Future<bool> _transfer(
   String conversationId,
   _Reserved slot, {
   UploadProgress? onProgress,
+  CancelToken? cancelToken,
 }) async {
   final notifier = ref.read(chatProvider.notifier);
+  final sizeBytes = slot.source.sizeBytes;
+  void report(int sent, int total) {
+    // Dio stream PUTs often never fire a final 100% tick — without this the
+    // bubble footer sticks around ~70% until the message API returns.
+    final knownTotal = total > 0 ? total : sizeBytes;
+    final clampedSent = sent < 0
+        ? 0
+        : (knownTotal > 0 && sent > knownTotal ? knownTotal : sent);
+    onProgress?.call(slot.input.fileUrl, clampedSent, knownTotal);
+  }
+
   Uint8List? bytes;
   try {
+    if (cancelToken?.isCancelled == true) return false;
     final path = slot.source.localPath;
     if (path != null && path.isNotEmpty) {
       await notifier.uploadAttachmentFile(
         slot.presign,
         File(path),
         slot.source.contentType,
-        slot.source.sizeBytes,
-        onProgress: (sent, total) =>
-            onProgress?.call(slot.input.fileUrl, sent, total),
+        sizeBytes,
+        cancelToken: cancelToken,
+        onProgress: report,
       );
     } else {
       bytes = await slot.source.read();
@@ -147,14 +171,15 @@ Future<bool> _transfer(
         slot.presign,
         bytes,
         slot.source.contentType,
-        onProgress: (sent, total) =>
-            onProgress?.call(slot.input.fileUrl, sent, total),
+        cancelToken: cancelToken,
+        onProgress: report,
       );
     }
   } catch (_) {
     await notifier.discardUpload(conversationId, slot.presign.publicUrl);
     return false;
   }
+  report(sizeBytes, sizeBytes);
   if (slot.source.localPath == null && bytes != null) {
     await _cacheBytesForPreview(slot.presign.publicUrl, slot.source, bytes);
   }

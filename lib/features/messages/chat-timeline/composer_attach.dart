@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 
 import '../../../shared/media/media_grid_sheet.dart';
 import '../../../shared/media/media_quality.dart';
@@ -49,6 +50,7 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
   ValueChanged<String>? onNativeSendReady,
   ImageSource? source,
   ComposerAttachKind? kind,
+  CancelToken? cancelToken,
 }) async {
   final requested = kind ?? _kindFor(source);
 
@@ -67,6 +69,7 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
       onFailed,
       onProgress,
       onNativeSendReady,
+      cancelToken,
     );
   }
 
@@ -79,6 +82,7 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
       onAdded,
       onFailed,
       onProgress,
+      cancelToken,
     );
     return const ComposerAttachResult();
   }
@@ -91,6 +95,7 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
       onAdded,
       onFailed,
       onProgress,
+      cancelToken,
     );
     return const ComposerAttachResult();
   }
@@ -109,6 +114,7 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
         onAdded,
         onFailed,
         onProgress,
+        cancelToken,
       );
     case MediaSheetAction.files:
       await _settle();
@@ -119,6 +125,7 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
         onAdded,
         onFailed,
         onProgress,
+        cancelToken,
       );
     case MediaSheetAction.picked:
       await uploadAttachments(
@@ -128,6 +135,7 @@ Future<ComposerAttachResult> pickAndUploadAttachment(
         onAdded: onAdded,
         onFailed: onFailed,
         onProgress: onProgress,
+        cancelToken: cancelToken,
       );
   }
   return const ComposerAttachResult();
@@ -146,6 +154,7 @@ Future<ComposerAttachResult> _nativeAttach(
   ValueChanged<String> onFailed,
   UploadProgress? onProgress,
   ValueChanged<String>? onNativeSendReady,
+  CancelToken? cancelToken,
 ) async {
   final native = await NativeMediaSend.open(
     start: switch (kind) {
@@ -164,6 +173,7 @@ Future<ComposerAttachResult> _nativeAttach(
     onAdded: onAdded,
     onFailed: onFailed,
     onProgress: onProgress,
+    cancelToken: cancelToken,
     onReady: onNativeSendReady == null
         ? null
         : () => onNativeSendReady(native.caption),
@@ -181,6 +191,7 @@ Future<void> _uploadPicked(
   ValueChanged<ChatAttachmentInput> onAdded,
   ValueChanged<String> onFailed,
   UploadProgress? onProgress,
+  CancelToken? cancelToken,
 ) async {
   if (picked == null) return;
   await uploadAttachments(
@@ -193,6 +204,7 @@ Future<void> _uploadPicked(
     onAdded: onAdded,
     onFailed: onFailed,
     onProgress: onProgress,
+    cancelToken: cancelToken,
   );
 }
 
@@ -218,6 +230,7 @@ Future<ComposerAttachResult> pickAndUploadImage(
   ValueChanged<String>? onNativeSendReady,
   ImageSource? source,
   ComposerAttachKind? kind,
+  CancelToken? cancelToken,
 }) => pickAndUploadAttachment(
   context,
   ref,
@@ -228,4 +241,5 @@ Future<ComposerAttachResult> pickAndUploadImage(
   onNativeSendReady: onNativeSendReady,
   source: source,
   kind: kind,
+  cancelToken: cancelToken,
 );

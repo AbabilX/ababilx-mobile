@@ -33,7 +33,11 @@ class AttachmentDownloadBadge extends ConsumerWidget {
     final size = handle.totalBytes > 0
         ? handle.totalBytes
         : attachment.sizeBytes;
-    final label = showSize && !handle.isBusy ? attachmentSizeLabel(size) : '';
+    final label = handle.isBusy
+        ? AppTranslations.translate(context, ref, 'cancel')
+        : showSize
+        ? attachmentSizeLabel(size)
+        : '';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -43,9 +47,10 @@ class AttachmentDownloadBadge extends ConsumerWidget {
           const SizedBox(height: 6),
           Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colors.onSurfaceVariant,
+              fontWeight: handle.isBusy ? FontWeight.w600 : FontWeight.normal,
+            ),
           ),
         ],
       ],

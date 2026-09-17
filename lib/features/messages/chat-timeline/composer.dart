@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -92,6 +93,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   bool _restoringDraft = true;
   bool _persistTextChanges = true;
   bool _sendInFlight = false;
+  /// Set when the user cancels an uploading bubble mid-flight.
+  bool _sendCancelled = false;
 
   List<MentionCandidate> _mentionCandidates = [];
   final Set<String> _mentionedUserIds = {};
@@ -371,6 +374,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     final notifier = ref.read(chatProvider.notifier);
     String? clientRef;
     _UploadBubble? uploadBubble;
+    _sendCancelled = false;
     if (uploading) {
       clientRef = await notifier.beginUploadingMessage(
         conversationId: widget.conversationId,
@@ -390,6 +394,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       for (final attachment in attachments) {
         _uploadBubbleByUrl[attachment.fileUrl] = uploadBubble;
       }
+      notifier.registerUploadingCancel(clientRef, () {
+        _sendCancelled = true;
+        _uploads.cancelAll();
+      });
       _publishUploadProgress(uploadBubble);
     }
     clientRef ??= newChatClientMessageId();
@@ -430,11 +438,29 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         _progressByUrl.remove(attachment.fileUrl);
       }
       if (!mounted) return;
+      if (_sendCancelled) {
+        _sendInFlight = false;
+        notifier.removeUploadingMessage(
+          widget.conversationId,
+          clientRef as String,
+          parentId: reply.parentId,
+        );
+        return;
+      }
+      // Dio often never reports 100% — pin the bar before the API send so the
+      // footer does not sit on a stale ~70% while encrypting / posting.
+      final uploadRef = clientRef as String;
+      notifier.updatePendingUploadProgress(
+        widget.conversationId,
+        uploadRef,
+        1,
+        parentId: reply.parentId,
+      );
       if (uploadBubble!.attachments.isEmpty && body.isEmpty) {
         _sendInFlight = false;
         notifier.removeUploadingMessage(
           widget.conversationId,
-          clientRef,
+          uploadRef,
           parentId: reply.parentId,
         );
         _showMessage(
@@ -537,12 +563,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   Future<void> _attach({ImageSource? source, ComposerAttachKind? kind}) async {
     if (!mounted) return;
     try {
+      final token = CancelToken();
       final run = pickAndUploadAttachment(
         context,
         ref,
         conversationId: widget.conversationId,
         source: source,
         kind: kind,
+        cancelToken: token,
         onAdded: (a) {
           if (!mounted) return;
           setState(() => _pending.add(a));
@@ -556,7 +584,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           unawaited(_send());
         },
       );
-      _uploads.track(run);
+      _uploads.track(run, cancelToken: token);
       final outcome = await run;
       // The native review screen ends on its own Send: the album and the one
       // message typed under it go out without a second trip to the composer.
@@ -621,12 +649,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     final selected = List<DeviceMediaItem>.of(_selectedRecent);
     if (selected.isEmpty) return;
     try {
+      final token = CancelToken();
       final run = reviewAndUploadRecentMedia(
         ref,
         conversationId: widget.conversationId,
         items: selected,
         maxSelection: _maxAttachments - _pending.length,
         initialCaption: _ctrl.text,
+        cancelToken: token,
         onAccepted: (caption) {
           if (!mounted) return;
           setState(() {
@@ -643,7 +673,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         onProgress: _onUploadProgress,
         onReady: () => unawaited(_send()),
       );
-      _uploads.track(run);
+      _uploads.track(run, cancelToken: token);
       await run;
     } on ChatAttachmentSizeException {
       _showMessage(

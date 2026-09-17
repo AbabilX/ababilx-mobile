@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,6 +21,7 @@ Future<void> reviewAndUploadRecentMedia(
   required ValueChanged<String> onFailed,
   required VoidCallback onReady,
   UploadProgress? onProgress,
+  CancelToken? cancelToken,
 }) async {
   if (items.isEmpty || !await NativeMediaSend.isAvailable()) return;
 
@@ -49,5 +51,6 @@ Future<void> reviewAndUploadRecentMedia(
     onFailed: onFailed,
     onProgress: onProgress,
     onReady: onReady,
+    cancelToken: cancelToken,
   );
 }

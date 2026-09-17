@@ -10,6 +10,8 @@ class PendingMessageAttachments extends StatelessWidget {
     required this.muted,
     required this.uploading,
     this.progress,
+    this.onCancel,
+    this.cancelLabel = 'Cancel',
   });
 
   final List<ChatAttachmentInput> attachments;
@@ -17,6 +19,8 @@ class PendingMessageAttachments extends StatelessWidget {
   final Color muted;
   final bool uploading;
   final double? progress;
+  final VoidCallback? onCancel;
+  final String cancelLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -58,17 +62,74 @@ class PendingMessageAttachments extends StatelessWidget {
           ),
         if (uploading) ...[
           const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 3,
-              backgroundColor: muted.withValues(alpha: .25),
-              color: foreground,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 3,
+                    backgroundColor: muted.withValues(alpha: .25),
+                    color: foreground,
+                  ),
+                ),
+              ),
+              if (onCancel != null) ...[
+                const SizedBox(width: 8),
+                _CancelUploadButton(
+                  label: cancelLabel,
+                  color: foreground,
+                  onTap: onCancel!,
+                ),
+              ],
+            ],
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Compact Cancel control beside the upload bar — icon + label, like the
+/// download badge, so the affordance is obvious while bytes are moving.
+class _CancelUploadButton extends StatelessWidget {
+  const _CancelUploadButton({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.close_rounded, size: 16, color: color),
+              const SizedBox(width: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

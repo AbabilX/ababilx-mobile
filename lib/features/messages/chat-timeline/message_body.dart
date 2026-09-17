@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/models/chat_models.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../messages/data/models/chat_models.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
@@ -131,6 +132,16 @@ class MessageBody extends ConsumerWidget {
             muted: colors.muted,
             uploading: message.sendStatus == MessageSendStatus.uploading,
             progress: message.uploadProgress,
+            cancelLabel: AppTranslations.translate(context, ref, 'cancel'),
+            onCancel: message.sendStatus == MessageSendStatus.uploading
+                ? () => ref
+                      .read(chatProvider.notifier)
+                      .cancelUploadingMessage(
+                        message.conversationId,
+                        message.clientRef ?? message.id,
+                        parentId: message.parentId,
+                      )
+                : null,
           ),
       ],
     );

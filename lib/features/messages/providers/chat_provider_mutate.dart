@@ -179,12 +179,14 @@ mixin _ChatMutateMixin
     List<int> bytes,
     String contentType, {
     ProgressCallback? onProgress,
+    CancelToken? cancelToken,
   }) async {
     final dio = Dio();
     await dio.put(
       presign.uploadUrl,
       data: bytes,
       options: Options(headers: {'Content-Type': contentType}),
+      cancelToken: cancelToken,
       onSendProgress: onProgress,
     );
   }
@@ -195,6 +197,7 @@ mixin _ChatMutateMixin
     String contentType,
     int sizeBytes, {
     ProgressCallback? onProgress,
+    CancelToken? cancelToken,
   }) async {
     final dio = Dio();
     await dio.put(
@@ -206,6 +209,7 @@ mixin _ChatMutateMixin
           Headers.contentLengthHeader: sizeBytes,
         },
       ),
+      cancelToken: cancelToken,
       onSendProgress: onProgress,
     );
   }
