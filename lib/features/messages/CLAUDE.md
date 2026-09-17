@@ -1108,7 +1108,7 @@ cached row   written ciphertext-only, painted before the vault, and
 
 - **The group sidebar query now returns the four ciphertext columns**, from
   the same `chatSidebarEncryptedPreviewSQL()` the DM query uses
-  (`ababilx-server/db/chat_sidebar_preview_sql.go`, pinned by
+  (`ababilx-server/db/chat/sidebar/chat_sidebar_preview_sql.go`, pinned by
   `chat_sidebar_preview_test.go`). Personal groups were sealed on 2026-09-05
   and this query was never touched, so the placeholder WAS the preview.
 - **One rule for both lists**, `message_e2ee/sidebar_preview.dart` — the
