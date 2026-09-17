@@ -107,9 +107,10 @@ class _AppIconScreenState extends State<AppIconScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Your launcher redraws the icon on its own schedule, so it may '
-            'take a moment. A home-screen shortcut created for the old icon '
-            'may need to be added again.',
+            'Calendar, Calculator and Notes look like other apps, so AbabilX '
+            'is less obvious on the home screen. Your launcher redraws the '
+            'icon on its own schedule, so it may take a moment. A home-screen '
+            'shortcut created for the old icon may need to be added again.',
             style: textTheme.bodySmall?.copyWith(
               color: colors.onSurfaceVariant,
             ),

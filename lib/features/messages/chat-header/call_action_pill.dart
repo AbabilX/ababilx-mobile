@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Header call affordance: icon + label, so the action reads as "Call" instead
+/// Header call affordance: icon + label, so the action reads as "Talk" instead
 /// of a bare glyph. Deliberately compact — the header uses a centred title, and
 /// a wide trailing widget eats the name.
 class CallActionPill extends StatelessWidget {
@@ -40,7 +40,7 @@ class CallActionPill extends StatelessWidget {
     final pill = Opacity(
       opacity: opacity,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(999),
@@ -50,19 +50,19 @@ class CallActionPill extends StatelessWidget {
           children: [
             if (busy)
               SizedBox(
-                width: 14,
-                height: 14,
+                width: 16,
+                height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   color: foreground,
                 ),
               )
             else
-              Icon(icon, size: 16, color: foreground),
-            const SizedBox(width: 6),
+              Icon(icon, size: 18, color: foreground),
+            const SizedBox(width: 7),
             Text(
               label,
-              style: theme.textTheme.labelMedium?.copyWith(
+              style: theme.textTheme.labelLarge?.copyWith(
                 color: foreground,
                 fontWeight: FontWeight.w700,
                 height: 1.1,

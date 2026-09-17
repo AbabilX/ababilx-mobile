@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/group/providers/group_call_provider.dart';
 import '../../calls/providers/in_call_presence_provider.dart';
@@ -121,7 +122,7 @@ class DetailsHeader extends ConsumerWidget {
             if (conversation.hasDmPeer && conversation.canMessage)
               DetailsActionButton(
                 icon: const Icon(Icons.call_rounded),
-                label: 'Call',
+                label: AppTranslations.translate(context, ref, 'chat_call'),
                 onTap: callActive
                     ? null
                     : () => startAudioCall(ref, conversation),
@@ -129,7 +130,7 @@ class DetailsHeader extends ConsumerWidget {
             else if (conversation.canGroupCall)
               DetailsActionButton(
                 icon: const Icon(Icons.headset_mic_rounded),
-                label: 'Call',
+                label: AppTranslations.translate(context, ref, 'chat_call'),
                 onTap: callActive
                     ? null
                     : () => unawaited(

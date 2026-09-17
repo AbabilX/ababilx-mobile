@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../messages/providers/chat_provider.dart';
+import '../data/call_log_seen_storage.dart';
 import '../providers/call_log_provider.dart';
 import '../providers/voice_call_provider.dart';
 import 'call_log_cluster.dart';
@@ -40,6 +41,7 @@ class CallsList extends ConsumerStatefulWidget {
 class _CallsListState extends ConsumerState<CallsList> {
   final _scroll = ScrollController();
   _CallFilter _filter = _CallFilter.all;
+  DateTime? _lastSeenMissedAt;
 
   @override
   void initState() {
@@ -50,11 +52,17 @@ class _CallsListState extends ConsumerState<CallsList> {
       final log = ref.read(callLogProvider);
       ref.read(callLogProvider.notifier).load(silent: log.calls.isNotEmpty);
     });
+    lastSeenMissedCallAt().then((at) {
+      if (mounted) setState(() => _lastSeenMissedAt = at);
+    });
   }
 
   @override
   void dispose() {
     _scroll.dispose();
+    // Visiting the tab clears the badge for next time; this visit still
+    // shows whatever count it opened with.
+    markMissedCallsSeen(DateTime.now());
     super.dispose();
   }
 
@@ -105,7 +113,12 @@ class _CallsListState extends ConsumerState<CallsList> {
         ? allRows.where((row) => row.lead.missed).toList()
         : allRows;
     final items = _items(rows, lang);
-    final missedCount = allRows.where((row) => row.lead.missed).length;
+    final unseenMissed = allRows.where((row) => row.lead.missed);
+    final missedCount = _lastSeenMissedAt == null
+        ? unseenMissed.length
+        : unseenMissed
+            .where((row) => row.lead.startedAt.isAfter(_lastSeenMissedAt!))
+            .length;
     String t(String key) => AppTranslations.of(lang, key);
 
     return Scaffold(

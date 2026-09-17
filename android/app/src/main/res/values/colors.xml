@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="notification_color">#6366F1</color>
-    <!-- Alternate launcher-icon plates. Every option has its own mark. -->
-    <color name="icon_bg_calendar">#2563EB</color>
-    <color name="icon_bg_notes">#7C3AED</color>
+    <!-- Disguise launcher plates: look like other apps, not AbabilX. -->
+    <color name="icon_bg_calendar">#E11D48</color>
+    <color name="icon_bg_calculator">#1C1C1E</color>
+    <color name="icon_bg_notes">#CA8A04</color>
+    <!-- Hidden aliases kept so a previous selection still launches. -->
+    <color name="icon_bg_night">#0B1B3A</color>
+    <color name="icon_bg_ember">#3B1408</color>
+    <color name="icon_bg_pulse">#023A40</color>
     <color name="icon_bg_weather">#0284C7</color>
     <color name="icon_bg_ink">#0F172A</color>
     <color name="icon_bg_indigo">#6366F1</color>

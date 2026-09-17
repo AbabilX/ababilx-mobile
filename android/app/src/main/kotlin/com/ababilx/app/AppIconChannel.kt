@@ -105,8 +105,12 @@ class AppIconChannel(private val context: Context) {
         val ALIASES = linkedMapOf(
             DEFAULT_ID to ".Launcher",
             "calendar" to ".LauncherCalendar",
+            "calculator" to ".LauncherCalculator",
             "notes" to ".LauncherNotes",
-            "weather" to ".LauncherWeather",
+            "legacy_night" to ".LauncherNight",
+            "legacy_ember" to ".LauncherEmber",
+            "legacy_pulse" to ".LauncherPulse",
+            "legacy_weather" to ".LauncherWeather",
             "legacy_ink" to ".LauncherInk",
             "legacy_indigo" to ".LauncherIndigo",
             "legacy_forest" to ".LauncherForest",

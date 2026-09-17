@@ -33,7 +33,6 @@ class SettingsSections extends ConsumerWidget {
           title: t('devices_title'),
           onTap: () => context.push('/profile/devices'),
         ),
-        const Divider(height: 24),
         SettingsRow(
           icon: HugeIcons.strokeRoundedNotification03,
           title: t('settings_notifications'),

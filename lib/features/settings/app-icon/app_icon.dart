@@ -29,26 +29,27 @@ class AppIconOption {
   final IconData? previewIcon;
 }
 
-/// Must stay in step with `AppIconChannel.ALIASES` on the Android side.
+/// Disguise marks for the home screen — calendar / calculator / notes, not
+/// the AbabilX swallow. Must stay in step with `AppIconChannel.ALIASES`.
 const List<AppIconOption> appIconOptions = [
   AppIconOption(id: 'default', label: 'Default', background: Color(0xFF12121A)),
   AppIconOption(
     id: 'calendar',
     label: 'Calendar',
-    background: Color(0xFF2563EB),
+    background: Color(0xFFE11D48),
     previewAsset: 'assets/icon/alternates/calendar.png',
+  ),
+  AppIconOption(
+    id: 'calculator',
+    label: 'Calculator',
+    background: Color(0xFF1C1C1E),
+    previewAsset: 'assets/icon/alternates/calculator.png',
   ),
   AppIconOption(
     id: 'notes',
     label: 'Notes',
-    background: Color(0xFF7C3AED),
+    background: Color(0xFFCA8A04),
     previewAsset: 'assets/icon/alternates/notes.png',
-  ),
-  AppIconOption(
-    id: 'weather',
-    label: 'Weather',
-    background: Color(0xFF0284C7),
-    previewAsset: 'assets/icon/alternates/weather.png',
   ),
 ];
 

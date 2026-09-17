@@ -208,12 +208,67 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
+            android:name=".LauncherCalculator"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_calculator"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
             android:name=".LauncherNotes"
             android:targetActivity=".MainActivity"
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_notes"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <!-- Kept out of the picker solely so users who selected a former
+             icon retain a launch entry after upgrading. The next icon
+             selection disables these aliases. -->
+        <activity-alias
+            android:name=".LauncherNight"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_night"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherEmber"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_ember"
+            android:label="AbabilX">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherPulse"
+            android:targetActivity=".MainActivity"
+            android:taskAffinity=""
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_pulse"
             android:label="AbabilX">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -233,9 +288,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity-alias>
-        <!-- Kept out of the picker solely so users who selected a former
-             colour-only icon retain a launch entry after upgrading. The next
-             icon selection disables these aliases. -->
         <activity-alias
             android:name=".LauncherInk"
             android:targetActivity=".MainActivity"

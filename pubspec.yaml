@@ -1,7 +1,7 @@
 name: ababilx
 description: "AbabilX — All-in-one team collaboration platform featuring messaging, calls, CRM, Kanban boards, and local sharing."
 publish_to: "none"
-version: 5.1.2+24
+version: 5.1.3+25
 
 environment:
   sdk: ^3.12.0
@@ -130,8 +130,8 @@ flutter:
     # Drawn in Settings → App icon as the mark on each alternate plate.
     - assets/icon/icon_foreground.png
     - assets/icon/alternates/calendar.png
+    - assets/icon/alternates/calculator.png
     - assets/icon/alternates/notes.png
-    - assets/icon/alternates/weather.png
     - assets/images/login_background_v1.png
     - assets/images/login_background_v2.png
     - assets/images/onboarding_connections_v1.png
