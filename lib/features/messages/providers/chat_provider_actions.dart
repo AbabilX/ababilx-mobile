@@ -199,6 +199,11 @@ mixin _ChatActionsMixin
         pendingMsg,
         encrypted: encrypted,
       );
+      if (!(this as _ChatCacheMixin).messageStore.deletions.allows(
+        pendingMsg,
+      )) {
+        throw StateError('This pending message was deleted');
+      }
       return repo.sendMessage(
         convId,
         clientMessageId: clientRef,
@@ -215,6 +220,7 @@ mixin _ChatActionsMixin
     }
 
     try {
+      await (this as _ChatOutboxMixin).stageOutbox(pendingMsg);
       // ── Step 2: Fire the actual network call ─────────────────────────────
       ChatMessage msg;
       if (conv?.isEncrypted == true && body.isNotEmpty) {
@@ -241,7 +247,6 @@ mixin _ChatActionsMixin
             .decryptMessage(msg, currentUser);
       }
       // ── Step 3: Replace the pending bubble with the confirmed message ─────
-      (this as _ChatOutboxMixin).removeFromOutboxAsync(clientRef);
       _replacePendingMessage(convId, clientRef, msg, parentId: parentId);
       // Same local row as persistOutbox — clientRef is the history key, the
       // server id rides in the payload. Never delete-and-reinsert.
@@ -393,6 +398,7 @@ mixin _ChatActionsMixin
     if (parentId != null) {
       patchThreadReply(parentId, confirmed);
     }
+    (this as _ChatOutboxMixin).settleOutbox(confirmed).ignore();
     // Update sidebar with confirmed message body.
     applyIncomingMessage(convId, confirmed, bumpUnread: false);
   }

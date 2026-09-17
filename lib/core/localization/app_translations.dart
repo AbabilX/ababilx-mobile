@@ -19,6 +19,13 @@ class AppTranslations {
 
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
+      'call_control_share': 'Share',
+      'call_control_stop': 'Stop',
+      'call_control_take_over': 'Take over',
+      'call_control_speaker': 'Speaker',
+      'call_control_end': 'End',
+      'call_sharing_own_screen': 'You are sharing your screen',
+      'call_done': 'Done',
       'group_mic_unavailable': 'Microphone unavailable',
       'group_unmute': 'Unmute',
       'group_mute': 'Mute',
@@ -530,6 +537,13 @@ class AppTranslations {
       'jpack_cover_victory': 'Victory Day',
     },
     'bn': {
+      'call_control_share': 'শেয়ার',
+      'call_control_stop': 'বন্ধ করুন',
+      'call_control_take_over': 'শেয়ার নিন',
+      'call_control_speaker': 'স্পিকার',
+      'call_control_end': 'শেষ করুন',
+      'call_sharing_own_screen': 'আপনি স্ক্রিন শেয়ার করছেন',
+      'call_done': 'সম্পন্ন',
       'group_mic_unavailable': 'মাইক পাওয়া যাচ্ছে না',
       'group_unmute': 'মাইক চালু করুন',
       'group_mute': 'মাইক বন্ধ করুন',
@@ -1006,7 +1020,8 @@ class AppTranslations {
       'jpack_cover': 'কভার',
       'jpack_shuffle': 'অন্য বার্তা',
       'jpack_tab_captions': 'ক্যাপশন',
-      'jpack_send_failed': 'JPack এখনো পাঠানো যায়নি। আবার চেষ্টা করতে চ্যাটে ট্যাপ করুন।',
+      'jpack_send_failed':
+          'JPack এখনো পাঠানো যায়নি। আবার চেষ্টা করতে চ্যাটে ট্যাপ করুন।',
       'jpack_from': '{name}-এর পক্ষ থেকে JPack',
       'jpack_open': 'খুলুন',
       'jpack_swipe_up': 'খুলতে উপরে সোয়াইপ বা ট্যাপ করুন',

@@ -156,6 +156,7 @@ class _DelayedDraftStore extends ComposerDraftStore {
     String? parentId,
   }) async {
     writes.add(text);
+    await super.write(ownerId, conversationId, text, parentId: parentId);
   }
 }
 
@@ -295,7 +296,7 @@ void main() {
     result.complete(_message('sent-after-dispose', 'me'));
     await tester.pump();
 
-    expect(store.writes.last, isEmpty);
+    expect(await ComposerDraftStore().read('me', 'conversation-1'), isEmpty);
   });
 
   testWidgets('sending keeps focus and requests newest-message reveal', (

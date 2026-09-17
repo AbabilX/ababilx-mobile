@@ -9,7 +9,7 @@ mixin _ChatOutboxMixin on Notifier<ChatState>, _ChatFeedMixin {
 
   // ─── Outbox (durable — see PendingOutboxMessages) ──────────────────────────
 
-  /// Writes [pendingMsg] to durable history (and the legacy outbox table)
+  /// Writes the conversation-encrypted [pendingMsg] to durable history
   /// before the network call is even made, so a send survives an app kill
   /// regardless of whether it ever gets to try. Pass [encrypted] for a DM
   /// send — its ciphertext is stored instead of [pendingMsg.body], never the
@@ -30,30 +30,47 @@ mixin _ChatOutboxMixin on Notifier<ChatState>, _ChatFeedMixin {
             encryptionKeyVersion: encrypted.keyVersion,
           );
     await (this as _ChatCacheMixin).persistFeed([disk]);
-    await outboxCache.save(
-      clientRef: pendingMsg.clientRef ?? pendingMsg.id,
-      conversationId: conversationId,
-      body: encrypted == null ? pendingMsg.body : '',
-      parentId: pendingMsg.pendingParentId,
-      attachments: pendingMsg.pendingAttachments,
-      mentionedUserIds: pendingMsg.pendingMentionedUserIds,
-      encryptedBody: encrypted?.encryptedBody,
-      encryptionNonce: encrypted?.nonce,
-      encryptionKeyVersion: encrypted?.keyVersion,
-    );
   }
 
   void removeFromOutboxAsync(String clientRef) {
     outboxCache.remove(clientRef).ignore();
   }
 
+  Future<void> stageOutbox(ChatMessage message) async {
+    final payload = await ref.read(localOutboxCipherProvider).seal(message);
+    if (!(this as _ChatCacheMixin).messageStore.deletions.allows(message)) {
+      throw StateError('This pending message was deleted');
+    }
+    await outboxCache.save(
+      clientRef: message.clientRef ?? message.id,
+      conversationId: message.conversationId,
+      body: '',
+      parentId: message.parentId,
+      encryptedBody: payload,
+    );
+  }
+
+  Future<void> settleOutbox(ChatMessage message) async {
+    final clientRef = message.clientRef;
+    if (clientRef == null || message.isPending) return;
+    await ref
+        .read(composerDraftStoreProvider)
+        .completeSend(
+          message.userId,
+          message.conversationId,
+          clientRef,
+          parentId: message.parentId,
+        );
+    await outboxCache.remove(clientRef);
+  }
+
   /// Reloads every outstanding send left over from a previous session and
   /// re-injects it as a failed bubble in its conversation's feed, so it
   /// shows up as "tap to retry" immediately — and so [retryPendingMessages]
   /// (fired on the next WS reconnect) picks it up without the user having to
-  /// open that conversation first. History rows are the source of truth;
-  /// the legacy outbox table is only a fallback for sends written before
-  /// pending messages lived in the history store.
+  /// open that conversation first. Device-sealed outbox entries hold the full
+  /// retry payload; old conversation-encrypted history/outbox rows remain
+  /// readable for upgrades from earlier app versions.
   Future<void> hydrateOutboxMessages() async {
     final userId = state.currentUserId;
     if (userId.isEmpty) return;
@@ -87,11 +104,35 @@ mixin _ChatOutboxMixin on Notifier<ChatState>, _ChatFeedMixin {
       seen.add(identity);
     }
 
+    final entries = await outboxCache.readAll();
+    for (final entry in entries.where((e) => e.isLocal)) {
+      if (!(this as _ChatCacheMixin).messageStore.deletions.allowsTime(
+        entry.conversationId,
+        entry.createdAtMs * 1000,
+        pending: true,
+      )) {
+        continue;
+      }
+      try {
+        final message = await ref
+            .read(localOutboxCipherProvider)
+            .open(
+              entry.encryptedBody!,
+              userId,
+              entry.conversationId,
+              entry.clientRef,
+            );
+        await inject(message);
+      } catch (_) {
+        // Locked/unavailable secure storage: retain the envelope for next boot.
+      }
+    }
     for (final msg
         in await (this as _ChatCacheMixin).messageStore.listUnsent()) {
       await inject(msg);
     }
-    for (final entry in await outboxCache.readAll()) {
+    for (final entry in entries) {
+      if (entry.isLocal) continue;
       if (seen.contains(entry.clientRef)) continue;
       var msg = ChatMessage(
         id: entry.clientRef,

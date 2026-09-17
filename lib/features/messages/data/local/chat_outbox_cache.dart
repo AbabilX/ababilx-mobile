@@ -38,6 +38,8 @@ class OutboxEntry {
   final String? encryptionNonce;
   final int? encryptionKeyVersion;
 
+  bool get isLocal => encryptedBody?.startsWith('local-v1:') == true;
+
   bool get isEncrypted => encryptedBody != null && encryptionNonce != null;
 }
 

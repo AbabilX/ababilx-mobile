@@ -18,11 +18,13 @@ class CallBackdrop extends StatelessWidget {
     super.key,
     required this.avatarUrl,
     this.scrim = 0.4,
+    this.themeAware = false,
     this.blurSigma = 32,
   });
 
   final String? avatarUrl;
   final double scrim;
+  final bool themeAware;
   final double blurSigma;
 
   @override
@@ -44,22 +46,29 @@ class CallBackdrop extends StatelessWidget {
             child: CachedNetworkImage(
               imageUrl: url,
               fit: BoxFit.cover,
-              placeholder: (_, _) => _Fallback(colors: colors),
-              errorWidget: (_, _, _) => _Fallback(colors: colors),
+              placeholder: (_, _) =>
+                  _Fallback(colors: colors, themeAware: themeAware),
+              errorWidget: (_, _, _) =>
+                  _Fallback(colors: colors, themeAware: themeAware),
             ),
           )
         else
-          _Fallback(colors: colors),
-        ColoredBox(color: Colors.black.withValues(alpha: scrim)),
+          _Fallback(colors: colors, themeAware: themeAware),
+        ColoredBox(
+          color: themeAware
+              ? colors.surface.withValues(alpha: 0.88)
+              : Colors.black.withValues(alpha: scrim),
+        ),
       ],
     );
   }
 }
 
 class _Fallback extends StatelessWidget {
-  const _Fallback({required this.colors});
+  const _Fallback({required this.colors, this.themeAware = false});
 
   final ColorScheme colors;
+  final bool themeAware;
 
   @override
   Widget build(BuildContext context) {
@@ -71,9 +80,9 @@ class _Fallback extends StatelessWidget {
           colors: [
             Color.alphaBlend(
               colors.primary.withValues(alpha: 0.35),
-              Colors.black,
+              themeAware ? colors.surface : Colors.black,
             ),
-            Colors.black,
+            themeAware ? colors.surface : Colors.black,
           ],
         ),
       ),

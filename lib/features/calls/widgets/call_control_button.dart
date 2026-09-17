@@ -2,16 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'call_top_bar.dart' show callTextShadow;
 
-/// A round call control, styled the way Signal styles them on a dark call
-/// screen: a filled circle with an optional label underneath.
-///
-/// Colours are deliberately *not* taken from the app's ColorScheme. A call
-/// screen is always dark — it sits on a blurred photo — so a light-theme
-/// surface colour here would vanish. The three states Signal uses are:
-///
-///   idle     translucent white, white icon      (mic on, speaker off)
-///   engaged  solid white, black icon            (muted, speaker on, sharing)
-///   danger   red, white icon                    (hang up, decline)
+/// A round call control. Photo-overlay surfaces keep their existing style;
+/// the caller's themed surface opts into ColorScheme colours.
 class CallControlButton extends StatelessWidget {
   const CallControlButton({
     super.key,
@@ -19,6 +11,7 @@ class CallControlButton extends StatelessWidget {
     required this.onPressed,
     this.label,
     this.selected = false,
+    this.themeAware = false,
     this.background,
     this.foreground,
     this.size = 56,
@@ -34,7 +27,8 @@ class CallControlButton extends StatelessWidget {
     this.label,
     this.background,
     this.foreground,
-  }) : selected = false,
+  }) : themeAware = false,
+       selected = false,
        size = 78,
        iconSize = 32;
 
@@ -42,6 +36,7 @@ class CallControlButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final String? label;
   final bool selected;
+  final bool themeAware;
   final Color? background;
   final Color? foreground;
   final double size;
@@ -49,43 +44,57 @@ class CallControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final bg =
         background ??
-        (selected ? Colors.white : Colors.white.withValues(alpha: 0.18));
-    final fg = foreground ?? (selected ? Colors.black : Colors.white);
+        (themeAware
+            ? (selected
+                  ? colors.primaryContainer
+                  : colors.surfaceContainerHighest)
+            : (selected ? Colors.white : Colors.white.withValues(alpha: 0.18)));
+    final fg =
+        foreground ??
+        (themeAware
+            ? (selected ? colors.onPrimaryContainer : colors.onSurface)
+            : (selected ? Colors.black : Colors.white));
     final enabled = onPressed != null;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Opacity(
-          opacity: enabled ? 1 : 0.45,
-          child: Material(
-            color: bg,
-            shape: const CircleBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: onPressed,
-              child: SizedBox(
-                width: size,
-                height: size,
-                child: Icon(icon, size: iconSize, color: fg),
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      toggled: selected,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Opacity(
+            opacity: enabled ? 1 : 0.45,
+            child: Material(
+              color: bg,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onPressed,
+                child: SizedBox(
+                  width: size,
+                  height: size,
+                  child: Icon(icon, size: iconSize, color: fg),
+                ),
               ),
             ),
           ),
-        ),
-        if (label != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            label!,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white,
-              shadows: callTextShadow,
+          if (label != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              label!,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: themeAware ? colors.onSurface : Colors.white,
+                shadows: themeAware ? null : callTextShadow,
+              ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

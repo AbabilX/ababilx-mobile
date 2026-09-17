@@ -152,7 +152,9 @@ class VoicePeerEngine {
     // not come out of the loudspeaker. The Speaker button is the way up from
     // here, and `CallScreenLock`'s proximity blanking keys off this same route.
     await CallAudioRoute.activate(speaker: false);
+    if (_disposed) return;
     await _ensureAudioSessionIfNeeded();
+    if (_disposed) return;
     final stream = await navigator.mediaDevices.getUserMedia({
       'audio': {
         'echoCancellation': true,
@@ -161,6 +163,13 @@ class VoicePeerEngine {
       },
       'video': false,
     });
+    if (_disposed) {
+      for (final track in stream.getTracks()) {
+        await track.stop();
+      }
+      await stream.dispose();
+      return;
+    }
     _localStream = stream;
 
     final peer = await createPeerConnection({
@@ -170,6 +179,11 @@ class VoicePeerEngine {
       'rtcpMuxPolicy': 'require',
       if (kForceRelayTransport) 'iceTransportPolicy': 'relay',
     });
+    if (_disposed) {
+      await peer.close();
+      await peer.dispose();
+      return;
+    }
     if (kForceRelayTransport) {
       voiceCallLog(
         'engine.ice.forceRelay',
@@ -238,6 +252,7 @@ class VoicePeerEngine {
     };
 
     for (final track in stream.getAudioTracks()) {
+      if (_disposed) return;
       await peer.addTrack(track, stream);
     }
     if (video) {
@@ -251,7 +266,7 @@ class VoicePeerEngine {
     // move the phone off its route on its own. `force` is false for the
     // earpiece on purpose, so a connected headset still wins. A video call
     // opens on the loudspeaker: the phone is held out to see the picture.
-    await CallAudioRoute.setSpeaker(_camera != null);
+    if (!_disposed) await CallAudioRoute.setSpeaker(_camera != null);
   }
 
   // ---- camera -------------------------------------------------------------

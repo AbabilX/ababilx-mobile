@@ -113,7 +113,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
 
     if (call.phase == VoiceCallPhase.incomingRinging) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: IncomingCallView(
           peerName: call.peerName,
           peerAvatar: call.peerAvatar,
@@ -142,13 +142,14 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
         _leave();
       },
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: ConnectedCallBody(
           call: call,
           lang: lang,
           onMinimize: _leave,
           onSwitchCamera: notifier.switchCamera,
           controls: CallControlsRow(
+            lang: lang,
             call: call,
             onToggleMute: notifier.toggleMute,
             onToggleCamera: notifier.toggleCamera,

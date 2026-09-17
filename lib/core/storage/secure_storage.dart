@@ -7,6 +7,10 @@ class SecureStorage {
 
   final FlutterSecureStorage _storage;
 
+  Future<String?> readOutboxKey() => _storage.read(key: 'local_outbox_key_v1');
+  Future<void> writeOutboxKey(String value) =>
+      _storage.write(key: 'local_outbox_key_v1', value: value);
+
   // JWT
   Future<String?> readJwt() => _storage.read(key: StorageKeys.jwt);
   Future<void> writeJwt(String token) =>

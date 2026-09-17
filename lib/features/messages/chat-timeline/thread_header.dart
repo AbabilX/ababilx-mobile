@@ -5,7 +5,7 @@ import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/providers/voice_call_provider.dart';
 import '../chat-header/call_action_pill.dart';
-import '../chat-header/start_call_sheet.dart';
+import '../chat-header/start_audio_call.dart';
 import '../data/models/chat_models.dart';
 
 /// Thread screen top bar — Slack-style: "Thread" title, a subtitle telling
@@ -80,7 +80,7 @@ class ThreadHeader extends ConsumerWidget {
                       ),
                       onTap: callActive
                           ? null
-                          : () => showStartCallSheet(context, ref, convo),
+                          : () => startAudioCall(ref, convo),
                     ),
                   ),
               ],

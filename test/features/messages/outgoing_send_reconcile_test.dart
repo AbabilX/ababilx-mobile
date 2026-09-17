@@ -90,6 +90,7 @@ void main() {
   late ProviderContainer container;
 
   setUp(() {
+    FlutterSecureStorage.setMockInitialValues({});
     db = ChatLocalDb.forTesting(NativeDatabase.memory());
     repo = _FakeRepo();
     container = ProviderContainer(

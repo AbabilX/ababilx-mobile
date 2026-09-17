@@ -39,18 +39,63 @@ class ComposerDraftStore {
   }) async {
     if (ownerId.isEmpty) return;
     final key = _key(ownerId, conversationId, parentId);
-    final previous = _pendingWrites[key] ?? Future<void>.value();
-    final write = previous.then((_) async {
-      final prefs = await SharedPreferences.getInstance();
+    await _serialize(key, (prefs) async {
+      await prefs.remove('$key.send');
       if (text.isEmpty) {
         await prefs.remove(key);
       } else {
         await prefs.setString(key, text);
       }
     });
+  }
+
+  /// Bind only the exact revision submitted. Subsequent edits remove the
+  /// binding, even when the user types the same text again.
+  Future<void> bindSend(
+    String ownerId,
+    String conversationId,
+    String clientRef,
+    String expectedText, {
+    String? parentId,
+  }) async {
+    if (ownerId.isEmpty) return;
+    final key = _key(ownerId, conversationId, parentId);
+    await _serialize(key, (prefs) async {
+      if (prefs.getString(key) == expectedText) {
+        await prefs.setString('$key.send', clientRef);
+      }
+    });
+  }
+
+  Future<void> completeSend(
+    String ownerId,
+    String conversationId,
+    String clientRef, {
+    String? parentId,
+  }) async {
+    if (ownerId.isEmpty) return;
+    final key = _key(ownerId, conversationId, parentId);
+    await _serialize(key, (prefs) async {
+      if (prefs.getString('$key.send') != clientRef) return;
+      await prefs.remove(key);
+      await prefs.remove('$key.send');
+    });
+  }
+
+  Future<void> _serialize(
+    String key,
+    Future<void> Function(SharedPreferences) action,
+  ) async {
+    final previous = _pendingWrites[key] ?? Future<void>.value();
+    final write = previous.catchError((Object _) {}).then((_) async {
+      await action(await SharedPreferences.getInstance());
+    });
     _pendingWrites[key] = write;
-    await write;
-    if (identical(_pendingWrites[key], write)) _pendingWrites.remove(key);
+    try {
+      await write;
+    } finally {
+      if (identical(_pendingWrites[key], write)) _pendingWrites.remove(key);
+    }
   }
 
   Future<void> clearConversation(String ownerId, String conversationId) async {

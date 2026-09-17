@@ -21,6 +21,8 @@ class CallTopBar extends StatelessWidget {
     this.subtitle,
     this.minimizeIcon = Icons.keyboard_arrow_down_rounded,
     this.trailing,
+    this.themeAware = false,
+    this.centerTitle = false,
   });
 
   final VoidCallback onMinimize;
@@ -28,10 +30,14 @@ class CallTopBar extends StatelessWidget {
   final String? subtitle;
   final IconData minimizeIcon;
   final Widget? trailing;
+  final bool themeAware;
+  final bool centerTitle;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+    final foreground = themeAware ? colors.onSurface : Colors.white;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -40,16 +46,21 @@ class CallTopBar extends StatelessWidget {
           height: 200,
           child: Stack(
             children: [
-              const IgnorePointer(
+              IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xB3000000), Color(0x00000000)],
+                      colors: themeAware
+                          ? [
+                              colors.surface,
+                              colors.surface.withValues(alpha: 0),
+                            ]
+                          : const [Color(0xB3000000), Color(0x00000000)],
                     ),
                   ),
-                  child: SizedBox.expand(),
+                  child: const SizedBox.expand(),
                 ),
               ),
               SafeArea(
@@ -62,41 +73,53 @@ class CallTopBar extends StatelessWidget {
                       tooltip: MaterialLocalizations.of(
                         context,
                       ).backButtonTooltip,
-                      icon: Icon(minimizeIcon, color: Colors.white, size: 28),
+                      icon: Icon(minimizeIcon, color: foreground, size: 28),
                     ),
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.only(top: 12),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: centerTitle
+                              ? CrossAxisAlignment.center
+                              : CrossAxisAlignment.start,
                           children: [
                             if (title != null)
                               Text(
                                 title!,
+                                textAlign: centerTitle
+                                    ? TextAlign.center
+                                    : TextAlign.start,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
+                                  color: foreground,
                                   fontWeight: FontWeight.w600,
-                                  shadows: callTextShadow,
+                                  shadows: themeAware ? null : callTextShadow,
                                 ),
                               ),
                             if (subtitle != null)
                               Text(
                                 subtitle!,
+                                textAlign: centerTitle
+                                    ? TextAlign.center
+                                    : TextAlign.start,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: textTheme.bodySmall?.copyWith(
-                                  color: Colors.white70,
-                                  shadows: callTextShadow,
+                                  color: themeAware
+                                      ? colors.onSurfaceVariant
+                                      : Colors.white70,
+                                  shadows: themeAware ? null : callTextShadow,
                                 ),
                               ),
                           ],
                         ),
                       ),
                     ),
-                    ?trailing,
-                    const SizedBox(width: 4),
+                    if (trailing != null)
+                      trailing!
+                    else
+                      SizedBox(width: centerTitle ? 48 : 4),
                   ],
                 ),
               ),

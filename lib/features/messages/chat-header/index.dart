@@ -17,7 +17,7 @@ import '../providers/chat_connections_provider.dart';
 import 'call_action_pill.dart';
 import 'header_avatar.dart';
 import 'group_call_action.dart';
-import 'start_call_sheet.dart';
+import 'start_audio_call.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_title.dart';
 import '../chat-typing/typing_text.dart';
@@ -169,7 +169,7 @@ class ChatHeader extends ConsumerWidget {
                     label: AppTranslations.translate(context, ref, 'chat_call'),
                     onTap: callActive
                         ? null
-                        : () => showStartCallSheet(context, ref, conversation),
+                        : () => startAudioCall(ref, conversation),
                   ),
                 // Channels and personal groups alike; the server refuses only
                 // a DM (peer-to-peer) and anything you cannot post into.

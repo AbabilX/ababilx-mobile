@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
+import '../../../core/localization/app_translations.dart';
 import '../call_status_text.dart';
 import '../providers/voice_call_state.dart';
 import 'call_backdrop.dart';
@@ -11,13 +12,8 @@ import 'remote_screen_view.dart';
 
 /// Everything a call shows once it is no longer ringing.
 ///
-/// Signal's connected screen is the same picture as the ringing one with the
-/// scrim eased off (0.2 rather than 0.4) — the eye stays on the same subject
-/// through answering, instead of the screen changing identity. When a screen
-/// share arrives the shared surface takes the window and the person shrinks
-/// into the top bar, because at that point the screen is the subject. The
-/// peer's camera does the same — it *is* the person — and our own camera
-/// sits in a corner thumbnail with the flip button on it.
+/// Controls sit directly on the call surface. Remote screen sharing takes
+/// priority over remote video; the local camera stays in a corner preview.
 class ConnectedCallBody extends StatelessWidget {
   const ConnectedCallBody({
     super.key,
@@ -47,6 +43,7 @@ class ConnectedCallBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final ended =
         call.phase == VoiceCallPhase.ended ||
         call.phase == VoiceCallPhase.failed ||
@@ -62,7 +59,7 @@ class ConnectedCallBody extends StatelessWidget {
         else if (_remoteVideo)
           CallVideoView(stream: call.remoteCameraStream!)
         else
-          CallBackdrop(avatarUrl: call.peerAvatar, scrim: 0.35),
+          CallBackdrop(avatarUrl: call.peerAvatar, themeAware: true),
         if (call.localCameraStream != null)
           Positioned(
             right: 16,
@@ -74,105 +71,75 @@ class ConnectedCallBody extends StatelessWidget {
             ),
           ),
         SafeArea(
-          child: Column(
-            children: [
-              if (_stage) const SizedBox.shrink() else const Spacer(flex: 2),
-              if (!_stage) ...[
-                AppAvatar(
-                  size: 112,
-                  url: call.peerAvatar,
-                  name: call.peerName,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.35),
-                    width: 2,
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 68, 16, 20),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!_stage)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                top: constraints.maxHeight > 650 ? 72 : 24,
+                                bottom: 24,
+                              ),
+                              child: AppAvatar(
+                                size: constraints.maxHeight < 650 ? 112 : 176,
+                                url: call.peerAvatar,
+                                name: call.peerName,
+                                border: Border.all(
+                                  color: colors.outlineVariant,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          if (call.error != null)
+                            _Note(text: call.error!, error: true),
+                          if (call.screenSharing)
+                            _Note(
+                              text: AppTranslations.of(
+                                lang,
+                                'call_sharing_own_screen',
+                              ),
+                            ),
+                          if (call.screenShareError != null)
+                            _Note(text: call.screenShareError!, error: true),
+                          if (call.cameraError != null)
+                            _Note(text: call.cameraError!, error: true),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 28),
+                        child: ended
+                            ? FilledButton.tonal(
+                                onPressed: onMinimize,
+                                child: Text(
+                                  AppTranslations.of(lang, 'call_done'),
+                                ),
+                              )
+                            : controls,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                _Name(name: call.peerName),
-                const SizedBox(height: 10),
-                _Status(call: call, lang: lang),
-              ],
-              if (call.error != null) _Note(text: call.error!, error: true),
-              if (call.screenSharing)
-                const _Note(text: 'You are sharing your screen'),
-              if (call.screenShareError != null)
-                _Note(text: call.screenShareError!, error: true),
-              if (call.cameraError != null)
-                _Note(text: call.cameraError!, error: true),
-              const Spacer(flex: 3),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-                child: ended
-                    ? FilledButton.tonal(
-                        onPressed: onMinimize,
-                        child: const Text('Done'),
-                      )
-                    : controls,
               ),
-            ],
+            ),
           ),
         ),
         CallTopBar(
+          themeAware: true,
           onMinimize: onMinimize,
-          title: _stage ? call.peerName : null,
-          subtitle: _stage ? voiceCallStatusText(call, lang: lang) : null,
+          centerTitle: true,
+          title: call.peerName,
+          subtitle: voiceCallStatusText(call, lang: lang),
         ),
       ],
-    );
-  }
-}
-
-class _Name extends StatelessWidget {
-  const _Name({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Text(
-        name,
-        textAlign: TextAlign.center,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-          shadows: callTextShadow,
-        ),
-      ),
-    );
-  }
-}
-
-class _Status extends StatelessWidget {
-  const _Status({required this.call, required this.lang});
-
-  final VoiceCallState call;
-  final String lang;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final connected = call.phase == VoiceCallPhase.connected;
-    return Text(
-      voiceCallStatusText(call, lang: lang),
-      textAlign: TextAlign.center,
-      style: connected
-          ? textTheme.titleLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 1.1,
-              fontFeatures: const [FontFeature.tabularFigures()],
-              shadows: callTextShadow,
-            )
-          : textTheme.titleMedium?.copyWith(
-              color: call.phase == VoiceCallPhase.failed
-                  ? const Color(0xFFFF8A80)
-                  : Colors.white70,
-              shadows: callTextShadow,
-            ),
     );
   }
 }
@@ -187,12 +154,22 @@ class _Note extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: error ? const Color(0xFFFF8A80) : Colors.white,
-          shadows: callTextShadow,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: error
+                  ? Theme.of(context).colorScheme.error
+                  : Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
         ),
       ),
     );

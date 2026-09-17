@@ -11,7 +11,7 @@ import '../../calls/providers/voice_call_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
 import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
-import '../chat-header/start_call_sheet.dart';
+import '../chat-header/start_audio_call.dart';
 import '../chat-list/chat_search.dart';
 import '../chat-timeline/user_profile_sheet.dart';
 import '../chat_icon.dart';
@@ -124,7 +124,7 @@ class DetailsHeader extends ConsumerWidget {
                 label: 'Call',
                 onTap: callActive
                     ? null
-                    : () => showStartCallSheet(context, ref, conversation),
+                    : () => startAudioCall(ref, conversation),
               )
             else if (conversation.canGroupCall)
               DetailsActionButton(

@@ -12,6 +12,7 @@ import '../../attachments/providers/attachment_providers.dart';
 import '../../../shared/media/device_gallery.dart';
 import '../data/models/chat_models.dart';
 import '../data/local/composer_draft_store.dart';
+import '../data/chat_client_message_id.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_encode.dart';
 import '../providers/team_gate_provider.dart';
@@ -88,7 +89,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   bool _restoringDraft = true;
   bool _persistTextChanges = true;
   bool _sendInFlight = false;
-  int _draftRevision = 0;
 
   List<MentionCandidate> _mentionCandidates = [];
   final Set<String> _mentionedUserIds = {};
@@ -202,7 +202,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     setState(() {});
     final text = _ctrl.text;
     if (_persistTextChanges) {
-      _draftRevision++;
       // Only a person's edit announces typing — never a restored draft.
       if (!_restoringDraft) _typing?.onText(text);
     }
@@ -365,7 +364,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         : encodeTiptapBody(plain: plain, mentionByLabel: _mentionByLabel);
     final attachments = List<ChatAttachmentInput>.of(_pending);
     final mentionedIds = _mentionedUserIds.toList();
-    final sentDraftRevision = _draftRevision;
 
     final notifier = ref.read(chatProvider.notifier);
     String? clientRef;
@@ -391,6 +389,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       }
       _publishUploadProgress(uploadBubble);
     }
+    clientRef ??= newChatClientMessageId();
+    await _draftStore.bindSend(
+      _draftOwnerId,
+      widget.conversationId,
+      clientRef,
+      _ctrl.text,
+      parentId: widget.parentId,
+    );
     _mentionedUserIds.clear();
     _mentionByLabel.clear();
     if (!mounted) return;
@@ -425,7 +431,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         _sendInFlight = false;
         notifier.removeUploadingMessage(
           widget.conversationId,
-          clientRef!,
+          clientRef,
           parentId: reply.parentId,
         );
         _showMessage(
@@ -447,14 +453,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       reusePending: uploading,
     );
     _sendInFlight = false;
-    if (sentMsg != null && _draftRevision == sentDraftRevision) {
-      unawaited(
-        _draftStore.write(
-          _draftOwnerId,
-          widget.conversationId,
-          '',
-          parentId: widget.parentId,
-        ),
+    if (sentMsg != null) {
+      await _draftStore.completeSend(
+        _draftOwnerId, widget.conversationId, clientRef,
+        parentId: widget.parentId,
       );
     }
     // Slack parity: Check if any mentioned users are not members of this channel/group

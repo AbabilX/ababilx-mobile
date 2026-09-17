@@ -164,6 +164,9 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
           .read(messageVaultProvider)
           .decryptMessage(msg, state.currentUserId);
     }
+    if (msg.userId == state.currentUserId) {
+      (this as _ChatOutboxMixin).settleOutbox(msg).ignore();
+    }
     final isActive = convId == state.activeConversationId;
     unawaited(
       repo.acknowledgeMessages('delivered', [msg.id]).catchError((_) {}),

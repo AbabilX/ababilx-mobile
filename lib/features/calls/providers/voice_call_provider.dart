@@ -63,6 +63,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   Timer? _renegotiateTimer;
   bool _booted = false;
   bool _transitioning = false;
+  int _operation = 0;
+  bool _ending = false;
+  VoicePeerEngine? _preparingEngine;
   bool _offerResent = false;
   final Set<String> _finishedCallIds = {};
   final Set<String> _remoteRingingCallIds = {};
@@ -105,6 +108,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   Future<void> shutdown() async {
     if (!_booted) return;
     _booted = false;
+    _operation++;
     _ringTimer?.cancel();
     _resetTimer?.cancel();
     _connectWatchdog?.cancel();
@@ -132,7 +136,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     ChatConversation conversation, {
     bool video = false,
   }) async {
-    if (state.active || _transitioning || !conversation.isDm) return;
+    if (state.active || _transitioning || _ending || !conversation.isDm) return;
     if (!conversation.canMessage || conversation.peerUserId == null) {
       state = state.copyWith(
         phase: VoiceCallPhase.failed,
@@ -140,9 +144,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       );
       return;
     }
+    final operation = ++_operation;
     _transitioning = true;
     try {
       await _resetResources();
+      if (operation != _operation) return;
       state = VoiceCallState(
         phase: VoiceCallPhase.starting,
         currentUserId: state.currentUserId,
@@ -158,6 +164,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       );
       await _ensureCallPermissions();
       if (video) await _ensureCameraPermission();
+      if (operation != _operation) return;
       voiceCallLog('start.api.begin', source: 'startOutgoing');
       final session = await _startWithStaleRecovery(conversation.id, video);
       voiceCallLog(
@@ -165,6 +172,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         callId: session.call.id,
         phase: 'outgoingRinging',
       );
+      if (operation != _operation) {
+        await _endCancelledServerCall(session.call.id);
+        return;
+      }
       final ringingEarly = _remoteRingingCallIds.remove(session.call.id);
       state = VoiceCallState(
         phase: VoiceCallPhase.outgoingRinging,
@@ -175,21 +186,27 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         currentUserId: state.currentUserId,
       );
       await AndroidCallUi.startOutgoing(session.call, state.currentUserId);
+      if (operation != _operation) {
+        await _endNative(session.call.id, source: 'start.cancelled');
+        return;
+      }
       _startRingTimer(session.call);
     } catch (error) {
+      if (operation != _operation) return;
       voiceCallLog(
         'start.failed',
         reason: _debugError(error),
         source: 'startOutgoing',
       );
       await _resetResources();
+      if (operation != _operation) return;
       state = state.copyWith(
         phase: VoiceCallPhase.failed,
         error: _friendlyError(error),
       );
       _scheduleReset();
     } finally {
-      _transitioning = false;
+      if (operation == _operation) _transitioning = false;
     }
   }
 
@@ -198,7 +215,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       await _endNative(callId, source: 'accept.finished');
       return;
     }
-    if (_transitioning) {
+    if (_transitioning || _ending) {
       voiceCallLog(
         'accept.skip',
         callId: callId,
@@ -221,11 +238,13 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       }
     }
 
+    final operation = ++_operation;
     var call = state.call;
     if (call == null || (callId != null && call.id != callId)) {
       if (callId == null || callId.isEmpty) return;
       try {
         final session = await _repository.get(callId);
+        if (operation != _operation) return;
         call = session.call;
         // A CallKit surface outlives the call it announced: the plugin's
         // full-screen Activity cannot be closed by its own teardown (see
@@ -305,8 +324,13 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     );
     try {
       await _ensureCallPermissions();
+      if (operation != _operation) return;
       final session = await _acceptOnServer(call.id);
-      if (session == null) {
+      if (operation != _operation) {
+        if (session?.canControl == true) await _endCancelledServerCall(call.id);
+        return;
+      }
+      if (session == null || !session.canControl) {
         // Call already finished server-side — end quietly, no error banner.
         await _finishLocal(VoiceCallPhase.ended, reason: 'accept.already_over');
         return;
@@ -337,7 +361,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       );
       // Callee must be on WS before the caller offer arrives / is flushed.
       await _ws.connect();
+      if (operation != _operation) return;
       if (session.call.isVideo) await _ensureCameraPermission();
+      if (operation != _operation) return;
       await _prepareEngine(session);
       if (_engine == null || state.call?.id != call.id) {
         voiceCallLog(
@@ -350,9 +376,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       }
       await _flushPendingSignals();
     } catch (error) {
-      await _failLocal('accept_failed', error);
+      if (operation == _operation) await _failLocal('accept_failed', error);
     } finally {
-      _transitioning = false;
+      if (operation == _operation) _transitioning = false;
     }
   }
 
@@ -379,7 +405,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       );
       final session = await _repository.get(callId);
       final call = session.call;
-      if (call.status == 'accepted' && call.calleeId == state.currentUserId) {
+      if (session.canControl &&
+          call.status == 'accepted' &&
+          call.calleeId == state.currentUserId) {
         voiceCallLog('accept.reconciled', callId: callId, phase: 'connecting');
         return session;
       }
@@ -407,7 +435,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     if (_transitioning) {
       // Some other transition owns the state machine; the native surface still
       // has to go, or the user is left with a ringing screen they declined.
-      await _endNative(id, source: 'decline.transitioning');
+      if (state.call?.id == id) {
+        await hangUp(source: 'decline.transitioning');
+      } else {
+        await _endNative(id, source: 'decline.transitioning');
+      }
       return;
     }
     _transitioning = true;
@@ -426,13 +458,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       await _repository.action(id, 'decline');
     } catch (_) {
       // The server may already have expired the ringing call.
-    } finally {
-      _transitioning = false;
     }
   }
 
   Future<void> hangUp({String source = 'hangUp'}) async {
-    if (_transitioning) return;
     final call = state.call;
     if (call == null) {
       await _finishLocal(VoiceCallPhase.ended, reason: '$source.no_call');
@@ -458,8 +487,14 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       await _repository.action(call.id, action);
     } catch (_) {
       // Local media must stop even if the final lifecycle request times out.
-    } finally {
-      _transitioning = false;
+    }
+  }
+
+  Future<void> _endCancelledServerCall(String callId) async {
+    try {
+      await _repository.action(callId, 'end');
+    } catch (_) {
+      // Server ring expiry / heartbeat expiry remains the outage backstop.
     }
   }
 
@@ -743,11 +778,13 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       await _finishLocal(VoiceCallPhase.ended, reason: 'accepted.other_device');
       return;
     }
-    if (!state.outgoing || _engine != null) return;
+    if (!state.outgoing || _engine != null || _preparingEngine != null) return;
+    final operation = _operation;
     try {
       final ice = state.iceServers.isNotEmpty
           ? state.iceServers
           : (await _repository.get(call.id)).iceServers;
+      if (operation != _operation) return;
       final session = VoiceCallSession(call: call, iceServers: ice);
       state = state.copyWith(
         phase: VoiceCallPhase.connecting,
@@ -763,6 +800,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       );
       // Offer/answer must ride the notification WS — wait before negotiating.
       await _ws.connect();
+      if (operation != _operation) return;
       await _prepareEngine(session);
       if (_engine == null || state.call?.id != call.id) return;
       // Anything the callee sent while prepare() was still running (mic
@@ -772,7 +810,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       voiceCallLog('signal.offer.sent', callId: call.id, phase: _phaseName);
       _scheduleOfferRetry(call.id);
     } catch (error) {
-      await _failLocal('offer_failed', error);
+      if (operation == _operation) await _failLocal('offer_failed', error);
     }
   }
 
@@ -781,7 +819,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _renegotiateTimer?.cancel();
     _offerResent = false;
     _renegotiateTimer = Timer(const Duration(seconds: 6), () {
-      if (state.call?.id != callId) return;
+      if (state.call?.id != callId || _wasFinished(callId)) return;
       if (state.phase != VoiceCallPhase.connecting) return;
       final engine = _engine;
       if (engine == null || !engine.ready || engine.answerReceived) return;
@@ -808,7 +846,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         'signal': signal,
       }),
       onConnected: () {
-        if (state.call?.id != callId) return;
+        if (state.call?.id != callId || _wasFinished(callId)) return;
         _ringTimer?.cancel();
         _connectWatchdog?.cancel();
         _renegotiateTimer?.cancel();
@@ -820,9 +858,13 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         );
         unawaited(FlutterCallkitIncoming.setCallConnected(callId));
       },
-      onFailed: (reason) => unawaited(_failLocal(reason)),
+      onFailed: (reason) {
+        if (state.call?.id == callId && !_wasFinished(callId)) {
+          unawaited(_failLocal(reason));
+        }
+      },
       onTrouble: (reason, {bool immediate = false}) {
-        if (state.call?.id != callId) return;
+        if (state.call?.id != callId || _wasFinished(callId)) return;
         // Recovery is only meaningful once media has flowed at least once.
         // Before that the connect watchdog owns the timeout, and a restart
         // would race the very first offer/answer.
@@ -833,29 +875,29 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         _reconnect?.noteTrouble(reason, immediate: immediate);
       },
       onHealthy: () {
-        if (state.call?.id != callId) return;
+        if (state.call?.id != callId || _wasFinished(callId)) return;
         _reconnect?.noteHealthy();
       },
       onRestartRequested: () {
-        if (state.call?.id != callId) return;
+        if (state.call?.id != callId || _wasFinished(callId)) return;
         _reconnect?.noteRestartRequested();
       },
       onLocalScreenChanged: (sharing) {
-        if (state.call?.id != callId) return;
+        if (state.call?.id != callId || _wasFinished(callId)) return;
         state = state.copyWith(
           screenSharing: sharing,
           clearScreenShareError: true,
         );
       },
       onRemoteScreenChanged: (stream) {
-        if (state.call?.id != callId) return;
+        if (state.call?.id != callId || _wasFinished(callId)) return;
         state = state.copyWith(
           remoteScreenStream: stream,
           clearRemoteScreen: stream == null,
         );
       },
       onLocalCameraChanged: (stream, {required bool front}) {
-        if (state.call?.id != callId) return;
+        if (state.call?.id != callId || _wasFinished(callId)) return;
         state = state.copyWith(
           localCameraStream: stream,
           clearLocalCamera: stream == null,
@@ -864,7 +906,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         );
       },
       onRemoteCameraChanged: (stream) {
-        if (state.call?.id != callId) return;
+        if (state.call?.id != callId || _wasFinished(callId)) return;
         state = state.copyWith(
           remoteCameraStream: stream,
           clearRemoteCamera: stream == null,
@@ -877,10 +919,17 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     // why a first-ever video call silently became an audio one: nothing else
     // requests this permission, so the check could only ever fail, and the
     // initial SDP then carried no video at all.
-    await engine.prepare(
-      iceServers: session.iceServers,
-      video: call.isVideo && await _ensureCameraPermission(),
-    );
+    _preparingEngine = engine;
+    try {
+      final video = call.isVideo && await _ensureCameraPermission();
+      if (_wasFinished(callId) || state.call?.id != callId) return;
+      await engine.prepare(iceServers: session.iceServers, video: video);
+    } finally {
+      if (identical(_preparingEngine, engine)) _preparingEngine = null;
+      if (_wasFinished(callId) || state.call?.id != callId) {
+        await engine.dispose();
+      }
+    }
     // Call may have ended, been replaced, or left connecting while prepare ran.
     if (state.call?.id != callId ||
         (state.phase != VoiceCallPhase.connecting &&
@@ -904,7 +953,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       requestPeerRestart: () async => _engine?.requestRestart(),
       onGaveUp: (reason) => unawaited(_failLocal(reason)),
       onReconnectingChanged: (value) {
-        if (state.call?.id != callId) return;
+        if (state.call?.id != callId || _wasFinished(callId)) return;
         state = state.copyWith(
           reconnectingSince: value ? DateTime.now() : null,
           clearReconnectingSince: !value,
@@ -987,7 +1036,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   void _startConnectWatchdog(String callId) {
     _connectWatchdog?.cancel();
     _connectWatchdog = Timer(const Duration(seconds: 35), () {
-      if (state.call?.id != callId) return;
+      if (state.call?.id != callId || _wasFinished(callId)) return;
       if (state.phase != VoiceCallPhase.connecting) return;
       voiceCallLog(
         'connect.watchdog.timeout',
@@ -1045,11 +1094,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       phase: _phaseName,
       reason: error == null ? reason : '$reason | ${_debugError(error)}',
     );
-    if (callId != null && !state.call!.isTerminal) {
-      try {
-        await _repository.action(callId, 'fail', reason: reason);
-      } catch (_) {}
-    }
+    final notifyServer = callId != null && !state.call!.isTerminal;
     state = state.copyWith(
       phase: VoiceCallPhase.failed,
       error: error == null ? _failureLabel(reason) : _friendlyError(error),
@@ -1059,6 +1104,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       reason: 'failLocal.$reason',
       preserveError: true,
     );
+    if (notifyServer) {
+      try {
+        await _repository.action(callId, 'fail', reason: reason);
+      } catch (_) {}
+    }
   }
 
   Future<void> _finishLocal(
@@ -1071,21 +1121,46 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     // — a CallKit decline for a call this isolate never loaded. Falling back
     // to state alone skipped the native dismissal entirely.
     final id = callId ?? state.call?.id;
+    final operation = ++_operation;
+    _ending = true;
+    _transitioning = false;
+    _heartbeat.stop();
+    state = state.copyWith(phase: phase, clearReconnectingSince: true);
+    final engine = _engine;
+    final preparing = _preparingEngine;
+    final reconnect = _reconnect;
+    _engine = null;
+    _preparingEngine = null;
+    _reconnect = null;
     _rememberFinished(id);
     voiceCallLog('finishLocal', callId: id, phase: phase.name, reason: reason);
     _ringTimer?.cancel();
     _connectWatchdog?.cancel();
     _renegotiateTimer?.cancel();
-    // Release Android's call ownership before awaiting media cleanup: a slow
-    // or failed WebRTC dispose must not leave the SIM dialer busy.
-    if (id != null) {
-      await _endNative(id, source: 'finishLocal.$reason');
+    // Each cleanup is independent: a native failure cannot leave the mic
+    // alive, and a media failure cannot keep the next call locked out.
+    try {
+      for (final cleanup in <Future<void> Function()>[
+        if (id != null) () => _endNative(id, source: 'finishLocal.$reason'),
+        IncomingCallRingtone.stop,
+        if (reconnect != null) reconnect.dispose,
+        if (preparing != null) preparing.dispose,
+        if (engine != null) engine.dispose,
+      ]) {
+        try {
+          await cleanup();
+        } catch (error) {
+          voiceCallLog(
+            'finishLocal.cleanup_failed',
+            callId: id,
+            reason: '$error',
+          );
+        }
+      }
+    } finally {
+      _ending = false;
     }
-    await IncomingCallRingtone.stop();
-    await _reconnect?.dispose();
-    _reconnect = null;
-    await _engine?.dispose();
-    _engine = null;
+    if (operation != _operation) return;
     _pendingSignals.clear();
     _offerResent = false;
     state = state.copyWith(
@@ -1218,7 +1293,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       switch (decideAnsweredElsewhere(
         answeredHere:
             holdsThisCall &&
-            (state.phase == VoiceCallPhase.connecting ||
+            // The accept response decides ownership. A control push may
+            // beat that response back to the device that actually won.
+            (_transitioning ||
+                state.phase == VoiceCallPhase.connecting ||
                 state.phase == VoiceCallPhase.connected),
         ringingHere:
             holdsThisCall && state.phase == VoiceCallPhase.incomingRinging,
@@ -1398,7 +1476,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       reason: 'server_status=${call.status}',
     );
 
-    if (call.isTerminal) {
+    if (call.isTerminal || !session.canControl) {
       state = state.copyWith(call: call);
       await _finishLocal(VoiceCallPhase.ended, reason: 'resync.terminal');
       return;
@@ -1606,6 +1684,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _renegotiateTimer?.cancel();
     await _reconnect?.dispose();
     _reconnect = null;
+    await _preparingEngine?.dispose();
+    _preparingEngine = null;
     await _engine?.dispose();
     _engine = null;
     _pendingSignals.clear();
