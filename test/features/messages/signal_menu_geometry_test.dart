@@ -84,4 +84,23 @@ void main() {
     expect(layout.menu.right, closeTo(layout.bar.left - 12, 0.01));
     expect(layout.bubble, const Rect.fromLTWH(500, 300, 180, 44));
   });
+
+  test(
+    'tall content opening upward stacks bar above menu, never overlapping',
+    () {
+      // Tall enough that lifting for the menu, then pushing down again for the
+      // reaction bar, leaves no room under the bubble — so the menu flips up.
+      // Old geometry then parked the bar on the menu's bottom edge and the
+      // action list covered the scrubber (❤️ 👍 clipped by Delete/Edit/…).
+      final layout = _layout(
+        const Rect.fromLTWH(80, 500, 300, 300),
+        screen: const Size(400, 780),
+      );
+
+      expect(layout.reversed, isTrue);
+      expect(layout.bar.bottom, lessThanOrEqualTo(layout.menu.top));
+      expect(layout.menu.bottom, lessThanOrEqualTo(layout.bubble.top));
+      expect(layout.bar.right, 400 - 16);
+    },
+  );
 }

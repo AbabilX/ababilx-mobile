@@ -40,6 +40,11 @@ class SignalMenuLayout {
 /// near the bottom). If it does not, the bubble is scaled down until it does.
 /// A screen wide enough for the 320-wide bar *and* the menu side by side (a
 /// tablet, or a phone in landscape) puts them side by side instead.
+///
+/// When the menu must open **above** the bubble (tall content / near the
+/// bottom), the stack is bar → menu → bubble — never bar and menu sharing the
+/// same band. Sharing that band is what clipped the reaction scrubber behind
+/// the action list on a long link-preview bubble.
 SignalMenuLayout resolveSignalMenuLayout({
   required Size screen,
   required EdgeInsets safeArea,
@@ -97,8 +102,14 @@ SignalMenuLayout resolveSignalMenuLayout({
   }
 
   final available = bottom - top;
+  // Room above the bubble when the menu opens upward: bar + gap + menu + gap.
+  final aboveChrome =
+      SignalMenuMetrics.barHeight +
+      SignalMenuMetrics.menuPadding +
+      menuSize.height +
+      SignalMenuMetrics.menuPadding;
   // A short bubble cannot hold the bar off the top by itself, so the layout has
-  // to reserve the difference.
+  // to reserve the difference when the menu sits below.
   final spaceForBar = math.max(
     SignalMenuMetrics.barHeight + SignalMenuMetrics.barOffset - anchor.height,
     0.0,
@@ -137,33 +148,87 @@ SignalMenuLayout resolveSignalMenuLayout({
           SignalMenuMetrics.menuPadding;
     }
   } else {
-    final room =
+    // Tall content: reserve space for bar+menu above OR menu below. Prefer
+    // menu-below with the bar above the bubble (the common path); the reverse
+    // path still needs the full aboveChrome so the scrubber is not covered.
+    final roomBelow =
         available -
         menuSize.height -
         SignalMenuMetrics.menuPadding -
         spaceForBar;
+    final roomAbove = available - aboveChrome;
+    final room = math.max(roomBelow, roomAbove);
     scale = (room / anchor.height).clamp(0.35, 1.0);
     bubbleHeight = anchor.height * scale;
     bubbleTop = top + spaceForBar;
   }
 
-  final bubble = Rect.fromLTWH(
+  var bubble = Rect.fromLTWH(
     isMine ? anchor.right - anchor.width * scale : anchor.left,
     bubbleTop,
     anchor.width * scale,
     bubbleHeight,
   );
-  final barTop = math.max(
-    top + SignalMenuMetrics.barTopPadding,
-    bubble.top - SignalMenuMetrics.menuPadding - SignalMenuMetrics.barHeight,
-  );
+
   var menuTop = bubble.bottom + SignalMenuMetrics.menuPadding;
   var reversed = false;
   if (menuTop + menuSize.height > bottom) {
-    menuTop = bubble.top - SignalMenuMetrics.menuPadding - menuSize.height;
     reversed = true;
+    // Stack above the bubble: [bar] [gap] [menu] [gap] [bubble]. The old
+    // code parked the bar on the menu's bottom edge (both ending at
+    // bubble.top − gap), and clamping menuTop to the safe-area top then
+    // stole the bar's lane entirely — that is the tall-content scrubber
+    // clipped behind Delete/Edit.
+    final minMenuTop =
+        top +
+        SignalMenuMetrics.barTopPadding +
+        SignalMenuMetrics.barHeight +
+        SignalMenuMetrics.menuPadding;
+    final minBubbleTop =
+        minMenuTop + menuSize.height + SignalMenuMetrics.menuPadding;
+    if (bubble.top < minBubbleTop) {
+      var shifted = minBubbleTop;
+      if (shifted + bubble.height > bottom) {
+        // Still too tall even stacked above: shrink so bar+menu+bubble fit.
+        final room = bottom - minBubbleTop;
+        scale = (room / anchor.height).clamp(0.35, scale);
+        bubbleHeight = anchor.height * scale;
+        shifted = math.min(minBubbleTop, bottom - bubbleHeight);
+        bubble = Rect.fromLTWH(
+          isMine ? anchor.right - anchor.width * scale : anchor.left,
+          shifted,
+          anchor.width * scale,
+          bubbleHeight,
+        );
+      } else {
+        bubble = Rect.fromLTWH(
+          bubble.left,
+          shifted,
+          bubble.width,
+          bubble.height,
+        );
+      }
+    }
+    menuTop = bubble.top - SignalMenuMetrics.menuPadding - menuSize.height;
+    menuTop = menuTop.clamp(
+      minMenuTop,
+      math.max(minMenuTop, bottom - menuSize.height),
+    );
+  } else {
+    menuTop = menuTop.clamp(top, math.max(top, bottom - menuSize.height));
   }
-  menuTop = menuTop.clamp(top, math.max(top, bottom - menuSize.height));
+
+  final barTop = reversed
+      ? math.max(
+          top + SignalMenuMetrics.barTopPadding,
+          menuTop - SignalMenuMetrics.menuPadding - SignalMenuMetrics.barHeight,
+        )
+      : math.max(
+          top + SignalMenuMetrics.barTopPadding,
+          bubble.top -
+              SignalMenuMetrics.menuPadding -
+              SignalMenuMetrics.barHeight,
+        );
 
   return SignalMenuLayout(
     bubble: bubble,
