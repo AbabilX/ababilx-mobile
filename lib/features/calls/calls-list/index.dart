@@ -6,6 +6,7 @@ import '../../../core/localization/app_translations.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../data/call_log_seen_storage.dart';
+import '../group/providers/group_call_provider.dart';
 import '../providers/call_log_provider.dart';
 import '../providers/voice_call_provider.dart';
 import 'call_log_cluster.dart';
@@ -90,6 +91,12 @@ class _CallsListState extends ConsumerState<CallsList> {
         .read(chatProvider)
         .conversationById(conversationId);
     if (!isGroup && conversation != null && conversation.isDm) {
+      // UI already nulls the button while busy; keep the hard gate so a
+      // stale callback cannot start a second call underneath the first.
+      if (ref.read(voiceCallProvider).active ||
+          ref.read(groupCallProvider).active) {
+        return;
+      }
       ref.read(voiceCallProvider.notifier).startOutgoing(conversation);
       return;
     }
@@ -114,6 +121,11 @@ class _CallsListState extends ConsumerState<CallsList> {
   Widget build(BuildContext context) {
     final log = ref.watch(callLogProvider);
     final lang = ref.watch(appLanguageProvider);
+    // Same gate as ChatHeader: one live call at a time — redial icons go
+    // inert while a DM or group call is up (including minimized).
+    final callBusy =
+        ref.watch(voiceCallProvider.select((s) => s.active)) ||
+        ref.watch(groupCallProvider.select((s) => s.active));
 
     // Clustered over the whole accumulated list, not per page: a run split
     // across a page boundary merges by itself once the next page lands. This
@@ -255,10 +267,19 @@ class _CallsListState extends ConsumerState<CallsList> {
                                     onTap: () => context.push(
                                       '/messages/${entry.conversationId}',
                                     ),
-                                    onCall: () => _call(
-                                      entry.conversationId,
-                                      entry.isGroup,
-                                    ),
+                                    // Group trailing is "open chat", not a
+                                    // redial — leave it tappable while busy.
+                                    onCall: entry.isGroup
+                                        ? () => _call(
+                                            entry.conversationId,
+                                            entry.isGroup,
+                                          )
+                                        : callBusy
+                                        ? null
+                                        : () => _call(
+                                            entry.conversationId,
+                                            entry.isGroup,
+                                          ),
                                   ),
                                   const Divider(height: 1, indent: 84),
                                 ],

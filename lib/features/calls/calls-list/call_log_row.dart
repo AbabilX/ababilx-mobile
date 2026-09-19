@@ -10,6 +10,9 @@ import 'call_log_format.dart';
 /// [count] is how many calls this row stands for. Signal prints it in front of
 /// the state and nowhere else — "(3) Missed · 4:12" — so a stacked row still
 /// reads as one event rather than becoming a second kind of row.
+///
+/// [onCall] is null while the viewer is already in a call — the button stays
+/// visible but disabled, same idea as the chat-header call pill.
 class CallLogRow extends StatelessWidget {
   const CallLogRow({
     super.key,
@@ -22,7 +25,7 @@ class CallLogRow extends StatelessWidget {
 
   final CallLogEntry entry;
   final VoidCallback onTap;
-  final VoidCallback onCall;
+  final VoidCallback? onCall;
   final int count;
   final String lang;
 
@@ -99,6 +102,7 @@ class CallLogRow extends StatelessWidget {
         ),
         trailing: Semantics(
           button: true,
+          enabled: onCall != null,
           label: actionLabel,
           excludeSemantics: true,
           child: IconButton.filledTonal(
@@ -117,6 +121,10 @@ class CallLogRow extends StatelessWidget {
             style: IconButton.styleFrom(
               foregroundColor: scheme.primary,
               backgroundColor: scheme.primaryContainer,
+              // Custom colors above would otherwise keep the button looking
+              // live after onPressed goes null — spell out the disabled look.
+              disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
+              disabledBackgroundColor: scheme.onSurface.withValues(alpha: 0.12),
             ),
           ),
         ),
