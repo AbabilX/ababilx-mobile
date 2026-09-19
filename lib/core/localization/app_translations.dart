@@ -554,6 +554,17 @@ class AppTranslations {
       'settings_invite_text':
           'Try AbabilX — chat, boards and automation in one app. '
           'https://ababilx.com',
+      'settings_donate': 'Support AbabilX',
+      'settings_donate_sub': 'Help keep building this app',
+      'donate_title': 'Donate',
+      'donate_headline': 'Help us keep building AbabilX',
+      'donate_body':
+          'AbabilX is built by a small team. A donation buys time for '
+          'secure chat, calls, and the features you ask for — thank you.',
+      'donate_cta': 'Donate now',
+      'donate_coming_soon': 'Donation options are coming soon. Thank you!',
+      'donate_footnote':
+          'No pressure — using the app and telling a friend already helps.',
       'settings_you': 'You',
       'settings_your_qr': 'Your QR code',
       'settings_linked_via': 'Linked with {provider}',
@@ -1228,6 +1239,17 @@ class AppTranslations {
       'settings_invite_text':
           'AbabilX ব্যবহার করে দেখুন — চ্যাট, বোর্ড ও অটোমেশন এক অ্যাপে। '
           'https://ababilx.com',
+      'settings_donate': 'AbabilX সাপোর্ট করুন',
+      'settings_donate_sub': 'অ্যাপ বানাতে সাহায্য করুন',
+      'donate_title': 'ডোনেট',
+      'donate_headline': 'AbabilX বানাতে আমাদের সাহায্য করুন',
+      'donate_body':
+          'AbabilX ছোট একটি টিম বানাচ্ছে। আপনার ডোনেশন নিরাপদ চ্যাট, '
+          'কল ও যে ফিচারগুলো চান সেগুলোতে সময় কিনে দেয় — ধন্যবাদ।',
+      'donate_cta': 'এখনই ডোনেট করুন',
+      'donate_coming_soon': 'ডোনেশন অপশন শিগগির আসছে। ধন্যবাদ!',
+      'donate_footnote':
+          'বাধ্যবাধকতা নেই — অ্যাপ ব্যবহার ও বন্ধুকে বলাই অনেক সাহায্য।',
       'settings_you': 'আপনি',
       'settings_your_qr': 'আপনার কিউআর কোড',
       'settings_linked_via': '{provider} লিংক করা',

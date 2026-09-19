@@ -131,6 +131,12 @@ class SettingsSections extends ConsumerWidget {
             ShareParams(text: t('settings_invite_text')),
           ),
         ),
+        SettingsRow(
+          icon: HugeIcons.strokeRoundedFavourite,
+          title: t('settings_donate'),
+          subtitle: t('settings_donate_sub'),
+          onTap: () => context.push('/settings/donate'),
+        ),
         const Divider(height: 24),
         SettingsRow(
           icon: HugeIcons.strokeRoundedLogout01,
