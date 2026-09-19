@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/portrait_lock_scope.dart';
 import '../chat-list/index.dart';
 import '../history-restore/recovery_progress_banner.dart';
 import '../archive/archive_provider.dart';
@@ -82,9 +83,11 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     ref.listen(newChatSetupProvider, (_, next) {
       if (next == NewChatSetupState.ready) unawaited(_restoreVaultOffline());
     });
-    return _MessagesBody(
-      vaultUnlocked: _vaultUnlocked,
-      onUnlockTap: _openUnlockSheet,
+    return PortraitLockScope(
+      child: _MessagesBody(
+        vaultUnlocked: _vaultUnlocked,
+        onUnlockTap: _openUnlockSheet,
+      ),
     );
   }
 }

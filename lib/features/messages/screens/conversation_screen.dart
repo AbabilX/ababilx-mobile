@@ -112,8 +112,8 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final selecting = ref
         .watch(messageSelectionProvider)
         .isActiveIn(widget.conversationId);
-    // Chat + IME are portrait-only; landscape overflowed the composer by ~5px.
-    // Unlock on leave so /call and other routes can rotate again.
+    // Chat list, chat body + IME, and the calls tab are portrait-only.
+    // Unlock when the last PortraitLockScope leaves so /call can rotate.
     return PortraitLockScope(
       child: PopScope(
         canPop: canPop && !selecting,

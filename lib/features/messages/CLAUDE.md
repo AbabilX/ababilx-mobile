@@ -37,16 +37,20 @@ Web is unaffected: it has no delete-by-clientRef path.
 
 ---
 
-# Conversation screen stays portrait
+# Conversation, chat list, and calls tab stay portrait
 
-`ConversationScreen` wraps `PortraitLockScope` (`shared/widgets/portrait_lock_scope.dart`).
-Landscape + keyboard overflowed the timeline/composer by a few pixels; the
-layout is authored for a tall viewport, so the route locks to
-`portraitUp` / `portraitDown` while mounted and restores
-`DeviceOrientation.values` on dispose.
+`MessagesScreen`, `CallsScreen` (the shell call-history tab), and
+`ConversationScreen` wrap `PortraitLockScope`
+(`shared/widgets/portrait_lock_scope.dart`). Landscape + keyboard overflowed
+the timeline/composer by a few pixels; the list tabs match that tall-viewport
+layout. The scope locks to `portraitUp` / `portraitDown` while mounted.
+
+Nested locks share a depth counter — popping a conversation does not unlock
+while the chat list underneath is still showing. Free rotation
+(`DeviceOrientation.values`) returns only when the last lock disposes.
 
 Do **not** put this scope on `/call` or `/group-call` — those need landscape.
-Leaving chat (or `go('/call')` disposing the conversation route) unlocks again.
+Leaving chat via `go('/call')` disposes shell tabs and unlocks again.
 
 # The conversation timeline is Signal's
 

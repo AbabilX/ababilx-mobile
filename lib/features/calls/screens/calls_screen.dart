@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/portrait_lock_scope.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/message_e2ee/message_vault_sheet.dart';
 import '../calls-list/index.dart';
@@ -35,5 +36,6 @@ class _CallsScreenState extends ConsumerState<CallsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => const CallsList();
+  Widget build(BuildContext context) =>
+      const PortraitLockScope(child: CallsList());
 }
