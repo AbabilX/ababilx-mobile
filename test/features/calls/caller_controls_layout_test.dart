@@ -15,6 +15,7 @@ void main() {
     String lang = 'en',
     double scale = 1,
     Size size = const Size(390, 844),
+    EdgeInsets viewPadding = EdgeInsets.zero,
   }) {
     final call = VoiceCallState(
       phase: phase,
@@ -24,7 +25,12 @@ void main() {
     return MaterialApp(
       theme: theme,
       home: MediaQuery(
-        data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
+        data: MediaQueryData(
+          size: size,
+          textScaler: TextScaler.linear(scale),
+          viewPadding: viewPadding,
+          padding: viewPadding,
+        ),
         child: RepaintBoundary(
           key: const ValueKey('caller-screen'),
           child: Scaffold(
@@ -106,27 +112,57 @@ void main() {
     );
   }
   testWidgets(
-    'large Bengali labels and landscape keep End reachable without overflow',
+    'landscape keeps seats on the side strip; End inline; no labels',
     (tester) async {
       const size = Size(568, 320);
       await tester.binding.setSurfaceSize(size);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       var ended = false;
+      // Notch on the left (camera after rotate-left) → strip must pin right
+      // (portrait bottom / home edge), not the bump.
       await tester.pumpWidget(
         host(
           ThemeData(),
           lang: 'bn',
-          scale: 2,
+          scale: 1,
           size: size,
           end: () => ended = true,
+          viewPadding: const EdgeInsets.only(left: 48),
         ),
       );
+      await tester.pump();
       expect(tester.takeException(), isNull);
-      await tester.ensureVisible(find.byIcon(Icons.call_end_rounded));
-      await tester.pumpAndSettle();
+      expect(find.text('শেষ করুন'), findsNothing);
+      expect(find.text('মিউট'), findsNothing);
+
+      final mute = tester.getCenter(find.byIcon(Icons.mic_rounded));
+      final end = tester.getCenter(find.byIcon(Icons.call_end_rounded));
+      expect(end.dx, closeTo(mute.dx, 2.0));
+      expect(end.dy, isNot(closeTo(mute.dy, 8.0)));
+      expect(mute.dx, greaterThan(size.width * 0.5));
+
       await tester.tap(find.byIcon(Icons.call_end_rounded));
       expect(ended, isTrue);
-      expect(find.text('শেষ করুন'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'landscape with notch on the right pins the strip to the left (home)',
+    (tester) async {
+      const size = Size(568, 320);
+      await tester.binding.setSurfaceSize(size);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        host(
+          ThemeData(),
+          size: size,
+          viewPadding: const EdgeInsets.only(right: 48),
+        ),
+      );
+      await tester.pump();
+      final mute = tester.getCenter(find.byIcon(Icons.mic_rounded));
+      expect(mute.dx, lessThan(size.width * 0.5));
       expect(tester.takeException(), isNull);
     },
   );

@@ -1,8 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../call_status_text.dart';
 import '../providers/voice_call_state.dart';
+import 'call_controls_anchor.dart';
 import 'call_minimize_button.dart';
 import 'call_overlay_metrics.dart';
 import 'call_peer_identity.dart';
@@ -41,7 +44,6 @@ class ConnectedCallBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final m = CallOverlayMetrics.of(context);
     final padding = MediaQuery.paddingOf(context);
-    final bottomInset = padding.bottom;
     final ended =
         call.phase == VoiceCallPhase.ended ||
         call.phase == VoiceCallPhase.failed ||
@@ -51,7 +53,7 @@ class ConnectedCallBody extends StatelessWidget {
         call.phase == VoiceCallPhase.starting;
     final identityTop = CallOverlayMetrics.clampTop(
       m.avatarTop,
-      min: padding.top + 36,
+      min: padding.top + 48,
       max: m.size.height * 0.42,
     );
 
@@ -66,7 +68,7 @@ class ConnectedCallBody extends StatelessWidget {
           const CallWallpaper(),
         if (call.localCameraStream != null)
           Positioned(
-            right: 16,
+            right: math.max(padding.right, 12) + 4,
             top: padding.top + 48,
             child: LocalCameraPreview(
               stream: call.localCameraStream!,
@@ -76,7 +78,7 @@ class ConnectedCallBody extends StatelessWidget {
           ),
         Positioned(
           top: padding.top + 8,
-          left: 12,
+          left: math.max(padding.left, 12),
           child: CallMinimizeButton(onPressed: onMinimize),
         ),
         if (!_stage)
@@ -157,33 +159,34 @@ class ConnectedCallBody extends StatelessWidget {
             right: 24,
             child: _Note(text: call.cameraError!, error: true),
           ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: m.hangupBottomClearance(bottomInset),
-          child: ended
-              ? Center(
-                  child: SizedBox(
-                    width: m.doneButtonWidth,
-                    height: m.doneButtonHeight,
-                    child: FilledButton.tonal(
-                      onPressed: onMinimize,
-                      style: FilledButton.styleFrom(
-                        shape: const StadiumBorder(),
-                        padding: EdgeInsets.zero,
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.black.withValues(alpha: 0.28),
-                        textStyle: TextStyle(
-                          fontSize: m.doneButtonFont,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      child: Text(AppTranslations.of(lang, 'call_done')),
+        if (ended)
+          Positioned(
+            left: math.max(padding.left, 12),
+            right: math.max(padding.right, 12),
+            bottom: math.max(padding.bottom, 12),
+            child: Center(
+              child: SizedBox(
+                width: m.doneButtonWidth,
+                height: m.doneButtonHeight,
+                child: FilledButton.tonal(
+                  onPressed: onMinimize,
+                  style: FilledButton.styleFrom(
+                    shape: const StadiumBorder(),
+                    padding: EdgeInsets.zero,
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.black.withValues(alpha: 0.28),
+                    textStyle: TextStyle(
+                      fontSize: m.doneButtonFont,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                )
-              : controls,
-        ),
+                  child: Text(AppTranslations.of(lang, 'call_done')),
+                ),
+              ),
+            ),
+          )
+        else
+          CallControlsAnchor(child: controls),
       ],
     );
   }

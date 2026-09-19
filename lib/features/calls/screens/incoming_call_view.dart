@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/app_translations.dart';
@@ -28,13 +30,16 @@ class IncomingCallView extends StatelessWidget {
   Widget build(BuildContext context) {
     final m = CallOverlayMetrics.of(context);
     final padding = MediaQuery.paddingOf(context);
-    final bottomInset = padding.bottom;
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
     String tr(String key) => AppTranslations.of(lang, key);
     final identityTop = CallOverlayMetrics.clampTop(
       m.avatarTop,
-      min: padding.top + 36,
+      min: padding.top + 48,
       max: m.size.height * 0.42,
     );
+    final decline = tr('call_control_decline');
+    final answer = tr('call_control_answer');
 
     return Stack(
       fit: StackFit.expand,
@@ -42,26 +47,27 @@ class IncomingCallView extends StatelessWidget {
         const CallWallpaper(),
         Positioned(
           top: identityTop,
-          left: 0,
-          right: 0,
+          left: math.max(padding.left, 12),
+          right: math.max(padding.right, 12),
           child: CallPeerIdentity(
             name: peerName,
             avatarUrl: peerAvatar,
             status: tr('call_status_incoming'),
-            showWave: true,
+            showWave: !landscape,
           ),
         ),
         Positioned(
-          left: m.sideMargin * 1.4,
-          right: m.sideMargin * 1.4,
-          bottom: m.hangupBottomClearance(bottomInset),
+          left: math.max(padding.left, m.sideMargin),
+          right: math.max(padding.right, m.sideMargin),
+          bottom: math.max(padding.bottom, 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CallGlassCircle(
                 icon: Icons.call_end_rounded,
-                label: tr('call_control_decline'),
+                label: landscape ? null : decline,
+                semanticLabel: decline,
                 diameter: m.incomingActionDiameter,
                 iconSize: m.incomingActionIcon,
                 labelFontSize: m.controlLabelFont,
@@ -72,7 +78,8 @@ class IncomingCallView extends StatelessWidget {
               ),
               CallGlassCircle(
                 icon: Icons.call_rounded,
-                label: tr('call_control_answer'),
+                label: landscape ? null : answer,
+                semanticLabel: answer,
                 diameter: m.incomingActionDiameter,
                 iconSize: m.incomingActionIcon,
                 labelFontSize: m.controlLabelFont,

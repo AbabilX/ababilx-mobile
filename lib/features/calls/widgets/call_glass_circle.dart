@@ -3,18 +3,18 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'call_controls_anchor.dart';
 import 'call_top_bar.dart' show callTextShadow;
 
-/// Frosted glass circle used by the 1:1 call control deck.
-///
-/// Translucent dark fill + hairline white border so icons stay readable on
-/// both the light and dark call wallpapers (and over remote video).
+/// Frosted glass circle — chrome stays put; only the glyph rotates with
+/// [CallIconOrientation] (phone ground), never the seat itself.
 class CallGlassCircle extends StatefulWidget {
   const CallGlassCircle({
     super.key,
     required this.icon,
     required this.onPressed,
     this.label,
+    this.semanticLabel,
     this.selected = false,
     this.diameter,
     this.iconSize,
@@ -27,12 +27,11 @@ class CallGlassCircle extends StatefulWidget {
   final IconData icon;
   final VoidCallback? onPressed;
   final String? label;
+  final String? semanticLabel;
   final bool selected;
   final double? diameter;
   final double? iconSize;
   final double? labelFontSize;
-
-  /// Solid hang-up red — skips the glass treatment.
   final Color? background;
   final Color? foreground;
   final bool glow;
@@ -56,6 +55,14 @@ class _CallGlassCircleState extends State<CallGlassCircle> {
         widget.background ??
         Colors.black.withValues(alpha: widget.selected ? 0.42 : 0.26);
     final fg = widget.foreground ?? Colors.white;
+    final turns = CallIconOrientation.of(context);
+
+    final glyph = AnimatedRotation(
+      turns: turns / 4,
+      duration: callControlsOrientDuration,
+      curve: Curves.easeOutCubic,
+      child: Icon(widget.icon, size: iconSize, color: fg),
+    );
 
     final circle = AnimatedOpacity(
       duration: _morph,
@@ -112,16 +119,16 @@ class _CallGlassCircleState extends State<CallGlassCircle> {
                             widget.onPressed!();
                           }
                         : null,
-                    onTapDown: enabled ? (_) => setState(() => _down = true) : null,
+                    onTapDown: enabled
+                        ? (_) => setState(() => _down = true)
+                        : null,
                     onTapUp: enabled
                         ? (_) => setState(() => _down = false)
                         : null,
                     onTapCancel: enabled
                         ? () => setState(() => _down = false)
                         : null,
-                    child: Center(
-                      child: Icon(widget.icon, size: iconSize, color: fg),
-                    ),
+                    child: Center(child: glyph),
                   ),
                 ),
               ],
@@ -135,28 +142,35 @@ class _CallGlassCircleState extends State<CallGlassCircle> {
       button: true,
       enabled: enabled,
       toggled: solid ? null : widget.selected,
-      label: widget.label,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          circle,
-          if (widget.label != null) ...[
-            SizedBox(height: (size * 0.14).clamp(10.0, 16.0)),
-            Text(
-              widget.label!,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.88),
-                fontSize: widget.labelFontSize ?? 12,
-                fontWeight: FontWeight.w500,
-                height: 1.15,
-                shadows: callTextShadow,
+      label: widget.semanticLabel ?? widget.label,
+      child: RepaintBoundary(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            circle,
+            if (widget.label != null) ...[
+              SizedBox(height: (size * 0.14).clamp(10.0, 16.0)),
+              AnimatedRotation(
+                turns: turns / 4,
+                duration: callControlsOrientDuration,
+                curve: Curves.easeOutCubic,
+                child: Text(
+                  widget.label!,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.88),
+                    fontSize: widget.labelFontSize ?? 12,
+                    fontWeight: FontWeight.w500,
+                    height: 1.15,
+                    shadows: callTextShadow,
+                  ),
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

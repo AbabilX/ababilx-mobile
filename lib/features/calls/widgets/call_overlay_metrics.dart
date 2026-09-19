@@ -4,20 +4,25 @@ import 'package:flutter/widgets.dart';
 
 /// Layout numbers for the 1:1 call overlay, authored against 1080 × 1920.
 ///
-/// Every size scales with the shorter screen edge so a phone and a tall
-/// tablet keep the same visual hierarchy without dinner-plate buttons.
+/// Scale always uses the narrower edge so landscape does not inflate the
+/// control circles — seats stay the same size; only inners reorient.
 class CallOverlayMetrics {
-  const CallOverlayMetrics._(this.size);
+  const CallOverlayMetrics._(this.size, this.layoutWidth);
 
-  factory CallOverlayMetrics.of(BuildContext context) =>
-      CallOverlayMetrics._(MediaQuery.sizeOf(context));
+  factory CallOverlayMetrics.of(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return CallOverlayMetrics._(size, math.min(size.width, size.height));
+  }
 
   final Size size;
+
+  /// Narrow edge — portrait width, or landscape height.
+  final double layoutWidth;
 
   static const designWidth = 1080.0;
   static const designHeight = 1920.0;
 
-  double get _scale => size.width / designWidth;
+  double get _scale => layoutWidth / designWidth;
 
   double design(double px) => px * _scale;
 
