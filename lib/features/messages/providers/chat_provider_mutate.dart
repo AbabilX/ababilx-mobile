@@ -123,9 +123,9 @@ mixin _ChatMutateMixin
     caption: caption,
   );
 
-  /// Local history answers first so results appear with no round trip, then
-  /// an active workspace permits a server result to replace them. Personal-only
-  /// users search their device history only.
+  /// Local history answers first so results appear with no round trip.
+  /// One character is enough on-device; the server is only asked at two or more
+  /// so a single keystroke does not fan out a network search.
   Future<void> searchMessages(String q) async {
     state = state.copyWith(searchQuery: q, searchLoading: true);
     final store = (this as _ChatCacheMixin).messageStore;
@@ -148,6 +148,10 @@ mixin _ChatMutateMixin
           : (_) async => const [],
     ).search(q);
     if (state.searchQuery != q) return;
+    if (q.trim().length < 2) {
+      state = state.copyWith(searchResults: local, searchLoading: false);
+      return;
+    }
     if (local.isNotEmpty) {
       state = state.copyWith(searchResults: local, searchLoading: false);
     }
