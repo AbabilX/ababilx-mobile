@@ -19,7 +19,9 @@ import 'you-sheet/you_sheet_action.dart';
 /// home (`kAppHomePath`), so this header carries identity the way WhatsApp's
 /// chat list does; Calls, Wall and Board are secondary tabs and keep their own
 /// section titles. The bottom bar already names this tab, so repeating
-/// "Messages" here would spend the slot on nothing new.
+/// "Messages" here would spend the slot on nothing new. Because the title is
+/// identity, the avatar and the title are the same target: both open the You
+/// sheet through [_openYouSheet].
 ///
 /// The scanner sits here because it is the one action that answers a prompt on
 /// another screen — a desktop waiting to sign in, or a new device waiting for
@@ -52,10 +54,25 @@ class ChatListHeader extends ConsumerWidget {
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(
-                'AbabilX',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
+              // The title carries the account entry point too: tapping it
+              // opens the same You sheet as the avatar. Only the text is the
+              // target — `Align` keeps the sheet off the empty gap beside it,
+              // so a stray tap between title and search does nothing. The
+              // transparent Material exists only to host the ripple, the same
+              // way `_SearchCapsule` does it.
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _openYouSheet(context, ref),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Text(
+                      'AbabilX',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
                 ),
               ),
             ),
