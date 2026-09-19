@@ -15,6 +15,7 @@ import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/crm_list_bar.dart';
 import 'shell_bottom_bar/index.dart';
 import 'shell_bottom_bar/shell_chrome_provider.dart';
+import 'shell_bottom_bar/shell_nav_prefs.dart';
 import 'shell_bottom_bar/shell_tabs.dart';
 
 /// Floating capsule nav, or CRM list [My|Add|All] + search action.
@@ -32,7 +33,14 @@ class HomeShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hasTeam = ref.watch(hasTeamProvider);
     final showCrm = ref.watch(canViewCrmProvider);
-    final tabs = visibleShellTabs(hasTeam: hasTeam, showCrm: showCrm);
+    final navPrefs = ref.watch(shellNavPrefsProvider);
+    final tabs = visibleShellTabs(
+      hasTeam: hasTeam,
+      showCrm: showCrm,
+      showWallTab: navPrefs.showWall,
+      showCrmTab: navPrefs.showCrm,
+      showBoardTab: navPrefs.showBoard,
+    );
     final location = GoRouterState.of(context).matchedLocation;
     final idx = shellTabIndex(tabs, location);
     final unread = ref.watch(totalUnreadProvider);
@@ -43,14 +51,20 @@ class HomeShell extends ConsumerWidget {
     final isOrganizations = location == '/crm/organizations';
     final shellBarHidden = ref.watch(shellBottomBarHiddenProvider);
 
-    // A route whose tab is gone (left the team, lost CRM access) has no home
-    // to go back to — bounce to Messages, the one tab every account has.
-    // Only once the team is actually resolved: while it loads `hasTeam` is
-    // false, and bouncing then would kick a deep link off /board or /wall.
+    // Bounce only when the account lost workspace/CRM access — not when the
+    // user hid a tab in Settings. Pref-hidden routes stay reachable via deep
+    // link; the bar simply omits that destination.
+    // Wait until the team is resolved: while it loads `hasTeam` is false, and
+    // bouncing then would kick a deep link off /board or /wall.
     final teamResolved = ref.watch(teamGateProvider).hasValue;
-    final onHiddenRoute =
-        teamResolved && !tabs.any((t) => location.startsWith(t.route));
-    if (onHiddenRoute) {
+    final onDeniedRoute =
+        teamResolved &&
+        shellRouteAccessDenied(
+          location,
+          hasTeam: hasTeam,
+          showCrm: showCrm,
+        );
+    if (onDeniedRoute) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) context.go('/messages');
       });

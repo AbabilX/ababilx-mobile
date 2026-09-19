@@ -48,6 +48,7 @@ import '../../features/settings/screens/discovery_screen.dart';
 import '../../features/settings/screens/edit_name_screen.dart';
 import '../../features/settings/screens/edit_username_screen.dart';
 import '../../features/settings/screens/my_qr_screen.dart';
+import '../../features/settings/screens/navigation_settings_screen.dart';
 import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import 'home_shell.dart';
@@ -196,6 +197,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/discovery',
         builder: (_, _) => const DiscoveryScreen(),
+      ),
+      GoRoute(
+        path: '/settings/navigation',
+        builder: (_, _) => const NavigationSettingsScreen(),
       ),
       GoRoute(
         path: '/settings/notifications',

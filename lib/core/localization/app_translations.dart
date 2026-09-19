@@ -530,6 +530,12 @@ class AppTranslations {
       'settings_title': 'Settings',
       'settings_load_error': 'Could not load settings',
       'settings_notifications': 'Notifications',
+      'settings_navigation': 'Navigation',
+      'settings_navigation_sub': 'Choose which workspace tabs appear below',
+      'settings_navigation_hint':
+          'Turn a tab off to hide it from the bottom bar on this device. '
+          'You can still open it from a link.',
+      'settings_navigation_tab_sub': 'Show in the bottom bar',
       'settings_app_icon': 'App icon',
       'settings_app_icon_sub':
           'Hide AbabilX behind a calendar, calculator or notes icon',
@@ -1223,6 +1229,12 @@ class AppTranslations {
       'settings_title': 'সেটিংস',
       'settings_load_error': 'সেটিংস লোড করা যায়নি',
       'settings_notifications': 'বিজ্ঞপ্তি',
+      'settings_navigation': 'নেভিগেশন',
+      'settings_navigation_sub': 'নিচে কোন ওয়ার্কস্পেস ট্যাব থাকবে বেছে নিন',
+      'settings_navigation_hint':
+          'একটি ট্যাব বন্ধ করলে এই ডিভাইসের নিচের বার থেকে সরে যাবে। '
+          'লিঙ্ক থেকে এখনও খোলা যাবে।',
+      'settings_navigation_tab_sub': 'নিচের বারে দেখান',
       'settings_app_icon': 'অ্যাপ আইকন',
       'settings_app_icon_sub':
           'ক্যালেন্ডার, ক্যালকুলেটর বা নোটসের আইকনের আড়ালে AbabilX লুকান',

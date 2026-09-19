@@ -7,6 +7,17 @@ beside it. Every iOS change is judged first by one question: **does Android
 build and behave exactly as before?** If the answer is not a clear yes, stop
 and ask.
 
+## Home bottom bar (BNB)
+
+Visible tabs = **team/CRM access ∩ device-local prefs**.
+
+- Server gate: `hasTeamProvider` / `canViewCrmProvider` (`/api/teams/me`).
+- Device prefs: `shellNavPrefsProvider` (SharedPreferences keys
+  `ababilx_shell_nav_wall|crm|board`) — Settings → Navigation, shown only
+  when `hasTeam`. Turning a switch off hides the tab from the bar only;
+  deep links still open the route. Leaving a team still redirects
+  `/wall` `/board` `/crm` to Messages via `shellRouteAccessDenied`.
+
 ## Zones
 
 ```
@@ -39,7 +50,7 @@ user approval              res/, android/patches/*.gradle, proguard),
    touching a dependency: read the plugin's CHANGELOG `[Android]` entries,
    diff the plugin's `android/build.gradle` old vs new, tell the user what
    moves on Android, and get a yes. Exact pins (`flutter_callkit_incoming:
-   3.1.3`) are **never** bumped — the patches under `android/patches/` are
+3.1.3`) are **never** bumped — the patches under `android/patches/` are
    text-matched against that source.
 4. **No shared-Dart edit "while we are here".** An iOS task does not fix,
    tidy or rename Android-path code. Spot a problem there → report it, don't

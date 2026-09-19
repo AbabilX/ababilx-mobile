@@ -30,11 +30,104 @@ void main() {
       );
     });
 
+    test('device prefs can hide each workspace tab independently', () {
+      expect(
+        visibleShellTabs(
+          hasTeam: true,
+          showCrm: true,
+          showWallTab: false,
+        ).map((t) => t.route),
+        ['/messages', '/calls', '/crm', '/board'],
+      );
+      expect(
+        visibleShellTabs(
+          hasTeam: true,
+          showCrm: true,
+          showCrmTab: false,
+        ).map((t) => t.route),
+        ['/messages', '/calls', '/wall', '/board'],
+      );
+      expect(
+        visibleShellTabs(
+          hasTeam: true,
+          showCrm: true,
+          showBoardTab: false,
+        ).map((t) => t.route),
+        ['/messages', '/calls', '/wall', '/crm'],
+      );
+      expect(
+        visibleShellTabs(
+          hasTeam: true,
+          showCrm: true,
+          showWallTab: false,
+          showCrmTab: false,
+          showBoardTab: false,
+        ).map((t) => t.route),
+        ['/messages', '/calls'],
+      );
+    });
+
+    test('prefs cannot resurrect workspace tabs without a team', () {
+      expect(
+        visibleShellTabs(
+          hasTeam: false,
+          showCrm: true,
+          showWallTab: true,
+          showCrmTab: true,
+          showBoardTab: true,
+        ).map((t) => t.route),
+        ['/messages', '/calls'],
+      );
+    });
+
     test('unread badge rides on Messages alone', () {
       final tabs = visibleShellTabs(hasTeam: true, showCrm: true);
       expect(tabs.where((t) => t.showsUnread).map((t) => t.route), [
         '/messages',
       ]);
+    });
+  });
+
+  group('shellRouteAccessDenied', () {
+    test('wall and board require a team', () {
+      expect(
+        shellRouteAccessDenied('/wall', hasTeam: false, showCrm: false),
+        isTrue,
+      );
+      expect(
+        shellRouteAccessDenied('/board/abc', hasTeam: false, showCrm: true),
+        isTrue,
+      );
+      expect(
+        shellRouteAccessDenied('/wall', hasTeam: true, showCrm: false),
+        isFalse,
+      );
+    });
+
+    test('crm requires team and CRM access', () {
+      expect(
+        shellRouteAccessDenied('/crm', hasTeam: true, showCrm: false),
+        isTrue,
+      );
+      expect(
+        shellRouteAccessDenied('/crm/leads', hasTeam: false, showCrm: true),
+        isTrue,
+      );
+      expect(
+        shellRouteAccessDenied('/crm/contacts', hasTeam: true, showCrm: true),
+        isFalse,
+      );
+    });
+
+    test('messages and calls are never access-denied', () {
+      expect(
+        shellRouteAccessDenied('/messages', hasTeam: false, showCrm: false),
+        isFalse,
+      );
+      expect(
+        shellRouteAccessDenied('/calls', hasTeam: false, showCrm: false),
+        isFalse,
+      );
     });
   });
 
@@ -60,6 +153,17 @@ void main() {
       expect(shellTabIndex(minimal, '/board'), 0);
       expect(shellTabIndex(minimal, '/crm/leads'), 0);
       expect(shellTabIndex(minimal, '/profile'), 0);
+    });
+
+    test('pref-hidden tab falls back to Messages for bar selection', () {
+      final noWall = visibleShellTabs(
+        hasTeam: true,
+        showCrm: true,
+        showWallTab: false,
+      );
+      expect(shellTabIndex(noWall, '/wall'), 0);
+      // Board shifts left when Wall is gone.
+      expect(shellTabIndex(noWall, '/board'), 3);
     });
   });
 }

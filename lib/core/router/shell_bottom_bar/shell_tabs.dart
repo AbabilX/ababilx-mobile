@@ -63,22 +63,47 @@ const boardShellTab = ShellTab(
   selectedIcon: HugeIcons.strokeRoundedTask02,
 );
 
-/// Destinations visible to this account.
+/// Destinations visible to this account in the home bottom bar.
 ///
 /// Messages and Calls are the floor — they work with no workspace at all, so a
 /// team-less account gets the two-tab Signal shape. Wall, Board and CRM are
 /// workspace features: without a team they are permanently empty, so they stay
 /// out of the bar entirely until the user joins one.
+///
+/// [showWallTab] / [showCrmTab] / [showBoardTab] are device-local prefs
+/// (Settings → Navigation). They only filter the bar; deep links still open
+/// those routes when the account has access.
 List<ShellTab> visibleShellTabs({
   required bool hasTeam,
   required bool showCrm,
+  bool showWallTab = true,
+  bool showCrmTab = true,
+  bool showBoardTab = true,
 }) => [
   messagesShellTab,
   callsShellTab,
-  if (hasTeam) wallShellTab,
-  if (hasTeam && showCrm) crmShellTab,
-  if (hasTeam) boardShellTab,
+  if (hasTeam && showWallTab) wallShellTab,
+  if (hasTeam && showCrm && showCrmTab) crmShellTab,
+  if (hasTeam && showBoardTab) boardShellTab,
 ];
+
+/// True when [location] needs workspace/CRM access the account no longer has.
+///
+/// Pref-hidden tabs do **not** count — the user asked only to drop the BNB
+/// chrome, not to lock the route.
+bool shellRouteAccessDenied(
+  String location, {
+  required bool hasTeam,
+  required bool showCrm,
+}) {
+  if (location.startsWith('/wall') || location.startsWith('/board')) {
+    return !hasTeam;
+  }
+  if (location.startsWith('/crm')) {
+    return !hasTeam || !showCrm;
+  }
+  return false;
+}
 
 /// Index of the tab owning [location], or 0 when nothing matches — a route
 /// whose tab is hidden (e.g. /crm after leaving a team) falls back to Messages.
