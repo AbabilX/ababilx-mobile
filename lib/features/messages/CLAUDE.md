@@ -37,6 +37,17 @@ Web is unaffected: it has no delete-by-clientRef path.
 
 ---
 
+# Conversation screen stays portrait
+
+`ConversationScreen` wraps `PortraitLockScope` (`shared/widgets/portrait_lock_scope.dart`).
+Landscape + keyboard overflowed the timeline/composer by a few pixels; the
+layout is authored for a tall viewport, so the route locks to
+`portraitUp` / `portraitDown` while mounted and restores
+`DeviceOrientation.values` on dispose.
+
+Do **not** put this scope on `/call` or `/group-call` — those need landscape.
+Leaving chat (or `go('/call')` disposing the conversation route) unlocks again.
+
 # The conversation timeline is Signal's
 
 Rebuilt 2026-09-03. The chat used to be Slack: every message a full-width row

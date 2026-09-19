@@ -533,7 +533,10 @@ Traps:
   the window. The UI is a transparent overlay — circular peer face (~30% down),
   name + status, frosted glass controls, and a coral End / Decline.
 - **Video / screen share:** remote media is full-bleed; wallpaper is not drawn;
-  the same glass controls sit on top.
+  the same glass controls sit on top, then **auto-hide after ~4 s idle**
+  (`CallChromeAutoHide`) so the stage is clear. Tap the empty stage to show
+  or hide chrome again. Local camera PiP stays visible while chrome is hidden.
+  Audio-only never auto-hides — Mute / End must stay reachable without a tap.
 - **Minimize:** a small chevron in the top-left safe area leaves the screen
   without hanging up (`ActiveCallBanner` / return bar takes over).
 - **Incoming** keeps only Answer + Decline (no Mute/Camera/Share yet).

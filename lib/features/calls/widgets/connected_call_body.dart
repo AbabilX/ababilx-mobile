@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/app_translations.dart';
 import '../call_status_text.dart';
 import '../providers/voice_call_state.dart';
+import 'call_chrome_auto_hide.dart';
 import 'call_controls_anchor.dart';
 import 'call_minimize_button.dart';
 import 'call_overlay_metrics.dart';
@@ -17,7 +18,8 @@ import 'remote_screen_view.dart';
 /// Outgoing / connected / ended 1:1 call surface.
 ///
 /// Audio-only: theme wallpaper + glass overlay. Remote video or screen share
-/// replaces the wallpaper full-bleed; controls stay as an overlay.
+/// replaces the wallpaper full-bleed; controls stay as an overlay that
+/// auto-hides after idle so the stage is clear — tap the stage to reveal.
 class ConnectedCallBody extends StatelessWidget {
   const ConnectedCallBody({
     super.key,
@@ -56,6 +58,8 @@ class ConnectedCallBody extends StatelessWidget {
       min: padding.top + 48,
       max: m.size.height * 0.42,
     );
+    // Watch mode: fade chrome so remote video / screen is unobstructed.
+    final autoHideChrome = _stage && !ended;
 
     return Stack(
       fit: StackFit.expand,
@@ -66,6 +70,99 @@ class ConnectedCallBody extends StatelessWidget {
           CallVideoView(stream: call.remoteCameraStream!)
         else
           const CallWallpaper(),
+        CallChromeAutoHide(
+          enabled: autoHideChrome,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned(
+                top: padding.top + 8,
+                left: math.max(padding.left, 12),
+                child: CallMinimizeButton(onPressed: onMinimize),
+              ),
+              if (!_stage)
+                Positioned(
+                  top: identityTop,
+                  left: 0,
+                  right: 0,
+                  child: CallPeerIdentity(
+                    name: call.peerName,
+                    avatarUrl: call.peerAvatar,
+                    status: voiceCallStatusText(call, lang: lang),
+                    showWave: showWave,
+                  ),
+                ),
+              if (_stage)
+                Positioned(
+                  top: padding.top + 8,
+                  left: 56,
+                  right: 56,
+                  child: Column(
+                    children: [
+                      Text(
+                        call.peerName,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: m.nameFont * 0.78,
+                          fontWeight: FontWeight.w600,
+                          shadows: const [
+                            Shadow(color: Color(0x66000000), blurRadius: 6),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        voiceCallStatusText(call, lang: lang),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.75),
+                          fontSize: m.statusFont,
+                          shadows: const [
+                            Shadow(color: Color(0x66000000), blurRadius: 6),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (call.error != null)
+                Positioned(
+                  top: m.size.height * 0.55,
+                  left: 24,
+                  right: 24,
+                  child: _Note(text: call.error!, error: true),
+                ),
+              if (call.screenSharing)
+                Positioned(
+                  top: m.size.height * 0.55,
+                  left: 24,
+                  right: 24,
+                  child: _Note(
+                    text: AppTranslations.of(lang, 'call_sharing_own_screen'),
+                  ),
+                ),
+              if (call.screenShareError != null)
+                Positioned(
+                  top: m.size.height * 0.58,
+                  left: 24,
+                  right: 24,
+                  child: _Note(text: call.screenShareError!, error: true),
+                ),
+              if (call.cameraError != null)
+                Positioned(
+                  top: m.size.height * 0.61,
+                  left: 24,
+                  right: 24,
+                  child: _Note(text: call.cameraError!, error: true),
+                ),
+              if (!ended) CallControlsAnchor(child: controls),
+            ],
+          ),
+        ),
+        // PiP stays above chrome so self-view remains after controls fade.
         if (call.localCameraStream != null)
           Positioned(
             right: math.max(padding.right, 12) + 4,
@@ -75,89 +172,6 @@ class ConnectedCallBody extends StatelessWidget {
               mirror: call.cameraFront,
               onSwitchCamera: onSwitchCamera,
             ),
-          ),
-        Positioned(
-          top: padding.top + 8,
-          left: math.max(padding.left, 12),
-          child: CallMinimizeButton(onPressed: onMinimize),
-        ),
-        if (!_stage)
-          Positioned(
-            top: identityTop,
-            left: 0,
-            right: 0,
-            child: CallPeerIdentity(
-              name: call.peerName,
-              avatarUrl: call.peerAvatar,
-              status: voiceCallStatusText(call, lang: lang),
-              showWave: showWave,
-            ),
-          ),
-        if (_stage)
-          Positioned(
-            top: padding.top + 8,
-            left: 56,
-            right: 56,
-            child: Column(
-              children: [
-                Text(
-                  call.peerName,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: m.nameFont * 0.78,
-                    fontWeight: FontWeight.w600,
-                    shadows: const [
-                      Shadow(color: Color(0x66000000), blurRadius: 6),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  voiceCallStatusText(call, lang: lang),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontSize: m.statusFont,
-                    shadows: const [
-                      Shadow(color: Color(0x66000000), blurRadius: 6),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (call.error != null)
-          Positioned(
-            top: m.size.height * 0.55,
-            left: 24,
-            right: 24,
-            child: _Note(text: call.error!, error: true),
-          ),
-        if (call.screenSharing)
-          Positioned(
-            top: m.size.height * 0.55,
-            left: 24,
-            right: 24,
-            child: _Note(
-              text: AppTranslations.of(lang, 'call_sharing_own_screen'),
-            ),
-          ),
-        if (call.screenShareError != null)
-          Positioned(
-            top: m.size.height * 0.58,
-            left: 24,
-            right: 24,
-            child: _Note(text: call.screenShareError!, error: true),
-          ),
-        if (call.cameraError != null)
-          Positioned(
-            top: m.size.height * 0.61,
-            left: 24,
-            right: 24,
-            child: _Note(text: call.cameraError!, error: true),
           ),
         if (ended)
           Positioned(
@@ -184,9 +198,7 @@ class ConnectedCallBody extends StatelessWidget {
                 ),
               ),
             ),
-          )
-        else
-          CallControlsAnchor(child: controls),
+          ),
       ],
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/portrait_lock_scope.dart';
 import '../chat-header/index.dart';
 import '../chat-select/message_selection.dart';
 import '../chat-timeline/index.dart';
@@ -111,23 +112,27 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final selecting = ref
         .watch(messageSelectionProvider)
         .isActiveIn(widget.conversationId);
-    return PopScope(
-      canPop: canPop && !selecting,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        if (selecting) {
-          ref.read(messageSelectionProvider.notifier).clear();
-          return;
-        }
-        popOrGoMessages(context);
-      },
-      // The wallpaper paints inside the body, on top of the Scaffold's own
-      // background and under the chat — so with no wallpaper set nothing
-      // changes, and the Scaffold keeps painting the theme colour.
-      child: Scaffold(
-        body: ChatWallpaperBackground(
-          conversationId: widget.conversationId,
-          child: _body(conversation, vault),
+    // Chat + IME are portrait-only; landscape overflowed the composer by ~5px.
+    // Unlock on leave so /call and other routes can rotate again.
+    return PortraitLockScope(
+      child: PopScope(
+        canPop: canPop && !selecting,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          if (selecting) {
+            ref.read(messageSelectionProvider.notifier).clear();
+            return;
+          }
+          popOrGoMessages(context);
+        },
+        // The wallpaper paints inside the body, on top of the Scaffold's own
+        // background and under the chat — so with no wallpaper set nothing
+        // changes, and the Scaffold keeps painting the theme colour.
+        child: Scaffold(
+          body: ChatWallpaperBackground(
+            conversationId: widget.conversationId,
+            child: _body(conversation, vault),
+          ),
         ),
       ),
     );
