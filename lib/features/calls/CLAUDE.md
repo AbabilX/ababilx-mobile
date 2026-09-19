@@ -540,18 +540,25 @@ Traps:
 - **Minimize:** a small chevron in the top-left safe area leaves the screen
   without hanging up (`ActiveCallBanner` / return bar takes over).
 - **Incoming** keeps only Answer + Decline (no Mute/Camera/Share yet) — large
-  paired circles centered with a tight gap (`incomingActionGap`), not
+  paired circles centered with a comfortable gap (`incomingActionGap`), not
   `spaceBetween` to the screen edges.
   **Outgoing / connected** uses Mute · Camera · Screen Share · Speaker + End.
 - Labels: Incoming hang-up says **Decline**; live hang-up says **End**.
   Captions hide in landscape; semantics keep the names.
 
+**Native overlay when the app is closed** is a separate surface:
+`CallkitIncomingActivity` (`flutter_callkit_incoming`), raised by the
+notification `fullScreenIntent`. Flutter hot reload does not touch it.
+Layout/dimens are pinned under `android/patches/callkit/` and applied by
+`patches/callkit-incoming-ui.gradle` (avatar 160dp, buttons 100dp, centered
+gap, bottom lift). Keep view ids; Accept/Decline wiring stays in the Activity.
+After a plugin bump, re-copy and re-check the Activity margin patch.
+
 Group call UI is separate (`GroupCallScreen`) — participant tiles need a
 different layout.
 
 Do not restore the old Signal-blurred-avatar backdrop on the DM call surface
-without an explicit product decision; PiP and CallKit native chrome are
-unchanged.
+without an explicit product decision; PiP is unchanged.
 
 ### Control deck orientation — pin to portrait-bottom, never the camera bump
 

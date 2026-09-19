@@ -95,3 +95,4 @@ gradle.beforeProject {
 
 apply(from = "patches/callkit-accept.gradle")
 apply(from = "patches/callkit-lifecycle.gradle")
+apply(from = "patches/callkit-incoming-ui.gradle")
