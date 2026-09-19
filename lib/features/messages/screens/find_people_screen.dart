@@ -18,7 +18,11 @@ class FindPeopleScreen extends ConsumerWidget {
           appBar: AppBar(
             leading: const AppBarBackButton(),
             title: Text(
-              AppTranslations.translate(context, ref, 'chat_find_people_screen'),
+              AppTranslations.translate(
+                context,
+                ref,
+                'chat_find_people_screen',
+              ),
             ),
           ),
           body: const FindPeopleTab(),

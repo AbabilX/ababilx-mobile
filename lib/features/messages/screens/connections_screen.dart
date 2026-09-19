@@ -36,9 +36,9 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       final current = ref.read(chatConnectionsProvider);
       if (current.connections.isNotEmpty) return;
       unawaited(
-        ref.read(chatConnectionsProvider.notifier).refresh(
-          force: current.loading,
-        ),
+        ref
+            .read(chatConnectionsProvider.notifier)
+            .refresh(force: current.loading),
       );
     });
   }
@@ -123,10 +123,12 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       searching
-                          ? t('chat_connections_match_count')
-                              .replaceAll('{n}', '${filtered.length}')
-                          : t('chat_connections_count')
-                              .replaceAll('{n}', '${state.connections.length}'),
+                          ? t(
+                              'chat_connections_match_count',
+                            ).replaceAll('{n}', '${filtered.length}')
+                          : t(
+                              'chat_connections_count',
+                            ).replaceAll('{n}', '${state.connections.length}'),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -171,9 +173,8 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
         state: state,
         stalled: stalled,
         t: t,
-        onRetry: () => ref
-            .read(chatConnectionsProvider.notifier)
-            .refresh(force: true),
+        onRetry: () =>
+            ref.read(chatConnectionsProvider.notifier).refresh(force: true),
       );
     }
     if (searching && filtered.isEmpty) {
@@ -211,22 +212,14 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
           sharedWorkspaceLabel: t('chat_shared_workspace'),
           onOpenChat: () => unawaited(_openChat(connection.user.userId)),
           onRemove: () async {
-            final ok = await confirmRemoveConnection(
-              context,
-              ref,
-              name: name,
-            );
+            final ok = await confirmRemoveConnection(context, ref, name: name);
             if (!ok || !mounted) return;
             await ref
                 .read(chatConnectionsProvider.notifier)
                 .remove(connection.user.userId);
           },
           onBlock: () async {
-            final ok = await confirmBlockConnection(
-              context,
-              ref,
-              name: name,
-            );
+            final ok = await confirmBlockConnection(context, ref, name: name);
             if (!ok || !mounted) return;
             await ref
                 .read(chatConnectionsProvider.notifier)

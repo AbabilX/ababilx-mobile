@@ -99,10 +99,7 @@ class ChatConnectionsNotifier extends Notifier<ChatConnectionsState> {
       final requests = await _repo.listConnectionRequests().timeout(
         firstLoadNetworkTimeout,
       );
-      state = state.copyWith(
-        requests: requests.incoming,
-        sent: requests.sent,
-      );
+      state = state.copyWith(requests: requests.incoming, sent: requests.sent);
     } catch (_) {}
   }
 

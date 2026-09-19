@@ -43,10 +43,7 @@ class GhostHeader extends ConsumerWidget implements PreferredSizeWidget {
     final canBurn = state.inSession && state.phase != GhostPhase.inviting;
 
     return AppBar(
-      leading: IconButton(
-        onPressed: onBack,
-        icon: const AppBarBackIcon(),
-      ),
+      leading: IconButton(onPressed: onBack, icon: const AppBarBackIcon()),
       titleSpacing: 0,
       title: Row(
         children: [

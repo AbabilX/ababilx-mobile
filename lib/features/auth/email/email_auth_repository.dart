@@ -40,7 +40,8 @@ class EmailAuthRepository {
   /// `--dart-define=ABABILX_APP_KEY=…` still overrides it.
   static const _appKey = String.fromEnvironment(
     'ABABILX_APP_KEY',
-    defaultValue: '878c6721d52f43c7e6a781bb33dceaf4f96c2484259e9dd4ef967a90889911f3',
+    defaultValue:
+        '878c6721d52f43c7e6a781bb33dceaf4f96c2484259e9dd4ef967a90889911f3',
   );
 
   Future<Response<Map<String, dynamic>>> _post(

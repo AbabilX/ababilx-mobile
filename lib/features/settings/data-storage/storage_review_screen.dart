@@ -34,7 +34,9 @@ class _StorageReviewScreenState extends ConsumerState<StorageReviewScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: selecting ? const Icon(Icons.close_rounded) : const AppBarBackIcon(),
+          icon: selecting
+              ? const Icon(Icons.close_rounded)
+              : const AppBarBackIcon(),
           onPressed: selecting
               ? () => setState(_selected.clear)
               : () => popOrGoHome(context),

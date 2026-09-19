@@ -18,7 +18,11 @@ void main() {
   });
 
   test('filterConnections matches name and @username', () {
-    const ada = ChatUserSummary(userId: '1', name: 'Ada Lovelace', username: 'ada');
+    const ada = ChatUserSummary(
+      userId: '1',
+      name: 'Ada Lovelace',
+      username: 'ada',
+    );
     const bob = ChatUserSummary(userId: '2', name: 'Bob', username: 'bob42');
     final list = [
       ChatConnection(

@@ -47,10 +47,7 @@ class ChatConnectionsApi {
   Future<List<ChatConnection>> listConnections() async {
     final cancel = CancelToken();
     final response = await _client
-        .get(
-          ApiConstants.independentChatConnections,
-          cancelToken: cancel,
-        )
+        .get(ApiConstants.independentChatConnections, cancelToken: cancel)
         .timeout(
           firstLoadNetworkTimeout,
           onTimeout: () {

@@ -24,7 +24,8 @@ class SafetyNumberBanner extends ConsumerWidget {
     // A group has no single peer identity to pin, so there is nothing to watch.
     // hasDmPeer, not isDm: in a note to self the peer is the viewer, so there
     // is no second identity to compare and no substitution to catch.
-    final peerUserId = conversation?.hasDmPeer == true &&
+    final peerUserId =
+        conversation?.hasDmPeer == true &&
             conversation?.isAccountDeleted != true
         ? (conversation?.peerUserId ?? '')
         : '';

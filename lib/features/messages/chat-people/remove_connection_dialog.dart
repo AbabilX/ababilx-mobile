@@ -17,9 +17,7 @@ Future<bool> confirmRemoveConnection(
   final ok = await showDialog<bool>(
     context: context,
     builder: (dialog) => AlertDialog(
-      title: Text(
-        AppTranslations.translate(context, ref, 'chat_remove'),
-      ),
+      title: Text(AppTranslations.translate(context, ref, 'chat_remove')),
       content: Text(body, style: const TextStyle(height: 1.4)),
       actions: [
         TextButton(

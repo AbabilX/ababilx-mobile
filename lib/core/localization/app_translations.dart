@@ -816,8 +816,7 @@ class AppTranslations {
       'backup_toast_restore_failed': 'রিস্টোর ব্যর্থ',
       'backup_error_vault_locked':
           'আগে সিকিউর মেসেজ আনলক করুন, তারপর আবার চেষ্টা করুন।',
-      'backup_error_network':
-          'ব্যাকআপে পৌঁছানো যায়নি। সংযোগ পরীক্ষা করুন।',
+      'backup_error_network': 'ব্যাকআপে পৌঁছানো যায়নি। সংযোগ পরীক্ষা করুন।',
       'recovery_restore_failed':
           'কিছু মেসেজ ফিরিয়ে আনা যায়নি। আবার চেষ্টা করতে চাপুন।',
       'onboarding_title': 'আপন মানুষ।\nসবসময় কাছে।',

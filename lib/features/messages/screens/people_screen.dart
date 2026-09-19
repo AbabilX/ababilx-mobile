@@ -34,7 +34,10 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
   @override
   Widget build(BuildContext context) {
     String t(String key) => AppTranslations.translate(context, ref, key);
-    final connectionCount = ref.watch(chatConnectionsProvider).connections.length;
+    final connectionCount = ref
+        .watch(chatConnectionsProvider)
+        .connections
+        .length;
     final connectionsSubtitle = connectionCount > 0
         ? t('chat_connections_count').replaceAll('{n}', '$connectionCount')
         : t('settings_connections_sub');

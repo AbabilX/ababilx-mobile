@@ -109,10 +109,7 @@ class _SearchCapsule extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: colors.outlineVariant,
-              width: 1,
-            ),
+            border: Border.all(color: colors.outlineVariant, width: 1),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

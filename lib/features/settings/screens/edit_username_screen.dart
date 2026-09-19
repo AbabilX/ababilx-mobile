@@ -83,7 +83,9 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: AppBarBackButton(onPressed: _saving ? null : () => popOrGoHome(context)),
+        leading: AppBarBackButton(
+          onPressed: _saving ? null : () => popOrGoHome(context),
+        ),
         title: const Text('Username'),
         actions: [
           TextButton(

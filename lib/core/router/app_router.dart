@@ -269,10 +269,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/messages/people',
         builder: (_, _) => const PeopleScreen(),
         routes: [
-          GoRoute(
-            path: 'find',
-            builder: (_, _) => const FindPeopleScreen(),
-          ),
+          GoRoute(path: 'find', builder: (_, _) => const FindPeopleScreen()),
           GoRoute(
             path: 'connections',
             builder: (_, _) => const ConnectionsScreen(),

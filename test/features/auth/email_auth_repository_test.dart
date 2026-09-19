@@ -49,20 +49,26 @@ void main() {
     return (EmailAuthRepository(client), adapter);
   }
 
-  test('a sign-in answer becomes a session, sent as the mobile client', () async {
-    final (repo, adapter) = build(200, {
-      'success': true,
-      'access_token': 'a',
-      'refresh_token': 'r',
-      'user': {'id': 'u1', 'email': 'me@example.com'},
-    });
-    final session = await repo.signIn(email: 'me@example.com', password: 'pw');
-    expect(session.accessToken, 'a');
-    expect(session.refreshToken, 'r');
-    expect(session.userId, 'u1');
-    expect(adapter.last!.path, '/auth/email/login');
-    expect(adapter.sent!['client'], 'mobile');
-  });
+  test(
+    'a sign-in answer becomes a session, sent as the mobile client',
+    () async {
+      final (repo, adapter) = build(200, {
+        'success': true,
+        'access_token': 'a',
+        'refresh_token': 'r',
+        'user': {'id': 'u1', 'email': 'me@example.com'},
+      });
+      final session = await repo.signIn(
+        email: 'me@example.com',
+        password: 'pw',
+      );
+      expect(session.accessToken, 'a');
+      expect(session.refreshToken, 'r');
+      expect(session.userId, 'u1');
+      expect(adapter.last!.path, '/auth/email/login');
+      expect(adapter.sent!['client'], 'mobile');
+    },
+  );
 
   test('a structured refusal carries its code and wait', () async {
     final (repo, _) = build(429, {

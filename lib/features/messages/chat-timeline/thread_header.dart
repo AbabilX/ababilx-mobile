@@ -45,7 +45,9 @@ class ThreadHeader extends ConsumerWidget {
         child: SizedBox(
           height: kToolbarHeight,
           child: NavigationToolbar(
-            leading: AppBarBackButton(onPressed: () => Navigator.of(context).pop()),
+            leading: AppBarBackButton(
+              onPressed: () => Navigator.of(context).pop(),
+            ),
             middle: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,

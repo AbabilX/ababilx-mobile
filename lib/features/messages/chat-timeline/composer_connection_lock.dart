@@ -44,7 +44,10 @@ class _ComposerConnectionLockState
       final message = code == 'request_rejected_cooldown'
           ? _tr('chat_lock_try_later')
           : code == 'request_already_pending'
-          ? (serverErrorMessage(error) ?? _tr('chat_lock_reconnect_sent').replaceFirst('{name}', _peerName))
+          ? (serverErrorMessage(error) ??
+                _tr(
+                  'chat_lock_reconnect_sent',
+                ).replaceFirst('{name}', _peerName))
           : (serverErrorMessage(error) ?? friendlyErrorMessage(error));
       showAppToast(context, message, isError: true);
     }
@@ -58,10 +61,12 @@ class _ComposerConnectionLockState
     final name = _peerName;
     final showRequest = reason == 'connection_removed';
     final body = switch (reason) {
-      'connection_removed' =>
-        _tr('chat_lock_removed').replaceFirst('{name}', name),
-      'reconnect_requested' =>
-        _tr('chat_lock_reconnect_sent').replaceFirst('{name}', name),
+      'connection_removed' => _tr(
+        'chat_lock_removed',
+      ).replaceFirst('{name}', name),
+      'reconnect_requested' => _tr(
+        'chat_lock_reconnect_sent',
+      ).replaceFirst('{name}', name),
       'account_deleted' => _tr('chat_lock_account_deleted'),
       _ => _tr('chat_connection_required'),
     };

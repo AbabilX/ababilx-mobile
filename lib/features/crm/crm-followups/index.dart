@@ -406,7 +406,9 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: _selecting ? const Icon(Icons.close_rounded) : const AppBarBackIcon(),
+          icon: _selecting
+              ? const Icon(Icons.close_rounded)
+              : const AppBarBackIcon(),
           onPressed: () {
             if (_selecting) {
               _clearSelection();

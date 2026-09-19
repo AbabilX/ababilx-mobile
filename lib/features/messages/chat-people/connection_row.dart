@@ -28,7 +28,10 @@ class ConnectionRow extends StatelessWidget {
   final String blockLabel;
   final String sharedWorkspaceLabel;
 
-  static ButtonStyle _flatAction(BuildContext context, {bool destructive = false}) {
+  static ButtonStyle _flatAction(
+    BuildContext context, {
+    bool destructive = false,
+  }) {
     final colors = Theme.of(context).colorScheme;
     final foreground = destructive ? colors.error : colors.primary;
     return TextButton.styleFrom(
