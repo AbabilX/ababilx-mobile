@@ -15,6 +15,12 @@ import 'you-sheet/you_sheet_action.dart';
 
 /// Chat list header: identity pill, title, search, and the QR scanner.
 ///
+/// The title is the app brand, not the section name. Messages is the app's
+/// home (`kAppHomePath`), so this header carries identity the way WhatsApp's
+/// chat list does; Calls, Wall and Board are secondary tabs and keep their own
+/// section titles. The bottom bar already names this tab, so repeating
+/// "Messages" here would spend the slot on nothing new.
+///
 /// The scanner sits here because it is the one action that answers a prompt on
 /// another screen — a desktop waiting to sign in, or a new device waiting for
 /// this account's message key. Behind the avatar it was three taps deep
