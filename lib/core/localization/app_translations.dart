@@ -138,6 +138,57 @@ class AppTranslations {
       'account_switch_body':
           'Signing in as {account} will permanently remove the previous account’s messages, private media and message keys from this phone. Files saved to AbabilXStorage will stay.',
       'account_switch_confirm': 'Delete local data and continue',
+      'continue_email': 'Continue with email',
+      'email_sign_in_title': 'Sign in with email',
+      'email_field': 'Email',
+      'password_field': 'Password',
+      'name_field': 'Your name',
+      'new_password_field': 'New password',
+      'password_rule': 'At least 8 characters',
+      'show_password': 'Show password',
+      'hide_password': 'Hide password',
+      'email_sign_in': 'Sign in',
+      'forgot_password': 'Forgot password?',
+      'no_account_prompt': 'New to AbabilX?',
+      'create_account': 'Create account',
+      'email_sign_up_title': 'Create your account',
+      'email_sign_up_body':
+          'We\'ll email you a 6-digit code to confirm it\'s you. Already use Google with this email? You\'ll keep the same account and chats.',
+      'email_continue': 'Continue',
+      'email_code_title': 'Check your email',
+      'email_code_body':
+          'We sent a 6-digit code to {email}. It expires in 15 minutes.',
+      'email_code_field': '6-digit code',
+      'email_code_resend': 'Resend code',
+      'email_code_resend_in': 'Resend in {seconds}s',
+      'email_code_resent': 'A new code is on its way.',
+      'email_verify': 'Verify and continue',
+      'email_reset_title': 'Reset your password',
+      'email_reset_body':
+          'Enter your account email. We\'ll send a code to set a new password — this also adds a password to an account you made with Google.',
+      'email_send_code': 'Send code',
+      'email_reset_save': 'Save password and sign in',
+      'email_google_hint':
+          'Signed up with Google? Tap “Forgot password?” to add a password to the same account.',
+      'email_invalid': 'Enter a valid email address.',
+      'password_too_short': 'Use 8 to 128 characters.',
+      'name_required': 'Enter your name.',
+      'code_invalid_length': 'Enter the 6-digit code.',
+      'email_auth_failed': 'Something went wrong. Try again.',
+      'email_err_invalid_credentials': 'Email or password is wrong.',
+      'email_err_invalid_code':
+          'That code is wrong or expired. Request a new one.',
+      'email_err_code_cooldown':
+          'A code was just sent — check your inbox, or try again in a minute.',
+      'email_err_too_many_codes':
+          'Too many codes for this email today. Try again later.',
+      'email_err_too_many_attempts':
+          'Too many wrong passwords. Wait a few minutes, or reset your password.',
+      'email_err_email_failed': 'Could not send the email. Try again shortly.',
+      'email_err_invalid_app_key':
+          'This app version cannot sign in with email. Update AbabilX and try again.',
+      'email_err_app_key_unconfigured':
+          'Email sign-in is not available right now.',
       'messages': 'Messages',
       'calls': 'Talks',
       'wall': 'Wall',
@@ -395,18 +446,15 @@ class AppTranslations {
       'battery_opt_still_denied':
           'Still restricted — enable Unrestricted in battery settings',
 
-      'policy_title': 'Privacy & Policy',
-      'policy_subtitle':
-          'World-class secured messaging, built so you can trust it. A quick summary before you continue.',
+      'policy_title': 'Your chats stay private',
+      'policy_subtitle_bold': 'World-class',
+      'policy_subtitle': ' secured messaging, built so you can trust it.',
       'policy_bullet_secure':
-          'Your messages are end-to-end encrypted — sealed on your device with a key only you hold. We could not read them even if asked to.',
-      'policy_bullet_1':
-          'We store your profile, connected accounts, and the content you create (messages, posts, tasks).',
-      'policy_bullet_2': 'No ads, no trackers, no selling your data — ever.',
-      'policy_bullet_3':
-          'AI features process your content only to generate the summary you asked for.',
-      'policy_bullet_4':
-          'Disconnect integrations or delete your account anytime from Settings.',
+          'End-to-end encrypted. No government, no military, no hacker — not even us — can read your chats. Seize our servers and all you get is locked text.',
+      'policy_bullet_ghost':
+          'Ghost Chat: phone to phone, never stored. One tap wipes both phones.',
+      'policy_bullet_1': 'No ads, no trackers, no selling your data. Ever.',
+      'policy_bullet_2': 'Delete a chat or your account anytime.',
       'policy_read_full': 'Read the full policy',
       'policy_accept': 'I Agree',
       'policy_decline_signout': 'Decline & Sign Out',
@@ -706,6 +754,57 @@ class AppTranslations {
       'account_switch_body':
           '{account} হিসেবে ঢুকলে আগের অ্যাকাউন্টের বার্তা, ব্যক্তিগত মিডিয়া ও মেসেজ কী এই ফোন থেকে স্থায়ীভাবে মুছে যাবে। AbabilXStorage-এ সেভ করা ফাইল থাকবে।',
       'account_switch_confirm': 'লোকাল ডেটা মুছে এগিয়ে যান',
+      'continue_email': 'ইমেইল দিয়ে এগিয়ে যান',
+      'email_sign_in_title': 'ইমেইল দিয়ে সাইন ইন',
+      'email_field': 'ইমেইল',
+      'password_field': 'পাসওয়ার্ড',
+      'name_field': 'আপনার নাম',
+      'new_password_field': 'নতুন পাসওয়ার্ড',
+      'password_rule': 'কমপক্ষে ৮ অক্ষর',
+      'show_password': 'পাসওয়ার্ড দেখান',
+      'hide_password': 'পাসওয়ার্ড লুকান',
+      'email_sign_in': 'সাইন ইন',
+      'forgot_password': 'পাসওয়ার্ড ভুলে গেছেন?',
+      'no_account_prompt': 'AbabilX-এ নতুন?',
+      'create_account': 'অ্যাকাউন্ট তৈরি করুন',
+      'email_sign_up_title': 'আপনার অ্যাকাউন্ট তৈরি করুন',
+      'email_sign_up_body':
+          'এটি আপনিই কি না নিশ্চিত করতে আমরা ইমেইলে ৬ সংখ্যার একটি কোড পাঠাব। এই ইমেইলে আগে থেকেই গুগল ব্যবহার করলে একই অ্যাকাউন্ট ও চ্যাট থাকবে।',
+      'email_continue': 'এগিয়ে যান',
+      'email_code_title': 'আপনার ইমেইল দেখুন',
+      'email_code_body':
+          '{email}-এ ৬ সংখ্যার একটি কোড পাঠানো হয়েছে। এটি ১৫ মিনিটে মেয়াদোত্তীর্ণ হবে।',
+      'email_code_field': '৬ সংখ্যার কোড',
+      'email_code_resend': 'আবার কোড পাঠান',
+      'email_code_resend_in': '{seconds} সেকেন্ড পরে আবার পাঠান',
+      'email_code_resent': 'নতুন কোড পাঠানো হয়েছে।',
+      'email_verify': 'যাচাই করে এগিয়ে যান',
+      'email_reset_title': 'পাসওয়ার্ড রিসেট করুন',
+      'email_reset_body':
+          'আপনার অ্যাকাউন্টের ইমেইল লিখুন। নতুন পাসওয়ার্ড সেট করতে আমরা একটি কোড পাঠাব — গুগল দিয়ে খোলা অ্যাকাউন্টেও এভাবে পাসওয়ার্ড যোগ করা যায়।',
+      'email_send_code': 'কোড পাঠান',
+      'email_reset_save': 'পাসওয়ার্ড সেভ করে সাইন ইন',
+      'email_google_hint':
+          'গুগল দিয়ে সাইন আপ করেছিলেন? একই অ্যাকাউন্টে পাসওয়ার্ড যোগ করতে “পাসওয়ার্ড ভুলে গেছেন?”-এ চাপুন।',
+      'email_invalid': 'সঠিক ইমেইল ঠিকানা লিখুন।',
+      'password_too_short': '৮ থেকে ১২৮ অক্ষর ব্যবহার করুন।',
+      'name_required': 'আপনার নাম লিখুন।',
+      'code_invalid_length': '৬ সংখ্যার কোডটি লিখুন।',
+      'email_auth_failed': 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।',
+      'email_err_invalid_credentials': 'ইমেইল বা পাসওয়ার্ড ভুল।',
+      'email_err_invalid_code': 'কোডটি ভুল বা মেয়াদোত্তীর্ণ। নতুন কোড চান।',
+      'email_err_code_cooldown':
+          'এইমাত্র একটি কোড পাঠানো হয়েছে — ইনবক্স দেখুন, অথবা এক মিনিট পরে আবার চেষ্টা করুন।',
+      'email_err_too_many_codes':
+          'আজ এই ইমেইলে অনেক বেশি কোড চাওয়া হয়েছে। পরে আবার চেষ্টা করুন।',
+      'email_err_too_many_attempts':
+          'অনেকবার ভুল পাসওয়ার্ড দেওয়া হয়েছে। কয়েক মিনিট অপেক্ষা করুন, অথবা পাসওয়ার্ড রিসেট করুন।',
+      'email_err_email_failed':
+          'ইমেইল পাঠানো যায়নি। একটু পরে আবার চেষ্টা করুন।',
+      'email_err_invalid_app_key':
+          'এই অ্যাপ ভার্সনে ইমেইল দিয়ে সাইন ইন করা যায় না। AbabilX আপডেট করে আবার চেষ্টা করুন।',
+      'email_err_app_key_unconfigured':
+          'এই মুহূর্তে ইমেইল দিয়ে সাইন ইন করা যাচ্ছে না।',
       'messages': 'বার্তা',
       'calls': 'কথা',
       'wall': 'ওয়াল',
@@ -958,19 +1057,16 @@ class AppTranslations {
       'battery_opt_still_denied':
           'এখনো সীমিত — ব্যাটারি সেটিংসে Unrestricted চালু করুন',
 
-      'policy_title': 'গোপনীয়তা ও নীতিমালা',
-      'policy_subtitle':
-          'বিশ্বমানের সুরক্ষিত মেসেজিং, যাতে আপনি ভরসা রাখতে পারেন। চালিয়ে যাওয়ার আগে একটি সংক্ষিপ্ত সারাংশ।',
+      'policy_title': 'আপনার চ্যাট থাকে একান্ত আপনার',
+      'policy_subtitle_bold': 'বিশ্বমানের',
+      'policy_subtitle': ' সুরক্ষিত মেসেজিং, যাতে আপনি ভরসা রাখতে পারেন।',
       'policy_bullet_secure':
-          'আপনার বার্তা এন্ড-টু-এন্ড এনক্রিপ্টেড — আপনার ডিভাইসে এমন একটি চাবি দিয়ে সিল করা যা শুধু আপনিই রাখেন। চাইলেও আমরা তা পড়তে পারব না।',
+          'এন্ড-টু-এন্ড এনক্রিপ্টেড। কোনো সরকার, সেনাবাহিনী বা হ্যাকার — এমনকি আমরাও — আপনার চ্যাট পড়তে পারে না। আমাদের সার্ভার দখল করলেও মিলবে শুধু তালাবন্ধ লেখা।',
+      'policy_bullet_ghost':
+          'ঘোস্ট চ্যাট: সরাসরি ফোন থেকে ফোনে, কোথাও সংরক্ষণ হয় না। এক ট্যাপে দুই ফোন থেকেই মুছে যায়।',
       'policy_bullet_1':
-          'আমরা আপনার প্রোফাইল, সংযুক্ত অ্যাকাউন্ট এবং আপনার তৈরি কন্টেন্ট (বার্তা, পোস্ট, টাস্ক) সংরক্ষণ করি।',
-      'policy_bullet_2':
-          'কোনো বিজ্ঞাপন নেই, ট্র্যাকার নেই, আপনার ডেটা কখনো বিক্রি করা হয় না।',
-      'policy_bullet_3':
-          'AI ফিচার শুধু আপনার অনুরোধ করা সারাংশ তৈরি করতে আপনার কন্টেন্ট প্রক্রিয়া করে।',
-      'policy_bullet_4':
-          'সেটিংস থেকে যেকোনো সময় ইন্টিগ্রেশন সংযোগ বিচ্ছিন্ন বা অ্যাকাউন্ট মুছে ফেলতে পারবেন।',
+          'কোনো বিজ্ঞাপন নেই, ট্র্যাকার নেই, ডেটা বিক্রি নেই। কখনো না।',
+      'policy_bullet_2': 'যেকোনো সময় চ্যাট বা অ্যাকাউন্ট মুছে ফেলুন।',
       'policy_read_full': 'সম্পূর্ণ নীতিমালা পড়ুন',
       'policy_accept': 'আমি সম্মত',
       'policy_decline_signout': 'প্রত্যাখ্যান ও প্রস্থান',

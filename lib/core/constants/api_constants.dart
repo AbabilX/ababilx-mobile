@@ -9,6 +9,11 @@ class ApiConstants {
 
   // Auth
   static const String mobileGoogleAuth = '/auth/google/mobile';
+  static const String emailSignup = '/auth/email/signup';
+  static const String emailVerify = '/auth/email/verify';
+  static const String emailLogin = '/auth/email/login';
+  static const String emailReset = '/auth/email/reset';
+  static const String emailResetConfirm = '/auth/email/reset/confirm';
   static const String authRefresh = '/auth/refresh';
   static const String qrLoginInfo = '/api/auth/qr/info';
   static const String qrLoginApprove = '/api/auth/qr/approve';

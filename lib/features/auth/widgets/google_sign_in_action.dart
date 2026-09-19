@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/localization/app_translations.dart';
-import '../data/auth_session.dart';
 import '../providers/auth_provider.dart';
+import 'account_switch_prompt.dart';
 
 class LoginGoogleAction extends StatelessWidget {
   const LoginGoogleAction({
@@ -99,41 +98,7 @@ class LoginGoogleAction extends StatelessWidget {
 }
 
 Future<void> runGoogleSignIn(BuildContext context, WidgetRef ref) async {
-  final auth = ref.read(authProvider.notifier);
-  final outcome = await auth.signInWithGoogle();
-  if (!context.mounted || outcome is! GoogleAccountSwitchRequired) return;
-
-  String t(String key) => AppTranslations.translate(context, ref, key);
-  final confirmed = await showDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      final colors = Theme.of(dialogContext).colorScheme;
-      return AlertDialog(
-        title: Text(t('account_switch_title')),
-        content: Text(
-          t(
-            'account_switch_body',
-          ).replaceAll('{account}', outcome.accountLabel),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(t('cancel')),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: colors.error),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(t('account_switch_confirm')),
-          ),
-        ],
-      );
-    },
-  );
-
-  if (confirmed == true) {
-    await auth.confirmAccountSwitch();
-  } else {
-    await auth.cancelAccountSwitch();
-  }
+  final outcome = await ref.read(authProvider.notifier).signInWithGoogle();
+  if (!context.mounted) return;
+  await settleAccountSwitch(context, ref, outcome);
 }

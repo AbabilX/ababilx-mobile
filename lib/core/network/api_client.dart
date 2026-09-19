@@ -26,7 +26,10 @@ class ApiClient {
           handler.next(options);
         },
         onError: (error, handler) async {
-          if (error.response?.statusCode != 401) {
+          // A wrong password is a 401 too, and says nothing about the stored
+          // session — refreshing on it would sign a signed-out phone "out".
+          if (error.response?.statusCode != 401 ||
+              error.requestOptions.path.startsWith('/auth/email/')) {
             handler.next(error);
             return;
           }

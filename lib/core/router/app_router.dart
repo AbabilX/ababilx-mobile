@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/ghost/screens/ghost_chat_screen.dart';
 import '../../features/ghost/screens/ghost_invite_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../features/auth/email/email_auth_routes.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/board/screens/board_screen.dart';
 import '../../features/board/screens/board_detail_screen.dart';
@@ -95,7 +96,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authProvider);
       final isLoggedIn = authState.valueOrNull ?? false;
       final isLoading = authState.isLoading;
-      final isLoginPage = state.matchedLocation == '/login';
+      // The email sign-in steps live under /login, so a signed-out user may
+      // move between them and a finished sign-in leaves all of them at once.
+      final location = state.matchedLocation;
+      final isLoginPage =
+          location == '/login' || location.startsWith('/login/');
 
       if (isLoading) {
         if (isLoginPage) return null;
@@ -117,7 +122,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(
+        path: '/login',
+        builder: (_, _) => const LoginScreen(),
+        routes: emailAuthRoutes,
+      ),
       GoRoute(
         path: '/message-recovery',
         builder: (_, _) => const MessageRecoveryScreen(),

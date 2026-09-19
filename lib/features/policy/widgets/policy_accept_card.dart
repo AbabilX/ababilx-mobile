@@ -6,6 +6,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import 'policy_subtitle.dart';
 
 class PolicyAcceptCard extends ConsumerStatefulWidget {
   const PolicyAcceptCard({super.key});
@@ -72,23 +73,13 @@ class _PolicyAcceptCardState extends ConsumerState<PolicyAcceptCard> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      AppTranslations.translate(
-                        context,
-                        ref,
-                        'policy_subtitle',
-                      ),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
+                    const PolicySubtitle(),
                     const SizedBox(height: 16),
                     for (final key in [
                       'policy_bullet_secure',
+                      'policy_bullet_ghost',
                       'policy_bullet_1',
                       'policy_bullet_2',
-                      'policy_bullet_3',
-                      'policy_bullet_4',
                     ])
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10),

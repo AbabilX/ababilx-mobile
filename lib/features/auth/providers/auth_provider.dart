@@ -30,48 +30,70 @@ class AuthNotifier extends AsyncNotifier<bool> {
     return true;
   }
 
-  Future<GoogleSignInOutcome> signInWithGoogle() async {
+  Future<SignInOutcome> signInWithGoogle() async {
     state = const AsyncLoading();
     try {
-      final repo = ref.read(authRepositoryProvider);
-      final session = await repo.prepareGoogleSignIn();
+      final session = await ref
+          .read(authRepositoryProvider)
+          .prepareGoogleSignIn();
       if (session == null) {
         state = const AsyncData(false);
-        return const GoogleSignInCancelled();
+        return const SignInCancelled();
       }
-      final storage = ref.read(secureStorageProvider);
-      final cached = await ref.read(profileRepositoryProvider).getCachedMe();
-      final storedOwner = await storage.readLocalDataOwnerUserId();
-      final hasUnownedPrivateData =
-          (storedOwner?.trim().isEmpty ?? true) &&
-          ((await storage.readMessageVaultIdentity())?.isNotEmpty ?? false);
-      final decision = decideLocalAccount(
-        newUserId: session.userId,
-        storedOwnerUserId: storedOwner,
-        cachedOwnerUserId: cached?.id,
-        hasUnownedPrivateData: hasUnownedPrivateData,
-      );
-      if (decision == LocalAccountDecision.switchAccount) {
-        _pendingSession = session;
-        state = const AsyncData(false);
-        return GoogleAccountSwitchRequired(session.accountLabel);
-      }
-      await repo.commitSession(session);
-      _pendingSession = null;
-      state = const AsyncData(true);
-      return const GoogleSignInSucceeded();
+      return await _adopt(session);
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
-      return GoogleSignInFailed(error);
+      return SignInFailed(error);
     }
   }
 
-  Future<GoogleSignInOutcome> confirmAccountSwitch() async {
+  /// Finishes a sign-in the server already accepted (email + password, or a
+  /// confirmed code). The email screens own their own errors, so a failure
+  /// here is reported through the outcome and never parks the login screen
+  /// in an error state.
+  Future<SignInOutcome> signInWithSession(PreparedAuthSession session) async {
+    state = const AsyncLoading();
+    try {
+      return await _adopt(session);
+    } catch (error) {
+      state = const AsyncData(false);
+      return SignInFailed(error);
+    }
+  }
+
+  /// Commits [session], unless this phone holds another account's private
+  /// data — then the switch waits for the user's confirmation, whichever way
+  /// they signed in.
+  Future<SignInOutcome> _adopt(PreparedAuthSession session) async {
+    final storage = ref.read(secureStorageProvider);
+    final cached = await ref.read(profileRepositoryProvider).getCachedMe();
+    final storedOwner = await storage.readLocalDataOwnerUserId();
+    final hasUnownedPrivateData =
+        (storedOwner?.trim().isEmpty ?? true) &&
+        ((await storage.readMessageVaultIdentity())?.isNotEmpty ?? false);
+    final decision = decideLocalAccount(
+      newUserId: session.userId,
+      storedOwnerUserId: storedOwner,
+      cachedOwnerUserId: cached?.id,
+      hasUnownedPrivateData: hasUnownedPrivateData,
+    );
+    if (decision == LocalAccountDecision.switchAccount) {
+      _pendingSession = session;
+      state = const AsyncData(false);
+      return AccountSwitchRequired(session.accountLabel);
+    }
+    await ref.read(authRepositoryProvider).commitSession(session);
+    _pendingSession = null;
+    state = const AsyncData(true);
+    return const SignInSucceeded();
+  }
+
+  Future<SignInOutcome> confirmAccountSwitch() async {
     final session = _pendingSession;
     if (session == null) {
       final error = StateError('No account switch is waiting');
       state = AsyncError(error, StackTrace.current);
-      return GoogleSignInFailed(error);
+      return SignInFailed(error);
     }
     state = const AsyncLoading();
     try {
@@ -80,10 +102,10 @@ class AuthNotifier extends AsyncNotifier<bool> {
       _pendingSession = null;
       ref.invalidate(archiveProvider);
       state = const AsyncData(true);
-      return const GoogleSignInSucceeded();
+      return const SignInSucceeded();
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
-      return GoogleSignInFailed(error);
+      return SignInFailed(error);
     }
   }
 

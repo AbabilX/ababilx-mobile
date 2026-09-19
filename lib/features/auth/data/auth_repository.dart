@@ -61,28 +61,8 @@ class AuthRepository {
       data: {'id_token': idToken},
     );
 
-    final body = response.data as Map<String, dynamic>;
-    if (body['success'] != true) {
-      throw Exception(body['error']?.toString() ?? 'Login failed');
-    }
-
-    final jwt =
-        body['access_token'] as String? ??
-        body['token'] as String? ??
-        body['data']?['token'] as String?;
-    if (jwt == null) throw Exception('No token in server response');
-
-    final rawUser = body['user'];
-    final user = rawUser is Map
-        ? Map<String, dynamic>.from(rawUser)
-        : <String, dynamic>{};
-    final userId = user['id']?.toString().trim() ?? '';
-    if (userId.isEmpty) throw Exception('No user id in server response');
-    return PreparedAuthSession(
-      accessToken: jwt,
-      refreshToken: body['refresh_token'] as String?,
-      userId: userId,
-      user: user,
+    return PreparedAuthSession.fromLoginBody(
+      response.data as Map<String, dynamic>,
     );
   }
 
