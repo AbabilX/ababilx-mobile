@@ -105,6 +105,7 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
         ...?existing?.messages,
       ]);
       unawaited(ref.read(attachmentIntakeProvider).onMessages(merged));
+      await warmMediaFrames(merged);
       setFeed(
         feedKey(conversationId),
         ChatFeed(
@@ -138,6 +139,7 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
       return true;
     }
     final decrypted = await decryptIfNeeded(fresh);
+    await warmMediaFrames(decrypted);
     setFeed(
       key,
       feed.copyWith(
@@ -165,6 +167,25 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
   /// Persists a network page before it becomes the canonical in-memory feed.
   Future<void> persistFeed(List<ChatMessage> messages) =>
       messageStore.saveAll(messages);
+
+  /// A network page on its way into the feed: persisted, and its photo and
+  /// video sizes loaded so its rows mount at their final height.
+  Future<void> stageFeedPage(List<ChatMessage> messages) async {
+    await persistFeed(messages);
+    await warmMediaFrames(messages);
+  }
+
+  /// Recorded media sizes for [messages], into the attachment memory, before
+  /// a row mounts — see `MediaFrameLock`. Bounded: a slow disk only costs the
+  /// default frame, never a late feed.
+  Future<void> warmMediaFrames(List<ChatMessage> messages) async {
+    try {
+      await ref
+          .read(attachmentDimensionReaderProvider)
+          .warm(messages.expand((m) => m.attachments))
+          .timeout(const Duration(milliseconds: 250));
+    } catch (_) {}
+  }
 
   /// Persists a single message — the WS path, where re-writing the whole feed
   /// on every reaction would be wasted work.

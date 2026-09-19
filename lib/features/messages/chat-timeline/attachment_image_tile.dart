@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../attachments/data/models/attachment_handle.dart';
 import '../../attachments/widgets/attachment_gate.dart';
 import '../data/models/chat_models.dart';
 import 'attachment_gallery.dart';
 import 'media-preview/chat_media_preview_meta.dart';
+import 'media_frame.dart';
+import 'media_frame_lock.dart';
 import 'signal_bubble_metrics.dart';
 
-class AttachmentImageTile extends StatelessWidget {
+class AttachmentImageTile extends ConsumerStatefulWidget {
   const AttachmentImageTile({
     super.key,
     required this.attachment,
@@ -49,66 +52,101 @@ class AttachmentImageTile extends StatelessWidget {
   /// bubble and the time sits on the image, not in a chrome strip.
   final bool inset;
 
-  /// Solo photo in an overlay bubble: fill [maxWidth], height follows the
-  /// file, stop at [maxHeight]. Albums keep a fixed cell.
-  bool get _fillWidth => !grid && !inset;
-
   @override
-  Widget build(BuildContext context) {
-    final solo = !grid;
-    return Padding(
-      padding: EdgeInsets.only(top: solo && inset ? 8 : 0),
-      child: AttachmentGate(
-        attachment: attachment,
-        reserveSpace: !_fillWidth,
-        height: solo ? SignalBubbleMetrics.mediaDefaultSize : maxHeight,
-        width: grid
-            ? maxWidth
-            : inset
-            ? SignalBubbleMetrics.mediaDefaultSize.clamp(minWidth, maxWidth)
-            : maxWidth,
-        shape: _shape,
-        ready: (context, handle) => _ready(context, handle),
+  ConsumerState<AttachmentImageTile> createState() =>
+      _AttachmentImageTileState();
+}
+
+class _AttachmentImageTileState extends ConsumerState<AttachmentImageTile>
+    with MediaFrameLock {
+  @override
+  ChatMessageAttachment get framedAttachment => widget.attachment;
+
+  /// The box this picture occupies through lookup, download and decode alike.
+  /// A solo photo in an overlay bubble fills [AttachmentImageTile.maxWidth]
+  /// and takes its height from the file's shape; albums and captioned tiles
+  /// keep a fixed frame and crop into it.
+  Size get _box {
+    final w = widget;
+    if (w.grid) return Size(w.maxWidth, w.maxHeight);
+    if (w.inset) {
+      const side = SignalBubbleMetrics.mediaDefaultSize;
+      return Size(side.clamp(w.minWidth, w.maxWidth), side);
+    }
+    return Size(
+      w.maxWidth,
+      soloMediaHeight(
+        lockedDimensions,
+        width: w.maxWidth,
+        maxHeight: w.maxHeight,
       ),
     );
   }
 
   BorderRadius get _shape =>
-      radius ?? (inset ? BorderRadius.circular(8) : BorderRadius.zero);
+      widget.radius ??
+      (widget.inset ? BorderRadius.circular(8) : BorderRadius.zero);
 
-  Widget _ready(BuildContext context, AttachmentHandle handle) {
+  @override
+  Widget build(BuildContext context) {
+    final box = _box;
+    return Padding(
+      padding: EdgeInsets.only(top: !widget.grid && widget.inset ? 8 : 0),
+      child: AttachmentGate(
+        attachment: widget.attachment,
+        reserveSpace: true,
+        height: box.height,
+        width: box.width,
+        shape: _shape,
+        ready: (context, handle) => _ready(context, handle, box),
+      ),
+    );
+  }
+
+  Widget _ready(BuildContext context, AttachmentHandle handle, Size box) {
+    final colors = Theme.of(context).colorScheme;
     final photo = ClipRRect(
       borderRadius: _shape,
-      child: _fillWidth
-          ? _sizedPhoto(context, handle)
-          : _framedPhoto(context, handle),
+      // The placeholder's own fill stays under the picture, so the first
+      // decode fades in over the same colour the tile was already showing.
+      child: ColoredBox(
+        color: colors.surfaceContainerHighest,
+        child: Image(
+          image: displaySizedImage(
+            FileImage(handle.file!),
+            box: box,
+            size: handle.dimensions ?? lockedDimensions,
+            devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+          ),
+          width: box.width,
+          height: box.height,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          frameBuilder: fadeInImageFrame,
+          errorBuilder: (_, _, _) => _broken(context),
+        ),
+      ),
     );
     return Stack(
-      fit: _fillWidth ? StackFit.loose : StackFit.expand,
+      fit: StackFit.expand,
       children: [
         Material(
           color: Colors.transparent,
-          child: InkWell(
-            onTap: () => _open(context),
-            borderRadius: _shape,
-            child: photo,
-          ),
+          child: InkWell(onTap: _open, borderRadius: _shape, child: photo),
         ),
-        if (overlayText != null)
+        if (widget.overlayText != null)
           Positioned.fill(
             child: Material(
-              color: Theme.of(
-                context,
-              ).colorScheme.inverseSurface.withValues(alpha: .82),
+              color: colors.inverseSurface.withValues(alpha: .82),
               borderRadius: _shape,
               child: InkWell(
-                onTap: () => _open(context),
+                onTap: _open,
                 borderRadius: _shape,
                 child: Center(
                   child: Text(
-                    overlayText!,
+                    widget.overlayText!,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onInverseSurface,
+                      color: colors.onInverseSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -120,43 +158,11 @@ class AttachmentImageTile extends StatelessWidget {
     );
   }
 
-  /// Decode-driven height. Width is tight at [maxWidth]; [maxHeight] only
-  /// clips a tall file, it is not a size to fill.
-  Widget _sizedPhoto(BuildContext context, AttachmentHandle handle) {
-    return SizedBox(
-      width: maxWidth,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight: SignalBubbleMetrics.mediaMinHeight,
-          maxHeight: maxHeight,
-        ),
-        child: Image.file(
-          handle.file!,
-          width: maxWidth,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _broken(context),
-        ),
-      ),
-    );
-  }
-
-  /// Albums and captioned tiles: the model has no dimensions, so keep the
-  /// fallback frame stable after decode. The gallery still shows the original.
-  Widget _framedPhoto(BuildContext context, AttachmentHandle handle) {
-    return Image.file(
-      handle.file!,
-      width: double.infinity,
-      height: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => _broken(context),
-    );
-  }
-
-  Future<void> _open(BuildContext context) => showChatAttachmentGallery(
+  Future<void> _open() => showChatAttachmentGallery(
     context,
-    images: gallery,
-    index: index,
-    preview: preview,
+    images: widget.gallery,
+    index: widget.index,
+    preview: widget.preview,
   );
 
   Widget _broken(BuildContext context) => Container(

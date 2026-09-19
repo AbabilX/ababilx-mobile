@@ -1562,6 +1562,28 @@ class $AttachmentBlobsTable extends AttachmentBlobs
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _mediaWidthMeta = const VerificationMeta(
+    'mediaWidth',
+  );
+  @override
+  late final GeneratedColumn<int> mediaWidth = GeneratedColumn<int>(
+    'media_width',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mediaHeightMeta = const VerificationMeta(
+    'mediaHeight',
+  );
+  @override
+  late final GeneratedColumn<int> mediaHeight = GeneratedColumn<int>(
+    'media_height',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _cipherAlgoMeta = const VerificationMeta(
     'cipherAlgo',
   );
@@ -1613,6 +1635,8 @@ class $AttachmentBlobsTable extends AttachmentBlobs
     exportedAtMs,
     exportedPath,
     contentHash,
+    mediaWidth,
+    mediaHeight,
     cipherAlgo,
     cipherKeyRef,
     plainBytes,
@@ -1750,6 +1774,21 @@ class $AttachmentBlobsTable extends AttachmentBlobs
         ),
       );
     }
+    if (data.containsKey('media_width')) {
+      context.handle(
+        _mediaWidthMeta,
+        mediaWidth.isAcceptableOrUnknown(data['media_width']!, _mediaWidthMeta),
+      );
+    }
+    if (data.containsKey('media_height')) {
+      context.handle(
+        _mediaHeightMeta,
+        mediaHeight.isAcceptableOrUnknown(
+          data['media_height']!,
+          _mediaHeightMeta,
+        ),
+      );
+    }
     if (data.containsKey('cipher_algo')) {
       context.handle(
         _cipherAlgoMeta,
@@ -1840,6 +1879,14 @@ class $AttachmentBlobsTable extends AttachmentBlobs
         DriftSqlType.string,
         data['${effectivePrefix}content_hash'],
       ),
+      mediaWidth: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}media_width'],
+      ),
+      mediaHeight: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}media_height'],
+      ),
       cipherAlgo: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}cipher_algo'],
@@ -1899,6 +1946,15 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
   /// (sent by two people, or re-uploaded) costs one copy on disk, not two.
   final String? contentHash;
 
+  /// Drawn size of the picture, or of a video's poster frame (V8), measured
+  /// once from the local file. The server sends no dimensions, and without
+  /// them a timeline tile only learns its height by decoding — which changed
+  /// the row's height after it was laid out and shoved every row above it.
+  /// Deliberately NOT cleared by [AttachmentTransferState.absent]: an evicted
+  /// photo keeps its shape while it downloads again.
+  final int? mediaWidth;
+  final int? mediaHeight;
+
   /// Cipher used for the bytes on the wire, '' when stored in the clear.
   final String cipherAlgo;
 
@@ -1923,6 +1979,8 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
     this.exportedAtMs,
     this.exportedPath,
     this.contentHash,
+    this.mediaWidth,
+    this.mediaHeight,
     required this.cipherAlgo,
     this.cipherKeyRef,
     this.plainBytes,
@@ -1954,6 +2012,12 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
     }
     if (!nullToAbsent || contentHash != null) {
       map['content_hash'] = Variable<String>(contentHash);
+    }
+    if (!nullToAbsent || mediaWidth != null) {
+      map['media_width'] = Variable<int>(mediaWidth);
+    }
+    if (!nullToAbsent || mediaHeight != null) {
+      map['media_height'] = Variable<int>(mediaHeight);
     }
     map['cipher_algo'] = Variable<String>(cipherAlgo);
     if (!nullToAbsent || cipherKeyRef != null) {
@@ -1992,6 +2056,12 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
       contentHash: contentHash == null && nullToAbsent
           ? const Value.absent()
           : Value(contentHash),
+      mediaWidth: mediaWidth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mediaWidth),
+      mediaHeight: mediaHeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mediaHeight),
       cipherAlgo: Value(cipherAlgo),
       cipherKeyRef: cipherKeyRef == null && nullToAbsent
           ? const Value.absent()
@@ -2023,6 +2093,8 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
       exportedAtMs: serializer.fromJson<int?>(json['exportedAtMs']),
       exportedPath: serializer.fromJson<String?>(json['exportedPath']),
       contentHash: serializer.fromJson<String?>(json['contentHash']),
+      mediaWidth: serializer.fromJson<int?>(json['mediaWidth']),
+      mediaHeight: serializer.fromJson<int?>(json['mediaHeight']),
       cipherAlgo: serializer.fromJson<String>(json['cipherAlgo']),
       cipherKeyRef: serializer.fromJson<String?>(json['cipherKeyRef']),
       plainBytes: serializer.fromJson<int?>(json['plainBytes']),
@@ -2047,6 +2119,8 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
       'exportedAtMs': serializer.toJson<int?>(exportedAtMs),
       'exportedPath': serializer.toJson<String?>(exportedPath),
       'contentHash': serializer.toJson<String?>(contentHash),
+      'mediaWidth': serializer.toJson<int?>(mediaWidth),
+      'mediaHeight': serializer.toJson<int?>(mediaHeight),
       'cipherAlgo': serializer.toJson<String>(cipherAlgo),
       'cipherKeyRef': serializer.toJson<String?>(cipherKeyRef),
       'plainBytes': serializer.toJson<int?>(plainBytes),
@@ -2069,6 +2143,8 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
     Value<int?> exportedAtMs = const Value.absent(),
     Value<String?> exportedPath = const Value.absent(),
     Value<String?> contentHash = const Value.absent(),
+    Value<int?> mediaWidth = const Value.absent(),
+    Value<int?> mediaHeight = const Value.absent(),
     String? cipherAlgo,
     Value<String?> cipherKeyRef = const Value.absent(),
     Value<int?> plainBytes = const Value.absent(),
@@ -2090,6 +2166,8 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
     exportedAtMs: exportedAtMs.present ? exportedAtMs.value : this.exportedAtMs,
     exportedPath: exportedPath.present ? exportedPath.value : this.exportedPath,
     contentHash: contentHash.present ? contentHash.value : this.contentHash,
+    mediaWidth: mediaWidth.present ? mediaWidth.value : this.mediaWidth,
+    mediaHeight: mediaHeight.present ? mediaHeight.value : this.mediaHeight,
     cipherAlgo: cipherAlgo ?? this.cipherAlgo,
     cipherKeyRef: cipherKeyRef.present ? cipherKeyRef.value : this.cipherKeyRef,
     plainBytes: plainBytes.present ? plainBytes.value : this.plainBytes,
@@ -2129,6 +2207,12 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
       contentHash: data.contentHash.present
           ? data.contentHash.value
           : this.contentHash,
+      mediaWidth: data.mediaWidth.present
+          ? data.mediaWidth.value
+          : this.mediaWidth,
+      mediaHeight: data.mediaHeight.present
+          ? data.mediaHeight.value
+          : this.mediaHeight,
       cipherAlgo: data.cipherAlgo.present
           ? data.cipherAlgo.value
           : this.cipherAlgo,
@@ -2159,6 +2243,8 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
           ..write('exportedAtMs: $exportedAtMs, ')
           ..write('exportedPath: $exportedPath, ')
           ..write('contentHash: $contentHash, ')
+          ..write('mediaWidth: $mediaWidth, ')
+          ..write('mediaHeight: $mediaHeight, ')
           ..write('cipherAlgo: $cipherAlgo, ')
           ..write('cipherKeyRef: $cipherKeyRef, ')
           ..write('plainBytes: $plainBytes')
@@ -2183,6 +2269,8 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
     exportedAtMs,
     exportedPath,
     contentHash,
+    mediaWidth,
+    mediaHeight,
     cipherAlgo,
     cipherKeyRef,
     plainBytes,
@@ -2206,6 +2294,8 @@ class AttachmentBlob extends DataClass implements Insertable<AttachmentBlob> {
           other.exportedAtMs == this.exportedAtMs &&
           other.exportedPath == this.exportedPath &&
           other.contentHash == this.contentHash &&
+          other.mediaWidth == this.mediaWidth &&
+          other.mediaHeight == this.mediaHeight &&
           other.cipherAlgo == this.cipherAlgo &&
           other.cipherKeyRef == this.cipherKeyRef &&
           other.plainBytes == this.plainBytes);
@@ -2227,6 +2317,8 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
   final Value<int?> exportedAtMs;
   final Value<String?> exportedPath;
   final Value<String?> contentHash;
+  final Value<int?> mediaWidth;
+  final Value<int?> mediaHeight;
   final Value<String> cipherAlgo;
   final Value<String?> cipherKeyRef;
   final Value<int?> plainBytes;
@@ -2247,6 +2339,8 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
     this.exportedAtMs = const Value.absent(),
     this.exportedPath = const Value.absent(),
     this.contentHash = const Value.absent(),
+    this.mediaWidth = const Value.absent(),
+    this.mediaHeight = const Value.absent(),
     this.cipherAlgo = const Value.absent(),
     this.cipherKeyRef = const Value.absent(),
     this.plainBytes = const Value.absent(),
@@ -2268,6 +2362,8 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
     this.exportedAtMs = const Value.absent(),
     this.exportedPath = const Value.absent(),
     this.contentHash = const Value.absent(),
+    this.mediaWidth = const Value.absent(),
+    this.mediaHeight = const Value.absent(),
     this.cipherAlgo = const Value.absent(),
     this.cipherKeyRef = const Value.absent(),
     this.plainBytes = const Value.absent(),
@@ -2290,6 +2386,8 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
     Expression<int>? exportedAtMs,
     Expression<String>? exportedPath,
     Expression<String>? contentHash,
+    Expression<int>? mediaWidth,
+    Expression<int>? mediaHeight,
     Expression<String>? cipherAlgo,
     Expression<String>? cipherKeyRef,
     Expression<int>? plainBytes,
@@ -2311,6 +2409,8 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
       if (exportedAtMs != null) 'exported_at_ms': exportedAtMs,
       if (exportedPath != null) 'exported_path': exportedPath,
       if (contentHash != null) 'content_hash': contentHash,
+      if (mediaWidth != null) 'media_width': mediaWidth,
+      if (mediaHeight != null) 'media_height': mediaHeight,
       if (cipherAlgo != null) 'cipher_algo': cipherAlgo,
       if (cipherKeyRef != null) 'cipher_key_ref': cipherKeyRef,
       if (plainBytes != null) 'plain_bytes': plainBytes,
@@ -2334,6 +2434,8 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
     Value<int?>? exportedAtMs,
     Value<String?>? exportedPath,
     Value<String?>? contentHash,
+    Value<int?>? mediaWidth,
+    Value<int?>? mediaHeight,
     Value<String>? cipherAlgo,
     Value<String?>? cipherKeyRef,
     Value<int?>? plainBytes,
@@ -2355,6 +2457,8 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
       exportedAtMs: exportedAtMs ?? this.exportedAtMs,
       exportedPath: exportedPath ?? this.exportedPath,
       contentHash: contentHash ?? this.contentHash,
+      mediaWidth: mediaWidth ?? this.mediaWidth,
+      mediaHeight: mediaHeight ?? this.mediaHeight,
       cipherAlgo: cipherAlgo ?? this.cipherAlgo,
       cipherKeyRef: cipherKeyRef ?? this.cipherKeyRef,
       plainBytes: plainBytes ?? this.plainBytes,
@@ -2410,6 +2514,12 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
     if (contentHash.present) {
       map['content_hash'] = Variable<String>(contentHash.value);
     }
+    if (mediaWidth.present) {
+      map['media_width'] = Variable<int>(mediaWidth.value);
+    }
+    if (mediaHeight.present) {
+      map['media_height'] = Variable<int>(mediaHeight.value);
+    }
     if (cipherAlgo.present) {
       map['cipher_algo'] = Variable<String>(cipherAlgo.value);
     }
@@ -2443,6 +2553,8 @@ class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlob> {
           ..write('exportedAtMs: $exportedAtMs, ')
           ..write('exportedPath: $exportedPath, ')
           ..write('contentHash: $contentHash, ')
+          ..write('mediaWidth: $mediaWidth, ')
+          ..write('mediaHeight: $mediaHeight, ')
           ..write('cipherAlgo: $cipherAlgo, ')
           ..write('cipherKeyRef: $cipherKeyRef, ')
           ..write('plainBytes: $plainBytes, ')
@@ -3317,7 +3429,16 @@ class $$CachedSidebarsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$CachedSidebarsTable, CachedSidebar>(table),
+                  BaseReferences<
+                    _$ChatLocalDb,
+                    $CachedSidebarsTable,
+                    CachedSidebar
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -3548,7 +3669,16 @@ class $$CachedMessagesTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$CachedMessagesTable, CachedMessage>(table),
+                  BaseReferences<
+                    _$ChatLocalDb,
+                    $CachedMessagesTable,
+                    CachedMessage
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -3872,7 +4002,19 @@ class $$PendingOutboxMessagesTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<
+                    $PendingOutboxMessagesTable,
+                    PendingOutboxMessage
+                  >(table),
+                  BaseReferences<
+                    _$ChatLocalDb,
+                    $PendingOutboxMessagesTable,
+                    PendingOutboxMessage
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -3917,6 +4059,8 @@ typedef $$AttachmentBlobsTableCreateCompanionBuilder =
       Value<int?> exportedAtMs,
       Value<String?> exportedPath,
       Value<String?> contentHash,
+      Value<int?> mediaWidth,
+      Value<int?> mediaHeight,
       Value<String> cipherAlgo,
       Value<String?> cipherKeyRef,
       Value<int?> plainBytes,
@@ -3939,6 +4083,8 @@ typedef $$AttachmentBlobsTableUpdateCompanionBuilder =
       Value<int?> exportedAtMs,
       Value<String?> exportedPath,
       Value<String?> contentHash,
+      Value<int?> mediaWidth,
+      Value<int?> mediaHeight,
       Value<String> cipherAlgo,
       Value<String?> cipherKeyRef,
       Value<int?> plainBytes,
@@ -4026,6 +4172,16 @@ class $$AttachmentBlobsTableFilterComposer
 
   ColumnFilters<String> get contentHash => $composableBuilder(
     column: $table.contentHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mediaWidth => $composableBuilder(
+    column: $table.mediaWidth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mediaHeight => $composableBuilder(
+    column: $table.mediaHeight,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4129,6 +4285,16 @@ class $$AttachmentBlobsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get mediaWidth => $composableBuilder(
+    column: $table.mediaWidth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mediaHeight => $composableBuilder(
+    column: $table.mediaHeight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get cipherAlgo => $composableBuilder(
     column: $table.cipherAlgo,
     builder: (column) => ColumnOrderings(column),
@@ -4217,6 +4383,16 @@ class $$AttachmentBlobsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get mediaWidth => $composableBuilder(
+    column: $table.mediaWidth,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get mediaHeight => $composableBuilder(
+    column: $table.mediaHeight,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get cipherAlgo => $composableBuilder(
     column: $table.cipherAlgo,
     builder: (column) => column,
@@ -4285,6 +4461,8 @@ class $$AttachmentBlobsTableTableManager
                 Value<int?> exportedAtMs = const Value.absent(),
                 Value<String?> exportedPath = const Value.absent(),
                 Value<String?> contentHash = const Value.absent(),
+                Value<int?> mediaWidth = const Value.absent(),
+                Value<int?> mediaHeight = const Value.absent(),
                 Value<String> cipherAlgo = const Value.absent(),
                 Value<String?> cipherKeyRef = const Value.absent(),
                 Value<int?> plainBytes = const Value.absent(),
@@ -4305,6 +4483,8 @@ class $$AttachmentBlobsTableTableManager
                 exportedAtMs: exportedAtMs,
                 exportedPath: exportedPath,
                 contentHash: contentHash,
+                mediaWidth: mediaWidth,
+                mediaHeight: mediaHeight,
                 cipherAlgo: cipherAlgo,
                 cipherKeyRef: cipherKeyRef,
                 plainBytes: plainBytes,
@@ -4327,6 +4507,8 @@ class $$AttachmentBlobsTableTableManager
                 Value<int?> exportedAtMs = const Value.absent(),
                 Value<String?> exportedPath = const Value.absent(),
                 Value<String?> contentHash = const Value.absent(),
+                Value<int?> mediaWidth = const Value.absent(),
+                Value<int?> mediaHeight = const Value.absent(),
                 Value<String> cipherAlgo = const Value.absent(),
                 Value<String?> cipherKeyRef = const Value.absent(),
                 Value<int?> plainBytes = const Value.absent(),
@@ -4347,13 +4529,24 @@ class $$AttachmentBlobsTableTableManager
                 exportedAtMs: exportedAtMs,
                 exportedPath: exportedPath,
                 contentHash: contentHash,
+                mediaWidth: mediaWidth,
+                mediaHeight: mediaHeight,
                 cipherAlgo: cipherAlgo,
                 cipherKeyRef: cipherKeyRef,
                 plainBytes: plainBytes,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$AttachmentBlobsTable, AttachmentBlob>(table),
+                  BaseReferences<
+                    _$ChatLocalDb,
+                    $AttachmentBlobsTable,
+                    AttachmentBlob
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -4540,7 +4733,16 @@ class $$AttachmentRefsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$AttachmentRefsTable, AttachmentRef>(table),
+                  BaseReferences<
+                    _$ChatLocalDb,
+                    $AttachmentRefsTable,
+                    AttachmentRef
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -4744,7 +4946,19 @@ class $$CachedConversationKeysTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<
+                    $CachedConversationKeysTable,
+                    CachedConversationKey
+                  >(table),
+                  BaseReferences<
+                    _$ChatLocalDb,
+                    $CachedConversationKeysTable,
+                    CachedConversationKey
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),

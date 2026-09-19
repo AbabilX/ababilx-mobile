@@ -37,7 +37,15 @@ class VideoThumbnails {
   /// pointing at the same file share one decode instead of racing.
   static final Map<String, Future<VideoThumb?>> _inFlight = {};
 
+  /// Finished frames, readable while a widget builds. A `FutureBuilder`
+  /// always paints one "waiting" frame even for a future that completed long
+  /// ago, which drew a bubble that scrolled back into view as a spinner first.
+  static final Map<String, VideoThumb> _ready = {};
+
   static bool get supported => Platform.isAndroid;
+
+  /// The frame for [path] if this session has already extracted it.
+  static VideoThumb? peek(String path) => _ready[path];
 
   static Future<VideoThumb?> forFile(String path, {int maxPx = 512}) {
     if (!supported || path.isEmpty) return Future.value(null);
@@ -52,7 +60,7 @@ class VideoThumbnails {
       });
       final file = raw?['path'] as String?;
       if (file == null || file.isEmpty) return null;
-      return VideoThumb(
+      return _ready[path] = VideoThumb(
         path: file,
         width: (raw?['width'] as num?)?.toInt() ?? 0,
         height: (raw?['height'] as num?)?.toInt() ?? 0,

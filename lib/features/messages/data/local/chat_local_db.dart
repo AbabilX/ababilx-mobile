@@ -27,7 +27,7 @@ class ChatLocalDb extends _$ChatLocalDb {
   ChatLocalDb.forTesting(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -88,6 +88,13 @@ class ChatLocalDb extends _$ChatLocalDb {
       // with a connection, and offline reading works from then on.
       if (from < 7) {
         await m.createTable(cachedConversationKeys);
+      }
+      // V7 → V8: measured media size on the blob row. Additive — a row simply
+      // has no size until its file is next resolved. Same guard as V6: a
+      // device below V5 already got both columns from `createTable` above.
+      if (from < 8 && from >= 5) {
+        await m.addColumn(attachmentBlobs, attachmentBlobs.mediaWidth);
+        await m.addColumn(attachmentBlobs, attachmentBlobs.mediaHeight);
       }
     },
   );

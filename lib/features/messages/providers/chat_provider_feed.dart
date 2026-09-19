@@ -91,7 +91,7 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       // against the latest state, not the stale snapshot from request start.
       final latest = state.feeds[key] ?? existing;
       final merged = canonicalChatMessages([...latest.messages, ...sorted]);
-      await (this as _ChatCacheMixin).persistFeed(sorted);
+      await (this as _ChatCacheMixin).stageFeedPage(sorted);
       // A server page running out does NOT mean the conversation has no more
       // history. A webhook feed is trimmed to its newest few messages and the
       // device holds the archive; ask the local store before closing the
@@ -203,7 +203,7 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       }
       final latest = state.feeds[key] ?? feed;
       final merged = canonicalChatMessages([...latest.messages, ...sorted]);
-      await (this as _ChatCacheMixin).persistFeed(sorted);
+      await (this as _ChatCacheMixin).stageFeedPage(sorted);
       setFeed(
         key,
         latest.copyWith(

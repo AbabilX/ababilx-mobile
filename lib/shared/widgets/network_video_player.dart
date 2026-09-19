@@ -79,16 +79,20 @@ class _NetworkVideoPlayerState extends State<NetworkVideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
+    final path = widget.source.isLocal ? widget.source.path : null;
     return FutureBuilder<VideoThumb?>(
       future: _thumb,
+      // A frame already extracted this session paints on the first frame
+      // instead of after one "waiting" frame of spinner.
+      initialData: path == null ? null : VideoThumbnails.peek(path),
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        final thumb = snapshot.data;
+        if (thumb == null && snapshot.connectionState != ConnectionState.done) {
           return VideoThumbPlaceholder.loading(
             height: widget.maxHeight * 0.55,
             borderRadius: widget.borderRadius,
           );
         }
-        final thumb = snapshot.data;
         if (thumb == null) {
           return LiveVideoPoster(
             source: widget.source,

@@ -7,6 +7,7 @@ import '../data/models/attachment_handle.dart';
 import '../data/models/attachment_url_key.dart';
 import 'attachment_content_dedupe.dart';
 import 'attachment_content_hash.dart';
+import 'attachment_dimension_reader.dart';
 import 'attachment_paths.dart';
 import 'attachment_queue.dart';
 
@@ -22,12 +23,19 @@ import 'attachment_queue.dart';
 /// `DONE` before the message row is ever inserted. Nothing outgoing is ever
 /// downloaded.
 class AttachmentAdopter {
-  AttachmentAdopter(this._blobs, this._dedupe, this._paths, this._queue);
+  AttachmentAdopter(
+    this._blobs,
+    this._dedupe,
+    this._paths,
+    this._queue, {
+    this._dimensions,
+  });
 
   final AttachmentBlobStore _blobs;
   final AttachmentDedupeStore _dedupe;
   final AttachmentPaths _paths;
   final AttachmentQueue _queue;
+  final AttachmentDimensionReader? _dimensions;
 
   /// A file the picker gave us a real path to (gallery item, camera capture).
   Future<void> adoptFile({
@@ -104,19 +112,19 @@ class AttachmentAdopter {
         } catch (_) {}
       }
 
-      // Any gate already on screen for this object flips without a re-resolve.
-      _queue.announce(
-        AttachmentHandle(
-          urlKey: urlKey,
-          remoteUrl: fileUrl,
-          state: AttachmentTransferState.ready,
-          fileName: fileName,
-          contentType: contentType,
-          localPath: resolution.path,
-          receivedBytes: bytes,
-          totalBytes: bytes,
-        ),
+      // Any gate already on screen for this object flips without a re-resolve,
+      // and the confirmed bubble mounts at the photo's real height.
+      final ready = AttachmentHandle(
+        urlKey: urlKey,
+        remoteUrl: fileUrl,
+        state: AttachmentTransferState.ready,
+        fileName: fileName,
+        contentType: contentType,
+        localPath: resolution.path,
+        receivedBytes: bytes,
+        totalBytes: bytes,
       );
+      _queue.announce(await _dimensions?.complete(ready) ?? ready);
     } catch (_) {
       // Adoption is an optimisation. A failure here costs one download later,
       // never the send.

@@ -61,13 +61,20 @@ class MessageRowContent extends ConsumerWidget {
         : ref
               .watch(contactNicknamesProvider)
               .resolve(userId: message.userId, name: message.userName);
-    final chat = ref.watch(chatProvider);
-    final replies = chat.threadRepliesByRoot[message.id];
+    final replies = ref.watch(
+      chatProvider.select((c) => c.threadRepliesByRoot[message.id]),
+    );
     // A feed's picture belongs to the feed, not to one of its messages. The
     // URL joined onto a message is whatever the hook wore when that message
     // was fetched, so a photo set today would never reach the ones already in
     // the local store — and a photo removed today would go on showing on them.
-    final feed = webhook ? chat.conversationById(message.conversationId) : null;
+    final feed = webhook
+        ? ref.watch(
+            chatProvider.select(
+              (c) => c.conversationById(message.conversationId),
+            ),
+          )
+        : null;
     final avatarUrl = feed != null ? feed.avatarUrl : message.userAvatarUrl;
     final colors = SignalBubbleColors.of(scheme, hasWallpaper: hasWallpaper);
     // A name over an incoming bubble in a group, an avatar under the last one.

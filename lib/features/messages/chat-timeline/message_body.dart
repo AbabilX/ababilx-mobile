@@ -106,18 +106,20 @@ class MessageBody extends ConsumerWidget {
         preview: preview,
       );
       final overlay = mediaFooter;
-      media = overlay == null
-          ? tiles
-          : Stack(
-              children: [
-                tiles,
-                Positioned(
-                  right: 8,
-                  bottom: 6,
-                  child: IgnorePointer(child: overlay),
-                ),
-              ],
-            );
+      // Always the Stack, footer or not. The footer comes and goes as the
+      // message joins or leaves a run; swapping the tree shape with it would
+      // remount the tiles, and a remounted tile re-picks its frame.
+      media = Stack(
+        children: [
+          tiles,
+          if (overlay != null)
+            Positioned(
+              right: 8,
+              bottom: 6,
+              child: IgnorePointer(child: overlay),
+            ),
+        ],
+      );
     }
 
     return Column(

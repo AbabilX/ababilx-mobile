@@ -10,6 +10,7 @@ import '../providers/chat_provider.dart';
 import '../wallpaper/chat_wallpaper_provider.dart';
 import 'message_actions.dart';
 import 'message_row_content.dart';
+import 'message_row_pulse.dart';
 import 'message_swipe_reply.dart';
 import 'signal_menu_pointer.dart';
 import 'thread_sheet.dart';
@@ -35,29 +36,16 @@ class MessageRow extends ConsumerStatefulWidget {
 }
 
 class _MessageRowState extends ConsumerState<MessageRow>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulseCtrl;
-  late final Animation<double> _pulseAnim;
+    with SingleTickerProviderStateMixin, MessageRowPulse {
   final _messageKey = GlobalKey();
   bool _actionsOpen = false;
   SignalMenuPointer? _pointer;
 
   @override
-  void initState() {
-    super.initState();
-    _pulseCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(
-      begin: 0.3,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
-  }
+  ChatMessage get pulsedMessage => widget.message;
 
   @override
   void dispose() {
-    _pulseCtrl.dispose();
     _pointer?.dispose();
     super.dispose();
   }
@@ -109,16 +97,22 @@ class _MessageRowState extends ConsumerState<MessageRow>
   }
 
   Widget _content({required bool focused}) {
-    final chat = ref.watch(chatProvider);
-    final conversation = chat.conversationById(widget.conversationId);
+    final userId = ref.watch(chatProvider.select((c) => c.currentUserId));
+    final isGroup = ref.watch(
+      chatProvider.select(
+        (c) =>
+            c.conversationById(widget.conversationId)?.isGroupConversation ??
+            false,
+      ),
+    );
     final hasWallpaper = ref
         .watch(chatWallpaperProvider)
         .forChat(widget.conversationId)
         .isSet;
-    final isOwnMessage = widget.message.userId == chat.currentUserId;
+    final isOwnMessage = widget.message.userId == userId;
     return MessageRowContent(
       message: widget.message,
-      pulse: _pulseAnim,
+      pulse: pulse,
       isSending:
           isOwnMessage &&
           (widget.message.sendStatus == MessageSendStatus.sending ||
@@ -127,7 +121,7 @@ class _MessageRowState extends ConsumerState<MessageRow>
           isOwnMessage && widget.message.sendStatus == MessageSendStatus.failed,
       isOwnMessage: isOwnMessage,
       clusterPosition: widget.clusterPosition,
-      isGroup: conversation?.isGroupConversation ?? false,
+      isGroup: isGroup,
       hasWallpaper: hasWallpaper,
       onOpenThread: focused ? null : widget.onOpenThread,
     );
@@ -135,8 +129,8 @@ class _MessageRowState extends ConsumerState<MessageRow>
 
   @override
   Widget build(BuildContext context) {
-    final chat = ref.watch(chatProvider);
-    final isOwnMessage = widget.message.userId == chat.currentUserId;
+    final userId = ref.watch(chatProvider.select((c) => c.currentUserId));
+    final isOwnMessage = widget.message.userId == userId;
     final isSending =
         isOwnMessage &&
         (widget.message.sendStatus == MessageSendStatus.sending ||

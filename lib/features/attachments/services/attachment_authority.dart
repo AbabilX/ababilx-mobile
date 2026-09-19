@@ -6,6 +6,9 @@ import '../attachment_config.dart';
 import '../data/local/attachment_blob_store.dart';
 import '../data/models/attachment_handle.dart';
 import '../data/models/attachment_url_key.dart';
+import '../data/models/media_dimensions.dart';
+import 'attachment_dimension_reader.dart';
+import 'attachment_handle_memory.dart';
 import 'attachment_queue.dart';
 
 /// The one class a renderer talks to.
@@ -15,15 +18,33 @@ import 'attachment_queue.dart';
 /// No widget ever sees `fileUrl` again, which is what makes the remote source
 /// swappable (and, later, encrypted) without touching the UI.
 class AttachmentAuthority {
-  AttachmentAuthority(this._blobs, this._queue);
+  AttachmentAuthority(
+    this._blobs,
+    this._queue, {
+    AttachmentHandleMemory? memory,
+    this._dimensions,
+  }) : _memory = memory ?? AttachmentHandleMemory() {
+    // Every transfer event, watched or not: a download that finishes while its
+    // row is off screen must not leave the memory saying "downloading".
+    _mirror = _queue.events.listen(_memory.remember);
+  }
 
   final AttachmentBlobStore _blobs;
   final AttachmentQueue _queue;
+  final AttachmentHandleMemory _memory;
+  final AttachmentDimensionReader? _dimensions;
+  late final StreamSubscription<AttachmentHandle> _mirror;
   final Map<String, int> _lastTouchMs = {};
 
   /// Reads the current state. Database and a `stat` — never the network, so
   /// this is safe to call while building a widget.
   Future<AttachmentHandle> resolve(ChatMessageAttachment attachment) async {
+    final handle = await _resolve(attachment);
+    _memory.remember(handle);
+    return handle;
+  }
+
+  Future<AttachmentHandle> _resolve(ChatMessageAttachment attachment) async {
     // Retention-locked: the server sends no URL at all. Never touch the DB and
     // never issue a request for one.
     if (attachment.locked || attachment.fileUrl.isEmpty) {
@@ -44,6 +65,9 @@ class AttachmentAuthority {
     // Never seen — every message that predates this feature lands here, and is
     // simply fetched on demand.
     if (row == null) return base;
+    final sized = base.copyWith(
+      dimensions: MediaDimensions.tryCreate(row.mediaWidth, row.mediaHeight),
+    );
 
     final state = attachmentTransferStateFromIndex(row.transferState);
     final path = row.localPath ?? '';
@@ -51,12 +75,12 @@ class AttachmentAuthority {
     if (state == AttachmentTransferState.ready) {
       // The file can vanish under us: an OS cleaner, a restore onto a new
       // device, or our own eviction. Verify before promising a renderer a path.
-      if (path.isEmpty || !File(path).existsSync()) {
+      if (path.isEmpty || !await File(path).exists()) {
         await _blobs.markAbsent(urlKey);
-        return base;
+        return sized;
       }
       _touch(urlKey);
-      return base.copyWith(
+      final ready = sized.copyWith(
         state: AttachmentTransferState.ready,
         localPath: path,
         receivedBytes: row.receivedBytes,
@@ -64,6 +88,8 @@ class AttachmentAuthority {
             ? row.expectedBytes
             : row.receivedBytes,
       );
+      // Downloaded before sizes were recorded: measured once, here.
+      return await _dimensions?.complete(ready) ?? ready;
     }
 
     // A row still marked in-flight but with no live job means the process died
@@ -71,7 +97,7 @@ class AttachmentAuthority {
     if ((state == AttachmentTransferState.downloading ||
             state == AttachmentTransferState.queued) &&
         !_queue.isRunning(urlKey)) {
-      return base.copyWith(
+      return sized.copyWith(
         state: AttachmentTransferState.failed,
         receivedBytes: row.receivedBytes,
         totalBytes: row.expectedBytes,
@@ -79,7 +105,7 @@ class AttachmentAuthority {
       );
     }
 
-    return base.copyWith(
+    return sized.copyWith(
       state: state,
       receivedBytes: row.receivedBytes,
       totalBytes: row.expectedBytes > 0
@@ -143,5 +169,8 @@ class AttachmentAuthority {
     _blobs.touch(urlKey).ignore();
   }
 
-  void dispose() => _lastTouchMs.clear();
+  void dispose() {
+    _mirror.cancel();
+    _lastTouchMs.clear();
+  }
 }

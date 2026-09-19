@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../chat-date-divider/index.dart';
@@ -62,9 +63,19 @@ class MessageList extends ConsumerWidget {
     final idIndex = <String, int>{
       for (var i = 0; i < messages.length; i++) messages[i].id: i,
     };
+    final rows = timelineRowKeys(items);
+    final hasWallpaper = ref
+        .watch(chatWallpaperProvider)
+        .forChat(conversationId)
+        .isSet;
     return ListView.builder(
       controller: scrollController,
       reverse: true,
+      // Rows are built a screen ahead of the scroll, so a photo has decoded
+      // before it is on screen rather than fading in as it arrives.
+      scrollCacheExtent: const ScrollCacheExtent.viewport(1),
+      findChildIndexCallback: (key) =>
+          key is ValueKey<String> ? rows.positions[key.value] : null,
       // No horizontal padding: a selected row's shade has to reach both
       // screen edges, and the check-circle gutter has to start at the edge
       // too. Every item carries the side inset itself — for a message row it
@@ -84,15 +95,12 @@ class MessageList extends ConsumerWidget {
         final showDate =
             prevAnchor == null ||
             !isSameDay(prevAnchor.createdAt, item.anchor.createdAt);
-        final hasWallpaper = ref
-            .watch(chatWallpaperProvider)
-            .forChat(conversationId)
-            .isSet;
         final showUnread =
             unreadAnchorId != null &&
             _itemContainsMessageId(item, unreadAnchorId!);
 
         return Column(
+          key: ValueKey(rows.keys[i]),
           children: [
             if (showDate)
               _inset(

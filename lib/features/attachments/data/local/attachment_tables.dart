@@ -56,6 +56,15 @@ class AttachmentBlobs extends Table {
   /// (sent by two people, or re-uploaded) costs one copy on disk, not two.
   TextColumn get contentHash => text().nullable()();
 
+  /// Drawn size of the picture, or of a video's poster frame (V8), measured
+  /// once from the local file. The server sends no dimensions, and without
+  /// them a timeline tile only learns its height by decoding — which changed
+  /// the row's height after it was laid out and shoved every row above it.
+  /// Deliberately NOT cleared by [AttachmentTransferState.absent]: an evicted
+  /// photo keeps its shape while it downloads again.
+  IntColumn get mediaWidth => integer().nullable()();
+  IntColumn get mediaHeight => integer().nullable()();
+
   // ─── Reserved for asset encryption. Nothing writes these today. ──────────
   /// Cipher used for the bytes on the wire, '' when stored in the clear.
   TextColumn get cipherAlgo => text().withDefault(const Constant(''))();

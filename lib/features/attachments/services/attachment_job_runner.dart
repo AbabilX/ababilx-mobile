@@ -9,6 +9,7 @@ import '../data/local/attachment_dedupe_store.dart';
 import '../data/models/attachment_handle.dart';
 import 'attachment_content_dedupe.dart';
 import 'attachment_content_hash.dart';
+import 'attachment_dimension_reader.dart';
 import 'attachment_downloader.dart';
 import 'attachment_failure.dart';
 import 'attachment_paths.dart';
@@ -25,14 +26,16 @@ class AttachmentJobRunner {
     this._dedupe,
     this._paths,
     this._downloader,
-    this._emit,
-  );
+    this._emit, {
+    this._dimensions,
+  });
 
   final AttachmentBlobStore _blobs;
   final AttachmentDedupeStore _dedupe;
   final AttachmentPaths _paths;
   final AttachmentDownloader _downloader;
   final void Function(AttachmentHandle handle) _emit;
+  final AttachmentDimensionReader? _dimensions;
   final _random = Random();
 
   /// [registerToken] hands each attempt's cancel token back to the queue, so a
@@ -147,13 +150,16 @@ class AttachmentJobRunner {
       } catch (_) {}
     }
 
-    final ready = current.copyWith(
+    var ready = current.copyWith(
       state: AttachmentTransferState.ready,
       localPath: resolution.path,
       receivedBytes: outcome.bytes,
       totalBytes: outcome.bytes,
       errorMessage: '',
     );
+    // Sized before anyone is told it is ready, so no tile ever draws this
+    // photo at a guessed height first.
+    ready = await _dimensions?.complete(ready) ?? ready;
     _emit(ready);
     return ready;
   }

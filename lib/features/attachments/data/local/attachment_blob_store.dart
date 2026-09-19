@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../messages/data/local/chat_local_db.dart';
 import '../models/attachment_handle.dart';
+import '../models/media_dimensions.dart';
 
 /// Persistence for the local attachment mirror.
 ///
@@ -9,9 +10,13 @@ import '../models/attachment_handle.dart';
 /// the rest of the local layer follows — a cache write that fails must never
 /// break the conversation on screen. The worst case is a re-download.
 class AttachmentBlobStore {
-  AttachmentBlobStore(this._db);
+  AttachmentBlobStore(this._db, {this.onForget});
 
   final ChatLocalDb _db;
+
+  /// Told when a file leaves the disk (null key: all of them), so
+  /// `AttachmentHandleMemory` never offers a renderer an evicted path.
+  final void Function(String? urlKey, {required bool keepDimensions})? onForget;
 
   Future<AttachmentBlob?> read(String urlKey) async {
     if (urlKey.isEmpty) return null;
@@ -120,9 +125,19 @@ class AttachmentBlobStore {
     );
   }
 
+  /// Measured once per object; a failed write is just measured again later.
+  Future<void> setDimensions(String urlKey, MediaDimensions size) => _update(
+    urlKey,
+    AttachmentBlobsCompanion(
+      mediaWidth: Value(size.width),
+      mediaHeight: Value(size.height),
+    ),
+  );
+
   /// The file is gone (evicted, wiped by the OS, deleted by the user). Keep
-  /// the row so the badge shows "download" rather than a broken tile.
+  /// the row, size included, so the tile shows "download", not a broken tile.
   Future<void> markAbsent(String urlKey) async {
+    onForget?.call(urlKey, keepDimensions: true);
     await _update(
       urlKey,
       AttachmentBlobsCompanion(
@@ -160,6 +175,7 @@ class AttachmentBlobStore {
 
   Future<void> delete(String urlKey) async {
     if (urlKey.isEmpty) return;
+    onForget?.call(urlKey, keepDimensions: false);
     try {
       await (_db.delete(
         _db.attachmentBlobs,
@@ -168,6 +184,7 @@ class AttachmentBlobStore {
   }
 
   Future<void> clearAll() async {
+    onForget?.call(null, keepDimensions: false);
     await _db.delete(_db.attachmentBlobs).go();
   }
 

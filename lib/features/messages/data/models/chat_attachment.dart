@@ -1,5 +1,26 @@
 import 'package:equatable/equatable.dart';
 
+/// The attachment rules on bare strings, for code that holds a stored blob
+/// (content type + file name) rather than a message attachment.
+bool looksLikeImage(String contentType, String fileName) {
+  if (contentType.toLowerCase().startsWith('image/')) return true;
+  return _imageName.hasMatch(fileName);
+}
+
+bool looksLikeVideo(String contentType, String fileName) {
+  if (contentType.toLowerCase().startsWith('video/')) return true;
+  return _videoName.hasMatch(fileName);
+}
+
+final _imageName = RegExp(
+  r'\.(jpe?g|png|gif|webp|bmp|heic|heif|avif|svg)$',
+  caseSensitive: false,
+);
+final _videoName = RegExp(
+  r'\.(mp4|m4v|mov|webm|mkv|avi|3gp)$',
+  caseSensitive: false,
+);
+
 class ChatMessageAttachment extends Equatable {
   const ChatMessageAttachment({
     required this.id,
@@ -23,13 +44,7 @@ class ChatMessageAttachment extends Equatable {
   final String createdAt;
   final bool locked;
 
-  bool get isImage {
-    if (contentType.toLowerCase().startsWith('image/')) return true;
-    return RegExp(
-      r'\.(jpe?g|png|gif|webp|bmp|heic|heif|avif|svg)$',
-      caseSensitive: false,
-    ).hasMatch(fileName);
-  }
+  bool get isImage => looksLikeImage(contentType, fileName);
 
   bool get isPdf {
     final ct = contentType.toLowerCase();
@@ -37,13 +52,7 @@ class ChatMessageAttachment extends Equatable {
     return fileName.toLowerCase().endsWith('.pdf');
   }
 
-  bool get isVideo {
-    if (contentType.toLowerCase().startsWith('video/')) return true;
-    return RegExp(
-      r'\.(mp4|m4v|mov|webm|mkv|avi|3gp)$',
-      caseSensitive: false,
-    ).hasMatch(fileName);
-  }
+  bool get isVideo => looksLikeVideo(contentType, fileName);
 
   bool get isAudio {
     if (contentType.toLowerCase().startsWith('audio/')) return true;

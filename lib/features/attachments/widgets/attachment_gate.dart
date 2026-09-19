@@ -51,7 +51,15 @@ class AttachmentGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(attachmentHandleProvider(attachment));
-    final handle = async.valueOrNull;
+    // A row coming back on screen gets a fresh provider with no value yet;
+    // the session's last word on this file draws that first frame instead of
+    // a placeholder, and the stream corrects it a moment later if needed.
+    final memory = ref.watch(attachmentHandleMemoryProvider);
+    final handle =
+        async.valueOrNull ??
+        (attachment.locked
+            ? null
+            : memory.handleOf(memory.urlKeyOf(attachment.fileUrl)));
 
     final Widget content;
     if (attachment.locked || handle?.isLocked == true) {

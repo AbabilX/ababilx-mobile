@@ -75,3 +75,25 @@ List<ChatTimelineItem> buildChatTimelineItems(List<ChatMessage> messages) {
   }
   return items;
 }
+
+/// Row keys for the `reverse: true` timeline (position 0 = newest), and the
+/// position each key sits at — what `findChildIndexCallback` answers.
+///
+/// Without them a message arriving at the bottom shifts every index by one,
+/// and each built row's element — its state, its attachment lookups, its
+/// locked media frame — is handed the message beside it: every visible photo
+/// flashed and re-sized at once. A repeated id (canonicalisation should never
+/// let one through) takes a positional suffix, so two rows never claim a key.
+({List<String> keys, Map<String, int> positions}) timelineRowKeys(
+  List<ChatTimelineItem> items,
+) {
+  final keys = List<String>.filled(items.length, '');
+  final positions = <String, int>{};
+  for (var i = 0; i < items.length; i++) {
+    var key = items[items.length - 1 - i].key;
+    if (positions.containsKey(key)) key = '$key#$i';
+    positions[key] = i;
+    keys[i] = key;
+  }
+  return (keys: keys, positions: positions);
+}

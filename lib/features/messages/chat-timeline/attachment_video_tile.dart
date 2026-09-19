@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/network_video_player.dart';
 import '../../attachments/widgets/attachment_gate.dart';
 import '../data/models/chat_models.dart';
 import 'media-preview/chat_media_preview_meta.dart';
+import 'media_frame.dart';
+import 'media_frame_lock.dart';
 import 'signal_bubble_metrics.dart';
 
 /// A video in a bubble, held to the same bounds as a photo — Signal sizes both
 /// off `media_bubble_*`, so a mixed album does not step in and out.
-class AttachmentVideoTile extends StatelessWidget {
+///
+/// The frame is reserved in every state and taken from the poster's measured
+/// shape when that was known at mount (see [MediaFrameLock]); the poster, the
+/// loading placeholder and the live fallback all draw inside it.
+class AttachmentVideoTile extends ConsumerStatefulWidget {
   const AttachmentVideoTile({
     super.key,
     required this.attachment,
@@ -23,26 +30,34 @@ class AttachmentVideoTile extends StatelessWidget {
   final bool inset;
 
   @override
+  ConsumerState<AttachmentVideoTile> createState() =>
+      _AttachmentVideoTileState();
+}
+
+class _AttachmentVideoTileState extends ConsumerState<AttachmentVideoTile>
+    with MediaFrameLock {
+  @override
+  ChatMessageAttachment get framedAttachment => widget.attachment;
+
+  @override
   Widget build(BuildContext context) {
+    const width = SignalBubbleMetrics.mediaMaxWidth;
     return Padding(
-      padding: EdgeInsets.only(top: inset ? 8 : 0),
+      padding: EdgeInsets.only(top: widget.inset ? 8 : 0),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minWidth: SignalBubbleMetrics.mediaMaxWidth,
-          maxWidth: SignalBubbleMetrics.mediaMaxWidth,
-        ),
+        constraints: const BoxConstraints(minWidth: width, maxWidth: width),
         child: AttachmentGate(
-          attachment: attachment,
-          reserveSpace: inset,
-          height: SignalBubbleMetrics.mediaDefaultSize,
-          width: SignalBubbleMetrics.mediaMaxWidth,
+          attachment: widget.attachment,
+          reserveSpace: true,
+          height: soloMediaHeight(lockedDimensions, width: width),
+          width: width,
           ready: (_, handle) => NetworkVideoPlayer(
             source: VideoSource.file(handle.localPath!),
-            fileName: attachment.fileName,
-            detail: preview?.detail,
-            caption: preview?.caption,
+            fileName: widget.attachment.fileName,
+            detail: widget.preview?.detail,
+            caption: widget.preview?.caption,
             maxHeight: SignalBubbleMetrics.mediaMaxHeight,
-            borderRadius: inset ? 8 : 0,
+            borderRadius: widget.inset ? 8 : 0,
           ),
         ),
       ),

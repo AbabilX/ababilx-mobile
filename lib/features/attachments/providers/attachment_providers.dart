@@ -14,14 +14,33 @@ import '../data/models/attachment_handle.dart';
 import '../services/attachment_adopter.dart';
 import '../services/attachment_authority.dart';
 import '../services/attachment_cipher.dart';
+import '../services/attachment_dimension_reader.dart';
 import '../services/attachment_downloader.dart';
+import '../services/attachment_handle_memory.dart';
 import '../services/attachment_intake.dart';
 import '../services/attachment_paths.dart';
 import '../services/attachment_queue.dart';
 import '../services/attachment_sweeper.dart';
 
+/// Synchronous, session-long mirror of what the store knows — what lets a
+/// tile coming back on screen draw its final frame first. Cleared with the
+/// authority on logout and wipe.
+final attachmentHandleMemoryProvider = Provider<AttachmentHandleMemory>(
+  (ref) => AttachmentHandleMemory(),
+);
+
 final attachmentBlobStoreProvider = Provider<AttachmentBlobStore>(
-  (ref) => AttachmentBlobStore(ref.watch(chatLocalDbProvider)),
+  (ref) => AttachmentBlobStore(
+    ref.watch(chatLocalDbProvider),
+    onForget: ref.watch(attachmentHandleMemoryProvider).forget,
+  ),
+);
+
+final attachmentDimensionReaderProvider = Provider<AttachmentDimensionReader>(
+  (ref) => AttachmentDimensionReader(
+    ref.watch(attachmentBlobStoreProvider),
+    ref.watch(attachmentHandleMemoryProvider),
+  ),
 );
 
 final attachmentRefStoreProvider = Provider<AttachmentRefStore>(
@@ -78,6 +97,7 @@ final attachmentQueueProvider = Provider<AttachmentQueue>((ref) {
     ref.watch(attachmentDedupeStoreProvider),
     ref.watch(attachmentPathsProvider),
     ref.watch(attachmentDownloaderProvider),
+    dimensions: ref.watch(attachmentDimensionReaderProvider),
   );
   ref.onDispose(queue.dispose);
   return queue;
@@ -91,15 +111,24 @@ final attachmentAdopterProvider = Provider<AttachmentAdopter>(
     ref.watch(attachmentDedupeStoreProvider),
     ref.watch(attachmentPathsProvider),
     ref.watch(attachmentQueueProvider),
+    dimensions: ref.watch(attachmentDimensionReaderProvider),
   ),
 );
 
 final attachmentAuthorityProvider = Provider<AttachmentAuthority>((ref) {
+  final memory = ref.watch(attachmentHandleMemoryProvider);
   final authority = AttachmentAuthority(
     ref.watch(attachmentBlobStoreProvider),
     ref.watch(attachmentQueueProvider),
+    memory: memory,
+    dimensions: ref.watch(attachmentDimensionReaderProvider),
   );
-  ref.onDispose(authority.dispose);
+  ref.onDispose(() {
+    authority.dispose();
+    // Logout and wipe invalidate the authority; the paths it vouched for are
+    // gone with them.
+    memory.clear();
+  });
   return authority;
 });
 

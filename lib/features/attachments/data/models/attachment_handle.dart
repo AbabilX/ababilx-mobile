@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:equatable/equatable.dart';
 
+import 'media_dimensions.dart';
+
 /// Where an attachment's bytes are, from the renderer's point of view.
 ///
 /// Persisted as an int (`AttachmentBlobs.transferState`) so a future state is
@@ -53,6 +55,7 @@ class AttachmentHandle extends Equatable {
     this.receivedBytes = 0,
     this.totalBytes = 0,
     this.errorMessage = '',
+    this.dimensions,
   });
 
   const AttachmentHandle.locked({this.fileName = ''})
@@ -63,7 +66,8 @@ class AttachmentHandle extends Equatable {
       localPath = null,
       receivedBytes = 0,
       totalBytes = 0,
-      errorMessage = '';
+      errorMessage = '',
+      dimensions = null;
 
   final String urlKey;
   final String remoteUrl;
@@ -74,6 +78,11 @@ class AttachmentHandle extends Equatable {
   final int receivedBytes;
   final int totalBytes;
   final String errorMessage;
+
+  /// The picture's (or a video poster's) drawn size, once it has been
+  /// measured from the local file. Kept through eviction, so a photo that is
+  /// downloading again still knows its shape. Null when never measured.
+  final MediaDimensions? dimensions;
 
   File? get file {
     final path = localPath;
@@ -107,6 +116,7 @@ class AttachmentHandle extends Equatable {
     int? receivedBytes,
     int? totalBytes,
     String? errorMessage,
+    MediaDimensions? dimensions,
   }) {
     return AttachmentHandle(
       urlKey: urlKey,
@@ -118,6 +128,7 @@ class AttachmentHandle extends Equatable {
       receivedBytes: receivedBytes ?? this.receivedBytes,
       totalBytes: totalBytes ?? this.totalBytes,
       errorMessage: errorMessage ?? this.errorMessage,
+      dimensions: dimensions ?? this.dimensions,
     );
   }
 
@@ -129,5 +140,6 @@ class AttachmentHandle extends Equatable {
     receivedBytes,
     totalBytes,
     errorMessage,
+    dimensions,
   ];
 }

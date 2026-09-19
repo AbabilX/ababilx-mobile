@@ -152,13 +152,14 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
     });
   }
 
+  ChatFeed _feedOf(ChatState chat) =>
+      chat.feedFor(widget.conversationId, threadRootId: widget.threadRootId);
+
   @override
   Widget build(BuildContext context) {
-    final chat = ref.watch(chatProvider);
-    final feed = chat.feedFor(
-      widget.conversationId,
-      threadRootId: widget.threadRootId,
-    );
+    // Only this feed and "me": the whole state rebuilt every row mid-scroll.
+    final feed = ref.watch(chatProvider.select(_feedOf));
+    final userId = ref.watch(chatProvider.select((c) => c.currentUserId));
 
     pinUnreadAnchor(feed.messages);
 
@@ -166,7 +167,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
     if (shouldRevealNewestMessage(
       previousNewestId: _previousNewestMessageId,
       messages: feed.messages,
-      currentUserId: chat.currentUserId,
+      currentUserId: userId,
       isNearBottom: _isNearBottom,
     )) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
@@ -183,7 +184,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
         messages: feed.messages,
         loading: feed.loading,
         loadingMore: feed.loadingMore,
-        currentUserId: chat.currentUserId,
+        currentUserId: userId,
         error: feed.error,
         scrollController: _scrollCtrl,
         unreadAnchorId: unreadAnchorId,

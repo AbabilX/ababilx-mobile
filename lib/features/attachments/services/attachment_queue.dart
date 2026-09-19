@@ -8,6 +8,7 @@ import '../data/local/attachment_blob_store.dart';
 import '../data/local/attachment_dedupe_store.dart';
 import '../data/models/attachment_handle.dart';
 import '../data/models/attachment_url_key.dart';
+import 'attachment_dimension_reader.dart';
 import 'attachment_downloader.dart';
 import 'attachment_job_runner.dart';
 import 'attachment_paths.dart';
@@ -29,8 +30,16 @@ class AttachmentQueue {
     AttachmentPaths paths,
     AttachmentDownloader downloader, {
     AttachmentSemaphore? semaphore,
+    AttachmentDimensionReader? dimensions,
   }) : _gate = semaphore ?? AttachmentSemaphore(maxConcurrentDownloads) {
-    _runner = AttachmentJobRunner(_blobs, dedupe, paths, downloader, _emit);
+    _runner = AttachmentJobRunner(
+      _blobs,
+      dedupe,
+      paths,
+      downloader,
+      _emit,
+      dimensions: dimensions,
+    );
   }
 
   final AttachmentBlobStore _blobs;

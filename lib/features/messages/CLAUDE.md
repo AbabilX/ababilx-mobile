@@ -1276,3 +1276,74 @@ first. The account was stuck at the door with the key on the other side of it.
 - Web and desktop were never exposed — their policy dialog sits in the user
   shell, and neither has a screen in front of it.
 - Test: `test/features/policy/policy_precheck_test.dart`.
+
+# A mounted media tile never changes height (2026-09-19)
+
+Reported as "scrolling down in a chat with photos jitters, and sometimes it
+bounces back up before I reach the newest message". The list is
+`reverse: true`, so scrolling toward newer messages builds rows BELOW the
+viewport first — and a caption-less photo changed height three times after it
+was laid out:
+
+```
+frame 1   no handle yet (autoDispose provider)   -> placeholder 210dp
+frame 2   file found, not decoded                -> Image min height 100dp
+~50-300ms full-resolution decode finished        -> 240 x ratio, up to 420dp
+```
+
+Every change to a row below the viewport shoves every row above it, which is
+what the reader is looking at. Scrolling up never showed it: rows appear at
+the top there and push nothing. `media_scroll_test.dart (caption=false)` had
+been failing for exactly this.
+
+```
+size       measured ONCE from the file header when bytes land
+           (download, sender adoption, or lazily for older files)
+           -> attachment_blobs.media_width/height (schema V8) + memory
+tile       picks its frame at MOUNT and holds it (MediaFrameLock)
+first frame  AttachmentHandleMemory: last handle + size, read synchronously
+decode     ResizeImage at box x devicePixelRatio, cover, never upscaled
+```
+
+- **The rule is "a mounted tile never resizes", not "every tile is right".**
+  A size learned after mount (a fresh download on screen) waits for the next
+  mount. A remount happens off screen and INSERTS the row at its new height,
+  which moves nothing visible; resizing a live row always does. Pinned by
+  `media_tile_frame_test.dart`.
+- **The server sends no dimensions**, and this is the mobile-only answer. A
+  photo that has never been downloaded still mounts at the default 240x210
+  frame and is cropped into it until its next mount. Signal carries width and
+  height in the attachment pointer; doing that means a server column plus
+  every sender, and was deliberately left for later.
+- **Sizes are loaded before rows mount**: `warmMediaFrames` runs one indexed
+  query per page (cold-open hydrate, network page, disk page) ahead of
+  `setFeed`, bounded at 250 ms so a slow disk only costs a default frame.
+- **`ImageDescriptor.encoded` reads the header, allocates no pixels**, and
+  answers through the same codec that later decodes the file, so EXIF
+  orientation agrees. A video's size is its poster frame's
+  (`VideoThumbnails`, Android). A measurement that hangs times out at 3 s —
+  the runner waits for it before announcing "ready".
+- **Memory is told when a file leaves disk** (`AttachmentBlobStore.onForget`
+  on markAbsent / delete / clearAll), so the first-frame fallback never offers
+  an evicted path. The size survives eviction on purpose. Cleared with the
+  authority on logout and wipe.
+- **Decode at display size.** Full-resolution decode of a 12 MP photo is
+  ~48 MB against Flutter's 100 MB image cache; every pass through a photo
+  chat evicted and re-decoded. `displaySizedImage` covers the box on this
+  screen's density and no more.
+- **Rows are keyed** (`timelineRowKeys` + `findChildIndexCallback`). Before,
+  a new message at the bottom shifted every index, and each built row's
+  element was handed the message beside it — every visible photo re-looked-up
+  its file and re-picked its frame at once.
+- `MessageBody` keeps media under one `Stack` whether or not the footer
+  overlays it: the footer comes and goes as a run grows, and a changed tree
+  shape remounts the tile.
+- Rows prebuild one viewport ahead (`ScrollCacheExtent.viewport(1)`), so a
+  photo decodes before it is on screen; a first decode fades in over the
+  placeholder colour (`fadeInImageFrame`), a cached one paints at once.
+- Timeline and rows `select` what they read from `chatProvider`. Watching the
+  whole state rebuilt every visible row on typing, presence and other chats'
+  traffic, mid-scroll.
+- The sending-clock pulse runs only while a message is sending
+  (`MessageRowPulse`). It used to repeat forever in every row, keeping a
+  ticker asking for a frame on every vsync while a chat was open.
