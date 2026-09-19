@@ -14,7 +14,7 @@ mixin GroupCallCallkit on GroupCallBase, GroupCallLifecycle, GroupCallMedia {
   Future<void> leave();
 
   void initNativeCallUi() {
-    _nativeSub ??= FlutterCallkitIncoming.onEvent.listen(_handleNativeEvent);
+    _nativeSub ??= NativeCallEvents.stream.listen(_handleNativeEvent);
   }
 
   Future<void> disposeNativeCallUi() async {

@@ -21,6 +21,7 @@ import '../incoming_call_ringtone.dart';
 import '../native/android_call_ui.dart';
 import '../native/android_group_call_ui.dart';
 import '../native/incoming_call_admission.dart';
+import '../native/native_call_events.dart';
 import '../native/answered_elsewhere.dart';
 import '../native/call_answered_guard.dart';
 import '../native/call_ringing_ack.dart';
@@ -96,7 +97,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _wsReconnectSub = _ws.reconnects.listen((_) {
       unawaited(resyncActiveCall());
     });
-    _nativeSub = FlutterCallkitIncoming.onEvent.listen(_handleNativeEvent);
+    _nativeSub = NativeCallEvents.stream.listen(_handleNativeEvent);
     _foregroundPushSub = FirebaseMessaging.onMessage.listen(
       _handleForegroundCallPush,
     );
