@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 
-import '../../../core/router/root_back.dart';
 import 'app_icon.dart';
 
 /// Settings → App icon.
@@ -77,10 +77,7 @@ class _AppIconScreenState extends State<AppIconScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => popOrGoHome(context),
-        ),
+        leading: const AppBarBackButton(),
         title: const Text('App icon'),
       ),
       body: ListView(

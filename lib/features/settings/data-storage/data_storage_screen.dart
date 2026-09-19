@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/network/network_class.dart';
 import '../../../core/network/network_probe.dart';
-import '../../../core/router/root_back.dart';
 import '../../../shared/text/byte_size.dart';
 import '../../attachments/attachment_config.dart';
 import '../../attachments/auto_download/auto_download_settings.dart';
@@ -33,10 +33,7 @@ class DataStorageScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => popOrGoHome(context),
-        ),
+        leading: const AppBarBackButton(),
         title: const Text('Data and storage'),
       ),
       body: SafeArea(

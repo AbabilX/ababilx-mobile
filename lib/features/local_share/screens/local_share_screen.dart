@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 
-import '../../messages/chat_icon.dart';
 import '../widgets/share_tab_bar.dart';
 import 'history_tab.dart';
 import 'receive_tab.dart';
@@ -35,10 +34,7 @@ class _LocalShareScreenState extends State<LocalShareScreen> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.of(context).maybePop(),
-                        icon: ChatIcon(
-                          HugeIcons.strokeRoundedArrowLeft01,
-                          color: scheme.onSurface,
-                        ),
+                        icon: AppBarBackIcon(),
                       ),
                       Text(
                         'Local Share',

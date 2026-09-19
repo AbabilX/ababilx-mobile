@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/router/root_back.dart';
 import '../../../shared/media/pick_wallpaper_photo.dart';
 import 'chat_wallpaper.dart';
 import 'chat_wallpaper_grid.dart';
@@ -71,10 +71,7 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => popOrGoHome(context),
-        ),
+        leading: const AppBarBackButton(),
         title: Text(perChat ? 'Chat wallpaper' : 'Chat wallpapers'),
       ),
       body: ListView(

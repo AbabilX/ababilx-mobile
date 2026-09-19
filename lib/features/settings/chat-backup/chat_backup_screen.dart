@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/localization/app_translations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../notifications/data/device_identity.dart';
-import '../../../core/router/root_back.dart';
 import '../../../shared/text/byte_size.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../../messages/archive/archive_provider.dart';
@@ -41,10 +41,7 @@ class _ChatBackupScreenState extends ConsumerState<ChatBackupScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => popOrGoHome(context),
-        ),
+        leading: const AppBarBackButton(),
         title: Text(AppTranslations.translate(context, ref, 'settings_backup')),
       ),
       body: SafeArea(

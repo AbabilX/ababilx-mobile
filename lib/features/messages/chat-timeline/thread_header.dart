@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
@@ -44,10 +45,7 @@ class ThreadHeader extends ConsumerWidget {
         child: SizedBox(
           height: kToolbarHeight,
           child: NavigationToolbar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
+            leading: AppBarBackButton(onPressed: () => Navigator.of(context).pop()),
             middle: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,

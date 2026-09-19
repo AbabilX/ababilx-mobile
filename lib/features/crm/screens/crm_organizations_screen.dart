@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/friendly_error.dart';
@@ -114,10 +115,7 @@ class _CrmOrganizationsScreenState
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.go('/crm'),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
+        leading: AppBarBackButton(onPressed: () => context.go('/crm')),
         title: _showSearch
             ? TextField(
                 controller: _search,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -44,7 +45,7 @@ class GhostHeader extends ConsumerWidget implements PreferredSizeWidget {
     return AppBar(
       leading: IconButton(
         onPressed: onBack,
-        icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+        icon: const AppBarBackIcon(),
       ),
       titleSpacing: 0,
       title: Row(

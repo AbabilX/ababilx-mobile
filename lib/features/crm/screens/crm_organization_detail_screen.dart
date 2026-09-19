@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/friendly_error.dart';
 
-import '../../../core/router/root_back.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../crm-organizations/organization_form_sheet.dart';
 import '../crm-organizations/organization_documents.dart';
@@ -123,10 +123,7 @@ class CrmOrganizationDetailScreen extends ConsumerWidget {
         length: 4,
         child: Scaffold(
           appBar: AppBar(
-            leading: IconButton(
-              onPressed: () => popOrGoHome(context),
-              icon: const Icon(Icons.arrow_back_rounded),
-            ),
+            leading: const AppBarBackButton(),
             title: Text(record.name),
             actions: [
               if (perms.update)

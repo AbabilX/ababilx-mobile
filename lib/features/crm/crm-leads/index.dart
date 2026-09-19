@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -196,8 +197,7 @@ class _CrmLeadsPageState extends ConsumerState<CrmLeadsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+        leading: AppBarBackButton(
           onPressed: () {
             if (filterContact) {
               context.go('/crm/contacts/$contactId');

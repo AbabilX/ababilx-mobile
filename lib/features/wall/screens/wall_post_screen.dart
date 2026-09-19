@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/router/root_back.dart';
-import '../../messages/chat_icon.dart';
 import '../data/models/wall_models.dart';
 import '../providers/wall_provider.dart';
 import '../wall-comments/comment_composer.dart';
@@ -49,7 +48,7 @@ class _WallPostScreenState extends ConsumerState<WallPostScreen> {
         appBar: AppBar(
           leading: IconButton(
             onPressed: () => popOrGoHome(context),
-            icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+            icon: const AppBarBackIcon(),
           ),
           title: const Text('Post'),
         ),

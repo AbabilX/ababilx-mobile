@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -405,9 +406,7 @@ class _CrmFollowupsPageState extends ConsumerState<CrmFollowupsPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(
-            _selecting ? Icons.close_rounded : Icons.arrow_back_rounded,
-          ),
+          icon: _selecting ? const Icon(Icons.close_rounded) : const AppBarBackIcon(),
           onPressed: () {
             if (_selecting) {
               _clearSelection();

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
-import '../../../core/router/root_back.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../data/session_repository.dart';
 import '../providers/sessions_provider.dart';
@@ -41,10 +41,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => popOrGoHome(context),
-        ),
+        leading: const AppBarBackButton(),
         title: Text(_t('devices_title')),
         actions: [
           IconButton(

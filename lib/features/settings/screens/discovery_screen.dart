@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/friendly_error.dart';
-import '../../../core/router/root_back.dart';
 import '../discovery/discovery_phone_field.dart';
 import '../discovery/discovery_provider.dart';
 import '../typing-indicators/typing_indicators_tile.dart';
@@ -23,10 +23,7 @@ class DiscoveryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => popOrGoHome(context),
-        ),
+        leading: const AppBarBackButton(),
         title: const Text('Discovery'),
       ),
       body: settings.when(

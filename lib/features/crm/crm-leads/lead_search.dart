@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -44,7 +45,7 @@ class LeadSearchDelegate extends SearchDelegate<void> {
 
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-    icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+    icon: const AppBarBackIcon(),
     onPressed: () {
       ref.read(crmLeadsUiProvider.notifier).setSearchQuery(query.trim());
       close(context, null);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 
 import '../nav_back.dart';
 
@@ -18,8 +19,7 @@ class ConversationPlaceholderHeader extends StatelessWidget {
         child: SizedBox(
           height: kToolbarHeight,
           child: NavigationToolbar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+            leading: AppBarBackButton(
               onPressed: () => popOrGoMessages(context),
             ),
             middle: Text(

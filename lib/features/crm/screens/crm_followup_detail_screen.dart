@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -23,10 +24,7 @@ class CrmFollowupDetailScreen extends ConsumerWidget {
       ),
       error: (error, _) => Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () => context.pop(),
-          ),
+          leading: AppBarBackButton(onPressed: () => context.pop()),
         ),
         body: LoadErrorState(error),
       ),
@@ -34,10 +32,7 @@ class CrmFollowupDetailScreen extends ConsumerWidget {
         if (detail == null || !detail.canViewCrm) {
           return Scaffold(
             appBar: AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => context.pop(),
-              ),
+              leading: AppBarBackButton(onPressed: () => context.pop()),
             ),
             body: ChatEmptyState(
               title: AppTranslations.translate(context, ref, 'crm_no_access'),

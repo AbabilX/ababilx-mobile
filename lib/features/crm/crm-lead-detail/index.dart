@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/friendly_error.dart';
-import '../../../core/router/root_back.dart';
 import '../../messages/providers/team_gate_provider.dart';
 import '../crm-leads/lead_form_sheet.dart';
 import '../data/crm_repository.dart';
@@ -142,19 +142,13 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
     return leadAsync.when(
       loading: () => Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () => context.pop(),
-          ),
+          leading: AppBarBackButton(onPressed: () => context.pop()),
         ),
         body: const CrmLoading(),
       ),
       error: (e, _) => Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () => context.pop(),
-          ),
+          leading: AppBarBackButton(onPressed: () => context.pop()),
         ),
         body: CrmErrorBox(message: e.toString()),
       ),
@@ -183,10 +177,7 @@ class _CrmLeadDetailPageState extends ConsumerState<CrmLeadDetailPage>
 
         return Scaffold(
           appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded),
-              onPressed: () => popOrGoHome(context),
-            ),
+            leading: const AppBarBackButton(),
             title: Text(
               (lead.contactName ?? '').isNotEmpty
                   ? '← ${lead.contactName}'

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -23,7 +24,7 @@ class WallSearchDelegate extends SearchDelegate<void> {
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
     onPressed: () => close(context, null),
-    icon: const Icon(Icons.arrow_back),
+    icon: const AppBarBackIcon(),
   );
 
   @override

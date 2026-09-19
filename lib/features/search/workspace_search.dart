@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -32,7 +33,7 @@ class WorkspaceSearchDelegate extends SearchDelegate<void> {
 
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-    icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+    icon: const AppBarBackIcon(),
     onPressed: () => close(context, null),
   );
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,20 +30,14 @@ class SettingsScreen extends ConsumerWidget {
     return profile.when(
       loading: () => Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () => popOrGoHome(context),
-          ),
+          leading: const AppBarBackButton(),
           title: Text(t('settings_title')),
         ),
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (_, _) => Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () => popOrGoHome(context),
-          ),
+          leading: const AppBarBackButton(),
           title: Text(t('settings_title')),
         ),
         body: Center(child: Text(t('settings_load_error'))),

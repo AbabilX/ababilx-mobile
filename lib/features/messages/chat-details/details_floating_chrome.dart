@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../chat_icon.dart';
@@ -31,7 +32,7 @@ class DetailsFloatingChrome extends StatelessWidget {
         children: [
           DetailsFloatingButton(
             onBanner: onBanner,
-            icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+            icon: const AppBarBackIcon(),
             tooltip: 'Back',
             onPressed: onBack,
           ),

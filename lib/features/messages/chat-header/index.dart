@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -64,8 +65,7 @@ class ChatHeader extends ConsumerWidget {
         child: SizedBox(
           height: kToolbarHeight,
           child: NavigationToolbar(
-            leading: IconButton(
-              icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+            leading: AppBarBackButton(
               onPressed: () => popOrGoMessages(context),
             ),
             middle: InkWell(

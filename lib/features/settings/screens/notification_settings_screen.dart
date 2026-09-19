@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../../core/router/root_back.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../notifications/providers/battery_optimization_provider.dart';
 import '../../notifications/widgets/battery_optimization_tile.dart';
@@ -71,10 +71,7 @@ class _NotificationSettingsScreenState
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => popOrGoHome(context),
-        ),
+        leading: const AppBarBackButton(),
         title: const Text('Notifications'),
       ),
       body: ListView(

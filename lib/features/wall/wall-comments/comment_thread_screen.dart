@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
-import '../../messages/chat_icon.dart';
 import '../providers/wall_provider.dart';
 import 'comment_composer.dart';
 import 'comment_tile.dart';
@@ -28,7 +27,7 @@ class WallCommentThreadScreen extends ConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const ChatIcon(HugeIcons.strokeRoundedArrowLeft01),
+          icon: const AppBarBackIcon(),
         ),
         title: const Text('Thread'),
       ),
