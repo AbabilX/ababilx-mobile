@@ -68,7 +68,7 @@ class DonateSheet extends ConsumerWidget {
                     color: colors.surfaceContainerHighest,
                     child: Center(
                       child: ChatIcon(
-                        HugeIcons.strokeRoundedFavourite,
+                        HugeIcons.strokeRoundedMoneySend01,
                         size: 40,
                         color: colors.primary,
                       ),
@@ -103,9 +103,15 @@ class DonateSheet extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(14),
                 onTap: () => _copyNumber(context, t('donate_copied')),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+                  padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
                   child: Row(
                     children: [
+                      ChatIcon(
+                        HugeIcons.strokeRoundedMoneySend01,
+                        size: 28,
+                        color: colors.primary,
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

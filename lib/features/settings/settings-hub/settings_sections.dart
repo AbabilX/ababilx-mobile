@@ -133,7 +133,7 @@ class SettingsSections extends ConsumerWidget {
           ),
         ),
         SettingsRow(
-          icon: HugeIcons.strokeRoundedFavourite,
+          icon: HugeIcons.strokeRoundedMoneySend01,
           title: t('settings_donate'),
           subtitle: t('settings_donate_sub'),
           onTap: () => showDonateSheet(context),
