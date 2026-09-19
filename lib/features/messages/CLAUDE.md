@@ -481,11 +481,13 @@ without a thread, and Documents/Links/Photos chips are not on this screen.
 
 Name matching is local (`chat_search_matches.dart` + `matchesNameQuery`) over
 the sidebar, including nicknames, so a hit appears before the message index
-returns. Message hits stay the existing local-then-server search. Opened from
-one chat's details, the message list is still narrowed to that conversation;
-the Chats section stays global so you can jump. The floating shell pill is
-hidden for the duration (`shellBottomBarHiddenProvider`), because `showSearch`
-does not leave the shell navigator.
+returns. One non-empty character is enough — there is no 2-character floor;
+local message search (`LocalMessageSearch` / Drift) and the UI kick off on the
+first keystroke. Message hits stay the existing local-then-server search.
+Opened from one chat's details, the message list is still narrowed to that
+conversation; the Chats section stays global so you can jump. The floating
+shell pill is hidden for the duration (`shellBottomBarHiddenProvider`), because
+`showSearch` does not leave the shell navigator.
 
 # Received media stays in the sandbox
 

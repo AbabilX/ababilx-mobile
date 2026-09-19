@@ -15,7 +15,7 @@ class LocalMessageSearch {
 
   Future<List<ChatMessage>> search(String query, {int limit = 30}) async {
     final q = query.trim().toLowerCase();
-    if (q.length < 2) return const [];
+    if (q.isEmpty) return const [];
 
     final found = <String, ChatMessage>{};
     for (final message in await _store.search(q, limit: limit)) {

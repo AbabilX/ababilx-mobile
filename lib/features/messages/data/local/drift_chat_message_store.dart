@@ -210,7 +210,7 @@ class DriftChatMessageStore {
 
   Future<List<ChatMessage>> search(String query, {required int limit}) async {
     final normalized = query.trim().toLowerCase();
-    if (normalized.length < 2) return const [];
+    if (normalized.isEmpty) return const [];
     try {
       final rows =
           await (_db.select(_db.cachedMessages)

@@ -73,7 +73,7 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
     // SearchDelegate rebuilds on every keystroke. Kicking the index off
     // during build is a Riverpod write-in-layout, so wait a frame and skip
     // a query we are already answering.
-    if (q.length >= 2 && ref.read(chatProvider).searchQuery != q) {
+    if (q.isNotEmpty && ref.read(chatProvider).searchQuery != q) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (query.trim() != q) return;
         ref.read(chatProvider.notifier).searchMessages(q);

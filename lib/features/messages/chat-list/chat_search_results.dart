@@ -34,7 +34,7 @@ class ChatSearchResults extends ConsumerWidget {
     String tr(String key) => AppTranslations.translate(context, ref, key);
 
     final needle = query.trim();
-    if (needle.length < 2) {
+    if (needle.isEmpty) {
       return Center(child: Text(tr('chat_search_min_chars')));
     }
 

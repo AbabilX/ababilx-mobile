@@ -18,7 +18,7 @@ List<ChatConversation> matchingSearchConversations(
   required ContactNicknames nicknames,
   String? currentUserId,
 }) {
-  if (query.trim().length < 2) return const [];
+  if (query.trim().isEmpty) return const [];
   return [
     for (final conversation in conversations)
       if (conversationMatchesSearch(
