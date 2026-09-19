@@ -17,6 +17,9 @@ class ConnectionsTab extends ConsumerWidget {
     if (state.loading && state.connections.isEmpty) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
+    if (state.error.isNotEmpty && state.connections.isEmpty) {
+      return Center(child: Text(state.error));
+    }
     if (state.connections.isEmpty) {
       return Center(
         child: Text(

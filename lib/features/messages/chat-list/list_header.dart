@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -52,13 +53,9 @@ class ChatListHeader extends ConsumerWidget {
                 ),
               ),
             ),
-            IconButton(
-              onPressed: () => openChatSearch(context, ref),
-              icon: ChatIcon(
-                HugeIcons.strokeRoundedSearch01,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              tooltip: MaterialLocalizations.of(context).searchFieldLabel,
+            _SearchCapsule(
+              label: AppTranslations.translate(context, ref, 'chat_search'),
+              onTap: () => openChatSearch(context, ref),
             ),
             IconButton(
               onPressed: () => QrLoginFlow.start(context, ref),
@@ -88,5 +85,56 @@ class ChatListHeader extends ConsumerWidget {
     } else if (action == YouSheetAction.localShare) {
       context.push('/local-share');
     }
+  }
+}
+
+/// Chat-list search: icon + label in a stadium hit target, no fill.
+class _SearchCapsule extends StatelessWidget {
+  const _SearchCapsule({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final foreground = colors.onSurfaceVariant;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: colors.outlineVariant,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ChatIcon(
+                HugeIcons.strokeRoundedSearch01,
+                size: 22,
+                color: foreground,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w600,
+                  height: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
