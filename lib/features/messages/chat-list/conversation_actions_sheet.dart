@@ -6,6 +6,9 @@ import '../data/models/chat_models.dart';
 
 /// What a long press on a conversation row can ask for.
 ///
+/// Order is load-bearing for the menu: pin first, then mark-as-read (when
+/// unread), then mute, then the destructive end action.
+///
 /// Deliberately absent, and each for a reason worth keeping: **Archive**,
 /// because there is no per-user archive — `chat_conversations.archived_at`
 /// archives a group for everyone in it, so the row would either do nothing or
@@ -63,6 +66,12 @@ List<Widget> _tiles(BuildContext context, ChatConversation conversation) {
       onTap: () =>
           choose(pinned ? ConversationAction.unpin : ConversationAction.pin),
     ),
+    if (conversation.unreadCount > 0)
+      _ActionTile(
+        icon: HugeIcons.strokeRoundedCheckmarkCircle02,
+        label: 'Mark as read',
+        onTap: () => choose(ConversationAction.markRead),
+      ),
     _ActionTile(
       icon: muted
           ? HugeIcons.strokeRoundedNotification01
@@ -71,12 +80,6 @@ List<Widget> _tiles(BuildContext context, ChatConversation conversation) {
       onTap: () =>
           choose(muted ? ConversationAction.unmute : ConversationAction.mute),
     ),
-    if (conversation.unreadCount > 0)
-      _ActionTile(
-        icon: HugeIcons.strokeRoundedCheckmarkCircle02,
-        label: 'Mark as read',
-        onTap: () => choose(ConversationAction.markRead),
-      ),
     _ActionTile(
       icon: isGroup
           ? HugeIcons.strokeRoundedLogout01

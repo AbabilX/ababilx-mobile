@@ -5,9 +5,8 @@ import '../data/models/chat_models.dart';
 /// The confirmation for the one action that ends a conversation — leaving a
 /// group, or deleting a DM for yourself.
 ///
-/// Shared by the swipe lane and the long-press sheet on purpose. They are two
-/// gestures onto the same destructive action, and two copies of the wording
-/// is how one of them ends up promising something the other does not.
+/// Raised from the long-press sheet only. Keep the wording here so Leave and
+/// Delete never drift if another entry point is added later.
 Future<bool> confirmConversationEndAction(
   BuildContext context,
   ChatConversation conversation,
