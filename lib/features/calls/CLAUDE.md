@@ -539,6 +539,7 @@ Traps:
 - **Incoming** keeps only Answer + Decline (no Mute/Camera/Share yet).
   **Outgoing / connected** uses Mute · Camera · Screen Share · Speaker + End.
 - Labels: Incoming hang-up says **Decline**; live hang-up says **End**.
+  Captions hide in landscape; semantics keep the names.
 
 Group call UI is separate (`GroupCallScreen`) — participant tiles need a
 different layout.
@@ -546,6 +547,51 @@ different layout.
 Do not restore the old Signal-blurred-avatar backdrop on the DM call surface
 without an explicit product decision; PiP and CallKit native chrome are
 unchanged.
+
+### Control deck orientation — pin to portrait-bottom, never the camera bump
+
+Owned by `CallControlsAnchor` + `CallControlsRow`
+(`pinControlsToPhysicalBottom`).
+
+**Portrait**
+
+- Deck sits on the **bottom** safe inset (home / gesture edge).
+- Four toggles in one row; **End** drops under them (`AnimatedSize`).
+
+**Landscape**
+
+- Same physical edge as portrait-bottom becomes a **vertical strip** on the
+  left or right — **not** the landscape screen’s bottom bar, and **not** the
+  camera / notch / Dynamic Island edge.
+- All five seats (Mute · Camera · Screen Share · Speaker · End) share that
+  one strip (End inline). Seat diameter shrinks to fit the short edge.
+- Circle chrome stays put; only glyphs may turn via `CallIconOrientation`
+  (do **not** `RotatedBox` the whole deck — that moved seats and confused
+  “icon-only rotate”).
+
+**Which side in landscape (easy to get backwards)**
+
+| You rotate phone… | Portrait-bottom becomes… | Strip pins… |
+| ----------------- | ------------------------ | ----------- |
+| Left (CCW)        | Right edge of the view   | **Right**   |
+| Right (CW)        | Left edge of the view    | **Left**    |
+
+Implementation rule: the camera/notch cutout makes the **larger** horizontal
+`viewPadding`. The home/gesture edge (portrait controls) has the **smaller**
+inset — pin there (`viewPadding.right <= viewPadding.left` → pin right).
+Equal insets → default pin right (rotate-left case).
+
+**Do not**
+
+- Pin to `padding.right >= padding.left` (that prefers the **notch** and
+  sends the deck to the camera bump — already shipped as a bug once).
+- Drop the landscape deck onto the bottom of the landscape frame “for
+  simplicity”.
+- Rotate the entire control column with `RotatedBox` when you only meant
+  glyphs to follow gravity.
+
+Tests that lock this: `caller_controls_layout_test.dart` (notch-left →
+strip right; notch-right → strip left).
 
 ## Screen sharing rides the call's own service — never a second one
 
