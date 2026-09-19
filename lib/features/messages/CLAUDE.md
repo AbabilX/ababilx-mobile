@@ -785,7 +785,38 @@ manifest   seal and commit the index of what was sent — and what was missing
 - **Not built yet**, and none of it is fake: no attempt to re-download a file
   from R2 before sending it (missing is reported as missing), no network-class
   or storage-pressure gating on the upload, no background/foreground-service
-  continuation, and no destination — so nothing has been transferred end to end.
+  continuation. Nothing has been transferred end to end on a real device.
+
+## Protocol v2 — batches (`history-transfer/v2/`, 2026-09-19)
+
+A QR with `v=2` takes this path; `v=1` keeps the code above. Contract:
+`ababilx-server/docs/history-transfer-v2-protocol.md`; shared fixtures in
+`test/fixtures/history_transfer/` (the web repo pins the same files).
+
+```
+plan     message batches sealed to disk (gzip NDJSON, conv before msg, end frame)
+         media laid out across batches as packed segments; missing files listed
+batch    create -> reserve (by size) / PUT / confirm -> pages -> finalize
+         final batch -> job seal -> wait until the browser COMMITS -> next batch
+```
+
+- **Messages before media**, each batch activatable alone, so the browser shows
+  history while video is still moving. The next batch starts only after the
+  browser commits the previous one; the relay never holds more than the
+  server's outstanding allowance (409 `history_transfer_relay_busy` = wait).
+- **A vanished or changed file is `omitted`, never skipped**: its stream range
+  goes up as zeros so the batch stays gapless (v1's uploader could deadlock
+  completion here), and the descriptor tells the browser to discard it.
+  `V2Pins` keeps planned files out of the sweeper's eviction while it runs.
+- **Byte-identical retries**: message chunks and descriptor pages are sealed to
+  disk before the first upload; media chunks are re-sealed (the server only
+  reads a chunk after confirm, so a re-PUT is safe).
+- **Resume key in secure storage** (`SecureV2KeyVault`), the plan on disk; the
+  chat list resumes an approved job on launch and shows it in the status tile.
+- **Foreground only**: "Keep AbabilX open while sending." No background
+  service; suspension pauses it and the next run resumes from the plan.
+- The approval echoes the scanned `k` string byte-for-byte (v1 re-encoded it).
+- Tests: `history_transfer_v2_{fixtures,crypto,export,media_plan}_test.dart`.
 
 ## Traps
 

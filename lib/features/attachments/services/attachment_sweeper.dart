@@ -7,6 +7,7 @@ import '../data/local/attachment_blob_store.dart';
 import '../data/local/attachment_dedupe_store.dart';
 import '../data/local/attachment_ref_store.dart';
 import 'attachment_paths.dart';
+import '../../messages/history-transfer/v2/v2_pins.dart';
 
 /// Keeps the on-disk store from growing without bound.
 ///
@@ -100,6 +101,9 @@ class AttachmentSweeper {
       if (total <= diskBudgetBytes) return;
       if (row.lastAccessMs > cutoff) continue;
       if (row.receivedBytes < evictionMinBytes) continue;
+      // A history transfer still has to read this file; evicting it now would
+      // turn a photo the phone holds into one the browser is told is gone.
+      if (V2Pins.isHeld(row.urlKey)) continue;
       // A content-hash dedupe match means another row still reads this exact
       // file — evicting this row must not pull the bytes out from under it.
       final shared =

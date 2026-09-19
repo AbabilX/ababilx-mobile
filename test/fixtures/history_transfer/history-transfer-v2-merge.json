@@ -1,0 +1,636 @@
+{
+  "comment": "Merge decision fixtures, docs/history-transfer-v2-protocol.md section 7. `row` is the table row that decides the case. Copied verbatim into both client repos.",
+  "cases": [
+    {
+      "name": "message marker suppresses phone copy",
+      "row": 1,
+      "markers": [
+        {
+          "conversation_id": "c1",
+          "message_id": "m1",
+          "through_at": "2026-01-10T10:00:00.000000Z",
+          "deleted_at": "2026-03-01T00:00:00Z",
+          "entire_conversation": false
+        }
+      ],
+      "existing": null,
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "suppress"
+    },
+    {
+      "name": "message marker suppresses and removes existing",
+      "row": 1,
+      "markers": [
+        {
+          "conversation_id": "c1",
+          "message_id": "m1",
+          "through_at": "2026-01-10T10:00:00.000000Z",
+          "deleted_at": "2026-03-01T00:00:00Z",
+          "entire_conversation": false
+        }
+      ],
+      "existing": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 9
+        }
+      },
+      "expect": "suppress"
+    },
+    {
+      "name": "conversation clear through created_at suppresses",
+      "row": 1,
+      "markers": [
+        {
+          "conversation_id": "c1",
+          "message_id": "",
+          "through_at": "2026-01-10T10:00:00.000000Z",
+          "deleted_at": "2026-03-01T00:00:00Z",
+          "entire_conversation": false
+        }
+      ],
+      "existing": null,
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "suppress"
+    },
+    {
+      "name": "conversation clear before created_at does not apply",
+      "row": 2,
+      "markers": [
+        {
+          "conversation_id": "c1",
+          "message_id": "",
+          "through_at": "2026-01-10T10:00:00.000000Z",
+          "deleted_at": "2026-03-01T00:00:00Z",
+          "entire_conversation": false
+        }
+      ],
+      "existing": null,
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000001Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "insert"
+    },
+    {
+      "name": "entire conversation marker suppresses newer messages",
+      "row": 1,
+      "markers": [
+        {
+          "conversation_id": "c1",
+          "message_id": "",
+          "through_at": "2026-01-10T10:00:00.000000Z",
+          "deleted_at": "2026-03-01T00:00:00Z",
+          "entire_conversation": true
+        }
+      ],
+      "existing": null,
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2027-01-01T00:00:00Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "suppress"
+    },
+    {
+      "name": "marker for another conversation does not apply",
+      "row": 2,
+      "markers": [
+        {
+          "conversation_id": "c2",
+          "message_id": "",
+          "through_at": "2026-01-10T10:00:00.000000Z",
+          "deleted_at": "2026-03-01T00:00:00Z",
+          "entire_conversation": false
+        }
+      ],
+      "existing": null,
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "insert"
+    },
+    {
+      "name": "new phone message inserts",
+      "row": 2,
+      "markers": [],
+      "existing": null,
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "insert"
+    },
+    {
+      "name": "new server message inserts",
+      "row": 2,
+      "markers": [],
+      "existing": null,
+      "incoming": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "insert"
+    },
+    {
+      "name": "incoming intentional deletion replaces content",
+      "row": 3,
+      "markers": [],
+      "existing": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 9
+        }
+      },
+      "incoming": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "",
+          "revision": 3,
+          "deleted_at": "2026-02-01T00:00:00Z"
+        }
+      },
+      "expect": "replace"
+    },
+    {
+      "name": "existing intentional deletion survives phone backfill",
+      "row": 4,
+      "markers": [],
+      "existing": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "",
+          "revision": 3,
+          "deleted_at": "2026-02-01T00:00:00Z"
+        }
+      },
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 9
+        }
+      },
+      "expect": "keep"
+    },
+    {
+      "name": "existing intentional deletion survives unknown revision",
+      "row": 4,
+      "markers": [],
+      "existing": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "",
+          "revision": 0,
+          "deleted_at": "2026-02-01T00:00:00Z"
+        }
+      },
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 0
+        }
+      },
+      "expect": "keep"
+    },
+    {
+      "name": "retention placeholder never overwrites phone content",
+      "row": 5,
+      "markers": [],
+      "existing": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "incoming": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "",
+          "revision": 99,
+          "deleted_at": "2026-07-10T00:00:00Z",
+          "content_purged": true
+        }
+      },
+      "expect": "keep"
+    },
+    {
+      "name": "phone content restores retention placeholder",
+      "row": 6,
+      "markers": [],
+      "existing": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "",
+          "revision": 99,
+          "deleted_at": "2026-07-10T00:00:00Z",
+          "content_purged": true
+        }
+      },
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "replace"
+    },
+    {
+      "name": "phone content restores placeholder with unknown revision",
+      "row": 6,
+      "markers": [],
+      "existing": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "",
+          "revision": 0,
+          "deleted_at": "2026-07-10T00:00:00Z",
+          "content_purged": true
+        }
+      },
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 0
+        }
+      },
+      "expect": "replace"
+    },
+    {
+      "name": "higher phone revision wins over server",
+      "row": 7,
+      "markers": [],
+      "existing": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "edited",
+          "revision": 7
+        }
+      },
+      "expect": "replace"
+    },
+    {
+      "name": "lower server revision loses to phone",
+      "row": 7,
+      "markers": [],
+      "existing": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 7
+        }
+      },
+      "incoming": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "keep"
+    },
+    {
+      "name": "equal revision: server arriving after phone replaces",
+      "row": 8,
+      "markers": [],
+      "existing": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "incoming": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "replace"
+    },
+    {
+      "name": "equal revision: phone arriving after server keeps server",
+      "row": 8,
+      "markers": [],
+      "existing": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "keep"
+    },
+    {
+      "name": "equal revision, same provenance keeps existing",
+      "row": 8,
+      "markers": [],
+      "existing": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "incoming": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 5
+        }
+      },
+      "expect": "keep"
+    },
+    {
+      "name": "unknown revision: phone keeps usable local record",
+      "row": 9,
+      "markers": [],
+      "existing": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 0
+        }
+      },
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 3
+        }
+      },
+      "expect": "keep"
+    },
+    {
+      "name": "unknown revision: phone keeps usable record when incoming is unknown",
+      "row": 9,
+      "markers": [],
+      "existing": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 4
+        }
+      },
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 0
+        }
+      },
+      "expect": "keep"
+    },
+    {
+      "name": "unknown revision: server stays authoritative",
+      "row": 9,
+      "markers": [],
+      "existing": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 4
+        }
+      },
+      "incoming": {
+        "provenance": "server",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 0
+        }
+      },
+      "expect": "replace"
+    },
+    {
+      "name": "unknown revision: phone over phone keeps existing",
+      "row": 9,
+      "markers": [],
+      "existing": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "hello",
+          "revision": 0
+        }
+      },
+      "incoming": {
+        "provenance": "phone",
+        "message": {
+          "id": "m1",
+          "conversation_id": "c1",
+          "user_id": "u1",
+          "created_at": "2026-01-10T10:00:00.000000Z",
+          "body": "x",
+          "revision": 0
+        }
+      },
+      "expect": "keep"
+    }
+  ]
+}

@@ -12,6 +12,8 @@ import '../message_e2ee/new_chat_setup.dart';
 import '../message_e2ee/new_chat_setup_banner.dart';
 import '../message_e2ee/message_vault_sheet.dart';
 import '../providers/chat_provider.dart';
+import '../history-transfer/history_transfer_provider.dart';
+import '../history-transfer/history_transfer_sheet.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -36,6 +38,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   Future<void> _bootstrap() async {
     final chat = ref.read(chatProvider.notifier);
     await chat.ensureReady();
+    // A history transfer this phone was sending when it was closed picks up
+    // where it stopped; the relay keeps its window open for 24 hours.
+    if (mounted) unawaited(ref.read(historyTransferProvider.notifier).resumeIfPending());
     if (mounted) await chat.startHistoryRestoreIfNeeded();
   }
 
@@ -116,6 +121,8 @@ class _MessagesBody extends ConsumerWidget {
           ? _UnlockBanner(onTap: onUnlockTap)
           : restoring
           ? const RecoveryProgressBanner()
+          : ref.watch(historyTransferProvider.select((s) => s.transferId.isNotEmpty))
+          ? const HistoryTransferStatusTile()
           : null,
     );
   }

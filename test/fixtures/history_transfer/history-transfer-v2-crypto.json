@@ -1,0 +1,79 @@
+{
+  "comment": "Pinned by ababilx-server docs/history-transfer-v2-protocol.md section 3. Copied verbatim into ababilx-mobile and opensource/chat_ababilx tests; change all three together or not at all.",
+  "transfer_id": "3f0c9a1e-7b2d-4c55-9e1a-2b6f0d4c8a17",
+  "transfer_key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "nonce_hex": "a0a1a2a3a4a5a6a7a8a9aaab",
+  "seals": [
+    {
+      "purpose": "inventory",
+      "aad": "ababilx-history-transfer-v2|inventory|3f0c9a1e-7b2d-4c55-9e1a-2b6f0d4c8a17",
+      "plaintext_utf8": "{\"v\":2,\"messages\":3}",
+      "sealed_b64u": "oKGio6SlpqeoqaqrnToKD3_5Lp0PAPSgZh2lrVKWam1_efz9ATYDNTqeZYrYRV1U"
+    },
+    {
+      "purpose": "dest-inventory",
+      "aad": "ababilx-history-transfer-v2|dest-inventory|3f0c9a1e-7b2d-4c55-9e1a-2b6f0d4c8a17",
+      "plaintext_utf8": "{\"v\":2,\"complete_files\":[]}",
+      "sealed_b64u": "oKGio6SlpqeoqaqrnToKD3_5Lp0BCuqjax-0uy_KMHz3xGBWx1NbQ4vtPiwPYZIUtg1X5P4C3Q"
+    },
+    {
+      "purpose": "chunk",
+      "aad": "ababilx-history-transfer-v2|chunk|3f0c9a1e-7b2d-4c55-9e1a-2b6f0d4c8a17|0|messages|0",
+      "plaintext_utf8": "chunk zero of batch zero",
+      "sealed_b64u": "oKGio6SlpqeoqaqrhXAJQy7reNoQCqe8YVqivwTPMTDo0jAD_ple4T-E2-zxuoWG3ObRFA"
+    },
+    {
+      "purpose": "chunk",
+      "aad": "ababilx-history-transfer-v2|chunk|3f0c9a1e-7b2d-4c55-9e1a-2b6f0d4c8a17|4|media|17",
+      "plaintext_utf8": "media bytes",
+      "sealed_b64u": "oKGio6Slpqeoqaqri30YRCTrYMYWAPRIx28GmMqXC4UepT49rv0C"
+    },
+    {
+      "purpose": "page",
+      "aad": "ababilx-history-transfer-v2|page|3f0c9a1e-7b2d-4c55-9e1a-2b6f0d4c8a17|2|0|3",
+      "plaintext_utf8": "{\"v\":2,\"batch\":2",
+      "sealed_b64u": "oKGio6SlpqeoqaqrnToKD3_5Lp0ABPOwb1j67NVVSGD3R1xZlQTHZmbnQ7M"
+    },
+    {
+      "purpose": "seal",
+      "aad": "ababilx-history-transfer-v2|seal|3f0c9a1e-7b2d-4c55-9e1a-2b6f0d4c8a17",
+      "plaintext_utf8": "{\"v\":2,\"last_batch\":4}",
+      "sealed_b64u": "oKGio6SlpqeoqaqrnToKD3_5Lp0OBPSnWBihqhPEeyqmyqz8e5Av9cU1lRBhLEJUH3Y"
+    }
+  ],
+  "envelope": {
+    "aad": "ababilx-history-transfer-v2|envelope|3f0c9a1e-7b2d-4c55-9e1a-2b6f0d4c8a17",
+    "destination_private_jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "AhfmF_C2RDkoJ4-WmZ5pojpPLBUr321s32bluAKC1O0",
+      "y": "GUp968uXcS0t2jyoWqh2Wlb0X8dYWZZS8ol8ZTBuV5Q",
+      "d": "ERERERERERERERERERERERERERERERERERERERERERE"
+    },
+    "destination_public_param_k": "eyJjcnYiOiJQLTI1NiIsImV4dCI6dHJ1ZSwia2V5X29wcyI6W10sImt0eSI6IkVDIiwieCI6IkFoZm1GX0MyUkRrb0o0LVdtWjVwb2pwUExCVXIzMjFzMzJibHVBS0MxTzAiLCJ5IjoiR1VwOTY4dVhjUzB0Mmp5b1dxaDJXbGIwWDhkWVdaWlM4b2w4WlRCdVY1USJ9",
+    "ephemeral_private_jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPM",
+      "y": "UBheiVNy32Ih6joTdVfkc_3bZ1XwW9UHw8Uz_OnJEoU",
+      "d": "IiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI"
+    },
+    "shared_x_hex": "ccfc261f58193c98ca4ad4a53bbac6f0ee29bc4d48438090446908622ca79af6",
+    "wrapping_key_hex": "98f5bf15dbc72627acd9a8ab61ce21349ea3496d79136adf08ad381cc9c0fa25",
+    "nonce_hex": "b0b1b2b3b4b5b6b7b8b9babb",
+    "envelope_json": {
+      "v": 2,
+      "ephemeral_public_key": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "1lqTl3yqPRsIGFL_V6eeRl8WYFdzBLrq1QXdOkhYnPM",
+        "y": "UBheiVNy32Ih6joTdVfkc_3bZ1XwW9UHw8Uz_OnJEoU",
+        "ext": true,
+        "key_ops": []
+      },
+      "nonce": "sLGys7S1tre4ubq7",
+      "ciphertext": "ScoiFUZfjq-iD_0Pu5GzmeUwPoksl6I6Nr9Zui9wPUHdIGADZTO8iReQH4Ae2czg"
+    },
+    "verification_code": "137150"
+  }
+}

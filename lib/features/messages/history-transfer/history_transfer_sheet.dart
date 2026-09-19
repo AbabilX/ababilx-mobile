@@ -95,7 +95,13 @@ class HistoryTransferStatusTile extends ConsumerWidget {
                   ref.read(historyTransferProvider.notifier).cancel(),
               child: const Text('Cancel'),
             )
-          : null,
+          : TextButton(
+              onPressed: () {
+                final notifier = ref.read(historyTransferProvider.notifier);
+                state.error.isNotEmpty ? notifier.retry() : notifier.dismiss();
+              },
+              child: Text(state.error.isNotEmpty ? 'Retry' : 'OK'),
+            ),
     );
   }
 
@@ -125,9 +131,13 @@ class HistoryTransferStatusTile extends ConsumerWidget {
           ? 'Everything this phone still has was sent.$missing'
           : 'Messages and files transferred.';
     }
-    if (state.phase == HistoryTransferPhase.upload && state.total > 0) {
-      return '${state.done} of ${state.total} pieces$missing';
+    final part = state.batches > 1 ? 'Part ${state.batch + 1} of ${state.batches} · ' : '';
+    if (state.waiting) {
+      return '${part}Waiting for the other device to save it. Keep AbabilX open.$missing';
     }
-    return 'Keep AbabilX open while this runs.$missing';
+    if (state.phase == HistoryTransferPhase.upload && state.total > 0) {
+      return '$part${state.done} of ${state.total} pieces · Keep AbabilX open$missing';
+    }
+    return 'Keep AbabilX open while sending.$missing';
   }
 }

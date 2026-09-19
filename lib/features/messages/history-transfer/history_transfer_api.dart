@@ -31,11 +31,17 @@ class HistoryTransferApi {
   /// Approves and opens the 24-hour relay window. The public key is echoed so
   /// the server can refuse a token whose key it does not recognise — a
   /// substituted pairing fails here rather than being sealed to a stranger.
+  ///
+  /// v2 passes [destinationKeyParam], the scanned `k` exactly as the camera
+  /// read it: the server compares it to what the destination registered as a
+  /// string, and re-encoding a decoded JWK is one key-order change away from
+  /// a mismatch that reads as a substituted key.
   Future<String> approve({
     required String token,
     required String deviceName,
     required Map<String, dynamic> envelope,
     required Map<String, dynamic> destinationJwk,
+    String? destinationKeyParam,
   }) async {
     final res = await _client.post(
       ApiConstants.historyTransferApprove,
@@ -43,7 +49,7 @@ class HistoryTransferApi {
         'token': token,
         'device_name': deviceName,
         'transfer_envelope': _encodeEnvelope(envelope),
-        'destination_public_key': _jwkParam(destinationJwk),
+        'destination_public_key': destinationKeyParam ?? _jwkParam(destinationJwk),
       },
     );
     return unwrapApiData<Map<String, dynamic>>(res)['id'] as String;

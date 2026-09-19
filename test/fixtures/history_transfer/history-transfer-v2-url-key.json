@@ -1,0 +1,35 @@
+{
+  "comment": "attachmentUrlKey: sha256 hex of normalised URL, first 40 chars. Mobile attachment_url_key.dart is the reference.",
+  "cases": [
+    {
+      "url": "https://cdn.ababilx.com/chat/abc/Photo%20One.JPG",
+      "normalised": "https://cdn.ababilx.com/chat/abc/Photo%20One.JPG",
+      "url_key": "3e058054566b965685b7980b8c8bb7b63a426bcf"
+    },
+    {
+      "url": "HTTPS://CDN.AbabilX.com/chat/abc/Photo%20One.JPG?v=2#frag",
+      "normalised": "https://cdn.ababilx.com/chat/abc/Photo%20One.JPG",
+      "url_key": "3e058054566b965685b7980b8c8bb7b63a426bcf"
+    },
+    {
+      "url": "https://cdn.ababilx.com:8443/chat/Case/Sensitive.png",
+      "normalised": "https://cdn.ababilx.com:8443/chat/Case/Sensitive.png",
+      "url_key": "3e5c88358bb44a66f0e91628e8b96c843676445b"
+    },
+    {
+      "url": "  https://cdn.ababilx.com/chat/x/voice.m4a  ",
+      "normalised": "https://cdn.ababilx.com/chat/x/voice.m4a",
+      "url_key": "6cffe517907f10fdea43dd5358f8eba827faf686"
+    },
+    {
+      "url": "https://cdn.ababilx.com",
+      "normalised": "https://cdn.ababilx.com",
+      "url_key": "11ed63a4d507e7dac979a7c771a66b1f166e2cd8"
+    },
+    {
+      "url": "",
+      "normalised": "",
+      "url_key": ""
+    }
+  ]
+}

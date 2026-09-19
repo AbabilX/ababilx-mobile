@@ -3,64 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../data/local/chat_message_store.dart';
-import '../data/local/chat_sidebar_cache.dart';
 import '../data/models/chat_models.dart';
-import '../providers/chat_provider.dart';
 import 'history_transfer_api.dart';
 import 'history_transfer_exporter.dart';
+import 'history_transfer_local_conversations.dart';
+import 'history_transfer_state.dart';
+
+export 'history_transfer_state.dart';
+import 'v2/v2_api.dart';
+import 'v2/v2_exporter.dart';
+import 'v2/v2_store.dart';
 
 final historyTransferApiProvider = Provider<HistoryTransferApi>(
   (ref) => HistoryTransferApi(ref.watch(apiClientProvider)),
 );
 
-/// What the phone is doing for a transfer it approved.
-///
-/// Sending is deliberately NOT modal: the user approved a transfer, they did
-/// not agree to stare at a progress bar for an hour of video. The state lives
-/// here so a sheet can show it and the chat list can carry a quiet line.
-class HistoryTransferState {
-  const HistoryTransferState({
-    this.transferId = '',
-    this.phase,
-    this.done = 0,
-    this.total = 0,
-    this.missingFiles = 0,
-    this.error = '',
-    this.finished = false,
-  });
-
-  final String transferId;
-  final HistoryTransferPhase? phase;
-  final int done;
-  final int total;
-
-  /// Files the phone no longer holds. Reported apart from progress, because a
-  /// transfer that moved every message and four missing photos must never
-  /// read as "everything transferred".
-  final int missingFiles;
-  final String error;
-  final bool finished;
-
-  bool get busy => transferId.isNotEmpty && !finished && error.isEmpty;
-
-  HistoryTransferState copyWith({
-    String? transferId,
-    HistoryTransferPhase? phase,
-    int? done,
-    int? total,
-    int? missingFiles,
-    String? error,
-    bool? finished,
-  }) => HistoryTransferState(
-    transferId: transferId ?? this.transferId,
-    phase: phase ?? this.phase,
-    done: done ?? this.done,
-    total: total ?? this.total,
-    missingFiles: missingFiles ?? this.missingFiles,
-    error: error ?? this.error,
-    finished: finished ?? this.finished,
-  );
-}
+final historyTransferV2ApiProvider = Provider<HistoryTransferV2Api>(
+  (ref) => HistoryTransferV2Api(ref.watch(apiClientProvider)),
+);
 
 class HistoryTransferNotifier extends Notifier<HistoryTransferState> {
   @override
@@ -124,20 +84,63 @@ class HistoryTransferNotifier extends Notifier<HistoryTransferState> {
     state = const HistoryTransferState();
   }
 
-  /// The sidebar cache is the only local enumeration of conversations there
-  /// is. Best effort: without it every message still transfers, there is just
-  /// nothing to name the threads until the destination's first sidebar fetch.
-  Future<List<ChatConversation>> _conversations() async {
+  Future<List<ChatConversation>> _conversations() =>
+      localTransferConversations(ref);
+
+  /// Protocol v2 (`v2/`): batches, messages before media. `transferKey` is
+  /// null on a resume, and read back from secure storage.
+  Future<void> sendV2({required String transferId, List<int>? transferKey}) async {
+    _cancelled = false;
+    state = HistoryTransferState(transferId: transferId, phase: HistoryTransferPhase.snapshot);
     try {
-      final userId = ref.read(chatProvider).currentUserId;
-      if (userId.isEmpty) return const [];
-      final sidebar = await ChatSidebarCache(
-        ref.read(chatLocalDbProvider),
-      ).read(userId);
-      if (sidebar == null) return const [];
-      return [...sidebar.channels, ...sidebar.dms];
+      final outcome = await HistoryTransferV2Exporter(
+        api: ref.read(historyTransferV2ApiProvider),
+        messages: ref.read(chatMessageStoreProvider),
+        blobs: ref.read(attachmentBlobStoreProvider),
+        conversations: await _conversations(),
+        isCancelled: () => _cancelled,
+        onProgress: (phase, batch, batches, done, total) => state = state.copyWith(
+          phase: phase == V2Phase.planning ? HistoryTransferPhase.snapshot : HistoryTransferPhase.upload,
+          batch: batch,
+          batches: batches,
+          done: done,
+          total: total,
+          waiting: phase == V2Phase.waiting,
+        ),
+      ).run(transferId: transferId, transferKey: transferKey);
+      state = state.copyWith(
+        finished: outcome.completed,
+        waiting: false,
+        missingFiles: outcome.filesMissing + outcome.filesOmitted,
+        error: outcome.completed || _cancelled ? '' : 'The other device stopped the transfer.',
+      );
+    } catch (error) {
+      // Left open: the window is 24 hours and the plan is on disk, so the
+      // next launch (or Retry) resumes rather than restarts.
+      state = state.copyWith(error: historyTransferFailure(error), waiting: false);
+    }
+  }
+
+  /// After a failure: the plan and key are still here, so this resumes.
+  Future<void> retry() async {
+    state = const HistoryTransferState();
+    await resumeIfPending();
+  }
+
+  /// Clears a finished line off the chat list.
+  void dismiss() => state = const HistoryTransferState();
+
+  /// Picks up a v2 transfer this phone was sending when it was closed.
+  Future<void> resumeIfPending() async {
+    if (state.busy) return;
+    try {
+      final active = await ref.read(historyTransferApiProvider).active();
+      if (active == null || active['role'] != 'source' || active['status'] != 'approved') return;
+      final id = active['id'] as String? ?? '';
+      if (id.isEmpty || await (await V2Store.open(id)).readKey(id) == null) return;
+      await sendV2(transferId: id);
     } catch (_) {
-      return const [];
+      // Nothing to resume, or no network yet; the next launch asks again.
     }
   }
 }

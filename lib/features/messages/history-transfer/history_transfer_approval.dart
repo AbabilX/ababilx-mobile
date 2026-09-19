@@ -11,6 +11,7 @@ import 'history_transfer_payload.dart';
 import 'history_transfer_provider.dart';
 import 'history_transfer_sheet.dart';
 import 'history_transfer_verification.dart';
+import 'v2/v2_crypto.dart';
 
 /// Approving a scanned device's request for this phone's history.
 ///
@@ -31,7 +32,7 @@ class HistoryTransferApproval {
       showAppToast(context, 'That code is not a history transfer.');
       return;
     }
-    if (scanned.version > HistoryTransferCrypto.formatVersion) {
+    if (scanned.version > HistoryTransferV2Crypto.version) {
       // Refused up front rather than after uploading chunks the destination
       // could not open — a failure with nothing to show for the wait.
       showAppToast(context, 'Update AbabilX on this phone to send history.');
@@ -52,6 +53,8 @@ class HistoryTransferApproval {
     try {
       final request = await api.inspect(scanned.token);
       view = HistoryTransferRequestView(
+        id: request.id,
+        version: request.version,
         deviceName: request.deviceName,
         client: request.client,
         code: await historyTransferVerificationCode(scanned.destinationJwk),
@@ -73,22 +76,33 @@ class HistoryTransferApproval {
 
     try {
       final key = HistoryTransferCrypto.newTransferKey();
+      final v2 = scanned.version >= 2 && view.version >= 2;
       final id = await api.approve(
         token: scanned.token,
         deviceName: view.deviceName,
-        envelope: await HistoryTransferCrypto.sealTransferKey(
-          transferKey: key,
-          destinationJwk: scanned.destinationJwk,
-        ),
+        // v2 binds the transfer id into the envelope's AAD, so a sealed key
+        // cannot be moved to another job.
+        envelope: v2
+            ? await HistoryTransferV2Crypto.sealEnvelope(
+                transferId: view.id,
+                transferKey: key,
+                destinationJwk: scanned.destinationJwk,
+              )
+            : await HistoryTransferCrypto.sealTransferKey(
+                transferKey: key,
+                destinationJwk: scanned.destinationJwk,
+              ),
         destinationJwk: scanned.destinationJwk,
+        destinationKeyParam: v2 ? scanned.publicKeyParam : null,
       );
       // Not awaited: the export runs for as long as the history is large, and
       // the user approved a transfer, not a progress bar. Its state lives in
       // the provider, which the sheet and any later screen can read.
+      final notifier = ref.read(historyTransferProvider.notifier);
       unawaited(
-        ref
-            .read(historyTransferProvider.notifier)
-            .send(transferId: id, transferKey: key, deviceId: view.deviceName),
+        v2
+            ? notifier.sendV2(transferId: id, transferKey: key)
+            : notifier.send(transferId: id, transferKey: key, deviceId: view.deviceName),
       );
       if (context.mounted) {
         showAppToast(context, 'Sending your history to ${view.label}.');
@@ -134,10 +148,15 @@ class HistoryTransferApproval {
 /// this phone from the scanned key, never taken from the server's answer.
 class HistoryTransferRequestView {
   const HistoryTransferRequestView({
+    this.id = '',
+    this.version = 1,
     required this.deviceName,
     required this.client,
     required this.code,
   });
+
+  final String id;
+  final int version;
 
   final String deviceName;
   final String client;
