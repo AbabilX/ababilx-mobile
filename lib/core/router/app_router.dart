@@ -50,7 +50,6 @@ import '../../features/settings/screens/edit_username_screen.dart';
 import '../../features/settings/screens/my_qr_screen.dart';
 import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
-import '../../features/settings/screens/donate_screen.dart';
 import 'home_shell.dart';
 import '../../features/settings/recovery-codes/recovery_codes_screen.dart';
 import '../../features/messages/message_e2ee/message_entry_ready.dart';
@@ -181,10 +180,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const LocalShareScreen(),
       ),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
-      GoRoute(
-        path: '/settings/donate',
-        builder: (_, _) => const DonateScreen(),
-      ),
       // Where an incoming ACTION_SEND from another app lands.
       GoRoute(path: '/share', builder: (_, _) => const ShareTargetScreen()),
       GoRoute(

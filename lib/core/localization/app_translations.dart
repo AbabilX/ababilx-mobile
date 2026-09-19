@@ -561,10 +561,14 @@ class AppTranslations {
       'donate_body':
           'AbabilX is built by a small team. A donation buys time for '
           'secure chat, calls, and the features you ask for — thank you.',
-      'donate_cta': 'Donate now',
-      'donate_coming_soon': 'Donation options are coming soon. Thank you!',
+      'donate_cta': 'Copy bKash number',
+      'donate_bkash_label': 'bKash (Send Money)',
+      'donate_bkash_hint': 'Personal · tap to copy',
+      'donate_copy': 'Copy',
+      'donate_copied': 'bKash number copied',
       'donate_footnote':
-          'No pressure — using the app and telling a friend already helps.',
+          'Open bKash → Send Money → paste the number. Any amount helps. '
+          'Using the app and telling a friend already helps too.',
       'settings_you': 'You',
       'settings_your_qr': 'Your QR code',
       'settings_linked_via': 'Linked with {provider}',
@@ -1245,10 +1249,14 @@ class AppTranslations {
       'donate_body':
           'AbabilX ছোট একটি টিম বানাচ্ছে। আপনার ডোনেশন নিরাপদ চ্যাট, '
           'কল ও যে ফিচারগুলো চান সেগুলোতে সময় কিনে দেয় — ধন্যবাদ।',
-      'donate_cta': 'এখনই ডোনেট করুন',
-      'donate_coming_soon': 'ডোনেশন অপশন শিগগির আসছে। ধন্যবাদ!',
+      'donate_cta': 'bKash নম্বর কপি করুন',
+      'donate_bkash_label': 'bKash (সেন্ড মানি)',
+      'donate_bkash_hint': 'পার্সোনাল · কপি করতে ট্যাপ করুন',
+      'donate_copy': 'কপি',
+      'donate_copied': 'bKash নম্বর কপি হয়েছে',
       'donate_footnote':
-          'বাধ্যবাধকতা নেই — অ্যাপ ব্যবহার ও বন্ধুকে বলাই অনেক সাহায্য।',
+          'bKash খুলে → সেন্ড মানি → নম্বর পেস্ট করুন। যেকোনো অ্যামাউন্ট সাহায্য করে। '
+          'অ্যাপ ব্যবহার ও বন্ধুকে বলাই অনেক সাহায্য।',
       'settings_you': 'আপনি',
       'settings_your_qr': 'আপনার কিউআর কোড',
       'settings_linked_via': '{provider} লিংক করা',

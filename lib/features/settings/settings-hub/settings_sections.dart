@@ -14,6 +14,7 @@ import '../../profile/providers/profile_provider.dart';
 import 'language_dialog.dart';
 import 'settings_row.dart';
 import 'sign_out_dialog.dart';
+import '../donate/donate_sheet.dart';
 
 /// The row groups under the bio block. Signal splits these with dividers
 /// rather than cards, so each group reads as one surface.
@@ -135,7 +136,7 @@ class SettingsSections extends ConsumerWidget {
           icon: HugeIcons.strokeRoundedFavourite,
           title: t('settings_donate'),
           subtitle: t('settings_donate_sub'),
-          onTap: () => context.push('/settings/donate'),
+          onTap: () => showDonateSheet(context),
         ),
         const Divider(height: 24),
         SettingsRow(
