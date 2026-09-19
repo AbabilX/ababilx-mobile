@@ -30,24 +30,20 @@ void main() {
     expect(voiceCallStatusText(ringing), 'Ringing…');
   });
 
-  test('callee sees key exchange while the accepted call connects', () {
-    final state = VoiceCallState(
+  test('both sides see key exchange while the accepted call connects', () {
+    final callee = VoiceCallState(
       phase: VoiceCallPhase.connecting,
       call: _call(),
       currentUserId: 'peer',
     );
-
-    expect(voiceCallStatusText(state), 'Exchanging security keys…');
-  });
-
-  test('caller keeps the general connecting message', () {
-    final state = VoiceCallState(
+    final caller = VoiceCallState(
       phase: VoiceCallPhase.connecting,
       call: _call(),
       currentUserId: 'me',
     );
 
-    expect(voiceCallStatusText(state), 'Connecting…');
+    expect(voiceCallStatusText(callee), 'Exchanging security keys…');
+    expect(voiceCallStatusText(caller), 'Exchanging security keys…');
   });
 
   test('callee_ringing_at parses from the server row', () {
