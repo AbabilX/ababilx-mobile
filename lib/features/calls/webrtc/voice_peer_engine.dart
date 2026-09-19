@@ -8,6 +8,7 @@ import '../audio/call_audio_route.dart';
 import '../native/android_screen_share.dart';
 import '../voice_call_log.dart';
 import 'ice_candidate_stats.dart';
+import 'voice_audio_progress.dart';
 import 'voice_camera_capture.dart';
 import 'voice_media_map.dart';
 import 'voice_video_quality.dart';
@@ -106,6 +107,9 @@ class VoicePeerEngine {
   bool _remoteDescriptionSet = false;
   bool _disposed = false;
   bool _connected = false;
+  final _audioProgress = VoiceAudioProgress();
+  Timer? _audioHealthTimer;
+  bool _audioHealthPending = false;
   bool _answerReceived = false;
 
   /// Counts remote offers applied, so the fallback below can tell whether the
@@ -224,6 +228,10 @@ class VoicePeerEngine {
       voiceCallLog('ice.connection', reason: state.toString());
       if (state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
         onTrouble(_failureReason(), immediate: true);
+      } else if (_connected &&
+          (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
+              state == RTCIceConnectionState.RTCIceConnectionStateCompleted)) {
+        onHealthy();
       }
     };
     peer.onConnectionState = _handleConnectionState;
@@ -499,6 +507,10 @@ class VoicePeerEngine {
         if (!_connected) {
           _connected = true;
           onConnected();
+          _audioHealthTimer = Timer.periodic(
+            const Duration(seconds: 2),
+            (_) => unawaited(_checkAudioHealth()),
+          );
           // One-shot pair snapshot, then a 5s follow-up to confirm media flow.
           unawaited(logSelectedPair());
           Timer(const Duration(seconds: 5), () => unawaited(logMediaFlow()));
@@ -522,6 +534,33 @@ class VoicePeerEngine {
   /// Distinguishes "the connection dropped" from "no route could ever exist".
   String _failureReason() =>
       _localCandidates.lanOnly ? 'ice_no_relay' : 'peer_connection_failed';
+
+  // Network notifications and ICE restarts need not produce a new aggregate
+  // PC connected event. Fresh incoming audio also ends a recovery episode.
+  Future<void> _checkAudioHealth() async {
+    final peer = _peer;
+    if (_disposed || peer == null || _audioHealthPending) return;
+    _audioHealthPending = true;
+    try {
+      final stats = await peer.getStats();
+      if (_disposed || !identical(peer, _peer)) return;
+      final packets = <String, num>{};
+      for (final report in stats) {
+        final values = report.values;
+        if (report.type == 'inbound-rtp' &&
+            (values['kind'] ?? values['mediaType']) == 'audio' &&
+            values['packetsReceived'] is num) {
+          packets[report.id] = values['packetsReceived'] as num;
+        }
+      }
+      if (_audioProgress.update(packets)) onHealthy();
+    } catch (_) {
+      // An unavailable stats sample is not evidence of call failure.
+      _audioProgress.update({});
+    } finally {
+      _audioHealthPending = false;
+    }
+  }
 
   Future<void> _flushCandidates() async {
     for (final candidate in _pendingCandidates) {
@@ -830,6 +869,8 @@ class VoicePeerEngine {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    _audioHealthTimer?.cancel();
+    _audioHealthTimer = null;
     await stopScreenShare(renegotiate: false);
     _renegotiateFallback?.cancel();
     _renegotiateFallback = null;
