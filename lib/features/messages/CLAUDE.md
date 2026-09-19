@@ -30,7 +30,7 @@ that row. Insert-then-update, never delete-and-reinsert.
 - Confirm writes the same local key (`localMessageRowId` = clientRef when
   present). Absent `send_status` in JSON still means `sent`.
 - `_markPendingFailed` only patches a still-pending row (`m.id == pendingId &&
-  m.isPending`), so a lost HTTP response after a websocket confirm cannot flip
+m.isPending`), so a lost HTTP response after a websocket confirm cannot flip
   the settled bubble to failed.
 
 Web is unaffected: it has no delete-by-clientRef path.
@@ -161,7 +161,7 @@ checkout is `examples/Signal-Android`: AGPL, read-only, never a source to paste
 from — the Dart here is written fresh against the values.
 
 Corner radii are the load-bearing part. `signalBubbleRadius` collapses a run's
-corners on the sender's *own* side — right for yours, left for theirs — which
+corners on the sender's _own_ side — right for yours, left for theirs — which
 is what makes three bubbles read as one block. It is pure and tested
 (`test/features/messages/signal_bubble_metrics_test.dart`); change it there,
 not in a widget.
@@ -193,7 +193,7 @@ not in a widget.
 - Sender-name colours are per-user and derived from the id's code units, not
   `Object.hashCode` — Dart may vary that between runs and the colour has to
   survive a restart.
-- The unread divider is placed by *count*, not timestamp: the conversation
+- The unread divider is placed by _count_, not timestamp: the conversation
   carries no last-read marker, so `ChatTimeline` snapshots `unreadCount` before
   `loadFeed` marks it read. That count is turned into a **message id** once
   (`unreadDividerAnchorId`, `chat_timeline_unread.dart`) and the bar is pinned
@@ -220,7 +220,7 @@ Helpers live in `thread_people.dart` (`threadReplyLabel`, `threadPreview`,
 
 ## Reply means two different things, and they must never both be set
 
-The app has quotes *and* threads. `ComposerReplyTarget.resolve` is the only
+The app has quotes _and_ threads. `ComposerReplyTarget.resolve` is the only
 place that decides which one a Reply becomes, and it is pure and tested:
 
 - **Main timeline** → a **quote** (`quoted_message_id`). The reply stays in the
@@ -242,7 +242,7 @@ Server-side the quote is a join on `chat_messages.quoted_message_id`
 (migration `0119`), so editing the original updates the quote and deleting it
 leaves `deleted: true` and a tombstone. Two consequences here:
 
-- In a DM the quoted text arrives as **ciphertext**, keyed to the *quoted*
+- In a DM the quoted text arrives as **ciphertext**, keyed to the _quoted_
   sender — the DM cipher binds that id into its AAD. `MessageVault._decryptQuote`
   runs it back through `decryptMessage` as a stand-in message so the key cache
   and rotation refetch are reused; the stand-in has no quote of its own, so it
@@ -412,13 +412,13 @@ cannot span two rows, caps combining marks at two per base, and bounds the
 result at 64 runes.
 
 **The blank-glyph rule is the one that matters.** `U+3164 HANGUL FILLER` is
-category `Lo` — a *letter*. `U+2800 BRAILLE PATTERN BLANK` is `So` — a *symbol*.
+category `Lo` — a _letter_. `U+2800 BRAILLE PATTERN BLANK` is `So` — a _symbol_.
 So a name built from them passes every category check, is not whitespace, is not
 a control character, and renders as nothing: the chat row keeps its avatar,
 timestamp and preview, and has no title to read, say or report. That is why they
 get chosen. `safeDisplayName` returns its fallback for a name that draws nothing,
 and `handlers/me.NormalizeDisplayName` now **rejects** one outright, so it cannot
-be set again through our API. A blank glyph *beside* real text is still fine.
+be set again through our API. A blank glyph _beside_ real text is still fine.
 
 `displayNameInitial` gives the avatar letter. Never `name[0]` — that splits a
 surrogate pair and paints a tofu box for any name starting with an emoji. It
@@ -438,7 +438,7 @@ sign is `Mc`, not `L`, and folding it away would collide two different names.
 
 `features/messages/nickname/`. Signal's model: a display name belongs to the
 account that owns it, so we sanitise it but never change it; a **nickname** is
-the name *you* file someone under on *your* phone. Keyed by user id, not
+the name _you_ file someone under on _your_ phone. Keyed by user id, not
 conversation id, so one nickname follows a person through their DM, every group
 they are in, and the sender line above their messages.
 
@@ -448,6 +448,15 @@ the person it describes. `ContactNicknames.titleFor` is the single decision
 point — a DM takes the nickname, a group or channel never does, because nobody
 has a private name for a room. Edited from Nickname on the chat details screen,
 and searched in the people list, since a rename has to be how you find someone.
+
+## Chat wallpaper is device-local; fresh installs get a theme pair
+
+`features/messages/wallpaper/`. Global default plus per-chat overrides in
+`SharedPreferences`. The bundled `mobile` preset swaps `mobile_light.jpg` /
+`mobile_dark.jpg` with theme brightness. `ChatWallpaperStore.shipDefaultIfFreshInstall`
+(called from `main`) writes that preset only on a brand-new install; upgrades
+and an explicit "No wallpaper" stay plain. Dewdrop and rainy-paddy remain
+picker options. Per-chat choices always win over the global default.
 
 ## Chat search is chats, then messages
 
@@ -464,7 +473,6 @@ one chat's details, the message list is still narrowed to that conversation;
 the Chats section stays global so you can jump. The floating shell pill is
 hidden for the duration (`shellBottomBarHiddenProvider`), because `showSearch`
 does not leave the shell navigator.
-
 
 # Received media stays in the sandbox
 
@@ -496,7 +504,7 @@ parity. Two things were wrong with it:
 Signal's rule, which is the one we follow now: attachments live only in the
 app's private store, and `AttachmentSaver` writes to MediaStore only after the
 user taps Save and accepts the "other apps can read this" warning. Duplicate
-*names* are then handled honestly — Signal appends `-1`, `-2` — because saving
+_names_ are then handled honestly — Signal appends `-1`, `-2` — because saving
 the same file twice is a thing the user asked for.
 
 `exported_at_ms` / `exported_path` are still on the table, never written, so
@@ -506,7 +514,6 @@ anything starts calling the `media_store` channel off a download again.
 
 Copies exported by older builds are still in the user's gallery. They are the
 user's files now; nothing deletes them.
-
 
 # A video bubble holds no decoder
 
@@ -528,7 +535,7 @@ actually opened.
 - A portrait video is stored landscape with a 90°/270° rotation flag and the
   retriever hands back the **rotated** frame — the target size has to be
   swapped too, or the poster comes out squashed.
-- `VideoThumbnails.forFile` memoises the *future*, so two bubbles on the same
+- `VideoThumbnails.forFile` memoises the _future_, so two bubbles on the same
   file share one decode.
 - Android only. A remote URL (wall, CRM) and every non-Android build fall back
   to `LiveVideoPoster`, which is the old controller-per-tile behaviour, scoped
@@ -644,7 +651,7 @@ The identity is minted on the device. Its private half is stored on the server
 - **anything else** → `VaultIdentityState.unlock`, and `VaultGateRecoveryCode`
   asks for the code (`MessageVaultRecover.unlockWithRecoveryCode`).
 
-A correct code restores the *same* identity, so every message the account ever
+A correct code restores the _same_ identity, so every message the account ever
 received decrypts.
 
 **The newest page of every chat is pulled once after that code, not when a
@@ -726,10 +733,10 @@ manifest   seal and commit the index of what was sent — and what was missing
   thing a device short on storage cannot afford.
 - **The manifest is committed LAST and freezes the transfer.** The server
   refuses new chunks after it and refuses completion until every chunk it names
-  is uploaded *and* acknowledged, so an early manifest either describes chunks
+  is uploaded _and_ acknowledged, so an early manifest either describes chunks
   that do not exist or shuts out the ones still to come.
 - **A file the phone no longer holds is recorded, not skipped** (`first_chunk:
-  -1`). The message still arrives and the attachment reads as unavailable —
+-1`). The message still arrives and the attachment reads as unavailable —
   which is the truth — rather than as a download that will never finish.
   `HistoryTransferOutcome.missingFiles` is reported separately from progress
   for the same reason: every message plus four lost photos is not "everything
@@ -784,7 +791,7 @@ manifest   seal and commit the index of what was sent — and what was missing
 - **After a reset, the OTHER side has to re-key too.** The reset drops only the
   resetting user's key envelopes, so the peer's device still holds a valid one
   and sees nothing wrong — it would keep sealing to a key the reset user can
-  never open, which reads as "every incoming message says *Unable to decrypt*".
+  never open, which reads as "every incoming message says _Unable to decrypt_".
   `_DmKey.stale` (from `missing_member_ids` on `GET .../e2ee-key`) makes the
   next send rotate, and `sendEncryptedDm` in `message_e2ee/dm_key_rotation.dart`
   re-keys once on the server's 409 `chat_key_rotation_required` for a key that
@@ -807,10 +814,10 @@ manifest   seal and commit the index of what was sent — and what was missing
 Changed 2026-09-07, after "selecting images takes time".
 
 The composer used to call `onAdded` — the thing that puts a tile in the pending
-strip — only *after* the file's PUT had finished, and it uploaded one file
+strip — only _after_ the file's PUT had finished, and it uploaded one file
 before starting the next. Ten photos on a slow uplink therefore left the
 composer visibly empty for as long as the whole transfer took, which reads as
-the *picker* being slow rather than the network.
+the _picker_ being slow rather than the network.
 
 `composer_upload.dart` now runs in two passes:
 
@@ -970,7 +977,7 @@ and every bubble on screen renders the same string.
 store the **sealed envelope** — byte-for-byte the ciphertext the server hands
 out, openable only by the identity private key in the OS keystore. So the
 "ciphertext only at rest" rule is intact: this adds nothing readable to the
-disk, it moves the *key* to where the messages already are.
+disk, it moves the _key_ to where the messages already are.
 
 **This is deliberately not what Signal does.** Signal decrypts once on receipt
 and writes the plaintext into its SQLCipher database, which is why its chats
@@ -1220,7 +1227,7 @@ composer-> icon+label bar      (SelectionActionBar)
   the screen clears it too; the bars belong to this screen.
 - **Thread panels never enter it.** They have no header and no composer slot,
   so there is nowhere to put the two bars — hence `showSelect: threadRootId ==
-  null` on the menu and the same test in the row and the view.
+null` on the menu and the same test in the row and the view.
 - **Forwarding many is the single forward, looped in timeline order**
   (`chat-forward/forward_send.dart`, split out of `forward_sheet.dart`).
   Destinations are resolved **once**, or a DM created for the first message
@@ -1272,7 +1279,7 @@ first. The account was stuck at the door with the key on the other side of it.
   70%-black `Material` scrim over the shell) and this route has nothing
   underneath it.
 - The 403s in the log were not only the vault: `[ChatCache] fetchSidebar:
-  network threw: … 403` is the same gate. One refusal, every call.
+network threw: … 403` is the same gate. One refusal, every call.
 - Web and desktop were never exposed — their policy dialog sits in the user
   shell, and neither has a screen in front of it.
 - Test: `test/features/policy/policy_precheck_test.dart`.

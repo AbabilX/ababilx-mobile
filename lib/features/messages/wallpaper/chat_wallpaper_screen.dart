@@ -63,6 +63,10 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
     );
   }
 
+  bool _isThemePair(ChatWallpaper wallpaper) =>
+      wallpaper.kind == ChatWallpaperKind.preset &&
+      (chatWallpaperPresetById(wallpaper.presetId)?.isThemePair ?? false);
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(chatWallpaperProvider);
@@ -105,11 +109,13 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
             contentPadding: EdgeInsets.zero,
             value: wallpaper.dimInDark,
             title: const Text('Dim wallpaper in dark theme'),
-            subtitle: const Text(
-              'A background bright enough to read against by day is glaring '
-              'at night.',
+            subtitle: Text(
+              _isThemePair(wallpaper)
+                  ? 'This wallpaper already has a dark version.'
+                  : 'A background bright enough to read against by day is '
+                        'glaring at night.',
             ),
-            onChanged: wallpaper.isSet
+            onChanged: wallpaper.isSet && !_isThemePair(wallpaper)
                 ? (value) => _apply(wallpaper.copyWith(dimInDark: value))
                 : null,
           ),

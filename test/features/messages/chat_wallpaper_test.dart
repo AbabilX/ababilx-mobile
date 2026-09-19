@@ -1,7 +1,10 @@
 import 'dart:io';
 
 import 'package:ababilx/features/messages/wallpaper/chat_wallpaper.dart';
+import 'package:ababilx/features/messages/wallpaper/chat_wallpaper_store.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('a wallpaper survives a round trip', () {
@@ -75,16 +78,20 @@ void main() {
     expect(invisible.copyWith(opacity: 9).drawOpacity, 1);
   });
 
-  test('nothing is applied until a person picks it', () {
-    // The paintings are offered, never imposed: a chat with no stored choice
-    // paints no wallpaper, exactly as it did before they were bundled.
-    expect(ChatWallpaper.decode(null).isSet, isFalse);
-    expect(ChatWallpaper.none.isSet, isFalse);
-  });
+  test(
+    'nothing is applied until a person picks it (or a fresh install ships)',
+    () {
+      // Decode itself never invents a wallpaper; shipping the default is a
+      // separate store step for brand-new installs only.
+      expect(ChatWallpaper.decode(null).isSet, isFalse);
+      expect(ChatWallpaper.none.isSet, isFalse);
+    },
+  );
 
   test('the paintings lead the grid and name real bundled files', () {
     final art = chatWallpaperPresets.where((p) => p.isArt).toList();
     expect(art.map((p) => p.id), [
+      chatWallpaperMobileId,
       chatWallpaperDewdropId,
       chatWallpaperRainyPaddyId,
     ]);
@@ -92,6 +99,75 @@ void main() {
     expect(chatWallpaperPresets.take(art.length), art);
     for (final preset in art) {
       expect(File(preset.asset!).existsSync(), isTrue, reason: preset.asset);
+      if (preset.darkAsset != null) {
+        expect(
+          File(preset.darkAsset!).existsSync(),
+          isTrue,
+          reason: preset.darkAsset,
+        );
+      }
     }
+  });
+
+  test('the mobile preset swaps art with brightness', () {
+    final mobile = chatWallpaperPresetById(chatWallpaperMobileId)!;
+    expect(mobile.isThemePair, isTrue);
+    expect(
+      mobile.assetFor(Brightness.light),
+      'assets/images/wallpapers/mobile_light.jpg',
+    );
+    expect(
+      mobile.assetFor(Brightness.dark),
+      'assets/images/wallpapers/mobile_dark.jpg',
+    );
+    expect(mobile.alignment, chatWallpaperPatternAlignment);
+  });
+
+  test('a single-art preset keeps the same file in dark theme', () {
+    final dewdrop = chatWallpaperPresetById(chatWallpaperDewdropId)!;
+    expect(dewdrop.isThemePair, isFalse);
+    expect(
+      dewdrop.assetFor(Brightness.light),
+      dewdrop.assetFor(Brightness.dark),
+    );
+  });
+
+  group('shipDefaultIfFreshInstall', () {
+    const store = ChatWallpaperStore();
+
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('fresh install gets the mobile theme pair', () async {
+      await store.shipDefaultIfFreshInstall();
+      final global = await store.readGlobal();
+      expect(global.kind, ChatWallpaperKind.preset);
+      expect(global.presetId, chatWallpaperMobileId);
+      expect(global.dimInDark, isFalse);
+    });
+
+    test('upgrade with onboarding seen stays plain', () async {
+      SharedPreferences.setMockInitialValues({
+        'messaging_onboarding_v1_seen': true,
+      });
+      await store.shipDefaultIfFreshInstall();
+      expect((await store.readGlobal()).isSet, isFalse);
+    });
+
+    test('does not overwrite an existing global choice', () async {
+      SharedPreferences.setMockInitialValues({});
+      await store.writeGlobal(ChatWallpaper.preset('ink'));
+      // Writing the global key counts as a returning install (`ababilx_*`).
+      await store.shipDefaultIfFreshInstall();
+      expect((await store.readGlobal()).presetId, 'ink');
+    });
+
+    test('second call is a no-op even after clearing wallpaper', () async {
+      await store.shipDefaultIfFreshInstall();
+      await store.writeGlobal(ChatWallpaper.none);
+      await store.shipDefaultIfFreshInstall();
+      expect((await store.readGlobal()).isSet, isFalse);
+    });
   });
 }

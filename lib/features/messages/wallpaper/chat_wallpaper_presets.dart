@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Both bundled paintings are anchored to this corner wherever they are drawn
-/// — grid tile, preview and the chat itself.
+/// Both dewdrop / rainy paintings are anchored to this corner wherever they
+/// are drawn — grid tile, preview and the chat itself.
 ///
 /// A phone screen is much taller than either picture, so `cover` scales them
 /// past the viewport and crops the overflow. Both were composed with their
@@ -9,13 +9,25 @@ import 'package:flutter/material.dart';
 /// leaves an empty sky.
 const Alignment chatWallpaperArtAlignment = Alignment.bottomLeft;
 
+/// Seamless doodle patterns (the mobile light/dark pair) tile from the centre
+/// so the crop does not favour one edge of the repeating motif.
+const Alignment chatWallpaperPatternAlignment = Alignment.center;
+
+const String chatWallpaperMobileId = 'mobile';
 const String chatWallpaperDewdropId = 'dewdrop';
 const String chatWallpaperRainyPaddyId = 'rainy-paddy';
 
 /// One of the built-in backgrounds.
 @immutable
 class ChatWallpaperPreset {
-  const ChatWallpaperPreset(this.id, this.colors, {this.asset});
+  const ChatWallpaperPreset(
+    this.id,
+    this.colors, {
+    this.asset,
+    this.darkAsset,
+    this.darkSolid,
+    this.alignment = chatWallpaperArtAlignment,
+  });
 
   final String id;
 
@@ -25,10 +37,24 @@ class ChatWallpaperPreset {
 
   /// A bundled painting. When set it is what actually shows and [colors] is
   /// only the ground under it, so a tile is never blank while the image
-  /// decodes.
+  /// decodes. Light theme (and dark theme when [darkAsset] is null) uses this.
   final String? asset;
 
+  /// Optional dark-theme painting. When set, the chat switches between
+  /// [asset] and this by [Brightness] instead of dimming the light picture.
+  final String? darkAsset;
+
+  /// Ground under [darkAsset] while it decodes. Falls back to [solid].
+  final Color? darkSolid;
+
+  /// Where [BoxFit.cover] anchors the crop. Paintings with a composed subject
+  /// use [chatWallpaperArtAlignment]; repeating patterns use centre.
+  final Alignment alignment;
+
   bool get isArt => asset != null;
+
+  /// Whether this preset swaps art with the theme (not just dim overlay).
+  bool get isThemePair => asset != null && darkAsset != null;
 
   Gradient? get gradient => fadedGradient(1);
 
@@ -45,14 +71,34 @@ class ChatWallpaperPreset {
         );
 
   Color get solid => colors.first;
+
+  Color groundFor(Brightness brightness) =>
+      brightness == Brightness.dark && darkSolid != null ? darkSolid! : solid;
+
+  /// The asset path that should paint for [brightness], or null for solids.
+  String? assetFor(Brightness brightness) {
+    if (asset == null) return null;
+    if (brightness == Brightness.dark && darkAsset != null) return darkAsset;
+    return asset;
+  }
 }
 
-/// The built-in set. The two paintings lead, then solids, then gradients, so
-/// the grid reads left-to-right from loud to calm.
+/// The built-in set. Theme-aware mobile art leads, then the older paintings,
+/// then solids, then gradients, so the grid reads left-to-right from loud to
+/// calm.
 ///
-/// None of them is a default: a chat with no stored choice paints no wallpaper
-/// at all, the same as before these existed.
+/// The mobile pair is the fresh-install global default (see
+/// [ChatWallpaperStore.shipDefaultIfFreshInstall]). Upgrades and an explicit
+/// "No wallpaper" choice stay plain.
 const List<ChatWallpaperPreset> chatWallpaperPresets = [
+  ChatWallpaperPreset(
+    chatWallpaperMobileId,
+    [Color(0xFFE6E2DA)],
+    asset: 'assets/images/wallpapers/mobile_light.jpg',
+    darkAsset: 'assets/images/wallpapers/mobile_dark.jpg',
+    darkSolid: Color(0xFF1A3D2E),
+    alignment: chatWallpaperPatternAlignment,
+  ),
   ChatWallpaperPreset(chatWallpaperDewdropId, [
     Color(0xFF9CC77E),
   ], asset: 'assets/images/wallpapers/dewdrop_field.jpg'),

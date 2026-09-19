@@ -15,6 +15,43 @@ class ChatWallpaperStore {
   static const String _globalKey = 'ababilx_chat_wallpaper_global';
   static const String _perChatPrefix = 'ababilx_chat_wallpaper_';
 
+  /// Set once at process start. Prevents re-applying the bundled default after
+  /// an upgrade user (or someone who chose "No wallpaper") clears the key.
+  static const String _shippedDefaultKey =
+      'ababilx_chat_wallpaper_shipped_default_v1';
+
+  /// Same string as `OnboardingGate.preferenceKey`. Inlined so this store does
+  /// not import the auth widget tree. A returning install has seen onboarding;
+  /// at `main()` a fresh one has not written it yet.
+  static const String _onboardingSeenKey = 'messaging_onboarding_v1_seen';
+
+  /// Writes the theme-aware mobile pair as the global wallpaper on a brand-new
+  /// install only. Upgrades keep plain (or whatever they already chose).
+  ///
+  /// Call once from `main()` before other features write prefs that would make
+  /// a fresh install look like a returning one. Safe to call repeatedly.
+  Future<void> shipDefaultIfFreshInstall() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.containsKey(_shippedDefaultKey)) return;
+
+    final keys = prefs.getKeys();
+    final returning =
+        keys.contains(_onboardingSeenKey) ||
+        keys.any((k) => k.startsWith('ababilx_'));
+
+    if (!returning) {
+      // dimInDark off: the pair already has a dark painting.
+      await prefs.setString(
+        _globalKey,
+        ChatWallpaper.preset(
+          chatWallpaperMobileId,
+          dimInDark: false,
+        ).encode(),
+      );
+    }
+    await prefs.setBool(_shippedDefaultKey, true);
+  }
+
   /// Absence means no wallpaper, which is also what an unset one decodes to —
   /// so the write below can drop the key rather than store a blank.
   Future<ChatWallpaper> readGlobal() async {

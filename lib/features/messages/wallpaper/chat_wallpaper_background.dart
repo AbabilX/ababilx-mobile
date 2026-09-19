@@ -65,7 +65,12 @@ class ChatWallpaperPaint extends StatelessWidget {
   Widget build(BuildContext context) {
     final surface = Theme.of(context).colorScheme.surface;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final dim = wallpaper.dimInDark && dark;
+    // Theme-pair presets already swap to a dark painting — dimming on top
+    // would crush them. The toggle still stores; it only affects single-art
+    // presets and photos.
+    final themePair = wallpaper.kind == ChatWallpaperKind.preset &&
+        (chatWallpaperPresetById(wallpaper.presetId)?.isThemePair ?? false);
+    final dim = wallpaper.dimInDark && dark && !themePair;
     final opacity = wallpaper.drawOpacity;
 
     return Stack(
@@ -118,11 +123,12 @@ class ChatWallpaperPresetPaint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     final preset = chatWallpaperPresetById(id);
     if (preset == null) {
       return ColoredBox(color: Theme.of(context).colorScheme.surface);
     }
-    final asset = preset.asset;
+    final asset = preset.assetFor(brightness);
     if (asset != null) {
       // The solid sits under the image rather than behind a transparent one:
       // it is the ground for the frame or two before the bundle decodes, and
@@ -130,11 +136,11 @@ class ChatWallpaperPresetPaint extends StatelessWidget {
       // with the image, or turning opacity down would uncover a flat colour
       // instead of the chat surface.
       return ColoredBox(
-        color: preset.solid.withValues(alpha: opacity),
+        color: preset.groundFor(brightness).withValues(alpha: opacity),
         child: Image.asset(
           asset,
           fit: BoxFit.cover,
-          alignment: chatWallpaperArtAlignment,
+          alignment: preset.alignment,
           opacity: AlwaysStoppedAnimation(opacity),
         ),
       );
