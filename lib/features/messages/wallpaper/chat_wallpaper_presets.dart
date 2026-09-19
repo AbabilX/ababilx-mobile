@@ -87,9 +87,8 @@ class ChatWallpaperPreset {
 /// then solids, then gradients, so the grid reads left-to-right from loud to
 /// calm.
 ///
-/// The mobile pair is the fresh-install global default (see
-/// [ChatWallpaperStore.shipDefaultIfFreshInstall]). Upgrades and an explicit
-/// "No wallpaper" choice stay plain.
+/// Unset storage falls back to the mobile pair ([ChatWallpaper.builtInDefault]);
+/// there is no plain-background opt-out.
 const List<ChatWallpaperPreset> chatWallpaperPresets = [
   ChatWallpaperPreset(
     chatWallpaperMobileId,

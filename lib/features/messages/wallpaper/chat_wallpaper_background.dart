@@ -42,7 +42,6 @@ class _ChatWallpaperBackgroundState
     final wallpaper = ref
         .watch(chatWallpaperProvider)
         .forChat(widget.conversationId);
-    if (!wallpaper.isSet) return widget.child;
 
     return Stack(
       fit: StackFit.expand,

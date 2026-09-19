@@ -1,10 +1,8 @@
 import 'dart:io';
 
 import 'package:ababilx/features/messages/wallpaper/chat_wallpaper.dart';
-import 'package:ababilx/features/messages/wallpaper/chat_wallpaper_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('a wallpaper survives a round trip', () {
@@ -40,7 +38,6 @@ void main() {
     for (final preset in chatWallpaperPresets) {
       expect(chatWallpaperPresetById(preset.id), same(preset));
       expect(preset.colors, isNotEmpty);
-      // One colour paints flat, two or more paint as a gradient.
       expect(preset.gradient == null, preset.colors.length < 2);
     }
   });
@@ -74,19 +71,15 @@ void main() {
       opacity: 0,
     );
     expect(invisible.drawOpacity, chatWallpaperMinOpacity);
-    // Out of range the other way too — nothing guarantees what was stored.
     expect(invisible.copyWith(opacity: 9).drawOpacity, 1);
   });
 
-  test(
-    'nothing is applied until a person picks it (or a fresh install ships)',
-    () {
-      // Decode itself never invents a wallpaper; shipping the default is a
-      // separate store step for brand-new installs only.
-      expect(ChatWallpaper.decode(null).isSet, isFalse);
-      expect(ChatWallpaper.none.isSet, isFalse);
-    },
-  );
+  test('unset always resolves to the built-in theme pair', () {
+    expect(ChatWallpaper.decode(null).isSet, isFalse);
+    expect(ChatWallpaper.none.effective.presetId, chatWallpaperMobileId);
+    expect(ChatWallpaper.none.effective.dimInDark, isFalse);
+    expect(ChatWallpaper.builtInDefault.presetId, chatWallpaperMobileId);
+  });
 
   test('the paintings lead the grid and name real bundled files', () {
     final art = chatWallpaperPresets.where((p) => p.isArt).toList();
@@ -95,7 +88,6 @@ void main() {
       chatWallpaperDewdropId,
       chatWallpaperRainyPaddyId,
     ]);
-    // Leading the list is what puts them on the first row of the picker.
     expect(chatWallpaperPresets.take(art.length), art);
     for (final preset in art) {
       expect(File(preset.asset!).existsSync(), isTrue, reason: preset.asset);
@@ -130,44 +122,5 @@ void main() {
       dewdrop.assetFor(Brightness.light),
       dewdrop.assetFor(Brightness.dark),
     );
-  });
-
-  group('shipDefaultIfFreshInstall', () {
-    const store = ChatWallpaperStore();
-
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-    });
-
-    test('fresh install gets the mobile theme pair', () async {
-      await store.shipDefaultIfFreshInstall();
-      final global = await store.readGlobal();
-      expect(global.kind, ChatWallpaperKind.preset);
-      expect(global.presetId, chatWallpaperMobileId);
-      expect(global.dimInDark, isFalse);
-    });
-
-    test('upgrade with onboarding seen stays plain', () async {
-      SharedPreferences.setMockInitialValues({
-        'messaging_onboarding_v1_seen': true,
-      });
-      await store.shipDefaultIfFreshInstall();
-      expect((await store.readGlobal()).isSet, isFalse);
-    });
-
-    test('does not overwrite an existing global choice', () async {
-      SharedPreferences.setMockInitialValues({});
-      await store.writeGlobal(ChatWallpaper.preset('ink'));
-      // Writing the global key counts as a returning install (`ababilx_*`).
-      await store.shipDefaultIfFreshInstall();
-      expect((await store.readGlobal()).presetId, 'ink');
-    });
-
-    test('second call is a no-op even after clearing wallpaper', () async {
-      await store.shipDefaultIfFreshInstall();
-      await store.writeGlobal(ChatWallpaper.none);
-      await store.shipDefaultIfFreshInstall();
-      expect((await store.readGlobal()).isSet, isFalse);
-    });
   });
 }

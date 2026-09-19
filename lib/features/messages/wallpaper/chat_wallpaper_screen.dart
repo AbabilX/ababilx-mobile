@@ -30,7 +30,9 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
 
   ChatWallpaper _current(ChatWallpaperState state) {
     final id = widget.conversationId;
-    return _draft ?? (id == null ? state.global : state.forChat(id));
+    if (_draft != null) return _draft!.effective;
+    if (id == null) return state.global.effective;
+    return state.forChat(id);
   }
 
   Future<void> _apply(ChatWallpaper wallpaper) async {
@@ -120,12 +122,6 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
                 : null,
           ),
           const Divider(height: 24),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.format_color_reset_outlined),
-            title: const Text('No wallpaper'),
-            onTap: () => _apply(ChatWallpaper.none),
-          ),
           if (perChat)
             ListTile(
               contentPadding: EdgeInsets.zero,

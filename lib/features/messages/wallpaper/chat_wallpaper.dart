@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import 'chat_wallpaper_presets.dart';
+
 // The preset catalogue is a separate file but the same concept: everything
 // that imports a wallpaper wants the presets too, so it is re-exported rather
 // than made a second import at 20 call sites.
@@ -13,8 +15,7 @@ enum ChatWallpaperKind { none, preset, photo }
 /// The faintest a wallpaper may be drawn.
 ///
 /// Not zero: a fully transparent wallpaper is indistinguishable from having
-/// none, so the slider's floor would look like a bug rather than a setting,
-/// and "No wallpaper" already exists one screen down.
+/// none, so the slider's floor would look like a bug rather than a setting.
 const double chatWallpaperMinOpacity = 0.2;
 
 /// A chat background.
@@ -62,6 +63,13 @@ class ChatWallpaper {
 
   static const ChatWallpaper none = ChatWallpaper();
 
+  /// Built-in theme pair used whenever nothing (or an explicit "none") is stored.
+  /// Chats always have a wallpaper; there is no plain opt-out.
+  static ChatWallpaper get builtInDefault => ChatWallpaper.preset(
+    chatWallpaperMobileId,
+    dimInDark: false,
+  );
+
   final ChatWallpaperKind kind;
   final String presetId;
   final String photoPath;
@@ -72,6 +80,9 @@ class ChatWallpaper {
   final double opacity;
 
   bool get isSet => kind != ChatWallpaperKind.none;
+
+  /// What painters / bubble contrast use: unset falls back to [builtInDefault].
+  ChatWallpaper get effective => isSet ? this : builtInDefault;
 
   /// What the painters actually use.
   double get drawOpacity => opacity.clamp(chatWallpaperMinOpacity, 1.0);

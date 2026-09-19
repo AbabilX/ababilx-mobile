@@ -9,7 +9,6 @@ import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
 import 'app.dart';
 import 'firebase_options.dart';
-import 'features/messages/wallpaper/chat_wallpaper_store.dart';
 import 'features/calls/native/android_call_background.dart';
 import 'features/calls/native/android_call_ui.dart';
 import 'features/calls/native/android_group_call_ui.dart';
@@ -155,10 +154,6 @@ void main() async {
       androidCallkitBackgroundHandler,
     );
   }
-
-  // Fresh installs get the theme-aware chat wallpaper; upgrades stay plain.
-  // Must run before other features write SharedPreferences.
-  await const ChatWallpaperStore().shipDefaultIfFreshInstall();
 
   runApp(const ProviderScope(child: AbabilXApp()));
 }

@@ -449,13 +449,11 @@ point — a DM takes the nickname, a group or channel never does, because nobody
 has a private name for a room. Edited from Nickname on the chat details screen,
 and searched in the people list, since a rename has to be how you find someone.
 
-## Chat wallpaper is device-local; fresh installs get a theme pair
+## Chat wallpaper is device-local; the theme pair is always the fallback
 
 `features/messages/wallpaper/`. Global default plus per-chat overrides in
-`SharedPreferences`. The bundled `mobile` preset swaps `mobile_light.jpg` /
-`mobile_dark.jpg` with theme brightness. `ChatWallpaperStore.shipDefaultIfFreshInstall`
-(called from `main`) writes that preset only on a brand-new install; upgrades
-and an explicit "No wallpaper" stay plain. Dewdrop and rainy-paddy remain
+`SharedPreferences`. Unset / stored "none" always paints the bundled `mobile`
+light/dark pair — there is no plain opt-out. Dewdrop and rainy-paddy remain
 picker options. Per-chat choices always win over the global default.
 
 ## Chat search is chats, then messages

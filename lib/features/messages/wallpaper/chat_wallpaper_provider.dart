@@ -16,9 +16,11 @@ class ChatWallpaperState {
   final Map<String, ChatWallpaper> overrides;
   final bool loaded;
 
-  /// What a given chat should paint. An override wins; otherwise the default.
+  /// What a given chat should paint. An override wins; otherwise the global.
+  /// Unset / stored "none" always falls back to the built-in theme pair —
+  /// there is no plain background opt-out.
   ChatWallpaper forChat(String conversationId) =>
-      overrides[conversationId] ?? global;
+      (overrides[conversationId] ?? global).effective;
 
   bool hasOverride(String conversationId) =>
       overrides.containsKey(conversationId);
