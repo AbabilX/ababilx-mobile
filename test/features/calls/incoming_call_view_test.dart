@@ -65,6 +65,28 @@ void main() {
     expect(find.text('Screen Share'), findsNothing);
   });
 
+  testWidgets('Decline and Answer are a large close pair, not edge-spread', (
+    tester,
+  ) async {
+    const size = Size(390, 844);
+    await tester.binding.setSurfaceSize(size);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(host(onDecline: () {}, onAccept: () {}));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final decline = tester.getCenter(find.byIcon(Icons.call_end_rounded));
+    final answer = tester.getCenter(find.byIcon(Icons.call_rounded));
+    final gap = answer.dx - decline.dx;
+    // Diameter ~92–112 + gap ~48–72 → centers ~140–185; still well inside
+    // the frame (not spaceBetween to the edges).
+    expect(gap, lessThan(200));
+    expect(gap, greaterThan(130));
+    expect(decline.dx, greaterThan(size.width * 0.18));
+    expect(answer.dx, lessThan(size.width * 0.82));
+    // Lifted above the bottom edge (bottom inset + ~56–88).
+    expect(decline.dy, lessThan(size.height - 100));
+  });
+
   testWidgets('landscape hides Answer/Decline captions', (tester) async {
     await tester.binding.setSurfaceSize(const Size(568, 320));
     addTearDown(() => tester.binding.setSurfaceSize(null));

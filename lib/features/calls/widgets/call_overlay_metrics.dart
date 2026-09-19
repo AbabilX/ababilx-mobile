@@ -26,8 +26,8 @@ class CallOverlayMetrics {
 
   double design(double px) => px * _scale;
 
-  /// ~220–250 on the design canvas.
-  double get avatarDiameter => design(240).clamp(100.0, 148.0);
+  /// ~280–300 on the design canvas — hero face for incoming/outgoing.
+  double get avatarDiameter => design(300).clamp(128.0, 176.0);
 
   double get nameFont => design(48).clamp(22.0, 30.0);
 
@@ -54,10 +54,17 @@ class CallOverlayMetrics {
 
   double get doneButtonFont => design(28).clamp(13.0, 15.0);
 
-  /// Incoming Answer / Decline stay thumb-sized (not the tiny End).
-  double get incomingActionDiameter => design(148).clamp(68.0, 84.0);
+  /// Incoming Answer / Decline — large paired seats (ref: thumb-sized).
+  double get incomingActionDiameter => design(220).clamp(92.0, 112.0);
 
-  double get incomingActionIcon => design(62).clamp(30.0, 36.0);
+  double get incomingActionIcon => design(88).clamp(40.0, 52.0);
+
+  /// Gap between Decline and Answer — comfortable, not edge-spread.
+  double get incomingActionGap => design(96).clamp(48.0, 72.0);
+
+  /// Lift the pair above the gesture bar (larger = higher on screen).
+  double incomingActionsBottom(double bottomInset) =>
+      math.max(bottomInset, 0) + design(120).clamp(56.0, 88.0);
 
   double get sideMargin => design(36).clamp(12.0, 22.0);
 

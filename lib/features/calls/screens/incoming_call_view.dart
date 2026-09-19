@@ -59,9 +59,10 @@ class IncomingCallView extends StatelessWidget {
         Positioned(
           left: math.max(padding.left, m.sideMargin),
           right: math.max(padding.right, m.sideMargin),
-          bottom: math.max(padding.bottom, 16),
+          bottom: m.incomingActionsBottom(padding.bottom),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Centered pair with comfortable gap — not edge-to-edge.
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CallGlassCircle(
@@ -76,6 +77,7 @@ class IncomingCallView extends StatelessWidget {
                 glow: true,
                 onPressed: onDecline,
               ),
+              SizedBox(width: m.incomingActionGap),
               CallGlassCircle(
                 icon: Icons.call_rounded,
                 label: landscape ? null : answer,

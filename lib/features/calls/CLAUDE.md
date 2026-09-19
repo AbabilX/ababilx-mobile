@@ -539,7 +539,9 @@ Traps:
   Audio-only never auto-hides — Mute / End must stay reachable without a tap.
 - **Minimize:** a small chevron in the top-left safe area leaves the screen
   without hanging up (`ActiveCallBanner` / return bar takes over).
-- **Incoming** keeps only Answer + Decline (no Mute/Camera/Share yet).
+- **Incoming** keeps only Answer + Decline (no Mute/Camera/Share yet) — large
+  paired circles centered with a tight gap (`incomingActionGap`), not
+  `spaceBetween` to the screen edges.
   **Outgoing / connected** uses Mute · Camera · Screen Share · Speaker + End.
 - Labels: Incoming hang-up says **Decline**; live hang-up says **End**.
   Captions hide in landscape; semantics keep the names.
