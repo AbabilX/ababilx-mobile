@@ -164,8 +164,9 @@ class _ConversationDetailsScreenState
         ),
       ),
     // DM only: a safety number is a comparison between two identities, and a
-    // group has no single peer identity to compare against.
-    if (conversation.hasDmPeer)
+    // group has no single peer identity to compare against. A deleted account
+    // has no key left to compare.
+    if (conversation.hasDmPeer && !conversation.isAccountDeleted)
       SafetyNumberTile(
         peerUserId: conversation.peerUserId!,
         peerName: conversation.displayTitle(

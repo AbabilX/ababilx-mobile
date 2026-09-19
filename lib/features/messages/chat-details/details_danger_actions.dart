@@ -64,7 +64,9 @@ class DetailsDangerActions extends ConsumerWidget {
                   ref.read(chatProvider.notifier).hideDm(conversation.id),
             ),
           ),
-          if (conversation.isPersonal && conversation.hasDmPeer)
+          if (conversation.isPersonal &&
+              conversation.hasDmPeer &&
+              !conversation.isAccountDeleted)
             DetailsTile(
               icon: const Icon(Icons.block_rounded),
               title: 'Block',
@@ -86,7 +88,8 @@ class DetailsDangerActions extends ConsumerWidget {
         // Report sits with the other red rows but ends nothing: filing one
         // leaves the conversation exactly as it was unless the person also
         // chose to block. There is nobody to report in a note to self.
-        if (!conversation.isSelf) DetailsReportTile(conversation: conversation),
+        if (!conversation.isSelf && !conversation.isAccountDeleted)
+          DetailsReportTile(conversation: conversation),
         if (group && GroupPermissions(conversation).canManage)
           DetailsTile(
             icon: const Icon(Icons.delete_forever_outlined),

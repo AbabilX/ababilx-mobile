@@ -163,7 +163,9 @@ class ChatHeader extends ConsumerWidget {
                   ),
                 // A note to self has no callee: the server finds no second
                 // member and answers voice_call_peer_unavailable.
-                if (conversation.hasDmPeer && conversation.canMessage)
+                if (conversation.hasDmPeer &&
+                    conversation.canMessage &&
+                    !conversation.isAccountDeleted)
                   CallActionPill(
                     icon: Icons.call_rounded,
                     label: AppTranslations.translate(context, ref, 'chat_call'),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/chat_provider.dart';
 import 'composer.dart';
+import 'composer_connection_lock.dart';
 import 'composer_locked.dart';
 import 'message_request_bar.dart';
 
@@ -26,12 +27,11 @@ class TimelineComposer extends ConsumerWidget {
     // opens a thread members reply in with the ordinary group composer.
     final webhook = conversation?.isWebhook == true;
     final feedThread = webhook && parentId != null;
-    if (!feedThread && (webhook || conversation?.canMessage == false)) {
-      return ComposerLocked(
-        messageKey: webhook
-            ? 'chat_webhook_read_only'
-            : 'chat_connection_required',
-      );
+    if (!feedThread && webhook) {
+      return const ComposerLocked(messageKey: 'chat_webhook_read_only');
+    }
+    if (!feedThread && conversation?.canMessage == false) {
+      return ComposerConnectionLock(conversation: conversation!);
     }
     if (conversation?.isIncomingRequest == true) {
       return MessageRequestBar(conversation: conversation!);

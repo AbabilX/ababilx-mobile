@@ -8,7 +8,11 @@ Future<void> startAudioCall(
   WidgetRef ref,
   ChatConversation conversation,
 ) async {
-  if (!conversation.hasDmPeer || !conversation.canMessage) return;
+  if (!conversation.hasDmPeer ||
+      !conversation.canMessage ||
+      conversation.isAccountDeleted) {
+    return;
+  }
 
   await ref
       .read(voiceCallProvider.notifier)

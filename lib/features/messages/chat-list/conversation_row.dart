@@ -431,8 +431,8 @@ class _ConversationAvatar extends StatelessWidget {
     }
     return AppAvatar(
       size: 52,
-      url: conversation.peerUserAvatar,
-      name: title,
+      url: conversation.isAccountDeleted ? null : conversation.peerUserAvatar,
+      name: conversation.isAccountDeleted ? null : title,
       fallback: ChatIcon(
         HugeIcons.strokeRoundedUser02,
         color: colors.onSurfaceVariant,

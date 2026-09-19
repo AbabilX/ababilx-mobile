@@ -260,6 +260,15 @@ class AppTranslations {
       // does lock read as an invitation to reconnect rather than as what
       // it is.
       'chat_connection_required': 'You cannot send messages in this chat.',
+      'chat_lock_removed':
+          '{name} removed the connection. You can\'t send messages.',
+      'chat_lock_request_connect': 'Request to connect',
+      'chat_lock_reconnect_sent':
+          'Request sent. You can message {name} once they accept.',
+      'chat_lock_account_deleted': 'This account was deleted.',
+      'chat_lock_try_later': 'Try again later',
+      'chat_remove_connection_confirm':
+          'Remove {name}? They won\'t be able to message you until you accept them again.',
       'chat_no_requests': 'No requests',
       'chat_no_connections': 'No connections yet',
       'chat_pending': 'Pending',
@@ -871,6 +880,15 @@ class AppTranslations {
       'chat_group_name': 'গ্রুপের নাম',
       'chat_create': 'তৈরি করুন',
       'chat_connection_required': 'এই চ্যাটে আপনি বার্তা পাঠাতে পারবেন না।',
+      'chat_lock_removed':
+          '{name} সংযোগ সরিয়ে দিয়েছেন। আপনি বার্তা পাঠাতে পারবেন না।',
+      'chat_lock_request_connect': 'সংযোগের অনুরোধ পাঠান',
+      'chat_lock_reconnect_sent':
+          'অনুরোধ পাঠানো হয়েছে। {name} গ্রহণ করলে আপনি বার্তা পাঠাতে পারবেন।',
+      'chat_lock_account_deleted': 'এই অ্যাকাউন্ট মুছে ফেলা হয়েছে।',
+      'chat_lock_try_later': 'পরে আবার চেষ্টা করুন',
+      'chat_remove_connection_confirm':
+          '{name}-কে সরাবেন? আপনি আবার গ্রহণ না করা পর্যন্ত তিনি বার্তা পাঠাতে পারবেন না।',
       'chat_no_requests': 'কোনো অনুরোধ নেই',
       'chat_no_connections': 'এখনো কোনো সংযোগ নেই',
       'chat_pending': 'অপেক্ষমাণ',

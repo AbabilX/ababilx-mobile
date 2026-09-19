@@ -24,6 +24,31 @@ void main() {
       expect(conversation.toJson()['can_message'], isFalse);
     });
 
+    test('lock_reason from the sidebar is kept for the composer', () {
+      final conversation = ChatConversation.fromJson({
+        'id': 'dm-1',
+        'type': 'dm',
+        'created_at': '2026-09-19T00:00:00Z',
+        'can_message': false,
+        'lock_reason': 'connection_removed',
+        'peer_user_id': 'u2',
+        'peer_user_name': 'Nila',
+      });
+
+      expect(conversation.lockReason, 'connection_removed');
+      expect(conversation.isAccountDeleted, isFalse);
+      expect(conversation.toJson()['lock_reason'], 'connection_removed');
+
+      final deleted = ChatConversation.fromJson({
+        'id': 'dm-2',
+        'type': 'dm',
+        'created_at': '2026-09-19T00:00:00Z',
+        'can_message': false,
+        'lock_reason': 'account_deleted',
+      });
+      expect(deleted.isAccountDeleted, isTrue);
+    });
+
     test('generic endpoint set never falls back to a team route', () {
       const endpoints = ChatEndpoints();
 

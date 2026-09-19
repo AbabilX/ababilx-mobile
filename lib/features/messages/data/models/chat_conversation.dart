@@ -65,6 +65,7 @@ class ChatConversation extends Equatable {
     this.peerLeft = false,
     this.isSelf = false,
     this.canMessage = true,
+    this.lockReason = '',
     this.plaintextUntilKeyed = false,
     this.requestState = 'none',
     this.muted = false,
@@ -116,6 +117,12 @@ class ChatConversation extends Equatable {
   /// report — is dropped rather than pointed back at them.
   final bool isSelf;
   final bool canMessage;
+
+  /// Why the composer is closed. Empty when [canMessage] is true.
+  /// `blocked`, `connection_removed`, `reconnect_requested`, `account_deleted`.
+  final String lockReason;
+
+  bool get isAccountDeleted => lockReason == 'account_deleted';
 
   /// The server's word that this group may still take plaintext while
   /// somebody in it cannot be sealed to yet (`plaintext_until_keyed`). True
@@ -286,6 +293,7 @@ class ChatConversation extends Equatable {
       peerLeft: json['peer_left'] as bool? ?? false,
       isSelf: json['is_self'] as bool? ?? false,
       canMessage: json['can_message'] as bool? ?? true,
+      lockReason: _jsonString(json['lock_reason']) ?? '',
       plaintextUntilKeyed: json['plaintext_until_keyed'] as bool? ?? false,
       requestState: json['request_state'] as String? ?? 'none',
       muted: json['muted'] as bool? ?? false,
@@ -383,6 +391,7 @@ class ChatConversation extends Equatable {
     peerLeft: peerLeft,
     isSelf: isSelf,
     canMessage: canMessage,
+    lockReason: lockReason,
     plaintextUntilKeyed: plaintextUntilKeyed,
     requestState: requestState ?? this.requestState,
     muted: muted ?? this.muted,
@@ -414,6 +423,7 @@ class ChatConversation extends Equatable {
     scope,
     isSelf,
     canMessage,
+    lockReason,
     plaintextUntilKeyed,
     requestState,
     description,

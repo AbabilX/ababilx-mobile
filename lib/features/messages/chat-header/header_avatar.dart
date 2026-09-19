@@ -39,8 +39,15 @@ class ChatHeaderAvatar extends StatelessWidget {
     return ClipOval(
       child: AppAvatar(
         size: size,
-        url: conversation.peerUserAvatar,
-        name: title,
+        url: conversation.isAccountDeleted ? null : conversation.peerUserAvatar,
+        name: conversation.isAccountDeleted ? null : title,
+        fallback: conversation.isAccountDeleted
+            ? Icon(
+                Icons.person_outline_rounded,
+                size: size * 0.55,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              )
+            : null,
       ),
     );
   }

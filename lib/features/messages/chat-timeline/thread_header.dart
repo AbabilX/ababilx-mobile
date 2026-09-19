@@ -24,7 +24,9 @@ class ThreadHeader extends ConsumerWidget {
         : convo.isDm
         ? 'Direct message'
         : (convo.name != null ? '#${convo.name}' : 'Channel');
-    final avatarUrl = convo?.isDm == true
+    final avatarUrl = convo?.isAccountDeleted == true
+        ? null
+        : convo?.isDm == true
         ? convo?.peerUserAvatar
         : convo?.avatarUrl;
     final avatarName = convo?.isDm == true
@@ -68,7 +70,10 @@ class ThreadHeader extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppAvatar(size: 30, url: avatarUrl, name: avatarName),
-                if (convo != null && convo.isDm && convo.canMessage)
+                if (convo != null &&
+                    convo.isDm &&
+                    convo.canMessage &&
+                    !convo.isAccountDeleted)
                   Padding(
                     padding: const EdgeInsets.only(left: 8),
                     child: CallActionPill(

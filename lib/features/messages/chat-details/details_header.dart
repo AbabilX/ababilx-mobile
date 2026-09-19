@@ -73,12 +73,25 @@ class DetailsHeader extends ConsumerWidget {
           )
         else if (conversation.isSelf)
           const NoteToSelfAvatar(size: 96, iconSize: 40)
+        else if (conversation.isAccountDeleted)
+          ClipOval(
+            child: AppAvatar(
+              size: 96,
+              url: null,
+              name: null,
+              fallback: Icon(
+                Icons.person_outline_rounded,
+                size: 48,
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          )
         else
           _tappableAvatar(context, url: avatar, name: title),
         const SizedBox(height: 14),
         InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: conversation.hasDmPeer
+          onTap: conversation.hasDmPeer && !conversation.isAccountDeleted
               ? () => showUserProfileSheet(
                   context: context,
                   ref: ref,
@@ -104,7 +117,7 @@ class DetailsHeader extends ConsumerWidget {
                     ),
                   ),
                 ),
-                if (conversation.hasDmPeer)
+                if (conversation.hasDmPeer && !conversation.isAccountDeleted)
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 24,
@@ -119,7 +132,9 @@ class DetailsHeader extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (conversation.hasDmPeer && conversation.canMessage)
+            if (conversation.hasDmPeer &&
+                conversation.canMessage &&
+                !conversation.isAccountDeleted)
               DetailsActionButton(
                 icon: const Icon(Icons.call_rounded),
                 label: AppTranslations.translate(context, ref, 'chat_call'),

@@ -6,6 +6,7 @@ import '../../../core/localization/app_translations.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
 import 'people_row.dart';
+import 'remove_connection_dialog.dart';
 
 class ConnectionsTab extends ConsumerWidget {
   const ConnectionsTab({super.key});
@@ -40,6 +41,19 @@ class ConnectionsTab extends ConsumerWidget {
                       .startDm(connection.user.userId);
                   if (context.mounted) context.push('/messages/${dm.id}');
                 } else if (action == 'remove') {
+                  final name = connection.user.name.trim().isEmpty
+                      ? AppTranslations.translate(
+                          context,
+                          ref,
+                          'chat_someone',
+                        )
+                      : connection.user.name.trim();
+                  final ok = await confirmRemoveConnection(
+                    context,
+                    ref,
+                    name: name,
+                  );
+                  if (!ok || !context.mounted) return;
                   await ref
                       .read(chatConnectionsProvider.notifier)
                       .remove(connection.user.userId);
