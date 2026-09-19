@@ -1,34 +1,64 @@
 import 'package:ababilx/features/messages/chat-timeline/attachment_album_geometry.dart';
+import 'package:ababilx/features/messages/chat-timeline/signal_bubble_metrics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const width = 210.0;
+  const width = 240.0;
+  const maxH = SignalBubbleMetrics.mediaMaxHeight;
 
   group('albumLayout', () {
-    test('draws every image up to five', () {
-      for (var count = 2; count <= 5; count++) {
-        final layout = albumLayout(count: count, width: width, corner: 14);
-        expect(layout.cells.length, count);
-        expect(layout.overflow, 0);
-      }
-    });
-
-    test('six or more reuse the five-cell shape and count the rest', () {
-      final layout = albumLayout(count: 8, width: width, corner: 14);
-      expect(layout.cells.length, albumMaxCells);
-      // The old grid showed four cells and "+4"; the album shows five and the
-      // three that are actually left over.
-      expect(layout.overflow, 3);
-    });
-
-    test('cells stay inside the album and never overlap', () {
-      for (var count = 2; count <= 9; count++) {
-        final layout = albumLayout(count: count, width: width, corner: 14);
+    test('uses full available width and solo max height', () {
+      for (var count = 2; count <= 6; count++) {
+        final layout = albumLayout(
+          count: count,
+          width: width,
+          corner: 14,
+          maxHeight: maxH,
+        );
+        expect(layout.height, maxH);
         for (final cell in layout.cells) {
           expect(cell.rect.left, greaterThanOrEqualTo(-0.01));
           expect(cell.rect.right, lessThanOrEqualTo(width + 0.01));
-          expect(cell.rect.bottom, lessThanOrEqualTo(layout.height + 0.01));
+          expect(cell.rect.bottom, lessThanOrEqualTo(maxH + 0.01));
         }
+      }
+    });
+
+    test('one row when everything fits — full height cells', () {
+      final layout = albumLayout(
+        count: 2,
+        width: width,
+        corner: 0,
+        maxHeight: maxH,
+      );
+      expect(layout.cells.length, 2);
+      expect(layout.overflow, 0);
+      expect(layout.cells[0].rect.height, maxH);
+      expect(
+        layout.cells[0].rect.width + layout.cells[1].rect.width,
+        closeTo(width - albumGap, 0.01),
+      );
+    });
+
+    test('overflow past two full rows shows +N', () {
+      final layout = albumLayout(
+        count: 20,
+        width: width,
+        corner: 14,
+        maxHeight: maxH,
+      );
+      expect(layout.overflow, greaterThan(0));
+      expect(layout.cells.length, lessThan(20));
+    });
+
+    test('cells never overlap', () {
+      for (var count = 2; count <= 12; count++) {
+        final layout = albumLayout(
+          count: count,
+          width: width,
+          corner: 14,
+          maxHeight: maxH,
+        );
         for (var a = 0; a < layout.cells.length; a++) {
           for (var b = a + 1; b < layout.cells.length; b++) {
             final overlap = layout.cells[a].rect.intersect(
@@ -40,24 +70,15 @@ void main() {
       }
     });
 
-    test('matches Signal geometry at its own album width', () {
-      expect(albumLayout(count: 2, width: width, corner: 0).height, 104);
-      expect(
-        albumLayout(count: 3, width: width, corner: 0).height,
-        closeTo(140, 1),
-      );
-      expect(albumLayout(count: 4, width: width, corner: 0).height, 210);
-      expect(
-        albumLayout(count: 5, width: width, corner: 0).height,
-        closeTo(175, 1),
-      );
-    });
-
     test('only the album outline is rounded', () {
-      final layout = albumLayout(count: 4, width: width, corner: 14);
+      final layout = albumLayout(
+        count: 4,
+        width: width,
+        corner: 14,
+        maxHeight: maxH,
+      );
       expect(layout.cells[0].radius.topLeft.x, 14);
       expect(layout.cells[0].radius.topRight.x, 0);
-      expect(layout.cells[3].radius.bottomRight.x, 14);
     });
   });
 }

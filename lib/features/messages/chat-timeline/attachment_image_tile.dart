@@ -63,9 +63,9 @@ class _AttachmentImageTileState extends ConsumerState<AttachmentImageTile>
   ChatMessageAttachment get framedAttachment => widget.attachment;
 
   /// The box this picture occupies through lookup, download and decode alike.
-  /// A solo photo in an overlay bubble fills [AttachmentImageTile.maxWidth]
-  /// and takes its height from the file's shape; albums and captioned tiles
-  /// keep a fixed frame and crop into it.
+  /// A solo photo in an overlay bubble fits inside maxW×maxH keeping aspect
+  /// (width shrinks for tall files); albums and captioned tiles keep a fixed
+  /// frame and crop into it.
   Size get _box {
     final w = widget;
     if (w.grid) return Size(w.maxWidth, w.maxHeight);
@@ -73,13 +73,11 @@ class _AttachmentImageTileState extends ConsumerState<AttachmentImageTile>
       const side = SignalBubbleMetrics.mediaDefaultSize;
       return Size(side.clamp(w.minWidth, w.maxWidth), side);
     }
-    return Size(
-      w.maxWidth,
-      soloMediaHeight(
-        lockedDimensions,
-        width: w.maxWidth,
-        maxHeight: w.maxHeight,
-      ),
+    return soloMediaSize(
+      lockedDimensions,
+      maxWidth: w.maxWidth,
+      maxHeight: w.maxHeight,
+      minWidth: w.minWidth,
     );
   }
 

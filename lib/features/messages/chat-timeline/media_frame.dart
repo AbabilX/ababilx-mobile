@@ -5,21 +5,53 @@ import 'package:flutter/widgets.dart';
 import '../../attachments/data/models/media_dimensions.dart';
 import 'signal_bubble_metrics.dart';
 
-/// Height of a solo picture or video that fills [width]: the file's own
-/// shape, held between Signal's `media_bubble_min_height` and [maxHeight].
-/// With no measured shape it is the default frame, and the media is cropped
-/// into it — never resized while mounted, see `MediaFrameLock`.
+/// Largest box inside [maxWidth] × [maxHeight] that keeps the file's aspect.
+///
+/// Tall (9:16) media shrinks **width** when height hits the ceiling — same
+/// contain idea as web. Extreme panoramas still use the min-height floor and
+/// keep full [maxWidth] (cropped via [BoxFit.cover]). Unmeasured files get
+/// the default frame. Never resized while mounted — see `MediaFrameLock`.
+Size soloMediaSize(
+  MediaDimensions? size, {
+  required double maxWidth,
+  double maxHeight = SignalBubbleMetrics.mediaMaxHeight,
+  double minWidth = 0,
+  double minHeight = SignalBubbleMetrics.mediaMinHeight,
+}) {
+  if (size == null) {
+    final side = SignalBubbleMetrics.mediaDefaultSize;
+    return Size(side.clamp(minWidth > 0 ? minWidth : 0, maxWidth), side);
+  }
+
+  final ar = size.aspectRatio;
+  late final double w;
+  late final double h;
+  if (maxWidth / maxHeight <= ar) {
+    w = maxWidth;
+    h = maxWidth / ar;
+  } else {
+    h = maxHeight;
+    w = maxHeight * ar;
+  }
+
+  // Signal floor: very wide files stay full width and crop into min height.
+  if (h < minHeight) {
+    return Size(maxWidth, minHeight);
+  }
+  if (minWidth > 0 && w < minWidth) {
+    final raised = minWidth;
+    return Size(raised, (raised / ar).clamp(minHeight, maxHeight));
+  }
+  return Size(w, h);
+}
+
+/// Height of a solo picture or video at a fixed [width] (legacy helper).
+/// Prefer [soloMediaSize] when both edges should follow the file's shape.
 double soloMediaHeight(
   MediaDimensions? size, {
   required double width,
   double maxHeight = SignalBubbleMetrics.mediaMaxHeight,
-}) {
-  if (size == null) return SignalBubbleMetrics.mediaDefaultSize;
-  return (width / size.aspectRatio).clamp(
-    SignalBubbleMetrics.mediaMinHeight,
-    maxHeight,
-  );
-}
+}) => soloMediaSize(size, maxWidth: width, maxHeight: maxHeight).height;
 
 /// Decode a picture at the size it is drawn, not the size it was shot.
 ///

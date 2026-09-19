@@ -6,12 +6,11 @@ import 'attachment_image_tile.dart';
 import 'media-preview/chat_media_preview_meta.dart';
 import 'signal_bubble_metrics.dart';
 
-/// Signal's album: one image drawn full width, several laid out by
-/// [albumLayout] with `+N` over the last cell when there are more than five.
+/// Multi-image album: fills the bubble's available width × [mediaMaxHeight],
+/// equal cells, row 1 then row 2, `+N` on the last cell when both rows are full.
 ///
 /// Every image in the message stays in [gallery] whatever the cell count, so
-/// the sixth photo of an album of eight is one swipe away in the viewer and
-/// can be downloaded there.
+/// overflow photos are one swipe away in the viewer.
 class AttachmentImageGrid extends StatelessWidget {
   const AttachmentImageGrid({
     super.key,
@@ -29,7 +28,6 @@ class AttachmentImageGrid extends StatelessWidget {
   final ChatMediaPreviewMeta? preview;
 
   static const double _corner = 14;
-  static const double _maxWidth = SignalBubbleMetrics.mediaMaxWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -52,14 +50,17 @@ class AttachmentImageGrid extends StatelessWidget {
       padding: EdgeInsets.only(top: withCaption ? 8 : 0),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final available = constraints.hasBoundedWidth
+          // Use the bubble's full available width — do not clamp to the solo
+          // mediaMaxWidth (240); that left empty space beside multi albums.
+          final width =
+              constraints.hasBoundedWidth && constraints.maxWidth.isFinite
               ? constraints.maxWidth
-              : _maxWidth;
-          final width = available < _maxWidth ? available : _maxWidth;
+              : SignalBubbleMetrics.mediaMaxWidth;
           final layout = albumLayout(
             count: images.length,
             width: width,
             corner: _corner,
+            maxHeight: SignalBubbleMetrics.mediaMaxHeight,
           );
           return SizedBox(
             width: width,

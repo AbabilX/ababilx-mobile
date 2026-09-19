@@ -19,17 +19,31 @@ ChatMessage _message(
 );
 
 void main() {
-  group('soloMediaHeight', () {
+  group('soloMediaSize', () {
     test('an unmeasured file gets the default frame', () {
-      expect(soloMediaHeight(null, width: 240), 210);
+      expect(soloMediaSize(null, maxWidth: 240), const Size(210, 210));
     });
-    test('the file decides, inside Signal\'s bounds', () {
+    test('wide media fills width; height follows aspect', () {
       const wide = MediaDimensions(1200, 600);
+      expect(soloMediaSize(wide, maxWidth: 240), const Size(240, 120));
+    });
+    test('tall media hits height ceiling and shrinks width', () {
       const tall = MediaDimensions(1080, 1920);
+      final box = soloMediaSize(tall, maxWidth: 240);
+      expect(box.height, 420, reason: 'ceiling');
+      expect(box.width, closeTo(420 * (1080 / 1920), 0.01));
+      expect(box.width < 240, isTrue, reason: 'width fits aspect');
+    });
+    test('panorama keeps full width at the min-height floor', () {
       const panorama = MediaDimensions(4000, 500);
+      expect(soloMediaSize(panorama, maxWidth: 240), const Size(240, 100));
+    });
+  });
+
+  group('soloMediaHeight', () {
+    test('delegates to soloMediaSize height', () {
+      const wide = MediaDimensions(1200, 600);
       expect(soloMediaHeight(wide, width: 240), 120);
-      expect(soloMediaHeight(tall, width: 240), 420, reason: 'ceiling');
-      expect(soloMediaHeight(panorama, width: 240), 100, reason: 'floor');
     });
   });
 

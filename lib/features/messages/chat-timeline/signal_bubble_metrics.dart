@@ -51,8 +51,10 @@ class SignalBubbleMetrics {
   /// Timeline thumbnails use a stable default frame because attachments do
   /// not carry dimensions. Captions widen that frame before bytes arrive;
   /// albums use their predetermined cells and galleries keep original ratios.
-  /// A caption-less solo photo/video fills [mediaMaxWidth]; so does one with
-  /// a caption. [mediaMaxHeight] is a ceiling, not a size to always reach.
+  /// A caption-less solo photo/video fits inside [mediaMaxWidth] ×
+  /// [mediaMaxHeight] keeping aspect ([soloMediaSize]); so does one with
+  /// a caption's outer cap. [mediaMaxHeight] is a ceiling, not a size to
+  /// always reach.
   static const mediaMaxWidth = 240.0;
   static const mediaMaxHeight = 420.0;
   static const mediaMinWidthSolo = 150.0;

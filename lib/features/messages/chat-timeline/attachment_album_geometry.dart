@@ -1,16 +1,15 @@
+import 'dart:math' as math;
+
 import 'package:flutter/rendering.dart';
+
+import 'signal_bubble_metrics.dart';
 
 /// Where each cell of an image album sits, and how its corners are cut.
 ///
-/// Signal's `AlbumThumbnailView`, expressed as arithmetic instead of five
-/// inflated layouts: 2 side by side, 3 as one tall cell plus a stacked pair,
-/// 4 as a square, 5 as two big over three small — and **six or more reuse the
-/// five-cell shape with `+N` written over the last cell**. The old grid here
-/// capped at four and dropped everything past it, which is why an album of
-/// eight showed `+4` and no way to reach the other four.
-///
-/// Corners are cut so the whole album reads as one rounded block, exactly as
-/// `applyCornersForSizeClass*` does — only the outer four are rounded.
+/// Packs L→R then next row (max 2 rows). The album box is always [width] ×
+/// [maxHeight] (solo media ceiling) so multi-image uses available width and
+/// the same max height as a single photo — equal columns, last cell may show
+/// `+N` when both rows are full.
 class AlbumCell {
   const AlbumCell({
     required this.index,
@@ -39,85 +38,94 @@ class AlbumLayout {
 
 const double albumGap = 2;
 
-/// Signal's cap: five cells, the fifth carrying the overflow count.
-const int albumMaxCells = 5;
+/// Portrait thumb width estimate used only to decide column count.
+const double _portraitAspect = 9 / 16;
 
 AlbumLayout albumLayout({
   required int count,
   required double width,
   required double corner,
+  double maxHeight = SignalBubbleMetrics.mediaMaxHeight,
 }) {
+  assert(count >= 2);
   final w = width;
-  final half = (w - albumGap) / 2;
-  final third = (w - albumGap) / 3;
-  final smallThird = (w - albumGap * 2) / 3;
+  final h = maxHeight;
   final c = corner;
-  final visible = count < albumMaxCells ? count : albumMaxCells;
-  final overflow = count - visible;
 
-  List<AlbumCell> cells;
-  double height;
-
-  switch (visible) {
-    case 2:
-      height = half;
-      cells = [
-        _cell(0, 0, 0, half, height, _r(c, 0, 0, c)),
-        _cell(1, half + albumGap, 0, half, height, _r(0, c, c, 0)),
-      ];
-    case 3:
-      final small = third;
-      height = small * 2 + albumGap;
-      cells = [
-        _cell(0, 0, 0, third * 2, height, _r(c, 0, 0, c)),
-        _cell(1, third * 2 + albumGap, 0, small, small, _r(0, c, 0, 0)),
-        _cell(
-          2,
-          third * 2 + albumGap,
-          small + albumGap,
-          small,
-          small,
-          _r(0, 0, c, 0),
-        ),
-      ];
-    case 4:
-      height = half * 2 + albumGap;
-      cells = [
-        _cell(0, 0, 0, half, half, _r(c, 0, 0, 0)),
-        _cell(1, half + albumGap, 0, half, half, _r(0, c, 0, 0)),
-        _cell(2, 0, half + albumGap, half, half, _r(0, 0, 0, c)),
-        _cell(3, half + albumGap, half + albumGap, half, half, _r(0, 0, c, 0)),
-      ];
-    default:
-      final small = smallThird;
-      final top = half;
-      height = top + albumGap + small;
-      final bottomY = top + albumGap;
-      cells = [
-        _cell(0, 0, 0, half, top, _r(c, 0, 0, 0)),
-        _cell(1, half + albumGap, 0, half, top, _r(0, c, 0, 0)),
-        _cell(2, 0, bottomY, small, small, _r(0, 0, 0, c)),
-        _cell(3, small + albumGap, bottomY, small, small, _r(0, 0, 0, 0)),
-        _cell(4, (small + albumGap) * 2, bottomY, small, small, _r(0, 0, c, 0)),
-      ];
+  int colsAt(int rowCount) {
+    final rowH = (h - albumGap * (rowCount - 1)) / rowCount;
+    final thumbW = math.max(72.0, rowH * _portraitAspect);
+    return math.max(1, (w / thumbW).floor());
   }
 
-  return AlbumLayout(cells: cells, height: height, overflow: overflow);
+  final colsOne = colsAt(1);
+  final colsTwo = colsAt(2);
+
+  late final int rows;
+  late final int cols;
+  if (count <= colsOne || count <= colsTwo) {
+    rows = 1;
+    cols = count;
+  } else {
+    rows = 2;
+    cols = colsTwo;
+  }
+
+  final slots = rows * cols;
+  final visible = math.min(count, slots);
+  final overflow = count - visible;
+  final tileW = (w - albumGap * (cols - 1)) / cols;
+  final tileH = (h - albumGap * (rows - 1)) / rows;
+
+  final cells = <AlbumCell>[];
+  for (var i = 0; i < visible; i++) {
+    final row = i ~/ cols;
+    final col = i % cols;
+    final x = col * (tileW + albumGap);
+    final y = row * (tileH + albumGap);
+    cells.add(
+      AlbumCell(
+        index: i,
+        rect: Rect.fromLTWH(x, y, tileW, tileH),
+        radius: _corners(
+          row: row,
+          col: col,
+          rows: rows,
+          cols: cols,
+          corner: c,
+          index: i,
+          visible: visible,
+        ),
+      ),
+    );
+  }
+
+  return AlbumLayout(cells: cells, height: h, overflow: overflow);
 }
 
-AlbumCell _cell(
-  int index,
-  double x,
-  double y,
-  double w,
-  double h,
-  BorderRadius radius,
-) => AlbumCell(index: index, rect: Rect.fromLTWH(x, y, w, h), radius: radius);
+/// Outer corners of the album block only — matches Signal's outline rounding.
+BorderRadius _corners({
+  required int row,
+  required int col,
+  required int rows,
+  required int cols,
+  required double corner,
+  required int index,
+  required int visible,
+}) {
+  final lastCol = cols - 1;
+  final lastRow = rows - 1;
+  final isLast = index == visible - 1;
+  // When the last row is short, the last cell is the bottom-right outline.
+  final bottomRight = isLast || (row == lastRow && col == lastCol);
+  final bottomLeft = row == lastRow && col == 0;
+  final topLeft = row == 0 && col == 0;
+  final topRight = row == 0 && col == lastCol;
 
-BorderRadius _r(double tl, double tr, double br, double bl) =>
-    BorderRadius.only(
-      topLeft: Radius.circular(tl),
-      topRight: Radius.circular(tr),
-      bottomRight: Radius.circular(br),
-      bottomLeft: Radius.circular(bl),
-    );
+  return BorderRadius.only(
+    topLeft: Radius.circular(topLeft ? corner : 0),
+    topRight: Radius.circular(topRight ? corner : 0),
+    bottomRight: Radius.circular(bottomRight ? corner : 0),
+    bottomLeft: Radius.circular(bottomLeft ? corner : 0),
+  );
+}

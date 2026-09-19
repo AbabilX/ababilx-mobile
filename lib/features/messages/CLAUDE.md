@@ -180,8 +180,9 @@ not in a widget.
   for time + ticks, and do not paint a gradient behind them — the photo is
   the surface. The caption sits below with the usual inset. Quotes and
   text-only bubbles keep the footer under the content.
-  The tile fills `mediaMaxWidth`; height follows the file and stops at
-  `mediaMaxHeight` — never stretch every photo to the ceiling.
+  The tile fits inside `mediaMaxWidth` × `mediaMaxHeight` keeping the file's
+  aspect (`soloMediaSize`) — tall media shrinks width at the height ceiling;
+  never stretch every photo to the ceiling.
 - **Do not wrap bubble content in an `Align`.** An `Align` stretches its parent
   to the full width cap and every bubble reaches the far edge. The footer picks
   its side through the content column's `crossAxisAlignment` instead — right on

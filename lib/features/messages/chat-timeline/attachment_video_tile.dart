@@ -41,16 +41,19 @@ class _AttachmentVideoTileState extends ConsumerState<AttachmentVideoTile>
 
   @override
   Widget build(BuildContext context) {
-    const width = SignalBubbleMetrics.mediaMaxWidth;
+    final box = soloMediaSize(
+      lockedDimensions,
+      maxWidth: SignalBubbleMetrics.mediaMaxWidth,
+    );
     return Padding(
       padding: EdgeInsets.only(top: widget.inset ? 8 : 0),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: width, maxWidth: width),
+        constraints: BoxConstraints(minWidth: box.width, maxWidth: box.width),
         child: AttachmentGate(
           attachment: widget.attachment,
           reserveSpace: true,
-          height: soloMediaHeight(lockedDimensions, width: width),
-          width: width,
+          height: box.height,
+          width: box.width,
           ready: (_, handle) => NetworkVideoPlayer(
             source: VideoSource.file(handle.localPath!),
             fileName: widget.attachment.fileName,
