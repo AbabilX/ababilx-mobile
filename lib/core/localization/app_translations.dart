@@ -87,13 +87,16 @@ class AppTranslations {
       'recovery_copy': 'Copy code',
       'recovery_copied': 'Copied',
       'settings_backup': 'Backup',
-      'settings_backup_sub': 'Encrypted backup and recovery code',
+      'settings_backup_sub': '180-day cloud history and recovery code',
       'backup_section_recent': 'While you chat',
       'backup_recent_title': 'Your last 180 days save automatically',
       'backup_recent_body':
           'Messages sync to our servers as you send and receive them. They stay '
           'there for 180 days, end-to-end encrypted — only your devices can read '
-          'them. This is not stored again on your phone and does not use Back up now.',
+          'them. A new phone or desktop can load that recent history when you sign in.',
+      'backup_recovery_footnote':
+          'Save your recovery code so you can unlock messages on another device. '
+          'Older than 180 days stays only on phones that already have it.',
       'backup_section_recovery': 'Recovery',
       'backup_section_archive': 'Extra encrypted backup',
       'backup_status_checking': 'Checking…',
@@ -763,13 +766,16 @@ class AppTranslations {
       'recovery_copy': 'কোড কপি করুন',
       'recovery_copied': 'কপি হয়েছে',
       'settings_backup': 'ব্যাকআপ',
-      'settings_backup_sub': 'এনক্রিপ্টেড ব্যাকআপ ও রিকভারি কোড',
+      'settings_backup_sub': '১৮০ দিন ক্লাউড ইতিহাস ও রিকভারি কোড',
       'backup_section_recent': 'চ্যাট করার সময়',
       'backup_recent_title': 'গত ১৮০ দিনের মেসেজ নিজে থেকেই সেভ হয়',
       'backup_recent_body':
           'মেসেজ পাঠানো ও পাওয়ার সাথে সাথে সার্ভারে সিঙ্ক হয়। সেখানে ১৮০ দিন '
-          'থাকে, এন্ড-টু-এন্ড এনক্রিপ্টেড — শুধু আপনার ডিভাইস পড়তে পারে। এটা ফোনে '
-          'আবার সেভ হয় না এবং Back up now ব্যবহার করে না।',
+          'থাকে, এন্ড-টু-এন্ড এনক্রিপ্টেড — শুধু আপনার ডিভাইস পড়তে পারে। নতুন ফোন '
+          'বা ডেস্কটপে সাইন ইন করলে এই সাম্প্রতিক ইতিহাস লোড হতে পারে।',
+      'backup_recovery_footnote':
+          'রিকভারি কোড সংরক্ষণ করুন, যাতে অন্য ডিভাইসে মেসেজ আনলক করতে পারেন। '
+          '১৮০ দিনের বেশি পুরোনো শুধু যে ফোনে আগে থেকে আছে সেখানেই থাকে।',
       'backup_section_recovery': 'রিকভারি',
       'backup_section_archive': 'অতিরিক্ত এনক্রিপ্টেড ব্যাকআপ',
       'backup_status_checking': 'পরীক্ষা করা হচ্ছে…',
