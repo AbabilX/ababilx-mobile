@@ -75,6 +75,8 @@ class V2Plan {
     required this.conversationCount,
     required this.batches,
     required this.files,
+    this.inventoryCiphertext = '',
+    this.sealCiphertext = '',
     this.inventorySent = false,
     this.sealSent = false,
   });
@@ -85,6 +87,8 @@ class V2Plan {
   final int conversationCount;
   final List<V2PlannedBatch> batches;
   final List<V2File> files;
+  String inventoryCiphertext;
+  String sealCiphertext;
   bool inventorySent;
   bool sealSent;
 
@@ -99,7 +103,9 @@ class V2Plan {
     'messages': messageCount,
     'conversations': conversationCount,
     'inventory_sent': inventorySent,
+    'inventory_ciphertext': inventoryCiphertext,
     'seal_sent': sealSent,
+    'seal_ciphertext': sealCiphertext,
     'batches': batches.map((b) => b.toJson()).toList(),
     'files': files.map((f) => f.toJson()).toList(),
   };
@@ -110,9 +116,13 @@ class V2Plan {
     messageCount: j['messages'] as int? ?? 0,
     conversationCount: j['conversations'] as int? ?? 0,
     inventorySent: j['inventory_sent'] == true,
+    inventoryCiphertext: j['inventory_ciphertext'] as String? ?? '',
     sealSent: j['seal_sent'] == true,
+    sealCiphertext: j['seal_ciphertext'] as String? ?? '',
     batches: (j['batches'] as List)
-        .map((b) => V2PlannedBatch.fromJson(Map<String, dynamic>.from(b as Map)))
+        .map(
+          (b) => V2PlannedBatch.fromJson(Map<String, dynamic>.from(b as Map)),
+        )
         .toList(),
     files: (j['files'] as List)
         .map((f) => V2File.fromJson(Map<String, dynamic>.from(f as Map)))

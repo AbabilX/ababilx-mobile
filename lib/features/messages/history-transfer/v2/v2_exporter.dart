@@ -1,9 +1,13 @@
+import 'dart:math';
+
 import '../../../attachments/data/local/attachment_blob_store.dart';
 import '../../data/local/chat_message_store.dart';
 import '../../data/models/chat_models.dart';
 import 'v2_api.dart';
 import 'v2_batch_uploader.dart';
 import 'v2_conversations.dart';
+import 'v2_crypto.dart';
+import 'v2_descriptor.dart';
 import 'v2_inventory.dart';
 import 'v2_media_plan.dart';
 import 'v2_media_source.dart';
@@ -14,7 +18,8 @@ import 'v2_store.dart';
 
 enum V2Phase { planning, uploading, waiting, done }
 
-typedef V2Progress = void Function(V2Phase phase, int batch, int batches, int done, int total);
+typedef V2Progress =
+    void Function(V2Phase phase, int batch, int batches, int done, int total);
 
 /// The phone's side of a v2 transfer, start to finish or from wherever the
 /// last run stopped.
@@ -56,17 +61,40 @@ class HistoryTransferV2Exporter {
 
   /// `transferKey` is given on the first run and read back from secure
   /// storage on a resume.
-  Future<V2Outcome> run({required String transferId, List<int>? transferKey}) async {
+  Future<V2Outcome> run({
+    required String transferId,
+    List<int>? transferKey,
+  }) async {
     final store = await openStore(transferId);
     if (transferKey != null) await store.writeKey(transferId, transferKey);
     final key = transferKey ?? await store.readKey(transferId);
-    if (key == null) throw StateError('this transfer cannot be resumed on this phone');
+    if (key == null) {
+      throw StateError('this transfer cannot be resumed on this phone');
+    }
 
-    final plan = await store.readPlan() ?? await _plan(store, transferId, key);
-    V2Pins.hold(plan.files.where((f) => f.status == 'available').map((f) => f.urlKey));
+    final capabilities = await retrying(api.capabilities);
+    final limits = validateHistoryTransferV2Capabilities(capabilities);
+
+    final plan =
+        await store.readPlan() ?? await _plan(store, transferId, key, limits);
+    if (plan.batches.length > limits.maxBatches ||
+        plan.batches.any((batch) => batch.chunkCount > limits.targetChunks)) {
+      throw StateError(
+        'This history needs more batches than the server allows.',
+      );
+    }
+    V2Pins.hold(
+      plan.files.where((f) => f.status == 'available').map((f) => f.urlKey),
+    );
     try {
       if (!plan.inventorySent) {
-        await retrying(() async => api.putInventory(transferId, await sealInventory(plan, key)));
+        if (plan.inventoryCiphertext.isEmpty) {
+          plan.inventoryCiphertext = await sealInventory(plan, key);
+          await store.writePlan(plan);
+        }
+        await retrying(
+          () => api.putInventory(transferId, plan.inventoryCiphertext),
+        );
         plan.inventorySent = true;
         await store.writePlan(plan);
       }
@@ -79,20 +107,51 @@ class HistoryTransferV2Exporter {
         media: media,
         deletions: () => messages.deletions.records,
         isCancelled: isCancelled,
-        onChunk: (b, n) => onProgress?.call(V2Phase.uploading, b.batch, plan.batches.length, n, b.chunkCount),
+        onChunk: (b, n) => onProgress?.call(
+          V2Phase.uploading,
+          b.batch,
+          plan.batches.length,
+          n,
+          b.chunkCount,
+        ),
       );
       for (final batch in plan.batches) {
         if (batch.committed) continue;
-        onProgress?.call(V2Phase.uploading, batch.batch, plan.batches.length, 0, batch.chunkCount);
-        if (!await uploader.run(batch)) return V2Outcome.of(plan, completed: false);
+        onProgress?.call(
+          V2Phase.uploading,
+          batch.batch,
+          plan.batches.length,
+          0,
+          batch.chunkCount,
+        );
+        if (!await uploader.run(batch)) {
+          return V2Outcome.of(plan, completed: false);
+        }
         if (batch.isFinal && !plan.sealSent) {
-          final seal = await sealJobSeal(plan, key, messages.deletions.records);
-          await retrying(() => api.putSeal(transferId, batch.batch, seal));
+          if (plan.sealCiphertext.isEmpty) {
+            plan.sealCiphertext = await sealJobSeal(
+              plan,
+              key,
+              messages.deletions.records,
+            );
+            await store.writePlan(plan);
+          }
+          await retrying(
+            () => api.putSeal(transferId, batch.batch, plan.sealCiphertext),
+          );
           plan.sealSent = true;
           await store.writePlan(plan);
         }
-        onProgress?.call(V2Phase.waiting, batch.batch, plan.batches.length, 0, 0);
-        if (!await _waitCommitted(transferId, batch.batch)) return V2Outcome.of(plan, completed: false);
+        onProgress?.call(
+          V2Phase.waiting,
+          batch.batch,
+          plan.batches.length,
+          0,
+          0,
+        );
+        if (!await _waitCommitted(transferId, batch.batch)) {
+          return V2Outcome.of(plan, completed: false);
+        }
         batch.state = 'committed';
         await store.writePlan(plan);
         await store.dropBatch(batch.batch);
@@ -105,7 +164,12 @@ class HistoryTransferV2Exporter {
     }
   }
 
-  Future<V2Plan> _plan(V2Store store, String transferId, List<int> key) async {
+  Future<V2Plan> _plan(
+    V2Store store,
+    String transferId,
+    List<int> key,
+    V2ServerLimits limits,
+  ) async {
     onProgress?.call(V2Phase.planning, 0, 0, 0, 0);
     final frames = V2Conversations(conversations);
     final builder = V2MessageBatchBuilder(
@@ -114,6 +178,7 @@ class HistoryTransferV2Exporter {
       transferId: transferId,
       transferKey: key,
       conversations: frames,
+      targetChunks: limits.targetChunks,
       onProgress: (n) => onProgress?.call(V2Phase.planning, 0, 0, n, 0),
     );
     final messageBatches = await builder.build();
@@ -124,8 +189,11 @@ class HistoryTransferV2Exporter {
       wait: destinationInventoryWait,
       pollEvery: pollEvery,
     );
-    final media = await V2MediaPlanner(blobs: blobs, held: held)
-        .plan(builder.attachments.values, messageBatches.length);
+    final media = await V2MediaPlanner(
+      blobs: blobs,
+      held: held,
+      batchPlainBytes: limits.targetChunks * V2MessageBatchBuilder.chunkBytes,
+    ).plan(builder.attachments.values, messageBatches.length);
     final batches = [...messageBatches, ...media.batches]..last.isFinal = true;
     final plan = V2Plan(
       transferId: transferId,
@@ -156,6 +224,57 @@ class HistoryTransferV2Exporter {
       await Future<void>.delayed(pollEvery);
     }
   }
+}
+
+class V2ServerLimits {
+  const V2ServerLimits({required this.targetChunks, required this.maxBatches});
+
+  final int targetChunks;
+  final int maxBatches;
+}
+
+/// Refuse an incompatible relay before the user approves it. The selected
+/// batch target also keeps every planned batch within the handler's chunk,
+/// batch and outstanding-byte ceilings.
+V2ServerLimits validateHistoryTransferV2Capabilities(
+  Map<String, dynamic> value,
+) {
+  int number(String key) => (value[key] as num?)?.toInt() ?? 0;
+  final versions = (value['versions'] as List? ?? const [])
+      .whereType<num>()
+      .map((v) => v.toInt());
+  final chunk = number('plaintext_chunk_bytes');
+  final sealedChunk =
+      chunk +
+      HistoryTransferV2Crypto.nonceBytes +
+      HistoryTransferV2Crypto.tagBytes;
+  final maxChunk = number('max_chunk_bytes');
+  final maxChunks = number('max_chunks_per_batch');
+  final maxBatch = number('max_batch_bytes');
+  final maxOutstanding = number('max_outstanding_bytes');
+  final maxPage = number('max_page_bytes');
+  final maxPagePlaintext = number('max_page_plaintext_bytes');
+  final pages = number('max_pages_per_batch');
+  final batches = number('max_batches');
+  final targetChunks = [
+    64,
+    maxChunks,
+    sealedChunk == 0 ? 0 : maxBatch ~/ sealedChunk,
+    sealedChunk == 0 ? 0 : maxOutstanding ~/ sealedChunk,
+  ].reduce(min);
+  if (!versions.contains(2) ||
+      chunk != V2MessageBatchBuilder.chunkBytes ||
+      maxChunk < sealedChunk ||
+      maxPage < 1048571 ||
+      maxPagePlaintext < V2Descriptor.slicePlainBytes ||
+      pages < V2Descriptor.maxPages ||
+      batches <= 0 ||
+      targetChunks <= 0) {
+    throw StateError(
+      'This server does not support this history transfer format.',
+    );
+  }
+  return V2ServerLimits(targetChunks: targetChunks, maxBatches: batches);
 }
 
 class V2Outcome {

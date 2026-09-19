@@ -29,7 +29,9 @@ class V2MediaSource {
 
   Future<Uint8List> plaintext(V2PlannedBatch batch, int index) async {
     final start = index * chunkBytes;
-    final end = (start + chunkBytes) < batch.streamBytes ? start + chunkBytes : batch.streamBytes;
+    final end = (start + chunkBytes) < batch.streamBytes
+        ? start + chunkBytes
+        : batch.streamBytes;
     final out = Uint8List(end - start);
     for (final entry in _segmentsOf(batch.batch)) {
       final seg = entry.seg;
@@ -37,7 +39,11 @@ class V2MediaSource {
       final segEnd = seg.streamOffset + seg.length;
       final to = segEnd < end ? segEnd : end;
       if (to <= from || entry.file.status != 'available') continue;
-      final bytes = await _read(entry.file, seg.fileOffset + (from - seg.streamOffset), to - from);
+      final bytes = await _read(
+        entry.file,
+        seg.fileOffset + (from - seg.streamOffset),
+        to - from,
+      );
       if (bytes == null) {
         _omit(entry.file);
         continue;
@@ -53,12 +59,42 @@ class V2MediaSource {
   Future<String?> segmentHash(V2File file, V2Segment seg) async {
     if (file.status != 'available') return null;
     if (seg.length == 0) return sha256.convert(const []).toString();
-    final bytes = await _read(file, seg.fileOffset, seg.length);
-    if (bytes == null) {
+    final hash = await _hash(file, seg.fileOffset, seg.length);
+    if (hash == null) {
       _omit(file);
       return null;
     }
-    return sha256.convert(bytes).toString();
+    return hash;
+  }
+
+  Future<String?> _hash(V2File file, int offset, int length) async {
+    RandomAccessFile? handle;
+    try {
+      final source = File(file.localPath);
+      final stat = await source.stat();
+      if (stat.type != FileSystemEntityType.file ||
+          stat.size != file.size ||
+          stat.modified.millisecondsSinceEpoch != file.mtimeMs) {
+        return null;
+      }
+      handle = await source.open();
+      await handle.setPosition(offset);
+      final output = _DigestSink();
+      final sink = sha256.startChunkedConversion(output);
+      var left = length;
+      while (left > 0) {
+        final bytes = await handle.read(left < 1 << 20 ? left : 1 << 20);
+        if (bytes.isEmpty) return null;
+        sink.add(bytes);
+        left -= bytes.length;
+      }
+      sink.close();
+      return output.value.toString();
+    } catch (_) {
+      return null;
+    } finally {
+      await handle?.close();
+    }
   }
 
   Future<Uint8List?> _read(V2File file, int offset, int length) async {
@@ -87,4 +123,14 @@ class V2MediaSource {
     file.status = 'omitted';
     omittedChanged = true;
   }
+}
+
+class _DigestSink implements Sink<Digest> {
+  late Digest value;
+
+  @override
+  void add(Digest data) => value = data;
+
+  @override
+  void close() {}
 }

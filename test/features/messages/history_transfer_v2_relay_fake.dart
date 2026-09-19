@@ -26,20 +26,51 @@ class FakeRelay implements HistoryTransferV2Api {
   final Map<int, int> chunkCounts = {};
   String? seal;
   int? sealLast;
+  final List<String> inventoryAttempts = [];
+  final List<String> sealAttempts = [];
+  bool failInventoryResponseOnce = false;
+  bool failSealResponseOnce = false;
   void Function()? beforeFirstMediaReserve;
+
+  @override
+  Future<Map<String, dynamic>> capabilities() async => {
+    'versions': [1, 2],
+    'plaintext_chunk_bytes': 4 * 1024 * 1024,
+    'max_chunk_bytes': 8 * 1024 * 1024,
+    'max_chunks_per_batch': 8192,
+    'max_batch_bytes': 16 * 1024 * 1024 * 1024,
+    'max_outstanding_bytes': 2 * 1024 * 1024 * 1024,
+    'max_page_bytes': 1024 * 1024,
+    'max_page_plaintext_bytes': 786400,
+    'max_pages_per_batch': 32,
+    'max_batches': 4096,
+  };
 
   @override
   Future<Map<String, dynamic>> job(String id) async => {
     'live': true,
     'transfer': {'status': 'approved', 'dest_inventory_ciphertext': ''},
-    'batches': [for (final e in status.entries) {'batch': e.key, 'status': e.value}],
+    'batches': [
+      for (final e in status.entries) {'batch': e.key, 'status': e.value},
+    ],
   };
 
   @override
-  Future<void> putInventory(String id, String ciphertext) async {}
+  Future<void> putInventory(String id, String ciphertext) async {
+    inventoryAttempts.add(ciphertext);
+    if (failInventoryResponseOnce) {
+      failInventoryResponseOnce = false;
+      throw StateError('inventory response lost');
+    }
+  }
 
   @override
-  Future<void> createBatch(String id, int batch, String kind, bool isFinal) async {
+  Future<void> createBatch(
+    String id,
+    int batch,
+    String kind,
+    bool isFinal,
+  ) async {
     if (status.containsKey(batch)) return;
     expect(batch, status.length, reason: 'batches are created in order');
     expect(status.values.every((s) => s == 'committed'), isTrue);
@@ -49,7 +80,12 @@ class FakeRelay implements HistoryTransferV2Api {
   }
 
   @override
-  Future<({String url, bool uploaded})> reserve(String id, int batch, int index, int size) async {
+  Future<({String url, bool uploaded})> reserve(
+    String id,
+    int batch,
+    int index,
+    int size,
+  ) async {
     final name = '$batch/$index';
     if (kinds[batch] == 'media' && beforeFirstMediaReserve != null) {
       beforeFirstMediaReserve!();
@@ -74,14 +110,21 @@ class FakeRelay implements HistoryTransferV2Api {
   }
 
   @override
-  Future<void> putPage(String id, int batch, int page, String ciphertext) async =>
-      (pages[batch] ??= []).add(ciphertext);
+  Future<void> putPage(
+    String id,
+    int batch,
+    int page,
+    String ciphertext,
+  ) async => (pages[batch] ??= []).add(ciphertext);
 
   @override
   Future<void> finalize(String id, int batch, int chunks, int pageCount) async {
     for (var i = 0; i < chunks; i++) {
-      expect(settled.contains('$batch/$i') || objects.containsKey('$batch/$i'), isTrue,
-          reason: 'finalize only a gapless batch');
+      expect(
+        settled.contains('$batch/$i') || objects.containsKey('$batch/$i'),
+        isTrue,
+        reason: 'finalize only a gapless batch',
+      );
     }
     chunkCounts[batch] = chunks;
     status[batch] = 'committed';
@@ -89,16 +132,25 @@ class FakeRelay implements HistoryTransferV2Api {
 
   @override
   Future<void> putSeal(String id, int lastBatch, String ciphertext) async {
+    sealAttempts.add(ciphertext);
     seal = ciphertext;
     sealLast = lastBatch;
+    if (failSealResponseOnce) {
+      failSealResponseOnce = false;
+      throw StateError('seal response lost');
+    }
   }
 
   Future<Uint8List> stream(int batch, String kind) async {
     final out = <int>[];
     for (var i = 0; i < chunkCounts[batch]!; i++) {
-      out.addAll(await HistoryTransferV2Crypto.open(
-        key, HistoryTransferV2Crypto.chunkAad(transferId, batch, kind, i), objects['$batch/$i']!,
-      ));
+      out.addAll(
+        await HistoryTransferV2Crypto.open(
+          key,
+          HistoryTransferV2Crypto.chunkAad(transferId, batch, kind, i),
+          objects['$batch/$i']!,
+        ),
+      );
     }
     return Uint8List.fromList(out);
   }
@@ -107,17 +159,28 @@ class FakeRelay implements HistoryTransferV2Api {
     final sealedPages = pages[batch]!;
     final out = <int>[];
     for (var p = 0; p < sealedPages.length; p++) {
-      out.addAll(await HistoryTransferV2Crypto.open(
-        key,
-        HistoryTransferV2Crypto.pageAad(transferId, batch, p, sealedPages.length),
-        HistoryTransferCodec.bytesFromB64(sealedPages[p]),
-      ));
+      out.addAll(
+        await HistoryTransferV2Crypto.open(
+          key,
+          HistoryTransferV2Crypto.pageAad(
+            transferId,
+            batch,
+            p,
+            sealedPages.length,
+          ),
+          HistoryTransferCodec.bytesFromB64(sealedPages[p]),
+        ),
+      );
     }
     return Map<String, dynamic>.from(jsonDecode(utf8.decode(out)) as Map);
   }
 
   Future<Map<String, dynamic>> openSeal() async => Map<String, dynamic>.from(
-    await HistoryTransferV2Crypto.openJson(key, HistoryTransferV2Crypto.sealAad(transferId), seal!)
+    await HistoryTransferV2Crypto.openJson(
+          key,
+          HistoryTransferV2Crypto.sealAad(transferId),
+          seal!,
+        )
         as Map,
   );
 

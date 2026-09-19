@@ -41,14 +41,23 @@ class V2BatchUploader {
   final void Function(V2PlannedBatch batch, int uploaded)? onChunk;
   final bool Function()? isCancelled;
 
-  static const _order = ['planned', 'created', 'uploaded', 'paged', 'finalized', 'committed'];
+  static const _order = [
+    'planned',
+    'created',
+    'uploaded',
+    'paged',
+    'finalized',
+    'committed',
+  ];
   bool _before(V2PlannedBatch b, String state) =>
       _order.indexOf(b.state) < _order.indexOf(state);
 
   Future<bool> run(V2PlannedBatch batch) async {
     final id = plan.transferId;
     if (_before(batch, 'created')) {
-      await retrying(() => api.createBatch(id, batch.batch, batch.kind, batch.isFinal));
+      await retrying(
+        () => api.createBatch(id, batch.batch, batch.kind, batch.isFinal),
+      );
       await _advance(batch, 'created');
     }
     if (_before(batch, 'uploaded')) {
@@ -70,6 +79,10 @@ class V2BatchUploader {
           media: media,
           deletions: deletions(),
         );
+        if (media.omittedChanged) {
+          media.omittedChanged = false;
+          await store.writePlan(plan);
+        }
         pages = await V2Descriptor.seal(
           key: transferKey,
           transferId: id,
@@ -87,7 +100,9 @@ class V2BatchUploader {
       await _advance(batch, 'paged');
     }
     if (_before(batch, 'finalized')) {
-      await retrying(() => api.finalize(id, batch.batch, batch.chunkCount, batch.pageCount));
+      await retrying(
+        () => api.finalize(id, batch.batch, batch.chunkCount, batch.pageCount),
+      );
       await _advance(batch, 'finalized');
     }
     return true;
@@ -106,11 +121,15 @@ class V2BatchUploader {
     var refusedPuts = 0;
     for (;;) {
       try {
-        final slot = await retrying(() => api.reserve(id, batch.batch, index, size ?? 1));
+        final slot = await retrying(
+          () => api.reserve(id, batch.batch, index, size ?? 1),
+        );
         if (slot.uploaded) return;
         final sealed = size == null ? null : await _sealed(batch, index);
         if (sealed == null) {
-          throw StateError('the sealed copy of batch ${batch.batch} chunk $index is gone');
+          throw StateError(
+            'the sealed copy of batch ${batch.batch} chunk $index is gone',
+          );
         }
         try {
           await retrying(() => api.put(slot.url, sealed));
@@ -121,7 +140,14 @@ class V2BatchUploader {
           if ((status == 403 || status == 400) && ++refusedPuts < 3) continue;
           rethrow;
         }
-        await retrying(() => api.confirm(id, batch.batch, index, sha256.convert(sealed).toString()));
+        await retrying(
+          () => api.confirm(
+            id,
+            batch.batch,
+            index,
+            sha256.convert(sealed).toString(),
+          ),
+        );
         return;
       } on HistoryTransferRelayBusy catch (busy) {
         // The job already holds its allowance in the relay; committed batches
@@ -141,8 +167,12 @@ class V2BatchUploader {
     }
     final start = index * V2MediaSource.chunkBytes;
     final left = batch.streamBytes - start;
-    final plain = left < V2MediaSource.chunkBytes ? left : V2MediaSource.chunkBytes;
-    return plain + HistoryTransferV2Crypto.nonceBytes + HistoryTransferV2Crypto.tagBytes;
+    final plain = left < V2MediaSource.chunkBytes
+        ? left
+        : V2MediaSource.chunkBytes;
+    return plain +
+        HistoryTransferV2Crypto.nonceBytes +
+        HistoryTransferV2Crypto.tagBytes;
   }
 
   Future<Uint8List?> _sealed(V2PlannedBatch batch, int index) async {
@@ -157,7 +187,12 @@ class V2BatchUploader {
     }
     return HistoryTransferV2Crypto.seal(
       transferKey,
-      HistoryTransferV2Crypto.chunkAad(plan.transferId, batch.batch, 'media', index),
+      HistoryTransferV2Crypto.chunkAad(
+        plan.transferId,
+        batch.batch,
+        'media',
+        index,
+      ),
       plain,
     );
   }
@@ -176,7 +211,9 @@ Future<T> retrying<T>(Future<T> Function() call, {int attempts = 5}) async {
       final transient = status == 0 || status >= 500 || status == 429;
       if (!transient || attempt >= attempts) rethrow;
       final base = 500 * (1 << (attempt - 1));
-      await Future<void>.delayed(Duration(milliseconds: base + _jitter.nextInt(base)));
+      await Future<void>.delayed(
+        Duration(milliseconds: base + _jitter.nextInt(base)),
+      );
     }
   }
 }

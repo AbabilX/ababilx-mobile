@@ -12,6 +12,7 @@ import 'history_transfer_provider.dart';
 import 'history_transfer_sheet.dart';
 import 'history_transfer_verification.dart';
 import 'v2/v2_crypto.dart';
+import 'v2/v2_exporter.dart';
 
 /// Approving a scanned device's request for this phone's history.
 ///
@@ -59,6 +60,11 @@ class HistoryTransferApproval {
         client: request.client,
         code: await historyTransferVerificationCode(scanned.destinationJwk),
       );
+      if (scanned.version >= 2 && view.version >= 2) {
+        validateHistoryTransferV2Capabilities(
+          await ref.read(historyTransferV2ApiProvider).capabilities(),
+        );
+      }
     } catch (error) {
       if (context.mounted) showAppToast(context, _failureMessage(error));
       return;
@@ -102,7 +108,11 @@ class HistoryTransferApproval {
       unawaited(
         v2
             ? notifier.sendV2(transferId: id, transferKey: key)
-            : notifier.send(transferId: id, transferKey: key, deviceId: view.deviceName),
+            : notifier.send(
+                transferId: id,
+                transferKey: key,
+                deviceId: view.deviceName,
+              ),
       );
       if (context.mounted) {
         showAppToast(context, 'Sending your history to ${view.label}.');

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:ababilx/features/messages/history-transfer/history_transfer_codec.dart';
 import 'package:ababilx/features/messages/history-transfer/history_transfer_verification.dart';
 import 'package:ababilx/features/messages/history-transfer/v2/v2_crypto.dart';
+import 'package:ababilx/features/messages/history-transfer/v2/v2_descriptor.dart';
 import 'package:ababilx/features/messages/message_e2ee/p256_ecdh.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -78,10 +79,27 @@ void main() {
     );
   });
 
+  test(
+    'maximum descriptor plaintext stays below the encoded 1 MiB limit',
+    () async {
+      final sealed = await HistoryTransferV2Crypto.seal(
+        key,
+        HistoryTransferV2Crypto.pageAad(transferId, 0, 0, 1),
+        Uint8List(V2Descriptor.slicePlainBytes),
+      );
+      expect(HistoryTransferCodec.b64(sealed).length, 1048571);
+      expect(HistoryTransferCodec.b64(sealed).length, lessThan(1 << 20));
+    },
+  );
+
   test('the envelope matches WebCrypto byte for byte', () async {
     final envelope = Map<String, dynamic>.from(fixture['envelope'] as Map);
-    final eph = Map<String, dynamic>.from(envelope['ephemeral_private_jwk'] as Map);
-    final dest = Map<String, dynamic>.from(envelope['destination_private_jwk'] as Map);
+    final eph = Map<String, dynamic>.from(
+      envelope['ephemeral_private_jwk'] as Map,
+    );
+    final dest = Map<String, dynamic>.from(
+      envelope['destination_private_jwk'] as Map,
+    );
     final pair = P256KeyPair(
       d: HistoryTransferCodec.bytesFromB64(eph['d'] as String),
       x: HistoryTransferCodec.bytesFromB64(eph['x'] as String),
@@ -96,13 +114,18 @@ void main() {
       ephemeral: pair,
       nonce: _hex(envelope['nonce_hex'] as String),
     );
-    final expected = Map<String, dynamic>.from(envelope['envelope_json'] as Map);
+    final expected = Map<String, dynamic>.from(
+      envelope['envelope_json'] as Map,
+    );
     expect(sealed['ciphertext'], expected['ciphertext']);
     expect(sealed['nonce'], expected['nonce']);
     final k = envelope['destination_public_param_k'] as String;
     final jwk = Map<String, dynamic>.from(
       jsonDecode(utf8.decode(HistoryTransferCodec.bytesFromB64(k))) as Map,
     );
-    expect(await historyTransferVerificationCode(jwk), envelope['verification_code']);
+    expect(
+      await historyTransferVerificationCode(jwk),
+      envelope['verification_code'],
+    );
   });
 }
