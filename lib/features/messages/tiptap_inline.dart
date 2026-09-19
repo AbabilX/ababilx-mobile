@@ -4,8 +4,16 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'tiptap_autolink.dart';
 
-/// Link blue, shared by every surface that renders a body.
-const tiptapLinkColor = Color(0xFF64B5F6);
+/// Soft sky blue — readable on dark bubbles / dark wallpaper.
+const Color tiptapLinkColorDark = Color(0xFF64B5F6);
+
+/// Deeper blue — readable on light bubbles and the light chat wallpaper.
+/// The old single sky (`tiptapLinkColorDark`) washed out on pale surfaces.
+const Color tiptapLinkColorLight = Color(0xFF1565C0);
+
+/// Link blue for the current brightness. Prefer this over a fixed const.
+Color tiptapLinkColorFor(Brightness brightness) =>
+    brightness == Brightness.dark ? tiptapLinkColorDark : tiptapLinkColorLight;
 
 /// Inline half of the TipTap renderer: text nodes, marks, mentions, links.
 class TiptapInline {
@@ -74,11 +82,14 @@ class TiptapInline {
     return TextSpan(text: text, style: style, recognizer: recognizer);
   }
 
-  TextStyle _linkStyle(TextStyle style) => style.copyWith(
-    color: tiptapLinkColor,
-    decoration: TextDecoration.underline,
-    decorationColor: tiptapLinkColor.withValues(alpha: 0.45),
-  );
+  TextStyle _linkStyle(TextStyle style) {
+    final link = tiptapLinkColorFor(Theme.of(context).brightness);
+    return style.copyWith(
+      color: link,
+      decoration: TextDecoration.underline,
+      decorationColor: link.withValues(alpha: 0.45),
+    );
+  }
 
   List<InlineSpan> _spansOfNode(Map<String, dynamic> node) {
     final type = node['type'];

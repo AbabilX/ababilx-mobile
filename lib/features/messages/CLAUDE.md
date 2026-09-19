@@ -60,7 +60,9 @@ on the accent, theirs left on a raised surface.
 node (`tiptap_autolink.dart`). `https://`, `www.`, emails and phone numbers
 (BD `01[3-9]…`, `+880…`, formatted) become tappable: browser / mailer /
 dialer. A URL wins if a number sits inside its path. Invoice-like digit
-runs stay plain text.
+runs stay plain text. Link ink is theme-aware (`tiptapLinkColorFor`): deep
+blue on light, soft sky on dark — the old single sky washed out on the
+light wallpaper.
 
 ## Link previews are fetched on THIS phone
 
@@ -196,10 +198,10 @@ not in a widget.
   never stretch every photo to the ceiling. An image/video-only message (no
   caption) paints no bubble fill — `isBareMediaBubble` / `MessageBubble.transparent`.
 - **Do not wrap bubble content in an `Align`.** An `Align` stretches its parent
-  to the full width cap and every bubble reaches the far edge. The footer picks
-  its side through the content column's `crossAxisAlignment` instead — right on
-  yours, left on theirs, exactly as Signal does. Media bubbles use `Positioned`
-  on the image, not an `Align`.
+  to the full width cap and every bubble reaches the far edge. The footer is
+  always trailing (`crossAxisAlignment: end`) so time + ticks sit on the
+  right inside every bubble — own or theirs. Media bubbles use `Positioned`
+  bottom-right on the image, not an `Align`.
 - **The avatar hangs off the bottom of a run, not the top**, and only in a
   group. A DM shows no avatar and no sender name at all. The slot is held for
   every message of the run so the bubbles stay in one column.

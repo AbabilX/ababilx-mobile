@@ -101,11 +101,22 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
           ),
           ChatWallpaperOpacitySlider(
             value: wallpaper.drawOpacity,
-            enabled: wallpaper.isSet,
+            // Wallpaper is always on (built-in theme pair fallback); the slider
+            // must stay usable even when storage still has an unset/none value.
+            enabled: true,
             // Dragging only redraws; the write waits for the thumb to land.
-            onChanged: (value) =>
-                setState(() => _draft = wallpaper.copyWith(opacity: value)),
-            onSettled: (value) => _apply(wallpaper.copyWith(opacity: value)),
+            // Re-resolve from draft/provider so we never copy opacity onto a
+            // stale closure from mid-gesture rebuild timing.
+            onChanged: (value) => setState(
+              () => _draft = _current(
+                ref.read(chatWallpaperProvider),
+              ).copyWith(opacity: value),
+            ),
+            onSettled: (value) => _apply(
+              _current(
+                ref.read(chatWallpaperProvider),
+              ).copyWith(opacity: value),
+            ),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,

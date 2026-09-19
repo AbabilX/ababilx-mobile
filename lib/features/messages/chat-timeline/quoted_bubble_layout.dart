@@ -66,8 +66,8 @@ class RenderQuotedBubble extends RenderBox
     );
 
     // Re-laying out at the settled width is what makes the two line up — and
-    // what keeps the footer on its own side, since the content column aligns
-    // itself once it has a width to align within.
+    // what lets the content column pin the footer to the trailing edge once
+    // it has a width to align within.
     final tight = BoxConstraints.tightFor(width: width);
     if (content.size.width != width) {
       content.layout(tight, parentUsesSize: true);

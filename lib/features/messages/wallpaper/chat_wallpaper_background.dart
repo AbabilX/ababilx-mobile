@@ -8,8 +8,8 @@ import 'chat_wallpaper_provider.dart';
 
 /// Paints a chat's wallpaper behind [child].
 ///
-/// When nothing is set the child is returned untouched, so a chat with no
-/// wallpaper costs no extra layer and keeps the theme's own surface colour.
+/// Unset storage still paints the built-in theme pair — there is no plain
+/// opt-out — so this always stacks a [ChatWallpaperPaint] under [child].
 class ChatWallpaperBackground extends ConsumerStatefulWidget {
   const ChatWallpaperBackground({
     super.key,
@@ -67,7 +67,8 @@ class ChatWallpaperPaint extends StatelessWidget {
     // Theme-pair presets already swap to a dark painting — dimming on top
     // would crush them. The toggle still stores; it only affects single-art
     // presets and photos.
-    final themePair = wallpaper.kind == ChatWallpaperKind.preset &&
+    final themePair =
+        wallpaper.kind == ChatWallpaperKind.preset &&
         (chatWallpaperPresetById(wallpaper.presetId)?.isThemePair ?? false);
     final dim = wallpaper.dimInDark && dark && !themePair;
     final opacity = wallpaper.drawOpacity;
@@ -84,10 +85,12 @@ class ChatWallpaperPaint extends StatelessWidget {
           ChatWallpaperKind.photo => Image.file(
             File(wallpaper.photoPath),
             fit: BoxFit.cover,
-            // `Image`'s own opacity multiplies alpha while painting. Wrapping
-            // in an `Opacity` widget instead would push a full-screen
-            // saveLayer onto every frame of every chat.
-            opacity: AlwaysStoppedAnimation(opacity),
+            // Prefer color+modulate over `Image.opacity` + AlwaysStoppedAnimation:
+            // swapping that animation does not call markNeedsPaint on
+            // RenderImage, so the slider looked dead until something else
+            // repainted. `color` does mark dirty. Avoids Opacity's saveLayer.
+            color: Colors.white.withValues(alpha: opacity),
+            colorBlendMode: BlendMode.modulate,
             errorBuilder: (_, _, _) => ColoredBox(color: surface),
           ),
           ChatWallpaperKind.preset => ChatWallpaperPresetPaint(
@@ -140,7 +143,10 @@ class ChatWallpaperPresetPaint extends StatelessWidget {
           asset,
           fit: BoxFit.cover,
           alignment: preset.alignment,
-          opacity: AlwaysStoppedAnimation(opacity),
+          // Same as photo: color+modulate repaints when the slider moves;
+          // AlwaysStoppedAnimation on Image.opacity did not.
+          color: Colors.white.withValues(alpha: opacity),
+          colorBlendMode: BlendMode.modulate,
         ),
       );
     }

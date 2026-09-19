@@ -70,11 +70,10 @@ class MessageBubbleContent extends StatelessWidget {
     return message.attachments.every((a) => a.isImage || a.isVideo);
   }
 
-  // Signal sets the footer against the bubble's own side — right on yours,
-  // left on theirs. An `Align` here instead would stretch the column to the
+  // Time + ticks always sit on the trailing edge of the bubble (WhatsApp /
+  // common chat UI). An `Align` here instead would stretch the column to the
   // full width cap and every bubble would reach the far edge.
-  CrossAxisAlignment get _footerSide =>
-      isOwn ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+  static const CrossAxisAlignment _footerSide = CrossAxisAlignment.end;
 
   Widget? _footer({bool onMedia = false}) => showFooter
       ? MessageBubbleFooter(
