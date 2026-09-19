@@ -49,6 +49,7 @@ class MessageBubble extends StatelessWidget {
     required this.colors,
     required this.child,
     this.dimmed = false,
+    this.transparent = false,
   });
 
   final bool isOwn;
@@ -58,6 +59,9 @@ class MessageBubble extends StatelessWidget {
 
   /// Sending bubbles fade, exactly as Signal dims an unsent item.
   final bool dimmed;
+
+  /// Image/video-only (no caption): the media is the surface — no fill behind it.
+  final bool transparent;
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +79,7 @@ class MessageBubble extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Container(
           decoration: BoxDecoration(
-            color: colors.background,
+            color: transparent ? Colors.transparent : colors.background,
             borderRadius: radius,
           ),
           // Media fills the bubble edge to edge, so the clip is always on and

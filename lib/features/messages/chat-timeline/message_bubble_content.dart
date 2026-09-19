@@ -14,6 +14,17 @@ import 'message_quote_block.dart';
 import 'quoted_bubble_layout.dart';
 import 'signal_bubble_metrics.dart';
 
+/// Image/video attachments only, no caption or quote — the media is the
+/// surface, so [MessageBubble] paints no fill behind it.
+bool isBareMediaBubble(ChatMessage message) {
+  if (message.isDeleted) return false;
+  if (message.quote != null) return false;
+  if (message.forwardedFromName != null) return false;
+  if (message.attachments.isEmpty) return false;
+  if (!message.attachments.every((a) => a.isImage || a.isVideo)) return false;
+  return tiptapToPlainText(message.body).trim().isEmpty;
+}
+
 /// What sits inside a bubble, and how much padding it takes.
 ///
 /// A picture or video fills the bubble corner to corner and draws the time on

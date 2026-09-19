@@ -121,6 +121,7 @@ class MessageRowContent extends ConsumerWidget {
           clusterPosition: clusterPosition,
           colors: colors,
           dimmed: isSending,
+          transparent: isBareMediaBubble(message),
           child: MessageBubbleContent(
             message: message,
             colors: colors,

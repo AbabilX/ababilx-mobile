@@ -182,7 +182,8 @@ not in a widget.
   text-only bubbles keep the footer under the content.
   The tile fits inside `mediaMaxWidth` × `mediaMaxHeight` keeping the file's
   aspect (`soloMediaSize`) — tall media shrinks width at the height ceiling;
-  never stretch every photo to the ceiling.
+  never stretch every photo to the ceiling. An image/video-only message (no
+  caption) paints no bubble fill — `isBareMediaBubble` / `MessageBubble.transparent`.
 - **Do not wrap bubble content in an `Align`.** An `Align` stretches its parent
   to the full width cap and every bubble reaches the far edge. The footer picks
   its side through the content column's `crossAxisAlignment` instead — right on
