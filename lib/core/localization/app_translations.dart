@@ -20,10 +20,13 @@ class AppTranslations {
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
       'call_control_share': 'Share',
+      'call_control_screen_share': 'Screen Share',
       'call_control_stop': 'Stop',
       'call_control_take_over': 'Take over',
       'call_control_speaker': 'Speaker',
       'call_control_end': 'End',
+      'call_control_decline': 'Decline',
+      'call_control_answer': 'Answer',
       'call_sharing_own_screen': 'You are sharing your screen',
       'call_done': 'Done',
       'group_mic_unavailable': 'Microphone unavailable',
@@ -716,10 +719,13 @@ class AppTranslations {
     },
     'bn': {
       'call_control_share': 'শেয়ার',
+      'call_control_screen_share': 'স্ক্রিন শেয়ার',
       'call_control_stop': 'বন্ধ করুন',
       'call_control_take_over': 'শেয়ার নিন',
       'call_control_speaker': 'স্পিকার',
       'call_control_end': 'শেষ করুন',
+      'call_control_decline': 'প্রত্যাখ্যান',
+      'call_control_answer': 'উত্তর দিন',
       'call_sharing_own_screen': 'আপনি স্ক্রিন শেয়ার করছেন',
       'call_done': 'সম্পন্ন',
       'group_mic_unavailable': 'মাইক পাওয়া যাচ্ছে না',

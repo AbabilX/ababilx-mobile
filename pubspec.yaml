@@ -171,6 +171,10 @@ flutter:
     # mobile_light / mobile_dark are the theme-aware fresh-install default.
     - assets/images/wallpapers/mobile_light.jpg
     - assets/images/wallpapers/mobile_dark.jpg
+    # 1:1 call screen audio-only backdrops (theme-aware). Separate from chat
+    # wallpaper presets so call art can evolve without changing the chat default.
+    - assets/images/wallpapers/call_light.jpg
+    - assets/images/wallpapers/call_dark.jpg
     - assets/images/wallpapers/dewdrop_field.jpg
     - assets/images/wallpapers/rainy_paddy.jpg
     - assets/ringtone/Clear_Agenda.mp3

@@ -25,10 +25,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Rahim Uddin'), findsOneWidget);
-    expect(find.text('AbabilX voice call'), findsOneWidget);
+    expect(find.text('Incoming call…'), findsOneWidget);
     expect(find.text('Decline'), findsOneWidget);
-    // "Answer", not "Accept" — the word Signal's incoming screen uses, and
-    // the one every phone dialler uses.
+    // "Answer", not "Accept" — the word every phone dialler uses.
     expect(find.text('Answer'), findsOneWidget);
   });
 
@@ -40,7 +39,6 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Tap the circles, not the labels underneath them.
     await tester.tap(find.byIcon(Icons.call_rounded));
     await tester.tap(find.byIcon(Icons.call_end_rounded));
     await tester.pump();
@@ -53,9 +51,8 @@ void main() {
     await tester.pumpWidget(host(onDecline: () {}, onAccept: () {}));
     await tester.pump(const Duration(milliseconds: 300));
 
-    // While it is still ringing there is nothing to mute or share.
     expect(find.text('Mute'), findsNothing);
     expect(find.text('Speaker'), findsNothing);
-    expect(find.text('Share'), findsNothing);
+    expect(find.text('Screen Share'), findsNothing);
   });
 }

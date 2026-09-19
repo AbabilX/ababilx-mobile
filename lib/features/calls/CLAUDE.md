@@ -95,7 +95,7 @@ Two things prevent that; both are required:
 
 - `android/app/src/main/res/raw/keep.xml` — `tools:keep` the raw entries.
 - `android/gradle.properties` — `android.enableResourceOptimizations=false`
-  (keeps resource *names*, which `keep.xml` alone does not).
+  (keeps resource _names_, which `keep.xml` alone does not).
 
 Verify after any Gradle/AGP change:
 
@@ -307,7 +307,7 @@ cannot get back to the call or end it".
 
 `AndroidCallUi.hideIncoming` deliberately tears the CallKit surface down the
 moment a call is answered, so the Flutter `/call` screen is the only ringing
-UI. Nothing then replaced it for the *connected* phase, and `/call` is an
+UI. Nothing then replaced it for the _connected_ phase, and `/call` is an
 ordinary route with no `PopScope` — so back popped it and left a live WebRTC
 session with no way in and no way out. The call ran until the peer hung up or
 the server sweeper expired it.
@@ -330,7 +330,7 @@ Two surfaces now cover that, both Signal's:
   duration is not a state change, so the parent would not rebuild for it) and
   turns `colorScheme.error` while a recovery is in progress. A group call shows
   the participant count instead of a duration — `GroupCall.startedAt` is when
-  *someone* started the call, not when this device joined, and a wrong timer is
+  _someone_ started the call, not when this device joined, and a wrong timer is
   worse than a right count.
   **`MediaQuery.removePadding(removeTop: true)` on the screen under the bar is
   load-bearing.** The bar's own `SafeArea` takes the status-bar inset so it
@@ -362,7 +362,7 @@ was as likely to be the plugin's as ours.
 
 `AndroidCallParams` (both incoming and outgoing) and `_ongoingParams` for group
 calls now pass `callingNotification: NotificationParams(showNotification: false)`.
-That kills the notification *and* the plugin's foreground service — CallKit
+That kills the notification _and_ the plugin's foreground service — CallKit
 still keeps its call record, which `_recoverNativeCall` and `_adoptNativeAccept`
 depend on. `OngoingCallService` is the single entry.
 
@@ -402,7 +402,7 @@ Three pieces, and they are all needed because each fails alone:
 - **`MainActivity.onDestroy` stops the service.** The engine is dying, so the
   call is dying; the tray entry has to go with it.
 - **`AndroidOngoingCall.stop(force: true)`.** `_running` is per-isolate state,
-  so a *fresh* engine believes it has posted nothing and the ordinary `stop()`
+  so a _fresh_ engine believes it has posted nothing and the ordinary `stop()`
   returns before it sends anything. Force is the only way a new engine can take
   down an entry an old one raised.
 - **`OngoingCallSync` clears once on boot** (`_clearedOrphan`). Its `_shownKey`
@@ -444,7 +444,7 @@ in `_recoverNativeCall`, which that first branch skips.
 persisted record for the call in state says `isAccepted`, apply the accept
 instead of re-showing the ring. The predicate is `nativeCallWasAccepted`
 (`native/incoming_call_admission.dart`, unit-tested). It returns true when an
-accept is merely *in flight* too — the point of the return value is "do not put
+accept is merely _in flight_ too — the point of the return value is "do not put
 the ringing UI back up", not "the call is connected".
 
 ## Back on a DM call goes to the chat list — PiP is for group calls only
@@ -525,27 +525,27 @@ Traps:
 - Activity-scoped, like `OngoingCallChannel` and for the same reason: a
   connected call lives in the Flutter isolate.
 
-## The call screens are Signal's layout
+## The 1:1 call screens are a wallpaper + glass overlay
 
-`IncomingCallView` and `ConnectedCallBody` are built from
-`IncomingCallScreen.kt` / `CallScreen.kt`: the caller's own photo blurred
-across the window under a black scrim (0.4 while ringing, 0.35 once up), a
-call-type line, the avatar, the name, the status, and the actions at the
-bottom edge. Every string carries `callTextShadow`, because all of it sits on
-a photograph. The buttons are `CallControlButton`, whose colours are hardcoded
-rather than taken from `ColorScheme` — a call screen is always dark, and a
-light-theme surface colour would disappear into the blur. This is the one place
-in the app where the "use Theme.colorScheme" rule is deliberately not followed.
+`IncomingCallView` and `ConnectedCallBody` share one design language:
 
-The label is **Answer**, not "Accept" — Signal's word, and every dialler's.
+- **Audio-only:** theme wallpaper (`call_light.jpg` / `call_dark.jpg`) fills
+  the window. The UI is a transparent overlay — circular peer face (~30% down),
+  name + status, frosted glass controls, and a coral End / Decline.
+- **Video / screen share:** remote media is full-bleed; wallpaper is not drawn;
+  the same glass controls sit on top.
+- **Minimize:** a small chevron in the top-left safe area leaves the screen
+  without hanging up (`ActiveCallBanner` / return bar takes over).
+- **Incoming** keeps only Answer + Decline (no Mute/Camera/Share yet).
+  **Outgoing / connected** uses Mute · Camera · Screen Share · Speaker + End.
+- Labels: Incoming hang-up says **Decline**; live hang-up says **End**.
 
-The native full-screen surface over the lock screen is still
-flutter_callkit_incoming's Activity and its layout is not ours to change. What
-we can set, we do: `backgroundUrl` is the caller's avatar, with a dark
-`backgroundColor` behind it and a green `actionColor` (see
-`AndroidCallUi._params`). Do not replace that Activity to chase pixel parity
-without re-reading the ringtone sections above first — the ring holder handoff
-is built on it.
+Group call UI is separate (`GroupCallScreen`) — participant tiles need a
+different layout.
+
+Do not restore the old Signal-blurred-avatar backdrop on the DM call surface
+without an explicit product decision; PiP and CallKit native chrome are
+unchanged.
 
 ## Screen sharing rides the call's own service — never a second one
 
@@ -562,7 +562,7 @@ and out of the mask (`ActiveCallForegroundService.serviceType`). So does
 `OngoingCallService.serviceType()`: `MICROPHONE`, plus `MEDIA_PROJECTION` while
 `screenSharing`. `AndroidScreenShare.start/stop` is now a thin call into
 `AndroidOngoingCall.setScreenSharing`, which starts the service if a call never
-registered one — the projection type must be in place *before* capture begins.
+registered one — the projection type must be in place _before_ capture begins.
 
 Do not add a second foreground service for capture. If a new capture surface
 needs a type, add it to that mask.
@@ -577,7 +577,7 @@ the candidate pair carrying media is gone — so every WiFi-to-mobile handover,
 lift, tunnel and carrier IP reassignment killed a live call. The longer the
 call, the likelier one of them fires.
 
-The engine now only *reports* those transitions (`onTrouble`), and
+The engine now only _reports_ those transitions (`onTrouble`), and
 `VoiceReconnectController` decides what to do: run an ICE restart, back off,
 and keep trying for `VoiceReconnectPolicy.giveUpAfter` (120 s) before failing.
 `onHealthy` fires on every entry to `connected`, not just the first, and is
@@ -601,16 +601,16 @@ Rules that are load-bearing:
 - **`connectivity_plus`'s first event is the current network, not a change.**
   Acting on it restarts a healthy call the instant it connects, so the
   controller seeds a baseline (`_seedNetwork`) and ignores no-op transitions.
-  Going *offline* is deliberately not actionable: there is nothing to restart
+  Going _offline_ is deliberately not actionable: there is nothing to restart
   onto. Coming back resets the recovery budget, or an outage longer than
   `giveUpAfter` would kill the call exactly when it became recoverable.
 - **A hard deadline runs beside the attempt chain.** An attempt that hangs (a
   socket connect that never returns on a dead network) would otherwise leave
   "Reconnecting…" on screen with nothing left to end it.
 - **Attempts never overlap, and carry a generation.** `_schedule` cancels the
-  pending *timer*, not an attempt already awaiting a TURN fetch — so a
+  pending _timer_, not an attempt already awaiting a TURN fetch — so a
   connectivity event mid-fetch used to start a second attempt whose older
-  credentials could land *after* the newer ones. `_attemptInFlight` queues
+  credentials could land _after_ the newer ones. `_attemptInFlight` queues
   instead, `_generation` invalidates a late completion, and the provider's
   `_restartStillWanted` re-checks engine **identity** (not just the call id)
   after every await. Stale async completion is the classic failure of a
@@ -747,12 +747,12 @@ features/calls/group/
   (`List<List<dynamic>>`) and must go through `CallIcon`, never `Icon`. The
   chat-header pill still takes a Material `IconData` because it is shared with
   the DM call action.
-- **The group call follows the theme; the DM call does not.** Colours come from
-  `CallColors.of(context)`, resolved once per build. `CallControlButton` and
-  `ConnectedCallBody` stay hardcoded dark because they sit on a blurred
-  photograph of the caller — a group call has no such backdrop, so a
-  permanently dark takeover would just be a light-theme bug. Do not "restore"
-  the hardcoded palette here by pattern-matching the DM screens.
+- **The group call follows the theme; the DM call uses theme wallpapers.**
+  Group colours come from `CallColors.of(context)`. The 1:1 audio surface
+  picks `call_light.jpg` / `call_dark.jpg` from brightness; glass controls and
+  white labels stay fixed so they read on both wallpapers and over video.
+  Do not "restore" a permanently dark blurred-avatar backdrop without a
+  product decision.
 
 ### The stage divides the space it has; the control bar divides its width
 
@@ -859,7 +859,7 @@ the same bug more quietly**: it shifts the `Expanded` from index 1 to index 0,
 and a multi-child widget matches children by index, so the navigator is
 reparented again.
 
-`test/features/calls/active_call_banner_test.dart` asserts the *shape*, not the
+`test/features/calls/active_call_banner_test.dart` asserts the _shape_, not the
 state: a GlobalKey preserves its `State` across a reparent, so an assertion on
 the State passes either way — the first version of this test did, which is
 worth remembering before writing another one like it.
@@ -868,7 +868,7 @@ worth remembering before writing another one like it.
 
 The chevron and Back return to the app and leave the call running behind
 `ActiveCallBanner`; they do not shrink into a floating window. Reaching for a
-control *inside* the app should not eject the whole app into a thumbnail over
+control _inside_ the app should not eject the whole app into a thumbnail over
 the launcher. PiP is still armed the whole time the call screen is mounted
 (`AndroidPip.setActive`, which sets `setAutoEnterEnabled` / `onUserLeaveHint`),
 so pressing Home shrinks the call exactly as before — that is the case PiP is
@@ -1010,7 +1010,6 @@ Accept on CallKit's lock-screen Activity
   `tool/audit/locked_call_check.py` (answer, minimise, return from the lock
   screen, hang up; `--decline`). Never point it at a real phone.
 
-
 ## One Telecom call per call id
 
 Added 2026-09-12, after "the phone says I am in a call and the SIM dialer
@@ -1030,7 +1029,7 @@ The WebRTC call, the microphone, the UI and the notification were all gone. The
 orphan was invisible and outlived everything except a force-stop.
 
 - **Reserve before requesting, attach afterwards.**
-  `CallkitCallLifecycle.begin(id)` inserts the id under one lock *before*
+  `CallkitCallLifecycle.begin(id)` inserts the id under one lock _before_
   `addNewIncomingCall`, so the second presentation loses; `attach()` never
   overwrites an owner — it disconnects the late or duplicate `Connection` it
   was handed instead of dropping the reference to the live one. The plugin's
@@ -1082,5 +1081,6 @@ orphan was invisible and outlived everything except a force-stop.
   Needs an **idle** emulator: the Telecom test asserts `mCalls:` is empty before
   it starts, and it reads `dumpsys` rather than a mock. Never point it at a
   phone with a SIM.
+
 - Not reproduced on a real device — the emulator's orphan matches the reported
   symptom exactly, but the device case was only ever seen once, by hand.

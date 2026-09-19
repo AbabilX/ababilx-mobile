@@ -113,13 +113,11 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
 
     if (call.phase == VoiceCallPhase.incomingRinging) {
       return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Colors.transparent,
         body: IncomingCallView(
           peerName: call.peerName,
           peerAvatar: call.peerAvatar,
-          subtitle: call.isVideoCall
-              ? 'AbabilX video call'
-              : 'AbabilX voice call',
+          lang: lang,
           onDecline: () {
             unawaited(IncomingCallRingtone.stop());
             notifier.declineIncoming();
@@ -142,7 +140,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
         _leave();
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Colors.transparent,
         body: ConnectedCallBody(
           call: call,
           lang: lang,

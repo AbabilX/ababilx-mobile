@@ -14,6 +14,7 @@ void main() {
     VoiceCallPhase phase = VoiceCallPhase.connected,
     String lang = 'en',
     double scale = 1,
+    Size size = const Size(390, 844),
   }) {
     final call = VoiceCallState(
       phase: phase,
@@ -23,7 +24,7 @@ void main() {
     return MaterialApp(
       theme: theme,
       home: MediaQuery(
-        data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+        data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
         child: RepaintBoundary(
           key: const ValueKey('caller-screen'),
           child: Scaffold(
@@ -50,7 +51,7 @@ void main() {
 
   for (final brightness in Brightness.values) {
     testWidgets(
-      'caller controls are 2 + 2 + centered End in ${brightness.name}',
+      'caller controls are one row + centered End in ${brightness.name}',
       (tester) async {
         await tester.binding.setSurfaceSize(const Size(390, 844));
         addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -70,19 +71,21 @@ void main() {
         final share = tester.getCenter(find.byIcon(Icons.screen_share_rounded));
         final speaker = tester.getCenter(find.byIcon(Icons.hearing_rounded));
         final end = tester.getCenter(find.byIcon(Icons.call_end_rounded));
-        expect(mute.dy, camera.dy);
-        expect(share.dy, speaker.dy);
-        expect(share.dy, greaterThan(mute.dy));
+        expect(mute.dy, closeTo(camera.dy, 0.5));
+        expect(camera.dy, closeTo(share.dy, 0.5));
+        expect(share.dy, closeTo(speaker.dy, 0.5));
         expect(end.dy, greaterThan(share.dy));
-        expect(end.dx, closeTo((mute.dx + camera.dx) / 2, 0.1));
+        expect(end.dx, closeTo((mute.dx + speaker.dx) / 2, 1.0));
         expect(
           tester.widget<Icon>(find.byIcon(Icons.call_end_rounded)).color,
-          theme.colorScheme.onError,
+          Colors.white,
         );
         expect(
           tester.widget<Icon>(find.byIcon(Icons.mic_rounded)).color,
-          theme.colorScheme.onSurface,
+          Colors.white,
         );
+        expect(find.text('End'), findsOneWidget);
+        expect(find.text('Screen Share'), findsOneWidget);
         await tester.tap(find.byIcon(Icons.call_end_rounded));
         expect(ended, 1);
         expect(tester.takeException(), isNull);
@@ -105,11 +108,18 @@ void main() {
   testWidgets(
     'large Bengali labels and landscape keep End reachable without overflow',
     (tester) async {
-      await tester.binding.setSurfaceSize(const Size(568, 320));
+      const size = Size(568, 320);
+      await tester.binding.setSurfaceSize(size);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       var ended = false;
       await tester.pumpWidget(
-        host(ThemeData(), lang: 'bn', scale: 2, end: () => ended = true),
+        host(
+          ThemeData(),
+          lang: 'bn',
+          scale: 2,
+          size: size,
+          end: () => ended = true,
+        ),
       );
       expect(tester.takeException(), isNull);
       await tester.ensureVisible(find.byIcon(Icons.call_end_rounded));
@@ -135,5 +145,14 @@ void main() {
     );
     await tester.tap(find.byIcon(Icons.call_end_rounded));
     expect(ended, isTrue);
+  });
+
+  testWidgets('minimize chevron is present on the connected overlay', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(host(ThemeData()));
+    expect(find.byIcon(Icons.keyboard_arrow_down_rounded), findsOneWidget);
   });
 }
