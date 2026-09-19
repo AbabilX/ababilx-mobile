@@ -18,9 +18,12 @@ class AppTheme {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
+      fontFamily: AppFonts.family,
     );
+    final textTheme = buildAppTextTheme(scheme, base.textTheme);
     final withText = base.copyWith(
-      textTheme: buildAppTextTheme(scheme, base.textTheme),
+      textTheme: textTheme,
+      primaryTextTheme: buildAppTextTheme(scheme, base.primaryTextTheme),
     );
     return applyComponentThemes(withText, scheme);
   }

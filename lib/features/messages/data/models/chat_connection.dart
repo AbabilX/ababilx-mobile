@@ -21,13 +21,13 @@ class ChatUserSummary extends Equatable {
 
   factory ChatUserSummary.fromJson(Map<String, dynamic> json) =>
       ChatUserSummary(
-        userId: json['user_id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        username: json['username'] as String? ?? '',
-        avatarUrl: json['avatar_url'] as String? ?? '',
-        connection: json['connection'] as String? ?? 'none',
-        sharedWorkspace: json['shared_workspace'] as bool? ?? false,
-        canMessage: json['can_message'] as bool? ?? false,
+        userId: _jsonString(json['user_id']),
+        name: _jsonString(json['name']),
+        username: _jsonString(json['username']),
+        avatarUrl: _jsonString(json['avatar_url']),
+        connection: _jsonString(json['connection'], fallback: 'none'),
+        sharedWorkspace: json['shared_workspace'] == true,
+        canMessage: json['can_message'] == true,
       );
 
   @override
@@ -59,16 +59,21 @@ class ChatConnection extends Equatable {
   final String createdAt;
   final String? respondedAt;
 
-  factory ChatConnection.fromJson(Map<String, dynamic> json) => ChatConnection(
-    id: json['id'] as String? ?? '',
-    user: ChatUserSummary.fromJson(
-      Map<String, dynamic>.from(json['user'] as Map? ?? const {}),
-    ),
-    status: json['status'] as String? ?? '',
-    direction: json['direction'] as String? ?? '',
-    createdAt: json['created_at'] as String? ?? '',
-    respondedAt: json['responded_at'] as String?,
-  );
+  factory ChatConnection.fromJson(Map<String, dynamic> json) {
+    final user = json['user'];
+    return ChatConnection(
+      id: _jsonString(json['id']),
+      user: ChatUserSummary.fromJson(
+        user is Map ? Map<String, dynamic>.from(user) : const {},
+      ),
+      status: _jsonString(json['status']),
+      direction: _jsonString(json['direction']),
+      createdAt: _jsonString(json['created_at']),
+      respondedAt: json['responded_at'] == null
+          ? null
+          : _jsonString(json['responded_at']),
+    );
+  }
 
   @override
   List<Object?> get props => [id, user, status, direction, respondedAt];
@@ -85,6 +90,12 @@ class ChatConnectionRequests extends Equatable {
 
   @override
   List<Object?> get props => [incoming, sent];
+}
+
+String _jsonString(dynamic value, {String fallback = ''}) {
+  if (value == null) return fallback;
+  if (value is String) return value;
+  return value.toString();
 }
 
 class ChatUserSearchResult extends Equatable {

@@ -125,6 +125,37 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Lato
+      fonts:
+        - asset: assets/fonts/lato/Lato-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/lato/Lato-ThinItalic.ttf
+          weight: 100
+          style: italic
+        - asset: assets/fonts/lato/Lato-Light.ttf
+          weight: 300
+        - asset: assets/fonts/lato/Lato-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: assets/fonts/lato/Lato-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/lato/Lato-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/fonts/lato/Lato-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/lato/Lato-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: assets/fonts/lato/Lato-Black.ttf
+          weight: 900
+        - asset: assets/fonts/lato/Lato-BlackItalic.ttf
+          weight: 900
+          style: italic
+    - family: NotoSansBengali
+      fonts:
+        - asset: assets/fonts/noto_sans_bengali/NotoSansBengali-VF.ttf
   assets:
     - assets/icon/icon.png
     # Drawn in Settings → App icon as the mark on each alternate plate.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import 'theme_text.dart';
 
 AppBarTheme buildAppBarTheme(ColorScheme scheme) {
   final lightIcons = scheme.brightness == Brightness.dark;
@@ -12,6 +13,8 @@ AppBarTheme buildAppBarTheme(ColorScheme scheme) {
         : SystemUiOverlayStyle.dark,
     centerTitle: false,
     titleTextStyle: TextStyle(
+      fontFamily: AppFonts.family,
+      fontFamilyFallback: AppFonts.fallback,
       fontSize: 20,
       fontWeight: FontWeight.w700,
       color: scheme.onSurface,
@@ -37,11 +40,18 @@ InputDecorationTheme buildInputTheme(ColorScheme scheme) {
     filled: true,
     fillColor: scheme.surfaceContainerHighest,
     labelStyle: TextStyle(
+      fontFamily: AppFonts.family,
+      fontFamilyFallback: AppFonts.fallback,
       color: muted,
       fontSize: 13,
       fontWeight: FontWeight.w500,
     ),
-    hintStyle: TextStyle(color: muted, fontSize: 13),
+    hintStyle: TextStyle(
+      fontFamily: AppFonts.family,
+      fontFamilyFallback: AppFonts.fallback,
+      color: muted,
+      fontSize: 13,
+    ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
       borderSide: BorderSide(color: scheme.outline),
@@ -78,7 +88,9 @@ NavigationBarThemeData buildNavBarTheme(ColorScheme scheme) {
     }),
     labelTextStyle: WidgetStateProperty.resolveWith((states) {
       final selected = states.contains(WidgetState.selected);
-      return GoogleFonts.plusJakartaSans(
+      return TextStyle(
+        fontFamily: AppFonts.family,
+        fontFamilyFallback: AppFonts.fallback,
         color: selected ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
         fontSize: 12,
         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,

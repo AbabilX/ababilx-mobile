@@ -1,55 +1,66 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+/// Bundled UI typefaces. Latin glyphs come from Lato; Bengali falls
+/// through to Noto Sans Bengali. Login wordmark stays Fredoka.
+abstract final class AppFonts {
+  static const family = 'Lato';
+  static const fallback = <String>['NotoSansBengali'];
+}
 
 TextTheme buildAppTextTheme(ColorScheme scheme, TextTheme base) {
   final on = scheme.onSurface;
-  return GoogleFonts.plusJakartaSansTextTheme(base)
+  return base
       .copyWith(
-        displayLarge: GoogleFonts.outfit(
+        displayLarge: TextStyle(
           fontSize: 57,
           fontWeight: FontWeight.w800,
           color: on,
         ),
-        displayMedium: GoogleFonts.outfit(
+        displayMedium: TextStyle(
           fontSize: 45,
           fontWeight: FontWeight.w800,
           color: on,
         ),
-        displaySmall: GoogleFonts.outfit(
+        displaySmall: TextStyle(
           fontSize: 36,
           fontWeight: FontWeight.w800,
           color: on,
         ),
-        headlineLarge: GoogleFonts.outfit(
+        headlineLarge: TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w800,
           color: on,
         ),
-        headlineMedium: GoogleFonts.outfit(
+        headlineMedium: TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w800,
           color: on,
         ),
-        headlineSmall: GoogleFonts.outfit(
+        headlineSmall: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w700,
           color: on,
         ),
-        titleLarge: GoogleFonts.outfit(
+        titleLarge: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: on,
         ),
-        titleMedium: GoogleFonts.outfit(
+        titleMedium: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: on,
         ),
-        titleSmall: GoogleFonts.outfit(
+        titleSmall: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: on,
         ),
       )
-      .apply(bodyColor: on, displayColor: on);
+      .apply(
+        fontFamily: AppFonts.family,
+        fontFamilyFallback: AppFonts.fallback,
+        bodyColor: on,
+        displayColor: on,
+      );
 }

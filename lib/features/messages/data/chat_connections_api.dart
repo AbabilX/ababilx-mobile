@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/network/first_load_timeout.dart';
 import 'models/chat_connection.dart';
 
 class ChatConnectionsApi {
@@ -42,9 +45,24 @@ class ChatConnectionsApi {
   }
 
   Future<List<ChatConnection>> listConnections() async {
-    final response = await _client.get(ApiConstants.independentChatConnections);
-    final data = unwrapApiData<Map<String, dynamic>>(response);
-    return _connections(data['connections']);
+    final cancel = CancelToken();
+    final response = await _client
+        .get(
+          ApiConstants.independentChatConnections,
+          cancelToken: cancel,
+        )
+        .timeout(
+          firstLoadNetworkTimeout,
+          onTimeout: () {
+            cancel.cancel('connections-timeout');
+            throw TimeoutException('connections', firstLoadNetworkTimeout);
+          },
+        );
+    final data = unwrapApiData<dynamic>(response);
+    final map = data is Map
+        ? Map<String, dynamic>.from(data)
+        : const <String, dynamic>{};
+    return _connections(map['connections']);
   }
 
   Future<ChatConnectionRequests> listRequests() async {

@@ -49,6 +49,19 @@ String friendlyErrorMessage(Object error) {
   return '${copy.title}. ${copy.subtitle}';
 }
 
+/// People → Connections hits `/api/chat/connections`, which is behind the
+/// server policy gate. A cached profile can look accepted while the API still
+/// answers 403 — show that instead of a generic failure.
+bool isPolicyNotAcceptedError(Object error) =>
+    serverErrorCode(error) == 'policy_not_accepted';
+
+String chatConnectionsLoadError(Object error) {
+  if (isPolicyNotAcceptedError(error)) {
+    return 'Accept the privacy policy to load your connections.';
+  }
+  return friendlyErrorMessage(error);
+}
+
 /// The machine-readable code from a structured API failure
 /// (`{success: false, error: "...", ...}`), or null when the failure was a
 /// transport problem rather than a considered answer from the server.

@@ -272,6 +272,9 @@ class AppTranslations {
           'Remove {name}? They won\'t be able to message you until you accept them again.',
       'chat_no_requests': 'No requests',
       'chat_no_connections': 'No connections yet',
+      'chat_connections_loading': 'Loading connections…',
+      'chat_connections_policy_required':
+          'Accept the privacy policy to load your connections.',
       'chat_pending': 'Pending',
       'chat_incoming': 'Incoming',
       'chat_sent': 'Sent',
@@ -893,6 +896,9 @@ class AppTranslations {
           '{name}-কে সরাবেন? আপনি আবার গ্রহণ না করা পর্যন্ত তিনি বার্তা পাঠাতে পারবেন না।',
       'chat_no_requests': 'কোনো অনুরোধ নেই',
       'chat_no_connections': 'এখনো কোনো সংযোগ নেই',
+      'chat_connections_loading': 'সংযোগ লোড হচ্ছে…',
+      'chat_connections_policy_required':
+          'সংযোগ দেখতে প্রাইভেসি পলিসি গ্রহণ করুন।',
       'chat_pending': 'অপেক্ষমাণ',
       'chat_incoming': 'আসা অনুরোধ',
       'chat_sent': 'পাঠানো হয়েছে',

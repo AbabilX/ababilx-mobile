@@ -1,8 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/first_load_timeout.dart';
 import '../../../core/network/friendly_error.dart';
 import '../data/chat_repository.dart';
 import '../data/models/chat_connection.dart';
+
+/// Stored in [ChatConnectionsState.error] so the UI can route to policy accept.
+const chatConnectionsPolicyGateError = 'policy_not_accepted';
 
 class ChatConnectionsState {
   const ChatConnectionsState({
@@ -44,30 +50,60 @@ class ChatConnectionsState {
 
 class ChatConnectionsNotifier extends Notifier<ChatConnectionsState> {
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
+  Future<void>? _inFlight;
 
   @override
   ChatConnectionsState build() => const ChatConnectionsState();
 
-  Future<void> refresh() async {
-    state = state.copyWith(loading: true, error: '');
+  /// One in-flight list at a time. PeopleScreen remounts whenever GoRouter
+  /// refreshes; a second `refresh()` used to flip `loading` back to true
+  /// and keep the Connections tab on a spinner forever.
+  ///
+  /// [force] drops a stuck in-flight future (watchdog / pull-to-refresh).
+  Future<void> refresh({bool force = false}) {
+    if (force) _inFlight = null;
+    return _inFlight ??= _refresh().whenComplete(() {
+      _inFlight = null;
+    });
+  }
+
+  Future<void> _refresh() async {
+    final showLoad = state.connections.isEmpty;
+    state = state.copyWith(loading: showLoad, error: '');
     try {
-      final results = await Future.wait([
-        _repo.listConnections(),
-        _repo.listConnectionRequests(),
-      ]);
-      final requests = results[1] as ChatConnectionRequests;
-      state = state.copyWith(
-        connections: results[0] as List<ChatConnection>,
-        requests: requests.incoming,
-        sent: requests.sent,
-        loading: false,
+      final connections = await _repo.listConnections().timeout(
+        firstLoadNetworkTimeout,
       );
+      state = state.copyWith(
+        connections: connections,
+        loading: false,
+        error: '',
+      );
+      unawaited(_loadRequests());
     } catch (error) {
       state = state.copyWith(
         loading: false,
-        error: friendlyErrorMessage(error),
+        error: isPolicyNotAcceptedError(error)
+            ? chatConnectionsPolicyGateError
+            : chatConnectionsLoadError(error),
       );
+    } finally {
+      if (state.loading) {
+        state = state.copyWith(loading: false);
+      }
     }
+  }
+
+  Future<void> _loadRequests() async {
+    try {
+      final requests = await _repo.listConnectionRequests().timeout(
+        firstLoadNetworkTimeout,
+      );
+      state = state.copyWith(
+        requests: requests.incoming,
+        sent: requests.sent,
+      );
+    } catch (_) {}
   }
 
   Future<void> search(String query) async {
