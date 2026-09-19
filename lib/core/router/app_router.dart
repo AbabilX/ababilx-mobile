@@ -18,6 +18,8 @@ import '../../features/messages/screens/messages_screen.dart';
 import '../../features/messages/chat-details/conversation_details_screen.dart';
 import '../../features/messages/chat-media/conversation_media_screen.dart';
 import '../../features/messages/screens/conversation_screen.dart';
+import '../../features/messages/screens/connections_screen.dart';
+import '../../features/messages/screens/find_people_screen.dart';
 import '../../features/messages/screens/people_screen.dart';
 import '../../features/messages/screens/new_message_screen.dart';
 import '../../features/wall/screens/wall_screen.dart';
@@ -261,6 +263,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/messages/people',
         builder: (_, _) => const PeopleScreen(),
+        routes: [
+          GoRoute(
+            path: 'find',
+            builder: (_, _) => const FindPeopleScreen(),
+          ),
+          GoRoute(
+            path: 'connections',
+            builder: (_, _) => const ConnectionsScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/messages/new',

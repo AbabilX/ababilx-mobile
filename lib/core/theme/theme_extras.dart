@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
+import '../../shared/widgets/preview_icon.dart';
 import 'theme_components.dart';
 
 SwitchThemeData buildSwitchTheme(ColorScheme scheme) {
@@ -51,6 +53,16 @@ ThemeData applyComponentThemes(ThemeData base, ColorScheme scheme) {
   return base.copyWith(
     colorScheme: scheme,
     scaffoldBackgroundColor: scheme.surface,
+    actionIconTheme: ActionIconThemeData(
+      backButtonIconBuilder: (context) => PreviewIcon(
+        PreviewIcons.back,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
+      closeButtonIconBuilder: (context) => PreviewIcon(
+        HugeIcons.strokeRoundedCancel01,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
+    ),
     appBarTheme: buildAppBarTheme(scheme),
     cardTheme: buildCardTheme(scheme),
     inputDecorationTheme: buildInputTheme(scheme),

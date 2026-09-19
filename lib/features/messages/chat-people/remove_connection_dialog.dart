@@ -36,3 +36,40 @@ Future<bool> confirmRemoveConnection(
   );
   return ok == true;
 }
+
+Future<bool> confirmBlockConnection(
+  BuildContext context,
+  WidgetRef ref, {
+  required String name,
+}) async {
+  final colors = Theme.of(context).colorScheme;
+  final title = AppTranslations.translate(
+    context,
+    ref,
+    'chat_block_connection_title',
+  ).replaceFirst('{name}', name);
+  final body = AppTranslations.translate(
+    context,
+    ref,
+    'chat_block_connection_confirm',
+  );
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (dialog) => AlertDialog(
+      title: Text(title),
+      content: Text(body, style: const TextStyle(height: 1.4)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialog, false),
+          child: Text(AppTranslations.translate(context, ref, 'cancel')),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: colors.error),
+          onPressed: () => Navigator.pop(dialog, true),
+          child: Text(AppTranslations.translate(context, ref, 'chat_block')),
+        ),
+      ],
+    ),
+  );
+  return ok == true;
+}
