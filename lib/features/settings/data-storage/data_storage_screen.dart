@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../../core/network/network_class.dart';
 import '../../../core/network/network_probe.dart';
 import '../../../shared/text/byte_size.dart';
@@ -30,6 +31,7 @@ class DataStorageScreen extends ConsumerWidget {
     final usage = ref.watch(storageUsageProvider);
     final autoDownload = ref.watch(autoDownloadSettingsProvider);
     final quality = ref.watch(mediaQualityProvider);
+    String t(String key) => AppTranslations.translate(context, ref, key);
 
     return Scaffold(
       appBar: AppBar(
@@ -57,8 +59,8 @@ class DataStorageScreen extends ConsumerWidget {
             // that is lost rather than full.
             SettingsRow(
               icon: HugeIcons.strokeRoundedCloudUpload,
-              title: 'Chat backup',
-              subtitle: 'An encrypted copy only your devices can read',
+              title: t('settings_backup'),
+              subtitle: t('settings_backup_sub'),
               onTap: () => context.push('/settings/chat-backup'),
             ),
             const Divider(height: 24),

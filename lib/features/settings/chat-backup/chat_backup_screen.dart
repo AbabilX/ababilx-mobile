@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
-import 'package:go_router/go_router.dart';
-import '../../../core/localization/app_translations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:intl/intl.dart';
 
-import '../../notifications/data/device_identity.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../shared/text/byte_size.dart';
+import '../../../shared/widgets/app_bar_back_button.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../../messages/archive/archive_provider.dart';
+import '../../messages/chat_icon.dart';
+import '../../notifications/data/device_identity.dart';
 import '../settings-hub/settings_row.dart';
-import 'chat_backup_actions.dart';
-import 'chat_backup_status_card.dart';
+import '../settings-hub/settings_section_header.dart';
 
-/// Chat backup: the encrypted copy of this phone's history.
+/// Settings → Backup: recovery code access and an encrypted message archive.
 ///
-/// The screen states the trade plainly rather than burying it. The server keeps
-/// six months; this phone keeps far more; and nothing but this backup survives
-/// losing the phone. See CHAT_RETENTION.md.
+/// The server keeps a rolling copy of recent ciphertext; this screen is for
+/// uploading a fuller encrypted archive and restoring it on another device.
+/// See CHAT_RETENTION.md.
 class ChatBackupScreen extends ConsumerStatefulWidget {
   const ChatBackupScreen({super.key});
 
@@ -33,110 +35,81 @@ class _ChatBackupScreenState extends ConsumerState<ChatBackupScreen> {
     );
   }
 
+  String _t(String key) =>
+      AppTranslations.translate(context, ref, key);
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(archiveProvider);
     final colors = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
         leading: const AppBarBackButton(),
-        title: Text(AppTranslations.translate(context, ref, 'settings_backup')),
+        title: Text(_t('settings_backup')),
       ),
       body: SafeArea(
         top: false,
         child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
-            // A trust pitch, not a status line: every account already gets six
-            // months of message history kept free in the cloud, end-to-end
-            // encrypted the whole time. The status card below is about THIS
-            // phone's own optional backup of everything older than that.
-            Container(
-              margin: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colors.primaryContainer.withValues(alpha: 0.28),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.verified_user_rounded, color: colors.primary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Free secure cloud history, built in',
-                          style: text.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Your last 6 months of messages already live safely in '
-                          'our cloud at no cost — sealed with end-to-end '
-                          'encryption the whole time, so only your own devices '
-                          'ever hold the key. The backup below is for keeping '
-                          'everything older than that, right here on your phone.',
-                          style: text.bodySmall?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            SettingsSectionHeader(_t('backup_section_recent')),
+            _RecentRetentionNotice(
+              title: _t('backup_recent_title'),
+              body: _t('backup_recent_body'),
             ),
+            const Divider(height: 24),
+            SettingsSectionHeader(_t('backup_section_recovery')),
             SettingsRow(
-              icon: const [],
-              title: AppTranslations.translate(
-                context,
-                ref,
-                'recovery_codes_title',
-              ),
-              subtitle: AppTranslations.translate(
-                context,
-                ref,
-                'recovery_codes_setting_hint',
-              ),
+              icon: HugeIcons.strokeRoundedKey01,
+              title: _t('recovery_codes_title'),
+              subtitle: _t('recovery_codes_setting_hint'),
               onTap: () => context.push('/settings/chat-backup/recovery-codes'),
             ),
             const Divider(height: 24),
-            ChatBackupStatusCard(state: state),
+            SettingsSectionHeader(_t('backup_section_archive')),
+            _BackupStatusLine(state: state, translate: _t),
             if (state.error.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
                 child: Text(
-                  state.error,
+                  _errorText(state.error),
                   style: TextStyle(color: colors.error, fontSize: 13),
                 ),
               ),
-            const Divider(height: 24),
-            ChatBackupActions(
-              busy: state.busy,
-              canRestore: state.remote != null,
-              onBackUp: () => backUpNow(context, ref),
-              onRestore: () => restoreNow(context, ref),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: FilledButton.icon(
+                onPressed: state.busy ? null : () => _backUpNow(),
+                icon: ChatIcon(HugeIcons.strokeRoundedCloudUpload, size: 18),
+                label: Text(_t('backup_back_up_now')),
+              ),
             ),
-            const Divider(height: 24),
             if (state.remote != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                child: OutlinedButton.icon(
+                  onPressed: state.busy ? null : () => _restoreNow(),
+                  icon: ChatIcon(HugeIcons.strokeRoundedCloudDownload, size: 18),
+                  label: Text(_t('backup_restore')),
+                ),
+              ),
+            if (state.remote != null) ...[
+              const SizedBox(height: 16),
               SettingsRow(
-                icon: const [],
-                title: 'Stored size',
+                icon: HugeIcons.strokeRoundedDatabase01,
+                title: _t('backup_stored_size'),
                 value: formatBytes(state.remote!.totalBytes),
               ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
+            ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Text(
-                'The backup is encrypted with a key only your devices hold. '
-                'AbabilX cannot read it, and cannot restore it for you if you '
-                'lose both your phone and your recovery code.',
-                style: TextStyle(fontSize: 12.5, height: 1.45),
+                _t('backup_footnote'),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                  height: 1.45,
+                ),
               ),
             ),
           ],
@@ -144,53 +117,191 @@ class _ChatBackupScreenState extends ConsumerState<ChatBackupScreen> {
       ),
     );
   }
-}
 
-/// Runs a backup and reports the outcome where the user is looking.
-///
-/// The device id is the messaging device identity the account already
-/// registered, so an archive says which phone wrote it without inventing a
-/// second notion of device.
-Future<void> backUpNow(BuildContext context, WidgetRef ref) async {
-  final deviceId = await DeviceIdentity.get();
-  if (!context.mounted) return;
-  final ok = await ref
-      .read(archiveProvider.notifier)
-      .backUp(deviceId: deviceId, nowMs: DateTime.now().millisecondsSinceEpoch);
-  if (!context.mounted) return;
-  showAppToast(context, ok ? 'Backup complete' : 'Backup failed', isError: !ok);
-}
+  String _errorText(String code) => switch (code) {
+    'vault_locked' => _t('backup_error_vault_locked'),
+    _ => _t('backup_error_network'),
+  };
 
-/// Confirms before restoring, because a restore writes into the history that
-/// is already on screen. It merges rather than replaces, so nothing is lost —
-/// but a user who expected a wipe should not be surprised either way.
-Future<void> restoreNow(BuildContext context, WidgetRef ref) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Restore backup?'),
-      content: const Text(
-        'Messages from the backup are added to what is already on this phone. '
-        'Nothing already here is removed.',
+  Future<void> _backUpNow() async {
+    final deviceId = await DeviceIdentity.get();
+    if (!mounted) return;
+    final ok = await ref.read(archiveProvider.notifier).backUp(
+      deviceId: deviceId,
+      nowMs: DateTime.now().millisecondsSinceEpoch,
+    );
+    if (!mounted) return;
+    showAppToast(
+      context,
+      ok ? _t('backup_toast_complete') : _t('backup_toast_failed'),
+      isError: !ok,
+    );
+  }
+
+  Future<void> _restoreNow() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(_t('backup_restore_title')),
+        content: Text(_t('backup_restore_body')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_t('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(_t('backup_restore')),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Restore'),
-        ),
-      ],
-    ),
-  );
-  if (confirmed != true || !context.mounted) return;
-  final restored = await ref.read(archiveProvider.notifier).restore();
-  if (!context.mounted) return;
-  showAppToast(
-    context,
-    restored == null ? 'Restore failed' : 'Restored $restored messages',
-    isError: restored == null,
-  );
+    );
+    if (confirmed != true || !mounted) return;
+    final restored = await ref.read(archiveProvider.notifier).restore();
+    if (!mounted) return;
+    showAppToast(
+      context,
+      restored == null
+          ? _t('backup_toast_restore_failed')
+          : _t('backup_toast_restored').replaceAll('{n}', '$restored'),
+      isError: restored == null,
+    );
+  }
+}
+
+/// Explains automatic 180-day server sync vs the optional archive below.
+class _RecentRetentionNotice extends StatelessWidget {
+  const _RecentRetentionNotice({required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: ChatIcon(
+              HugeIcons.strokeRoundedCloud,
+              size: 22,
+              color: colors.primary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  body,
+                  style: text.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BackupStatusLine extends StatelessWidget {
+  const _BackupStatusLine({required this.state, required this.translate});
+
+  final ArchiveState state;
+  final String Function(String key) translate;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (state.busy)
+            const Padding(
+              padding: EdgeInsets.only(top: 3, right: 12),
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(right: 12, top: 1),
+              child: Icon(
+                state.remote == null
+                    ? Icons.cloud_off_outlined
+                    : Icons.cloud_done_outlined,
+                size: 22,
+                color: state.remote == null
+                    ? colors.onSurfaceVariant
+                    : colors.primary,
+              ),
+            ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_headline(), style: text.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  _detail(),
+                  style: text.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _headline() => switch (state.phase) {
+    ArchivePhase.backingUp => translate('backup_status_backing_up'),
+    ArchivePhase.restoring => translate('backup_status_restoring'),
+    ArchivePhase.idle => !state.loaded
+        ? translate('backup_status_checking')
+        : state.remote == null
+        ? translate('backup_status_none')
+        : translate('backup_status_ready'),
+  };
+
+  String _detail() {
+    if (state.phase == ArchivePhase.backingUp) {
+      return translate('backup_progress_packed')
+          .replaceAll('{n}', '${state.progress}');
+    }
+    if (state.phase == ArchivePhase.restoring) {
+      return translate('backup_progress_restored')
+          .replaceAll('{n}', '${state.progress}');
+    }
+    if (!state.loaded) return translate('backup_status_checking');
+    if (state.remote == null) return translate('backup_detail_none');
+    final last = state.lastBackupAt;
+    if (last == null) return translate('backup_detail_other_device');
+    final when = DateFormat.yMMMd().add_jm().format(last);
+    return translate('backup_detail_last').replaceAll('{when}', when);
+  }
 }

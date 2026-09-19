@@ -160,11 +160,10 @@ class ArchiveNotifier extends Notifier<ArchiveState> {
 
   /// A locked vault is the one failure with a real remedy, so it says so
   /// rather than collapsing into "something went wrong".
+  /// Machine-readable so the settings screen can localize the message.
   String _describe(Object error) {
-    if (error is ArchiveLockedError) {
-      return 'Unlock secure messages first, then try again.';
-    }
-    return 'Could not reach the backup. Check your connection.';
+    if (error is ArchiveLockedError) return 'vault_locked';
+    return 'network';
   }
 }
 

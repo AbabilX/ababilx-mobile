@@ -87,7 +87,44 @@ class AppTranslations {
       'recovery_copy': 'Copy code',
       'recovery_copied': 'Copied',
       'settings_backup': 'Backup',
-      'settings_backup_sub': 'Message backups and recovery codes',
+      'settings_backup_sub': 'Encrypted backup and recovery code',
+      'backup_section_recent': 'While you chat',
+      'backup_recent_title': 'Your last 180 days save automatically',
+      'backup_recent_body':
+          'Messages sync to our servers as you send and receive them. They stay '
+          'there for 180 days, end-to-end encrypted — only your devices can read '
+          'them. This is not stored again on your phone and does not use Back up now.',
+      'backup_section_recovery': 'Recovery',
+      'backup_section_archive': 'Extra encrypted backup',
+      'backup_status_checking': 'Checking…',
+      'backup_status_none': 'No backup yet',
+      'backup_status_ready': 'Backup on server',
+      'backup_status_backing_up': 'Backing up…',
+      'backup_status_restoring': 'Restoring…',
+      'backup_detail_none':
+          'Optional: upload a snapshot of what is on this phone (including older '
+          'than 180 days). Does not duplicate chat on this device.',
+      'backup_detail_other_device': 'Last upload was from another device.',
+      'backup_detail_last': 'Last backup on this phone: {when}',
+      'backup_progress_packed': '{n} messages packed',
+      'backup_progress_restored': '{n} messages restored',
+      'backup_stored_size': 'Stored size',
+      'backup_footnote':
+          'Only your devices hold the key. AbabilX cannot read this backup or recover it if you lose both your phone and recovery code.',
+      'backup_back_up_now': 'Back up now',
+      'backup_restore': 'Restore',
+      'backup_nothing_to_restore': 'Nothing to restore yet',
+      'backup_restore_title': 'Restore backup?',
+      'backup_restore_body':
+          'Messages from the backup are added to what is already on this phone. Nothing here is removed.',
+      'backup_toast_complete': 'Backup complete',
+      'backup_toast_failed': 'Backup failed',
+      'backup_toast_restored': 'Restored {n} messages',
+      'backup_toast_restore_failed': 'Restore failed',
+      'backup_error_vault_locked':
+          'Unlock secure messages first, then try again.',
+      'backup_error_network':
+          'Could not reach the backup. Check your connection.',
       'recovery_restore_failed':
           'Some messages could not be restored. Tap to retry.',
       'onboarding_title': 'Your people.\nAlways close.',
@@ -726,7 +763,44 @@ class AppTranslations {
       'recovery_copy': 'কোড কপি করুন',
       'recovery_copied': 'কপি হয়েছে',
       'settings_backup': 'ব্যাকআপ',
-      'settings_backup_sub': 'মেসেজ ব্যাকআপ ও রিকভারি কোড',
+      'settings_backup_sub': 'এনক্রিপ্টেড ব্যাকআপ ও রিকভারি কোড',
+      'backup_section_recent': 'চ্যাট করার সময়',
+      'backup_recent_title': 'গত ১৮০ দিনের মেসেজ নিজে থেকেই সেভ হয়',
+      'backup_recent_body':
+          'মেসেজ পাঠানো ও পাওয়ার সাথে সাথে সার্ভারে সিঙ্ক হয়। সেখানে ১৮০ দিন '
+          'থাকে, এন্ড-টু-এন্ড এনক্রিপ্টেড — শুধু আপনার ডিভাইস পড়তে পারে। এটা ফোনে '
+          'আবার সেভ হয় না এবং Back up now ব্যবহার করে না।',
+      'backup_section_recovery': 'রিকভারি',
+      'backup_section_archive': 'অতিরিক্ত এনক্রিপ্টেড ব্যাকআপ',
+      'backup_status_checking': 'পরীক্ষা করা হচ্ছে…',
+      'backup_status_none': 'এখনও কোনো ব্যাকআপ নেই',
+      'backup_status_ready': 'সার্ভারে ব্যাকআপ আছে',
+      'backup_status_backing_up': 'ব্যাকআপ হচ্ছে…',
+      'backup_status_restoring': 'রিস্টোর হচ্ছে…',
+      'backup_detail_none':
+          'ঐচ্ছিক: এই ফোনে যা আছে তার স্ন্যাপশট আপলোড (১৮০ দিনের বেশি পুরোনোসহ)। '
+          'এই ডিভাইসের চ্যাটে ডুপ্লিকেট বানায় না।',
+      'backup_detail_other_device': 'শেষ আপলোড অন্য ডিভাইস থেকে হয়েছে।',
+      'backup_detail_last': 'এই ফোনে শেষ ব্যাকআপ: {when}',
+      'backup_progress_packed': '{n}টি মেসেজ প্যাক হয়েছে',
+      'backup_progress_restored': '{n}টি মেসেজ রিস্টোর হয়েছে',
+      'backup_stored_size': 'সংরক্ষিত আকার',
+      'backup_footnote':
+          'কী শুধু আপনার ডিভাইসে। AbabilX এই ব্যাকআপ পড়তে পারে না; ফোন ও রিকভারি কোড দুটোই হারালে ফিরিয়ে আনা যাবে না।',
+      'backup_back_up_now': 'এখনই ব্যাকআপ',
+      'backup_restore': 'রিস্টোর',
+      'backup_nothing_to_restore': 'এখনও রিস্টোর করার কিছু নেই',
+      'backup_restore_title': 'ব্যাকআপ রিস্টোর করবেন?',
+      'backup_restore_body':
+          'ব্যাকআপের মেসেজ এই ফোনে যা আছে তার সাথে যোগ হবে। এখানে কিছু মুছবে না।',
+      'backup_toast_complete': 'ব্যাকআপ সম্পন্ন',
+      'backup_toast_failed': 'ব্যাকআপ ব্যর্থ',
+      'backup_toast_restored': '{n}টি মেসেজ রিস্টোর হয়েছে',
+      'backup_toast_restore_failed': 'রিস্টোর ব্যর্থ',
+      'backup_error_vault_locked':
+          'আগে সিকিউর মেসেজ আনলক করুন, তারপর আবার চেষ্টা করুন।',
+      'backup_error_network':
+          'ব্যাকআপে পৌঁছানো যায়নি। সংযোগ পরীক্ষা করুন।',
       'recovery_restore_failed':
           'কিছু মেসেজ ফিরিয়ে আনা যায়নি। আবার চেষ্টা করতে চাপুন।',
       'onboarding_title': 'আপন মানুষ।\nসবসময় কাছে।',

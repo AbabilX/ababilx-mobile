@@ -117,12 +117,6 @@ class SettingsSections extends ConsumerWidget {
           onTap: () => QrLoginFlow.start(context, ref),
         ),
         SettingsRow(
-          icon: HugeIcons.strokeRoundedKey01,
-          title: t('settings_backup'),
-          subtitle: t('settings_backup_sub'),
-          onTap: () => context.push('/settings/chat-backup'),
-        ),
-        SettingsRow(
           icon: HugeIcons.strokeRoundedShield01,
           title: t('settings_privacy'),
           onTap: () => launchUrl(
