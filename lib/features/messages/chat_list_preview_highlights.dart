@@ -1,4 +1,4 @@
-/// A URL or @mention run inside a chat-list preview line.
+/// A URL, email or @mention run inside a chat-list preview line.
 class PreviewHighlight {
   const PreviewHighlight({
     required this.start,
@@ -12,6 +12,8 @@ class PreviewHighlight {
 
   bool get isMention => !isUrl;
 }
+
+const _email = r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)+';
 
 /// Finds URL and @mention ranges in flattened preview text.
 ///
@@ -37,7 +39,12 @@ List<PreviewHighlight> findPreviewHighlights(
             r'(?:\s+(?:[A-Z][A-Za-z0-9_\-]*|[\u0980-\u09FF]+(?:\s+-\s+[\u0980-\u09FF]+)?)){0,4}'
       : labels.map((l) => '@${RegExp.escape(l)}').join('|');
 
-  final pattern = RegExp('https?://[^\\s]+|$mentionAlt');
+  // An email is one link-coloured run. Checked before mentions, and a mention
+  // must not follow a word character, or "me@gmail.com" painted "@gmail" as a
+  // mention chip between two plain halves.
+  final pattern = RegExp(
+    'https?://[^\\s]+|$_email|(?<![A-Za-z0-9_.+\\-])(?:$mentionAlt)',
+  );
   final out = <PreviewHighlight>[];
   for (final match in pattern.allMatches(text)) {
     final token = match.group(0)!;
@@ -45,7 +52,7 @@ List<PreviewHighlight> findPreviewHighlights(
       PreviewHighlight(
         start: match.start,
         end: match.end,
-        isUrl: token.startsWith('http://') || token.startsWith('https://'),
+        isUrl: !token.startsWith('@'),
       ),
     );
   }

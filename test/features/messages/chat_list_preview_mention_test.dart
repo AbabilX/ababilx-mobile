@@ -55,5 +55,21 @@ void main() {
       );
       expect(hits.single.end - hits.single.start, '@Murad Ahmed'.length);
     });
+
+    test('an email is one link run, never an @domain mention', () {
+      const text = 'Contact: Muradian developer.mozadded@gmail.com';
+      final hits = findPreviewHighlights(text);
+      expect(hits, hasLength(1));
+      expect(hits.single.isUrl, isTrue);
+      expect(
+        text.substring(hits.single.start, hits.single.end),
+        'developer.mozadded@gmail.com',
+      );
+    });
+
+    test('a mention glued to a word is not a mention', () {
+      expect(findPreviewHighlights('abc@gmail'), isEmpty);
+      expect(findPreviewHighlights('hi @Murad').single.isMention, isTrue);
+    });
   });
 }
