@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import 'markdown/message_markdown.dart';
+import 'markdown/message_markdown_source.dart';
 import 'tiptap_blocks.dart';
 import 'tiptap_inline.dart';
 import 'tiptap_plain_text.dart';
@@ -22,6 +24,7 @@ class TiptapViewer extends StatefulWidget {
     this.trailing,
     this.maxHeight,
     this.onMentionTap,
+    this.markdown = false,
   });
 
   final String? content;
@@ -39,6 +42,10 @@ class TiptapViewer extends StatefulWidget {
 
   /// Tapping an @mention. See [TiptapInline.onMentionTap].
   final void Function(String userId, String label)? onMentionTap;
+
+  /// Draw a body written as markdown (a bot, a feed, a paste from an AI
+  /// assistant) as markdown. Chat bubbles only; see [markdownSourceOf].
+  final bool markdown;
 
   @override
   State<TiptapViewer> createState() => _TiptapViewerState();
@@ -76,6 +83,13 @@ class _TiptapViewerState extends State<TiptapViewer> {
 
     final trimmed = widget.content?.trim() ?? '';
     if (trimmed.isEmpty || isTiptapEmpty(trimmed)) return _empty(base);
+
+    final source = widget.markdown ? markdownSourceOf(trimmed) : null;
+    if (source != null) {
+      return _clip(
+        MessageMarkdown(source: source, style: base, trailing: widget.trailing),
+      );
+    }
 
     final inline = TiptapInline(
       context: context,

@@ -155,6 +155,7 @@ class MessageBody extends ConsumerWidget {
   Widget _text(BuildContext context, WidgetRef ref, {required bool collapsed}) {
     final viewer = TiptapViewer(
       content: message.body,
+      markdown: true,
       // A mention is the one part of a body that names a person, so it opens
       // them — the same sheet the avatar and the sender line already open.
       onMentionTap: (userId, label) => showUserProfileSheet(

@@ -47,6 +47,7 @@ class LongMessageScreen extends ConsumerWidget {
               children: [
                 TiptapViewer(
                   content: body,
+                  markdown: true,
                   style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
                   onMentionTap: (userId, label) => showUserProfileSheet(
                     context: context,

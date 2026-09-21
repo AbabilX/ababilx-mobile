@@ -98,6 +98,7 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.4.0
   open_filex: ^4.7.0
+  gpt_markdown: ^1.3.0
 
 dev_dependencies:
   flutter_test:

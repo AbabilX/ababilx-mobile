@@ -1456,3 +1456,26 @@ Also in this pass (`cache_first_loading_test.dart`):
   new URL hung, so no preview card ever drew — and is fixed the same way.
   `attachment_dimension_reader` is safe: it stores the inner future, not the
   chained one.
+
+# Markdown in bubbles (2026-09-21)
+
+Bots, webhook feeds and pastes from an AI assistant send markdown as literal
+text, and TipTap stores it as plain paragraphs — so the bubble showed the
+asterisks. `markdown/message_markdown_source.dart` (`markdownSourceOf`) hands
+such a body to `gpt_markdown` (`markdown/message_markdown.dart`); everything
+else stays on `TiptapViewer`.
+
+- **Only plain TipTap qualifies**: paragraphs of unmarked text and hard
+  breaks, or a legacy non-JSON body. Real marks, lists or a mention keep the
+  TipTap renderer — the formatting is already there, and a mention must stay a
+  tappable chip.
+- **Only when it looks like markdown** (`looksLikeMarkdown`: heading, list,
+  quote, fence, table, rule, `**`, `__`, `~~`, inline code, `[t](url)`). A
+  sentence with one `*` renders exactly as before.
+- **Opt-in per call site** (`TiptapViewer(markdown: true)`): the bubble and
+  the long-message screen. Wall and board are unchanged.
+- Headings are scaled off the bubble's text size, not the app's display
+  styles. Links open only http/https/mailto/tel — the sender wrote them.
+- "(edited)" sits under the body right-aligned: markdown ends in a block, so
+  it cannot join the last line as TipTap's trailing span does.
+- Pinned by `test/features/messages/message_markdown_test.dart`.
