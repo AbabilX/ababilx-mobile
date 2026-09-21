@@ -564,6 +564,15 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     await engine.setCameraPaused(paused);
   }
 
+  /// The capture was ended from the system (status-bar chip, Cast tile).
+  /// Without this the call kept claiming a share: the peer sat on a frozen
+  /// frame until the user came back and pressed Stop.
+  Future<void> endScreenShareFromSystem() async {
+    final engine = _engine;
+    if (engine == null || !state.screenSharing) return;
+    await engine.stopScreenShare();
+  }
+
   Future<void> toggleScreenShare() async {
     final engine = _engine;
     if (engine == null || state.phase != VoiceCallPhase.connected) return;
@@ -578,10 +587,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       if (state.screenSharing) {
         await engine.stopScreenShare();
       } else {
-        await engine.startScreenShare();
-        // After the capture, never before: a cancelled permission prompt or a
-        // dismissed picker must leave the peer's share running.
-        if (takingOver) await engine.requestScreenTakeover();
+        await engine.startScreenShare(takeover: takingOver);
       }
     } catch (error) {
       voiceCallLog(

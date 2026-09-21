@@ -62,7 +62,8 @@ dependencies:
   uuid: ^4.6.0
   shared_preferences: ^2.5.5
   web_socket_channel: ^3.0.3
-  flutter_webrtc: ^1.5.2
+  # Exact: android/patches/flutter-webrtc-projection-stop.gradle is text-matched.
+  flutter_webrtc: 1.6.2+hotfix.3
   # Promoted from transitive: call recovery restarts ICE the moment the
   # network interface changes, instead of waiting for WebRTC to time out.
   connectivity_plus: ^7.3.1

@@ -1142,3 +1142,26 @@ orphan was invisible and outlived everything except a force-stop.
 
 - Not reproduced on a real device — the emulator's orphan matches the reported
   symptom exactly, but the device case was only ever seen once, by hand.
+
+## A share stopped from the system ends the share (2026-09-22)
+
+Ending a screen share from outside the app (status-bar "sharing" chip, Cast
+tile, shade) killed the capture and nothing else: flutter_webrtc's
+`MediaProjection.Callback.onStop` is an empty body and the Dart track's
+`onEnded` never fires on Android. The call kept claiming a share — the peer
+froze on the last frame and the user had to press Stop again in the app.
+
+- `android/patches/flutter-webrtc-projection-stop.gradle` makes that callback
+  call `ScreenCaptureStop.onSystemStop()` by reflection (kept in
+  `proguard-rules.pro`). The plugin's own `stopCapture()` unregisters the
+  callback first, so it fires ONLY for a stop the app did not ask for.
+  `pubspec.yaml` pins flutter_webrtc exactly because the patch is text-matched.
+- It travels as `screen_share_stopped` on the ongoing-call event channel and is
+  **not held** for a later listener — a stale stop would end the next share.
+  `OngoingCallSync` hands it to `endScreenShareFromSystem()` on both the DM
+  and the group provider (the group one also releases the server claim).
+
+**Takeover is immediate.** `startScreenShare(takeover: true)` sends
+`screen_takeover` right after our capture exists — still after the picker, so
+a dismissed one leaves the peer's share alone — and drops the peer's screen
+from our view at once, instead of after our renegotiation round trip.

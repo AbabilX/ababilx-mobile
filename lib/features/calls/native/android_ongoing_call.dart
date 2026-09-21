@@ -3,8 +3,10 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 
-/// What the user pressed on the ongoing-call notification.
-enum OngoingCallAction { hangUp, returnToCall }
+/// What the user did to the call from outside the app: a press on the
+/// ongoing-call notification, or ending the screen share from the system
+/// (status-bar chip, Cast tile), which the capture itself never reports.
+enum OngoingCallAction { hangUp, returnToCall, screenShareStopped }
 
 /// The ongoing-call notification, and the foreground service behind it.
 ///
@@ -52,6 +54,8 @@ class AndroidOngoingCall {
         return OngoingCallAction.hangUp;
       case 'return_to_call':
         return OngoingCallAction.returnToCall;
+      case 'screen_share_stopped':
+        return OngoingCallAction.screenShareStopped;
       default:
         return null;
     }

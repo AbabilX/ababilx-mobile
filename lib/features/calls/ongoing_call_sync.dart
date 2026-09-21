@@ -117,6 +117,14 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
         if (ref.read(groupCallProvider).phase == GroupCallPhase.connected) {
           unawaited(ref.read(groupCallProvider.notifier).leave());
         }
+      case OngoingCallAction.screenShareStopped:
+        voiceCallLog('ongoing.screenShare.systemStop');
+        unawaited(
+          ref.read(voiceCallProvider.notifier).endScreenShareFromSystem(),
+        );
+        unawaited(
+          ref.read(groupCallProvider.notifier).endScreenShareFromSystem(),
+        );
       case OngoingCallAction.returnToCall:
         voiceCallLog('ongoing.notification.return');
         if (ref.read(voiceCallProvider).active) {

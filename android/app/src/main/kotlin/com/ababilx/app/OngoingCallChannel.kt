@@ -146,12 +146,18 @@ object OngoingCallBridge {
 
     fun notifyReturn(callId: String) = emit("return_to_call", callId)
 
+    /**
+     * Not held for a later listener: a stale "stopped" delivered after the
+     * user shared again would end the new share.
+     */
+    fun notifyScreenShareStopped() = emit("screen_share_stopped", "", hold = false)
+
     @Synchronized
-    private fun emit(action: String, callId: String) {
+    private fun emit(action: String, callId: String, hold: Boolean = true) {
         val event = mapOf("action" to action, "call_id" to callId)
         val target = sink
         if (target == null) {
-            pending.add(event)
+            if (hold) pending.add(event)
             return
         }
         main.post { target.success(event) }

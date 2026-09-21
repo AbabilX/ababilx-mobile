@@ -35,6 +35,13 @@ mixin GroupCallMedia on GroupCallBase {
     }
   }
 
+  /// The capture was ended from the system (status-bar chip, Cast tile).
+  /// LiveKit never hears of it, so unpublish and hand the claim back here.
+  Future<void> endScreenShareFromSystem() async {
+    if (!state.sharingScreen) return;
+    await toggleScreenShare();
+  }
+
   /// Listen-only is a valid state: no microphone (or a refused permission)
   /// must not fail the join, it just disables the mute button.
   Future<bool> enableMicrophone(Room room) async {

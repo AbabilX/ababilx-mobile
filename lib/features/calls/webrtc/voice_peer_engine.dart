@@ -654,7 +654,12 @@ class VoicePeerEngine {
 
   /// Sharing a screen turns the camera off: the far side shows one or the
   /// other, never both. The share's own renegotiation covers the swap.
-  Future<void> startScreenShare() async {
+  ///
+  /// [takeover]: the peer is sharing. It is told to stop the moment our
+  /// capture exists — after the picker, so a dismissed one leaves their share
+  /// running, but before our renegotiation round trip, which used to leave
+  /// both shares live for seconds. Their screen leaves our view at once.
+  Future<void> startScreenShare({bool takeover = false}) async {
     if (_screenStream != null) return;
     final peer = _requirePeer();
     await stopCamera();
@@ -675,6 +680,7 @@ class VoicePeerEngine {
         throw StateError('screen capture returned no video track');
       }
       final track = tracks.first;
+      if (takeover) await _takeScreenFromPeer();
       _screenStream = stream;
       _screenSender = await peer.addTrack(track, stream);
       await capVideoSendBitrate(
@@ -700,13 +706,15 @@ class VoicePeerEngine {
     }
   }
 
-  /// "I am taking the screen share" — the peer stops sharing its own.
-  ///
-  /// Sent only after our own capture succeeded: a picker the user backs out of
-  /// must not end somebody else's share for nothing.
-  Future<void> requestScreenTakeover() async {
+  /// "I am taking the screen share" — the peer stops sharing its own, and we
+  /// stop drawing it now rather than after their renegotiation lands.
+  Future<void> _takeScreenFromPeer() async {
     if (_disposed) return;
     await sendSignal({'kind': 'screen_takeover'});
+    _remoteMedia
+      ..received = true
+      ..screenId = null;
+    _syncRemoteVideo();
   }
 
   Future<void> stopScreenShare({bool renegotiate = true}) async {

@@ -1,0 +1,38 @@
+// flutter_webrtc 1.6.2+hotfix.3 (pinned by livekit_client and pubspec.yaml):
+// a screen share stopped from OUTSIDE the app never reached Dart.
+//
+// Android lets the user end a MediaProjection from the system — the status-bar
+// "sharing" chip, the Cast tile, the shade. The plugin's
+// MediaProjection.Callback.onStop swallows that (its only line is commented
+// out) and the Dart track's onEnded is never fired on Android. So the capture
+// was gone while the call still claimed a share: the peer sat on a frozen
+// frame and the user had to come back to the call screen to press Stop again.
+//
+// The plugin's own stopCapture() unregisters this callback before it stops the
+// projection, so onStop fires ONLY for a stop the app did not ask for. The
+// hook is reached by reflection because the plugin module cannot see app
+// classes; proguard-rules.pro keeps the target.
+def patchWebrtcSource(File file, String before, String after, String what) {
+    def source = file.text
+    if (source.contains(after)) return
+    if (!source.contains(before)) {
+        throw new GradleException("flutter_webrtc $what patch no longer matches 1.6.2+hotfix.3")
+    }
+    file.text = source.replace(before, after)
+}
+
+gradle.beforeProject { project ->
+    if (project.name != 'flutter_webrtc') return
+    def file = new File(project.projectDir,
+        'src/main/java/com/cloudwebrtc/webrtc/GetUserMediaImpl.java')
+    def before = '''                                //resultError("MediaProjection.Callback()", "User revoked permission to capture the screen.", result);
+'''
+    def after = before + '''                                // AbabilX: the user stopped the share from the system; tell the host.
+                                try {
+                                    Class.forName("com.ababilx.app.ScreenCaptureStop")
+                                            .getMethod("onSystemStop").invoke(null);
+                                } catch (Throwable ignored) {
+                                }
+'''
+    patchWebrtcSource(file, before, after, 'projection-stop')
+}
