@@ -21,6 +21,10 @@ class SignalMenuMetrics {
   static const menuPadding = 12.0;
   static const horizontalMargin = 16.0;
 
+  /// Gaussian sigma of the blur behind the overlay. Light on purpose: the
+  /// conversation should stay recognisable, only pushed back.
+  static const backdropBlur = 6.0;
+
   static const menuMinWidth = 200.0;
   static const menuRadius = 18.0;
   static const menuRowHeight = 50.0;

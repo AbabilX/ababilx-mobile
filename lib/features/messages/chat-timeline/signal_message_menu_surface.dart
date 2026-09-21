@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'signal_menu_pointer.dart';
 import 'signal_message_menu.dart';
+import 'signal_message_menu_backdrop.dart';
 import 'signal_message_menu_focus.dart';
 import 'signal_message_menu_geometry.dart';
 import 'signal_message_menu_items.dart';
@@ -128,6 +129,7 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
+              child: SignalMenuBackdrop(animation: move),
             ),
           ),
           SignalFocusedMessage(
