@@ -44,6 +44,10 @@ AndroidNotificationDetails buildChatNotificationDetails({
           message.fromMe
               ? null
               : Person(name: message.sender, key: message.sender),
+          // Android draws the picture in place of the text; the text stays
+          // as the fallback for launchers and watches that cannot.
+          dataMimeType: message.imageUri == null ? null : 'image/jpeg',
+          dataUri: message.imageUri,
         ),
     ],
   ),

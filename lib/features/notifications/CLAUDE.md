@@ -343,3 +343,34 @@ Android above is unchanged. iOS is a separate, incomplete path:
 - Do not add a `UNNotificationServiceExtension` in this pass. That is the
   follow-up that lets iOS decrypt like Android; until then iOS keeps the
   server placeholder.
+
+## The open chat does not buzz; attachments name themselves (2026-09-22)
+
+**No notification for the chat on screen.** `ConversationScreen` runs a
+`ChatFocusReporter` (`features/messages/chat-focus/`), which does two things:
+sends `{"type":"chat.focus","conversation_id":…}` over the socket — the frame
+web already sent, so `notify.IsViewingConversation` skips the push on the
+server — and sets `ChatScreenFocus`, which `FcmService._onForeground` checks to
+drop a push that raced the claim. Re-sent every 45 s (server TTL 2 min) and on
+reconnect; cleared on hide/pause and on leaving. Stacked chat screens: only the
+top one speaks. The server claim is **one slot per account**, so a web tab and
+the phone overwrite each other; the result is at worst one redundant
+notification, because the check fails open.
+
+**Attachments.** The server adds `att_kind` (`photo|video|voice|audio|file|mixed`)
+and `att_count` to every chat push (`notify_push_attachments.go`), and renders
+"📷 Photo" / "📷 3 photos" / "📷 <caption>" into the plaintext preview (iOS and
+plaintext groups). The phone posts that label instead of "🔒 Encrypted
+message", rewrites it to "📷 <caption>" after decrypting, and for a **single
+photo** rewrites once more with the picture (`chat_push_image.dart`).
+
+- **The file URL never rides in the push.** Objects sit on a public CDN and a
+  push passes through Google, so the phone reads the URL from our own API
+  (newest message page) and downloads it with a bare Dio — no JWT to the CDN.
+- The picture is served by `NotificationImageProvider` (a FileProvider
+  subclass, `cache/notification_images/`, swept after 2 days). Not exported and
+  never granted explicitly: Android 9+ grants SystemUI read access to URIs
+  inside a posted MessagingStyle message. Authority is hardcoded in Dart —
+  change both.
+- Budget: decrypt 6 s + image 10 s stays inside the FCM background window; the
+  label is already up if either is cut short.

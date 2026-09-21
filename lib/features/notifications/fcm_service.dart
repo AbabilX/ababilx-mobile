@@ -18,6 +18,7 @@ import 'data/device_repository.dart';
 import 'fcm_log.dart';
 import 'local_notifications.dart';
 import '../ghost/ghost_push.dart';
+import '../messages/chat-focus/chat_focus_reporter.dart';
 import 'notification_router.dart';
 
 /// Owns FCM permission, token sync, and foreground display.
@@ -366,6 +367,15 @@ class FcmService {
     }
 
     if (isChatPush(data)) {
+      // The message is already landing in the open chat over the socket; a
+      // buzz and a tray line for it would be noise. The server usually skips
+      // this push itself (chat.focus), this catches the race around it.
+      if (ChatScreenFocus.isOnScreen(
+        data['conversation_id']?.toString() ?? '',
+      )) {
+        fcmLog('push.foreground.chat.skip', 'conversation on screen');
+        return;
+      }
       // Chat entries are drawn here even when the push carried a notification
       // block, so the message lands in the threaded MessagingStyle entry with
       // its reply button instead of a flat system tray line.

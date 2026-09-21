@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/network/ws_client.dart';
 import '../../../shared/widgets/portrait_lock_scope.dart';
+import '../chat-focus/chat_focus_reporter.dart';
 import '../chat-header/index.dart';
 import '../chat-select/message_selection.dart';
 import '../chat-timeline/index.dart';
@@ -31,6 +33,10 @@ class ConversationScreen extends ConsumerStatefulWidget {
 class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   bool _ready = false;
   bool _vaultChecked = false;
+  late final ChatFocusReporter _focus = ChatFocusReporter(
+    ws: ref.read(wsClientProvider),
+    conversationId: widget.conversationId,
+  );
 
   @override
   void initState() {
@@ -39,6 +45,8 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     // else has loaded chat, so it starts the bootstrap itself instead of
     // racing whatever ChatStoreSync is doing.
     _prepare();
+    // No buzz for a message landing in the chat being read.
+    _focus.start();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref
@@ -81,6 +89,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
 
   @override
   void dispose() {
+    _focus.dispose();
     // Arrivals over the socket move the read marker as they land; this catches
     // the ones that came in with the socket down, so backing out of a chat
     // never leaves it showing unread messages the reader has just seen.

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Photos drawn inside a chat notification, and nothing else. Written by
+         lib/features/notifications/chat/chat_push_image.dart, swept after 2 days. -->
+    <cache-path name="images" path="notification_images/" />
+</paths>

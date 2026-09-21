@@ -145,6 +145,17 @@
                 android:resource="@xml/ms_file_paths" />
         </provider>
 
+        <!-- A chat notification's photo, for SystemUI to draw. -->
+        <provider
+            android:name=".NotificationImageProvider"
+            android:authorities="${applicationId}.notificationimages"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/notification_image_paths" />
+        </provider>
+
         <!-- Ghost Chat files, served from memory so they never reach disk.
              Not exported: the only way in is a read permission this app grants
              on the chooser intent, for one launch of one viewer. -->

@@ -14,6 +14,7 @@ class ChatNotificationMessage {
     required this.text,
     required this.sentAt,
     this.fromMe = false,
+    this.imageUri,
   });
 
   factory ChatNotificationMessage.fromJson(Map<String, dynamic> json) =>
@@ -26,6 +27,7 @@ class ChatNotificationMessage {
               DateTime.now().millisecondsSinceEpoch,
         ),
         fromMe: json['me'] == true,
+        imageUri: json['img']?.toString(),
       );
 
   final String messageId;
@@ -34,21 +36,28 @@ class ChatNotificationMessage {
   final DateTime sentAt;
   final bool fromMe;
 
+  /// `content://` URI of a photo drawn in the thread, from
+  /// `NotificationImageProvider`. Null for a text line.
+  final String? imageUri;
+
   Map<String, dynamic> toJson() => {
     'id': messageId,
     'sender': sender,
     'text': text,
     'at': sentAt.millisecondsSinceEpoch,
     'me': fromMe,
+    if (imageUri != null) 'img': imageUri,
   };
 
-  ChatNotificationMessage copyWith({String? text}) => ChatNotificationMessage(
-    messageId: messageId,
-    sender: sender,
-    text: text ?? this.text,
-    sentAt: sentAt,
-    fromMe: fromMe,
-  );
+  ChatNotificationMessage copyWith({String? text, String? imageUri}) =>
+      ChatNotificationMessage(
+        messageId: messageId,
+        sender: sender,
+        text: text ?? this.text,
+        sentAt: sentAt,
+        fromMe: fromMe,
+        imageUri: imageUri ?? this.imageUri,
+      );
 }
 
 class ChatNotificationUpsert {

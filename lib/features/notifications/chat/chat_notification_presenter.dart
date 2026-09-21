@@ -4,6 +4,8 @@ import '../notification_router.dart';
 import 'chat_notification_builder.dart';
 import 'chat_notification_ids.dart';
 import 'chat_notification_store.dart';
+import 'chat_push_attachments.dart';
+import 'chat_push_image.dart';
 
 /// Raises and updates the tray entry for a chat push.
 ///
@@ -33,20 +35,32 @@ class ChatNotificationPresenter {
       return;
     }
 
+    final attachments = ChatPushAttachments.of(data);
     final encrypted = plainBody == null;
-    await _post(
-      local,
-      data,
-      text: plainBody ?? encryptedPushPlaceholder,
-      alertOnce: false,
-    );
-    if (!encrypted) return;
+    // An attachment names itself before anything is decrypted: "📷 Photo"
+    // tells the reader more than the lock placeholder does.
+    var text = plainBody ?? attachments?.label ?? encryptedPushPlaceholder;
+    await _post(local, data, text: text, alertOnce: false);
 
-    final decrypted = await decryptChatPushBody(data);
-    if (decrypted == null || decrypted.isEmpty) return;
-    // Same message id, so this rewrites the placeholder line in place instead
-    // of stacking a second copy of the message.
-    await _post(local, data, text: decrypted, alertOnce: true);
+    if (encrypted) {
+      final decrypted = await decryptChatPushBody(data);
+      if (decrypted != null && decrypted.isNotEmpty) {
+        text = attachments?.line(decrypted) ?? decrypted;
+        // Same message id, so this rewrites the line in place instead of
+        // stacking a second copy of the message.
+        await _post(local, data, text: text, alertOnce: true);
+      }
+    }
+
+    if (attachments?.isSinglePhoto ?? false) {
+      final image = await fetchChatPushImage(
+        conversationId: conversationId,
+        messageId: messageId,
+      );
+      if (image != null) {
+        await _post(local, data, text: text, alertOnce: true, imageUri: image);
+      }
+    }
   }
 
   /// Appends a reply the user just sent from the notification, so the thread in
@@ -82,6 +96,7 @@ class ChatNotificationPresenter {
     required bool alertOnce,
     String? messageId,
     bool fromMe = false,
+    String? imageUri,
   }) async {
     final conversationId = data['conversation_id']?.toString() ?? '';
     final title = data['title']?.toString() ?? 'AbabilX';
@@ -96,6 +111,7 @@ class ChatNotificationPresenter {
         text: text,
         sentAt: DateTime.now(),
         fromMe: fromMe,
+        imageUri: imageUri,
       ),
     );
 
