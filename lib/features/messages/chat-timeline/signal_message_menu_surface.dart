@@ -1,10 +1,9 @@
-import 'dart:ui' show lerpDouble;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'signal_menu_pointer.dart';
 import 'signal_message_menu.dart';
+import 'signal_message_menu_focus.dart';
 import 'signal_message_menu_geometry.dart';
 import 'signal_message_menu_items.dart';
 import 'signal_action_panel.dart';
@@ -17,6 +16,7 @@ class SignalMessageMenuSurface extends StatefulWidget {
     super.key,
     required this.animation,
     required this.anchor,
+    this.origin = Offset.zero,
     required this.focused,
     required this.isMine,
     required this.items,
@@ -25,7 +25,13 @@ class SignalMessageMenuSurface extends StatefulWidget {
   });
 
   final Animation<double> animation;
+
+  /// In the surface's own frame.
   final Rect anchor;
+
+  /// Where the surface's top-left sits on the screen. The finger is tracked in
+  /// screen coordinates, so the reaction bar is compared there.
+  final Offset origin;
   final Widget focused;
   final bool isMine;
   final List<SignalMenuItem> items;
@@ -85,23 +91,27 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _build(context, constraints.biggest),
+  );
+
+  Widget _build(BuildContext context, Size screen) {
     final media = MediaQuery.of(context);
     final theme = Theme.of(context);
     final menuSize = signalMenuSize(
       widget.items,
       theme.textTheme.bodyLarge ?? const TextStyle(fontSize: 16),
       media.textScaler.scale(1),
-      media.size.width - SignalMenuMetrics.horizontalMargin * 2,
+      screen.width - SignalMenuMetrics.horizontalMargin * 2,
     );
     final layout = resolveSignalMenuLayout(
-      screen: media.size,
+      screen: screen,
       safeArea: media.padding,
       anchor: widget.anchor,
       menuSize: menuSize,
       isMine: widget.isMine,
     );
-    _bar = layout.bar;
+    _bar = layout.bar.shift(widget.origin);
     final ordered = layout.reversed
         ? widget.items.reversed.toList()
         : widget.items;
@@ -120,58 +130,12 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
               onTap: () => Navigator.pop(context),
             ),
           ),
-          AnimatedBuilder(
-            animation: move,
-            builder: (context, child) {
-              final scale = lerpDouble(
-                SignalMenuMetrics.pressScale,
-                layout.scale,
-                move.value,
-              )!;
-              // The message slides from where it sits in the list to where the
-              // overlay needs it, unpinching from Signal's 0.95 press scale on
-              // the way — exactly how it animates x/y/scale. It pinches in from
-              // the side it hangs on, so both ends of the lerp are the painted
-              // top-left corner and `Alignment.topLeft` makes the transform
-              // land on it exactly.
-              final pressLeft = widget.isMine
-                  ? widget.anchor.right -
-                        widget.anchor.width * SignalMenuMetrics.pressScale
-                  : widget.anchor.left;
-              final corner = Offset.lerp(
-                Offset(pressLeft, widget.anchor.top),
-                layout.bubble.topLeft,
-                move.value,
-              )!;
-              // The box keeps the message's own size at every frame and only
-              // the transform shrinks it. Sizing the box to the scaled rect
-              // instead — which `Positioned.fromRect(layout.bubble)` did —
-              // hands the message a tight height smaller than it needs, and a
-              // long one answers with a render overflow stripe across the
-              // bubble. Android has the same split: `setScaleY` is a paint
-              // property and leaves the view's layout height alone.
-              return Positioned(
-                left: corner.dx,
-                top: corner.dy,
-                width: widget.anchor.width,
-                height: widget.anchor.height,
-                child: Transform.scale(
-                  scale: scale,
-                  alignment: Alignment.topLeft,
-                  // The copy is laid out again here and can come out a few
-                  // pixels taller than the row it was measured from — a long
-                  // collapsed body with "Read more", a link preview that
-                  // resolved in between. A tight height turned that into an
-                  // overflow stripe; let it take its own height instead.
-                  child: OverflowBox(
-                    alignment: Alignment.topLeft,
-                    minHeight: 0,
-                    maxHeight: double.infinity,
-                    child: IgnorePointer(child: child),
-                  ),
-                ),
-              );
-            },
+          SignalFocusedMessage(
+            move: move,
+            anchor: widget.anchor,
+            target: layout.bubble,
+            targetScale: layout.scale,
+            isMine: widget.isMine,
             child: widget.focused,
           ),
           Positioned.fromRect(

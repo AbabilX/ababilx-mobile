@@ -52,6 +52,15 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
   bool showCopy = true,
   bool showEdit = true,
 }) {
+  // [anchor] is in screen coordinates, but the dialog is laid out inside the
+  // root navigator — which the in-call return bar pushes down by its own
+  // height. Measured in the screen's frame, the whole menu sat that much too
+  // low and the last rows of a message near the bottom fell off the screen.
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final box = navigator.context.findRenderObject();
+  final origin = box is RenderBox && box.hasSize
+      ? box.localToGlobal(Offset.zero)
+      : Offset.zero;
   return showGeneralDialog<SignalMessageMenuResult>(
     context: context,
     barrierDismissible: true,
@@ -60,7 +69,8 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
     transitionDuration: SignalMenuMetrics.revealDuration,
     pageBuilder: (ctx, animation, _) => SignalMessageMenuSurface(
       animation: animation,
-      anchor: anchor,
+      anchor: anchor.shift(-origin),
+      origin: origin,
       focused: focused,
       isMine: isMine,
       pointer: pointer,
