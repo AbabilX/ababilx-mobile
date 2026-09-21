@@ -1479,3 +1479,7 @@ else stays on `TiptapViewer`.
 - "(edited)" sits under the body right-aligned: markdown ends in a block, so
   it cannot join the last line as TipTap's trailing span does.
 - Pinned by `test/features/messages/message_markdown_test.dart`.
+- **Web twin**: `components/team/board/tiptap/markdown-source.ts` in
+  `opensource/chat_ababilx` and `Ababil-X-frontend`, same regexes and same test
+  cases. Web renders through `@tiptap/markdown` and adds hard breaks so a
+  single newline stays a line break, as `gpt_markdown` keeps it here.

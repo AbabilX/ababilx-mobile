@@ -12,6 +12,10 @@ import 'dart:convert';
 ///
 /// The syntax check keeps ordinary messages on the existing renderer, so a
 /// sentence that happens to contain one `*` is not reinterpreted.
+///
+/// Web twin: `components/team/board/tiptap/markdown-source.ts` in both web
+/// trees. Same rule, same regexes — change both, or a message renders
+/// formatted on one device and raw on the other.
 String? markdownSourceOf(String? body) {
   final trimmed = body?.trim() ?? '';
   if (trimmed.isEmpty) return null;
@@ -41,7 +45,10 @@ final _inlineSyntax = RegExp(
 /// The body as markdown source: plain text as it is, a plain TipTap doc as
 /// its paragraphs joined by newlines. Null for rich TipTap.
 String? _plainTextOf(String body) {
-  if (!body.startsWith('{') || !body.contains('"type"')) return body;
+  if (!body.startsWith('{')) return body;
+  // JSON that is not a TipTap doc (the kanban webhook marker, anything else)
+  // is never re-read as markdown — web's `markdown-source.ts` agrees.
+  if (!body.contains('"type"')) return null;
   Object? decoded;
   try {
     decoded = jsonDecode(body);
