@@ -12,6 +12,7 @@ Future<void> runHistoryRestore({
   required Future<void> Function(String id) pull,
   required void Function(int done, int total) onProgress,
   required bool Function() shouldStop,
+  String? Function()? prioritized,
   int concurrency = historyRestoreConcurrency,
 }) async {
   final total = ids.length;
@@ -20,16 +21,24 @@ Future<void> runHistoryRestore({
     return;
   }
   onProgress(0, total);
-  var next = 0;
+  final queue = [...ids];
   var done = 0;
+
+  // The conversation the user is looking at jumps the queue the moment a
+  // worker is free, so an open chat is never waiting behind the whole list.
+  String? take() {
+    if (queue.isEmpty) return null;
+    final wanted = prioritized?.call();
+    if (wanted != null && queue.remove(wanted)) return wanted;
+    return queue.removeAt(0);
+  }
 
   Future<void> worker() async {
     while (!shouldStop()) {
-      final index = next;
-      next += 1;
-      if (index >= ids.length) return;
+      final id = take();
+      if (id == null) return;
       try {
-        await pull(ids[index]);
+        await pull(id);
       } catch (_) {}
       done += 1;
       onProgress(done, total);

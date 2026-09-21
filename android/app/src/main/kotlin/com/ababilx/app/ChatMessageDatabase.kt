@@ -45,9 +45,31 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
                 "(conversation_id, thread_root_id, created_at_ms, id)",
         )
         db.execSQL("CREATE TABLE migration_scopes (scope TEXT PRIMARY KEY NOT NULL)")
+        createLookupIndexes(db)
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // V1 -> V2: additive indexes only; building them reads the table once.
+        if (oldVersion < 2) createLookupIndexes(db)
+    }
+
+    /**
+     * Expression indexes for the two per-row JSON lookups. Without them every
+     * upserted row ran `json_extract` over the whole encrypted table to drop
+     * its duplicate, so a 100-message restore page was 100 full scans — and
+     * every read queued behind it. The expressions must match the queries
+     * exactly, or SQLite cannot use the index.
+     */
+    private fun createLookupIndexes(db: SQLiteDatabase) {
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS messages_payload_id ON messages " +
+                "(json_extract(payload_json, '\$.id'))",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS messages_send_status ON messages " +
+                "(json_extract(payload_json, '\$.send_status'))",
+        )
+    }
 
     fun upsert(rows: List<StoredChatMessage>) {
         if (rows.isEmpty()) return
@@ -89,7 +111,7 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
         val incoming = JSONObject(row.payloadJson)
         if (incoming.optBoolean("content_purged")) return true
         return database.rawQuery(
-            "SELECT payload_json FROM messages WHERE id=? OR json_extract(payload_json, '$.id')=?",
+            "SELECT payload_json FROM messages WHERE id=? OR json_extract(payload_json, '\$.id')=?",
             arrayOf(row.id, row.payloadId),
         ).use { cursor ->
             var keep = false
@@ -255,6 +277,14 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
      * conversation past a couple of hundred thousand messages ever reaches it.
      */
     private fun prune(database: SQLiteDatabase, conversationId: String) {
+        // Counting walks the timeline index; the delete below builds a set of
+        // up to MAX_KEEP ids and scans the conversation, so it must only run
+        // for the rare conversation that is actually over the cap.
+        val count = database.rawQuery(
+            "SELECT COUNT(*) FROM messages WHERE conversation_id = ?",
+            arrayOf(conversationId),
+        ).use { if (it.moveToFirst()) it.getLong(0) else 0L }
+        if (count <= MAX_KEEP) return
         database.execSQL(
             "DELETE FROM messages WHERE conversation_id = ? AND id NOT IN " +
                 "(SELECT id FROM messages WHERE conversation_id = ? " +
@@ -265,7 +295,7 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
 
     private companion object {
         const val DATABASE_NAME = "ababilx_messages.db"
-        const val DATABASE_VERSION = 1
+        const val DATABASE_VERSION = 2
 
         /** Local retention backstop. The phone outlives the server's window. */
         const val MAX_KEEP = 200_000

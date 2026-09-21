@@ -6,10 +6,19 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.Executors
 
-/** Serializes every SQLCipher operation away from Flutter's platform thread. */
+/**
+ * Runs every SQLCipher operation away from Flutter's platform thread.
+ *
+ * Writes are serialized on one thread; reads get their own. The database is
+ * opened in WAL mode, so a read sees the last committed state while a write is
+ * in progress — and opening a chat no longer waits behind a history restore's
+ * queue of upserts, which is what made a restored DM look like it was still
+ * fetching.
+ */
 class ChatMessageStoreChannel(context: android.content.Context) {
     private val database = ChatMessageDatabase(context)
     private val worker = Executors.newSingleThreadExecutor()
+    private val reader = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private var channel: MethodChannel? = null
 
@@ -24,7 +33,7 @@ class ChatMessageStoreChannel(context: android.content.Context) {
                         database.upsert(parseRows(call.argument<List<*>>("rows")))
                         null
                     }
-                    "isLegacyMigrated" -> background(result) {
+                    "isLegacyMigrated" -> background(result, reader) {
                         database.isLegacyMigrated(
                             requiredString(call.argument("scope")),
                         )
@@ -36,7 +45,7 @@ class ChatMessageStoreChannel(context: android.content.Context) {
                         )
                         null
                     }
-                    "page" -> background(result) {
+                    "page" -> background(result, reader) {
                         database.page(
                             requiredString(call.argument("conversationId")),
                             (call.argument<Int>("limit") ?: 50),
@@ -45,14 +54,14 @@ class ChatMessageStoreChannel(context: android.content.Context) {
                             call.argument("threadRootId"),
                         )
                     }
-                    "exportPage" -> background(result) {
+                    "exportPage" -> background(result, reader) {
                         database.exportPage(
                             call.argument<Number>("afterMs")?.toLong(),
                             call.argument("afterId"),
                             (call.argument<Int>("limit") ?: 500),
                         )
                     }
-                    "hasOlder" -> background(result) {
+                    "hasOlder" -> background(result, reader) {
                         database.hasOlder(
                             requiredString(call.argument("conversationId")),
                             requiredNumber(call.argument("beforeMs")).toLong(),
@@ -63,7 +72,7 @@ class ChatMessageStoreChannel(context: android.content.Context) {
                         database.remove(requiredString(call.argument("messageId")))
                         null
                     }
-                    "unsent" -> background(result) {
+                    "unsent" -> background(result, reader) {
                         database.unsent()
                     }
                     "clearConversation" -> background(result) {
@@ -85,6 +94,7 @@ class ChatMessageStoreChannel(context: android.content.Context) {
     fun dispose() {
         channel?.setMethodCallHandler(null)
         channel = null
+        reader.shutdown()
         worker.execute(database::close)
         worker.shutdown()
     }
@@ -107,8 +117,12 @@ class ChatMessageStoreChannel(context: android.content.Context) {
             )
         }
 
-    private fun <T> background(result: MethodChannel.Result, operation: () -> T) {
-        worker.execute {
+    private fun <T> background(
+        result: MethodChannel.Result,
+        executor: java.util.concurrent.Executor = worker,
+        operation: () -> T,
+    ) {
+        executor.execute {
             try {
                 val value = operation()
                 main.post { result.success(value) }

@@ -111,17 +111,31 @@ class _Storage implements SecureStorage {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-ChatMessage _sealed(EncryptedDmPayload payload) => ChatMessage(
-  id: 'm1',
-  conversationId: 'chat',
-  userId: 'me',
-  body: '',
-  createdAt: '2026-09-10T00:00:00Z',
-  encryptedBody: payload.encryptedBody,
-  encryptionNonce: payload.nonce,
-  encryptionVersion: 1,
-  encryptionKeyVersion: payload.keyVersion,
-);
+/// Counts envelope reads, so a test can see how often the disk was asked.
+class _CountingCache extends ChatKeyCache {
+  _CountingCache(super.db);
+
+  int reads = 0;
+
+  @override
+  Future<Map<String, dynamic>?> read(String conversationId, int version) {
+    reads++;
+    return super.read(conversationId, version);
+  }
+}
+
+ChatMessage _sealed(EncryptedDmPayload payload, {String id = 'm1'}) =>
+    ChatMessage(
+      id: id,
+      conversationId: 'chat',
+      userId: 'me',
+      body: '',
+      createdAt: '2026-09-10T00:00:00Z',
+      encryptedBody: payload.encryptedBody,
+      encryptionNonce: payload.nonce,
+      encryptionVersion: 1,
+      encryptionKeyVersion: payload.keyVersion,
+    );
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -249,5 +263,25 @@ void main() {
     await cache.clearConversation('chat');
     expect(await cache.read('chat', 1), isNull);
     expect((await cache.read('other', 1))!['ciphertext'], 'c');
+  });
+
+  test('a cold page of messages under one key opens that key once', () async {
+    final counting = _CountingCache(db);
+    final online = MessageVault(repo, storage, counting);
+    await online.ensureIdentity();
+    final payload = await online.encryptNew(
+      conversationId: 'chat',
+      text: 'one of many',
+      currentUserId: 'me',
+    );
+
+    final relaunched = MessageVault(repo, storage, counting);
+    await relaunched.restoreTrustedIdentity();
+    counting.reads = 0;
+    final page = [for (var i = 0; i < 50; i++) _sealed(payload, id: 'm$i')];
+    final read = await relaunched.decryptMessages(page, 'me');
+
+    expect(read.map((m) => m.body).toSet(), {'one of many'});
+    expect(counting.reads, 1, reason: 'fifty messages, one envelope unwrap');
   });
 }

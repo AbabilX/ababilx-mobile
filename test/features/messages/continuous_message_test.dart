@@ -62,7 +62,10 @@ class _TimelineNotifier extends _ComposerNotifier {
   );
 
   @override
-  Future<bool> hydrateFeedFromCache(String conversationId) async => false;
+  Future<bool> hydrateFeedFromCache(
+    String conversationId, {
+    String? threadRootId,
+  }) async => false;
 
   @override
   Future<void> loadFeed(

@@ -11,7 +11,12 @@ mixin _ChatFeedEditMixin on Notifier<ChatState>, _ChatFeedMixin {
   }) {
     final key = feedKey(conversationId, threadRootId: threadRootId);
     final existing = state.feeds[key];
-    if (existing == null) return;
+    if (existing == null) {
+      // Nobody has opened this feed yet. Keep the decrypted copy so the open
+      // shows it on its first frame — see [ReceivedMessageBuffer].
+      receivedBuffer.add(key, msg);
+      return;
+    }
     setFeed(
       key,
       existing.copyWith(
@@ -30,12 +35,15 @@ mixin _ChatFeedEditMixin on Notifier<ChatState>, _ChatFeedMixin {
   }) {
     final key = feedKey(conversationId, threadRootId: threadRootId);
     final feed = state.feeds[key];
-    if (feed == null) return;
+    if (feed == null) {
+      receivedBuffer.patch(msg.id, (_) => msg);
+      return;
+    }
     setFeed(
       key,
       feed.copyWith(
         messages: feed.messages.map((m) => m.id == msg.id ? msg : m).toList(),
-        fetchedAt: DateTime.now().millisecondsSinceEpoch,
+        fetchedAt: _touched(feed),
       ),
     );
   }
@@ -45,6 +53,7 @@ mixin _ChatFeedEditMixin on Notifier<ChatState>, _ChatFeedMixin {
     String messageId, {
     String? threadRootId,
   }) {
+    receivedBuffer.remove(messageId);
     final key = feedKey(conversationId, threadRootId: threadRootId);
     final feed = state.feeds[key];
     if (feed == null) return;
@@ -64,7 +73,10 @@ mixin _ChatFeedEditMixin on Notifier<ChatState>, _ChatFeedMixin {
   }) {
     final key = feedKey(conversationId, threadRootId: threadRootId);
     final feed = state.feeds[key];
-    if (feed == null) return;
+    if (feed == null) {
+      receivedBuffer.patch(messageId, (m) => m.copyWith(reactions: reactions));
+      return;
+    }
     setFeed(
       key,
       feed.copyWith(
@@ -73,8 +85,13 @@ mixin _ChatFeedEditMixin on Notifier<ChatState>, _ChatFeedMixin {
               (m) => m.id == messageId ? m.copyWith(reactions: reactions) : m,
             )
             .toList(),
-        fetchedAt: DateTime.now().millisecondsSinceEpoch,
+        fetchedAt: _touched(feed),
       ),
     );
   }
+
+  /// A live edit to a feed painted from disk must not mark it fresh: 0 is
+  /// what tells [loadFeed] the server has not been asked yet.
+  int _touched(ChatFeed feed) =>
+      feed.fetchedAt == 0 ? 0 : DateTime.now().millisecondsSinceEpoch;
 }

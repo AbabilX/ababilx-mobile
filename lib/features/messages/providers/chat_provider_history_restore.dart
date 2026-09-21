@@ -18,6 +18,7 @@ mixin _ChatHistoryRestoreMixin
 
   Future<void> completeHistoryReset(String userId) async {
     await HistoryRestoreFlag.complete(userId);
+    resetFeedHydration();
     state = state.copyWith(
       feeds: const {},
       threadRepliesByRoot: const {},
@@ -68,6 +69,8 @@ mixin _ChatHistoryRestoreMixin
       await runHistoryRestore(
         ids: ids,
         shouldStop: stopped,
+        // The chat on screen is pulled next, whatever its place in the list.
+        prioritized: () => state.activeConversationId,
         pull: (id) async {
           try {
             await _restoreConversation(id, stopped);
@@ -101,11 +104,16 @@ mixin _ChatHistoryRestoreMixin
           page.messages.where((m) => !m.contentPurged).toList(),
         );
         if (stopped()) return;
-        await messageStore.saveRecovered(
-          canonicalChatMessages(messages),
-          fromBackup: false,
-        );
+        final restored = canonicalChatMessages(messages);
+        await messageStore.saveRecovered(restored, fromBackup: false);
         if (stopped()) return;
+        // Persisted first, then shown: an open chat fills in as the restore
+        // reaches it instead of after the whole account is done.
+        mergeRestoredPage(
+          id,
+          messageStore.deletions.filter(restored),
+          threadRootId: thread,
+        );
         unawaited(
           repo
               .acknowledgeMessages(

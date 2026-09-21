@@ -87,15 +87,24 @@ class ChatMessageStore {
     }
     try {
       final scope = jsonEncode([conversationId, threadRootId]);
-      if (!await native.isLegacyMigrated(scope)) {
-        // Migrate the entire retained slice before marking this scope done.
-        // Re-running after a crash is harmless because id is the conflict key.
-        final legacy = await _drift.page(
-          conversationId,
-          limit: localPageCeiling,
-          threadRootId: threadRootId,
-        );
-        await native.migrateLegacy(scope, legacy);
+      if (!_migratedScopes.contains(scope)) {
+        if (await native.isLegacyMigrated(scope)) {
+          _migratedScopes.add(scope);
+        } else {
+          // Every write lands in both stores, so Drift already holds this
+          // page. Answer from it now and carry the scope across in the
+          // background: migrating first cost a 2 000-row read and write on
+          // the first open of every chat, which is exactly when the reader
+          // is waiting.
+          _migrateScope(native, scope, conversationId, threadRootId);
+          return _drift.page(
+            conversationId,
+            limit: limit,
+            beforeMs: beforeMs,
+            beforeId: beforeId,
+            threadRootId: threadRootId,
+          );
+        }
       }
       return native.page(
         conversationId,
@@ -113,6 +122,36 @@ class ChatMessageStore {
         threadRootId: threadRootId,
       );
     }
+  }
+
+  /// Scopes known to be migrated this session — spares a platform call on
+  /// every page read once the answer is yes.
+  final _migratedScopes = <String>{};
+  final _migrations = <String, Future<void>>{};
+
+  void _migrateScope(
+    AndroidChatMessageStore native,
+    String scope,
+    String conversationId,
+    String? threadRootId,
+  ) {
+    _migrations[scope] ??= () async {
+      try {
+        // Migrate the entire retained slice before marking this scope done.
+        // Re-running after a crash is harmless because id is the conflict key.
+        final legacy = await _drift.page(
+          conversationId,
+          limit: localPageCeiling,
+          threadRootId: threadRootId,
+        );
+        await native.migrateLegacy(scope, legacy);
+        _migratedScopes.add(scope);
+      } catch (_) {
+        // Drift keeps answering this scope; the next open tries again.
+      } finally {
+        _migrations.remove(scope);
+      }
+    }();
   }
 
   Future<bool> hasOlderThan(

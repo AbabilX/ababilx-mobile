@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../attachments/data/local/attachment_tables.dart';
+import 'chat_local_indexes.dart';
 import 'chat_local_migrations.dart';
 import 'chat_local_tables.dart';
 
@@ -27,11 +28,14 @@ class ChatLocalDb extends _$ChatLocalDb {
   ChatLocalDb.forTesting(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) => m.createAll(),
+    onCreate: (m) async {
+      await m.createAll();
+      await ensureChatMessageIndexes(m.database);
+    },
     onUpgrade: (m, from, to) async {
       // V2 → V3: create the durable send outbox.
       if (from < 3) {
@@ -95,6 +99,11 @@ class ChatLocalDb extends _$ChatLocalDb {
       if (from < 8 && from >= 5) {
         await m.addColumn(attachmentBlobs, attachmentBlobs.mediaWidth);
         await m.addColumn(attachmentBlobs, attachmentBlobs.mediaHeight);
+      }
+      // V8 → V9: the message indexes a fresh install never got. Additive —
+      // building them reads the table once, and every later read is indexed.
+      if (from < 9) {
+        await ensureChatMessageIndexes(m.database);
       }
     },
   );

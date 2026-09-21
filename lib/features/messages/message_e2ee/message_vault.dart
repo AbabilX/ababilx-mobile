@@ -73,6 +73,11 @@ class MessageVault {
   // Exact-version fetches in flight, keyed like [_readKeys], so a page of
   // messages sealed under one retired version asks the server once.
   final _versionLoads = <String, Future<_DmKey?>>{};
+  // Key resolutions for READING in flight, keyed like [_readKeys]. A cold
+  // page decrypts fifty messages at once under one key; without this each
+  // read the same envelope off disk and unwrapped it with its own P-256
+  // agreement, which is what made a restored chat open slowly.
+  final _readKeyLoads = <String, Future<_DmKey?>>{};
   // When the server last said this account holds no envelope for a version.
   final _versionMisses = <String, DateTime>{};
   // Envelopes already reported as unopenable this session, 'conversation:version'.
@@ -166,6 +171,7 @@ class MessageVault {
     // must not be joined by the next identity's first read either.
     _versionMisses.clear();
     _versionLoads.clear();
+    _readKeyLoads.clear();
     _reportedUnreadable.clear();
     _gapFill = null;
   }

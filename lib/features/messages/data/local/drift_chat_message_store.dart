@@ -195,13 +195,17 @@ class DriftChatMessageStore {
 
   Future<List<ChatMessage>> listUnsent() async {
     try {
-      final rows =
-          await (_db.select(_db.cachedMessages)..where(
-                (t) =>
-                    t.payloadJson.like('%"send_status":"sending"%') |
-                    t.payloadJson.like('%"send_status":"failed"%'),
-              ))
-              .get();
+      // Indexed (idx_cached_messages_send_status): this runs on every boot,
+      // and a LIKE over the payload read the whole archive to find nothing.
+      final rows = await _db
+          .customSelect(
+            "SELECT * FROM cached_messages "
+            "WHERE json_extract(payload_json, '\$.send_status') "
+            "IN ('sending', 'failed')",
+            readsFrom: {_db.cachedMessages},
+          )
+          .map((row) => _db.cachedMessages.map(row.data))
+          .get();
       return messagesFromRows(rows).where((m) => m.isPending).toList();
     } catch (_) {
       return const [];

@@ -1404,3 +1404,55 @@ decode     ResizeImage at box x devicePixelRatio, cover, never upscaled
 - The sending-clock pulse runs only while a message is sending
   (`MessageRowPulse`). It used to repeat forever in every row, keeping a
   ticker asking for a frame on every vsync while a chat was open.
+
+# Opening a chat never waits on the network (2026-09-21)
+
+Reported as "after login the restore bar counts n/n, then opening a DM
+fetches from the API again instead of showing". The history was on disk the
+whole time; five things stood between it and the screen.
+
+```
+open  -> buffered live copies (memory, first frame)
+      -> disk page  ─┐  both start at once, neither waits on the other,
+      -> network    ─┘  each merges into the LATEST state, never a snapshot
+```
+
+- **SQLCipher ran every call on one thread.** A history restore upserts 100
+  messages at a time, and a DM's page read queued behind all of them.
+  `ChatMessageStoreChannel` now has a reader executor beside the writer; the
+  database is WAL, so a read sees the last commit while a write runs.
+- **Every upserted row scanned the whole table** (`json_extract(payload_json,
+  '$.id')` to drop its duplicate, and again in `keepLocalRecovery`), and
+  `prune` built a set of 200 000 ids per batch. Native V2 adds expression
+  indexes on `$.id` / `$.send_status` and prunes only past the cap.
+- **Drift's timeline index only existed on devices upgraded through V4** —
+  `createAll()` never builds hand-written indexes, so a fresh sign-in read
+  every page by full scan. V9 (`chat_local_indexes.dart`) creates the timeline
+  and the two expression indexes for everyone. The expressions must match the
+  queries byte for byte.
+- **First open of every scope migrated 2 000 rows into SQLCipher before
+  answering.** Drift is a full mirror (every write lands in both), so an
+  unmigrated scope is answered from Drift and migrated in the background.
+- **Fifty messages unwrapped the same key fifty times** — `decryptMessages`
+  is a `Future.wait`, and each `_readKey` read the envelope and ran its own
+  pure-Dart P-256 agreement. `_readKeyLoads` single-flights it; pinned by
+  `offline_message_decrypt_test.dart` (50 → 1).
+
+Also in this pass (`cache_first_loading_test.dart`):
+
+- `ReceivedMessageBuffer` keeps the decrypted socket copy for a feed nobody
+  has opened; the open takes it synchronously. The persist is async, so the
+  disk page could miss the message whose preview was already in the list.
+- `hydrateFeedFromCache` is single-flight per feed and thread-aware; threads
+  open and page back offline from their replies on disk, and the summary under
+  the root (`threadRepliesByRoot`) is merged from the same rows.
+- A restore pulls the open chat next (`prioritized`) and merges each persisted
+  page that touches the visible window — never the whole archive.
+- `ChatOpenTrace` logs `[ChatOpen] <feed> disk= decrypt= frames= paint=` in
+  debug/profile builds.
+- **Trap:** `future.whenComplete(() => _map.remove(key))` returns the stored
+  future to `whenComplete`, which then waits on itself forever. Use a block
+  body. `link_preview_loader` had exactly this — every `loadLinkPreview` for a
+  new URL hung, so no preview card ever drew — and is fixed the same way.
+  `attachment_dimension_reader` is safe: it stores the inner future, not the
+  chained one.

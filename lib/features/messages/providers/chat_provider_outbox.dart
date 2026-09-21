@@ -87,9 +87,9 @@ mixin _ChatOutboxMixin on Notifier<ChatState>, _ChatFeedMixin {
       final identity = msg.clientRef ?? msg.id;
       if (identity.isEmpty || seen.contains(identity)) return;
       final key = feedKey(msg.conversationId, threadRootId: msg.parentId);
-      final feed =
-          state.feeds[key] ??
-          ChatFeed(fetchedAt: DateTime.now().millisecondsSinceEpoch);
+      // fetchedAt stays 0: this feed holds one unsent bubble, not a page of
+      // history, and opening it must still read the disk and the server.
+      final feed = state.feeds[key] ?? const ChatFeed();
       if (feed.messages.any(
         (m) =>
             m.id == msg.id || (m.clientRef != null && m.clientRef == identity),

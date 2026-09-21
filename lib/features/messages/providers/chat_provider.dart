@@ -34,8 +34,11 @@ import '../message_e2ee/dm_key_rotation.dart';
 import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/sidebar_preview.dart';
 import '../message_e2ee/vault_placeholder.dart';
+import 'chat_open_trace.dart';
 import 'chat_state.dart';
+import 'received_message_buffer.dart';
 
+export 'chat_open_trace.dart' show ChatOpenTrace;
 export 'chat_state.dart';
 
 part 'chat_provider_patch.dart';
@@ -259,6 +262,7 @@ class ChatNotifier extends Notifier<ChatState>
   void resetTeamChatState({bool clearCurrentUser = false}) {
     _restoreCancelled = true;
     _bootstrapped = false;
+    resetFeedHydration();
     state = ChatState(
       currentUserId: clearCurrentUser ? '' : state.currentUserId,
     );

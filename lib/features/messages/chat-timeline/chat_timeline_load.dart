@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../chat_utils.dart';
 import '../providers/chat_provider.dart';
 import 'chat_timeline.dart';
 
@@ -9,20 +10,26 @@ mixin ChatTimelineLoad on ConsumerState<ChatTimeline> {
   void loadFeed() {
     if (!mounted) return;
     final n = ref.read(chatProvider.notifier);
-    // Cache-first: hydrate from SQLite immediately so messages show with 0
-    // network latency. Then force a fresh network fetch in the background.
-    // This is exactly how WhatsApp loads conversations.
-    n.hydrateFeedFromCache(widget.conversationId).then((_) {
-      if (!mounted) return;
-      if (widget.threadRootId == null) {
-        n.prefetchThreadSummaries(widget.conversationId);
-      }
-      n.loadFeed(
-        widget.conversationId,
-        threadRootId: widget.threadRootId,
-        force: true,
-      );
-    });
+    ChatOpenTrace.start(
+      feedKey(widget.conversationId, threadRootId: widget.threadRootId),
+    );
+    // Cache-first: the disk page and the network refresh start together
+    // inside loadFeed, and the disk never waits for the network. Summaries
+    // under thread roots fill from disk as soon as the page is in memory.
+    n
+        .hydrateFeedFromCache(
+          widget.conversationId,
+          threadRootId: widget.threadRootId,
+        )
+        .then((_) {
+          if (!mounted || widget.threadRootId != null) return;
+          n.prefetchThreadSummaries(widget.conversationId);
+        });
+    n.loadFeed(
+      widget.conversationId,
+      threadRootId: widget.threadRootId,
+      force: true,
+    );
     if (widget.threadRootId == null) {
       n.markConversationRead(widget.conversationId);
     }

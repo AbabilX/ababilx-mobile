@@ -16,7 +16,11 @@ Future<LinkPreviewData?> loadLinkPreview(String url) {
   final existing = _inFlight[url];
   if (existing != null) return existing;
 
-  final request = _load(url).whenComplete(() => _inFlight.remove(url));
+  // Block body: `=> _inFlight.remove(url)` hands `request` itself back to
+  // whenComplete, which then waits on its own future and never completes.
+  final request = _load(url).whenComplete(() {
+    _inFlight.remove(url);
+  });
   _inFlight[url] = request;
   return request;
 }

@@ -85,6 +85,23 @@ extension MessageVaultKeyCache on MessageVault {
     if (live != null && live.version == version) return live;
     final held = _readKeys['$conversationId:$version'];
     if (held != null) return held;
+    final slot = '$conversationId:$version';
+    final inFlight = _readKeyLoads[slot];
+    if (inFlight != null) return inFlight;
+    final load = _resolveReadKey(conversationId, self, version);
+    _readKeyLoads[slot] = load;
+    try {
+      return await load;
+    } finally {
+      if (identical(_readKeyLoads[slot], load)) _readKeyLoads.remove(slot);
+    }
+  }
+
+  Future<_DmKey?> _resolveReadKey(
+    String conversationId,
+    String self,
+    int version,
+  ) async {
     final stored = await _storedKey(conversationId, self, version);
     if (stored != null) return stored;
     try {
