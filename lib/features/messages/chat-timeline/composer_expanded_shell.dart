@@ -33,7 +33,7 @@ class ComposerExpandedShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Material(
+    final bar = Material(
       color: colors.surface,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
       clipBehavior: Clip.antiAlias,
@@ -43,7 +43,6 @@ class ComposerExpandedShell extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ?mentionPicker,
             ?replyBanner,
             ?selectionBadge,
             if (pending.isNotEmpty)
@@ -60,6 +59,25 @@ class ComposerExpandedShell extends StatelessWidget {
           ],
         ),
       ),
+    );
+    // Always the same Column with the bar keyed: returning the bar alone
+    // when the popover is shut changed the tree's shape, which remounted the
+    // text field and dropped the keyboard on every `@` typed or deleted.
+    final picker = mentionPicker;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // The popover floats over the timeline as its own card; inside the
+        // bar it stretched the bar's surface up behind it.
+        if (picker != null)
+          Padding(
+            key: const ValueKey('mention-picker'),
+            padding: const EdgeInsets.only(bottom: 6),
+            child: picker,
+          ),
+        KeyedSubtree(key: const ValueKey('composer-bar'), child: bar),
+      ],
     );
   }
 }

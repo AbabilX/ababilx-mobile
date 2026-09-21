@@ -17,12 +17,15 @@ import '../data/local/composer_draft_store.dart';
 import '../data/chat_client_message_id.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_encode.dart';
-import '../providers/team_gate_provider.dart';
+import '../providers/chat_connections_provider.dart';
+import '../providers/messageable_people_provider.dart';
 import 'composer_attach.dart';
 import 'composer_uploads_gate.dart';
 import 'composer_attachment_keyboard.dart';
 import 'composer_expanded_shell.dart';
 import 'composer_input_bar.dart';
+import 'composer_highlight_controller.dart';
+import 'composer_mention_candidates.dart';
 import 'composer_mention_picker.dart';
 import 'composer_recording_bar.dart';
 import 'composer_recent_review.dart';
@@ -35,7 +38,6 @@ import 'reaction_emoji_picker.dart';
 import 'composer_share_contact.dart';
 import 'composer_text_actions.dart';
 import 'voice_message_recorder.dart';
-import '../../../shared/text/name_search.dart';
 import '../../../core/network/ws_client.dart';
 import '../../settings/typing-indicators/typing_indicators_provider.dart';
 import '../chat-typing/typing_sender.dart';
@@ -105,6 +107,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   /// which run of characters was a person; the encoder turns it back into
   /// mention nodes at send time.
   final Map<String, String> _mentionByLabel = {};
+
+  /// `@all` was picked, so the draft paints it like any other mention.
+  bool _pickedAll = false;
   bool _showMentions = false;
   int _mentionStartIndex = -1;
 
@@ -117,6 +122,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   bool get _voiceSheetOpen => _recording || _recordPreparing || _uploadingVoice;
 
   List<MentionCandidate> _channelMembers = [];
+  bool _channelMembersLoaded = false;
 
   /// Top-level composer only: typing is scoped to the conversation, and a
   /// thread reply announcing itself there would point at the wrong place.
@@ -132,8 +138,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     _draftStore = ref.read(composerDraftStoreProvider);
     _draftOwnerId = ref.read(chatProvider).currentUserId;
     _loadChannelMembers();
-    _ctrl = TextEditingController(text: widget.initialText)
-      ..addListener(_onTextChanged);
+    _ctrl = ComposerHighlightController(
+      text: widget.initialText,
+      mentionLabels: () => [..._mentionByLabel.keys, if (_pickedAll) 'all'],
+    )..addListener(_onTextChanged);
     _focus = FocusNode()..addListener(_onFocus);
     if (widget.parentId == null) {
       _typing = ChatTypingSender(
@@ -189,20 +197,39 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   }
 
   Future<void> _loadChannelMembers() async {
+    // A DM's only candidate is the peer, already on the conversation row.
+    if (!widget.isGroup) return;
+    // Outsiders are accepted connections. Nothing else loads that list unless
+    // the People screen was opened this session, so ask for it here. The
+    // notifier shares an in-flight request, so this costs nothing extra.
+    unawaited(
+      ref
+          .read(chatConnectionsProvider.notifier)
+          .refresh()
+          .then((_) => _refreshOpenMentions()),
+    );
     try {
       final members = await ref
           .read(chatProvider.notifier)
           .listChannelMembers(widget.conversationId);
-      if (mounted) {
-        setState(() {
-          _channelMembers = members
-              .map(
-                (m) => MentionCandidate(userId: m.userId, displayName: m.name),
-              )
-              .toList();
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _channelMembers = [
+          for (final m in members)
+            MentionCandidate(
+              userId: m.userId,
+              displayName: m.name,
+              avatarUrl: m.avatarUrl,
+            ),
+        ];
+        _channelMembersLoaded = true;
+      });
+      _refreshOpenMentions();
     } catch (_) {}
+  }
+
+  void _refreshOpenMentions() {
+    if (mounted && _focus.hasFocus) _syncMentions();
   }
 
   void _onTextChanged() {
@@ -222,6 +249,14 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         ),
       );
     }
+    _syncMentions();
+  }
+
+  /// Opens, refreshes or closes the `@` popover for the text at the cursor.
+  /// Also run when members or connections finish loading, so a popover opened
+  /// before they arrived fills in instead of staying short.
+  void _syncMentions() {
+    final text = _ctrl.text;
     final sel = _ctrl.selection;
 
     if (!sel.isValid || !sel.isCollapsed) {
@@ -246,53 +281,15 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   }
 
   void _updateMentionCandidates(String query) {
-    final teamMembers = ref.read(teamMembersProvider);
-    final chatState = ref.read(chatProvider);
-    final currentUserId = chatState.currentUserId;
-
-    final map = <String, MentionCandidate>{};
-
-    // 1. Add channel members
-    for (final cm in _channelMembers) {
-      if (cm.userId.isNotEmpty && cm.userId != currentUserId) {
-        map[cm.userId] = cm;
-      }
-    }
-
-    // 2. Add team members
-    for (final tm in teamMembers) {
-      if (tm.userId.isNotEmpty && tm.userId != currentUserId) {
-        map[tm.userId] = MentionCandidate(
-          userId: tm.userId,
-          displayName: tm.displayName,
-          avatarUrl: tm.avatarUrl,
-        );
-      }
-    }
-
-    // 3. Add DM peers
-    for (final dm in chatState.dms) {
-      final peerId = dm.peerUserId;
-      final peerName = dm.peerUserName;
-      if (peerId != null &&
-          peerId.isNotEmpty &&
-          peerId != currentUserId &&
-          peerName != null &&
-          peerName.isNotEmpty) {
-        map.putIfAbsent(
-          peerId,
-          () => MentionCandidate(
-            userId: peerId,
-            displayName: peerName,
-            avatarUrl: dm.peerUserAvatar,
-          ),
-        );
-      }
-    }
-
-    final candidates = map.values
-        .where((c) => matchesNameQuery(query, [c.displayName]))
-        .toList();
+    final chat = ref.read(chatProvider);
+    final candidates = buildMentionCandidates(
+      conversation: chat.conversationById(widget.conversationId),
+      currentUserId: chat.currentUserId,
+      members: _channelMembers,
+      membersLoaded: _channelMembersLoaded,
+      connections: ref.read(groupInvitablePeopleProvider),
+      query: query,
+    );
 
     setState(() {
       _mentionCandidates = candidates;
@@ -318,8 +315,18 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       ),
     );
 
-    _mentionedUserIds.add(candidate.userId);
-    _mentionByLabel[candidate.displayName] = candidate.userId;
+    if (candidate.isAll) {
+      // "@all" stays plain text (no mention node every client would have to
+      // learn); the notification half is every member's id on the send.
+      final me = ref.read(chatProvider).currentUserId;
+      _pickedAll = true;
+      _mentionedUserIds.addAll(
+        _channelMembers.map((m) => m.userId).where((id) => id != me),
+      );
+    } else {
+      _mentionedUserIds.add(candidate.userId);
+      _mentionByLabel[candidate.displayName] = candidate.userId;
+    }
     setState(() => _showMentions = false);
   }
 
@@ -411,6 +418,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     );
     _mentionedUserIds.clear();
     _mentionByLabel.clear();
+    _pickedAll = false;
     if (!mounted) return;
     // Clear the visible composer immediately, but retain the durable draft
     // until delivery succeeds. If the send fails, recreation restores the
