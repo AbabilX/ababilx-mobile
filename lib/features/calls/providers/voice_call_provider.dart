@@ -103,7 +103,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     );
     await _ws.connect();
     unawaited(prewarmCallPermissions());
-    await _recoverNativeCall();
+    // Not `_recoverNativeCall` alone: the socket connected above replays
+    // `call.incoming` for a call still ringing on the server, so by now state
+    // may already hold it as ringing — and recovery skips an active call. The
+    // sync adopts an Accept CallKit recorded before this engine existed.
+    await syncFromNativeIncoming();
   }
 
   Future<void> shutdown() async {
@@ -707,6 +711,15 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       call: call,
       currentUserId: state.currentUserId,
     );
+    // Accept may already have been pressed on CallKit: the app was started
+    // (or brought forward) BY that press, and this event is the socket or a
+    // push replaying the ring. Ringing again here is the "I answered and the
+    // app asked me to answer again" report.
+    if (await _adoptNativeAccept()) return;
+    if (state.call?.id != call.id ||
+        state.phase != VoiceCallPhase.incomingRinging) {
+      return;
+    }
     _startRingTimer(call);
     // This device rings from here on — the Flutter screen or CallKit.
     unawaited(postVoiceCallRingingAck(call.id));

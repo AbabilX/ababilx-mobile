@@ -1165,3 +1165,25 @@ froze on the last frame and the user had to press Stop again in the app.
 `screen_takeover` right after our capture exists — still after the picker, so
 a dismissed one leaves the peer's share alone — and drops the peer's screen
 from our view at once, instead of after our renegotiation round trip.
+
+## Accept on a killed app asked for a second Accept (2026-09-22)
+
+The 2026-09-04 fix above covered a backgrounded app. A **killed** app still
+asked twice, some of the time — a race, which is why it was "sometimes":
+
+```
+Accept on CallKit -> plugin stores isAccepted, event reaches no engine
+app boots -> bootstrap: listen WS, await connect
+          -> socket replays call.incoming -> _onIncoming -> incomingRinging
+          -> _recoverNativeCall: state.active -> return   (accept never adopted)
+          -> Flutter is focused -> in-app ringing screen, Accept again
+```
+
+When the replay lost the race, recovery ran first and it worked. Two fixes,
+both through `_adoptNativeAccept`:
+
+- `_onIncoming` asks CallKit before ringing: an accepted record for this call
+  is applied instead of rung. Covers the socket replay and the FCM
+  foreground push (`_recoverForegroundIncoming` goes through it).
+- `bootstrap` ends with `syncFromNativeIncoming()` rather than
+  `_recoverNativeCall()`, so a ring that is already in state is adopted too.
