@@ -35,6 +35,7 @@ import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/sidebar_preview.dart';
 import '../message_e2ee/vault_placeholder.dart';
 import 'chat_open_trace.dart';
+import 'chat_read_marks.dart';
 import 'chat_state.dart';
 import 'received_message_buffer.dart';
 
@@ -75,6 +76,7 @@ class ChatNotifier extends Notifier<ChatState>
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
   WsClient get _ws => ref.read(wsClientProvider);
   bool _realtimeStarted = false;
+  final _readMarks = ChatReadMarks();
   bool _bootstrapped = false;
   Future<void>? _bootstrapInFlight;
   StreamSubscription<Map<String, dynamic>>? _wsEventSub;
@@ -262,6 +264,7 @@ class ChatNotifier extends Notifier<ChatState>
   void resetTeamChatState({bool clearCurrentUser = false}) {
     _restoreCancelled = true;
     _bootstrapped = false;
+    _readMarks.clear();
     resetFeedHydration();
     state = ChatState(
       currentUserId: clearCurrentUser ? '' : state.currentUserId,
@@ -294,11 +297,27 @@ class ChatNotifier extends Notifier<ChatState>
         firstLoadNetworkTimeout,
       );
       // Groups are sealed exactly like DMs, so both lists are opened.
-      final dms = sortDms(await decryptPreviews(data.dms, userId));
-      final channels = sortChannels(
-        await decryptPreviews(data.channels, userId),
-      );
       final active = state.activeConversationId;
+      final stale = <String>{};
+      final dms = sortDms(
+        _readMarks.apply(
+          await decryptPreviews(data.dms, userId),
+          activeId: active,
+          stale: stale,
+        ),
+      );
+      final channels = sortChannels(
+        _readMarks.apply(
+          await decryptPreviews(data.channels, userId),
+          activeId: active,
+          stale: stale,
+        ),
+      );
+      // The server still counted these unread: its markRead was lost or
+      // raced this fetch. Say it again so the next fetch agrees.
+      for (final id in stale) {
+        unawaited(_repo.markRead(id).catchError((_) {}));
+      }
       final known =
           active != null &&
           (dms.any((d) => d.id == active) ||

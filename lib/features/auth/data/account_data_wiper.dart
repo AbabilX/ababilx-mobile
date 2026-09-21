@@ -5,6 +5,7 @@ import '../../messages/data/local/chat_archive_wiper.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/safety_number/safety_number_store.dart';
 import '../../notifications/chat/chat_notification_store.dart';
+import '../../notifications/chat/chat_notification_dismissals.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../team/data/team_repository.dart';
@@ -23,6 +24,7 @@ class AccountDataWiper {
     await _ref.read(profileRepositoryProvider).clearCache(strict: true);
     await _ref.read(teamRepositoryProvider).clearCache(strict: true);
     await ChatNotificationStore.clearAll(strict: true);
+    await ChatNotificationDismissals.clearAll();
     await _ref.read(localNotificationsProvider).cancelAll(strict: true);
     await _ref.read(secureStorageProvider).clearAllPrivateData();
   }

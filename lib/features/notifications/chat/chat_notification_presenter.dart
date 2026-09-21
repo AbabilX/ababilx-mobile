@@ -2,6 +2,7 @@ import '../chat_push_decrypt.dart';
 import '../local_notifications.dart';
 import '../notification_router.dart';
 import 'chat_notification_builder.dart';
+import 'chat_notification_dismissals.dart';
 import 'chat_notification_ids.dart';
 import 'chat_notification_store.dart';
 import 'chat_push_attachments.dart';
@@ -35,12 +36,25 @@ class ChatNotificationPresenter {
       return;
     }
 
+    // Every post below waits on this: reading the chat in the app while the
+    // decrypt or the photo is still in flight must not bring the entry back.
+    final startedAt = DateTime.now();
+    Future<bool> post(String text, {bool alertOnce = true, String? image}) =>
+        _postUnlessRead(
+          local,
+          data,
+          startedAt,
+          text: text,
+          alertOnce: alertOnce,
+          imageUri: image,
+        );
+
     final attachments = ChatPushAttachments.of(data);
     final encrypted = plainBody == null;
     // An attachment names itself before anything is decrypted: "📷 Photo"
     // tells the reader more than the lock placeholder does.
     var text = plainBody ?? attachments?.label ?? encryptedPushPlaceholder;
-    await _post(local, data, text: text, alertOnce: false);
+    if (!await post(text, alertOnce: false)) return;
 
     if (encrypted) {
       final decrypted = await decryptChatPushBody(data);
@@ -48,7 +62,7 @@ class ChatNotificationPresenter {
         text = attachments?.line(decrypted) ?? decrypted;
         // Same message id, so this rewrites the line in place instead of
         // stacking a second copy of the message.
-        await _post(local, data, text: text, alertOnce: true);
+        if (!await post(text)) return;
       }
     }
 
@@ -57,10 +71,38 @@ class ChatNotificationPresenter {
         conversationId: conversationId,
         messageId: messageId,
       );
-      if (image != null) {
-        await _post(local, data, text: text, alertOnce: true, imageUri: image);
-      }
+      if (image != null) await post(text, image: image);
     }
+  }
+
+  /// Posts unless the conversation was read since [startedAt], and takes the
+  /// entry down again if the read landed while it was being posted. False
+  /// means the reader has it, and nothing more should be drawn.
+  static Future<bool> _postUnlessRead(
+    LocalNotifications local,
+    Map<String, dynamic> data,
+    DateTime startedAt, {
+    required String text,
+    required bool alertOnce,
+    String? imageUri,
+  }) async {
+    final conversationId = data['conversation_id']?.toString() ?? '';
+    if (await ChatNotificationDismissals.readSince(conversationId, startedAt)) {
+      return false;
+    }
+    await _post(
+      local,
+      data,
+      text: text,
+      alertOnce: alertOnce,
+      imageUri: imageUri,
+    );
+    if (await ChatNotificationDismissals.readSince(conversationId, startedAt)) {
+      await ChatNotificationStore.clear(conversationId);
+      await local.cancel(chatNotificationId(conversationId));
+      return false;
+    }
+    return true;
   }
 
   /// Appends a reply the user just sent from the notification, so the thread in
@@ -85,6 +127,8 @@ class ChatNotificationPresenter {
     String conversationId,
   ) async {
     if (conversationId.isEmpty) return;
+    // Marked first, so a background isolate mid-post sees it and stops.
+    await ChatNotificationDismissals.mark(conversationId);
     await ChatNotificationStore.clear(conversationId);
     await local.cancel(chatNotificationId(conversationId));
   }

@@ -7,6 +7,7 @@ import '../../messages/archive/archive_provider.dart';
 import '../../messages/message_e2ee/new_chat_setup.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../../notifications/chat/chat_notification_store.dart';
+import '../../notifications/chat/chat_notification_dismissals.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../../core/network/api_client.dart';
@@ -135,6 +136,7 @@ class AuthNotifier extends AsyncNotifier<bool> {
     } catch (_) {}
     ref.read(notificationPermissionProvider.notifier).setGranted(false);
     await ChatNotificationStore.clearAll();
+    await ChatNotificationDismissals.clearAll();
     await ref.read(localNotificationsProvider).cancelAll();
 
     // Stop work from this session, but keep this phone's Signal-style archive.

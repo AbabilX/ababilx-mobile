@@ -469,6 +469,12 @@ mixin _ChatActionsMixin
   }
 
   Future<void> markConversationRead(String conversationId) async {
+    (this as ChatNotifier)._readMarks.record(conversationId, [
+      state.conversationById(conversationId)?.lastMessageAt,
+      for (final entry in state.feeds.entries)
+        if (entry.key == conversationId)
+          for (final message in entry.value.messages) message.createdAt,
+    ]);
     state = state.copyWith(
       dms: patchList(state.dms, conversationId, unreadCount: 0),
       channels: patchList(state.channels, conversationId, unreadCount: 0),

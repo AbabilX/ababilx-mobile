@@ -20,6 +20,11 @@ class LocalNotifications {
       FlutterLocalNotificationsPlugin();
 
   bool _ready = false;
+
+  /// Cancels asked for before the plugin was initialised. A chat opened in the
+  /// first seconds after launch reads its conversation before FcmService has
+  /// got this far, and dropping that cancel left the entry in the tray.
+  final Set<int> _pendingCancels = {};
   void Function(String payload)? onTap;
 
   static const _iosDetails = DarwinNotificationDetails(
@@ -81,6 +86,7 @@ class LocalNotifications {
     }
 
     _ready = true;
+    await _flushPendingCancels();
   }
 
   /// Initialises the plugin inside the FCM background isolate, where no tap
@@ -112,6 +118,7 @@ class LocalNotifications {
       }
     }
     _ready = true;
+    await _flushPendingCancels();
   }
 
   Future<bool> requestPermission() async {
@@ -198,11 +205,22 @@ class LocalNotifications {
   }
 
   Future<void> cancel(int id) async {
-    if (!_ready) return;
+    if (!_ready) {
+      _pendingCancels.add(id);
+      return;
+    }
     try {
       await _plugin.cancel(id: id);
     } catch (_) {
       // Already gone is fine.
+    }
+  }
+
+  Future<void> _flushPendingCancels() async {
+    final ids = _pendingCancels.toList();
+    _pendingCancels.clear();
+    for (final id in ids) {
+      await cancel(id);
     }
   }
 
