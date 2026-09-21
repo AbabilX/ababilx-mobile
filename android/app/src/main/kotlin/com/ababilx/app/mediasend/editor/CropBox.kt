@@ -13,7 +13,7 @@ import kotlin.math.abs
  * back to normalised image coordinates only when the crop is committed —
  * dragging a corner must not re-derive the image transform on every move.
  */
-class CropBox {
+class CropBox(private val density: Float) {
 
     val rect = RectF()
     private var grab = Grab.NONE
@@ -24,12 +24,21 @@ class CropBox {
     private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         style = Paint.Style.STROKE
-        strokeWidth = 2f
+        strokeWidth = 1.5f * density
     }
+    private val grid = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#99FFFFFF")
+        style = Paint.Style.STROKE
+        strokeWidth = 1f * density
+    }
+
+    // Handles are sized in dp. They were 6 px thick with 22 px arms, which on
+    // a 3x screen is a hairline nobody can find with a thumb.
     private val corner = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         style = Paint.Style.STROKE
-        strokeWidth = 6f
+        strokeWidth = CORNER_THICK * density
+        strokeCap = Paint.Cap.SQUARE
     }
 
     private enum class Grab { NONE, MOVE, TL, TR, BL, BR }
@@ -48,18 +57,25 @@ class CropBox {
         val third = rect.width() / 3f
         val thirdY = rect.height() / 3f
         for (i in 1..2) {
-            canvas.drawLine(rect.left + third * i, rect.top, rect.left + third * i, rect.bottom, line)
-            canvas.drawLine(rect.left, rect.top + thirdY * i, rect.right, rect.top + thirdY * i, line)
+            canvas.drawLine(rect.left + third * i, rect.top, rect.left + third * i, rect.bottom, grid)
+            canvas.drawLine(rect.left, rect.top + thirdY * i, rect.right, rect.top + thirdY * i, grid)
         }
-        val arm = 22f
-        canvas.drawLine(rect.left, rect.top, rect.left + arm, rect.top, corner)
-        canvas.drawLine(rect.left, rect.top, rect.left, rect.top + arm, corner)
-        canvas.drawLine(rect.right, rect.top, rect.right - arm, rect.top, corner)
-        canvas.drawLine(rect.right, rect.top, rect.right, rect.top + arm, corner)
-        canvas.drawLine(rect.left, rect.bottom, rect.left + arm, rect.bottom, corner)
-        canvas.drawLine(rect.left, rect.bottom, rect.left, rect.bottom - arm, corner)
-        canvas.drawLine(rect.right, rect.bottom, rect.right - arm, rect.bottom, corner)
-        canvas.drawLine(rect.right, rect.bottom, rect.right, rect.bottom - arm, corner)
+        // Each L sits just inside the box edge: a photo that fills the view
+        // puts the crop edge on the view edge, where anything outside clips.
+        val arm = CORNER_ARM * density
+        val o = corner.strokeWidth / 2f
+        val l = rect.left + o
+        val t = rect.top + o
+        val r = rect.right - o
+        val b = rect.bottom - o
+        canvas.drawLine(l, t, l + arm, t, corner)
+        canvas.drawLine(l, t, l, t + arm, corner)
+        canvas.drawLine(r, t, r - arm, t, corner)
+        canvas.drawLine(r, t, r, t + arm, corner)
+        canvas.drawLine(l, b, l + arm, b, corner)
+        canvas.drawLine(l, b, l, b - arm, corner)
+        canvas.drawLine(r, b, r - arm, b, corner)
+        canvas.drawLine(r, b, r, b - arm, corner)
     }
 
     fun down(x: Float, y: Float) {
@@ -112,10 +128,14 @@ class CropBox {
     }
 
     private fun near(x: Float, y: Float, px: Float, py: Float) =
-        abs(x - px) < TOUCH && abs(y - py) < TOUCH
+        abs(x - px) < TOUCH * density && abs(y - py) < TOUCH * density
+
+    private val MIN get() = MIN_SIDE * density
 
     private companion object {
-        const val TOUCH = 48f
-        const val MIN = 80f
+        const val CORNER_THICK = 4f
+        const val CORNER_ARM = 26f
+        const val TOUCH = 36f
+        const val MIN_SIDE = 64f
     }
 }

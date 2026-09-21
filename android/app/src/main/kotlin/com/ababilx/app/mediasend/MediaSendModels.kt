@@ -45,7 +45,8 @@ class PickedItem(
     }
 }
 
-enum class DrawTool { PEN, HIGHLIGHT, BLUR }
+/** ERASER paints the untouched photo back over earlier strokes. */
+enum class DrawTool { PEN, HIGHLIGHT, BLUR, ERASER }
 
 /**
  * A stroke in normalised image space, so it survives zoom, rotation and the

@@ -42,7 +42,7 @@ class EditableImageView @JvmOverloads constructor(
     private var item: PickedItem? = null
     private var blurred: Bitmap? = null
     private var active: DrawOp? = null
-    private val crop = CropBox()
+    private val crop = CropBox(resources.displayMetrics.density)
     private val inverse = Matrix()
 
     fun bind(bitmap: Bitmap?, model: PickedItem?) {
@@ -168,6 +168,7 @@ class EditableImageView @JvmOverloads constructor(
         DrawTool.PEN -> 0.012f
         DrawTool.HIGHLIGHT -> 0.05f
         DrawTool.BLUR -> 0.09f
+        DrawTool.ERASER -> 0.06f
     }
 
     private fun displayMatrix(bitmap: Bitmap): Matrix? {

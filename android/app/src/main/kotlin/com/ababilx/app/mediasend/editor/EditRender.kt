@@ -112,6 +112,13 @@ object EditRender {
                         )
                     }
             }
+            DrawTool.ERASER -> {
+                // Erasing is another stroke, painted with the original photo:
+                // whatever was drawn under it before is covered by the source
+                // pixels, undo removes it like any stroke, and it exports the
+                // same way. Deleting points out of earlier strokes would not.
+                paint.shader = BitmapShader(source, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+            }
         }
         return paint
     }

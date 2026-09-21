@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.ababilx.app.R
 import com.ababilx.app.mediasend.MediaQuality
-import com.ababilx.app.mediasend.MediaSendInsets
+import com.ababilx.app.mediasend.MediaSendContentFit
 import com.ababilx.app.mediasend.PickedItem
 import com.ababilx.app.mediasend.ThumbnailLoader
 
@@ -97,8 +97,7 @@ class ReviewView @JvmOverloads constructor(
             }
         })
 
-        MediaSendInsets.padTop(findViewById(R.id.review_topbar))
-        MediaSendInsets.padBottom(findViewById(R.id.review_bottombar))
+        MediaSendContentFit.chrome(this, pager, R.id.review_topbar, R.id.review_bottombar)
     }
 
     fun attach(loader: ThumbnailLoader, previewPx: Int) {

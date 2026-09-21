@@ -64,7 +64,7 @@
             android:layout_height="44dp"
             android:gravity="center"
             android:orientation="horizontal"
-            android:visibility="gone" />
+            android:visibility="invisible" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -76,7 +76,7 @@
                 android:id="@+id/tool_pen"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginEnd="10dp"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/ms_circle_button"
                 android:contentDescription="@string/media_send_pen"
                 android:src="@drawable/ic_ms_draw" />
@@ -85,7 +85,7 @@
                 android:id="@+id/tool_highlight"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginEnd="10dp"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/ms_circle_button"
                 android:contentDescription="@string/media_send_highlight"
                 android:src="@drawable/ic_ms_highlight" />
@@ -94,16 +94,25 @@
                 android:id="@+id/tool_blur"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginEnd="10dp"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/ms_circle_button"
                 android:contentDescription="@string/media_send_blur"
                 android:src="@drawable/ic_ms_blur" />
 
             <ImageButton
+                android:id="@+id/tool_eraser"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/ms_circle_button"
+                android:contentDescription="@string/media_send_eraser"
+                android:src="@drawable/ic_ms_eraser" />
+
+            <ImageButton
                 android:id="@+id/tool_crop"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginEnd="10dp"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/ms_circle_button"
                 android:contentDescription="@string/media_send_crop"
                 android:src="@drawable/ic_ms_crop" />

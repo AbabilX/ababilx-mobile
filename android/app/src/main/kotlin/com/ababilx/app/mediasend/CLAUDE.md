@@ -28,7 +28,7 @@ MediaSendActivity          lifecycle only: permissions, picker results, export
  ├─ review/ReviewView      pager + rail + edit + quality + caption + Send
  │   ├─ AddMoreSheetView   "+" → Camera / Gallery / Files
  │   └─ QualitySheetView   Standard / High
- └─ editor/EditorView      pen / highlighter / blur / crop / rotate / undo
+ └─ editor/EditorView      pen / highlighter / blur / eraser / crop / rotate / undo
 ```
 
 Review chrome icons (`ic_ms_back`, `ic_ms_send`, `ic_ms_draw`, `ic_ms_add`,
@@ -147,6 +147,12 @@ under the cap.
 - **Blur is painted with the photo.** The stroke's `Paint` carries a
   `BitmapShader` of the downscaled-then-upscaled image, so blurring needs no
   extra layer, no clip, and exports identically. Do not reach for RenderScript.
+- **The eraser is a stroke painted with the original photo** (`DrawTool.ERASER`),
+  the same trick as blur. It covers whatever was drawn before it, undo drops
+  it like any stroke, and it exports identically. It does not delete points
+  from earlier strokes — that would break the instructions-not-pixels model.
+- **Crop handles are sized in dp** (`CropBox(density)`): 4dp thick, 26dp arms,
+  36dp touch slop. They were raw pixels, a hairline on a 3x screen.
 - **Every bitmap that leaves `MediaBitmaps` is EXIF-upright.** A canvas does
   not read the orientation tag; a stroke on a sideways preview would land in
   the wrong place on the file.
@@ -238,6 +244,14 @@ under the cap.
   (gallery footer, review's rail+caption, editor's tool row) pads for the
   navigation bar and the IME together, so the caption field also rises clear
   of the keyboard.
+- **The picture sits between the bars, never under them**
+  (`MediaSendContentFit.chrome`, review pager and editor canvas). The bars
+  used to float over a full-screen image, so a tall photo ran behind the
+  close/done row and the tool row, and a stroke drawn there landed under a
+  button. The content view takes margins equal to the bars' measured heights.
+  The keyboard is not followed (the margin holds while it is up), and the
+  editor's colour strip goes `INVISIBLE`, never `GONE`, so switching to blur
+  or crop does not resize the picture.
 - The FileProvider authority `${applicationId}.mediasend.fileprovider` exposes
   **only** `cacheDir/mediasend/`, and exists solely so the camera app can write
   the shot it was asked for.

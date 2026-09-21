@@ -11,7 +11,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import com.ababilx.app.R
 import com.ababilx.app.mediasend.DrawTool
-import com.ababilx.app.mediasend.MediaSendInsets
+import com.ababilx.app.mediasend.MediaSendContentFit
 import com.ababilx.app.mediasend.PickedItem
 
 /**
@@ -47,6 +47,7 @@ class EditorView @JvmOverloads constructor(
         tools[DrawTool.PEN] = findViewById(R.id.tool_pen)
         tools[DrawTool.HIGHLIGHT] = findViewById(R.id.tool_highlight)
         tools[DrawTool.BLUR] = findViewById(R.id.tool_blur)
+        tools[DrawTool.ERASER] = findViewById(R.id.tool_eraser)
 
         findViewById<ImageButton>(R.id.editor_cancel).setOnClickListener { onCancel?.invoke() }
         findViewById<ImageButton>(R.id.editor_undo).setOnClickListener { canvas.undo() }
@@ -58,8 +59,7 @@ class EditorView @JvmOverloads constructor(
         buildColorStrip()
         selectTool(DrawTool.PEN)
 
-        MediaSendInsets.padTop(findViewById(R.id.editor_topbar))
-        MediaSendInsets.padBottom(findViewById(R.id.editor_bottombar))
+        MediaSendContentFit.chrome(this, canvas, R.id.editor_topbar, R.id.editor_bottombar)
     }
 
     fun open(bitmap: Bitmap?, item: PickedItem) {
@@ -90,7 +90,7 @@ class EditorView @JvmOverloads constructor(
     private fun toggleCrop() {
         cropping = !cropping
         canvas.mode = if (cropping) EditableImageView.Mode.CROP else EditableImageView.Mode.DRAW
-        colors.visibility = if (cropping) GONE else VISIBLE
+        colors.visibility = if (cropping) INVISIBLE else VISIBLE
         refreshCropButton()
     }
 
@@ -109,8 +109,9 @@ class EditorView @JvmOverloads constructor(
                 if (key == tool) R.drawable.ms_circle_accent else R.drawable.ms_circle_button,
             )
         }
-        // Blur has no colour of its own — it paints with the photo.
-        colors.visibility = if (tool == DrawTool.BLUR) GONE else VISIBLE
+        // Blur and eraser have no colour — both paint with the photo. INVISIBLE,
+        // not GONE: the strip keeps its height so the picture never jumps.
+        colors.visibility = if (tool == DrawTool.BLUR || tool == DrawTool.ERASER) INVISIBLE else VISIBLE
     }
 
     private fun buildColorStrip() {
