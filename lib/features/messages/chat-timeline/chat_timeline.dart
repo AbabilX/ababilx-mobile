@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../chat-select/message_selection.dart';
-import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'chat_timeline_jump.dart';
 import 'chat_timeline_load.dart';
+import 'chat_timeline_selection.dart';
 import 'chat_timeline_unread.dart';
 import 'chat_timeline_view.dart';
 import 'timeline_reveal_policy.dart';
@@ -16,6 +15,7 @@ class ChatTimeline extends ConsumerStatefulWidget {
     required this.conversationId,
     this.threadRootId,
     this.header,
+    this.leading,
   });
 
   final String conversationId;
@@ -24,12 +24,19 @@ class ChatTimeline extends ConsumerStatefulWidget {
   /// Top bar that auto-hides while scrolling message history (Wall-style).
   final Widget? header;
 
+  /// Scrolls as the oldest row of the list (a thread's root message).
+  final Widget? leading;
+
   @override
   ConsumerState<ChatTimeline> createState() => _ChatTimelineState();
 }
 
 class _ChatTimelineState extends ConsumerState<ChatTimeline>
-    with ChatTimelineLoad, ChatTimelineUnread, ChatTimelineJump {
+    with
+        ChatTimelineLoad,
+        ChatTimelineUnread,
+        ChatTimelineJump,
+        ChatTimelineSelection {
   final _scrollCtrl = ScrollController();
 
   @override
@@ -137,21 +144,6 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
     super.dispose();
   }
 
-  /// Drops selected ids the feed no longer carries — a message deleted from
-  /// another device, or one that fell out of the loaded page. Signal does the
-  /// same on `onItemRangeRemoved`; without it the count keeps promising rows
-  /// no action can reach. Deferred a frame because it writes to a provider.
-  void _pruneSelection(List<ChatMessage> messages) {
-    if (!ref.read(messageSelectionProvider).isActiveIn(widget.conversationId)) {
-      return;
-    }
-    final present = messages.map((m) => m.id).toSet();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(messageSelectionProvider.notifier).retain(present);
-    });
-  }
-
   ChatFeed _feedOf(ChatState chat) =>
       chat.feedFor(widget.conversationId, threadRootId: widget.threadRootId);
 
@@ -173,13 +165,14 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     }
     _previousNewestMessageId = newestMessageId;
-    _pruneSelection(feed.messages);
+    pruneSelection(feed.messages);
 
     return jumpScope(
       child: ChatTimelineView(
         conversationId: widget.conversationId,
         threadRootId: widget.threadRootId,
         header: widget.header,
+        leading: widget.leading,
         headerVisible: _headerVisible,
         messages: feed.messages,
         loading: feed.loading,

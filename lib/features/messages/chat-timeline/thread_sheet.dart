@@ -26,35 +26,18 @@ void openThreadSheet(
               children: [
                 ThreadHeader(conversation: conversation),
                 Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) => Column(
-                      children: [
-                        // The root is capped and scrolls on its own. A long
-                        // root (a webhook order, a pasted log) used to take
-                        // its full height, so once the keyboard shrank the
-                        // screen the composer was pushed off the bottom. The
-                        // replies + composer always keep at least 200px.
-                        ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: (constraints.maxHeight - 200).clamp(
-                              0.0,
-                              constraints.maxHeight * 0.4,
-                            ),
-                          ),
-                          child: SingleChildScrollView(
-                            child: ThreadRootCard(
-                              message: root,
-                              conversationId: conversationId,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: ChatTimeline(
-                            conversationId: conversationId,
-                            threadRootId: root.id,
-                          ),
-                        ),
-                      ],
+                  // The root scrolls with the replies, as the list's oldest
+                  // row. It used to sit in its own box capped at 40% of the
+                  // screen, so on a short phone a long root's "Read more"
+                  // fell below that box and read as unreachable. In the list
+                  // it is always reachable, and the composer still keeps its
+                  // place at the bottom however long the root is.
+                  child: ChatTimeline(
+                    conversationId: conversationId,
+                    threadRootId: root.id,
+                    leading: ThreadRootCard(
+                      message: root,
+                      conversationId: conversationId,
                     ),
                   ),
                 ),

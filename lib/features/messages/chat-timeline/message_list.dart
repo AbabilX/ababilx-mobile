@@ -31,6 +31,7 @@ class MessageList extends ConsumerWidget {
     this.onRetry,
     this.unreadAnchorId,
     this.unreadCount = 0,
+    this.leading,
   });
 
   final List<ChatMessage> messages;
@@ -51,14 +52,33 @@ class MessageList extends ConsumerWidget {
   /// The number that bar reports.
   final int unreadCount;
 
+  /// Drawn above the oldest message and scrolled with the list — a thread's
+  /// root. It stays up while the replies load or fail, so those two states
+  /// become rows under it instead of replacing the whole list.
+  final Widget? leading;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (loading && messages.isEmpty) {
+    final firstLoad = loading && messages.isEmpty;
+    final failed = messages.isEmpty && error.isNotEmpty;
+    if (leading == null && firstLoad) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
-    if (messages.isEmpty && error.isNotEmpty) {
+    if (leading == null && failed) {
       return MessageListError(message: error, onRetry: onRetry);
     }
+    // Past the messages, oldest end first: the spinner, then [leading].
+    final spinner = loadingMore || firstLoad;
+    final tail = [
+      if (spinner)
+        const Padding(
+          padding: EdgeInsets.all(12),
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        )
+      else if (failed)
+        MessageListError(message: error, onRetry: onRetry),
+      ?leading,
+    ];
     final items = buildChatTimelineItems(messages);
     final idIndex = <String, int>{
       for (var i = 0; i < messages.length; i++) messages[i].id: i,
@@ -81,14 +101,9 @@ class MessageList extends ConsumerWidget {
       // too. Every item carries the side inset itself — for a message row it
       // is [SelectableMessageRow], which grows it while selecting.
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
-      itemCount: items.length + (loadingMore ? 1 : 0),
+      itemCount: items.length + tail.length,
       itemBuilder: (context, i) {
-        if (loadingMore && i == items.length) {
-          return const Padding(
-            padding: EdgeInsets.all(12),
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          );
-        }
+        if (i >= items.length) return tail[i - items.length];
         final idx = items.length - 1 - i;
         final item = items[idx];
         final prevAnchor = idx > 0 ? items[idx - 1].anchor : null;

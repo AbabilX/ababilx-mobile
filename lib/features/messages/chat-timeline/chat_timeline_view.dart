@@ -19,6 +19,7 @@ class ChatTimelineView extends ConsumerWidget {
     required this.conversationId,
     required this.threadRootId,
     required this.header,
+    this.leading,
     required this.headerVisible,
     required this.messages,
     required this.loading,
@@ -38,6 +39,7 @@ class ChatTimelineView extends ConsumerWidget {
   final String conversationId;
   final String? threadRootId;
   final Widget? header;
+  final Widget? leading;
   final bool headerVisible;
   final List<ChatMessage> messages;
   final bool loading;
@@ -106,6 +108,7 @@ class ChatTimelineView extends ConsumerWidget {
                   onRetry: onRetry,
                   unreadAnchorId: unreadAnchorId,
                   unreadCount: unreadCount,
+                  leading: leading,
                 ),
                 Positioned(
                   right: 0,
