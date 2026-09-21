@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 
 import '../jpack/data/jpack_preview.dart';
 import 'data/models/chat_models.dart';
+import 'markdown/message_markdown_preview.dart';
 import 'tiptap_plain_text.dart';
 
 enum ChatListFilter { all, unread }
@@ -98,7 +99,9 @@ ChatListPreview chatListPreview(ChatConversation conv, String? currentUserId) {
   } else if (hasBody) {
     text = tiptapToPreviewText(rawBody);
     if (text.isEmpty || _looksLikeJson(text)) {
-      text = extractFromBrokenTiptapJson(rawBody).trim();
+      text = markdownToPreviewText(extractFromBrokenTiptapJson(rawBody))
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
     }
     if (_looksLikeJson(text)) text = '';
   }
