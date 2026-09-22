@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../shared/widgets/app_avatar.dart';
 import '../../../profile/providers/user_status_provider.dart';
 import '../../../profile/widgets/user_status_badge.dart';
+import '../../chat_icon.dart';
 import 'set_status_sheet.dart';
 
-/// Centered identity block: avatar → name → tappable status.
+/// Centered identity block: avatar → name → tappable status (pen = editable).
 class YouIdentity extends ConsumerWidget {
   const YouIdentity({
     super.key,
@@ -40,16 +42,29 @@ class YouIdentity extends ConsumerWidget {
             borderRadius: BorderRadius.circular(999),
             onTap: () => showSetStatusSheet(context, ref, currentUserId),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: status != null
-                  ? UserStatusBadge(status: status)
-                  : Text(
-                      "What's your status?",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: status != null
+                        ? UserStatusBadge(status: status)
+                        : Text(
+                            "What's your status?",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 6),
+                  ChatIcon(
+                    HugeIcons.strokeRoundedEdit02,
+                    size: 14,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
