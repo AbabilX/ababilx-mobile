@@ -1,4 +1,6 @@
 import 'package:ababilx/features/messages/chat-timeline/message_long_body.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -27,5 +29,33 @@ void main() {
     test('trailing blank lines still count as lines', () {
       expect(MessageLongBody.isLong('x${'\n' * 13}'), isTrue);
     });
+  });
+
+  testWidgets('collapsed body does not create a GPU shader layer', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 320,
+            child: CollapsedBodyFade(
+              child: Text(
+                'A long message body that is clipped before Read more.\n'
+                'The Android renderer must not composite it through a shader.',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.layers.whereType<ShaderMaskLayer>(),
+      isEmpty,
+      reason:
+          'ShaderMask over the clipped long-message scroll layer produces '
+          'the diagonal raster artefact seen on Android.',
+    );
   });
 }

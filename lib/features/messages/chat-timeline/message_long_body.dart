@@ -38,24 +38,21 @@ class MessageLongBody {
       '\n'.allMatches(plain).length + 1 >= maxLines;
 }
 
-/// Fades the last few lines of a clipped body out into the bubble fill, so the
-/// cut looks deliberate instead of broken.
+/// Keeps a collapsed body inside its paint bounds without creating an
+/// offscreen shader layer.
+///
+/// This used to apply a `ShaderMask` fade. On Android that mask was composited
+/// over the clipped scroll layer used by [TiptapViewer], and sufficiently long
+/// bodies could rasterise with a diagonal trail across the text. The adjacent
+/// "Read more" row already makes the truncation explicit, so a hard clip is
+/// both clearer and safe for the renderer.
 class CollapsedBodyFade extends StatelessWidget {
   const CollapsedBodyFade({super.key, required this.child});
 
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => ShaderMask(
-    blendMode: BlendMode.dstIn,
-    shaderCallback: (rect) => const LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [Colors.black, Colors.black, Colors.transparent],
-      stops: [0, 0.84, 1],
-    ).createShader(rect),
-    child: child,
-  );
+  Widget build(BuildContext context) => ClipRect(child: child);
 }
 
 /// Signal's "Read More". It opens the message full screen rather than growing
