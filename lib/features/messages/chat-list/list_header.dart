@@ -63,6 +63,7 @@ class ChatListHeader extends ConsumerWidget {
                 child: Material(
                   color: Colors.transparent,
                   child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => _openYouSheet(context, ref),
                     child: SizedBox(
                       width: double.infinity,
