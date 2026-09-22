@@ -984,12 +984,13 @@ Same date, `features/profile/screens/sessions_screen.dart`. The screen had a
 paragraph of explanation at the top, two labelled buttons on every row, and no
 way to add a device: the button that starts a link was never on it.
 
-Now: illustration + one sentence + **Link a new device** (the scanner), a
-divider, **My linked devices**, then the end-to-end-encryption footer. Rename
-and Sign out moved into each row's ⋮, and "sign out all other devices" into the
-app-bar overflow — a rare, heavy action does not belong under the list as a red
-button. The current session never offers Sign out here; that is Settings →
-Sign out, which ends authentication but preserves this device's message key.
+Now: pinned hero (illustration + one sentence + **Link a new device** + a
+circular **Sign out all other devices** on its right), then a scrolling **My
+linked devices** list and the end-to-end-encryption footer. Rename and Sign out
+live in each row's ⋮. The hero stays fixed so Link stays reachable on a long
+list; the circular logout is disabled when this phone is the only session.
+The current session never offers Sign out here; that is Settings → Sign out,
+which ends authentication but preserves this device's message key.
 
 Rows show **dates** ("Linked 26/08/26"), not "3 days ago": the list is read to
 recognise a device, and a relative age answers neither question. The drawing is

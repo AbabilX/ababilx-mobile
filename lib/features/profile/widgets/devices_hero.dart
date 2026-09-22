@@ -7,6 +7,10 @@ import 'package:flutter/material.dart';
 /// get my account onto my laptop?" before it answers "what is already signed
 /// in?". The list below is the second question.
 ///
+/// Stays pinned above the device list — it is the common action on this
+/// screen, so scrolling it away with a long list made the primary button
+/// harder to reach than the rare "sign out others" overflow used to be.
+///
 /// The drawing is widgets, not an asset: two rounded slabs and three bars.
 /// A shipped PNG would need a dark variant, a 3x variant and a designer for
 /// every tweak, for something this size.
@@ -16,11 +20,20 @@ class DevicesHero extends StatelessWidget {
     required this.caption,
     required this.buttonLabel,
     required this.onLink,
+    required this.signOutOthersLabel,
+    this.onSignOutOthers,
   });
 
   final String caption;
   final String buttonLabel;
   final VoidCallback onLink;
+
+  /// Tooltip / semantics for the circular button beside Link.
+  final String signOutOthersLabel;
+
+  /// Null when this phone is the only signed-in session — the circle stays
+  /// visible but disabled so the row width does not jump when a peer leaves.
+  final VoidCallback? onSignOutOthers;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +41,7 @@ class DevicesHero extends StatelessWidget {
     final colors = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
       child: Column(
         children: [
           const _DevicesArt(),
@@ -41,16 +54,48 @@ class DevicesHero extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonal(
-              onPressed: onLink,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: const StadiumBorder(),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.tonal(
+                  onPressed: onLink,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: Text(buttonLabel),
+                ),
               ),
-              child: Text(buttonLabel),
-            ),
+              const SizedBox(width: 12),
+              // Right of Link: destructive, rare, one-tap — a labelled red
+              // button under the list used to compete with the primary CTA.
+              // Same 52px height as the tonal Link pill so the row reads as
+              // one control group; always error-tinted so a disabled state
+              // (this phone alone) is still recognisable, not invisible.
+              SizedBox(
+                width: 52,
+                height: 52,
+                child: IconButton.filledTonal(
+                  onPressed: onSignOutOthers,
+                  tooltip: signOutOthersLabel,
+                  style: IconButton.styleFrom(
+                    foregroundColor: colors.error.withValues(
+                      alpha: onSignOutOthers == null ? 0.38 : 1,
+                    ),
+                    backgroundColor: colors.errorContainer.withValues(
+                      alpha: onSignOutOthers == null ? 0.38 : 1,
+                    ),
+                    disabledForegroundColor: colors.error.withValues(
+                      alpha: 0.38,
+                    ),
+                    disabledBackgroundColor: colors.errorContainer.withValues(
+                      alpha: 0.38,
+                    ),
+                  ),
+                  icon: const Icon(Icons.logout_rounded, size: 22),
+                ),
+              ),
+            ],
           ),
         ],
       ),

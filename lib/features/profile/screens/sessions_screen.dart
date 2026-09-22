@@ -13,13 +13,9 @@ import '../widgets/session_tile.dart';
 
 /// Linked devices — Signal's screen of the same name.
 ///
-/// Three blocks, in the order the questions arrive: link a new device, see
-/// what is already linked, and the note that says the messages on all of them
-/// are encrypted. The old version opened with a paragraph of explanation and
-/// put two labelled buttons on every row; the button that actually adds a
-/// device was nowhere on it.
-///
-/// "Link a new device" opens the scanner, which is the same act as approving a
+/// Pinned hero (link + sign-out-others) above a scrolling list of what is
+/// already linked, then the note that messages on all of them are encrypted.
+/// "Link a new device" opens the scanner — the same act as approving a
 /// desktop sign-in: the code on the other screen is what this phone reads.
 class SessionsScreen extends ConsumerStatefulWidget {
   const SessionsScreen({super.key});
@@ -48,63 +44,59 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
             icon: const Icon(Icons.refresh_rounded, size: 20),
             onPressed: () => ref.read(sessionsProvider.notifier).refresh(),
           ),
-          // Signing every other device out is a rare, heavy action: it belongs
-          // in the overflow, not as a red button under the list.
-          if (hasOthers)
-            PopupMenuButton<void>(
-              icon: const Icon(Icons.more_vert_rounded),
-              itemBuilder: (menuContext) => [
-                PopupMenuItem(
-                  onTap: _revokeOthers,
-                  child: Text(
-                    _t('devices_sign_out_others'),
-                    style: TextStyle(color: colors.error),
-                  ),
-                ),
-              ],
-            ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 32),
+      // Hero + Link / Sign-out-others stay pinned; only the device list scrolls.
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           DevicesHero(
             caption: _t('devices_hero'),
             buttonLabel: _t('devices_link_new'),
             onLink: () => QrLoginFlow.start(context, ref),
+            signOutOthersLabel: _t('devices_sign_out_others'),
+            onSignOutOthers: hasOthers ? _revokeOthers : null,
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-            child: Text(
-              _t('devices_my'),
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          Divider(height: 1, color: colors.outlineVariant),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 32),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                  child: Text(
+                    _t('devices_my'),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                ...sessionsAsync.when(
+                  loading: () => [
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 32),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  ],
+                  error: (_, _) => [
+                    DevicesNote(_t('devices_error'), color: colors.error),
+                  ],
+                  data: (sessions) => [
+                    if (sessions.isEmpty) DevicesNote(_t('devices_empty')),
+                    for (final session in sessions)
+                      SessionTile(
+                        session: session,
+                        busy: _busyId == session.id,
+                        onRename: () => _rename(session),
+                        onRevoke: () => _revoke(session),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                DevicesEncryptionNote(text: _t('devices_e2ee_note')),
+              ],
             ),
           ),
-          ...sessionsAsync.when(
-            loading: () => [
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            ],
-            error: (_, _) => [
-              DevicesNote(_t('devices_error'), color: colors.error),
-            ],
-            data: (sessions) => [
-              if (sessions.isEmpty) DevicesNote(_t('devices_empty')),
-              for (final session in sessions)
-                SessionTile(
-                  session: session,
-                  busy: _busyId == session.id,
-                  onRename: () => _rename(session),
-                  onRevoke: () => _revoke(session),
-                ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          DevicesEncryptionNote(text: _t('devices_e2ee_note')),
         ],
       ),
     );
