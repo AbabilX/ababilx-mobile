@@ -7,6 +7,8 @@ import '../../../core/localization/app_translations.dart';
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../profile/providers/user_status_provider.dart';
+import '../../profile/widgets/user_status_badge.dart';
 import '../chat_icon.dart';
 import 'chat_search.dart';
 import 'header_profile_pill.dart';
@@ -15,22 +17,20 @@ import 'you-sheet/you_sheet_action.dart';
 
 /// Chat list header: identity pill, title, search, and the QR scanner.
 ///
-/// The title is the app brand, not the section name. Messages is the app's
-/// home (`kAppHomePath`), so this header carries identity the way WhatsApp's
-/// chat list does; Calls, Wall and Board are secondary tabs and keep their own
-/// section titles. The bottom bar already names this tab, so repeating
-/// "Messages" here would spend the slot on nothing new. Because the title is
-/// identity, the avatar and the title are the same target: both open the You
-/// sheet through [_openYouSheet].
+/// The title slot is the brand ("AbabilX") until the account has a custom
+/// status — then the status takes that same slot so the header stays one
+/// line and the status does not sit beside the avatar. Messages is the app's
+/// home (`kAppHomePath`); the bottom bar already names this tab. Avatar and
+/// title both open the You sheet through [_openYouSheet].
 ///
 /// The scanner sits here because it is the one action that answers a prompt on
 /// another screen — a desktop waiting to sign in, or a new device waiting for
 /// this account's message key. Behind the avatar it was three taps deep
 /// (avatar, sheet, Scan QR code) while the other device timed out. Local Share
-/// gave up this slot for it: it is started from this phone at leisure, and it
-/// keeps its rows in the You sheet and at Settings → Local Share. The filters
-/// this row used to hold — unread and the personal/workspace scope — live in
-/// the pill row under this header now (Slack's arrangement), where the current
+/// gave up this slot for it: it is started from this phone at leisure, and the
+/// route stays wired even while its menu rows are hidden. The filters this
+/// row used to hold — unread and the personal/workspace scope — live in the
+/// pill row under this header now (Slack's arrangement), where the current
 /// selection is visible without opening anything.
 class ChatListHeader extends ConsumerWidget {
   const ChatListHeader({super.key});
@@ -39,6 +39,7 @@ class ChatListHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(profileProvider).valueOrNull;
     final name = user?.name.isNotEmpty == true ? user!.name : 'You';
+    final status = ref.watch(userStatusForProvider(user?.id));
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 8, 8),
@@ -49,17 +50,14 @@ class ChatListHeader extends ConsumerWidget {
             HeaderProfilePill(
               name: name,
               avatarUrl: user?.avatarUrl,
-              currentUserId: user?.id,
               onProfileTap: () => _openYouSheet(context, ref),
             ),
             const SizedBox(width: 14),
             Expanded(
-              // The title carries the account entry point too: tapping it
-              // opens the same You sheet as the avatar. Only the text is the
-              // target — `Align` keeps the sheet off the empty gap beside it,
-              // so a stray tap between title and search does nothing. The
-              // transparent Material exists only to host the ripple, the same
-              // way `_SearchCapsule` does it.
+              // Title (brand or status) opens the You sheet with the avatar.
+              // `Align` keeps the hit target on the text only — a stray tap
+              // between title and search does nothing. Transparent Material
+              // hosts the ripple the same way `_SearchCapsule` does.
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Material(
@@ -67,10 +65,17 @@ class ChatListHeader extends ConsumerWidget {
                   child: InkWell(
                     onTap: () => _openYouSheet(context, ref),
                     borderRadius: BorderRadius.circular(8),
-                    child: Text(
-                      'AbabilX',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                    // Full width so a long status ellipsises inside the
+                    // title slot instead of pushing search off-screen.
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: status != null
+                          ? UserStatusBadge(status: status, plain: true)
+                          : Text(
+                              'AbabilX',
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
                     ),
                   ),
                 ),

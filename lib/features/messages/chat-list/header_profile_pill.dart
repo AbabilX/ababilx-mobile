@@ -1,48 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/app_avatar.dart';
-import '../../profile/providers/user_status_provider.dart';
-import '../../profile/widgets/user_status_badge.dart';
 
-/// Right app-bar: optional plain status + clean profile avatar.
-class HeaderProfilePill extends ConsumerWidget {
+/// Chat-list header avatar — status lives in the title slot, not beside this.
+class HeaderProfilePill extends StatelessWidget {
   const HeaderProfilePill({
     super.key,
     required this.name,
     this.avatarUrl,
-    this.currentUserId,
     required this.onProfileTap,
   });
 
   final String name;
   final String? avatarUrl;
-  final String? currentUserId;
   final VoidCallback onProfileTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final status = ref.watch(userStatusForProvider(currentUserId));
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (status != null) ...[
-          // No chip bg — kept short so it never crowds the workspace title.
-          UserStatusBadge(
-            status: status,
-            compact: true,
-            plain: true,
-            maxWidth: 72,
-          ),
-          const SizedBox(width: 8),
-        ],
-        GestureDetector(
-          onTap: onProfileTap,
-          child: _PillAvatar(name: name, url: avatarUrl),
-        ),
-      ],
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onProfileTap,
+      child: _PillAvatar(name: name, url: avatarUrl),
     );
   }
 }
