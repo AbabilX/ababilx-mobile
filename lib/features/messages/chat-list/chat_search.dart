@@ -49,6 +49,22 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
       ? super.searchFieldLabel ?? 'Search'
       : 'Search in $conversationTitle';
 
+  /// SearchDelegate paints its bar plain white (grey[900] in dark), which
+  /// sits as a band over the results scaffold. Take the scaffold's own
+  /// colour so bar and suggestions read as one surface.
+  @override
+  ThemeData appBarTheme(BuildContext context) {
+    final base = super.appBarTheme(context);
+    return base.copyWith(
+      appBarTheme: base.appBarTheme.copyWith(
+        backgroundColor: base.scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+    );
+  }
+
   @override
   List<Widget>? buildActions(BuildContext context) => [
     IconButton(
