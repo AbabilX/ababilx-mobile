@@ -102,7 +102,10 @@ class _ChatListState extends ConsumerState<ChatList> {
                     )
                   : rows.isEmpty
                   ? ConversationListEmpty(
+                      filter: _filter,
                       onStart: () => context.push('/messages/new'),
+                      onShowAll: () =>
+                          setState(() => _filter = ChatListFilter.all),
                     )
                   : ConversationRows(
                       conversations: rows,

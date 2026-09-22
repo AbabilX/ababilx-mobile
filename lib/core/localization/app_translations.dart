@@ -383,6 +383,9 @@ class AppTranslations {
       'chat_request_sent': 'Connection request sent',
       'chat_empty_title': 'Start a conversation',
       'chat_empty_body': 'Find someone or create a group to begin messaging.',
+      'chat_unread_empty_title': 'No unread messages',
+      'chat_unread_empty_body': 'You’re all caught up. Switch back to see every chat.',
+      'chat_show_all_messages': 'Show all messages',
       'chat_gallery': 'Gallery',
       'chat_camera': 'Camera',
       'chat_file': 'File',
@@ -1103,6 +1106,10 @@ class AppTranslations {
       'chat_empty_title': 'কথোপকথন শুরু করুন',
       'chat_empty_body':
           'কাউকে খুঁজুন অথবা বার্তা পাঠাতে একটি গ্রুপ তৈরি করুন।',
+      'chat_unread_empty_title': 'কোনো অপঠিত বার্তা নেই',
+      'chat_unread_empty_body':
+          'সব পড়ে ফেলেছেন। সব চ্যাট দেখতে ফিরে যান।',
+      'chat_show_all_messages': 'সব বার্তা দেখুন',
       'chat_gallery': 'গ্যালারি',
       'chat_camera': 'ক্যামেরা',
       'chat_file': 'ফাইল',
