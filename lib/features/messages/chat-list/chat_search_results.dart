@@ -9,6 +9,7 @@ import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 import 'chat_search_matches.dart';
 import 'chat_search_section_header.dart';
+import 'chat_search_suggestions.dart';
 import 'conversation_row.dart';
 
 /// Signal-Android order: name-matched chats, then message keyword hits.
@@ -35,6 +36,11 @@ class ChatSearchResults extends ConsumerWidget {
 
     final needle = query.trim();
     if (needle.isEmpty) {
+      // Inside one chat's search, other chats are not what is being looked
+      // for — keep the plain hint there.
+      if (conversationId == null) {
+        return ChatSearchSuggestions(onOpenConversation: onOpenConversation);
+      }
       return Center(child: Text(tr('chat_search_min_chars')));
     }
 
