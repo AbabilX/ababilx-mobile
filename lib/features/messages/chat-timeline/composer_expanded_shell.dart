@@ -35,7 +35,9 @@ class ComposerExpandedShell extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final bar = Material(
       color: colors.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+      // Nested with the input pill (radius 26, 10px side inset): outer =
+      // inner + padding, or the white corner reads flatter than the grey pill.
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
       clipBehavior: Clip.antiAlias,
       elevation: 8,
       child: SafeArea(
