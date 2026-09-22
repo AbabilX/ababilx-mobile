@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../chat-date-divider/index.dart';
+import '../chat-typing/typing_bubble.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import '../wallpaper/chat_wallpaper_provider.dart';
@@ -84,6 +85,9 @@ class MessageList extends ConsumerWidget {
       for (var i = 0; i < messages.length; i++) messages[i].id: i,
     };
     final rows = timelineRowKeys(items);
+    // DM only: reserve index 0 (newest end of a reverse list) for the typing
+    // bubble. Header "typing…" stays; groups keep the header alone for now.
+    final typingSlot = dmTypingBubbleSlot(ref, conversationId) ? 1 : 0;
     final hasWallpaper = ref
         .watch(chatWallpaperProvider)
         .forChat(conversationId)
@@ -94,17 +98,27 @@ class MessageList extends ConsumerWidget {
       // Rows are built a screen ahead of the scroll, so a photo has decoded
       // before it is on screen rather than fading in as it arrives.
       scrollCacheExtent: const ScrollCacheExtent.viewport(1),
-      findChildIndexCallback: (key) =>
-          key is ValueKey<String> ? rows.positions[key.value] : null,
+      findChildIndexCallback: (key) {
+        if (key is! ValueKey<String>) return null;
+        final pos = rows.positions[key.value];
+        if (pos == null) return null;
+        return pos + typingSlot;
+      },
       // No horizontal padding: a selected row's shade has to reach both
       // screen edges, and the check-circle gutter has to start at the edge
       // too. Every item carries the side inset itself — for a message row it
       // is [SelectableMessageRow], which grows it while selecting.
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
-      itemCount: items.length + tail.length,
+      itemCount: items.length + tail.length + typingSlot,
       itemBuilder: (context, i) {
-        if (i >= items.length) return tail[i - items.length];
-        final idx = items.length - 1 - i;
+        if (typingSlot == 1 && i == 0) {
+          return DmTypingBubble(conversationId: conversationId);
+        }
+        final listIndex = i - typingSlot;
+        if (listIndex >= items.length) {
+          return tail[listIndex - items.length];
+        }
+        final idx = items.length - 1 - listIndex;
         final item = items[idx];
         final prevAnchor = idx > 0 ? items[idx - 1].anchor : null;
         final showDate =
@@ -115,7 +129,7 @@ class MessageList extends ConsumerWidget {
             _itemContainsMessageId(item, unreadAnchorId!);
 
         return Column(
-          key: ValueKey(rows.keys[i]),
+          key: ValueKey(rows.keys[listIndex]),
           children: [
             if (showDate)
               _inset(

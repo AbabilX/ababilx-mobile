@@ -58,6 +58,15 @@ Rebuilt 2026-09-03. The chat used to be Slack: every message a full-width row
 with an avatar and a name, your own included. It is now bubbles — yours right
 on the accent, theirs left on a raised surface.
 
+## Typing indicator — header + DM bubble
+
+Header subtitle still shows "typing…" (DM) / "Alice is typing…" (group). On a
+**DM with a peer** the timeline also bumps an animated
+`HugeIcons.strokeRoundedThoughtBubble` at the newest end
+(`chat-typing/typing_bubble.dart` + `typing_thought.dart`). Groups keep the
+header only for now. Do not drop the header when adding the bubble — both are
+intentional. Note-to-self and feeds never type.
+
 ## Autolink in bubbles
 
 `TiptapViewer` → `TiptapInline.linkify` runs `detectAutolinks` on every text

@@ -75,7 +75,7 @@ dependencies:
   # are all shown small, so they are exported as JPEG instead — see
   # lib/shared/media/crop_render.dart for why that trade is worth making.
   image: ^4.8.0
-  hugeicons: ^1.1.7
+  hugeicons: ^1.2.0
   # Local chat cache (SQLite via Drift — cache-first sidebar)
   drift: ^2.34.2
   path: ^1.9.1
