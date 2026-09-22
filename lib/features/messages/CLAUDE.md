@@ -940,7 +940,8 @@ show.
 ```
 chat list header  ->  scanner        (the thing that reads a code)
 Settings, beside your name -> /settings/qr   (the thing you hold up)
-Settings -> Local Share, You sheet -> Local Share  (unchanged, both kept)
+Settings → Local Share and You sheet → Local Share are HIDDEN for now
+ (route + LocalShareSync stay; re-enable the two menu rows when ready)
 QR glyph is always HugeIcons.strokeRoundedQrCode (header, Settings, empty
 state, scan button). ChatIcon / PreviewIcon stroke is 1.2 so they stay light.
 ```

@@ -82,12 +82,8 @@ class SettingsSections extends ConsumerWidget {
             await ref.read(profileProvider.notifier).updateLanguage(picked);
           },
         ),
-        SettingsRow(
-          icon: HugeIcons.strokeRoundedFolderTransfer,
-          title: t('settings_local_share'),
-          subtitle: t('settings_local_share_sub'),
-          onTap: () => context.push('/local-share'),
-        ),
+        // Local Share hub is intentionally hidden from Settings for now;
+        // the feature (route + sync) stays wired for a later re-enable.
         // A handle is what a QR code carries, so it sits directly above the
         // switches that decide who else can find you by one.
         SettingsRow(
