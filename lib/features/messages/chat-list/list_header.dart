@@ -62,11 +62,9 @@ class ChatListHeader extends ConsumerWidget {
                 alignment: Alignment.centerLeft,
                 child: Material(
                   color: Colors.transparent,
-                  child: InkWell(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => _openYouSheet(context, ref),
-                    borderRadius: BorderRadius.circular(8),
-                    // Full width so a long status ellipsises inside the
-                    // title slot instead of pushing search off-screen.
                     child: SizedBox(
                       width: double.infinity,
                       child: status != null
