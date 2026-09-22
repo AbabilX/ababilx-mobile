@@ -16,6 +16,7 @@ import '../data/ghost_api.dart';
 import '../data/ghost_session.dart';
 import '../protocol/ghost_file_assembler.dart';
 import '../protocol/ghost_frames.dart';
+import '../protocol/ghost_item_rules.dart';
 import '../native/ghost_blobs.dart';
 import '../webrtc/ghost_file_sender.dart';
 import '../webrtc/ghost_peer.dart';
@@ -26,6 +27,7 @@ part 'ghost_provider_content.dart';
 part 'ghost_provider_end.dart';
 part 'ghost_provider_link.dart';
 part 'ghost_provider_signal.dart';
+part 'ghost_provider_view.dart';
 
 /// How long an invite rings — the server's `PendingTTL`.
 const ghostInviteWindow = Duration(seconds: 60);
@@ -66,6 +68,7 @@ abstract class _GhostBase extends Notifier<GhostState> {
   void _sendSignal(String kind, Map<String, dynamic>? payload);
   void _onText(String raw);
   void _onBinary(Uint8List bytes);
+  void _onPeerViewed(String id);
   void _lost(String why);
   void _finish(String reason, {required bool byMe, required bool notifyServer});
   void _teardown();
@@ -79,7 +82,7 @@ abstract class _GhostBase extends Notifier<GhostState> {
 /// the property worth defending here: a helper that "just caches" something
 /// would quietly break the promise the feature is named after.
 class GhostNotifier extends _GhostBase
-    with _GhostSignal, _GhostLink, _GhostContent, _GhostEnd {
+    with _GhostSignal, _GhostLink, _GhostContent, _GhostView, _GhostEnd {
   @override
   GhostState build() {
     final sub = ref.read(wsClientProvider).events.listen(_onEvent);

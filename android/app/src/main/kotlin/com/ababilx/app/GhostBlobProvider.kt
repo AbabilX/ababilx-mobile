@@ -115,6 +115,17 @@ class GhostBlobProvider : ContentProvider() {
       return Uri.parse("content://${authority(context)}/blob/$id")
     }
 
+    /**
+     * A seekable, RAM-backed descriptor over a blob, for this process's own
+     * readers ([GhostPdfDocuments]). Null below API 26, where only a pipe
+     * exists and a PDF renderer cannot use one.
+     */
+    fun readDescriptor(context: Context, uri: Uri): ParcelFileDescriptor? {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null
+      val blob = blobs[uri.lastPathSegment ?: ""] ?: return null
+      return seekableDescriptor(context, blob.bytes)
+    }
+
     /** The burn: overwrite every array, then forget it. */
     fun clear() {
       val held = blobs.values.toList()

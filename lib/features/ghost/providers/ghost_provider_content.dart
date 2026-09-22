@@ -29,9 +29,17 @@ mixin _GhostContent on _GhostBase {
     return true;
   }
 
-  Future<void> sendFile(String name, String mime, Uint8List bytes) async {
+  Future<void> sendFile(
+    String name,
+    String mime,
+    Uint8List bytes, {
+    GhostItemRules rules = GhostItemRules.none,
+  }) async {
     final sender = _sender;
-    if (!state.canSend || sender == null) return;
+    if (!state.canSend || sender == null) {
+      bytes.fillRange(0, bytes.length, 0);
+      return;
+    }
     if (bytes.length > maxGhostFileBytes) {
       bytes.fillRange(0, bytes.length, 0);
       state = state.copyWith(error: 'ghost_file_too_large');
@@ -43,6 +51,9 @@ mixin _GhostContent on _GhostBase {
       mime: mime,
       size: bytes.length,
       at: DateTime.now().millisecondsSinceEpoch,
+      rules: mime.startsWith('image/')
+          ? rules
+          : GhostItemRules(allowSave: rules.allowSave),
     );
     _append(
       GhostItem(
@@ -53,6 +64,7 @@ mixin _GhostContent on _GhostBase {
         mime: mime,
         size: header.size,
         bytes: bytes,
+        rules: header.rules,
       ),
     );
     final ok = await sender.send(
@@ -100,6 +112,7 @@ mixin _GhostContent on _GhostBase {
             fileName: header.name,
             mime: header.mime,
             size: header.size,
+            rules: header.rules,
           ),
         );
       case GhostTypingFrame(:final on):
@@ -110,6 +123,8 @@ mixin _GhostContent on _GhostBase {
             state = state.copyWith(peerTyping: false);
           });
         }
+      case GhostViewedFrame(:final id):
+        _onPeerViewed(id);
       case GhostBurnFrame():
         _finish(GhostEndReason.burn, byMe: false, notifyServer: false);
       case GhostLeaveFrame():

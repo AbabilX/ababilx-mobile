@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'ghost_item_rules.dart';
+
 /// Wire format of the Ghost Chat data channel, version 1.
 ///
 /// Text frames are JSON; binary frames are file chunks. One ordered, reliable
@@ -9,8 +11,10 @@ import 'dart:convert';
 ///
 /// ```
 /// {"t":"msg","id":"…","body":"hi","at":1726570000000}
-/// {"t":"file","id":"…","name":"a.jpg","mime":"image/jpeg","size":12345,"at":…}
+/// {"t":"file","id":"…","name":"a.jpg","mime":"image/jpeg","size":12345,"at":…,
+///  "view":"once"|5|10|30, "save":true}  // optional; view is photos only
 /// <binary chunk> × ceil(size / 16 KiB)
+/// {"t":"viewed","id":"…"}   // a timed photo ran out: both phones zero it
 /// {"t":"typing","on":true}
 /// {"t":"burn"}   {"t":"leave"}
 /// ```
@@ -36,6 +40,7 @@ sealed class GhostFrame {
       'msg' => GhostTextFrame._from(json),
       'file' => GhostFileHeader._from(json),
       'typing' => GhostTypingFrame(on: json['on'] == true),
+      'viewed' => GhostViewedFrame._from(json),
       'burn' => const GhostBurnFrame(),
       'leave' => const GhostLeaveFrame(),
       _ => null,
@@ -85,12 +90,16 @@ class GhostFileHeader extends GhostFrame {
     required this.mime,
     required this.size,
     required this.at,
+    this.rules = GhostItemRules.none,
   });
   final String id;
   final String name;
   final String mime;
   final int size;
   final int at;
+
+  /// Timer and save permission. Absent = no timer, no saving.
+  final GhostItemRules rules;
 
   int get chunkCount => (size + ghostChunkBytes - 1) ~/ ghostChunkBytes;
 
@@ -99,14 +108,22 @@ class GhostFileHeader extends GhostFrame {
     final size = json['size'], at = json['at'];
     if (id is! String || id.isEmpty || id.length > 64) return null;
     if (size is! int || size <= 0 || size > maxGhostFileBytes) return null;
+    final type = mime is String && mime.length <= 128
+        ? mime
+        : 'application/octet-stream';
     return GhostFileHeader(
       id: id,
       name: safeGhostFileName(name is String ? name : ''),
-      mime: mime is String && mime.length <= 128
-          ? mime
-          : 'application/octet-stream',
+      mime: type,
       size: size,
       at: at is int ? at : 0,
+      // A timer on a document is meaningless: it is dropped, never guessed.
+      rules: GhostItemRules(
+        timer: type.startsWith('image/')
+            ? GhostViewTimer.decode(json['view'])
+            : GhostViewTimer.off,
+        allowSave: json['save'] == true,
+      ),
     );
   }
 
@@ -118,7 +135,24 @@ class GhostFileHeader extends GhostFrame {
     'mime': mime,
     'size': size,
     'at': at,
+    if (rules.timer.timed) 'view': rules.timer.wire,
+    if (rules.allowSave) 'save': true,
   });
+}
+
+/// The receiver closed a timed photo, or its countdown ran out.
+class GhostViewedFrame extends GhostFrame {
+  const GhostViewedFrame({required this.id});
+  final String id;
+
+  static GhostViewedFrame? _from(Map json) {
+    final id = json['id'];
+    if (id is! String || id.isEmpty || id.length > 64) return null;
+    return GhostViewedFrame(id: id);
+  }
+
+  @override
+  String encode() => jsonEncode({'t': 'viewed', 'id': id});
 }
 
 class GhostTypingFrame extends GhostFrame {

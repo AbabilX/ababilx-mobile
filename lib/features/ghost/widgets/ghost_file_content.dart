@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:open_filex/open_filex.dart';
 
 import '../../messages/chat-timeline/message_bubble.dart'
     show SignalBubbleColors;
 import '../../messages/chat-timeline/signal_bubble_metrics.dart';
 import '../../messages/chat_icon.dart';
-import '../native/ghost_blobs.dart';
 import '../providers/ghost_state.dart';
-import '../providers/ghost_temp_files.dart';
+import '../screens/ghost_photo_viewer.dart';
 import 'ghost_bubble.dart';
+import 'ghost_file_row.dart';
 import 'ghost_labels.dart';
+import 'ghost_timed_photo.dart';
 
 /// A photo or a file inside a Ghost Chat bubble, at the timeline's own media
 /// measurements. A photo draws straight from memory; anything else is a row
@@ -24,22 +24,33 @@ class GhostFileContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // A timed photo is never drawn in the list on the receiving phone, and
+    // once viewed it is only a placeholder on both.
+    if (item.expired || (item.timed && !item.fromMe)) {
+      return GhostTimedPhoto(item: item, colors: colors);
+    }
     if (item.isImage && item.complete) {
       return _Photo(item: item, colors: colors);
     }
-    return _FileRow(item: item, colors: colors);
+    return GhostFileRow(item: item, colors: colors);
   }
 }
 
-class _Photo extends StatelessWidget {
+class _Photo extends ConsumerWidget {
   const _Photo({required this.item, required this.colors});
 
   final GhostItem item;
   final SignalBubbleColors colors;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final radius = BorderRadius.circular(SignalBubbleMetrics.bigRadius);
+    final rules = item.rules;
+    // What the sender chose, on the sender's own copy; "View only" on a
+    // received photo that may not be saved.
+    final badge = item.fromMe
+        ? (rules.timer.timed ? ghostTimerLabel(ref, rules.timer) : null)
+        : (rules.allowSave ? null : ghostText(ref, 'ghost_view_only'));
     return ClipRRect(
       borderRadius: radius,
       child: Stack(
@@ -61,6 +72,23 @@ class _Photo extends StatelessWidget {
               gaplessPlayback: true,
             ),
           ),
+          Positioned.fill(
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(onTap: () => showGhostPhoto(context, item)),
+            ),
+          ),
+          if (badge != null)
+            Positioned(
+              left: 8,
+              top: 8,
+              child: _Badge(
+                label: badge,
+                icon: item.fromMe
+                    ? HugeIcons.strokeRoundedTimer02
+                    : HugeIcons.strokeRoundedViewOff,
+              ),
+            ),
           // The photo is the surface: the time sits on it, as it does in the
           // ordinary timeline, with no strip and no scrim under it.
           Positioned(
@@ -74,97 +102,33 @@ class _Photo extends StatelessWidget {
   }
 }
 
-class _FileRow extends ConsumerWidget {
-  const _FileRow({required this.item, required this.colors});
+class _Badge extends StatelessWidget {
+  const _Badge({required this.label, required this.icon});
 
-  final GhostItem item;
-  final SignalBubbleColors colors;
-
-  /// Memory first, always. A temp file is the fallback for a platform with no
-  /// blob provider (iOS today), and it is the one place Ghost Chat bytes touch
-  /// the disk — deleted on the burn and at every app start.
-  Future<void> _open() async {
-    final bytes = item.bytes;
-    if (bytes == null || !item.complete) return;
-    final name = item.fileName ?? 'file';
-    final mime = item.mime ?? 'application/octet-stream';
-    if (await GhostBlobs.open(name, mime, bytes)) return;
-    final path = await GhostTempFiles.writeForOpen(name, bytes);
-    await OpenFilex.open(path, type: mime);
-  }
+  final String label;
+  final List<List<dynamic>> icon;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final done = item.complete && !item.failed;
-    final subtitle = item.failed
-        ? ghostText(ref, 'ghost_failed')
-        : done
-        ? _size(item.size)
-        : '${(item.progress * 100).round()}% · ${_size(item.size)}';
-
-    return InkWell(
-      onTap: done ? _open : null,
-      borderRadius: BorderRadius.circular(SignalBubbleMetrics.bigRadius),
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SignalBubbleMetrics.horizontalPadding,
-          vertical: SignalBubbleMetrics.topPadding,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox.square(
-                  dimension: 40,
-                  child: done || item.failed
-                      ? ChatIcon(
-                          item.isImage
-                              ? HugeIcons.strokeRoundedImage01
-                              : HugeIcons.strokeRoundedFile01,
-                          color: colors.foreground,
-                        )
-                      : CircularProgressIndicator(
-                          value: item.progress,
-                          strokeWidth: 2.5,
-                        ),
-                ),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        item.fileName ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: colors.foreground,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        subtitle,
-                        style: TextStyle(color: colors.muted, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            ChatIcon(icon, size: 13, color: Colors.white),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 11),
             ),
-            GhostBubbleTime(at: item.at, colors: colors),
           ],
         ),
       ),
     );
-  }
-
-  static String _size(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }

@@ -16,6 +16,10 @@ import io.flutter.plugin.common.MethodChannel
  */
 class GhostBlobChannel(private val activity: Activity) {
 
+  // One per process, like the blobs: an Activity recreated mid-session must
+  // still close the documents the previous one opened.
+  private val pdfs = GhostPdfDocuments.shared
+
   fun attach(engine: FlutterEngine) {
     MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
       .setMethodCallHandler { call, result ->
@@ -35,7 +39,19 @@ class GhostBlobChannel(private val activity: Activity) {
             }
           }
           "open" -> result.success(open(call.argument<String>("uri"), call.argument<String>("mime")))
+          "pdfOpen" -> pdfs.open(activity, call.argument<String>("uri"), result)
+          "pdfPage" -> pdfs.page(
+            call.argument<String>("id"),
+            call.argument<Int>("index") ?: 0,
+            call.argument<Int>("width") ?: 1080,
+            result,
+          )
+          "pdfClose" -> {
+            pdfs.close(call.argument<String>("id"))
+            result.success(null)
+          }
           "clear" -> {
+            pdfs.closeAll()
             GhostBlobProvider.clear()
             result.success(null)
           }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../data/ghost_session.dart';
+import '../protocol/ghost_item_rules.dart';
 import '../providers/ghost_state.dart';
 
 /// Ghost Chat copy, with the peer's name filled in.
@@ -44,3 +45,13 @@ String ghostErrorText(WidgetRef ref, String code, {String name = ''}) {
   };
   return ghostText(ref, key, name: name);
 }
+
+/// "No timer", "View once", "5 seconds".
+String ghostTimerLabel(WidgetRef ref, GhostViewTimer timer) => switch (timer) {
+  GhostViewTimer.off => ghostText(ref, 'ghost_timer_off'),
+  GhostViewTimer.once => ghostText(ref, 'ghost_timer_once'),
+  _ => ghostText(
+    ref,
+    'ghost_timer_secs',
+  ).replaceAll('{n}', '${timer.duration!.inSeconds}'),
+};

@@ -8,6 +8,7 @@ import '../../messages/chat_icon.dart';
 import '../providers/ghost_provider.dart';
 import 'ghost_labels.dart';
 import 'ghost_pick.dart';
+import 'ghost_send_preview.dart';
 
 /// Text, attach, send. Disabled until the phones are connected.
 ///
@@ -76,10 +77,17 @@ class _GhostComposerState extends ConsumerState<GhostComposer> {
     if (source == null) return;
     try {
       final picked = await pickForGhost(source);
-      if (picked == null) return;
+      if (picked == null || !mounted) return;
+      final rules = await showGhostSendPreview(context, picked);
+      // Backed out, or the chat ended under the preview (which disposes this
+      // composer): the picked bytes were only ever in RAM; clear them.
+      if (rules == null || !mounted) {
+        picked.bytes.fillRange(0, picked.bytes.length, 0);
+        return;
+      }
       await ref
           .read(ghostProvider.notifier)
-          .sendFile(picked.name, picked.mime, picked.bytes);
+          .sendFile(picked.name, picked.mime, picked.bytes, rules: rules);
     } on GhostFileTooLarge {
       if (mounted) {
         showAppToast(

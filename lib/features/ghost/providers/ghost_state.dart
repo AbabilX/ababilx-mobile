@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../data/ghost_session.dart';
+import '../protocol/ghost_item_rules.dart';
 
 /// Where this phone is in a Ghost Chat.
 ///
@@ -40,6 +41,8 @@ class GhostItem {
     this.bytes,
     this.transferred = 0,
     this.failed = false,
+    this.rules = GhostItemRules.none,
+    this.expired = false,
   });
 
   final String id;
@@ -53,24 +56,46 @@ class GhostItem {
   final int transferred;
   final bool failed;
 
+  /// What the sender allows: a view timer (photos) and saving.
+  final GhostItemRules rules;
+
+  /// A timed photo that was viewed: its bytes are zeroed on both phones and
+  /// only the placeholder is left.
+  final bool expired;
+
   bool get isFile => fileName != null;
   bool get isImage => (mime ?? '').startsWith('image/');
+  bool get isPdf =>
+      mime == 'application/pdf' ||
+      (fileName ?? '').toLowerCase().endsWith('.pdf');
+  bool get isVideo => (mime ?? '').startsWith('video/');
+  bool get timed => isImage && rules.timer.timed;
+
+  /// The receiver may hand this to another app or save it. The sender's own
+  /// copy is always theirs.
+  bool get mayLeaveApp => fromMe || rules.allowSave;
   bool get complete => !isFile || (bytes != null && transferred >= size);
   double get progress => size == 0 ? 1 : (transferred / size).clamp(0, 1);
 
-  GhostItem copyWith({Uint8List? bytes, int? transferred, bool? failed}) =>
-      GhostItem(
-        id: id,
-        fromMe: fromMe,
-        at: at,
-        body: body,
-        fileName: fileName,
-        mime: mime,
-        size: size,
-        bytes: bytes ?? this.bytes,
-        transferred: transferred ?? this.transferred,
-        failed: failed ?? this.failed,
-      );
+  GhostItem copyWith({
+    Uint8List? bytes,
+    int? transferred,
+    bool? failed,
+    bool? expired,
+  }) => GhostItem(
+    id: id,
+    fromMe: fromMe,
+    at: at,
+    body: body,
+    fileName: fileName,
+    mime: mime,
+    size: size,
+    bytes: expired == true ? null : bytes ?? this.bytes,
+    transferred: transferred ?? this.transferred,
+    failed: failed ?? this.failed,
+    rules: rules,
+    expired: expired ?? this.expired,
+  );
 }
 
 class GhostState {
@@ -85,6 +110,7 @@ class GhostState {
     this.endReason,
     this.endedByMe = false,
     this.error,
+    this.lastRules = GhostItemRules.none,
   });
 
   final GhostPhase phase;
@@ -99,6 +125,10 @@ class GhostState {
 
   /// A refusal to show once (start failed, file too large), as a stable code.
   final String? error;
+
+  /// The sender's last choice in the send preview, offered again for the next
+  /// one. Session-only: a new Ghost Chat starts back at no timer, no saving.
+  final GhostItemRules lastRules;
 
   bool get inSession => phase != GhostPhase.idle && phase != GhostPhase.ended;
   bool get canSend => phase == GhostPhase.live;
@@ -115,6 +145,7 @@ class GhostState {
     bool? endedByMe,
     String? error,
     bool clearError = false,
+    GhostItemRules? lastRules,
   }) => GhostState(
     phase: phase ?? this.phase,
     session: session ?? this.session,
@@ -126,5 +157,6 @@ class GhostState {
     endReason: endReason ?? this.endReason,
     endedByMe: endedByMe ?? this.endedByMe,
     error: clearError ? null : (error ?? this.error),
+    lastRules: lastRules ?? this.lastRules,
   );
 }
