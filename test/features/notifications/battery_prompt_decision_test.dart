@@ -80,6 +80,42 @@ void main() {
     );
   });
 
+  test('explicit restriction needs no delivered samples', () {
+    expect(
+      _decide(
+        delayed: false,
+        restrictions: const BatteryRestrictions(
+          ignoringBatteryOptimizations: false,
+          backgroundRestricted: true,
+        ),
+      ),
+      BatteryPromptDecision.promptBatterySaver,
+    );
+  });
+
+  test('restriction still respects refusal, permission and backoff', () {
+    const restricted = BatteryRestrictions(
+      ignoringBatteryOptimizations: false,
+      backgroundRestricted: true,
+    );
+    expect(
+      _decide(restrictions: restricted, delayed: false, dismissed: true),
+      BatteryPromptDecision.none,
+    );
+    expect(
+      _decide(
+        restrictions: restricted,
+        delayed: false,
+        notificationsEnabled: false,
+      ),
+      BatteryPromptDecision.none,
+    );
+    expect(
+      _decide(restrictions: restricted, delayed: false, lastPromptAt: _now),
+      BatteryPromptDecision.none,
+    );
+  });
+
   test('the restricted bucket still earns the prompt, only worded harder', () {
     expect(
       _decide(

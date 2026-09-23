@@ -15,6 +15,7 @@ import '../chat-people/remove_connection_dialog.dart';
 import '../data/models/chat_connection.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
+import 'blocked_connections_screen.dart';
 
 class ConnectionsScreen extends ConsumerStatefulWidget {
   const ConnectionsScreen({super.key});
@@ -96,6 +97,17 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
           appBar: AppBar(
             leading: const AppBarBackButton(),
             title: Text(t('chat_connections')),
+            actions: [
+              IconButton(
+                tooltip: t('chat_blocked_people'),
+                icon: const Icon(Icons.block_rounded),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const BlockedConnectionsScreen(),
+                  ),
+                ),
+              ),
+            ],
           ),
           body: Column(
             children: [

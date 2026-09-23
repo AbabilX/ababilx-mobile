@@ -29,10 +29,11 @@ class BatteryOptimizationTile extends ConsumerWidget {
             final ignored = restrictions.ignoringBatteryOptimizations;
             // "Restricted" is a harsher bucket than plain optimization, and the
             // copy for optimization understates what the phone is doing.
-            final bodyKey = ignored
-                ? 'battery_opt_ok_body'
-                : restrictions.backgroundRestricted
+            final solved = ignored && !restrictions.backgroundRestricted;
+            final bodyKey = restrictions.backgroundRestricted
                 ? 'battery_opt_restricted_tile_body'
+                : ignored
+                ? 'battery_opt_ok_body'
                 : 'battery_opt_need_body';
 
             return RestrictionTile(
@@ -42,11 +43,19 @@ class BatteryOptimizationTile extends ConsumerWidget {
                 'battery_opt_title',
               ),
               body: AppTranslations.translate(context, ref, bodyKey),
-              solved: ignored,
-              icon: ignored
+              solved: solved,
+              icon: solved
                   ? Icons.battery_charging_full_rounded
                   : Icons.battery_alert_rounded,
-              onTap: ignored ? null : () => _request(context, ref),
+              onTap: () {
+                if (ignored) {
+                  // Doze exemption does not prove OEM sleeping/autostart or
+                  // explicit app restrictions are off. Keep settings reachable.
+                  BatteryOptimization.openAppSettingsPage();
+                } else {
+                  _request(context, ref);
+                }
+              },
             );
           },
         );

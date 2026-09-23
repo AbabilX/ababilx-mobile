@@ -32,9 +32,8 @@ enum BatteryPromptDecision {
 ///    whatever the battery bucket says, so the exemption fixes nothing and the
 ///    dialog would be a lie. Whitelisted does not count — traffic flows there.
 ///
-/// `backgroundRestricted` deliberately gates nothing: an app in that bucket is
-/// not exempt either, so it is already caught above. It only changes how the
-/// prompt is worded.
+/// An explicit `backgroundRestricted` state also counts as evidence: a phone
+/// blocking every push cannot accumulate latency samples.
 BatteryPromptDecision decideBatteryPrompt({
   required BatteryRestrictions restrictions,
   required bool havingDelayedNotifications,
@@ -49,7 +48,11 @@ BatteryPromptDecision decideBatteryPrompt({
   if (lastPromptAt != null && now.difference(lastPromptAt) < backoff) {
     return BatteryPromptDecision.none;
   }
-  if (!havingDelayedNotifications) return BatteryPromptDecision.none;
+  // An explicit OS restriction is evidence even when no push can wake Dart
+  // to record a latency sample. Ordinary optimization still needs samples.
+  if (!havingDelayedNotifications && !restrictions.backgroundRestricted) {
+    return BatteryPromptDecision.none;
+  }
   if (restrictions.ignoringBatteryOptimizations) {
     return BatteryPromptDecision.none;
   }

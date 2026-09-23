@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,7 +20,38 @@ class FcmBootstrap extends ConsumerStatefulWidget {
   ConsumerState<FcmBootstrap> createState() => _FcmBootstrapState();
 }
 
-class _FcmBootstrapState extends ConsumerState<FcmBootstrap> {
+class _FcmBootstrapState extends ConsumerState<FcmBootstrap>
+    with WidgetsBindingObserver {
+  StreamSubscription<List<ConnectivityResult>>? _networkSub;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _networkSub = Connectivity().onConnectivityChanged.listen((results) {
+      if (results.any((result) => result != ConnectivityResult.none)) {
+        _retryRegistration();
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _retryRegistration();
+  }
+
+  void _retryRegistration() {
+    if (!(ref.read(authProvider).valueOrNull ?? false)) return;
+    unawaited(ref.read(fcmServiceProvider).retryPendingRegistration());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_networkSub?.cancel());
+    super.dispose();
+  }
+
   bool _startedForSession = false;
 
   @override

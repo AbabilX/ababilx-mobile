@@ -1,5 +1,12 @@
 # ababilx-mobile — iOS work must not break Android
 
+## Recent reliability fixes — 2026-09-23
+
+- Push/sleep audit: [failure mechanism, recovery changes, tests and device-validation limits](lib/features/notifications/PUSH_RELIABILITY_FIX.md).
+- Connections → Blocked people now exposes the existing server unblock API.
+  See [mobile chat notes](lib/features/messages/CLAUDE.md#unblock-connections--2026-09-23).
+  Unblocking removes your block; reconnecting still requires a new request.
+
 **Android is the shipped, device-verified baseline.** Calls, CallKit/Telecom,
 ringtone, media send, share intake, notifications and the lock-screen call all
 work on real phones and took many rounds to settle. iOS is being brought up

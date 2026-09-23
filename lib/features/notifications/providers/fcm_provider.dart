@@ -13,13 +13,15 @@ final localNotificationsProvider = Provider<LocalNotifications>(
   (_) => LocalNotifications(),
 );
 
-final fcmServiceProvider = Provider<FcmService>(
-  (ref) => FcmService(
+final fcmServiceProvider = Provider<FcmService>((ref) {
+  final service = FcmService(
     devices: ref.watch(deviceRepositoryProvider),
     storage: ref.watch(secureStorageProvider),
     localNotifications: ref.watch(localNotificationsProvider),
-  ),
-);
+  );
+  ref.onDispose(service.dispose);
+  return service;
+});
 
 /// Tracks whether Android notification permission is granted.
 class NotificationPermissionNotifier extends Notifier<bool?> {

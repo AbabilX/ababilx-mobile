@@ -19,6 +19,7 @@ import 'features/calls/native/voice_call_ended_guard.dart';
 import 'features/ghost/ghost_push.dart';
 import 'features/notifications/chat_push_notification.dart';
 import 'features/notifications/local_notifications.dart';
+import 'features/notifications/fcm_log.dart';
 import 'features/notifications/vitals/push_latency_store.dart';
 
 @pragma('vm:entry-point')
@@ -35,6 +36,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (sentTime != null) await PushLatencyStore.record(sentTime);
   final data = Map<String, dynamic>.from(message.data);
   final type = data['type'];
+  fcmLog('push.background.received', 'type=$type');
   if (type == 'voice_call' || type == 'group_call') {
     // This isolate is not `main()`, so the CallKit background executor has
     // never been started in this process — and the plugin only delivers a
@@ -131,8 +133,10 @@ Future<void> _handleChatPushInBackground(Map<String, dynamic> data) async {
     } else {
       await showPlainChatPush(local, data, _plainPushBody(data));
     }
-  } catch (_) {
-    // Nothing to show is better than a crash loop on every message.
+    fcmLog('push.background.chat.handled');
+  } catch (error) {
+    // Never log the payload, decrypted text or raw plugin errors here.
+    fcmLog('push.background.chat.fail', error.runtimeType);
   }
 }
 

@@ -102,6 +102,7 @@ class ChatRepository {
       _connections.lookupByUsername(username);
   Future<List<ChatConnection>> listConnections() =>
       _connections.listConnections();
+  Future<List<ChatConnection>> listBlockedUsers() => _connections.listBlocked();
   Future<ChatConnectionRequests> listConnectionRequests() =>
       _connections.listRequests();
   Future<void> sendConnectionRequest(String userId) =>

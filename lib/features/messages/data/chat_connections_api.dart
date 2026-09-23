@@ -62,6 +62,12 @@ class ChatConnectionsApi {
     return _connections(map['connections']);
   }
 
+  Future<List<ChatConnection>> listBlocked() async {
+    final response = await _client.get(ApiConstants.independentChatBlocked);
+    final data = unwrapApiData<Map<String, dynamic>>(response);
+    return _connections(data['blocked']);
+  }
+
   Future<ChatConnectionRequests> listRequests() async {
     final response = await _client.get(
       ApiConstants.independentChatConnectionRequests,

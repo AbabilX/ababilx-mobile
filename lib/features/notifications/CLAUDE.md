@@ -1,5 +1,13 @@
 # Chat notifications (Android)
 
+## Registration recovery audit — 2026-09-23
+
+See [PUSH_RELIABILITY_FIX.md](PUSH_RELIABILITY_FIX.md) for the failure mechanism,
+retry/logout guards, battery guidance changes, regression evidence and pending
+affected-device verification. This changes registration recovery, not the
+settled chat payload/display contract below.
+
+
 > **Settled 2026-08-26 — verified working on device. Do not rework.**
 > DM pushes showed "🔒 Encrypted message" forever, then showed every message
 > **twice**. Both are fixed and confirmed in production. The duplicate took four

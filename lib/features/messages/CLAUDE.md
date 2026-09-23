@@ -1511,3 +1511,20 @@ else stays on `TiptapViewer`.
   `opensource/chat_ababilx` and `Ababil-X-frontend`, same regexes and same test
   cases. Web renders through `@tiptap/markdown` and adds hard breaks so a
   single newline stays a line break, as `gpt_markdown` keeps it here.
+
+
+## Unblock connections — 2026-09-23
+
+Mobile previously exposed Block but no blocked list or Unblock action. Blocking
+removed a person from accepted connections and discovery, leaving no return
+path in the mobile UI. Connections now has a Blocked people app-bar action.
+`blocked_connections_screen.dart` reads `GET /api/chat/connections/blocked`
+through the repository and uses `DELETE /api/chat/connections/:userId` to lift
+the caller's block. The server already supports both routes and only lists
+blocks owned by the caller. Unblock returns the pair to strangers; it does not
+auto-accept a connection. A new request is needed to reconnect.
+
+The action prevents duplicate taps, keeps the row on failure, offers retry,
+and refreshes blocked people, accepted connections and the chat sidebar after
+success. Message history is untouched. `blocked_connections_test.dart` covers
+the endpoint/peer-id contract, success, duplicate taps, failure and list retry.

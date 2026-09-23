@@ -249,6 +249,11 @@ class AppTranslations {
       'chat_clear_selection': 'Clear',
       'chat_sending': 'Sending…',
       'chat_uploading': 'Uploading…',
+      'chat_blocked_people': 'Blocked people',
+      'chat_unblock': 'Unblock',
+      'chat_unblocked': 'Unblocked',
+      'chat_no_blocked_people': 'No blocked people',
+      'chat_unblock_hint': 'Unblocking removes your block. To reconnect, send a new connection request.',
       'chat_tap_to_retry': 'Tap to retry',
       'chat_file_too_large': 'Files must be 350 MB or smaller.',
       'chat_hold_to_record': 'Hold to record',
@@ -500,17 +505,18 @@ class AppTranslations {
       'battery_opt_need_body':
           'Turn off optimization so push notifications keep working in the background.',
       'battery_opt_ok_body':
-          'Unrestricted — AbabilX can deliver notifications reliably.',
+          'Android battery optimization is off. If alerts still fail, tap to check background activity and your phone’s Sleeping apps or Auto-start settings.',
       'battery_opt_restricted_tile_body':
           'Set to Restricted — Android stops AbabilX entirely in the background.',
       'data_saver_title': 'Data Saver',
       'data_saver_body':
           'Data Saver is blocking background data for AbabilX. Allow unrestricted data so notifications arrive.',
+      'battery_opt_restricted_title': 'Background activity is restricted',
       'battery_opt_slow_title': 'Notifications are arriving late',
       'battery_opt_slow_body':
           'Messages have been reaching this phone long after they were sent. Android is pausing AbabilX in the background to save battery. Letting it run unrestricted fixes that.',
       'battery_opt_restricted_body':
-          'Messages have been reaching this phone long after they were sent. AbabilX is set to Restricted in battery settings, so Android stops it entirely while it is in the background. Letting it run unrestricted fixes that.',
+          'Android reports that AbabilX background activity is restricted. Allow unrestricted battery use to help messages and calls arrive while the app is closed. Your phone may also have separate Sleeping apps or Auto-start settings.',
       'battery_opt_continue': 'Continue',
       'battery_opt_not_now': 'Not now',
       'battery_opt_open_settings': 'Open settings',
@@ -1062,6 +1068,11 @@ class AppTranslations {
       'chat_clear_selection': 'মুছুন',
       'chat_sending': 'পাঠানো হচ্ছে…',
       'chat_uploading': 'আপলোড হচ্ছে…',
+      'chat_blocked_people': 'ব্লক করা ব্যক্তিরা',
+      'chat_unblock': 'আনব্লক করুন',
+      'chat_unblocked': 'আনব্লক করা হয়েছে',
+      'chat_no_blocked_people': 'কাউকে ব্লক করা নেই',
+      'chat_unblock_hint': 'আনব্লক করলে আপনার দেওয়া ব্লক উঠে যাবে। আবার সংযুক্ত হতে নতুন কানেকশন অনুরোধ পাঠান।',
       'chat_tap_to_retry': 'আবার চেষ্টা করতে ট্যাপ করুন',
       'chat_file_too_large': 'ফাইল ৩৫০ MB বা তার কম হতে হবে।',
       'chat_hold_to_record': 'রেকর্ড করতে ধরে রাখুন',
@@ -1307,17 +1318,18 @@ class AppTranslations {
       'battery_opt_need_body':
           'ব্যাকগ্রাউন্ডে নোটিফিকেশন চালু রাখতে অপটিমাইজেশন বন্ধ করুন।',
       'battery_opt_ok_body':
-          'আনরেস্ট্রিক্টেড — AbabilX নির্ভরযোগ্যভাবে নোটিফিকেশন দিতে পারবে।',
+          'অ্যান্ড্রয়ডের ব্যাটারি অপটিমাইজেশন বন্ধ। তবুও নোটিফিকেশন না এলে ট্যাপ করে ব্যাকগ্রাউন্ড কার্যক্রম এবং ফোনের Sleeping apps বা Auto-start সেটিংস দেখুন।',
       'battery_opt_restricted_tile_body':
           '“Restricted” করা আছে — ব্যাকগ্রাউন্ডে অ্যান্ড্রয়ড AbabilX পুরোপুরি বন্ধ রাখে।',
       'data_saver_title': 'ডেটা সেভার',
       'data_saver_body':
           'ডেটা সেভার AbabilX-এর ব্যাকগ্রাউন্ড ডেটা বন্ধ করে রেখেছে। নোটিফিকেশন পেতে আনরেস্ট্রিক্টেড ডেটা অনুমতি দিন।',
+      'battery_opt_restricted_title': 'ব্যাকগ্রাউন্ড কার্যক্রম সীমিত',
       'battery_opt_slow_title': 'নোটিফিকেশন দেরিতে আসছে',
       'battery_opt_slow_body':
           'মেসেজ পাঠানোর অনেক পরে এই ফোনে পৌঁছাচ্ছে। ব্যাটারি বাঁচাতে অ্যান্ড্রয়ড ব্যাকগ্রাউন্ডে AbabilX পজ করছে। আনরেস্ট্রিক্টেড অনুমতি দিলে এটা ঠিক হয়ে যাবে।',
       'battery_opt_restricted_body':
-          'মেসেজ পাঠানোর অনেক পরে এই ফোনে পৌঁছাচ্ছে। ব্যাটারি সেটিংসে AbabilX “Restricted” করা আছে, তাই ব্যাকগ্রাউন্ডে অ্যান্ড্রয়ড এটাকে পুরোপুরি বন্ধ করে দেয়। আনরেস্ট্রিক্টেড অনুমতি দিলে এটা ঠিক হয়ে যাবে।',
+          'অ্যান্ড্রয়ড জানাচ্ছে AbabilX-এর ব্যাকগ্রাউন্ড কার্যক্রম সীমিত। অ্যাপ বন্ধ থাকলে মেসেজ ও কল আসতে সাহায্য করতে ব্যাটারি সেটিংসে Unrestricted অনুমতি দিন। ফোনে আলাদা Sleeping apps বা Auto-start সেটিংসও থাকতে পারে।',
       'battery_opt_continue': 'চালিয়ে যান',
       'battery_opt_not_now': 'এখন নয়',
       'battery_opt_open_settings': 'সেটিংস খুলুন',

@@ -81,7 +81,13 @@ class _BatterySaverSheet extends ConsumerWidget {
             Icon(Icons.battery_alert_rounded, color: colors.error, size: 32),
             const SizedBox(height: 16),
             Text(
-              AppTranslations.translate(context, ref, 'battery_opt_slow_title'),
+              AppTranslations.translate(
+                context,
+                ref,
+                restrictions.backgroundRestricted
+                    ? 'battery_opt_restricted_title'
+                    : 'battery_opt_slow_title',
+              ),
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
               ),

@@ -15,6 +15,7 @@ import '../calls/native/voice_call_ended_guard.dart';
 import 'chat/chat_notification_presenter.dart';
 import 'chat_push_notification.dart';
 import 'data/device_repository.dart';
+import 'data/push_token_registration.dart';
 import 'fcm_log.dart';
 import 'local_notifications.dart';
 import '../ghost/ghost_push.dart';
@@ -30,20 +31,35 @@ class FcmService {
     required DeviceRepository devices,
     required SecureStorage storage,
     required LocalNotifications localNotifications,
+    FirebaseMessaging? messaging,
   }) : _devices = devices, // ignore: prefer_initializing_formals
        _storage = storage, // ignore: prefer_initializing_formals
-       _local = localNotifications;
+       _local = localNotifications,
+       _messaging = messaging ?? FirebaseMessaging.instance;
 
   final DeviceRepository _devices;
   final SecureStorage _storage;
   final LocalNotifications _local;
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final FirebaseMessaging _messaging;
 
   GoRouter? router;
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<RemoteMessage>? _foregroundSub;
   StreamSubscription<RemoteMessage>? _openedSub;
   bool _started = false;
+  bool _sessionActive = false;
+  int _session = 0;
+  Future<bool>? _starting;
+  Future<void>? _stopping;
+  late final _registration = PushTokenRegistration(
+    loadToken: _loadPushToken,
+    saveToken: _storage.writeFcmToken,
+    registerToken: (token) => _devices.register(token, platform: _pushPlatform),
+    onFailure: (error) => fcmLog('token.registration.retry', error.runtimeType),
+  );
+
+  /// Recovery never reopens the permission dialog or registers after logout.
+  Future<void> retryPendingRegistration() => _registration.retryPending();
 
   /// Deep-link path from a notification tap; survives auth / router races.
   String? _pendingPath;
@@ -51,13 +67,26 @@ class FcmService {
   /// Permission currently granted (Android POST_NOTIFICATIONS / FCM).
   bool permissionGranted = false;
 
-  Future<bool> start() async {
+  Future<bool> start() {
+    if (_stopping != null) return Future.value(false);
+    if (_starting != null) return _starting!;
+    _sessionActive = true;
+    final session = _session;
+    return _starting = _start(session).whenComplete(() {
+      if (session == _session) _starting = null;
+    });
+  }
+
+  bool _isCurrent(int session) => _sessionActive && session == _session;
+
+  Future<bool> _start(int session) async {
     fcmLog(
       'start.begin',
       'api=${ApiConstants.baseUrl} alreadyStarted=$_started granted=$permissionGranted',
     );
     if (_started && permissionGranted) {
       fcmLog('start.skip', 'already running with permission');
+      unawaited(retryPendingRegistration());
       flushPendingNav();
       return true;
     }
@@ -65,6 +94,7 @@ class FcmService {
     // Capture cold-start tap ASAP (before permission / token work).
     try {
       final initial = await _messaging.getInitialMessage();
+      if (!_isCurrent(session)) return false;
       if (initial != null) {
         fcmLog(
           'initial_message',
@@ -78,6 +108,7 @@ class FcmService {
       fcmLog('initial_message.fail', e);
     }
 
+    if (!_isCurrent(session)) return false;
     try {
       await _local.init(onTap: _handlePayload);
       fcmLog('local_notif.init.ok');
@@ -85,6 +116,7 @@ class FcmService {
       fcmLog('local_notif.init.fail', e);
     }
 
+    if (!_isCurrent(session)) return false;
     try {
       final settings = await _messaging.requestPermission(
         alert: true,
@@ -96,9 +128,11 @@ class FcmService {
         'authorizationStatus=${settings.authorizationStatus}',
       );
 
+      if (!_isCurrent(session)) return false;
       final localGranted = await _local.requestPermission();
       fcmLog('permission.android', 'granted=$localGranted');
 
+      if (!_isCurrent(session)) return false;
       permissionGranted =
           localGranted &&
           settings.authorizationStatus != AuthorizationStatus.denied;
@@ -110,6 +144,7 @@ class FcmService {
       }
     } catch (e) {
       fcmLog('permission.fail', e);
+      if (!_isCurrent(session)) return false;
       permissionGranted = false;
     }
 
@@ -126,22 +161,29 @@ class FcmService {
     // Registering anyway is also correct on its own terms: call and encrypted
     // chat pushes are data-only, and Android delivers those to the app whether
     // or not it may draw a notification.
-    await _syncToken();
-
-    _tokenRefreshSub?.cancel();
-    _tokenRefreshSub = _messaging.onTokenRefresh.listen((token) async {
-      fcmLog('token.refresh', fcmTokenPreview(token));
-      await _storage.writeFcmToken(token);
-      try {
-        await _devices.register(token, platform: _pushPlatform);
-        fcmLog('token.refresh.register.ok');
-      } catch (e) {
-        fcmLog('token.refresh.register.fail', e);
-      }
-    });
+    if (!_isCurrent(session)) return false;
+    await _tokenRefreshSub?.cancel();
+    if (!_isCurrent(session)) return false;
+    // Subscribe before fetching so a rotation during registration is not lost.
+    // start() activates the registrar synchronously, before any event arrives.
+    final registration = _registration.start();
+    _tokenRefreshSub = _messaging.onTokenRefresh.listen(
+      (token) {
+        if (!_isCurrent(session)) return;
+        unawaited(_registration.tokenChanged(token));
+      },
+      onError: (Object error) {
+        fcmLog('token.refresh.fail', error.runtimeType);
+      },
+    );
+    // Do not hold notification listeners hostage to a slow registration API.
+    unawaited(registration);
 
     if (!permissionGranted) {
-      fcmLog('start.abort', 'permission denied — token registered, UI muted');
+      fcmLog(
+        'start.abort',
+        'permission denied — token registration active, UI muted',
+      );
       flushPendingNav();
       return false;
     }
@@ -156,6 +198,7 @@ class FcmService {
       fcmLog('foreground_options.fail', e);
     }
 
+    if (!_isCurrent(session)) return false;
     _foregroundSub?.cancel();
     _foregroundSub = FirebaseMessaging.onMessage.listen(_onForeground);
 
@@ -243,8 +286,15 @@ class FcmService {
     return start();
   }
 
-  Future<void> stopAndDeregister() async {
+  Future<void> stopAndDeregister() =>
+      _stopping ??= _stopAndDeregister().whenComplete(() => _stopping = null);
+
+  Future<void> _stopAndDeregister() async {
     fcmLog('stop.begin');
+    _sessionActive = false;
+    _session++;
+    _starting = null;
+    final registrationStopped = _registration.stop();
     // A notification opened for the previous session must not navigate the
     // next account immediately after login.
     _pendingPath = null;
@@ -256,6 +306,7 @@ class FcmService {
     _openedSub = null;
     _started = false;
 
+    await registrationStopped;
     final token = await _storage.readFcmToken() ?? await _messaging.getToken();
     if (token != null) {
       try {
@@ -270,48 +321,23 @@ class FcmService {
     fcmLog('stop.done');
   }
 
-  Future<void> _syncToken() async {
-    fcmLog('token.sync.begin');
-    if (Platform.isIOS) {
-      try {
-        var apns = await _messaging.getAPNSToken();
-        if (apns == null) {
-          await Future<void>.delayed(const Duration(seconds: 2));
-          apns = await _messaging.getAPNSToken();
-        }
-        fcmLog('token.apns', apns == null ? 'null' : 'ok');
-      } catch (e) {
-        fcmLog('token.apns.fail', e);
-      }
+  Future<String?> _loadPushToken() async {
+    if (Platform.isIOS &&
+        await _messaging.getAPNSToken().timeout(const Duration(seconds: 15)) ==
+            null) {
+      // APNs may not be ready at startup. The registrar will retry.
+      return null;
     }
-    String? token;
-    try {
-      token = await _messaging.getToken();
-    } catch (e) {
-      fcmLog('token.get.fail', e);
-      return;
-    }
+    return _messaging.getToken().timeout(const Duration(seconds: 15));
+  }
 
-    if (token == null) {
-      fcmLog(
-        'token.get.null',
-        'Firebase returned null — check google-services / Play Services',
-      );
-      return;
-    }
-
-    fcmLog('token.get.ok', fcmTokenPreview(token));
-    await _storage.writeFcmToken(token);
-
-    try {
-      await _devices.register(token, platform: _pushPlatform);
-      fcmLog('token.sync.done', 'registered with API');
-    } catch (e) {
-      fcmLog(
-        'token.sync.fail',
-        'API register failed — push will not arrive until this succeeds | $e',
-      );
-    }
+  void dispose() {
+    _sessionActive = false;
+    _session++;
+    unawaited(_registration.stop());
+    unawaited(_tokenRefreshSub?.cancel());
+    unawaited(_foregroundSub?.cancel());
+    unawaited(_openedSub?.cancel());
   }
 
   Future<void> _onForeground(RemoteMessage message) async {
