@@ -43,8 +43,9 @@ AttachmentHandle _ready(ChatMessageAttachment a, MediaDimensions? size) =>
       dimensions: size,
     );
 
-/// A mounted media tile never changes height — the rule that stops a row
-/// below the viewport from pushing the rows the reader is looking at.
+/// A mounted media tile never changes height where that would move what the
+/// reader is looking at — the rule that stops a row below the viewport from
+/// pushing the visible rows. On screen it may take its real shape.
 void main() {
   late AttachmentHandleMemory memory;
   late StreamController<AttachmentHandle> photo;
@@ -88,7 +89,7 @@ void main() {
     expect(tester.getSize(tile), const Size(240, 120));
   });
 
-  testWidgets('a shape learned after mount waits for the next mount', (
+  testWidgets('a photo on screen takes a shape learned after mount', (
     tester,
   ) async {
     await tester.pumpWidget(host(soloPhoto));
@@ -96,14 +97,47 @@ void main() {
     expect(tester.getSize(tile).height, 210, reason: 'default frame');
 
     photo.add(_ready(_photo, const MediaDimensions(1200, 600)));
-    memory.remember(_ready(_photo, const MediaDimensions(1200, 600)));
-    await tester.pump();
-    await tester.pump();
-    expect(tester.getSize(tile).height, 210, reason: 'mounted: held');
+    await tester.pumpAndSettle();
+    expect(tester.getSize(tile).height, 120, reason: 'nothing below it');
+  });
 
-    await tester.pumpWidget(host(const SizedBox()));
-    await tester.pumpWidget(host(soloPhoto));
-    expect(tester.getSize(tile).height, 120, reason: 'remounted: real shape');
+  testWidgets('below the screen a late shape waits, so no row moves', (
+    tester,
+  ) async {
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          attachmentHandleMemoryProvider.overrideWithValue(memory),
+          attachmentHandleProvider(_photo).overrideWith((ref) => photo.stream),
+        ],
+        child: MaterialApp(
+          home: ListView(
+            controller: scroll,
+            reverse: true,
+            children: [
+              soloPhoto,
+              for (var i = 0; i < 30; i++)
+                SizedBox(height: 80, child: Text('row $i')),
+            ],
+          ),
+        ),
+      ),
+    );
+    final tile = find.byType(AttachmentImageGrid);
+    scroll.jumpTo(150); // most of the photo now sits under the viewport
+    await tester.pump();
+    final row = tester.getRect(find.text('row 3')).top;
+
+    photo.add(_ready(_photo, const MediaDimensions(1200, 600)));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(tile).height, 210, reason: 'below: held');
+    expect(tester.getRect(find.text('row 3')).top, row);
+
+    scroll.jumpTo(0);
+    await tester.pumpAndSettle();
+    expect(tester.getSize(tile).height, 120, reason: 'back on screen');
   });
 
   testWidgets('a video reserves its poster shape before the poster', (
@@ -117,11 +151,12 @@ void main() {
       host(const AttachmentVideoTile(attachment: _video, inset: false)),
     );
     final tile = find.byType(AttachmentVideoTile);
-    expect(tester.getSize(tile), const Size(240, 420));
+    // Tall media keeps the 420 ceiling and narrows (1080/1920 × 420).
+    expect(tester.getSize(tile), const Size(236.25, 420));
 
     video.add(_ready(_video, const MediaDimensions(1080, 1920)));
     await tester.pump();
     await tester.pump();
-    expect(tester.getSize(tile), const Size(240, 420));
+    expect(tester.getSize(tile), const Size(236.25, 420));
   });
 }

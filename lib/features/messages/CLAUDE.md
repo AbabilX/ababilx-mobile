@@ -1375,19 +1375,29 @@ been failing for exactly this.
 size       measured ONCE from the file header when bytes land
            (download, sender adoption, or lazily for older files)
            -> attachment_blobs.media_width/height (schema V8) + memory
-tile       picks its frame at MOUNT and holds it (MediaFrameLock)
+tile       picks its frame at MOUNT (MediaFrameLock); a late size only
+           when nothing on screen moves (canResizeMediaFrame)
 first frame  AttachmentHandleMemory: last handle + size, read synchronously
 decode     ResizeImage at box x devicePixelRatio, cover, never upscaled
 ```
 
-- **The rule is "a mounted tile never resizes", not "every tile is right".**
-  A size learned after mount (a fresh download on screen) waits for the next
-  mount. A remount happens off screen and INSERTS the row at its new height,
-  which moves nothing visible; resizing a live row always does. Pinned by
-  `media_tile_frame_test.dart`.
+- **The rule is "a mounted tile never resizes where the reader would see
+  rows move", not "a mounted tile never resizes".** A size learned after
+  mount is taken only when `canResizeMediaFrame` (`media_frame_shift.dart`)
+  allows it: the tile is wholly past the trailing edge (above the screen in
+  the reverse list), or it is not below the screen AND the list is not
+  scrolling. A tile below the viewport, the one that caused the jitter, still
+  waits, for a later scroll that brings it up or for the next mount. The
+  first version held every late size until remount, and that was a bug
+  (fixed 2026-09-23): a photo or video that ARRIVED while the chat was open
+  mounted before its bytes existed and stayed a squashed 210 square until
+  the chat was reopened. An on-screen resize moves only the rows above the
+  tile, just as a new message arriving does. The listener exists only while
+  the size is unknown, so a known-size row costs nothing. Pinned by
+  `media_tile_frame_test.dart` and `media_frame_late_shape_test.dart`.
 - **The server sends no dimensions**, and this is the mobile-only answer. A
   photo that has never been downloaded still mounts at the default 240x210
-  frame and is cropped into it until its next mount. Signal carries width and
+  frame, and takes its real shape once downloaded, if that moves nothing. Signal carries width and
   height in the attachment pointer; doing that means a server column plus
   every sender, and was deliberately left for later.
 - **Sizes are loaded before rows mount**: `warmMediaFrames` runs one indexed
