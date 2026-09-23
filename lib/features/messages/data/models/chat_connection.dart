@@ -9,6 +9,7 @@ class ChatUserSummary extends Equatable {
     this.connection = 'none',
     this.sharedWorkspace = false,
     this.canMessage = false,
+    this.privacyMode = false,
   });
 
   final String userId;
@@ -19,6 +20,10 @@ class ChatUserSummary extends Equatable {
   final bool sharedWorkspace;
   final bool canMessage;
 
+  /// The person has privacy mode on (server migration 0152): nobody can put
+  /// them into a group, so group pickers leave them out.
+  final bool privacyMode;
+
   factory ChatUserSummary.fromJson(Map<String, dynamic> json) =>
       ChatUserSummary(
         userId: _jsonString(json['user_id']),
@@ -28,6 +33,7 @@ class ChatUserSummary extends Equatable {
         connection: _jsonString(json['connection'], fallback: 'none'),
         sharedWorkspace: json['shared_workspace'] == true,
         canMessage: json['can_message'] == true,
+        privacyMode: json['privacy_mode'] == true,
       );
 
   @override
@@ -39,6 +45,7 @@ class ChatUserSummary extends Equatable {
     connection,
     sharedWorkspace,
     canMessage,
+    privacyMode,
   ];
 }
 

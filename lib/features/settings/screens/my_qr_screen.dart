@@ -12,7 +12,9 @@ import '../../messages/chat-people/user_qr_payload.dart';
 import '../../messages/chat_icon.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../qr/my_qr_card.dart';
+import '../../privacy-mode/privacy_mode_provider.dart';
 import '../qr/my_qr_empty.dart';
+import '../qr/my_qr_private.dart';
 
 /// Your own QR code — Signal's "QR code" screen, reached from the button
 /// beside your name in Settings.
@@ -32,13 +34,14 @@ class MyQrScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(profileProvider).valueOrNull;
     final username = user?.username ?? '';
+    final private = ref.watch(privacyModeProvider);
 
     return Scaffold(
       appBar: AppBar(
         leading: const AppBarBackButton(),
         title: const Text('QR code'),
         actions: [
-          if (username.isNotEmpty)
+          if (username.isNotEmpty && !private)
             IconButton(
               tooltip: 'Change username',
               icon: const ChatIcon(HugeIcons.strokeRoundedEdit02),
@@ -46,7 +49,9 @@ class MyQrScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: username.isEmpty
+      body: private
+          ? const MyQrPrivate()
+          : username.isEmpty
           ? const MyQrEmpty()
           : _Code(name: user?.name ?? '', username: username),
     );

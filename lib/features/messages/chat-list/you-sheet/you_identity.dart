@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../shared/widgets/app_avatar.dart';
+import '../../../privacy-mode/privacy_header_badge.dart';
+import '../../../privacy-mode/privacy_mode_provider.dart';
 import '../../../profile/providers/user_status_provider.dart';
 import '../../../profile/widgets/user_status_badge.dart';
 import '../../chat_icon.dart';
@@ -37,6 +39,13 @@ class YouIdentity extends ConsumerWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
           ),
+          // Own privacy mode, under the name. The badge pads its own left
+          // edge for the header row; offset it here so it sits centred.
+          if (ref.watch(privacyModeProvider))
+            const Padding(
+              padding: EdgeInsets.only(top: 6, right: 8),
+              child: PrivacyHeaderBadge(),
+            ),
           const SizedBox(height: 8),
           InkWell(
             borderRadius: BorderRadius.circular(999),

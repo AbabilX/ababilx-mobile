@@ -24,6 +24,12 @@ class PrivacyModeScreen extends ConsumerWidget {
     (HugeIcons.strokeRoundedTimer02, 'privacy_mode_point_media'),
   ];
 
+  /// What it does for everyone, not only the people you already chat with.
+  static const _everyone = [
+    (HugeIcons.strokeRoundedSearch01, 'privacy_mode_point_find'),
+    (HugeIcons.strokeRoundedUserGroup, 'privacy_mode_point_groups'),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -63,6 +69,19 @@ class PrivacyModeScreen extends ConsumerWidget {
             ),
           ),
           for (final (icon, key) in _points)
+            ListTile(
+              dense: true,
+              leading: ChatIcon(icon, size: 20, color: muted),
+              title: Text(t(key), style: theme.textTheme.bodyMedium),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+            child: Text(
+              t('privacy_mode_everyone'),
+              style: theme.textTheme.labelLarge,
+            ),
+          ),
+          for (final (icon, key) in _everyone)
             ListTile(
               dense: true,
               leading: ChatIcon(icon, size: 20, color: muted),

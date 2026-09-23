@@ -633,7 +633,8 @@ class AppTranslations {
       'call_status_calling_private': 'Calling… · Privacy mode on',
       'chat_status_privacy': 'Privacy',
       'settings_privacy_mode': 'Privacy mode',
-      'settings_privacy_mode_sub': 'Hide typing, ticks, online and calls',
+      'settings_privacy_mode_sub':
+          'Hide typing, ticks, online and calls. Nobody can find you',
       'privacy_mode_title': 'Privacy mode',
       'privacy_mode_hint':
           'In your chats with one person, they stop seeing what you do.',
@@ -653,13 +654,26 @@ class AppTranslations {
       'privacy_mode_point_media':
           'Gets your photos with the timer and saving you choose',
       'privacy_mode_oneway':
-          'You still see their typing, ticks and status. Groups are not '
-          'affected.',
+          'You still see their typing, ticks and status, can find anyone '
+          'and can add people to your groups. Groups you are already in '
+          'stay as they are.',
       'privacy_mode_limits':
           'Screenshots are blocked on Android phones only. Nothing stops a '
           'second camera. Web and desktop do not block screenshots yet.',
       'privacy_media_no_save_hint':
           'View only. It opens inside the chat and cannot be saved',
+      'privacy_mode_point_find':
+          'Nobody can find you by username, email, phone or QR code',
+      'privacy_mode_point_groups': 'Nobody can add you to a group',
+      'privacy_mode_everyone': 'And for everyone else:',
+      'privacy_mode_qr_title': 'Privacy mode is on',
+      'privacy_mode_qr_body':
+          'Nobody can find you while it is on, so your QR code is hidden. '
+          'You can still scan other people.',
+      'privacy_mode_discovery_locked':
+          'Privacy mode is on, so nobody can find you. Your choices below '
+          'come back when you turn it off.',
+      'privacy_mode_badge': 'Private',
       'chat_media_expired': 'Photo expired',
       'chat_media_not_opened': 'Not opened yet',
       'chat_media_protected_forward': 'This cannot be forwarded',
@@ -1398,12 +1412,26 @@ class AppTranslations {
       'privacy_mode_point_media':
           'আপনার বাছাই করা টাইমার ও সেভ সেটিং সহ ছবি পাবেন',
       'privacy_mode_oneway':
-          'আপনি তাদের টাইপিং, টিক ও স্ট্যাটাস দেখতে পাবেন। গ্রুপে এর প্রভাব নেই।',
+          'আপনি তাদের টাইপিং, টিক ও স্ট্যাটাস দেখতে পাবেন, যে কাউকে খুঁজে পাবেন '
+          'এবং আপনার গ্রুপে অন্যদের যোগ করতে পারবেন। যে গ্রুপে আগে থেকে আছেন '
+          'সেগুলো আগের মতোই থাকবে।',
       'privacy_mode_limits':
           'স্ক্রিনশট শুধু অ্যান্ড্রয়েড ফোনে বন্ধ হয়। অন্য ক্যামেরা আটকানো যায় না। '
           'ওয়েব ও ডেস্কটপে এখনো স্ক্রিনশট বন্ধ হয় না।',
       'privacy_media_no_save_hint':
           'শুধু দেখা যাবে। চ্যাটের ভেতরেই খুলবে, সেভ করা যাবে না',
+      'privacy_mode_point_find':
+          'কেউ আপনাকে ইউজারনেম, ইমেইল, ফোন বা QR কোড দিয়ে খুঁজে পাবে না',
+      'privacy_mode_point_groups': 'কেউ আপনাকে কোনো গ্রুপে যোগ করতে পারবে না',
+      'privacy_mode_everyone': 'আর সবার জন্য:',
+      'privacy_mode_qr_title': 'প্রাইভেসি মোড চালু',
+      'privacy_mode_qr_body':
+          'চালু থাকলে কেউ আপনাকে খুঁজে পাবে না, তাই আপনার QR কোড লুকানো। '
+          'আপনি অন্যদের কোড স্ক্যান করতে পারবেন।',
+      'privacy_mode_discovery_locked':
+          'প্রাইভেসি মোড চালু, তাই কেউ আপনাকে খুঁজে পাবে না। বন্ধ করলে নিচের '
+          'সেটিংস আগের মতো ফিরে আসবে।',
+      'privacy_mode_badge': 'প্রাইভেট',
       'chat_media_expired': 'ছবির মেয়াদ শেষ',
       'chat_media_not_opened': 'এখনো খোলা হয়নি',
       'chat_media_protected_forward': 'এটি ফরোয়ার্ড করা যাবে না',

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../privacy-mode/peer_privacy_provider.dart';
 import '../data/models/chat_connection.dart';
 import '../data/models/chat_conversation.dart';
 import 'chat_connections_provider.dart';
@@ -81,10 +82,17 @@ ChatUserSummary? _dmPeer(ChatConversation dm, String? me) {
 /// refuse, but nobody gets a prompt before landing in a group. Offering a
 /// workspace colleague here only to have the add answer `connection_required`
 /// would be a dead row.
+///
+/// A connection in privacy mode is left out too: nobody may add them to a
+/// group (`peer_privacy_mode`). A live `chat.peer_privacy` flip wins over the
+/// connection list's flag, which is only as fresh as its last fetch.
 final groupInvitablePeopleProvider = Provider<List<ChatUserSummary>>((ref) {
   final me = ref.watch(chatProvider.select((s) => s.currentUserId));
+  final live = ref.watch(peerPrivacyOverridesProvider);
   return [
     for (final connection in ref.watch(chatConnectionsProvider).connections)
-      if (connection.user.userId != me) connection.user,
+      if (connection.user.userId != me &&
+          !(live[connection.user.userId] ?? connection.user.privacyMode))
+        connection.user,
   ]..sort((a, b) => a.name.compareTo(b.name));
 });

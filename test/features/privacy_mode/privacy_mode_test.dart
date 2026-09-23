@@ -28,6 +28,16 @@ VoiceCall _call({bool calleePrivacy = false}) => VoiceCall.fromJson({
 });
 
 void main() {
+  test('a connection in privacy mode carries the flag', () {
+    final user = ChatUserSummary.fromJson({
+      'user_id': 'u1',
+      'name': 'A',
+      'privacy_mode': true,
+    });
+    expect(user.privacyMode, isTrue);
+    expect(ChatUserSummary.fromJson({'user_id': 'u2'}).privacyMode, isFalse);
+  });
+
   group('call', () {
     test('a private callee reads Calling with the privacy label', () {
       final state = VoiceCallState(

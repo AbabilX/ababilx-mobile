@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -74,9 +75,19 @@ class _AddMembersSheetState extends ConsumerState<AddMembersSheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busyUserId = null);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not add ${user.name}: $e')));
+      final private =
+          e is DioException &&
+          e.response?.data is Map &&
+          (e.response!.data as Map)['error'] == 'peer_privacy_mode';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            private
+                ? '${user.name} has privacy mode on and cannot be added to groups'
+                : 'Could not add ${user.name}: $e',
+          ),
+        ),
+      );
     }
   }
 

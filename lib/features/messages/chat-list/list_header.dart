@@ -6,6 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
+import '../../privacy-mode/privacy_header_badge.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
@@ -67,13 +68,26 @@ class ChatListHeader extends ConsumerWidget {
                     onTap: () => _openYouSheet(context, ref),
                     child: SizedBox(
                       width: double.infinity,
-                      child: status != null
-                          ? UserStatusBadge(status: status, plain: true)
-                          : Text(
-                              'AbabilX',
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: status != null
+                                ? UserStatusBadge(status: status, plain: true)
+                                : Text(
+                                    'AbabilX',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                          ),
+                          // Own privacy mode, beside the title so it is
+                          // never on unnoticed. Nothing while it is off.
+                          const PrivacyHeaderBadge(),
+                        ],
+                      ),
                     ),
                   ),
                 ),

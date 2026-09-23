@@ -82,6 +82,8 @@ class _AddToGroupSheetState extends ConsumerState<_AddToGroupSheet> {
             'encrypted group',
       'not_connected' ||
       'connection_required' => 'You can only add people you are connected to',
+      'peer_privacy_mode' =>
+        '${widget.peerName} has privacy mode on and cannot be added to groups',
       _ => 'Could not add ${widget.peerName} to ${group.name}',
     };
   }
