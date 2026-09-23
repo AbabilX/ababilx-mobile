@@ -10,10 +10,15 @@
   `MediaSendActivity` call `WindowCompat.enableEdgeToEdge(window)` (androidx.core
   1.18.0, pinned), the MediaSend theme lost its deprecated bar-colour attributes,
   and `patches/callkit-incoming-ui.gradle` strips the callkit screen's
-  `setStatusBarColor`/`setNavigationBarColor`. The deprecated-API warning can't
-  go fully green: Flutter's own `FlutterActivity` / `PlatformPlugin` still
-  contain those calls (gated below API 35, so they never run on Android 15),
-  and androidx's edge-to-edge helper does too.
+  `setStatusBarColor`/`setNavigationBarColor`. Play's report on release 28
+  named only the callkit screen as the origin; Flutter's own `FlutterActivity`
+  / `PlatformPlugin` still contain those calls (gated below API 35) but were
+  not listed. Same report's "bitmap optimisation" item is a false pairing:
+  "decoded in" = `MediaSendExport.needsShrinking` (an `inJustDecodeBounds`
+  header read of a local file), "downloaded in" = media3's
+  `DefaultHttpDataSource` (video streaming) — unrelated code, nothing to fix.
+  Decode Play's obfuscated names with the AAB's own
+  `BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map`.
 
 **Android is the shipped, device-verified baseline.** Calls, CallKit/Telecom,
 ringtone, media send, share intake, notifications and the lock-screen call all
