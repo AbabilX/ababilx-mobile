@@ -5,7 +5,7 @@ import '../attachments/data/models/attachment_url_key.dart';
 import '../attachments/storage/storage_providers.dart';
 import '../ghost/protocol/ghost_item_rules.dart';
 import '../messages/data/models/chat_models.dart';
-import 'privacy_media_sheet.dart';
+import 'privacy_media_preview.dart';
 import 'privacy_mode_provider.dart';
 
 /// The Ghost Chat timer as the server stores it: null = no timer, 0 = view
@@ -61,7 +61,8 @@ Future<void> wipeExpiredMedia(
 }
 
 /// The composer's hook: when this account is in privacy mode and is sending
-/// photos or files into a DM, ask for the timer / saving choice first.
+/// photos or files into a DM, show Ghost Chat's send preview first: the
+/// media again, full screen, with the timer / saving choice under it.
 ///
 /// Returns [attachments] unchanged when the sheet does not apply, the stamped
 /// copies when it does, and null when the sender backed out.
@@ -77,9 +78,10 @@ Future<List<ChatAttachmentInput>?> askPrivacyMediaRules(
     return attachments;
   }
   if (!context.mounted) return null;
-  final rules = await showPrivacyMediaSheet(
+  final rules = await showPrivacyMediaPreview(
     context,
     peerName: conversation.displayTitle(null),
+    attachments: attachments,
     photosOnly: allPhotos(attachments),
   );
   if (rules == null) return null;

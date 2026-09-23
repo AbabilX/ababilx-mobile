@@ -362,6 +362,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   }
 
   Future<void> _send() async {
+    // The native review screen calls back after its Activity closes; a
+    // composer rebuilt meanwhile must not run the send on a dead `ref`.
+    if (!mounted) return;
     if (_selectedRecent.isNotEmpty) {
       await _reviewSelectedRecents();
       return;
