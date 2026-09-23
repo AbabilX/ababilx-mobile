@@ -131,7 +131,9 @@ class HistoryTransferStatusTile extends ConsumerWidget {
           ? 'Everything this phone still has was sent.$missing'
           : 'Messages and files transferred.';
     }
-    final part = state.batches > 1 ? 'Part ${state.batch + 1} of ${state.batches} · ' : '';
+    final part = state.batches > 1
+        ? 'Part ${state.batch + 1} of ${state.batches} · '
+        : '';
     if (state.waiting) {
       return '${part}Waiting for the other device to save it. Keep AbabilX open.$missing';
     }

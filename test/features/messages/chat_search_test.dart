@@ -15,7 +15,7 @@ class _DelayedSearchNotifier extends ChatNotifier {
   ChatState build() => const ChatState();
 
   @override
-  Future<void> searchMessages(String query) async {
+  Future<void> searchMessages(String query, {String? conversationId}) async {
     state = state.copyWith(searchLoading: true);
     await ready.future;
     state = state.copyWith(
@@ -51,7 +51,7 @@ class _ChatsThenMessagesNotifier extends ChatNotifier {
   );
 
   @override
-  Future<void> searchMessages(String query) async {
+  Future<void> searchMessages(String query, {String? conversationId}) async {
     state = state.copyWith(
       searchLoading: false,
       searchResults: [
@@ -157,4 +157,78 @@ void main() {
     await tester.pumpAndSettle();
     expect(container.read(shellBottomBarHiddenProvider), isFalse);
   });
+
+  testWidgets('search from a chat lists only its messages and returns the id', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [chatProvider.overrideWith(_ScopedNotifier.new)],
+    );
+    addTearDown(container.dispose);
+    String? picked;
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Consumer(
+            builder: (context, ref, _) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () async => picked = await openChatSearch(
+                  context,
+                  ref,
+                  conversationId: 'junayed-dm',
+                  conversationTitle: 'Junayed',
+                ),
+                child: const Text('Search'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Search'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Jun');
+    await tester.pumpAndSettle();
+
+    final notifier = container.read(chatProvider.notifier) as _ScopedNotifier;
+    expect(notifier.scopes, contains('junayed-dm'));
+    expect(find.text('Chats'), findsNothing);
+    expect(find.text('Jun in this chat'), findsOneWidget);
+    expect(find.text('Jun somewhere else'), findsNothing);
+
+    await tester.tap(find.text('Jun in this chat'));
+    await tester.pumpAndSettle();
+    expect(picked, 'message-here');
+  });
+}
+
+class _ScopedNotifier extends _ChatsThenMessagesNotifier {
+  final scopes = <String?>[];
+
+  @override
+  Future<void> searchMessages(String query, {String? conversationId}) async {
+    scopes.add(conversationId);
+    state = state.copyWith(
+      searchLoading: false,
+      searchResults: [
+        ChatMessage(
+          id: 'message-here',
+          conversationId: 'junayed-dm',
+          userId: 'junayed',
+          userName: 'Junayed',
+          body: 'Jun in this chat',
+          createdAt: '2026-09-02T00:00:00Z',
+        ),
+        ChatMessage(
+          id: 'message-there',
+          conversationId: 'other-dm',
+          userId: 'alice',
+          userName: 'Alice',
+          body: 'Jun somewhere else',
+          createdAt: '2026-09-01T00:00:00Z',
+        ),
+      ],
+    );
+  }
 }

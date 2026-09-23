@@ -54,7 +54,11 @@ class V2MessageBatchBuilder {
     int? afterMs;
     String? afterId;
     while (true) {
-      final page = await messages.exportPage(afterMs: afterMs, afterId: afterId, limit: _readPage);
+      final page = await messages.exportPage(
+        afterMs: afterMs,
+        afterId: afterId,
+        limit: _readPage,
+      );
       if (page.isEmpty) break;
       for (final message in page) {
         // Pending and failed sends stay here: not history yet, and their
@@ -116,11 +120,18 @@ class V2MessageBatchBuilder {
       _open.streamBytes += plain.length;
       final sealed = await HistoryTransferV2Crypto.seal(
         transferKey,
-        HistoryTransferV2Crypto.chunkAad(transferId, _open.batch, 'messages', _open.chunks),
+        HistoryTransferV2Crypto.chunkAad(
+          transferId,
+          _open.batch,
+          'messages',
+          _open.chunks,
+        ),
         plain,
       );
       await store.batchDir(_open.batch).create(recursive: true);
-      await store.chunkFile(_open.batch, _open.chunks).writeAsBytes(sealed, flush: true);
+      await store
+          .chunkFile(_open.batch, _open.chunks)
+          .writeAsBytes(sealed, flush: true);
       _open.chunks++;
     }
   }

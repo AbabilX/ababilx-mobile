@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Android 10+ paints a translucent scrim behind a transparent gesture
-         bar unless told not to. The flow is black under it already. -->
-    <style name="MediaSendTheme" parent="@style/MediaSendThemeBase">
-        <item name="android:enforceNavigationBarContrast">false</item>
-        <item name="android:enforceStatusBarContrast">false</item>
-    </style>
-</resources>

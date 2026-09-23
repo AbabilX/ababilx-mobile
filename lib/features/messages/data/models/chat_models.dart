@@ -8,6 +8,7 @@ export 'chat_media_page.dart';
 export 'chat_member.dart';
 export 'chat_message.dart';
 export 'chat_message_quote.dart';
+export 'chat_pinned_message.dart';
 export 'chat_reaction.dart';
 export 'chat_webhook.dart';
 export 'chat_sidebar_model.dart';

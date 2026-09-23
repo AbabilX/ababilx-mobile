@@ -21,16 +21,16 @@
     <style name="MediaSendThemeBase" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">@color/media_send_bg</item>
         <!-- Edge-to-edge: content runs under transparent bars and
-             MediaSendInsets pads the chrome back out from under them. The
-             legacy parent theme leaves windowDrawsSystemBarBackgrounds off,
-             which would ignore both colours below and keep the bars opaque. -->
+             MediaSendInsets pads the chrome back out from under them. The bar
+             colours are set by WindowCompat.enableEdgeToEdge in onCreate — the
+             statusBarColor / navigationBarColor attributes are deprecated in
+             Android 15 and flagged by Play. The legacy parent theme leaves
+             windowDrawsSystemBarBackgrounds off, which would ignore the
+             colours and keep the bars opaque. -->
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowAnimationStyle">@android:style/Animation.Activity</item>
     </style>
 
-    <!-- Split so values-v29 can turn off the system-bar contrast scrim. -->
     <style name="MediaSendTheme" parent="@style/MediaSendThemeBase" />
 
     <style name="MediaSendSheetRow">

@@ -12,7 +12,9 @@ Future<List<ChatConversation>> localTransferConversations(Ref ref) async {
   try {
     final userId = ref.read(chatProvider).currentUserId;
     if (userId.isEmpty) return const [];
-    final sidebar = await ChatSidebarCache(ref.read(chatLocalDbProvider)).read(userId);
+    final sidebar = await ChatSidebarCache(
+      ref.read(chatLocalDbProvider),
+    ).read(userId);
     if (sidebar == null) return const [];
     return [...sidebar.channels, ...sidebar.dms];
   } catch (_) {

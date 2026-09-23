@@ -5,9 +5,9 @@ import '../chat-select/message_selection.dart';
 import '../chat-select/selection_bar.dart';
 import '../chat-select/selection_top_bar.dart';
 import '../data/models/chat_models.dart';
+import '../providers/pinned_message_provider.dart';
 import '../safety_number/safety_number_banner.dart';
 import 'message_list.dart';
-import 'pinned_message_banner.dart';
 import 'scroll_to_bottom_pill.dart';
 import 'timeline_composer.dart';
 
@@ -67,6 +67,12 @@ class ChatTimelineView extends ConsumerWidget {
     // The header auto-hides on scroll; the selection bar must not, or the only
     // way out of the mode scrolls off the top.
     final showHeader = headerVisible || selecting;
+    // Pins live in chat details now, but the long-press menu still has to
+    // know Pin from Unpin at once — listening keeps the list loaded while the
+    // chat is open without rebuilding the timeline when it lands.
+    if (threadRootId == null) {
+      ref.listen(pinnedMessagesProvider(conversationId), (_, _) {});
+    }
 
     return Column(
       children: [
@@ -84,11 +90,6 @@ class ChatTimelineView extends ConsumerWidget {
               heightFactor: showHeader ? 1 : 0,
               child: header,
             ),
-          ),
-        if (threadRootId == null && !selecting)
-          PinnedMessageBanner(
-            conversationId: conversationId,
-            messages: messages,
           ),
         // Keyed because the first and last children swap type when selection
         // starts or ends. With both ends changed, the Column can only match

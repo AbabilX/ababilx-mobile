@@ -13,12 +13,22 @@ class LocalMessageSearch {
   final ChatMessageStore _store;
   final LocalMessageDecryptor _decrypt;
 
-  Future<List<ChatMessage>> search(String query, {int limit = 30}) async {
+  /// [conversationId] narrows to one chat — a chat's own search must not
+  /// have its hits crowded out by the newest 30 across every other chat.
+  Future<List<ChatMessage>> search(
+    String query, {
+    int limit = 30,
+    String? conversationId,
+  }) async {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return const [];
 
     final found = <String, ChatMessage>{};
-    for (final message in await _store.search(q, limit: limit)) {
+    for (final message in await _store.search(
+      q,
+      limit: limit,
+      conversationId: conversationId,
+    )) {
       found[message.id] = message;
     }
 
@@ -29,6 +39,7 @@ class LocalMessageSearch {
       final encrypted = await _store.encryptedPage(
         limit: pageSize,
         offset: offset,
+        conversationId: conversationId,
       );
       if (encrypted.isEmpty) break;
       final decrypted = await _decrypt(encrypted);

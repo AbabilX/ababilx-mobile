@@ -1,21 +1,37 @@
 import 'package:ababilx/core/localization/app_translations.dart';
 import 'package:ababilx/core/network/api_client.dart';
 import 'package:ababilx/core/storage/secure_storage.dart';
-import 'package:ababilx/features/messages/chat-timeline/pinned_message_banner.dart';
+import 'package:ababilx/features/messages/chat-pins/pinned_messages_screen.dart';
 import 'package:ababilx/features/messages/chat-timeline/signal_message_menu.dart';
 import 'package:ababilx/features/messages/chat-timeline/signal_message_menu_items.dart';
 import 'package:ababilx/features/messages/data/chat_repository.dart';
-import 'package:ababilx/features/messages/data/models/chat_message.dart';
+import 'package:ababilx/features/messages/providers/chat_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const _base = '/api/chat/conversations/chat-1/pinned-messages';
+
+Map<String, dynamic> _message(String id, String body) => {
+  'id': id,
+  'conversation_id': 'chat-1',
+  'user_id': 'user-1',
+  'user_name': 'Alice',
+  'body': body,
+  'created_at': '2026-09-23T00:00:00Z',
+};
 
 class _Api extends ApiClient {
   _Api() : super(const SecureStorage(FlutterSecureStorage()));
 
-  String pinned = 'message-1';
+  final pinned = <String, String>{
+    'message-2': 'Newer pin',
+    'message-1': 'Remember this',
+  };
   bool failWrite = false;
   final writes = <String>[];
 
@@ -25,43 +41,68 @@ class _Api extends ApiClient {
     Map<String, dynamic>? queryParameters,
     CancelToken? cancelToken,
   }) async {
-    expect(path, '/api/chat/conversations/chat-1/pinned-message');
+    expect(path, _base);
     return Response<T>(
       requestOptions: RequestOptions(path: path),
       data:
           {
                 'success': true,
-                'data': {'message_id': pinned},
+                'data': {
+                  'pins': [
+                    for (final entry in pinned.entries)
+                      {
+                        'pinned_at': '2026-09-23T01:00:00Z',
+                        'message': _message(entry.key, entry.value),
+                      },
+                  ],
+                },
               }
               as T,
     );
   }
 
+  Future<Response<T>> _write<T>(String path, String verb) async {
+    expect(path, startsWith('$_base/'));
+    writes.add('$verb ${path.substring(_base.length + 1)}');
+    if (failWrite) throw StateError('offline');
+    return Response<T>(requestOptions: RequestOptions(path: path));
+  }
+
   @override
   Future<Response<T>> put<T>(String path, {dynamic data}) async {
-    expect(path, '/api/chat/conversations/chat-1/pinned-message');
-    final id = (data as Map<String, dynamic>)['message_id'] as String;
-    writes.add(id);
-    if (failWrite) throw StateError('offline');
-    pinned = id;
-    return Response<T>(requestOptions: RequestOptions(path: path));
+    final response = await _write<T>(path, 'PUT');
+    pinned[path.split('/').last] = 'Pinned later';
+    return response;
+  }
+
+  @override
+  Future<Response<T>> delete<T>(String path, {dynamic data}) async {
+    final response = await _write<T>(path, 'DELETE');
+    pinned.remove(path.split('/').last);
+    return response;
   }
 }
 
+class _Chat extends ChatNotifier {
+  @override
+  ChatState build() => const ChatState(currentUserId: 'me');
+}
+
 void main() {
-  test(
-    'message pin API reads, replaces, and clears the personal pin',
-    () async {
-      final api = _Api();
-      final repo = ChatRepository(api);
-      expect(await repo.pinnedMessage('chat-1'), 'message-1');
-      await repo.setPinnedMessage('chat-1', 'message-2');
-      expect(await repo.pinnedMessage('chat-1'), 'message-2');
-      await repo.setPinnedMessage('chat-1', null);
-      expect(await repo.pinnedMessage('chat-1'), isNull);
-      expect(api.writes, ['message-2', '']);
-    },
-  );
+  test('pin API lists every pin and pins or unpins one message', () async {
+    final api = _Api();
+    final repo = ChatRepository(api);
+    final pins = await repo.pinnedMessages('chat-1');
+    expect(pins.map((p) => p.message.id), ['message-2', 'message-1']);
+    expect(pins.first.pinnedAt, '2026-09-23T01:00:00Z');
+    await repo.setMessagePinned('chat-1', 'message-3', pinned: true);
+    await repo.setMessagePinned('chat-1', 'message-1', pinned: false);
+    expect(api.writes, ['PUT message-3', 'DELETE message-1']);
+    expect((await repo.pinnedMessages('chat-1')).map((p) => p.message.id), [
+      'message-2',
+      'message-3',
+    ]);
+  });
 
   test('long-press menu offers Pin or Unpin for a sent message', () {
     final labels = <String, String>{
@@ -94,41 +135,79 @@ void main() {
     expect(actions(false, false), isNot(contains(SignalMessageAction.pin)));
   });
 
-  testWidgets('pinned banner unpins only after server success', (tester) async {
-    final api = _Api()..failWrite = true;
+  Future<_Api> mountPins(WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final api = _Api();
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, _) => Scaffold(
+            body: TextButton(
+              onPressed: () => context.push('/pins'),
+              child: const Text('open pins'),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/pins',
+          builder: (_, _) =>
+              const PinnedMessagesScreen(conversationId: 'chat-1'),
+        ),
+      ],
+    );
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           appLanguageProvider.overrideWithValue('en'),
           chatRepositoryProvider.overrideWithValue(ChatRepository(api)),
+          chatProvider.overrideWith(_Chat.new),
         ],
-        child: MaterialApp(
-          home: Scaffold(
-            body: PinnedMessageBanner(
-              conversationId: 'chat-1',
-              messages: const [
-                ChatMessage(
-                  id: 'message-1',
-                  conversationId: 'chat-1',
-                  userId: 'user-1',
-                  body: 'Remember this',
-                  createdAt: '2026-09-23T00:00:00Z',
-                ),
-              ],
-            ),
-          ),
-        ),
+        child: MaterialApp.router(routerConfig: router),
       ),
     );
+    await tester.tap(find.text('open pins'));
     await tester.pumpAndSettle();
+    return api;
+  }
+
+  testWidgets('pins screen draws the bubbles and unpins after server success', (
+    tester,
+  ) async {
+    final api = await mountPins(tester)
+      ..failWrite = true;
+    expect(find.text('2 Pinned Messages'), findsOneWidget);
     expect(find.text('Remember this'), findsOneWidget);
-    await tester.tap(find.byTooltip('Unpin message'));
-    await tester.pumpAndSettle();
+    expect(find.text('Newer pin'), findsOneWidget);
+    expect(find.byTooltip('Go to message'), findsNWidgets(2));
+
+    Future<void> unpin() async {
+      await tester.longPress(find.text('Remember this'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Unpin message'));
+      await tester.pumpAndSettle();
+    }
+
+    await unpin();
     expect(find.text('Remember this'), findsOneWidget);
     api.failWrite = false;
-    await tester.tap(find.byTooltip('Unpin message'));
-    await tester.pumpAndSettle();
+    await unpin();
     expect(find.text('Remember this'), findsNothing);
-    expect(api.writes, ['', '']);
+    expect(find.text('Newer pin'), findsOneWidget);
+    expect(find.text('1 Pinned Message'), findsOneWidget);
+    expect(api.writes, ['DELETE message-1', 'DELETE message-1']);
+  });
+
+  testWidgets('unpin all asks first, removes every pin and closes', (
+    tester,
+  ) async {
+    final api = await mountPins(tester);
+    await tester.tap(find.text('Unpin all messages'));
+    await tester.pumpAndSettle();
+    expect(find.text('Unpin all 2 messages?'), findsOneWidget);
+    await tester.tap(find.text('Unpin all messages').last);
+    await tester.pumpAndSettle();
+    expect(api.writes.toSet(), {'DELETE message-1', 'DELETE message-2'});
+    expect(find.text('open pins'), findsOneWidget);
   });
 }

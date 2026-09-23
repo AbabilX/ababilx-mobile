@@ -249,14 +249,23 @@ class ChatMessageStore {
         )
       : exportPage(afterMs: afterMs, afterId: afterId);
 
-  Future<List<ChatMessage>> search(String query, {int limit = 30}) =>
-      _filteredSearch(query, limit);
+  Future<List<ChatMessage>> search(
+    String query, {
+    int limit = 30,
+    String? conversationId,
+  }) async => deletions.filter(
+    await _drift.search(query, limit: limit, conversationId: conversationId),
+  );
 
-  Future<List<ChatMessage>> _filteredSearch(String query, int limit) async =>
-      deletions.filter(await _drift.search(query, limit: limit));
-
-  Future<List<ChatMessage>> encryptedPage({int limit = 200, int offset = 0}) =>
-      _drift.encryptedPage(limit: limit, offset: offset);
+  Future<List<ChatMessage>> encryptedPage({
+    int limit = 200,
+    int offset = 0,
+    String? conversationId,
+  }) => _drift.encryptedPage(
+    limit: limit,
+    offset: offset,
+    conversationId: conversationId,
+  );
 
   Future<void> clearConversation(String conversationId) async {
     final native = _android;

@@ -42,14 +42,21 @@ class V2MediaPlanner {
       if (file == null) continue;
       files[key] = file;
     }
-    final batches = _layout(files.values.where((f) => f.status == 'available'), firstBatch);
+    final batches = _layout(
+      files.values.where((f) => f.status == 'available'),
+      firstBatch,
+    );
     return (files: files.values.toList(), batches: batches);
   }
 
-  Future<V2File?> _describe(String key, ChatMessageAttachment attachment) async {
+  Future<V2File?> _describe(
+    String key,
+    ChatMessageAttachment attachment,
+  ) async {
     final blob = await blobs.read(key);
     final path = blob?.localPath ?? '';
-    final ready = blob != null &&
+    final ready =
+        blob != null &&
         blob.transferState == AttachmentTransferState.ready.index &&
         path.isNotEmpty;
     if (ready) {
@@ -62,7 +69,9 @@ class V2MediaPlanner {
           final hash = (blob.contentHash ?? '').isNotEmpty
               ? blob.contentHash!
               : await hashFileContents(file);
-          if (held.any((h) => h.urlKey == key && h.sha256 == hash && h.size == stat.size)) {
+          if (held.any(
+            (h) => h.urlKey == key && h.sha256 == hash && h.size == stat.size,
+          )) {
             return null;
           }
           return V2File(
@@ -108,16 +117,22 @@ class V2MediaPlanner {
       var fileOffset = 0;
       var remaining = file.size;
       do {
-        if (entries >= maxFilesPerBatch || (offset >= batchPlainBytes && remaining > 0)) next();
-        final take = remaining < batchPlainBytes - offset ? remaining : batchPlainBytes - offset;
-        segments.add(V2Segment(
-          batch: batch,
-          seg: segments.length,
-          segs: 0,
-          fileOffset: fileOffset,
-          length: take,
-          streamOffset: offset,
-        ));
+        if (entries >= maxFilesPerBatch ||
+            (offset >= batchPlainBytes && remaining > 0))
+          next();
+        final take = remaining < batchPlainBytes - offset
+            ? remaining
+            : batchPlainBytes - offset;
+        segments.add(
+          V2Segment(
+            batch: batch,
+            seg: segments.length,
+            segs: 0,
+            fileOffset: fileOffset,
+            length: take,
+            streamOffset: offset,
+          ),
+        );
         offset += take;
         fileOffset += take;
         remaining -= take;

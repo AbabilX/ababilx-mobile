@@ -40,7 +40,8 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     await chat.ensureReady();
     // A history transfer this phone was sending when it was closed picks up
     // where it stopped; the relay keeps its window open for 24 hours.
-    if (mounted) unawaited(ref.read(historyTransferProvider.notifier).resumeIfPending());
+    if (mounted)
+      unawaited(ref.read(historyTransferProvider.notifier).resumeIfPending());
     if (mounted) await chat.startHistoryRestoreIfNeeded();
   }
 
@@ -121,7 +122,9 @@ class _MessagesBody extends ConsumerWidget {
           ? _UnlockBanner(onTap: onUnlockTap)
           : restoring
           ? const RecoveryProgressBanner()
-          : ref.watch(historyTransferProvider.select((s) => s.transferId.isNotEmpty))
+          : ref.watch(
+              historyTransferProvider.select((s) => s.transferId.isNotEmpty),
+            )
           ? const HistoryTransferStatusTile()
           : null,
     );

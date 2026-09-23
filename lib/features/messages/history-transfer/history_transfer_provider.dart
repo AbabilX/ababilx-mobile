@@ -89,9 +89,15 @@ class HistoryTransferNotifier extends Notifier<HistoryTransferState> {
 
   /// Protocol v2 (`v2/`): batches, messages before media. `transferKey` is
   /// null on a resume, and read back from secure storage.
-  Future<void> sendV2({required String transferId, List<int>? transferKey}) async {
+  Future<void> sendV2({
+    required String transferId,
+    List<int>? transferKey,
+  }) async {
     _cancelled = false;
-    state = HistoryTransferState(transferId: transferId, phase: HistoryTransferPhase.snapshot);
+    state = HistoryTransferState(
+      transferId: transferId,
+      phase: HistoryTransferPhase.snapshot,
+    );
     try {
       final outcome = await HistoryTransferV2Exporter(
         api: ref.read(historyTransferV2ApiProvider),
@@ -99,25 +105,33 @@ class HistoryTransferNotifier extends Notifier<HistoryTransferState> {
         blobs: ref.read(attachmentBlobStoreProvider),
         conversations: await _conversations(),
         isCancelled: () => _cancelled,
-        onProgress: (phase, batch, batches, done, total) => state = state.copyWith(
-          phase: phase == V2Phase.planning ? HistoryTransferPhase.snapshot : HistoryTransferPhase.upload,
-          batch: batch,
-          batches: batches,
-          done: done,
-          total: total,
-          waiting: phase == V2Phase.waiting,
-        ),
+        onProgress: (phase, batch, batches, done, total) =>
+            state = state.copyWith(
+              phase: phase == V2Phase.planning
+                  ? HistoryTransferPhase.snapshot
+                  : HistoryTransferPhase.upload,
+              batch: batch,
+              batches: batches,
+              done: done,
+              total: total,
+              waiting: phase == V2Phase.waiting,
+            ),
       ).run(transferId: transferId, transferKey: transferKey);
       state = state.copyWith(
         finished: outcome.completed,
         waiting: false,
         missingFiles: outcome.filesMissing + outcome.filesOmitted,
-        error: outcome.completed || _cancelled ? '' : 'The other device stopped the transfer.',
+        error: outcome.completed || _cancelled
+            ? ''
+            : 'The other device stopped the transfer.',
       );
     } catch (error) {
       // Left open: the window is 24 hours and the plan is on disk, so the
       // next launch (or Retry) resumes rather than restarts.
-      state = state.copyWith(error: historyTransferFailure(error), waiting: false);
+      state = state.copyWith(
+        error: historyTransferFailure(error),
+        waiting: false,
+      );
     }
   }
 
@@ -135,9 +149,13 @@ class HistoryTransferNotifier extends Notifier<HistoryTransferState> {
     if (state.busy) return;
     try {
       final active = await ref.read(historyTransferApiProvider).active();
-      if (active == null || active['role'] != 'source' || active['status'] != 'approved') return;
+      if (active == null ||
+          active['role'] != 'source' ||
+          active['status'] != 'approved')
+        return;
       final id = active['id'] as String? ?? '';
-      if (id.isEmpty || await (await V2Store.open(id)).readKey(id) == null) return;
+      if (id.isEmpty || await (await V2Store.open(id)).readKey(id) == null)
+        return;
       await sendV2(transferId: id);
     } catch (_) {
       // Nothing to resume, or no network yet; the next launch asks again.

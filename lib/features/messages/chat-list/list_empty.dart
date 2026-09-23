@@ -59,9 +59,7 @@ class ConversationListEmpty extends ConsumerWidget {
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: unread ? onShowAll : onStart,
-              icon: Icon(
-                unread ? Icons.forum_outlined : Icons.edit_outlined,
-              ),
+              icon: Icon(unread ? Icons.forum_outlined : Icons.edit_outlined),
               label: Text(
                 AppTranslations.translate(
                   context,

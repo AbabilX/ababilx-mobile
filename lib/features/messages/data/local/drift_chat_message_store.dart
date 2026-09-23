@@ -212,13 +212,22 @@ class DriftChatMessageStore {
     }
   }
 
-  Future<List<ChatMessage>> search(String query, {required int limit}) async {
+  Future<List<ChatMessage>> search(
+    String query, {
+    required int limit,
+    String? conversationId,
+  }) async {
     final normalized = query.trim().toLowerCase();
     if (normalized.isEmpty) return const [];
     try {
       final rows =
           await (_db.select(_db.cachedMessages)
                 ..where((t) => t.searchText.like('%$normalized%'))
+                ..where(
+                  (t) => conversationId == null
+                      ? const Constant(true)
+                      : t.conversationId.equals(conversationId),
+                )
                 ..orderBy([
                   (t) => OrderingTerm(
                     expression: t.createdAtMs,
@@ -236,11 +245,17 @@ class DriftChatMessageStore {
   Future<List<ChatMessage>> encryptedPage({
     required int limit,
     required int offset,
+    String? conversationId,
   }) async {
     try {
       final rows =
           await (_db.select(_db.cachedMessages)
                 ..where((t) => t.searchText.equals(''))
+                ..where(
+                  (t) => conversationId == null
+                      ? const Constant(true)
+                      : t.conversationId.equals(conversationId),
+                )
                 ..where((t) => t.payloadJson.like('%"encryption_version":1%'))
                 ..orderBy([
                   (t) => OrderingTerm(

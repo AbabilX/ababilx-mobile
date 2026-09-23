@@ -4,6 +4,7 @@ import 'package:ababilx/features/messages/providers/chat_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'no_pins_override.dart';
 
 ChatConversation _group() => const ChatConversation(
   id: 'g1',
@@ -60,7 +61,7 @@ void main() {
   testWidgets('group details renders and tears down cleanly', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [chatProvider.overrideWith(_Notifier.new)],
+        overrides: [noPinsOverride, chatProvider.overrideWith(_Notifier.new)],
         child: const MaterialApp(
           home: ConversationDetailsScreen(conversationId: 'g1'),
         ),
@@ -68,6 +69,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Full Team'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('2 members'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('2 members'), findsOneWidget);
 
     // Deactivate the whole tree: an inherited dependency taken from the wrong
@@ -81,7 +87,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [chatProvider.overrideWith(_Notifier.new)],
+        overrides: [noPinsOverride, chatProvider.overrideWith(_Notifier.new)],
         child: const MaterialApp(
           home: ConversationDetailsScreen(conversationId: 'g1'),
         ),

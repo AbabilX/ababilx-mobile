@@ -223,7 +223,7 @@ under the cap.
   do not inherit it, and without it picking a photo would open a second entry
   in recents.
 - **The Activity draws edge-to-edge on every version**
-  (`WindowCompat.setDecorFitsSystemWindows(window, false)` in
+  (`WindowCompat.enableEdgeToEdge(window)` in
   `MediaSendActivity.onCreate`), so every chrome bar's own padding has to
   come from `MediaSendInsets.padTop`/`padBottom` — nothing pads it for free.
   Those two only **mark** a bar; the single listener that feeds them lives on
@@ -232,10 +232,13 @@ under the cap.
   ancestor dispatches them down, and these bars are inside `<merge>` blocks in
   sibling screens that are `GONE` most of the time and that mark themselves
   during `setContentView`, i.e. before attach — so the `requestApplyInsets`
-  next to a mark never fires. The theme (`MediaSendThemeBase`, plus a
-  `values-v29` override) turns on `windowDrawsSystemBarBackgrounds` with
-  transparent bars and no contrast scrim, since the legacy parent theme would
-  otherwise ignore the bar colours and keep them opaque.
+  next to a mark never fires. The theme (`MediaSendThemeBase`) only turns on
+  `windowDrawsSystemBarBackgrounds`, since the legacy parent theme would
+  otherwise ignore the bar colours and keep them opaque; `enableEdgeToEdge`
+  sets the bars transparent and the contrast scrim off in code. The
+  `statusBarColor` / `navigationBarColor` attributes and the `values-v29`
+  scrim override were removed on 2026-09-23: Android 15 deprecates them and
+  Play Console flags them.
   **No marked bar may have a fixed `layout_height`** — every one is
   `wrap_content` + a `minHeight` (56dp top, 72dp gallery footer). The inset
   arrives as padding, so on a fixed height it eats the interior and clips the

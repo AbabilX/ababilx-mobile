@@ -22,11 +22,17 @@ class ChatSearchResults extends ConsumerWidget {
     required this.query,
     required this.onOpenConversation,
     this.conversationId,
+    this.onOpenMessage,
   });
 
   final String query;
+
+  /// Set when searching inside one chat: other chats are not listed at all.
   final String? conversationId;
   final ValueChanged<String> onOpenConversation;
+
+  /// A hit inside one chat jumps to the message instead of opening the chat.
+  final ValueChanged<ChatMessage>? onOpenMessage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,12 +50,14 @@ class ChatSearchResults extends ConsumerWidget {
       return Center(child: Text(tr('chat_search_min_chars')));
     }
 
-    final chats = matchingSearchConversations(
-      unifiedConversations(dms: chat.dms, channels: chat.channels),
-      needle,
-      nicknames: nicknames,
-      currentUserId: chat.currentUserId,
-    );
+    final chats = conversationId != null
+        ? const <ChatConversation>[]
+        : matchingSearchConversations(
+            unifiedConversations(dms: chat.dms, channels: chat.channels),
+            needle,
+            nicknames: nicknames,
+            currentUserId: chat.currentUserId,
+          );
     final messages = conversationId == null
         ? chat.searchResults
         : chat.searchResults
@@ -82,7 +90,10 @@ class ChatSearchResults extends ConsumerWidget {
           for (final message in messages)
             _MessageHit(
               message: message,
-              onTap: () => onOpenConversation(message.conversationId),
+              showTime: conversationId != null,
+              onTap: onOpenMessage != null
+                  ? () => onOpenMessage!(message)
+                  : () => onOpenConversation(message.conversationId),
             ),
         ],
       ],
@@ -91,15 +102,29 @@ class ChatSearchResults extends ConsumerWidget {
 }
 
 class _MessageHit extends StatelessWidget {
-  const _MessageHit({required this.message, required this.onTap});
+  const _MessageHit({
+    required this.message,
+    required this.onTap,
+    this.showTime = false,
+  });
 
   final ChatMessage message;
   final VoidCallback onTap;
+  final bool showTime;
 
   @override
   Widget build(BuildContext context) {
+    final when = DateTime.tryParse(message.createdAt)?.toLocal();
     return ListTile(
       title: Text(message.userName ?? 'Unknown'),
+      trailing: showTime && when != null
+          ? Text(
+              MaterialLocalizations.of(context).formatShortDate(when),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            )
+          : null,
       subtitle: Text(
         tiptapToPreviewText(message.body),
         maxLines: 2,

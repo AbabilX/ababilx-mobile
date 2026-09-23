@@ -24,12 +24,18 @@ class HistoryTransferV2Crypto {
   static const int tagBytes = 16;
   static final _aes = AesGcm.with256bits();
 
-  static String envelopeAad(String transferId) => '$_prefix|envelope|$transferId';
-  static String inventoryAad(String transferId) => '$_prefix|inventory|$transferId';
+  static String envelopeAad(String transferId) =>
+      '$_prefix|envelope|$transferId';
+  static String inventoryAad(String transferId) =>
+      '$_prefix|inventory|$transferId';
   static String destInventoryAad(String transferId) =>
       '$_prefix|dest-inventory|$transferId';
-  static String chunkAad(String transferId, int batch, String kind, int index) =>
-      '$_prefix|chunk|$transferId|$batch|$kind|$index';
+  static String chunkAad(
+    String transferId,
+    int batch,
+    String kind,
+    int index,
+  ) => '$_prefix|chunk|$transferId|$batch|$kind|$index';
   static String pageAad(String transferId, int batch, int index, int count) =>
       '$_prefix|page|$transferId|$batch|$index|$count';
   static String sealAad(String transferId) => '$_prefix|seal|$transferId';
@@ -73,15 +79,21 @@ class HistoryTransferV2Crypto {
   }
 
   /// JSON sealed and base64url-encoded, the form every JSON-carried value takes.
-  static Future<String> sealJson(List<int> key, String aad, Object value) async =>
-      HistoryTransferCodec.b64(
-        await seal(key, aad, utf8.encode(jsonEncode(value))),
-      );
+  static Future<String> sealJson(
+    List<int> key,
+    String aad,
+    Object value,
+  ) async => HistoryTransferCodec.b64(
+    await seal(key, aad, utf8.encode(jsonEncode(value))),
+  );
 
-  static Future<Object?> openJson(List<int> key, String aad, String value) async =>
-      jsonDecode(
-        utf8.decode(await open(key, aad, HistoryTransferCodec.bytesFromB64(value))),
-      );
+  static Future<Object?> openJson(
+    List<int> key,
+    String aad,
+    String value,
+  ) async => jsonDecode(
+    utf8.decode(await open(key, aad, HistoryTransferCodec.bytesFromB64(value))),
+  );
 
   /// Seals the transfer key to the destination's scanned ephemeral key. The
   /// wrapping key is SHA-256 of the raw ECDH X coordinate — v1's and
@@ -106,7 +118,10 @@ class HistoryTransferV2Crypto {
       'v': version,
       'ephemeral_public_key': HistoryTransferCodec.publicJwk(pair),
       'nonce': HistoryTransferCodec.b64(iv),
-      'ciphertext': HistoryTransferCodec.b64([...box.cipherText, ...box.mac.bytes]),
+      'ciphertext': HistoryTransferCodec.b64([
+        ...box.cipherText,
+        ...box.mac.bytes,
+      ]),
     };
   }
 

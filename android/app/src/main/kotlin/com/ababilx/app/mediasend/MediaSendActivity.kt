@@ -55,8 +55,10 @@ class MediaSendActivity : Activity() {
         super.onCreate(savedInstanceState)
         // Draw behind the status and navigation bars ourselves, on every
         // version — not just the API 35+ default — so MediaSendInsets is the
-        // one thing responsible for keeping chrome clear of them.
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // one thing responsible for keeping chrome clear of them. androidx
+        // also makes both bars transparent with no contrast scrim, which the
+        // theme used to do with attributes Android 15 deprecated.
+        WindowCompat.enableEdgeToEdge(window)
         setContentView(R.layout.media_send_activity)
         request = MediaSendRequest.from(intent)
 

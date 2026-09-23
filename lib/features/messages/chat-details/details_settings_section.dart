@@ -12,9 +12,10 @@ import '../nickname/nickname_sheet.dart';
 import '../providers/chat_provider.dart';
 import '../safety_number/safety_number_tile.dart';
 import 'details_tile.dart';
+import 'pinned_messages_tile.dart';
 
 /// The settings block under the header: nickname, safety number and privacy
-/// for a DM, then wallpaper and notifications for every conversation.
+/// for a DM, then pins, wallpaper and notifications for every conversation.
 class DetailsSettingsSection extends ConsumerWidget {
   const DetailsSettingsSection({super.key, required this.conversation});
 
@@ -66,6 +67,7 @@ class DetailsSettingsSection extends ConsumerWidget {
       // Groups only: the group's own switch (server 0154), set by admins.
       if (conversation.isGroupConversation && !conversation.isWebhook)
         GroupPrivacyTile(conversation: conversation),
+      PinnedMessagesTile(conversationId: conversation.id),
       DetailsTile(
         icon: const ChatIcon(HugeIcons.strokeRoundedPaintBoard),
         title: 'Chat color & wallpaper',

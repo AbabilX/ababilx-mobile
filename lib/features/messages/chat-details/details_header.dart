@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../privacy-mode/peer_privacy_provider.dart';
@@ -175,12 +176,19 @@ class DetailsHeader extends ConsumerWidget {
             DetailsActionButton(
               icon: const ChatIcon(HugeIcons.strokeRoundedSearch01),
               label: 'Search',
-              onTap: () => openChatSearch(
-                context,
-                ref,
-                conversationId: conversation.id,
-                conversationTitle: title,
-              ),
+              // A hit comes back as a message id and is handed on to the
+              // chat, which walks its timeline to it — same path as a pin.
+              onTap: () async {
+                final messageId = await openChatSearch(
+                  context,
+                  ref,
+                  conversationId: conversation.id,
+                  conversationTitle: title,
+                );
+                if (messageId != null && context.mounted) {
+                  context.pop(messageId);
+                }
+              },
             ),
           ],
         ),

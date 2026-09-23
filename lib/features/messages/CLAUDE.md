@@ -497,8 +497,18 @@ the sidebar, including nicknames, so a hit appears before the message index
 returns. One non-empty character is enough on-device — local name match and
 `LocalMessageSearch` kick off on the first keystroke. The server message index
 is only asked at **two or more** characters so a single letter does not fan
-out a network search. Opened from one chat's details, the message list is still
-narrowed to that conversation; the Chats section stays global so you can jump.
+out a network search.
+
+**Search from chat details stays in that chat** (2026-09-23). It used to list
+global name-matched chats and open the whole conversation on a hit, which read
+as the global search. Now `openChatSearch(conversationId:)` draws no Chats
+section, `searchMessages(q, conversationId:)` narrows the LOCAL index in SQL
+(drift `search` / `encryptedPage` take the id — otherwise the global newest-30
+cap crowds a chat's hits out), and a hit closes the search with the MESSAGE
+id: details pops with it and the chat header walks the timeline there, the
+same path as a pin. The server index reads plaintext only, so its answer is now
+MERGED with the local, vault-decrypted hits instead of replacing them — before,
+an encrypted DM's hits vanished the moment the server answered.
 The floating shell pill is hidden for the duration (`shellBottomBarHiddenProvider`),
 because `showSearch` does not leave the shell navigator.
 
@@ -1529,30 +1539,46 @@ and refreshes blocked people, accepted connections and the chat sidebar after
 success. Message history is untouched. `blocked_connections_test.dart` covers
 the endpoint/peer-id contract, success, duplicate taps, failure and list retry.
 
-## Personal message pin — 2026-09-23
+## Personal message pins — a list in chat details (2026-09-23)
 
-Each member can pin one message per conversation for themselves. Long-press a
-sent message → Pin message; its banner stays above the timeline and jumps to
-the row. The banner's close action unpins it. Pinning another message replaces
-the old pin. The peer's pin is separate. Pending and purged messages cannot be
-pinned from the client.
+Each member pins any number of messages (cap 50) per conversation, for
+themselves only. Long-press a sent top-level message → Pin message; a toast
+says where to find it. **There is no bar over the timeline any more**: chat
+details → **Pinned messages** (count as the value) opens
+`/messages/:id/pins` (`chat-pins/`), built to Telegram's "N Pinned Messages":
+the chat's wallpaper, the timeline's own bubbles (`MessageRowContent`, so
+names, reactions and media match the chat) in chat order with the newest at
+the bottom, a round go-to arrow beside each, a floating back button + title
+pill, and **Unpin all messages** at the bottom (confirm, one DELETE each — no
+bulk route — then close). Long press a bubble for Go to / Unpin. Tapping a
+bubble or its arrow pops the pins screen and details with the message id
+(`context.pop(id)`), and the chat header that pushed details walks the
+timeline to it (`jumpToPinnedMessage`). Pending, purged and thread replies cannot be pinned.
 
-The server's `0155_chat_message_pin_v1.sql` adds only a nullable message ID to
-`chat_conversation_members`. `GET|PUT /api/chat/conversations/:id/pinned-message`
-(both prefixes; server code in `db|handlers/chat/conversations/messagepin/`)
-read/write the caller's row. The write checks chat membership and that the
-message belongs to this conversation and is visible to the caller; the read
-filters deleted, hidden and pre-join encrypted rows. No plaintext preview is
-stored on the server: the banner uses the current device's loaded message body
-when available. Pins do not extend the 180-day server content window or change
-device history. `message_pin_test.dart` covers API and banner behavior; the Go
-integration test covers ownership, cross-chat writes and hidden messages when
-a disposable PostgreSQL test database is configured.
+Server: `0156_chat_message_pins_v1.sql` adds `chat_message_pins
+(conversation_id, user_id, message_id, pinned_at)` and carries over 0155's one
+pin; `chat_conversation_members.pinned_message_id` is left unread.
+`GET .../pinned-messages` returns `{pins:[{pinned_at, message}]}` — the message
+as the timeline serves it (ciphertext included, opened on the phone through
+`decryptIfNeeded`), via `chatdb.ListChatMessagesByIDs` under the viewer rule.
+`PUT|DELETE .../pinned-messages/:messageId` pin/unpin, both idempotent; 409
+`chat_message_pin_limit` past 50, 404 when the message is not a visible
+top-level message of this chat. Both prefixes. The old single-pin
+`GET|PUT .../pinned-message` stay for older builds: read = newest pin, write =
+add, empty id = remove the newest only.
 
-The banner uses the existing timeline jump walker. A message beyond its
-40-screen search limit reports that it could not be found instead of moving
-the reader to the wrong place. A direct indexed jump would need a separate
-targeted history-loading feature.
+`pinnedMessagesProvider` is the list; `pinnedMessageIdsProvider` feeds the
+long-press Pin/Unpin label, and `ChatTimelineView` listens to the list so it is
+loaded while the chat is open. Widget tests that mount the timeline or details
+use `test/features/messages/no_pins_override.dart`.
+
+**"This message is no longer available here" on a message that was there** —
+the jump walker scrolls to the top of what is loaded, which is exactly where
+the list's own scroll listener starts `loadMoreFeed`. The walker's own call
+then returned at once (a page was in flight) and it read the unchanged extent
+as the end of history. `ChatTimelineJump._olderPageSettled` now waits for the
+in-flight page (`loadingMore` false) before measuring. The 40-screen search
+limit still stands; a message past it reports honestly.
 
 ## Block / Unblock on DM details — 2026-09-23
 

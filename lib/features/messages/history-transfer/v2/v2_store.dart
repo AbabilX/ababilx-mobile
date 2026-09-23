@@ -21,7 +21,8 @@ import 'v2_plan.dart';
 /// the server freezes an uploaded chunk, so a retry must send the same bytes.
 /// Media is never copied here — the attachment files are the snapshot.
 class V2Store {
-  V2Store(this.directory, {V2KeyVault? keys}) : _keys = keys ?? SecureV2KeyVault();
+  V2Store(this.directory, {V2KeyVault? keys})
+    : _keys = keys ?? SecureV2KeyVault();
 
   final Directory directory;
   final V2KeyVault _keys;
@@ -47,7 +48,9 @@ class V2Store {
     try {
       if (!await _planFile.exists()) return null;
       return V2Plan.fromJson(
-        Map<String, dynamic>.from(jsonDecode(await _planFile.readAsString()) as Map),
+        Map<String, dynamic>.from(
+          jsonDecode(await _planFile.readAsString()) as Map,
+        ),
       );
     } catch (_) {
       return null;
@@ -128,12 +131,14 @@ class SecureV2KeyVault implements V2KeyVault {
   String _name(String id) => 'history_transfer_v2_key_$id';
 
   @override
-  Future<String?> read(String transferId) => _storage.read(key: _name(transferId));
+  Future<String?> read(String transferId) =>
+      _storage.read(key: _name(transferId));
 
   @override
   Future<void> write(String transferId, String value) =>
       _storage.write(key: _name(transferId), value: value);
 
   @override
-  Future<void> delete(String transferId) => _storage.delete(key: _name(transferId));
+  Future<void> delete(String transferId) =>
+      _storage.delete(key: _name(transferId));
 }

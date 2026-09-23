@@ -16,8 +16,13 @@ class ChatEndpoints {
   String get search => ApiConstants.independentChatSearch;
   String get callLog => ApiConstants.independentChatCallLog;
   String messages(String id) => ApiConstants.independentChatMessages(id);
-  String pinnedMessage(String id) =>
-      ApiConstants.independentChatConversationAction(id, 'pinned-message');
+  String pinnedMessages(String id) =>
+      ApiConstants.independentChatConversationAction(id, 'pinned-messages');
+  String pinnedMessage(String id, String messageId) =>
+      ApiConstants.independentChatConversationAction(
+        id,
+        'pinned-messages/$messageId',
+      );
   String message(String id) => ApiConstants.independentChatMessage(id);
   String reactions(String id) =>
       ApiConstants.independentChatMessageReactions(id);

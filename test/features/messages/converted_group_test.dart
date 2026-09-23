@@ -5,6 +5,7 @@ import 'package:ababilx/features/messages/providers/chat_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'no_pins_override.dart';
 
 /// A workspace channel after the server's migration 0145: same id, now an
 /// ordinary personal group with no team. Its admins are whoever the migration
@@ -41,7 +42,10 @@ class _Notifier extends ChatNotifier {
 Future<void> openDetails(WidgetTester tester, ChatConversation group) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [chatProvider.overrideWith(() => _Notifier(group))],
+      overrides: [
+        noPinsOverride,
+        chatProvider.overrideWith(() => _Notifier(group)),
+      ],
       child: const MaterialApp(
         home: ConversationDetailsScreen(conversationId: 'converted'),
       ),
@@ -84,7 +88,10 @@ void main() {
   group('an update reply never demotes the admin who made it', () {
     ProviderContainer containerWith(ChatConversation group) {
       final container = ProviderContainer(
-        overrides: [chatProvider.overrideWith(() => _Notifier(group))],
+        overrides: [
+          noPinsOverride,
+          chatProvider.overrideWith(() => _Notifier(group)),
+        ],
       );
       addTearDown(container.dispose);
       return container;

@@ -30,10 +30,9 @@ bool isTiptapEmpty(String? value) {
 /// multi-line body has to fit one line. Never use it for a message body — that
 /// is what flattened every paragraph into one run-on line.
 /// Markdown syntax is stripped first, since a preview line cannot render it.
-String tiptapToPreviewText(String? value) =>
-    markdownToPreviewText(tiptapToPlainText(value))
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+String tiptapToPreviewText(String? value) => markdownToPreviewText(
+  tiptapToPlainText(value),
+).replaceAll(RegExp(r'\s+'), ' ').trim();
 
 /// Display labels of every `mention` node, longest first.
 ///

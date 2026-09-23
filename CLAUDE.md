@@ -6,6 +6,14 @@
 - Connections → Blocked people now exposes the existing server unblock API.
   See [mobile chat notes](lib/features/messages/CLAUDE.md#unblock-connections--2026-09-23).
   Unblocking removes your block; reconnecting still requires a new request.
+- Play Console "edge-to-edge" warnings (Android 15): `MainActivity` and
+  `MediaSendActivity` call `WindowCompat.enableEdgeToEdge(window)` (androidx.core
+  1.18.0, pinned), the MediaSend theme lost its deprecated bar-colour attributes,
+  and `patches/callkit-incoming-ui.gradle` strips the callkit screen's
+  `setStatusBarColor`/`setNavigationBarColor`. The deprecated-API warning can't
+  go fully green: Flutter's own `FlutterActivity` / `PlatformPlugin` still
+  contain those calls (gated below API 35, so they never run on Android 15),
+  and androidx's edge-to-edge helper does too.
 
 **Android is the shipped, device-verified baseline.** Calls, CallKit/Telecom,
 ringtone, media send, share intake, notifications and the lock-screen call all

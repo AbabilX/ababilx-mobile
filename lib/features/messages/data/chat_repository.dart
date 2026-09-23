@@ -31,11 +31,14 @@ class ChatRepository {
   final ChatConnectionsApi _connections;
   final ChatWebhooksApi _webhooks;
 
-  Future<String?> pinnedMessage(String conversationId) =>
-      _messages.pinnedMessage(conversationId);
+  Future<List<ChatPinnedMessage>> pinnedMessages(String conversationId) =>
+      _messages.pinnedMessages(conversationId);
 
-  Future<void> setPinnedMessage(String conversationId, String? messageId) =>
-      _messages.setPinnedMessage(conversationId, messageId);
+  Future<void> setMessagePinned(
+    String conversationId,
+    String messageId, {
+    required bool pinned,
+  }) => _messages.setMessagePinned(conversationId, messageId, pinned: pinned);
 
   Future<ChatSidebar> listConversations() => _conversations.listConversations();
 

@@ -131,6 +131,33 @@ void main() {
     expect(hits.map((m) => m.id), ['m1']);
   });
 
+  test('a chat\'s own search only reads that chat, sealed rows too', () async {
+    await store.saveAll([
+      msg('m1', '2026-08-21T00:00:00Z', body: 'deploy here'),
+      msg(
+        'm2',
+        '2026-08-22T00:00:00Z',
+        body: 'deploy there',
+        conversationId: 'c2',
+      ),
+      msg('m3', '2026-08-23T00:00:00Z', body: 'x', encryptedBody: 'Y2lwaGVy'),
+      msg(
+        'm4',
+        '2026-08-24T00:00:00Z',
+        body: 'x',
+        encryptedBody: 'Y2lwaGVy',
+        conversationId: 'c2',
+      ),
+    ]);
+
+    final hits = await LocalMessageSearch(store, (messages) async {
+      return messages
+          .map((message) => message.copyWith(body: 'deploy sealed'))
+          .toList();
+    }).search('deploy', conversationId: 'c1');
+    expect(hits.map((m) => m.id), ['m3', 'm1']);
+  });
+
   test('encrypted message is stored ciphertext-only', () async {
     await store.saveAll([
       msg(

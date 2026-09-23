@@ -66,10 +66,12 @@ class _BlockedConnectionsScreenState
           onRefresh: () async {
             ref.invalidate(blockedConnectionsProvider);
             // The provider renders a retryable error if refreshing fails.
-            await ref.read(blockedConnectionsProvider.future).then<void>(
-              (_) {},
-              onError: (Object error, StackTrace stack) {},
-            );
+            await ref
+                .read(blockedConnectionsProvider.future)
+                .then<void>(
+                  (_) {},
+                  onError: (Object error, StackTrace stack) {},
+                );
           },
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),

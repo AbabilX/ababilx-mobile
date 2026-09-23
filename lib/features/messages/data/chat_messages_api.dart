@@ -11,23 +11,26 @@ class ChatMessagesApi {
   final RequestSingleFlight<ChatMessagesPage> _pageRequests =
       RequestSingleFlight<ChatMessagesPage>();
 
-  Future<String?> pinnedMessage(String conversationId) async {
+  /// The caller's own pins in this chat, newest first, each carrying the
+  /// message as the timeline serves it (still sealed when encrypted).
+  Future<List<ChatPinnedMessage>> pinnedMessages(String conversationId) async {
     final response = await _client.get(
-      _endpoints.pinnedMessage(conversationId),
+      _endpoints.pinnedMessages(conversationId),
     );
     final data = unwrapApiData<Map<String, dynamic>>(response);
-    final id = data['message_id'] as String? ?? '';
-    return id.isEmpty ? null : id;
+    return [
+      for (final pin in data['pins'] as List? ?? const [])
+        ChatPinnedMessage.fromJson(pin as Map<String, dynamic>),
+    ];
   }
 
-  Future<void> setPinnedMessage(
+  Future<void> setMessagePinned(
     String conversationId,
-    String? messageId,
-  ) async {
-    await _client.put(
-      _endpoints.pinnedMessage(conversationId),
-      data: {'message_id': messageId ?? ''},
-    );
+    String messageId, {
+    required bool pinned,
+  }) async {
+    final path = _endpoints.pinnedMessage(conversationId, messageId);
+    pinned ? await _client.put(path) : await _client.delete(path);
   }
 
   Future<ChatMessagesPage> listMessages(

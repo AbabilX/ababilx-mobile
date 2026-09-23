@@ -10,14 +10,18 @@ String _json(String s) =>
 void main() {
   test('inline marks become their words', () {
     expect(
-      tiptapToPreviewText(_doc('**Done** with `build` and ~~old~~ [docs](https://x.io)')),
+      tiptapToPreviewText(
+        _doc('**Done** with `build` and ~~old~~ [docs](https://x.io)'),
+      ),
       'Done with build and old docs',
     );
   });
 
   test('block syntax is dropped, lines joined', () {
     expect(
-      tiptapToPreviewText(_doc('# Release notes\n- first\n- [x] second\n> quoted\n---')),
+      tiptapToPreviewText(
+        _doc('# Release notes\n- first\n- [x] second\n> quoted\n---'),
+      ),
       'Release notes first second quoted',
     );
   });
@@ -30,12 +34,17 @@ void main() {
   });
 
   test('fenced code keeps its content, not the fence', () {
-    expect(tiptapToPreviewText(_doc('```dart\nfinal a = 1;\n```')), 'final a = 1;');
+    expect(
+      tiptapToPreviewText(_doc('```dart\nfinal a = 1;\n```')),
+      'final a = 1;',
+    );
   });
 
   test('italic stripped, snake_case and arithmetic untouched', () {
-    expect(markdownToPreviewText('**x** and *soft* in my_var_name'),
-        'x and soft in my_var_name');
+    expect(
+      markdownToPreviewText('**x** and *soft* in my_var_name'),
+      'x and soft in my_var_name',
+    );
     expect(tiptapToPreviewText(_doc('2 * 3 = 6')), '2 * 3 = 6');
   });
 

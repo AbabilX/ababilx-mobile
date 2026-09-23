@@ -76,9 +76,11 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     // NotificationCompat.CallStyle (androidx.core 1.8+) for the ongoing-call
-    // notification. Pinned rather than left to transitive resolution so a
-    // plugin bump cannot quietly drop below the version that has it.
-    implementation("androidx.core:core-ktx:1.13.1")
+    // notification, and WindowCompat.enableEdgeToEdge (1.17+) for Android 15.
+    // Pinned rather than left to transitive resolution so a plugin bump cannot
+    // quietly drop below the version that has them. 1.18.0 is what the release
+    // graph already resolved to before this line said so.
+    implementation("androidx.core:core-ktx:1.18.0")
     // Signal's Android storage primitive: encrypted SQLite with a
     // Keystore-sealed random passphrase supplied by ChatDatabaseSecret.
     implementation("androidx.sqlite:sqlite:2.6.2")

@@ -5,6 +5,7 @@ import 'package:ababilx/features/messages/providers/chat_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'no_pins_override.dart';
 
 ChatConversation _group({String? avatarUrl, String? bannerUrl}) =>
     ChatConversation(
@@ -58,6 +59,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          noPinsOverride,
           chatProvider.overrideWith(
             () => _Notifier(_group(avatarUrl: 'https://cdn.example/g.jpg'), [
               const ChatMember(
@@ -89,6 +91,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          noPinsOverride,
           chatProvider.overrideWith(
             () => _Notifier(_group(), const [
               ChatMember(
@@ -118,6 +121,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          noPinsOverride,
           chatProvider.overrideWith(
             () => _Notifier(_group(), const [
               ChatMember(

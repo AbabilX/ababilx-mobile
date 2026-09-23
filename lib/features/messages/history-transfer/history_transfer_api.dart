@@ -49,7 +49,8 @@ class HistoryTransferApi {
         'token': token,
         'device_name': deviceName,
         'transfer_envelope': _encodeEnvelope(envelope),
-        'destination_public_key': destinationKeyParam ?? _jwkParam(destinationJwk),
+        'destination_public_key':
+            destinationKeyParam ?? _jwkParam(destinationJwk),
       },
     );
     return unwrapApiData<Map<String, dynamic>>(res)['id'] as String;

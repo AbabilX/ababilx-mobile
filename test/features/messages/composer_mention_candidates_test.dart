@@ -53,10 +53,10 @@ void main() {
   });
 
   test('outsiders wait for the member list', () {
-    expect(
-      _build(_conv('group'), loaded: false).map((c) => c.displayName),
-      ['all', 'Bina'],
-    );
+    expect(_build(_conv('group'), loaded: false).map((c) => c.displayName), [
+      'all',
+      'Bina',
+    ]);
   });
 
   test('the query filters both sections', () {

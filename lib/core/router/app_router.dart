@@ -16,6 +16,7 @@ import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
 import '../../features/settings/app-icon/app_icon_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
 import '../../features/messages/chat-details/conversation_details_screen.dart';
+import '../../features/messages/chat-pins/pinned_messages_screen.dart';
 import '../../features/messages/chat-media/conversation_media_screen.dart';
 import '../../features/messages/screens/conversation_screen.dart';
 import '../../features/messages/screens/connections_screen.dart';
@@ -265,6 +266,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => ConversationMediaScreen(
           conversationId: state.pathParameters['id']!,
         ),
+      ),
+      GoRoute(
+        path: '/messages/:id/pins',
+        builder: (_, state) =>
+            PinnedMessagesScreen(conversationId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/messages/:id/wallpaper',

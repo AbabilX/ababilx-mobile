@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import androidx.core.view.WindowCompat
 import com.ababilx.app.mediasend.MediaSendChannel
 import com.ababilx.call_ringer.CallRinger
 import io.flutter.embedding.android.FlutterActivity
@@ -17,6 +18,11 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Edge to edge on every version, not only the Android 15 default:
+        // Flutter reads the bars as viewPadding and every screen already pads
+        // for them. After super, which paints its own translucent status bar
+        // below API 35. This is also the call Play Console looks for.
+        WindowCompat.enableEdgeToEdge(window)
         // After super, because its cover goes over the FlutterView. A recreated
         // Activity still carries its old intent, and that is not a new Accept.
         if (savedInstanceState == null) callLockScreen.handleIntent(intent)

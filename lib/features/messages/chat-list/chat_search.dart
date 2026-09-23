@@ -37,10 +37,9 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
   ChatSearchDelegate(this.ref, {this.conversationId, this.conversationTitle});
   final WidgetRef ref;
 
-  /// Opened from one chat's details screen: the server search is account-wide,
-  /// so the message hits are narrowed here rather than pretending to be global.
-  /// Name-matched sidebar chats stay global — the same two-section layout as
-  /// the list search, which is how a person jumps to another chat from here.
+  /// Opened from one chat's details screen: only that chat's messages, no
+  /// name-matched chats, and a hit closes the search with the MESSAGE id so
+  /// the chat can walk to it. The global search closes with a conversation id.
   final String? conversationId;
   final String? conversationTitle;
 
@@ -92,7 +91,9 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
     if (q.isNotEmpty && ref.read(chatProvider).searchQuery != q) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (query.trim() != q) return;
-        ref.read(chatProvider.notifier).searchMessages(q);
+        ref
+            .read(chatProvider.notifier)
+            .searchMessages(q, conversationId: conversationId);
       });
     }
     return _list(context);
@@ -105,5 +106,8 @@ class ChatSearchDelegate extends SearchDelegate<String?> {
       close(context, id);
       context.push('/messages/$id');
     },
+    onOpenMessage: conversationId == null
+        ? null
+        : (message) => close(context, message.id),
   );
 }

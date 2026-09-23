@@ -55,7 +55,9 @@ String _stripInline(String line) => line
 
 final _fence = RegExp(r'^[ \t]{0,3}(```|~~~)');
 final _rule = RegExp(r'^[ \t]{0,3}(?:[-*_][ \t]*){3,}$');
-final _tableDivider = RegExp(r'^[ \t]*\|?[ \t]*:?-{3,}:?[ \t]*(\|[ \t]*:?-{3,}:?[ \t]*)*\|?[ \t]*$');
+final _tableDivider = RegExp(
+  r'^[ \t]*\|?[ \t]*:?-{3,}:?[ \t]*(\|[ \t]*:?-{3,}:?[ \t]*)*\|?[ \t]*$',
+);
 final _tableRow = RegExp(r'^[ \t]*\|.*\|[ \t]*$');
 final _heading = RegExp(r'^[ \t]{0,3}#{1,6}[ \t]+');
 final _quote = RegExp(r'^[ \t]{0,3}(?:>[ \t]?)+');

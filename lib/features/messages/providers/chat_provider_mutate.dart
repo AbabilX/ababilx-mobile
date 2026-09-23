@@ -126,7 +126,11 @@ mixin _ChatMutateMixin
   /// Local history answers first so results appear with no round trip.
   /// One character is enough on-device; the server is only asked at two or more
   /// so a single keystroke does not fan out a network search.
-  Future<void> searchMessages(String q) async {
+  /// [conversationId] scopes the search to one chat (its details screen).
+  /// The server index reads plaintext only, so its answer is MERGED with the
+  /// on-device hits rather than replacing them — an encrypted DM or group
+  /// exists only in the local, vault-decrypted half.
+  Future<void> searchMessages(String q, {String? conversationId}) async {
     state = state.copyWith(searchQuery: q, searchLoading: true);
     final store = (this as _ChatCacheMixin).messageStore;
     final vault = ref.read(messageVaultProvider);
@@ -146,7 +150,7 @@ mixin _ChatMutateMixin
                   .toList();
             }
           : (_) async => const [],
-    ).search(q);
+    ).search(q, conversationId: conversationId);
     if (state.searchQuery != q) return;
     if (q.trim().length < 2) {
       state = state.copyWith(searchResults: local, searchLoading: false);
@@ -156,9 +160,17 @@ mixin _ChatMutateMixin
       state = state.copyWith(searchResults: local, searchLoading: false);
     }
     try {
-      final results = await repo.searchMessages(q);
+      final remote = (await repo.searchMessages(q)).where(
+        (m) => conversationId == null || m.conversationId == conversationId,
+      );
       if (state.searchQuery != q) return;
-      state = state.copyWith(searchResults: results, searchLoading: false);
+      final merged =
+          <String, ChatMessage>{
+              for (final m in remote) m.id: m,
+              for (final m in local) m.id: m,
+            }.values.toList()
+            ..sort((a, b) => messageTimeMs(b).compareTo(messageTimeMs(a)));
+      state = state.copyWith(searchResults: merged, searchLoading: false);
     } catch (_) {
       // Offline: whatever the local index found stands as the answer.
       if (state.searchQuery != q) return;

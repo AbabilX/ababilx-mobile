@@ -20,13 +20,16 @@ HistoryMergeSide? _side(Object? raw) {
     raw['provenance'] == 'server'
         ? HistoryProvenance.server
         : HistoryProvenance.phone,
-    HistoryMergeMessage.fromJson(Map<String, dynamic>.from(raw['message'] as Map)),
+    HistoryMergeMessage.fromJson(
+      Map<String, dynamic>.from(raw['message'] as Map),
+    ),
   );
 }
 
 void main() {
   group('merge contract (protocol section 7)', () {
-    for (final raw in _fixture('history-transfer-v2-merge.json')['cases'] as List) {
+    for (final raw
+        in _fixture('history-transfer-v2-merge.json')['cases'] as List) {
       final item = Map<String, dynamic>.from(raw as Map);
       test('row ${item['row']}: ${item['name']}', () {
         final decision = decideHistoryMerge(
@@ -42,10 +45,14 @@ void main() {
   });
 
   group('attachment url key (the file identity across platforms)', () {
-    for (final raw in _fixture('history-transfer-v2-url-key.json')['cases'] as List) {
+    for (final raw
+        in _fixture('history-transfer-v2-url-key.json')['cases'] as List) {
       final item = Map<String, dynamic>.from(raw as Map);
       test('"${item['url']}"', () {
-        expect(normaliseAttachmentUrl(item['url'] as String), item['normalised']);
+        expect(
+          normaliseAttachmentUrl(item['url'] as String),
+          item['normalised'],
+        );
         expect(attachmentUrlKey(item['url'] as String), item['url_key']);
       });
     }

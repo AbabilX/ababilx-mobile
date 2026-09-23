@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'no_pins_override.dart';
 
 ChatMessage _message(String id, String userId, {String? body}) => ChatMessage(
   id: id,
@@ -178,7 +179,10 @@ void main() {
     tester,
   ) async {
     Widget composer() => ProviderScope(
-      overrides: [chatProvider.overrideWith(_ComposerNotifier.new)],
+      overrides: [
+        noPinsOverride,
+        chatProvider.overrideWith(_ComposerNotifier.new),
+      ],
       child: const MaterialApp(
         home: Scaffold(body: MessageComposer(conversationId: 'conversation-1')),
       ),
@@ -202,7 +206,7 @@ void main() {
   ) async {
     Future<void> mount(ChatNotifier Function() notifier) => tester.pumpWidget(
       ProviderScope(
-        overrides: [chatProvider.overrideWith(notifier)],
+        overrides: [noPinsOverride, chatProvider.overrideWith(notifier)],
         child: const MaterialApp(
           home: Scaffold(
             body: MessageComposer(conversationId: 'conversation-1'),
@@ -230,6 +234,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          noPinsOverride,
           chatProvider.overrideWith(_ComposerNotifier.new),
           composerDraftStoreProvider.overrideWithValue(store),
         ],
@@ -254,6 +259,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          noPinsOverride,
           chatProvider.overrideWith(_ComposerNotifier.new),
           composerDraftStoreProvider.overrideWithValue(store),
         ],
@@ -280,6 +286,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          noPinsOverride,
           chatProvider.overrideWith(_CompletingComposerNotifier.new),
           composerDraftStoreProvider.overrideWithValue(store),
           _sendResultProvider.overrideWithValue(result),
@@ -308,7 +315,10 @@ void main() {
     var revealRequested = false;
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [chatProvider.overrideWith(_ComposerNotifier.new)],
+        overrides: [
+          noPinsOverride,
+          chatProvider.overrideWith(_ComposerNotifier.new),
+        ],
         child: MaterialApp(
           home: Scaffold(
             body: MessageComposer(
@@ -341,7 +351,10 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [chatProvider.overrideWith(_TimelineNotifier.new)],
+        overrides: [
+          noPinsOverride,
+          chatProvider.overrideWith(_TimelineNotifier.new),
+        ],
         child: const MaterialApp(
           home: Scaffold(body: ChatTimeline(conversationId: 'conversation-1')),
         ),

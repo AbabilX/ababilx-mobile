@@ -10,6 +10,7 @@ import '../../calls/providers/voice_call_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
 import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
+import '../chat-timeline/pinned_message_actions.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../nav_back.dart';
@@ -85,8 +86,14 @@ class ChatHeader extends ConsumerWidget {
                   await ref.read(chatConnectionsProvider.notifier).refresh();
                   if (!context.mounted) return;
                 }
-                if (context.mounted) {
-                  context.push('/messages/${conversation.id}/details');
+                if (!context.mounted) return;
+                // Details answers with a message id when a pin or a search hit
+                // was chosen there; the timeline this header sits on walks to it.
+                final messageId = await context.push<String>(
+                  '/messages/${conversation.id}/details',
+                );
+                if (messageId != null && context.mounted) {
+                  await jumpToPinnedMessage(context, ref, messageId);
                 }
               },
               borderRadius: BorderRadius.circular(8),

@@ -99,9 +99,9 @@ ChatListPreview chatListPreview(ChatConversation conv, String? currentUserId) {
   } else if (hasBody) {
     text = tiptapToPreviewText(rawBody);
     if (text.isEmpty || _looksLikeJson(text)) {
-      text = markdownToPreviewText(extractFromBrokenTiptapJson(rawBody))
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim();
+      text = markdownToPreviewText(
+        extractFromBrokenTiptapJson(rawBody),
+      ).replaceAll(RegExp(r'\s+'), ' ').trim();
     }
     if (_looksLikeJson(text)) text = '';
   }

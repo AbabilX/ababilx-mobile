@@ -38,4 +38,24 @@ gradle.beforeProject { project ->
         params.setMargins(0, 0, 0, Utils.getNavigationBarHeight(this@CallkitIncomingActivity) + lift)
         llAction.layoutParams = params''',
         'incoming-action-lift')
+
+    // Play Console (Android 15): Window.setStatusBarColor / setNavigationBarColor
+    // are deprecated and flagged wherever they appear in the bytecode, gated or
+    // not. They were only ever making the two bars transparent; the theme's
+    // windowTranslucentStatus/Navigation already lays the call screen out under
+    // both bars, so keep those flags and drop the colour calls. Android 15+
+    // ignored the colours anyway; below it the bars show the platform's light
+    // scrim over the (dark) call background instead of nothing.
+    patchSource(activity,
+        '''        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            setWindowFlag(
+                (WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+                        or WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION), false
+            )
+            window.statusBarColor = Color.TRANSPARENT
+            window.navigationBarColor = Color.TRANSPARENT
+        }''',
+        '''        // AbabilX: no deprecated bar-colour calls (Play, Android 15). The
+        // theme's translucent bars keep the screen edge to edge.''',
+        'edge-to-edge-bar-colours')
 }
