@@ -11,6 +11,25 @@ class ChatMessagesApi {
   final RequestSingleFlight<ChatMessagesPage> _pageRequests =
       RequestSingleFlight<ChatMessagesPage>();
 
+  Future<String?> pinnedMessage(String conversationId) async {
+    final response = await _client.get(
+      _endpoints.pinnedMessage(conversationId),
+    );
+    final data = unwrapApiData<Map<String, dynamic>>(response);
+    final id = data['message_id'] as String? ?? '';
+    return id.isEmpty ? null : id;
+  }
+
+  Future<void> setPinnedMessage(
+    String conversationId,
+    String? messageId,
+  ) async {
+    await _client.put(
+      _endpoints.pinnedMessage(conversationId),
+      data: {'message_id': messageId ?? ''},
+    );
+  }
+
   Future<ChatMessagesPage> listMessages(
     String conversationId, {
     String? cursor,

@@ -92,10 +92,10 @@ class ChatWallpaperPreset {
 const List<ChatWallpaperPreset> chatWallpaperPresets = [
   ChatWallpaperPreset(
     chatWallpaperMobileId,
-    [Color(0xFFE6E2DA)],
-    asset: 'assets/images/wallpapers/mobile_light.jpg',
-    darkAsset: 'assets/images/wallpapers/mobile_dark.jpg',
-    darkSolid: Color(0xFF1A3D2E),
+    [Color(0xFFECECE8)],
+    asset: 'assets/images/wallpapers/mobile_light.webp',
+    darkAsset: 'assets/images/wallpapers/mobile_dark.webp',
+    darkSolid: Color(0xFF171717),
     alignment: chatWallpaperPatternAlignment,
   ),
   ChatWallpaperPreset(chatWallpaperDewdropId, [

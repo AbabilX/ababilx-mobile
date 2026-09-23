@@ -79,6 +79,18 @@ void main() {
     expect(ChatWallpaper.none.effective.presetId, chatWallpaperMobileId);
     expect(ChatWallpaper.none.effective.dimInDark, isFalse);
     expect(ChatWallpaper.builtInDefault.presetId, chatWallpaperMobileId);
+    expect(ChatWallpaper.builtInDefault.drawOpacity, 0.2);
+    expect(ChatWallpaper.none.effective.drawOpacity, 0.2);
+    final pattern = ChatWallpaper.builtInDefault;
+    expect(pattern.paintOpacity(Brightness.dark), 0.2);
+    expect(pattern.paintOpacity(Brightness.light), closeTo(0.05, 1e-9));
+    expect(pattern.copyWith(opacity: 1).paintOpacity(Brightness.light), 1);
+    final faint = pattern.copyWith(opacity: 0.05);
+    expect(faint.drawOpacity, 0.05);
+    expect(faint.paintOpacity(Brightness.dark), 0.05);
+    expect(faint.paintOpacity(Brightness.light), closeTo(0.0125, 1e-9));
+    final dewdrop = ChatWallpaper.preset(chatWallpaperDewdropId, opacity: 0.2);
+    expect(dewdrop.paintOpacity(Brightness.light), 0.2);
   });
 
   test('the paintings lead the grid and name real bundled files', () {
@@ -106,11 +118,11 @@ void main() {
     expect(mobile.isThemePair, isTrue);
     expect(
       mobile.assetFor(Brightness.light),
-      'assets/images/wallpapers/mobile_light.jpg',
+      'assets/images/wallpapers/mobile_light.webp',
     );
     expect(
       mobile.assetFor(Brightness.dark),
-      'assets/images/wallpapers/mobile_dark.jpg',
+      'assets/images/wallpapers/mobile_dark.webp',
     );
     expect(mobile.alignment, chatWallpaperPatternAlignment);
   });

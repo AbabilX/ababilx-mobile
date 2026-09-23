@@ -71,7 +71,7 @@ class ChatWallpaperPaint extends StatelessWidget {
         wallpaper.kind == ChatWallpaperKind.preset &&
         (chatWallpaperPresetById(wallpaper.presetId)?.isThemePair ?? false);
     final dim = wallpaper.dimInDark && dark && !themePair;
-    final opacity = wallpaper.drawOpacity;
+    final opacity = wallpaper.paintOpacity(Theme.of(context).brightness);
 
     return Stack(
       fit: StackFit.expand,

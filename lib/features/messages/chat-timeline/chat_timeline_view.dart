@@ -7,6 +7,7 @@ import '../chat-select/selection_top_bar.dart';
 import '../data/models/chat_models.dart';
 import '../safety_number/safety_number_banner.dart';
 import 'message_list.dart';
+import 'pinned_message_banner.dart';
 import 'scroll_to_bottom_pill.dart';
 import 'timeline_composer.dart';
 
@@ -83,6 +84,11 @@ class ChatTimelineView extends ConsumerWidget {
               heightFactor: showHeader ? 1 : 0,
               child: header,
             ),
+          ),
+        if (threadRootId == null && !selecting)
+          PinnedMessageBanner(
+            conversationId: conversationId,
+            messages: messages,
           ),
         // Keyed because the first and last children swap type when selection
         // starts or ends. With both ends changed, the Column can only match

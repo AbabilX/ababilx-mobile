@@ -13,6 +13,7 @@ enum SignalMessageAction {
   thread,
   select,
   edit,
+  pin,
   delete,
 }
 
@@ -46,6 +47,8 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
   required bool showThread,
   required bool showSave,
   required bool showSelect,
+  bool showPin = false,
+  bool pinned = false,
   required Map<String, String> labels,
   SignalMenuPointer? pointer,
   bool showForward = true,
@@ -79,6 +82,8 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
         showThread: showThread,
         showSave: showSave,
         showSelect: showSelect,
+        showPin: showPin,
+        pinned: pinned,
         labels: labels,
         showForward: showForward,
         showCopy: showCopy,

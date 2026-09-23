@@ -17,6 +17,8 @@ List<SignalMenuItem> signalMenuItems({
   required bool showThread,
   required bool showSave,
   required bool showSelect,
+  bool showPin = false,
+  bool pinned = false,
   required Map<String, String> labels,
   bool showForward = true,
   bool showCopy = true,
@@ -65,6 +67,12 @@ List<SignalMenuItem> signalMenuItems({
       SignalMessageAction.edit,
       Icons.edit_outlined,
       labels['edit']!,
+    ),
+  if (showPin)
+    SignalMenuItem(
+      SignalMessageAction.pin,
+      pinned ? Icons.push_pin_outlined : Icons.push_pin_rounded,
+      labels[pinned ? 'unpin' : 'pin']!,
     ),
   // Every message: somebody else's can still be deleted for me.
   SignalMenuItem(

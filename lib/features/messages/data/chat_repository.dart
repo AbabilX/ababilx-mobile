@@ -31,6 +31,12 @@ class ChatRepository {
   final ChatConnectionsApi _connections;
   final ChatWebhooksApi _webhooks;
 
+  Future<String?> pinnedMessage(String conversationId) =>
+      _messages.pinnedMessage(conversationId);
+
+  Future<void> setPinnedMessage(String conversationId, String? messageId) =>
+      _messages.setPinnedMessage(conversationId, messageId);
+
   Future<ChatSidebar> listConversations() => _conversations.listConversations();
 
   /// A webhook feed is an ordinary group in every way except that nobody may

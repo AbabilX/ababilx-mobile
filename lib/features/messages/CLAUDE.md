@@ -1304,9 +1304,9 @@ null` on the menu and the same test in the row and the view.
   ScrollPosition at 0. That threw the reader to the newest message on every
   Select and every exit (fixed 2026-09-23). Pinned by
   `selection_scroll_keep_test.dart`.
-- Deliberately absent: Signal's Details, star/pin and "select all". We have no
+- Deliberately absent: Signal's Details, star and "select all". We have no
   message-details screen and nothing stores a star, and a dead row is worse than
-  a missing one.
+  a missing one. Pin is single-message only (long-press menu, see below).
 - Tests: `test/features/messages/message_selection_test.dart` (the provider and
   every menu rule) and `message_multiselect_test.dart` (Select in the menu, the
   shift, the checks, and the two bars swapping in).
@@ -1528,3 +1528,40 @@ The action prevents duplicate taps, keeps the row on failure, offers retry,
 and refreshes blocked people, accepted connections and the chat sidebar after
 success. Message history is untouched. `blocked_connections_test.dart` covers
 the endpoint/peer-id contract, success, duplicate taps, failure and list retry.
+
+## Personal message pin — 2026-09-23
+
+Each member can pin one message per conversation for themselves. Long-press a
+sent message → Pin message; its banner stays above the timeline and jumps to
+the row. The banner's close action unpins it. Pinning another message replaces
+the old pin. The peer's pin is separate. Pending and purged messages cannot be
+pinned from the client.
+
+The server's `0155_chat_message_pin_v1.sql` adds only a nullable message ID to
+`chat_conversation_members`. `GET|PUT /api/chat/conversations/:id/pinned-message`
+(both prefixes; server code in `db|handlers/chat/conversations/messagepin/`)
+read/write the caller's row. The write checks chat membership and that the
+message belongs to this conversation and is visible to the caller; the read
+filters deleted, hidden and pre-join encrypted rows. No plaintext preview is
+stored on the server: the banner uses the current device's loaded message body
+when available. Pins do not extend the 180-day server content window or change
+device history. `message_pin_test.dart` covers API and banner behavior; the Go
+integration test covers ownership, cross-chat writes and hidden messages when
+a disposable PostgreSQL test database is configured.
+
+The banner uses the existing timeline jump walker. A message beyond its
+40-screen search limit reports that it could not be found instead of moving
+the reader to the wrong place. A direct indexed jump would need a separate
+targeted history-loading feature.
+
+## Block / Unblock on DM details — 2026-09-23
+
+`chat-details/details_block_tile.dart` draws **Unblock** when the caller owns
+the block, **Block** otherwise. `lock_reason: blocked` is the same for both
+people, so direction comes from `blockedConnectionsProvider` (server lists only
+the caller's own blocks) — a block the peer placed never reveals itself. While
+that list loads on a blocked chat the row draws nothing. Neither action leaves
+the screen any more (Block used to jump to `/messages`); the row flipping is
+the confirmation. Unblock is the same `DELETE /api/chat/connections/:userId` as
+Blocked people and does not restore acceptance. Pinned by
+`details_block_tile_test.dart`.

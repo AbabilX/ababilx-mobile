@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/models/chat_models.dart';
-import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
+import 'details_block_tile.dart';
 import 'details_tile.dart';
 import 'group_permissions.dart';
 import 'report_spam_action.dart';
@@ -67,23 +67,7 @@ class DetailsDangerActions extends ConsumerWidget {
           if (conversation.isPersonal &&
               conversation.hasDmPeer &&
               !conversation.isAccountDeleted)
-            DetailsTile(
-              icon: const Icon(Icons.block_rounded),
-              title: 'Block',
-              destructive: true,
-              onTap: () => _confirm(
-                context,
-                ref,
-                title: 'Block ${conversation.peerUserName ?? 'this person'}?',
-                body:
-                    'They will not be able to message or call you. Blocking '
-                    'is permanent until you undo it in People.',
-                action: 'Block',
-                run: () => ref
-                    .read(chatConnectionsProvider.notifier)
-                    .block(conversation.peerUserId!),
-              ),
-            ),
+            DetailsBlockTile(conversation: conversation),
         ],
         // Report sits with the other red rows but ends nothing: filing one
         // leaves the conversation exactly as it was unless the person also

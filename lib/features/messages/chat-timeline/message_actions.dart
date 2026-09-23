@@ -10,8 +10,10 @@ import '../chat-forward/forward_sheet.dart';
 import '../chat-select/message_selection.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
+import '../providers/pinned_message_provider.dart';
 import '../tiptap_plain_text.dart';
 import 'delete_message_dialog.dart';
+import 'pinned_message_actions.dart';
 import 'reaction_emoji_picker.dart';
 import 'save_message_attachments.dart';
 import 'signal_menu_pointer.dart';
@@ -38,6 +40,7 @@ Future<void> showMessageActions(
   // A JPack is a card: a forwarded copy would share its id (and its opened
   // state), editing would overwrite it, and its body is a payload, not text.
   final isJPack = JPackPayload.tryParse(msg.body) != null;
+  final pinnedId = ref.read(pinnedMessageProvider(conversationId)).valueOrNull;
 
   String tr(String key) => AppTranslations.translate(context, ref, key);
   final result = await showSignalMessageMenu(
@@ -59,6 +62,8 @@ Future<void> showMessageActions(
     // panel has room for neither — so the door only opens on the main
     // timeline, where those bars replace the header and the composer.
     showSelect: threadRootId == null,
+    showPin: threadRootId == null && !msg.isPending && !msg.contentPurged,
+    pinned: pinnedId == msg.id,
     // The sender's own restricted photo is still theirs to forward; nobody
     // else may (the server refuses it too).
     showForward: !isJPack && !locked && (isMine || !msg.hasProtectedMedia),
@@ -74,6 +79,8 @@ Future<void> showMessageActions(
       'select': tr('chat_select'),
       'edit': tr('chat_edit'),
       'delete': tr('chat_delete'),
+      'pin': tr('chat_pin_message'),
+      'unpin': tr('chat_unpin_message'),
       'moreReactions': tr('chat_more_reactions'),
     },
   );
@@ -114,6 +121,13 @@ Future<void> showMessageActions(
           .start(conversationId: conversationId, messageId: msg.id);
     case SignalMessageAction.edit:
       await editMessageFlow(context, ref, msg);
+    case SignalMessageAction.pin:
+      await changePinnedMessage(
+        context,
+        ref,
+        conversationId,
+        pinnedId == msg.id ? null : msg.id,
+      );
     case SignalMessageAction.delete:
       final scope = await showDeleteMessageDialog(
         context,
@@ -126,6 +140,9 @@ Future<void> showMessageActions(
         scope == MessageDeleteScope.everyone
             ? await n.deleteMessage(msg.id)
             : await n.hideMessage(msg.id);
+        if (pinnedId == msg.id) {
+          ref.invalidate(pinnedMessageProvider(conversationId));
+        }
       } catch (_) {
         if (context.mounted) {
           showAppToast(

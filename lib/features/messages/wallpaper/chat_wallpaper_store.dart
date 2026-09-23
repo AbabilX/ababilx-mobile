@@ -53,10 +53,25 @@ class ChatWallpaperStore {
     await prefs.setString(key, wallpaper.encode());
   }
 
+  /// Whether any stored wallpaper, global or per chat, still paints [path].
+  /// A saved photo's file is only deleted when nothing points at it.
+  Future<bool> photoInUse(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs
+        .getKeys()
+        .where((k) => k == _globalKey || k.startsWith(_perChatPrefix))
+        .map((k) => ChatWallpaper.decode(prefs.getString(k)))
+        .any((w) => w.kind == ChatWallpaperKind.photo && w.photoPath == path);
+  }
+
   /// Drops every per-chat override, leaving only the global default.
   Future<void> clearAllOverrides() async {
     final prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys().where((k) => k.startsWith(_perChatPrefix));
+    // The global key shares the prefix; "reset every chat to this" must keep
+    // the very wallpaper it resets them to.
+    final keys = prefs.getKeys().where(
+      (k) => k != _globalKey && k.startsWith(_perChatPrefix),
+    );
     for (final key in keys) {
       await prefs.remove(key);
     }

@@ -16,7 +16,19 @@ enum ChatWallpaperKind { none, preset, photo }
 ///
 /// Not zero: a fully transparent wallpaper is indistinguishable from having
 /// none, so the slider's floor would look like a bug rather than a setting.
-const double chatWallpaperMinOpacity = 0.2;
+const double chatWallpaperMinOpacity = 0.05;
+
+/// How strongly the built-in doodle pattern draws until somebody moves the
+/// slider. It is a busy, high-contrast line drawing, so full strength fights
+/// the bubbles; at the floor it reads as texture behind the chat.
+const double chatWallpaperDefaultOpacity = 0.2;
+
+/// What the default draws as for a theme-pair pattern in light theme.
+///
+/// Dark lines on a pale ground read much louder than pale lines on a dark
+/// one, so the same 20% that sits quietly at night is busy by day. Below the
+/// default light draws at half; above it the range stretches back to 100%.
+const double chatWallpaperLightPatternFloor = 0.05;
 
 /// A chat background.
 ///
@@ -68,6 +80,7 @@ class ChatWallpaper {
   static ChatWallpaper get builtInDefault => ChatWallpaper.preset(
     chatWallpaperMobileId,
     dimInDark: false,
+    opacity: chatWallpaperDefaultOpacity,
   );
 
   final ChatWallpaperKind kind;
@@ -86,6 +99,21 @@ class ChatWallpaper {
 
   /// What the painters actually use.
   double get drawOpacity => opacity.clamp(chatWallpaperMinOpacity, 1.0);
+
+  /// [drawOpacity] as painted in [brightness]. A theme-pair pattern in light
+  /// theme draws the default at [chatWallpaperLightPatternFloor], anything
+  /// fainter at the same ratio, and stretches the rest back up to 1.
+  double paintOpacity(Brightness brightness) {
+    final value = drawOpacity;
+    final pattern =
+        kind == ChatWallpaperKind.preset &&
+        (chatWallpaperPresetById(presetId)?.isThemePair ?? false);
+    if (!pattern || brightness != Brightness.light) return value;
+    const floor = chatWallpaperLightPatternFloor;
+    const base = chatWallpaperDefaultOpacity;
+    if (value <= base) return value * floor / base;
+    return floor + (value - base) * (1 - floor) / (1 - base);
+  }
 
   ChatWallpaper copyWith({bool? dimInDark, double? opacity}) => ChatWallpaper(
     kind: kind,

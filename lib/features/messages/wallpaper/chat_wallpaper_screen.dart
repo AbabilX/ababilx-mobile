@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/media/pick_wallpaper_photo.dart';
 import 'chat_wallpaper.dart';
+import 'chat_wallpaper_full_preview.dart';
 import 'chat_wallpaper_grid.dart';
 import 'chat_wallpaper_opacity_slider.dart';
+import 'chat_wallpaper_photo_grid.dart';
+import 'chat_wallpaper_photos.dart';
 import 'chat_wallpaper_preview.dart';
 import 'chat_wallpaper_provider.dart';
 
@@ -48,8 +51,24 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
 
   Future<void> _pickPhoto() async {
     final path = await pickWallpaperPhoto(context);
-    if (path == null) return;
-    await _apply(_carrying(ChatWallpaper.photo(path)));
+    if (path == null || !mounted) return;
+    await _previewPhoto(path);
+  }
+
+  /// A photo is kept in "Your photos" only once Save is pressed, so a
+  /// cancelled preview leaves nothing behind.
+  Future<void> _previewPhoto(String path) async {
+    final next = _carrying(ChatWallpaper.photo(path));
+    if (!await showChatWallpaperFullPreview(context, next)) return;
+    final photos = ref.read(chatWallpaperPhotosProvider.notifier);
+    final kept = await photos.keep(path);
+    if (mounted) await _apply(_carrying(ChatWallpaper.photo(kept)));
+  }
+
+  /// A new picture opens on its own screen first; only Save keeps it.
+  Future<void> _previewThenApply(ChatWallpaper next) async {
+    if (!await showChatWallpaperFullPreview(context, next)) return;
+    if (mounted) await _apply(next);
   }
 
   /// Keeps the two adjustments across a change of picture.
@@ -90,9 +109,15 @@ class _ChatWallpaperScreenState extends ConsumerState<ChatWallpaperScreen> {
                 ? wallpaper.presetId
                 : null,
             onSelect: (preset) =>
-                _apply(_carrying(ChatWallpaper.preset(preset.id))),
+                _previewThenApply(_carrying(ChatWallpaper.preset(preset.id))),
           ),
           const SizedBox(height: 8),
+          ChatWallpaperPhotoGrid(
+            selectedPath: wallpaper.kind == ChatWallpaperKind.photo
+                ? wallpaper.photoPath
+                : null,
+            onSelect: _previewPhoto,
+          ),
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.image_outlined),
