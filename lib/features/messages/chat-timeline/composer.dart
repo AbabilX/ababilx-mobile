@@ -1184,7 +1184,7 @@ Future<void> _showNotInChannelDialog(
                 );
               }
             },
-            child: const Text('Add to channel'),
+            child: const Text('Add to group'),
           ),
         ],
       );
