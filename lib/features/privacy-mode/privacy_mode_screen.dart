@@ -6,10 +6,11 @@ import '../../core/localization/app_translations.dart';
 import '../../shared/widgets/app_bar_back_button.dart';
 import '../../shared/widgets/app_toast.dart';
 import '../messages/chat_icon.dart';
+import 'people/privacy_people_row.dart';
 import 'privacy_mode_provider.dart';
 
-/// Settings → Privacy mode. One switch, then exactly what it does to the
-/// other person, then what it cannot do — a promise that overstates itself
+/// Settings → Privacy mode. One switch and its per-person exceptions, then
+/// exactly what it does to the other person, then what it cannot do — a promise that overstates itself
 /// is worse than a smaller one kept.
 class PrivacyModeScreen extends ConsumerWidget {
   const PrivacyModeScreen({super.key});
@@ -60,6 +61,7 @@ class PrivacyModeScreen extends ConsumerWidget {
               style: theme.textTheme.bodySmall?.copyWith(color: muted),
             ),
           ),
+          const PrivacyPeopleRow(),
           const Divider(height: 24),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),

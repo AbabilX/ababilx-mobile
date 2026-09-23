@@ -1,10 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../messages/providers/chat_provider.dart';
+import 'people/privacy_people_provider.dart';
+import 'people/privacy_person.dart';
 import 'privacy_mode_provider.dart';
 
 /// Live privacy-mode flips of DM peers, from `chat.peer_privacy`, keyed by
-/// user id. The sidebar row's `peer_privacy` is the truth as of the last
+/// user id. The value is where that peer's privacy stands toward THIS
+/// account — their switch folded with any per-person choice, decided by the
+/// server. The sidebar row's `peer_privacy` is the truth as of the last
 /// fetch; an entry here is anything newer.
 class PeerPrivacyOverrides extends Notifier<Map<String, bool>> {
   @override
@@ -21,6 +25,17 @@ class PeerPrivacyOverrides extends Notifier<Map<String, bool>> {
       return;
     }
     state = {...state, from: on};
+  }
+
+  /// `chat.privacy_person`: this account changed its choice for one person
+  /// on another device.
+  void onPersonEvent(Map<String, dynamic> ev) {
+    final person = ev['privacy_person'];
+    if (person is! Map) return;
+    final id = person['user_id'];
+    final mode = PrivacyPersonMode.fromWire(person['mode']);
+    if (id is! String || id.isEmpty || mode == null) return;
+    ref.read(privacyPeopleProvider.notifier).applyRemote(id, mode);
   }
 }
 

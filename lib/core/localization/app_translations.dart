@@ -674,6 +674,34 @@ class AppTranslations {
           'Privacy mode is on, so nobody can find you. Your choices below '
           'come back when you turn it off.',
       'privacy_mode_badge': 'Private',
+      'privacy_person_tile': 'Privacy with this person',
+      'privacy_person_sheet_title': 'Privacy with {name}',
+      'privacy_person_follow': 'Follow my setting',
+      'privacy_person_follow_on': 'Privacy mode is on right now',
+      'privacy_person_follow_off': 'Privacy mode is off right now',
+      'privacy_person_always': 'Always private with them',
+      'privacy_person_always_hint': 'Even while privacy mode is off',
+      'privacy_person_never': 'Never private with them',
+      'privacy_person_never_hint': 'Even while privacy mode is on',
+      'privacy_person_value_on': 'Follows your setting · private',
+      'privacy_person_value_off': 'Follows your setting · not private',
+      'privacy_person_scope':
+          'This changes only what this person sees in your chat and calls. '
+          'Search and group adds still follow the main switch.',
+      'privacy_person_save_failed': 'Could not save this choice',
+      'privacy_people_title': 'Exceptions',
+      'privacy_people_hint':
+          'People who are always or never private, whatever the switch says',
+      'privacy_people_count': '{n} people',
+      'privacy_people_none': 'None',
+      'privacy_people_add': 'Add person',
+      'privacy_people_empty':
+          'No exceptions yet. Everyone follows the switch. You can also set '
+          'this from a chat: tap the name, then Privacy with this person.',
+      'privacy_people_pick_title': 'Choose a person',
+      'privacy_people_pick_empty': 'No chats to choose from',
+      'privacy_people_search': 'Search',
+      'privacy_people_someone': 'Someone',
       'chat_media_expired': 'Photo expired',
       'chat_media_not_opened': 'Not opened yet',
       'chat_media_protected_forward': 'This cannot be forwarded',
@@ -1432,6 +1460,33 @@ class AppTranslations {
           'প্রাইভেসি মোড চালু, তাই কেউ আপনাকে খুঁজে পাবে না। বন্ধ করলে নিচের '
           'সেটিংস আগের মতো ফিরে আসবে।',
       'privacy_mode_badge': 'প্রাইভেট',
+      'privacy_person_tile': 'এই ব্যক্তির সাথে প্রাইভেসি',
+      'privacy_person_sheet_title': '{name}-এর সাথে প্রাইভেসি',
+      'privacy_person_follow': 'আমার সেটিং মেনে চলুক',
+      'privacy_person_follow_on': 'প্রাইভেসি মোড এখন চালু',
+      'privacy_person_follow_off': 'প্রাইভেসি মোড এখন বন্ধ',
+      'privacy_person_always': 'তার সাথে সবসময় প্রাইভেট',
+      'privacy_person_always_hint': 'প্রাইভেসি মোড বন্ধ থাকলেও',
+      'privacy_person_never': 'তার সাথে কখনো প্রাইভেট নয়',
+      'privacy_person_never_hint': 'প্রাইভেসি মোড চালু থাকলেও',
+      'privacy_person_value_on': 'আপনার সেটিং মেনে চলে · প্রাইভেট',
+      'privacy_person_value_off': 'আপনার সেটিং মেনে চলে · প্রাইভেট নয়',
+      'privacy_person_scope':
+          'এটি শুধু বদলায় এই ব্যক্তি আপনার চ্যাট ও কলে কী দেখবেন। '
+          'সার্চ ও গ্রুপে যোগ করা মূল সুইচ মেনেই চলে।',
+      'privacy_person_save_failed': 'এই সেটিং সেভ করা যায়নি',
+      'privacy_people_title': 'ব্যতিক্রম',
+      'privacy_people_hint': 'যারা সবসময় বা কখনোই প্রাইভেট নন, সুইচ যা-ই বলুক',
+      'privacy_people_count': '{n} জন',
+      'privacy_people_none': 'কেউ নেই',
+      'privacy_people_add': 'ব্যক্তি যোগ করুন',
+      'privacy_people_empty':
+          'এখনো কোনো ব্যতিক্রম নেই। সবাই সুইচ মেনে চলে। চ্যাট থেকেও এটি সেট '
+          'করা যায়: নামে ট্যাপ করুন, তারপর এই ব্যক্তির সাথে প্রাইভেসি।',
+      'privacy_people_pick_title': 'একজনকে বেছে নিন',
+      'privacy_people_pick_empty': 'বেছে নেওয়ার মতো কোনো চ্যাট নেই',
+      'privacy_people_search': 'খুঁজুন',
+      'privacy_people_someone': 'কেউ একজন',
       'chat_media_expired': 'ছবির মেয়াদ শেষ',
       'chat_media_not_opened': 'এখনো খোলা হয়নি',
       'chat_media_protected_forward': 'এটি ফরোয়ার্ড করা যাবে না',

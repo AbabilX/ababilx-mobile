@@ -45,6 +45,7 @@ import '../../features/settings/data-storage/storage_review_screen.dart';
 import '../../features/settings/screens/media_quality_screen.dart';
 import '../../features/settings/screens/notification_settings_screen.dart';
 import '../../features/settings/screens/discovery_screen.dart';
+import '../../features/privacy-mode/people/privacy_people_screen.dart';
 import '../../features/privacy-mode/privacy_mode_screen.dart';
 import '../../features/settings/screens/edit_name_screen.dart';
 import '../../features/settings/screens/edit_username_screen.dart';
@@ -202,6 +203,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/privacy-mode',
         builder: (_, _) => const PrivacyModeScreen(),
+      ),
+      GoRoute(
+        path: '/settings/privacy-mode/people',
+        builder: (_, _) => const PrivacyPeopleScreen(),
       ),
       GoRoute(
         path: '/settings/navigation',

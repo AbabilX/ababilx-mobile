@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../privacy-mode/people/privacy_people_provider.dart';
 import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../privacy-mode/privacy_secure_scope.dart';
 import '../../privacy-mode/privacy_mode_provider.dart';
@@ -129,9 +130,10 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final peerPrivate = ref.watch(
       conversationPeerPrivacyProvider(widget.conversationId),
     );
-    // Warm the own switch while the chat is open, so the photo sheet does not
-    // wait on its first load at send time.
+    // Warm the own switch and per-person choices while the chat is open, so
+    // the photo sheet does not wait on their first load at send time.
     ref.watch(privacyModeProvider);
+    ref.watch(privacyPeopleProvider);
     // Chat list, chat body + IME, and the calls tab are portrait-only.
     // Unlock when the last PortraitLockScope leaves so /call can rotate.
     return PrivacySecureScope(

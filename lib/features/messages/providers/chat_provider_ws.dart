@@ -32,6 +32,10 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
           .onEvent(ev, state.currentUserId);
       return;
     }
+    if (type == 'chat.privacy_person') {
+      ref.read(peerPrivacyOverridesProvider.notifier).onPersonEvent(ev);
+      return;
+    }
     // Sent to this account alone when the conversation is deleted — either
     // because the group is gone for everyone, or because the user deleted the
     // chat on another device. Either way this device is still holding the

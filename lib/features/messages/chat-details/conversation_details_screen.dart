@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
 
-import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
-import '../nickname/contact_nickname_provider.dart';
-import '../nickname/nickname_sheet.dart';
 import '../providers/chat_provider.dart';
-import '../safety_number/safety_number_tile.dart';
 import 'details_danger_actions.dart';
 import 'details_floating_chrome.dart';
 import 'details_header.dart';
 import 'details_members_section.dart';
+import 'details_settings_section.dart';
 import 'details_tile.dart';
 import 'group_edit_sheet.dart';
 import 'group_permissions.dart';
@@ -91,7 +86,7 @@ class _ConversationDetailsScreenState
               immersiveBanner: hasBanner,
             ),
             const DetailsSectionGap(),
-            ..._settingsTiles(conversation),
+            DetailsSettingsSection(conversation: conversation),
             // A feed is configured before its roster: the URL is the only part
             // of it that can be lost, and the members list is the same one every
             // other group has.
@@ -143,55 +138,4 @@ class _ConversationDetailsScreenState
     final saved = await showGroupEditSheet(context, ref, conversation);
     if (saved && mounted) setState(() {});
   }
-
-  List<Widget> _settingsTiles(ChatConversation conversation) => [
-    // DM only: a nickname renames a person, and a group is not one. It sits
-    // first because it is the fix for a name you cannot read.
-    if (conversation.hasDmPeer)
-      DetailsTile(
-        icon: const ChatIcon(HugeIcons.strokeRoundedUserEdit01),
-        title: 'Nickname',
-        value:
-            ref
-                .watch(contactNicknamesProvider)
-                .forUser(conversation.peerUserId) ??
-            'None',
-        onTap: () => showNicknameSheet(
-          context,
-          ref,
-          userId: conversation.peerUserId!,
-          profileName: conversation.peerUserName,
-        ),
-      ),
-    // DM only: a safety number is a comparison between two identities, and a
-    // group has no single peer identity to compare against. A deleted account
-    // has no key left to compare.
-    if (conversation.hasDmPeer && !conversation.isAccountDeleted)
-      SafetyNumberTile(
-        peerUserId: conversation.peerUserId!,
-        peerName: conversation.displayTitle(
-          ref.read(chatProvider).currentUserId,
-        ),
-      ),
-    DetailsTile(
-      icon: const ChatIcon(HugeIcons.strokeRoundedPaintBoard),
-      title: 'Chat color & wallpaper',
-      onTap: () => context.push('/messages/${conversation.id}/wallpaper'),
-    ),
-    DetailsTile(
-      icon: ChatIcon(
-        conversation.muted
-            ? HugeIcons.strokeRoundedNotificationOff01
-            : HugeIcons.strokeRoundedNotification01,
-      ),
-      title: 'Sounds & notifications',
-      value: conversation.muted ? 'Muted' : 'All messages',
-      trailing: Switch(
-        value: !conversation.muted,
-        onChanged: (on) => ref
-            .read(chatProvider.notifier)
-            .muteConversation(conversation.id, !on),
-      ),
-    ),
-  ];
 }
