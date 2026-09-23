@@ -60,6 +60,7 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
   late final PreviewChrome _chrome;
   late int _index;
   final _turns = <int, int>{};
+  double _waitingDragX = 0;
 
   @override
   void initState() {
@@ -86,13 +87,15 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
   }
 
   void _jumpTo(int i) {
-    if (i == _index) return;
+    if (i == _index || i < 0 || i >= widget.images.length) return;
     _page.animateToPage(
       i,
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
     );
   }
+
+  void _swipe(int direction) => _jumpTo(_index + direction);
 
   @override
   Widget build(BuildContext context) {
@@ -112,13 +115,14 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
           children: [
             PageView.builder(
               controller: _page,
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: widget.images.length,
               onPageChanged: (i) {
                 setState(() => _index = i);
                 _chrome.reveal();
               },
               itemBuilder: (_, i) =>
-                  _buildPage(widget.images[i], _turns[i] ?? 0),
+                  _buildPage(widget.images[i], _turns[i] ?? 0, i == _index),
             ),
             Align(
               alignment: Alignment.topCenter,
@@ -155,22 +159,27 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
     );
   }
 
-  Widget _buildPage(ChatMessageAttachment attachment, int quarterTurns) =>
-      AttachmentGate(
-        attachment: attachment,
-        waiting: (context, handle) => _waiting(context, attachment, handle),
-        ready: (context, handle) => ZoomablePreviewImage(
-          image: PreviewImage(
-            fileUrl: attachment.fileUrl,
-            fileName: attachment.fileName,
-            localPath: handle.localPath,
-          ),
-          allowRemoteFallback: false,
-          quarterTurns: quarterTurns,
-          onTap: _chrome.toggle,
-          onPan: _chrome.onContentPan,
-        ),
-      );
+  Widget _buildPage(
+    ChatMessageAttachment attachment,
+    int quarterTurns,
+    bool active,
+  ) => AttachmentGate(
+    attachment: attachment,
+    waiting: (context, handle) => _waiting(context, attachment, handle),
+    ready: (context, handle) => ZoomablePreviewImage(
+      image: PreviewImage(
+        fileUrl: attachment.fileUrl,
+        fileName: attachment.fileName,
+        localPath: handle.localPath,
+      ),
+      allowRemoteFallback: false,
+      quarterTurns: quarterTurns,
+      active: active,
+      onTap: _chrome.toggle,
+      onPan: _chrome.onContentPan,
+      onSwipe: _swipe,
+    ),
+  );
 
   /// The gate's own placeholder is sized for a timeline tile and drawn on a
   /// light surface; on a dark fullscreen page it needs its own shell.
@@ -182,6 +191,14 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _chrome.toggle,
+      onHorizontalDragStart: (_) => _waitingDragX = 0,
+      onHorizontalDragUpdate: (details) =>
+          _waitingDragX += details.primaryDelta ?? 0,
+      onHorizontalDragEnd: (_) {
+        if (_waitingDragX.abs() > MediaQuery.sizeOf(context).width * 0.2) {
+          _swipe(_waitingDragX < 0 ? 1 : -1);
+        }
+      },
       child: Center(
         child: handle == null
             ? const SizedBox(

@@ -11,8 +11,10 @@ class ZoomablePreviewImage extends StatefulWidget {
     required this.image,
     required this.allowRemoteFallback,
     this.quarterTurns = 0,
+    this.active = true,
     this.onTap,
     this.onPan,
+    this.onSwipe,
   });
 
   final PreviewImage image;
@@ -20,12 +22,16 @@ class ZoomablePreviewImage extends StatefulWidget {
 
   /// View-only 90° steps. Save / Share still write the original file.
   final int quarterTurns;
+  final bool active;
 
   /// Single tap — Signal toggles the chrome. Double-tap still zooms.
   final VoidCallback? onTap;
 
   /// Pinch or drag — chrome hides so the photo owns the screen.
   final VoidCallback? onPan;
+
+  /// Called with -1 for the previous photo, 1 for the next photo.
+  final ValueChanged<int>? onSwipe;
 
   @override
   State<ZoomablePreviewImage> createState() => _ZoomablePreviewImageState();
@@ -35,6 +41,9 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
     with AutomaticKeepAliveClientMixin {
   final _transform = TransformationController();
   TapDownDetails? _doubleTapDetails;
+  double _dragX = 0;
+  double _dragY = 0;
+  bool _multiPointer = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -42,7 +51,8 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
   @override
   void didUpdateWidget(ZoomablePreviewImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.quarterTurns != widget.quarterTurns) {
+    if (oldWidget.quarterTurns != widget.quarterTurns ||
+        (oldWidget.active && !widget.active)) {
       _transform.value = Matrix4.identity();
     }
   }
@@ -77,10 +87,29 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
         transformationController: _transform,
         minScale: 1,
         maxScale: 5,
-        clipBehavior: Clip.none,
+        clipBehavior: Clip.hardEdge,
+        onInteractionStart: (_) {
+          _dragX = 0;
+          _dragY = 0;
+          _multiPointer = false;
+        },
         onInteractionUpdate: (details) {
+          if (details.pointerCount > 1) {
+            _multiPointer = true;
+          } else if (!_multiPointer) {
+            _dragX += details.focalPointDelta.dx;
+            _dragY += details.focalPointDelta.dy;
+          }
           if (details.scale != 1 || details.focalPointDelta.distance > 1.5) {
             widget.onPan?.call();
+          }
+        },
+        onInteractionEnd: (_) {
+          final threshold = MediaQuery.sizeOf(context).width * 0.2;
+          if (!_multiPointer &&
+              _dragX.abs() > threshold &&
+              _dragX.abs() > _dragY.abs() * 1.2) {
+            widget.onSwipe?.call(_dragX < 0 ? 1 : -1);
           }
         },
         child: AnimatedRotation(
