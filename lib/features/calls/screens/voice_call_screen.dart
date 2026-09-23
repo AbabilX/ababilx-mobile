@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/router/root_back.dart';
+import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../privacy-mode/privacy_secure_scope.dart';
 import '../incoming_call_ringtone.dart';
 import '../native/android_call_screen_lock.dart';
@@ -112,8 +113,15 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     final notifier = ref.read(voiceCallProvider.notifier);
     final lang = ref.watch(appLanguageProvider);
     // The other side's privacy mode (server 0152): this phone must not
-    // capture the call — ring, video and shared screen included.
-    final peerPrivate = call.call?.peerPrivate(call.currentUserId) ?? false;
+    // capture the call — ring, video and shared screen included. A flip
+    // during the call (`chat.peer_privacy`) wins over the row's snapshot.
+    final session = call.call;
+    final peerPrivate =
+        session != null &&
+        (ref.watch(
+              livePeerPrivacyProvider(session.peerId(call.currentUserId)),
+            ) ??
+            session.peerPrivate(call.currentUserId));
 
     if (call.phase == VoiceCallPhase.incomingRinging) {
       return PrivacySecureScope(

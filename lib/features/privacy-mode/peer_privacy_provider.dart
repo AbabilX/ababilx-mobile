@@ -29,6 +29,13 @@ final peerPrivacyOverridesProvider =
       PeerPrivacyOverrides.new,
     );
 
+/// A live flip for one account, or null when none arrived since the last
+/// fetch — callers fall back to what their own row said (sidebar, call).
+final livePeerPrivacyProvider = Provider.family<bool?, String>(
+  (ref, userId) =>
+      ref.watch(peerPrivacyOverridesProvider.select((m) => m[userId])),
+);
+
 /// Whether the other side of this DM has privacy mode on. Always false for a
 /// group, a feed and Note to Self — privacy mode never reaches past a DM.
 final conversationPeerPrivacyProvider = Provider.family<bool, String>((
@@ -39,8 +46,9 @@ final conversationPeerPrivacyProvider = Provider.family<bool, String>((
     chatProvider.select((s) => s.conversationById(conversationId)),
   );
   if (conv == null || !conv.hasDmPeer) return false;
-  final live = ref.watch(
-    peerPrivacyOverridesProvider.select((m) => m[conv.peerUserId]),
-  );
+  final peerId = conv.peerUserId;
+  final live = peerId == null
+      ? null
+      : ref.watch(livePeerPrivacyProvider(peerId));
   return live ?? conv.peerPrivacy;
 });

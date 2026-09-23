@@ -16,86 +16,99 @@ import '../auth/providers/auth_provider.dart';
 /// Remembered on the device too: a phone that starts offline must still know
 /// it is in privacy mode before its first photo goes into the outbox, or that
 /// photo would be sent without the timer / saving sheet.
+///
+/// [state] is the only answer. Every writer — the first load, a toggle, a
+/// flip from another device — claims a new [_epoch] before it starts, and an
+/// async result lands only if its epoch is still current, so a slow GET or
+/// PUT reply can never put back a switch the user has since moved.
 class PrivacyModeNotifier extends Notifier<bool> {
   static const _prefsKey = 'privacy_mode_v1';
+  static const _resolveTimeout = Duration(seconds: 3);
 
-  Future<bool>? _loading;
-
-  /// Bumped on every rebuild, so a load still in flight from the previous
-  /// account cannot write its answer over the new one.
-  int _generation = 0;
+  /// The first load of this build; [resolve] waits on it, never reads it.
+  Future<void>? _loading;
+  int _epoch = 0;
 
   /// Rebuilt on sign-in and sign-out. Signed out, the device copy is
   /// dropped, so the next account to sign in never starts with the previous
   /// one's switch (its badge, or the photo sheet on its first send).
   @override
   bool build() {
-    _generation++;
+    final epoch = _claim();
     if (!ref.watch(isAuthenticatedProvider)) {
       _loading = null;
       _forget();
       return false;
     }
-    _loading = _load();
+    _loading = _load(epoch);
     return false;
   }
 
-  Future<void> _forget() async {
-    try {
-      await (await SharedPreferences.getInstance()).remove(_prefsKey);
-    } catch (_) {}
-  }
-
-  Future<bool> _load() async {
-    final generation = _generation;
-    try {
-      final cached = (await SharedPreferences.getInstance()).getBool(_prefsKey);
-      if (cached != null && generation == _generation) state = cached;
-    } catch (_) {}
-    try {
-      final res = await ref
-          .read(apiClientProvider)
-          .get(ApiConstants.mePrivacyMode);
-      if (generation == _generation) await _store(_enabled(res.data));
-    } catch (_) {}
-    return state;
-  }
-
-  /// The switch as best known: waits (briefly) for the first load instead of
-  /// answering with the not-yet-loaded default.
+  /// The switch as it stands now. Waits (briefly) for the first load so a
+  /// cold start does not answer with the not-yet-loaded default, then reads
+  /// [state] — never the load's own result, which is frozen at the moment it
+  /// finished and would ignore every toggle made since.
   Future<bool> resolve() async {
-    try {
-      return await (_loading ?? Future.value(state)).timeout(
-        const Duration(seconds: 3),
-      );
-    } catch (_) {
-      return state;
+    final loading = _loading;
+    if (loading != null) {
+      try {
+        await loading.timeout(_resolveTimeout);
+      } catch (_) {}
     }
+    return state;
   }
 
   /// Returns false when the server refused; the switch is put back.
   Future<bool> set(bool enabled) async {
     final previous = state;
+    final epoch = _claim();
     state = enabled;
     try {
       final res = await ref
           .read(apiClientProvider)
           .put(ApiConstants.mePrivacyMode, data: {'enabled': enabled});
-      await _store(_enabled(res.data));
+      await _commit(epoch, _enabled(res.data));
       return true;
     } catch (_) {
-      state = previous;
+      if (_isCurrent(epoch)) state = previous;
       return false;
     }
   }
 
   /// Another device of this account flipped it (`chat.peer_privacy` about us).
-  void applyRemote(bool enabled) => _store(enabled);
+  void applyRemote(bool enabled) => _commit(_claim(), enabled);
 
-  Future<void> _store(bool enabled) async {
+  int _claim() => ++_epoch;
+
+  bool _isCurrent(int epoch) => epoch == _epoch;
+
+  Future<void> _load(int epoch) async {
+    try {
+      final cached = (await SharedPreferences.getInstance()).getBool(_prefsKey);
+      if (cached != null && _isCurrent(epoch)) state = cached;
+    } catch (_) {}
+    try {
+      final res = await ref
+          .read(apiClientProvider)
+          .get(ApiConstants.mePrivacyMode);
+      await _commit(epoch, _enabled(res.data));
+    } catch (_) {}
+  }
+
+  /// Applies and remembers [enabled], unless a newer writer has claimed the
+  /// switch since [epoch] was taken.
+  Future<void> _commit(int epoch, bool enabled) async {
+    if (!_isCurrent(epoch)) return;
     state = enabled;
     try {
-      await (await SharedPreferences.getInstance()).setBool(_prefsKey, enabled);
+      final prefs = await SharedPreferences.getInstance();
+      if (_isCurrent(epoch)) await prefs.setBool(_prefsKey, enabled);
+    } catch (_) {}
+  }
+
+  Future<void> _forget() async {
+    try {
+      await (await SharedPreferences.getInstance()).remove(_prefsKey);
     } catch (_) {}
   }
 

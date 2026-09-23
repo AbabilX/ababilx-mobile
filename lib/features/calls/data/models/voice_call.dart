@@ -56,6 +56,10 @@ class VoiceCall {
   bool peerPrivate(String currentUserId) =>
       callerId == currentUserId ? calleePrivacy : callerPrivacy;
 
+  /// The account on the other end of this call.
+  String peerId(String currentUserId) =>
+      callerId == currentUserId ? calleeId : callerId;
+
   bool get isTerminal => const {
     'declined',
     'cancelled',
