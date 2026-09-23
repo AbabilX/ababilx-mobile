@@ -73,6 +73,16 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
     _chrome.reveal();
   }
 
+  void _swipe(int direction) {
+    final next = _index + direction;
+    if (next < 0 || next >= widget.images.length) return;
+    _page.animateToPage(
+      next,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final img = widget.images[_index];
@@ -90,6 +100,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
           children: [
             PageView.builder(
               controller: _page,
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: widget.images.length,
               onPageChanged: (i) {
                 setState(() => _index = i);
@@ -101,8 +112,10 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                   image: a,
                   allowRemoteFallback: widget.allowRemoteFallback,
                   quarterTurns: _turns[i] ?? 0,
+                  active: i == _index,
                   onTap: _chrome.toggle,
                   onPan: _chrome.onContentPan,
+                  onSwipe: _swipe,
                 );
               },
             ),
