@@ -71,5 +71,58 @@ void main() {
       expect(findPreviewHighlights('abc@gmail'), isEmpty);
       expect(findPreviewHighlights('hi @Murad').single.isMention, isTrue);
     });
+    test('@all is its own chip and never takes the Bengali after it', () {
+      const text = '@all আজকে থেকে যেহেতু খালা আসবেনা';
+      final hits = findPreviewHighlights(text);
+      expect(text.substring(hits.single.start, hits.single.end), '@all');
+    });
+
+    test('@all is painted even beside a labelled mention', () {
+      const text = '@all and @John Doe come';
+      final hits = findPreviewHighlights(
+        text,
+        mentionLabels: const ['John Doe'],
+      );
+      expect(
+        [for (final h in hits) text.substring(h.start, h.end)],
+        ['@all', '@John Doe'],
+      );
+    });
+
+    test('@allen is not @all', () {
+      const text = '@allen hi';
+      final hits = findPreviewHighlights(text);
+      expect(text.substring(hits.single.start, hits.single.end), '@allen');
+    });
+
+    test('a Latin name does not swallow the Bengali sentence', () {
+      const text = '@Rahim আজকে আসবেন';
+      final hits = findPreviewHighlights(text);
+      expect(text.substring(hits.single.start, hits.single.end), '@Rahim');
+    });
+
+    test('a label with doubled spaces still matches the collapsed preview', () {
+      const text = '@Murad Ahmed hi';
+      final hits = findPreviewHighlights(
+        text,
+        mentionLabels: const ['Murad  Ahmed'],
+      );
+      expect(
+        text.substring(hits.single.start, hits.single.end),
+        '@Murad Ahmed',
+      );
+    });
+
+    test('a known label ends at punctuation, not only space', () {
+      const text = 'ok @Sharmin Sorna? আসো';
+      final hits = findPreviewHighlights(
+        text,
+        mentionLabels: const ['Sharmin Sorna'],
+      );
+      expect(
+        text.substring(hits.single.start, hits.single.end),
+        '@Sharmin Sorna',
+      );
+    });
   });
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../mention_boundary.dart';
+
 const _email = r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)+';
 
 /// A range of the draft to paint as a chip: a picked mention or a link.
@@ -25,10 +27,13 @@ List<ComposerHighlight> findComposerHighlights(
   ]..sort((a, b) => b.length.compareTo(a.length));
   final mention = labels.isEmpty
       ? ''
-      // The end rule is tiptap_encode's `_tokenEnd`: paint exactly what the
+      // The end rule is the encoder's `mentionEndsAt`: paint exactly what the
       // send will turn into a mention, so "@Sharmin Sornax" is not a chip.
-      : '|(?<![A-Za-z0-9_.+\\-])(?:${labels.map((l) => '@${RegExp.escape(l)}').join('|')})(?=\$|[ \\n,.!])';
-  final pattern = RegExp('https?://[^\\s]+|www\\.[^\\s]+|$_email$mention');
+      : '|(?<![A-Za-z0-9_.+\\-])(?:${labels.map((l) => '@${RegExp.escape(l)}').join('|')})$mentionEndLookahead';
+  final pattern = RegExp(
+    'https?://[^\\s]+|www\\.[^\\s]+|$_email$mention',
+    unicode: true,
+  );
   return [
     for (final m in pattern.allMatches(text))
       ComposerHighlight(m.start, m.end, isMention: m.group(0)!.startsWith('@')),

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'mention_boundary.dart';
+
 /// Turns a composer's plain text back into TipTap JSON, with real `mention`
 /// (and optional `wallCategory`) nodes rather than one flat text run.
 ///
@@ -40,7 +42,8 @@ String encodeTiptapBody({
     if (text[i] == '@') {
       for (final label in labels) {
         final token = '@$label';
-        if (text.startsWith(token, i) && _tokenEnd(text, i + token.length)) {
+        if (text.startsWith(token, i) &&
+            mentionEndsAt(text, i + token.length)) {
           flush();
           nodes.add({
             'type': 'mention',
@@ -53,7 +56,7 @@ String encodeTiptapBody({
       }
     } else if (tagLabel != null && text.startsWith('#$tagLabel', i)) {
       final token = '#$tagLabel';
-      if (_tokenEnd(text, i + token.length)) {
+      if (mentionEndsAt(text, i + token.length)) {
         flush();
         nodes.add({
           'type': 'wallCategory',
@@ -88,11 +91,3 @@ String _doc(List<Map<String, dynamic>> nodes) => jsonEncode({
     },
   ],
 });
-
-/// A mention ends where a word ends. Without this "@Jo" would also match inside
-/// "@Joanne" and swallow the rest of the name into the chip.
-bool _tokenEnd(String text, int idx) {
-  if (idx >= text.length) return true;
-  final c = text[idx];
-  return c == ' ' || c == '\n' || c == ',' || c == '.' || c == '!';
-}

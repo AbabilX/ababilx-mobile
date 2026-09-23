@@ -1,3 +1,5 @@
+import 'mention_boundary.dart';
+
 /// A URL, email or @mention run inside a chat-list preview line.
 class PreviewHighlight {
   const PreviewHighlight({
@@ -15,46 +17,54 @@ class PreviewHighlight {
 
 const _email = r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)+';
 
+// Fallback for plain-text `@Name` with no TipTap label to match. A name keeps
+// ONE script: a Latin first word takes further Capitalised Latin words, a
+// Bengali one further Bengali words. Mixing them let "@all আজকে থেকে …" paint
+// four words of the sentence as the name.
+const _latinName = r'@[A-Za-z0-9_\-]+(?:\s+[A-Z][A-Za-z0-9_\-]*){0,3}';
+const _bengaliName = r'@[ঀ-৿]+(?:\s+[ঀ-৿]+){0,2}';
+
 /// Finds URL and @mention ranges in flattened preview text.
 ///
 /// When [mentionLabels] comes from TipTap (via [tiptapMentionLabels]), each
-/// `@Label` is matched exactly — including spaces inside a display name. Without
-/// labels, a short multi-token fallback is used so legacy plain text still
-/// paints `@First Last` instead of stopping at the first space.
+/// `@Label` is matched exactly — including spaces inside a display name.
+/// `@all` is always matched on its own: it is plain text on the wire, and it
+/// never takes the words after it. Other `@` runs with no label fall back to
+/// a short same-script guess so legacy plain text still paints `@First Last`.
 List<PreviewHighlight> findPreviewHighlights(
   String text, {
   List<String> mentionLabels = const [],
 }) {
   if (text.isEmpty) return const [];
 
-  final labels = [
+  // The preview collapses whitespace, so a label must too or it never matches
+  // and the fallback paints only the first word.
+  final labels = {
     for (final label in mentionLabels)
-      if (label.trim().isNotEmpty) label.trim(),
-  ]..sort((a, b) => b.length.compareTo(a.length));
+      if (label.trim().isNotEmpty) label.trim().replaceAll(RegExp(r'\s+'), ' '),
+  }.toList()..sort((a, b) => b.length.compareTo(a.length));
 
+  final exact = [
+    for (final l in labels) '@${RegExp.escape(l)}',
+    '@$mentionAllLabel',
+  ].join('|');
   final mentionAlt = labels.isEmpty
-      // Fallback only: continuation tokens look like name parts (Capitalised
-      // Latin or Bengali), so "@John Doe hey" does not paint "hey".
-      ? r'@[A-Za-z0-9_\-\u0980-\u09FF]+'
-            r'(?:\s+(?:[A-Z][A-Za-z0-9_\-]*|[\u0980-\u09FF]+(?:\s+-\s+[\u0980-\u09FF]+)?)){0,4}'
-      : labels.map((l) => '@${RegExp.escape(l)}').join('|');
+      ? '(?:$exact)$mentionEndLookahead|$_bengaliName|$_latinName'
+      : '(?:$exact)$mentionEndLookahead';
 
   // An email is one link-coloured run. Checked before mentions, and a mention
   // must not follow a word character, or "me@gmail.com" painted "@gmail" as a
   // mention chip between two plain halves.
   final pattern = RegExp(
     'https?://[^\\s]+|$_email|(?<![A-Za-z0-9_.+\\-])(?:$mentionAlt)',
+    unicode: true,
   );
-  final out = <PreviewHighlight>[];
-  for (final match in pattern.allMatches(text)) {
-    final token = match.group(0)!;
-    out.add(
+  return [
+    for (final match in pattern.allMatches(text))
       PreviewHighlight(
         start: match.start,
         end: match.end,
-        isUrl: !token.startsWith('@'),
+        isUrl: !match.group(0)!.startsWith('@'),
       ),
-    );
-  }
-  return out;
+  ];
 }
