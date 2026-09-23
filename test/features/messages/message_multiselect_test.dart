@@ -100,7 +100,6 @@ void main() {
     final container = ProviderContainer(
       overrides: [chatProvider.overrideWith(_SelectChatNotifier.new)],
     );
-    addTearDown(container.dispose);
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -130,6 +129,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(container.read(messageSelectionProvider).ids, {'one', 'two'});
     expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
+
+    // The typing provider's periodic timer has to stop before the test ends.
+    await tester.pumpWidget(const SizedBox());
+    container.dispose();
   });
 
   testWidgets('the bars replace the header and the composer', (tester) async {

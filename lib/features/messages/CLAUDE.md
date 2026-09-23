@@ -1297,6 +1297,13 @@ null` on the menu and the same test in the row and the view.
 - Copy joins the bodies with newlines, oldest first — Signal's
   `copyToClipboard`, which sorts by date. Delete confirms once for the batch and
   reports a partial failure rather than stopping at the first refusal.
+- **The timeline body is keyed** (`ValueKey('timeline-body')` in
+  `chat_timeline_view.dart`). Entering or leaving the mode swaps the header
+  and the composer at the same moment. With both ends of the Column changed,
+  unkeyed middle children cannot be matched, so the list was rebuilt with a new
+  ScrollPosition at 0. That threw the reader to the newest message on every
+  Select and every exit (fixed 2026-09-23). Pinned by
+  `selection_scroll_keep_test.dart`.
 - Deliberately absent: Signal's Details, star/pin and "select all". We have no
   message-details screen and nothing stores a star, and a dead row is worse than
   a missing one.

@@ -84,7 +84,13 @@ class ChatTimelineView extends ConsumerWidget {
               child: header,
             ),
           ),
+        // Keyed because the first and last children swap type when selection
+        // starts or ends. With both ends changed, the Column can only match
+        // the middle children by key. Unkeyed, it rebuilt the list from
+        // scratch with a new ScrollPosition at 0, which threw the reader to
+        // the newest message on every Select and every exit.
         Expanded(
+          key: const ValueKey('timeline-body'),
           child: Padding(
             // The header carries its own top safe-area padding, so it's fine
             // while visible — but auto-hide collapses it to zero height along
@@ -126,7 +132,10 @@ class ChatTimelineView extends ConsumerWidget {
         // Renders only when the peer's identity key has changed under us. It
         // sits above the composer, not in the collapsing header, because a
         // warning that scrolls away is a warning nobody reads.
-        SafetyNumberBanner(conversationId: conversationId),
+        SafetyNumberBanner(
+          key: const ValueKey('timeline-safety-banner'),
+          conversationId: conversationId,
+        ),
         if (selecting)
           SelectionBar(conversationId: conversationId)
         else
