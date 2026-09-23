@@ -6,6 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../privacy-mode/people/privacy_person_tile.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
+import '../group-privacy/group_privacy_tile.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_sheet.dart';
 import '../providers/chat_provider.dart';
@@ -62,6 +63,9 @@ class DetailsSettingsSection extends ConsumerWidget {
           name: conversation.peerUserName ?? '',
           avatarUrl: conversation.peerUserAvatar ?? '',
         ),
+      // Groups only: the group's own switch (server 0154), set by admins.
+      if (conversation.isGroupConversation && !conversation.isWebhook)
+        GroupPrivacyTile(conversation: conversation),
       DetailsTile(
         icon: const ChatIcon(HugeIcons.strokeRoundedPaintBoard),
         title: 'Chat color & wallpaper',

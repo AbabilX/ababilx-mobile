@@ -32,6 +32,9 @@ Future<void> showMessageActions(
   final isMine = msg.userId == ref.read(chatProvider).currentUserId;
   final conversation = ref.read(chatProvider).conversationById(conversationId);
   final isDm = conversation?.isDm ?? true;
+  // A private group (server 0154) keeps everything inside it: no Save, no
+  // Forward — for the sender too. The server refuses the forward as well.
+  final locked = conversation?.groupPrivacy ?? false;
   // A JPack is a card: a forwarded copy would share its id (and its opened
   // state), editing would overwrite it, and its body is a payload, not text.
   final isJPack = JPackPayload.tryParse(msg.body) != null;
@@ -51,14 +54,14 @@ Future<void> showMessageActions(
     pointer: pointer,
     isMine: isMine,
     showThread: !isDm && threadRootId == null,
-    showSave: canSaveMessageAttachments(msg),
+    showSave: !locked && canSaveMessageAttachments(msg),
     // Selection has a top bar and an action bar of its own, and a thread
     // panel has room for neither — so the door only opens on the main
     // timeline, where those bars replace the header and the composer.
     showSelect: threadRootId == null,
     // The sender's own restricted photo is still theirs to forward; nobody
     // else may (the server refuses it too).
-    showForward: !isJPack && (isMine || !msg.hasProtectedMedia),
+    showForward: !isJPack && !locked && (isMine || !msg.hasProtectedMedia),
     showCopy: !isJPack,
     showEdit: !isJPack,
     labels: {

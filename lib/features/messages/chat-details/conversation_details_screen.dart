@@ -10,6 +10,7 @@ import 'details_header.dart';
 import 'details_members_section.dart';
 import 'details_settings_section.dart';
 import 'details_tile.dart';
+import '../group-privacy/group_privacy_lock.dart';
 import 'group_edit_sheet.dart';
 import 'group_permissions.dart';
 import 'groups_in_common_section.dart';
@@ -126,11 +127,15 @@ class _ConversationDetailsScreenState
       ],
     );
 
-    if (!hasBanner) return Scaffold(body: body);
-
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
-      child: Scaffold(body: body),
+    // Group and member pictures open without Save / Share here too.
+    return GroupPrivacyLock(
+      conversationId: conversation.id,
+      child: hasBanner
+          ? AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle.light,
+              child: Scaffold(body: body),
+            )
+          : Scaffold(body: body),
     );
   }
 

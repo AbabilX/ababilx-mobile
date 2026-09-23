@@ -32,6 +32,7 @@ List<SelectionAction> selectionActions({
     selected: selected,
     currentUserId: chat.currentUserId,
     canMessage: canMessage,
+    groupPrivacy: ref.read(activeConversationProvider)?.groupPrivacy ?? false,
   );
   String tr(String key) => AppTranslations.translate(context, ref, key);
   void done() => ref.read(messageSelectionProvider.notifier).clear();

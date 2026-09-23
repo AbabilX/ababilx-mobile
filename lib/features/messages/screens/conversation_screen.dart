@@ -12,6 +12,7 @@ import '../chat-focus/chat_focus_reporter.dart';
 import '../chat-header/index.dart';
 import '../chat-select/message_selection.dart';
 import '../chat-timeline/index.dart';
+import '../group-privacy/group_privacy_lock.dart';
 import '../data/models/chat_models.dart';
 import '../nav_back.dart';
 import '../message_e2ee/message_vault.dart';
@@ -138,24 +139,27 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     // Unlock when the last PortraitLockScope leaves so /call can rotate.
     return PrivacySecureScope(
       active: peerPrivate,
-      child: PortraitLockScope(
-        child: PopScope(
-          canPop: canPop && !selecting,
-          onPopInvokedWithResult: (didPop, _) {
-            if (didPop) return;
-            if (selecting) {
-              ref.read(messageSelectionProvider.notifier).clear();
-              return;
-            }
-            popOrGoMessages(context);
-          },
-          // The wallpaper paints inside the body, on top of the Scaffold's own
-          // background and under the chat — so with no wallpaper set nothing
-          // changes, and the Scaffold keeps painting the theme colour.
-          child: Scaffold(
-            body: ChatWallpaperBackground(
-              conversationId: widget.conversationId,
-              child: _body(conversation, vault),
+      child: GroupPrivacyLock(
+        conversationId: widget.conversationId,
+        child: PortraitLockScope(
+          child: PopScope(
+            canPop: canPop && !selecting,
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) return;
+              if (selecting) {
+                ref.read(messageSelectionProvider.notifier).clear();
+                return;
+              }
+              popOrGoMessages(context);
+            },
+            // The wallpaper paints inside the body, on top of the Scaffold's own
+            // background and under the chat — so with no wallpaper set nothing
+            // changes, and the Scaffold keeps painting the theme colour.
+            child: Scaffold(
+              body: ChatWallpaperBackground(
+                conversationId: widget.conversationId,
+                child: _body(conversation, vault),
+              ),
             ),
           ),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../group-privacy/group_privacy_lock.dart';
 import 'conversation_media_tab.dart';
 
 /// Everything ever shared in one conversation, behind "See all".
@@ -14,23 +15,32 @@ class ConversationMediaScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Shared media'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Media'),
-              Tab(text: 'Files'),
+    return GroupPrivacyLock(
+      conversationId: conversationId,
+      child: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Shared media'),
+            bottom: const TabBar(
+              tabs: [
+                Tab(text: 'Media'),
+                Tab(text: 'Files'),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            children: [
+              ConversationMediaTab(
+                conversationId: conversationId,
+                kind: 'media',
+              ),
+              ConversationMediaTab(
+                conversationId: conversationId,
+                kind: 'files',
+              ),
             ],
           ),
-        ),
-        body: TabBarView(
-          children: [
-            ConversationMediaTab(conversationId: conversationId, kind: 'media'),
-            ConversationMediaTab(conversationId: conversationId, kind: 'files'),
-          ],
         ),
       ),
     );

@@ -79,6 +79,7 @@ class ChatConversation extends Equatable {
     this.editInfoRole = 'admin',
     this.addMembersRole = 'admin',
     this.myRole = '',
+    this.groupPrivacy = false,
   });
 
   final String id;
@@ -171,6 +172,11 @@ class ChatConversation extends Equatable {
   final String editInfoRole; // admin | member
   final String addMembersRole; // admin | member
   final String myRole; // admin | member | '' when the server did not say
+
+  /// The group's own privacy switch, set by its admins (server 0154): no
+  /// forwarding, no Save or Share of its media or pictures, and a member list
+  /// only admins see in full. Independent of anyone's privacy mode.
+  final bool groupPrivacy;
 
   /// The viewer's admin row in this conversation. What may be done with it
   /// is decided by `GroupPermissions` in chat-details — from this row and the
@@ -317,6 +323,7 @@ class ChatConversation extends Equatable {
       editInfoRole: _jsonString(json['edit_info_role']) ?? 'admin',
       addMembersRole: _jsonString(json['add_members_role']) ?? 'admin',
       myRole: _jsonString(json['my_role']) ?? '',
+      groupPrivacy: json['group_privacy'] as bool? ?? false,
     );
   }
 
@@ -356,6 +363,7 @@ class ChatConversation extends Equatable {
     String? editInfoRole,
     String? addMembersRole,
     String? myRole,
+    bool? groupPrivacy,
   }) => ChatConversation(
     id: id,
     teamId: teamId,
@@ -414,6 +422,7 @@ class ChatConversation extends Equatable {
     editInfoRole: editInfoRole ?? this.editInfoRole,
     addMembersRole: addMembersRole ?? this.addMembersRole,
     myRole: myRole ?? this.myRole,
+    groupPrivacy: groupPrivacy ?? this.groupPrivacy,
   );
 
   @override
@@ -442,6 +451,7 @@ class ChatConversation extends Equatable {
     bannerUrl,
     peerUserCover,
     myRole,
+    groupPrivacy,
   ];
 }
 

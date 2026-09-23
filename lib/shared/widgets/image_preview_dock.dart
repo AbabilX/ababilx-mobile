@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../media/media_save_lock.dart';
 import 'image_preview_chrome.dart';
 import 'media_preview_actions.dart';
 import 'preview_icon.dart';
+
+export 'image_preview_dock_bar.dart';
 
 /// Floating capsule that hugs its actions — no fixed slot width.
 class ImagePreviewDock extends StatelessWidget {
@@ -43,6 +46,18 @@ class ImagePreviewDock extends StatelessWidget {
     if (!hasSource(localPath: localPath, remoteUrl: remoteUrl)) {
       return const SizedBox.shrink();
     }
+    // A private group (MediaSaveLock) keeps its media in the app: no Save, no
+    // Share. Rotate, mute and Open stay — they change nothing outside.
+    return ValueListenableBuilder<int>(
+      valueListenable: MediaSaveLock.listenable,
+      builder: (context, _, _) => _capsule(context, !MediaSaveLock.held),
+    );
+  }
+
+  Widget _capsule(BuildContext context, bool canExport) {
+    if (!canExport && onRotate == null && onMute == null && onOpen == null) {
+      return const SizedBox.shrink();
+    }
     return Material(
       color: ImagePreviewChrome.capsule,
       elevation: 8,
@@ -54,18 +69,19 @@ class ImagePreviewDock extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _DockAction(
-              icon: PreviewIcons.save,
-              label: 'Save',
-              onTap: () => runMediaPreviewAction(
-                context,
-                MediaPreviewAction.save,
-                localPath: localPath,
-                remoteUrl: remoteUrl,
-                fileName: fileName,
-                contentType: contentType,
+            if (canExport)
+              _DockAction(
+                icon: PreviewIcons.save,
+                label: 'Save',
+                onTap: () => runMediaPreviewAction(
+                  context,
+                  MediaPreviewAction.save,
+                  localPath: localPath,
+                  remoteUrl: remoteUrl,
+                  fileName: fileName,
+                  contentType: contentType,
+                ),
               ),
-            ),
             if (onRotate != null)
               _DockAction(
                 icon: PreviewIcons.rotate,
@@ -84,18 +100,19 @@ class ImagePreviewDock extends StatelessWidget {
                 label: 'Open',
                 onTap: onOpen!,
               ),
-            _DockAction(
-              icon: PreviewIcons.share,
-              label: 'Share',
-              onTap: () => runMediaPreviewAction(
-                context,
-                MediaPreviewAction.share,
-                localPath: localPath,
-                remoteUrl: remoteUrl,
-                fileName: fileName,
-                contentType: contentType,
+            if (canExport)
+              _DockAction(
+                icon: PreviewIcons.share,
+                label: 'Share',
+                onTap: () => runMediaPreviewAction(
+                  context,
+                  MediaPreviewAction.share,
+                  localPath: localPath,
+                  remoteUrl: remoteUrl,
+                  fileName: fileName,
+                  contentType: contentType,
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -137,66 +154,6 @@ class _DockAction extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Safe-area pad that pins the capsule to the bottom-center.
-///
-/// Do not wrap the dock in [Center]: under a full-screen [Align] that
-/// expands, Center fills the viewer and an avatar/banner preview draws the
-/// capsule in the middle of the photo. [Align.bottomCenter] keeps it on
-/// the bottom edge and centered horizontally.
-class ImagePreviewDockSlot extends StatelessWidget {
-  const ImagePreviewDockSlot({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: FittedBox(fit: BoxFit.scaleDown, child: child),
-        ),
-      ),
-    );
-  }
-}
-
-/// Wall / CRM / profile: capsule over the photo, bottom-center.
-class ImagePreviewDockBar extends StatelessWidget {
-  const ImagePreviewDockBar({
-    super.key,
-    required this.fileName,
-    this.localPath,
-    this.remoteUrl,
-    this.onRotate,
-  });
-
-  final String fileName;
-  final String? localPath;
-  final String? remoteUrl;
-  final VoidCallback? onRotate;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!ImagePreviewDock.hasSource(
-      localPath: localPath,
-      remoteUrl: remoteUrl,
-    )) {
-      return const SizedBox.shrink();
-    }
-    return ImagePreviewDockSlot(
-      child: ImagePreviewDock(
-        fileName: fileName,
-        localPath: localPath,
-        remoteUrl: remoteUrl,
-        onRotate: onRotate,
       ),
     );
   }

@@ -40,5 +40,8 @@ extension ChatConversationJson on ChatConversation {
     'pinned': pinned,
     'member_avatars': memberAvatars,
     'member_count': memberCount,
+    // Kept on disk so an offline cold start never opens a private group
+    // unlocked.
+    'group_privacy': groupPrivacy,
   };
 }

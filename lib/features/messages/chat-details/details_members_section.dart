@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import 'add_members_sheet.dart';
 import '../data/models/chat_models.dart';
@@ -27,18 +28,35 @@ class DetailsMembersSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    // A private group (server 0154) hands a non-admin only the admins and
+    // themselves, so the count comes from the conversation, not the list.
+    final hidden = conversation.groupPrivacy && !conversation.iAmAdmin;
+    String t(String key) => AppTranslations.translate(context, ref, key);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
           child: Text(
-            loading && members.isEmpty
+            hidden
+                ? t('group_privacy_members_count').replaceAll(
+                    '{count}',
+                    '${conversation.memberCount ?? members.length}',
+                  )
+                : loading && members.isEmpty
                 ? 'Members'
                 : '${members.length} member${members.length == 1 ? '' : 's'}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
+        if (hidden)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Text(
+              t('group_privacy_members_hidden'),
+              style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant),
+            ),
+          ),
         if (GroupPermissions(conversation).canAddMembers)
           ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 20),

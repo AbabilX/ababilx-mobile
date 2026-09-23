@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../media/media_save_lock.dart';
 import '../media/save_to_phone.dart';
 import '../media/save_to_phone_action.dart';
 import 'preview_icon.dart';
@@ -85,6 +86,8 @@ Future<void> runMediaPreviewAction(
   required String fileName,
   String contentType = '',
 }) async {
+  // A private group's content never leaves the app, whatever drew the button.
+  if (MediaSaveLock.held) return;
   final path = await resolvePreviewFile(
     localPath: localPath,
     remoteUrl: remoteUrl,

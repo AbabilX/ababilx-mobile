@@ -42,6 +42,7 @@ SelectionMenuState selectionMenuState({
   required List<ChatMessage> selected,
   required String currentUserId,
   required bool canMessage,
+  bool groupPrivacy = false,
 }) {
   if (selected.isEmpty) return const SelectionMenuState();
 
@@ -72,13 +73,16 @@ SelectionMenuState selectionMenuState({
       !anySealed &&
       !anyJPack &&
       !anyProtected &&
+      // A private group (server 0154) forwards nothing, the sender's own
+      // messages included; the server refuses it too.
+      !groupPrivacy &&
       selected.length <= maxForwardableMessages;
 
   return SelectionMenuState(
     reply: single != null && !anyDeleted && !anyPending && canMessage,
     forward: forward,
     copy: anyText && !anySealed && !anyJPack,
-    save: single != null && canSaveMessageAttachments(single),
+    save: single != null && !groupPrivacy && canSaveMessageAttachments(single),
     edit:
         single != null &&
         allMine &&

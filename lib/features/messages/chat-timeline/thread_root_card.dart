@@ -73,6 +73,12 @@ class ThreadRootCard extends ConsumerWidget {
         ? (root.webhookSourceName ?? 'Webhook')
         : (root.userName ?? 'Unknown');
     final replyCount = root.threadCount;
+    // A private group (server 0154) forwards nothing.
+    final locked = ref.watch(
+      chatProvider.select(
+        (s) => s.conversationById(conversationId)?.groupPrivacy ?? false,
+      ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,7 +152,9 @@ class ThreadRootCard extends ConsumerWidget {
         if (replyCount > 0)
           _ReplyDivider(
             count: replyCount,
-            onForward: () => showForwardSheet(context, ref, root),
+            onForward: locked
+                ? null
+                : () => showForwardSheet(context, ref, root),
             onMore: () => showMessageActions(
               context,
               ref,
@@ -167,7 +175,7 @@ class _ReplyDivider extends StatelessWidget {
   });
 
   final int count;
-  final VoidCallback onForward;
+  final VoidCallback? onForward;
   final VoidCallback onMore;
 
   @override
@@ -196,11 +204,12 @@ class _ReplyDivider extends StatelessWidget {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.forward_rounded, size: 20),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onForward,
-                ),
+                if (onForward != null)
+                  IconButton(
+                    icon: const Icon(Icons.forward_rounded, size: 20),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: onForward,
+                  ),
                 IconButton(
                   icon: const Icon(Icons.more_vert, size: 20),
                   visualDensity: VisualDensity.compact,
