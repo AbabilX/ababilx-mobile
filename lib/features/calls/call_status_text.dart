@@ -17,6 +17,11 @@ String voiceCallStatusText(VoiceCallState state, {String lang = 'en'}) {
     case VoiceCallPhase.starting:
       return t('call_status_starting');
     case VoiceCallPhase.outgoingRinging:
+      // A private callee never reports ringing (server 0152), so the caller
+      // says so instead of waiting for a "Ringing…" that will not come.
+      if (state.call?.calleePrivacy == true) {
+        return t('call_status_calling_private');
+      }
       // "Calling…" until a callee device reports it is ringing.
       return state.call?.calleeRingingAt != null
           ? t('call_status_ringing')

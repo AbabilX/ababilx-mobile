@@ -26,6 +26,12 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       unawaited(fetchSidebarSilent());
       return;
     }
+    if (type == 'chat.peer_privacy') {
+      ref
+          .read(peerPrivacyOverridesProvider.notifier)
+          .onEvent(ev, state.currentUserId);
+      return;
+    }
     // Sent to this account alone when the conversation is deleted — either
     // because the group is gone for everyone, or because the user deleted the
     // chat on another device. Either way this device is still holding the
@@ -268,6 +274,12 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
           .read(messageVaultProvider)
           .decryptMessage(msg, state.currentUserId);
     }
+    // A timed photo that just expired arrives with its URL blanked; the
+    // bytes this phone holds are found under the URL the old copy carried.
+    final previous = state.feeds[feedKey(convId)]?.messages
+        .where((m) => m.id == msg.id)
+        .firstOrNull;
+    unawaited(wipeExpiredMedia(ref, previous, msg));
     updateFeedMessage(convId, msg);
     final threadRootId = msg.parentId ?? state.threadRootId;
     if (threadRootId != null) {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/router/root_back.dart';
+import '../../privacy-mode/privacy_secure_scope.dart';
 import '../incoming_call_ringtone.dart';
 import '../native/android_call_screen_lock.dart';
 import '../providers/voice_call_provider.dart';
@@ -110,22 +111,28 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     final call = ref.watch(voiceCallProvider);
     final notifier = ref.read(voiceCallProvider.notifier);
     final lang = ref.watch(appLanguageProvider);
+    // The other side's privacy mode (server 0152): this phone must not
+    // capture the call — ring, video and shared screen included.
+    final peerPrivate = call.call?.peerPrivate(call.currentUserId) ?? false;
 
     if (call.phase == VoiceCallPhase.incomingRinging) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
-        body: IncomingCallView(
-          peerName: call.peerName,
-          peerAvatar: call.peerAvatar,
-          lang: lang,
-          onDecline: () {
-            unawaited(IncomingCallRingtone.stop());
-            notifier.declineIncoming();
-          },
-          onAccept: () {
-            unawaited(IncomingCallRingtone.stop());
-            notifier.acceptIncoming();
-          },
+      return PrivacySecureScope(
+        active: peerPrivate,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: IncomingCallView(
+            peerName: call.peerName,
+            peerAvatar: call.peerAvatar,
+            lang: lang,
+            onDecline: () {
+              unawaited(IncomingCallRingtone.stop());
+              notifier.declineIncoming();
+            },
+            onAccept: () {
+              unawaited(IncomingCallRingtone.stop());
+              notifier.acceptIncoming();
+            },
+          ),
         ),
       );
     }
@@ -133,30 +140,33 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     // canPop stays false while the call is live so the pop runs through
     // [_leave] — a plain pop from a route with no history would strand the
     // user on a blank screen with a call still running.
-    return PopScope(
-      canPop: !call.active,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        _leave();
-      },
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: ConnectedCallBody(
-          call: call,
-          lang: lang,
-          onMinimize: _leave,
-          onSwitchCamera: notifier.switchCamera,
-          controls: CallControlsRow(
-            lang: lang,
+    return PrivacySecureScope(
+      active: peerPrivate,
+      child: PopScope(
+        canPop: !call.active,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          _leave();
+        },
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: ConnectedCallBody(
             call: call,
-            onToggleMute: notifier.toggleMute,
-            onToggleCamera: notifier.toggleCamera,
-            onToggleScreenShare: notifier.toggleScreenShare,
-            onToggleSpeaker: notifier.toggleSpeaker,
-            onHangUp: () {
-              unawaited(IncomingCallRingtone.stop());
-              notifier.hangUp();
-            },
+            lang: lang,
+            onMinimize: _leave,
+            onSwitchCamera: notifier.switchCamera,
+            controls: CallControlsRow(
+              lang: lang,
+              call: call,
+              onToggleMute: notifier.toggleMute,
+              onToggleCamera: notifier.toggleCamera,
+              onToggleScreenShare: notifier.toggleScreenShare,
+              onToggleSpeaker: notifier.toggleSpeaker,
+              onHangUp: () {
+                unawaited(IncomingCallRingtone.stop());
+                notifier.hangUp();
+              },
+            ),
           ),
         ),
       ),

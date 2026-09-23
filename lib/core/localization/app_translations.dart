@@ -385,7 +385,8 @@ class AppTranslations {
       'chat_empty_title': 'Start a conversation',
       'chat_empty_body': 'Find someone or create a group to begin messaging.',
       'chat_unread_empty_title': 'No unread messages',
-      'chat_unread_empty_body': 'You’re all caught up. Switch back to see every chat.',
+      'chat_unread_empty_body':
+          'You’re all caught up. Switch back to see every chat.',
       'chat_show_all_messages': 'Show all messages',
       'chat_gallery': 'Gallery',
       'chat_camera': 'Camera',
@@ -628,6 +629,40 @@ class AppTranslations {
       'call_status_starting': 'Starting call…',
       'call_status_calling': 'Calling…',
       'call_status_ringing': 'Ringing…',
+      // Privacy mode (server migration 0152).
+      'call_status_calling_private': 'Calling… · Privacy mode on',
+      'chat_status_privacy': 'Privacy',
+      'settings_privacy_mode': 'Privacy mode',
+      'settings_privacy_mode_sub': 'Hide typing, ticks, online and calls',
+      'privacy_mode_title': 'Privacy mode',
+      'privacy_mode_hint':
+          'In your chats with one person, they stop seeing what you do.',
+      'privacy_mode_save_failed': 'Could not save privacy mode',
+      'privacy_mode_what': 'While it is on, the other person in a chat:',
+      'privacy_mode_point_typing': 'Does not see you typing',
+      'privacy_mode_point_ticks':
+          'Sees no ticks at all on the messages they send you',
+      'privacy_mode_point_status':
+          'Sees "Privacy" instead of online or offline',
+      'privacy_mode_point_ringing':
+          'Sees "Calling…", never "Ringing…", when they call you',
+      'privacy_mode_point_calls':
+          'Keeps no history of calls you answered. Missed calls still show',
+      'privacy_mode_point_screens':
+          'Cannot take screenshots of your chat or your call',
+      'privacy_mode_point_media':
+          'Gets your photos with the timer and saving you choose',
+      'privacy_mode_oneway':
+          'You still see their typing, ticks and status. Groups are not '
+          'affected.',
+      'privacy_mode_limits':
+          'Screenshots are blocked on Android phones only. Nothing stops a '
+          'second camera. Web and desktop do not block screenshots yet.',
+      'privacy_media_no_save_hint':
+          'View only. It opens inside the chat and cannot be saved',
+      'chat_media_expired': 'Photo expired',
+      'chat_media_not_opened': 'Not opened yet',
+      'chat_media_protected_forward': 'This cannot be forwarded',
       // Chat typing indicators. A DM names nobody; a group says who.
       'chat_typing': 'typing…',
       'chat_typing_one': '{name} is typing…',
@@ -1109,8 +1144,7 @@ class AppTranslations {
       'chat_empty_body':
           'কাউকে খুঁজুন অথবা বার্তা পাঠাতে একটি গ্রুপ তৈরি করুন।',
       'chat_unread_empty_title': 'কোনো অপঠিত বার্তা নেই',
-      'chat_unread_empty_body':
-          'সব পড়ে ফেলেছেন। সব চ্যাট দেখতে ফিরে যান।',
+      'chat_unread_empty_body': 'সব পড়ে ফেলেছেন। সব চ্যাট দেখতে ফিরে যান।',
       'chat_show_all_messages': 'সব বার্তা দেখুন',
       'chat_gallery': 'গ্যালারি',
       'chat_camera': 'ক্যামেরা',
@@ -1343,6 +1377,36 @@ class AppTranslations {
       'call_status_starting': 'কল শুরু হচ্ছে…',
       'call_status_calling': 'কল করা হচ্ছে…',
       'call_status_ringing': 'রিং হচ্ছে…',
+      'call_status_calling_private': 'কল করা হচ্ছে… · প্রাইভেসি মোড চালু',
+      'chat_status_privacy': 'প্রাইভেসি',
+      'settings_privacy_mode': 'প্রাইভেসি মোড',
+      'settings_privacy_mode_sub': 'টাইপিং, টিক, অনলাইন ও কল লুকান',
+      'privacy_mode_title': 'প্রাইভেসি মোড',
+      'privacy_mode_hint':
+          'একজনের সাথে চ্যাটে, তিনি আপনি কী করছেন তা দেখতে পাবেন না।',
+      'privacy_mode_save_failed': 'প্রাইভেসি মোড সেভ করা যায়নি',
+      'privacy_mode_what': 'চালু থাকলে চ্যাটের অন্যজন:',
+      'privacy_mode_point_typing': 'আপনাকে টাইপ করতে দেখবেন না',
+      'privacy_mode_point_ticks': 'আপনাকে পাঠানো মেসেজে কোনো টিক দেখবেন না',
+      'privacy_mode_point_status': 'অনলাইন বা অফলাইনের বদলে "প্রাইভেসি" দেখবেন',
+      'privacy_mode_point_ringing':
+          'আপনাকে কল করলে "রিং হচ্ছে…" নয়, শুধু "কল করা হচ্ছে…" দেখবেন',
+      'privacy_mode_point_calls':
+          'আপনি যে কল ধরেছেন তার কোনো ইতিহাস থাকবে না। মিসড কল দেখা যাবে',
+      'privacy_mode_point_screens':
+          'আপনার চ্যাট বা কলের স্ক্রিনশট নিতে পারবেন না',
+      'privacy_mode_point_media':
+          'আপনার বাছাই করা টাইমার ও সেভ সেটিং সহ ছবি পাবেন',
+      'privacy_mode_oneway':
+          'আপনি তাদের টাইপিং, টিক ও স্ট্যাটাস দেখতে পাবেন। গ্রুপে এর প্রভাব নেই।',
+      'privacy_mode_limits':
+          'স্ক্রিনশট শুধু অ্যান্ড্রয়েড ফোনে বন্ধ হয়। অন্য ক্যামেরা আটকানো যায় না। '
+          'ওয়েব ও ডেস্কটপে এখনো স্ক্রিনশট বন্ধ হয় না।',
+      'privacy_media_no_save_hint':
+          'শুধু দেখা যাবে। চ্যাটের ভেতরেই খুলবে, সেভ করা যাবে না',
+      'chat_media_expired': 'ছবির মেয়াদ শেষ',
+      'chat_media_not_opened': 'এখনো খোলা হয়নি',
+      'chat_media_protected_forward': 'এটি ফরোয়ার্ড করা যাবে না',
       'chat_typing': 'টাইপ করছে…',
       'chat_typing_one': '{name} টাইপ করছে…',
       'chat_typing_two': '{a} ও {b} টাইপ করছে…',

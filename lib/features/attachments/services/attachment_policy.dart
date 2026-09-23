@@ -20,6 +20,9 @@ bool shouldAutoDownload(
   required NetworkClass network,
 }) {
   if (attachment.locked || attachment.fileUrl.isEmpty) return false;
+  // A timed photo (privacy mode) is fetched only when it is opened, so it
+  // never sits on disk waiting to be looked at.
+  if (attachment.timed || attachment.expired) return false;
   if (attachment.sizeBytes > autoDownloadMaxBytes) return false;
   return settings.allows(autoDownloadMediaOf(attachment), network);
 }

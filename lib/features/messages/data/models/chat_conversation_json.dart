@@ -31,6 +31,7 @@ extension ChatConversationJson on ChatConversation {
     'peer_user_cover': peerUserCover,
     'peer_left': peerLeft,
     'is_self': isSelf,
+    'peer_privacy': peerPrivacy,
     'can_message': canMessage,
     'lock_reason': lockReason,
     'plaintext_until_keyed': plaintextUntilKeyed,

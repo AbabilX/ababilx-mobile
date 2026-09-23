@@ -62,11 +62,16 @@ SelectionMenuState selectionMenuState({
   // A JPack is a card, not text: never forwarded, copied or edited.
   final anyJPack = selected.any((m) => JPackPayload.tryParse(m.body) != null);
 
+  final anyProtected = selected.any(
+    (m) => m.userId != currentUserId && m.hasProtectedMedia,
+  );
+
   final forward =
       !anyDeleted &&
       !anyPending &&
       !anySealed &&
       !anyJPack &&
+      !anyProtected &&
       selected.length <= maxForwardableMessages;
 
   return SelectionMenuState(

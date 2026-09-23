@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../privacy-mode/peer_privacy_provider.dart';
+import '../../privacy-mode/privacy_secure_scope.dart';
+import '../../privacy-mode/privacy_mode_provider.dart';
 import '../../../core/network/ws_client.dart';
 import '../../../shared/widgets/portrait_lock_scope.dart';
 import '../chat-focus/chat_focus_reporter.dart';
@@ -121,26 +124,37 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final selecting = ref
         .watch(messageSelectionProvider)
         .isActiveIn(widget.conversationId);
+    // The other side's privacy mode (server 0152) means this phone must not
+    // capture the chat: FLAG_SECURE for as long as it is on screen.
+    final peerPrivate = ref.watch(
+      conversationPeerPrivacyProvider(widget.conversationId),
+    );
+    // Warm the own switch while the chat is open, so the photo sheet does not
+    // wait on its first load at send time.
+    ref.watch(privacyModeProvider);
     // Chat list, chat body + IME, and the calls tab are portrait-only.
     // Unlock when the last PortraitLockScope leaves so /call can rotate.
-    return PortraitLockScope(
-      child: PopScope(
-        canPop: canPop && !selecting,
-        onPopInvokedWithResult: (didPop, _) {
-          if (didPop) return;
-          if (selecting) {
-            ref.read(messageSelectionProvider.notifier).clear();
-            return;
-          }
-          popOrGoMessages(context);
-        },
-        // The wallpaper paints inside the body, on top of the Scaffold's own
-        // background and under the chat — so with no wallpaper set nothing
-        // changes, and the Scaffold keeps painting the theme colour.
-        child: Scaffold(
-          body: ChatWallpaperBackground(
-            conversationId: widget.conversationId,
-            child: _body(conversation, vault),
+    return PrivacySecureScope(
+      active: peerPrivate,
+      child: PortraitLockScope(
+        child: PopScope(
+          canPop: canPop && !selecting,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            if (selecting) {
+              ref.read(messageSelectionProvider.notifier).clear();
+              return;
+            }
+            popOrGoMessages(context);
+          },
+          // The wallpaper paints inside the body, on top of the Scaffold's own
+          // background and under the chat — so with no wallpaper set nothing
+          // changes, and the Scaffold keeps painting the theme colour.
+          child: Scaffold(
+            body: ChatWallpaperBackground(
+              conversationId: widget.conversationId,
+              child: _body(conversation, vault),
+            ),
           ),
         ),
       ),

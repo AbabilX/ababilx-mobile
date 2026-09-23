@@ -185,6 +185,9 @@ class ChatRepository {
   Future<void> hideMessage(String messageId) =>
       _messages.hideMessage(messageId);
 
+  Future<Map<String, String>> markMediaViewed(String messageId) =>
+      _messages.markMediaViewed(messageId);
+
   Future<List<ChatReactionGroup>> toggleReaction(
     String messageId,
     String emoji,

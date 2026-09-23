@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../privacy-mode/privacy_media.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../jpack/screens/jpack_cover_gallery_screen.dart';
 import '../../ghost/widgets/ghost_intro_sheet.dart';
@@ -367,6 +368,20 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
     final plain = _ctrl.text.trim();
     if (plain.isEmpty && _pending.isEmpty) return;
+    // Privacy mode: after the preview, the timer / saving sheet (server 0152).
+    // Only a send carrying attachments waits for it; text goes straight out.
+    if (_pending.isNotEmpty) {
+      final ruled = await askPrivacyMediaRules(
+        context,
+        ref,
+        ref.read(chatProvider).conversationById(widget.conversationId),
+        List.of(_pending),
+      );
+      if (ruled == null || !mounted) return;
+      _pending
+        ..clear()
+        ..addAll(ruled);
+    }
     final uploading = _uploads.busy;
     final reply = ComposerReplyTarget.resolve(
       replyTo: ref.read(chatProvider).replyToMessage,
@@ -491,6 +506,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     );
     _sendInFlight = false;
     if (sentMsg != null) {
+      unawaited(purgeSentTimedMedia(ref, attachments));
       await _draftStore.completeSend(
         _draftOwnerId,
         widget.conversationId,

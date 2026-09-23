@@ -95,6 +95,10 @@ class ChatMessage extends Equatable {
   final List<String> pendingMentionedUserIds;
 
   bool get isDeleted => deletedAt != null;
+
+  /// Carries a photo or file its sender restricted in privacy mode (a timer
+  /// or no saving): never saved, shared, or forwarded by anyone else.
+  bool get hasProtectedMedia => attachments.any((a) => a.isProtected);
   bool get isSystem => messageType == 'system';
   bool get isVoiceCall => messageType == 'voice_call';
 

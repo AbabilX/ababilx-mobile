@@ -8,6 +8,7 @@ import 'attachment_pdf_tile.dart';
 import 'attachment_video_tile.dart';
 import 'media-preview/chat_media_preview_meta.dart';
 import 'voice_attachment_player.dart';
+import '../../privacy-mode/privacy_timed_card.dart';
 
 /// Local-first attachment assembly. Transfer progress is watched only by the
 /// leaf tiles, so the message row does not rebuild for every downloaded chunk.
@@ -29,7 +30,14 @@ class MessageAttachments extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locked = attachments.where((a) => a.locked).toList();
-    final open = attachments.where((a) => !a.locked).toList();
+    // Privacy mode (server 0152): a timed photo is never drawn inline, and an
+    // expired one has nothing left to draw.
+    final timed = attachments
+        .where((a) => !a.locked && (a.timed || a.expired))
+        .toList();
+    final open = attachments
+        .where((a) => !a.locked && !a.timed && !a.expired)
+        .toList();
     final images = open.where((a) => a.isImage).toList();
     final videos = open.where((a) => a.isVideo).toList();
     final audio = open.where((a) => a.isAudio).toList();
@@ -40,6 +48,8 @@ class MessageAttachments extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        for (final attachment in timed)
+          PrivacyTimedCard(attachment: attachment),
         if (images.isNotEmpty)
           AttachmentImageGrid(
             images: images,

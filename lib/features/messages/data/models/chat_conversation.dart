@@ -64,6 +64,7 @@ class ChatConversation extends Equatable {
     this.peerUserEmail,
     this.peerLeft = false,
     this.isSelf = false,
+    this.peerPrivacy = false,
     this.canMessage = true,
     this.lockReason = '',
     this.plaintextUntilKeyed = false,
@@ -116,6 +117,13 @@ class ChatConversation extends Equatable {
   /// person — calls, presence, safety numbers, the request bar, block and
   /// report — is dropped rather than pointed back at them.
   final bool isSelf;
+
+  /// The DM peer has privacy mode on (server migration 0152). This phone then
+  /// blocks screenshots in the chat and on a call with them, draws no ticks on
+  /// messages sent to them, and shows "Privacy" in place of online/offline.
+  /// Live flips arrive as `chat.peer_privacy`; read it through
+  /// `peerPrivacyProvider`, which folds those in.
+  final bool peerPrivacy;
   final bool canMessage;
 
   /// Why the composer is closed. Empty when [canMessage] is true.
@@ -292,6 +300,7 @@ class ChatConversation extends Equatable {
       ),
       peerLeft: json['peer_left'] as bool? ?? false,
       isSelf: json['is_self'] as bool? ?? false,
+      peerPrivacy: json['peer_privacy'] as bool? ?? false,
       canMessage: json['can_message'] as bool? ?? true,
       lockReason: _jsonString(json['lock_reason']) ?? '',
       plaintextUntilKeyed: json['plaintext_until_keyed'] as bool? ?? false,
@@ -390,6 +399,7 @@ class ChatConversation extends Equatable {
     peerUserCover: peerUserCover,
     peerLeft: peerLeft,
     isSelf: isSelf,
+    peerPrivacy: peerPrivacy,
     canMessage: canMessage,
     lockReason: lockReason,
     plaintextUntilKeyed: plaintextUntilKeyed,
@@ -422,6 +432,7 @@ class ChatConversation extends Equatable {
     peerUserName,
     scope,
     isSelf,
+    peerPrivacy,
     canMessage,
     lockReason,
     plaintextUntilKeyed,

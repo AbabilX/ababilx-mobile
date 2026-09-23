@@ -56,7 +56,9 @@ Future<void> showMessageActions(
     // panel has room for neither — so the door only opens on the main
     // timeline, where those bars replace the header and the composer.
     showSelect: threadRootId == null,
-    showForward: !isJPack,
+    // The sender's own restricted photo is still theirs to forward; nobody
+    // else may (the server refuses it too).
+    showForward: !isJPack && (isMine || !msg.hasProtectedMedia),
     showCopy: !isJPack,
     showEdit: !isJPack,
     labels: {

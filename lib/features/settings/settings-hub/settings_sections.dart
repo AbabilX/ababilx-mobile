@@ -102,6 +102,12 @@ class SettingsSections extends ConsumerWidget {
           onTap: () => context.push('/settings/discovery'),
         ),
         SettingsRow(
+          icon: HugeIcons.strokeRoundedShield01,
+          title: t('settings_privacy_mode'),
+          subtitle: t('settings_privacy_mode_sub'),
+          onTap: () => context.push('/settings/privacy-mode'),
+        ),
+        SettingsRow(
           icon: HugeIcons.strokeRoundedUserGroup,
           title: t('chat_people'),
           subtitle: t('settings_people_sub'),

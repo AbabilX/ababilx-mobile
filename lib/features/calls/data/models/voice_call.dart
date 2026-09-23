@@ -18,6 +18,8 @@ class VoiceCall {
     this.endReason,
     required this.createdAt,
     this.calleeRingingAt,
+    this.callerPrivacy = false,
+    this.calleePrivacy = false,
   });
 
   final String id;
@@ -43,6 +45,16 @@ class VoiceCall {
   /// First moment a callee device reported it is ringing. The caller says
   /// "Ringing…" from then on instead of "Calling…".
   final DateTime? calleeRingingAt;
+
+  /// That side has privacy mode on (server migration 0152). A private callee
+  /// never reports "Ringing…" to the caller, and the OTHER side's phone
+  /// blocks screenshots of the call.
+  final bool callerPrivacy;
+  final bool calleePrivacy;
+
+  /// Whether the person on the other end of this call has privacy mode on.
+  bool peerPrivate(String currentUserId) =>
+      callerId == currentUserId ? calleePrivacy : callerPrivacy;
 
   bool get isTerminal => const {
     'declined',
@@ -79,6 +91,8 @@ class VoiceCall {
     endReason: endReason,
     createdAt: createdAt,
     calleeRingingAt: calleeRingingAt ?? this.calleeRingingAt,
+    callerPrivacy: callerPrivacy,
+    calleePrivacy: calleePrivacy,
   );
 
   factory VoiceCall.fromJson(Map<String, dynamic> json) => VoiceCall(
@@ -100,6 +114,8 @@ class VoiceCall {
     endReason: json['end_reason'] as String?,
     createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
     calleeRingingAt: _date(json['callee_ringing_at']),
+    callerPrivacy: json['caller_privacy'] as bool? ?? false,
+    calleePrivacy: json['callee_privacy'] as bool? ?? false,
   );
 
   static DateTime? _date(dynamic value) {

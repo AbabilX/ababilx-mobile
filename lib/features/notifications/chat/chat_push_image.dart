@@ -78,8 +78,11 @@ Future<String?> _imageUrl(String conversationId, String messageId) async {
     if (message.id != messageId) continue;
     for (final attachment in message.attachments) {
       final url = attachment.fileUrl;
+      // A photo its sender restricted (privacy mode) never goes to the
+      // tray: it would be a copy outside the app, drawn over the lock screen.
       if (attachment.isImage &&
           !attachment.locked &&
+          !attachment.isProtected &&
           url.startsWith('https://')) {
         return url;
       }

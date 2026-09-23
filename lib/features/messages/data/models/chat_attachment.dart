@@ -32,6 +32,11 @@ class ChatMessageAttachment extends Equatable {
     required this.uploadedBy,
     required this.createdAt,
     this.locked = false,
+    this.viewSeconds,
+    this.noSave = false,
+    this.viewedAt,
+    this.expiresAt,
+    this.expired = false,
   });
 
   final String id;
@@ -43,6 +48,22 @@ class ChatMessageAttachment extends Equatable {
   final String uploadedBy;
   final String createdAt;
   final bool locked;
+
+  /// Sender-controlled media (privacy mode, server migration 0152).
+  /// [viewSeconds]: null = no timer, 0 = view once, else seconds from the
+  /// receiver's first open. [noSave]: opens only inside the app. [expired]:
+  /// the file is gone everywhere — [fileUrl] is empty and the local copy
+  /// must be wiped.
+  final int? viewSeconds;
+  final bool noSave;
+  final String? viewedAt;
+  final String? expiresAt;
+  final bool expired;
+
+  bool get timed => viewSeconds != null;
+
+  /// A timer or no saving: never saved, shared, forwarded or listed.
+  bool get isProtected => timed || noSave || expired;
 
   bool get isImage => looksLikeImage(contentType, fileName);
 
@@ -75,6 +96,11 @@ class ChatMessageAttachment extends Equatable {
         uploadedBy: json['uploaded_by'] as String? ?? '',
         createdAt: json['created_at'] as String? ?? '',
         locked: json['locked'] as bool? ?? false,
+        viewSeconds: (json['view_seconds'] as num?)?.toInt(),
+        noSave: json['no_save'] as bool? ?? false,
+        viewedAt: json['viewed_at'] as String?,
+        expiresAt: json['expires_at'] as String?,
+        expired: json['expired'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -87,10 +113,15 @@ class ChatMessageAttachment extends Equatable {
     'uploaded_by': uploadedBy,
     'created_at': createdAt,
     'locked': locked,
+    'view_seconds': ?viewSeconds,
+    if (noSave) 'no_save': true,
+    'viewed_at': ?viewedAt,
+    'expires_at': ?expiresAt,
+    if (expired) 'expired': true,
   };
 
   @override
-  List<Object?> get props => [id, fileUrl];
+  List<Object?> get props => [id, fileUrl, viewedAt, expired];
 }
 
 class ChatAttachmentInput extends Equatable {
@@ -99,6 +130,8 @@ class ChatAttachmentInput extends Equatable {
     required this.fileName,
     required this.contentType,
     required this.sizeBytes,
+    this.viewSeconds,
+    this.noSave = false,
   });
 
   final String fileUrl;
@@ -106,12 +139,32 @@ class ChatAttachmentInput extends Equatable {
   final String contentType;
   final int sizeBytes;
 
+  /// The privacy-mode send sheet's choice (see [ChatMessageAttachment]).
+  /// Travels with the attachment so the outbox keeps it across a retry; the
+  /// API lifts it to the message's `media_policy`.
+  final int? viewSeconds;
+  final bool noSave;
+
+  bool get restricted => viewSeconds != null || noSave;
+
+  ChatAttachmentInput withPolicy({int? viewSeconds, required bool noSave}) =>
+      ChatAttachmentInput(
+        fileUrl: fileUrl,
+        fileName: fileName,
+        contentType: contentType,
+        sizeBytes: sizeBytes,
+        viewSeconds: viewSeconds,
+        noSave: noSave || viewSeconds != null,
+      );
+
   factory ChatAttachmentInput.fromJson(Map<String, dynamic> json) =>
       ChatAttachmentInput(
         fileUrl: json['file_url'] as String? ?? '',
         fileName: json['file_name'] as String? ?? '',
         contentType: json['content_type'] as String? ?? '',
         sizeBytes: json['size_bytes'] as int? ?? 0,
+        viewSeconds: (json['view_seconds'] as num?)?.toInt(),
+        noSave: json['no_save'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -119,6 +172,8 @@ class ChatAttachmentInput extends Equatable {
     'file_name': fileName,
     'content_type': contentType,
     'size_bytes': sizeBytes,
+    'view_seconds': ?viewSeconds,
+    if (noSave) 'no_save': true,
   };
 
   @override

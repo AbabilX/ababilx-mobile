@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../privacy-mode/peer_privacy_provider.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import 'message_bubble.dart';
@@ -43,11 +44,17 @@ class MessageBubbleFooter extends ConsumerWidget {
     final error = Theme.of(context).colorScheme.error;
     String tr(String key) => AppTranslations.translate(context, ref, key);
     final percent = ((message.uploadProgress ?? 0) * 100).round();
+    // To a private peer (server 0152) nothing about delivery is shown — no
+    // clock, no tick, no "Sending…". A failure still says so: that is about
+    // this phone, not about them.
+    final hideTicks =
+        isOwn &&
+        ref.watch(conversationPeerPrivacyProvider(message.conversationId));
     final label = isFailed
         ? tr('chat_tap_to_retry')
         : message.sendStatus == MessageSendStatus.uploading
         ? '${tr('chat_uploading')} $percent%'
-        : isSending
+        : isSending && !hideTicks
         ? tr('chat_sending')
         : formatChatTime(message.createdAt);
     final ink = onMedia ? _onMediaInk : colors.muted;
@@ -68,7 +75,7 @@ class MessageBubbleFooter extends ConsumerWidget {
                 : null,
           ),
         ),
-        if (isOwn && !isFailed) ...[
+        if (isOwn && !isFailed && !hideTicks) ...[
           const SizedBox(width: 4),
           MessageDeliveryStatus(
             status: message.sendStatus,

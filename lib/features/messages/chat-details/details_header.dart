@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../privacy-mode/peer_privacy_provider.dart';
+import '../../privacy-mode/privacy_status_label.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/group/providers/group_call_provider.dart';
@@ -211,6 +213,12 @@ class DetailsHeader extends ConsumerWidget {
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant),
         ),
+      );
+    }
+    if (ref.watch(conversationPeerPrivacyProvider(conversation.id))) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 6),
+        child: PrivacyStatusLabel(),
       );
     }
     final inCall = ref.watch(isUserInCallProvider(conversation.peerUserId));

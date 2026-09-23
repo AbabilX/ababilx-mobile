@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
@@ -52,10 +53,15 @@ class ConversationRow extends ConsumerWidget {
           );
     final time = relativeChatTime(conversation.lastMessageAt);
     final unread = conversation.unreadCount > 0;
+    // A private peer (server 0152) leaks nothing here either.
+    final peerPrivate = ref.watch(
+      conversationPeerPrivacyProvider(conversation.id),
+    );
     final peerInCall =
         conversation.hasDmPeer &&
+        !peerPrivate &&
         ref.watch(isUserInCallProvider(conversation.peerUserId));
-    final peerStatus = conversation.hasDmPeer && !peerInCall
+    final peerStatus = conversation.hasDmPeer && !peerInCall && !peerPrivate
         ? ref.watch(userStatusForProvider(conversation.peerUserId))
         : null;
 

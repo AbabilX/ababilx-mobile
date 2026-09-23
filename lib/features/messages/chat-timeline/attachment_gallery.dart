@@ -145,7 +145,9 @@ class _ChatGalleryDialogState extends ConsumerState<_ChatGalleryDialog> {
                 child: ChatMediaPreviewFooter(
                   images: widget.images,
                   index: _index,
-                  localPath: localPath,
+                  // No path, no Save / Share dock: a view-only photo
+                  // (privacy mode) never leaves the app.
+                  localPath: current.isProtected ? null : localPath,
                   fileName: current.fileName,
                   caption: meta?.caption,
                   onSelect: _jumpTo,

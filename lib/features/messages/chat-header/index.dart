@@ -22,6 +22,8 @@ import 'start_audio_call.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_title.dart';
 import '../chat-typing/typing_text.dart';
+import '../../privacy-mode/peer_privacy_provider.dart';
+import '../../privacy-mode/privacy_status_label.dart';
 
 /// Conversation top bar — used inside the scroll shell (auto-hides on scroll).
 class ChatHeader extends ConsumerWidget {
@@ -41,10 +43,16 @@ class ChatHeader extends ConsumerWidget {
     );
     // hasDmPeer, not isDm: a note to self is a DM whose peer is the viewer, so
     // these would report the viewer's own presence back at them.
+    // A private peer (server 0152) shows "Privacy" and nothing else about
+    // what they are doing — not in a call, not a status.
+    final peerPrivate = ref.watch(
+      conversationPeerPrivacyProvider(conversation.id),
+    );
     final peerInCall =
         conversation.hasDmPeer &&
+        !peerPrivate &&
         ref.watch(isUserInCallProvider(conversation.peerUserId));
-    final peerStatus = conversation.hasDmPeer && !peerInCall
+    final peerStatus = conversation.hasDmPeer && !peerInCall && !peerPrivate
         ? ref.watch(userStatusForProvider(conversation.peerUserId))
         : null;
     // Typing wins the subtitle while it lasts: it is the most current thing
@@ -119,6 +127,11 @@ class ChatHeader extends ConsumerWidget {
                                   color: colors.primary,
                                 ),
                               ),
+                            )
+                          else if (peerPrivate)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 2),
+                              child: PrivacyStatusLabel(),
                             )
                           else if (peerInCall)
                             const Padding(

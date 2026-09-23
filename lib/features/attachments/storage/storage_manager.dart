@@ -62,8 +62,16 @@ class StorageManager {
       limit: 1 << 30,
       conversationId: conversationId,
     );
+    return purgeUrlKeys(items.map((item) => item.urlKey));
+  }
+
+  /// Drops these blobs outright — row and file — the way a deleted
+  /// conversation's are. Also what an expired timed photo takes (privacy
+  /// mode): no badge, no way to download it again, because the object is gone
+  /// from the server too.
+  Future<int> purgeUrlKeys(Iterable<String> urlKeys) async {
     var freed = 0;
-    for (final urlKey in items.map((item) => item.urlKey).toSet()) {
+    for (final urlKey in urlKeys.toSet()) {
       final row = await _blobs.read(urlKey);
       if (row == null) {
         await _blobs.delete(urlKey);

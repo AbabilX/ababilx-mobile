@@ -13,7 +13,7 @@ import '../data/models/chat_models.dart';
 /// message holding nothing else must not offer the action at all.
 List<ChatMessageAttachment> saveableAttachments(ChatMessage message) {
   return message.attachments
-      .where((a) => !a.locked && a.fileUrl.isNotEmpty)
+      .where((a) => !a.locked && !a.isProtected && a.fileUrl.isNotEmpty)
       .toList();
 }
 

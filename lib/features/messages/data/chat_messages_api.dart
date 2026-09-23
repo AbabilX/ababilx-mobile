@@ -75,9 +75,20 @@ class ChatMessagesApi {
         if (attachments.isNotEmpty)
           'attachments': attachments.map((a) => a.toJson()).toList(),
         if (mentionedUserIds.isNotEmpty) 'mentioned_user_ids': mentionedUserIds,
+        'media_policy': ?_mediaPolicy(attachments),
       },
     );
     return ChatMessage.fromJson(unwrapApiData<Map<String, dynamic>>(res));
+  }
+
+  /// The privacy-mode sheet sets one choice for every attachment of a send;
+  /// the server takes it once per message. Null when nothing is restricted.
+  static Map<String, dynamic>? _mediaPolicy(List<ChatAttachmentInput> atts) {
+    for (final a in atts) {
+      if (!a.restricted) continue;
+      return {'view_seconds': a.viewSeconds, 'allow_save': !a.noSave};
+    }
+    return null;
   }
 
   Future<ChatMessage> patchMessage(
@@ -103,6 +114,23 @@ class ChatMessagesApi {
 
   Future<void> deleteMessage(String messageId) async {
     await _client.delete(_endpoints.message(messageId));
+  }
+
+  /// The receiver opens a timed photo (privacy mode): starts its clock and
+  /// returns the real URLs, attachment id -> URL. Every other read withholds
+  /// them, so this is the only way to the bytes. Empty for the sender and once
+  /// the photo expired.
+  Future<Map<String, String>> markMediaViewed(String messageId) async {
+    final res = await _client.post('${_endpoints.message(messageId)}/viewed');
+    final data = unwrapApiData<Map<String, dynamic>>(res);
+    final out = <String, String>{};
+    for (final item in data['attachments'] as List<dynamic>? ?? const []) {
+      if (item is! Map) continue;
+      final id = item['id'] as String? ?? '';
+      final url = item['file_url'] as String? ?? '';
+      if (id.isNotEmpty && url.isNotEmpty) out[id] = url;
+    }
+    return out;
   }
 
   /// "Delete for me" — hidden for this account only.
