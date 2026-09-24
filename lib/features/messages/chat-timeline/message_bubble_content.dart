@@ -16,14 +16,22 @@ import 'signal_bubble_metrics.dart';
 
 /// Image/video attachments only, no caption or quote — the media is the
 /// surface, so [MessageBubble] paints no fill behind it.
+///
+/// Timed / expired photos (privacy mode) are label cards, not pictures — they
+/// keep the bubble fill and put the time under the label, never on it.
 bool isBareMediaBubble(ChatMessage message) {
   if (message.isDeleted) return false;
   if (message.quote != null) return false;
   if (message.forwardedFromName != null) return false;
   if (message.attachments.isEmpty) return false;
   if (!message.attachments.every((a) => a.isImage || a.isVideo)) return false;
+  if (!_hasDrawableMedia(message.attachments)) return false;
   return tiptapToPlainText(message.body).trim().isEmpty;
 }
+
+/// At least one attachment that is drawn as a real picture/video tile.
+bool _hasDrawableMedia(List<ChatMessageAttachment> attachments) =>
+    attachments.any((a) => !a.timed && !a.expired);
 
 /// What sits inside a bubble, and how much padding it takes.
 ///
@@ -62,12 +70,16 @@ class MessageBubbleContent extends StatelessWidget {
   );
 
   /// Picture/video bubble — caption or not. Time sits on the media. A quote
-  /// needs the inset, so a quoted photo keeps the text-bubble path.
+  /// needs the inset, so a quoted photo keeps the text-bubble path. Timed /
+  /// expired-only attachments are label cards — not this path.
   bool get _isMediaBubble {
     if (message.isDeleted) return false;
     if (message.quote != null) return false;
     if (message.attachments.isEmpty) return false;
-    return message.attachments.every((a) => a.isImage || a.isVideo);
+    if (!message.attachments.every((a) => a.isImage || a.isVideo)) {
+      return false;
+    }
+    return _hasDrawableMedia(message.attachments);
   }
 
   // Time + ticks always sit on the trailing edge of the bubble (WhatsApp /
