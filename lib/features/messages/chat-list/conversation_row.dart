@@ -104,6 +104,7 @@ class ConversationRow extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Flexible(
+                              flex: 3,
                               child: Text(
                                 title,
                                 maxLines: 1,
@@ -121,9 +122,14 @@ class ConversationRow extends ConsumerWidget {
                               const InCallLabel(compact: true),
                             ] else if (peerStatus != null) ...[
                               const SizedBox(width: 6),
-                              UserStatusBadge(
-                                status: peerStatus,
-                                compact: true,
+                              // Flexible, or a long status pushes the row
+                              // past the timestamp instead of ending in "…".
+                              Flexible(
+                                flex: 2,
+                                child: UserStatusBadge(
+                                  status: peerStatus,
+                                  compact: true,
+                                ),
                               ),
                             ],
                             if (conversation.muted)

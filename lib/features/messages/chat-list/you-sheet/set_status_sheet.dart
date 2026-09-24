@@ -161,7 +161,7 @@ class _SetStatusSheetState extends ConsumerState<_SetStatusSheet> {
                   Expanded(
                     child: TextField(
                       controller: _textCtrl,
-                      maxLength: 100,
+                      maxLength: 40,
                       decoration: const InputDecoration(
                         hintText: "What's your status?",
                         counterText: '',
