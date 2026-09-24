@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../chat_icon.dart';
 import 'signal_message_menu.dart';
 import 'signal_message_menu_geometry.dart';
 import 'signal_message_menu_items.dart';
@@ -47,7 +48,11 @@ class _ActionRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(item.icon, size: SignalMenuMetrics.menuIconSize, color: color),
+            ChatIcon(
+              item.icon,
+              size: SignalMenuMetrics.menuIconSize,
+              color: color,
+            ),
             const SizedBox(width: SignalMenuMetrics.menuIconGap),
             Expanded(
               child: Text(

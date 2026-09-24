@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'signal_message_menu.dart';
 import 'signal_message_menu_geometry.dart';
@@ -6,7 +7,7 @@ import 'signal_message_menu_geometry.dart';
 class SignalMenuItem {
   const SignalMenuItem(this.action, this.icon, this.label);
   final SignalMessageAction action;
-  final IconData icon;
+  final List<List<dynamic>> icon;
   final String label;
 }
 
@@ -28,31 +29,31 @@ List<SignalMenuItem> signalMenuItems({
   if (showReply)
     SignalMenuItem(
       SignalMessageAction.reply,
-      Icons.reply_rounded,
+      HugeIcons.strokeRoundedReply,
       labels['reply']!,
     ),
   if (showForward)
     SignalMenuItem(
       SignalMessageAction.forward,
-      Icons.shortcut_rounded,
+      HugeIcons.strokeRoundedArrowTurnForward,
       labels['forward']!,
     ),
   if (showSave)
     SignalMenuItem(
       SignalMessageAction.save,
-      Icons.save_alt_rounded,
+      HugeIcons.strokeRoundedDownload02,
       labels['save']!,
     ),
   if (showCopy)
     SignalMenuItem(
       SignalMessageAction.copy,
-      Icons.content_copy_outlined,
+      HugeIcons.strokeRoundedCopy01,
       labels['copy']!,
     ),
   if (showThread)
     SignalMenuItem(
       SignalMessageAction.thread,
-      Icons.forum_outlined,
+      HugeIcons.strokeRoundedThread,
       labels['thread']!,
     ),
   // Signal puts multi-select right after the per-message actions and before
@@ -61,25 +62,25 @@ List<SignalMenuItem> signalMenuItems({
   if (showSelect)
     SignalMenuItem(
       SignalMessageAction.select,
-      Icons.check_circle_outline,
+      HugeIcons.strokeRoundedCheckmarkCircle02,
       labels['select']!,
     ),
   if (isMine && showEdit)
     SignalMenuItem(
       SignalMessageAction.edit,
-      Icons.edit_outlined,
+      HugeIcons.strokeRoundedPencilEdit02,
       labels['edit']!,
     ),
   if (showPin)
     SignalMenuItem(
       SignalMessageAction.pin,
-      pinned ? Icons.push_pin_outlined : Icons.push_pin_rounded,
+      pinned ? HugeIcons.strokeRoundedPinOff : HugeIcons.strokeRoundedPin,
       labels[pinned ? 'unpin' : 'pin']!,
     ),
   // Every message: somebody else's can still be deleted for me.
   SignalMenuItem(
     SignalMessageAction.delete,
-    Icons.delete_outline_rounded,
+    HugeIcons.strokeRoundedDelete02,
     labels['delete']!,
   ),
 ];

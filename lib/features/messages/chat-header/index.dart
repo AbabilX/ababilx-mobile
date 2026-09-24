@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -18,6 +17,7 @@ import '../providers/chat_provider.dart';
 import '../providers/chat_connections_provider.dart';
 import 'call_action_pill.dart';
 import 'header_avatar.dart';
+import 'header_back_button.dart';
 import 'group_call_action.dart';
 import 'start_audio_call.dart';
 import '../nickname/contact_nickname_provider.dart';
@@ -75,7 +75,7 @@ class ChatHeader extends ConsumerWidget {
         child: SizedBox(
           height: kToolbarHeight,
           child: NavigationToolbar(
-            leading: AppBarBackButton(
+            leading: HeaderBackButton(
               onPressed: () => popOrGoMessages(context),
             ),
             middle: InkWell(

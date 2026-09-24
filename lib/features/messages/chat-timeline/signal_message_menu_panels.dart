@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
+import '../chat_icon.dart';
 import 'signal_message_menu.dart';
 import 'signal_message_menu_geometry.dart';
 
@@ -61,8 +63,8 @@ class SignalReactionBar extends StatelessWidget {
                   child: CircleAvatar(
                     radius: 17,
                     backgroundColor: colors.surfaceContainerHighest,
-                    child: Icon(
-                      Icons.more_horiz_rounded,
+                    child: ChatIcon(
+                      HugeIcons.strokeRoundedMoreHorizontal,
                       size: 20,
                       color: colors.onSurfaceVariant,
                     ),
