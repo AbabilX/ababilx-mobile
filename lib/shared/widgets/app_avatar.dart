@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../text/display_name.dart';
+import 'avatar_cache.dart';
 
 /// Homepage-style rounded-square avatar (radius 8 — not circle).
 class AppAvatar extends StatelessWidget {
@@ -68,13 +69,24 @@ class AppAvatar extends StatelessWidget {
       child: Center(child: letterWidget),
     );
     final src = _safeUrl;
+    // Decode at the size drawn, not the upload's: a group photo is often a
+    // full camera frame, and decoding that for a 48dp tile is most of the
+    // wait on a cold start. No fade — a picture read off disk should simply
+    // be there, not dissolve in over half a second. Width only (both would
+    // squash the aspect), doubled so a landscape photo cropped to the square
+    // still has its full height in pixels.
+    final px = (size * MediaQuery.devicePixelRatioOf(context) * 2).round();
 
     final inner = src == null
         ? placeholder
         : CachedNetworkImage(
             imageUrl: src,
+            cacheManager: AvatarCache.instance,
             fit: BoxFit.cover,
             httpHeaders: _headers,
+            memCacheWidth: px,
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
             placeholder: (_, _) => placeholder,
             errorWidget: (_, _, _) => placeholder,
           );

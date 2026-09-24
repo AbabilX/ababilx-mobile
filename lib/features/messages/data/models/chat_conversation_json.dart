@@ -29,6 +29,15 @@ extension ChatConversationJson on ChatConversation {
     'peer_user_name': peerUserName,
     'peer_user_avatar': peerUserAvatar,
     'peer_user_cover': peerUserCover,
+    'peer_user_email': peerUserEmail,
+    // A group's own picture and identity. Left out, every cold start drew the
+    // member montage (or the bare icon) until the network answered.
+    'avatar_url': avatarUrl,
+    'banner_url': bannerUrl,
+    'description': description,
+    'edit_info_role': editInfoRole,
+    'add_members_role': addMembersRole,
+    'my_role': myRole,
     'peer_left': peerLeft,
     'is_self': isSelf,
     'peer_privacy': peerPrivacy,

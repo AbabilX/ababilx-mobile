@@ -1617,3 +1617,20 @@ the screen any more (Block used to jump to `/messages`); the row flipping is
 the confirmation. Unblock is the same `DELETE /api/chat/connections/:userId` as
 Blocked people and does not restore acceptance. Pinned by
 `details_block_tile_test.dart`.
+
+## Cold-start avatars (2026-09-25)
+
+Group photos appeared only after the network answered on every launch because
+`chat_conversation_json.dart` (the sidebar cache's writer) never saved
+`avatar_url` — cached rows came back with no photo, so the list drew the
+member stack or the bare icon until `fetchSidebar` finished. It now saves
+`avatar_url`, `banner_url`, `description`, the two role switches, `my_role`
+and `peer_user_email`; `sidebar_cache_identity_test.dart` pins the round
+trip. **Any field `fromJson` reads must also be written by `toJson`**, or it
+silently disappears on an offline start.
+
+`AppAvatar` (`shared/widgets/`) reads through its own `AvatarCache`
+(`avatars_v1`, 2000 files, 365 days, app cache dir — never the gallery), so
+wall and shared photos no longer evict faces out of the default 200-object
+store. It decodes at the drawn size (`memCacheWidth`, 2x for landscape crops)
+and has no fade, so a disk hit shows at once.
