@@ -498,6 +498,10 @@ and searched in the people list, since a rename has to be how you find someone.
 light/dark pair — there is no plain opt-out. Dewdrop and rainy-paddy remain
 picker options. Per-chat choices always win over the global default.
 
+The Meet/Talk pill (`CallActionPill`) is frosted glass — `BackdropFilter`
+plus a light tint, never a solid container colour. The chat header bar itself
+stays the theme surface.
+
 ## Chat search is chats, then messages
 
 `chat-list/chat_search.dart`. Signal-Android's conversation-list search
