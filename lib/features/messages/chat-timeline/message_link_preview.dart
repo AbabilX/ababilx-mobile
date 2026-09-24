@@ -162,9 +162,8 @@ class MessageLinkPreviewCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 description,
-                // Signal's own cap. A bubble is narrow, so this is a ceiling
-                // rather than a target.
-                maxLines: 15,
+                // Caption only — long OG descriptions used to fill the bubble.
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13,
