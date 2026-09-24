@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../privacy-mode/peer_privacy_provider.dart';
-import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
 import '../../local_share/providers/local_share_providers.dart';
@@ -13,9 +12,8 @@ import '../chat_icon.dart';
 import '../chat_list_filters.dart';
 import '../chat_unread_badge.dart';
 import '../data/models/chat_models.dart';
-import '../note_to_self_avatar.dart';
+import 'conversation_avatar.dart';
 import 'conversation_preview_line.dart';
-import 'group_avatar_stack.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_title.dart';
 import '../chat-typing/typing_text.dart';
@@ -91,7 +89,7 @@ class ConversationRow extends ConsumerWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ConversationAvatar(conversation: conversation, title: title),
+            ConversationAvatar(conversation: conversation, title: title),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -209,41 +207,6 @@ class ConversationRow extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ConversationAvatar extends StatelessWidget {
-  const _ConversationAvatar({required this.conversation, required this.title});
-
-  final ChatConversation conversation;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    if (conversation.isGroupConversation) {
-      return GroupAvatarStack(
-        avatars: conversation.memberAvatars,
-        avatarUrl: conversation.avatarUrl,
-        name: title,
-        size: 52,
-      );
-    }
-    // The "peer" of a note to self is the viewer, so their own picture with
-    // their own presence dot on it would be the avatar. Signal draws a
-    // bookmark instead, and so do we.
-    if (conversation.isSelf) {
-      return NoteToSelfAvatar(size: 52, iconSize: 24);
-    }
-    return AppAvatar(
-      size: 52,
-      url: conversation.isAccountDeleted ? null : conversation.peerUserAvatar,
-      name: conversation.isAccountDeleted ? null : title,
-      fallback: ChatIcon(
-        HugeIcons.strokeRoundedUser02,
-        color: colors.onSurfaceVariant,
       ),
     );
   }

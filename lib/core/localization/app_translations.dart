@@ -663,6 +663,8 @@ class AppTranslations {
       // Privacy mode (server migration 0152).
       'call_status_calling_private': 'Calling… · Privacy mode on',
       'chat_status_privacy': 'Privacy',
+      'chat_status_online': 'Online',
+      'chat_status_offline': 'Offline',
       'settings_privacy_mode': 'Privacy mode',
       'settings_privacy_mode_sub':
           'Hide typing, ticks, online and calls. Nobody can find you',
@@ -1553,6 +1555,8 @@ class AppTranslations {
       'call_status_ringing': 'রিং হচ্ছে…',
       'call_status_calling_private': 'কল করা হচ্ছে… · প্রাইভেসি মোড চালু',
       'chat_status_privacy': 'প্রাইভেসি',
+      'chat_status_online': 'অনলাইন',
+      'chat_status_offline': 'অফলাইন',
       'settings_privacy_mode': 'প্রাইভেসি মোড',
       'settings_privacy_mode_sub': 'টাইপিং, টিক, অনলাইন ও কল লুকান',
       'privacy_mode_title': 'প্রাইভেসি মোড',

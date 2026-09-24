@@ -25,6 +25,7 @@ import '../nickname/nickname_title.dart';
 import '../chat-typing/typing_text.dart';
 import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../privacy-mode/privacy_status_label.dart';
+import '../../presence/peer_presence_label.dart';
 
 /// Conversation top bar — used inside the scroll shell (auto-hides on scroll).
 class ChatHeader extends ConsumerWidget {
@@ -151,6 +152,16 @@ class ChatHeader extends ConsumerWidget {
                               child: UserStatusBadge(
                                 status: peerStatus,
                                 compact: true,
+                              ),
+                            )
+                          else if (conversation.hasDmPeer &&
+                              !conversation.isAccountDeleted)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: PeerPresenceLabel(
+                                userId: conversation.peerUserId,
+                                showOffline:
+                                    conversation.requestState == 'none',
                               ),
                             )
                           else if (conversation.isGroupConversation &&

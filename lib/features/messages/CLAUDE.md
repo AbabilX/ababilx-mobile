@@ -1643,3 +1643,27 @@ logos and the webhook picker (`AvatarCache.provider(url)` wherever an
 (`PreviewImage.identity`) reads it too, so the tapped photo opens without a
 second download. The viewer's remote fallback for everything else is now
 cached as well; it was a bare `Image.network`.
+
+## Online dots and "Online / Offline" (2026-09-25)
+
+The phone never drew anyone online. The server has fanned
+`attendance.presence` / `attendance.presence.snapshot` out to every socket
+since 2026-09-07 (audience = teammates + accepted connections, minus anyone
+the peer is private toward), but no mobile provider listened.
+
+- `features/presence/online_presence_provider.dart`: userId → when the
+  phone heard they were online, the 90 s TTL web uses. Stamped with the
+  phone's own clock (not the event's `at`), so a skewed clock cannot expire
+  events on arrival. A 15 s sweep drops expired entries so a dot goes out
+  without an unrelated rebuild. Our own socket dropping clears the map. The
+  reconnect brings a fresh snapshot. Booted and shut down in `CallStoreSync`
+  beside in-call presence and user status.
+- Chat list: `chat-list/conversation_avatar.dart` (moved out of
+  `conversation_row.dart`) puts `OnlineDot` on a DM peer. It is always a
+  Stack, so the dot toggling never remounts the picture.
+- DM header: `PeerPresenceLabel` sits after typing, Privacy, in a call and
+  custom status. "Offline" shows only when `request_state == 'none'`. An open
+  request never receives presence, so "Offline" there would be a guess.
+- Snapshot missed when the socket connected before the provider subscribed?
+  The server's minute-tick re-broadcast (`RefreshConnectedPresence`) fills it
+  within 60 s.

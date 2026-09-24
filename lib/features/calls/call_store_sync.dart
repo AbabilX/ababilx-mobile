@@ -10,6 +10,7 @@ import '../profile/providers/user_status_provider.dart';
 import 'providers/in_call_presence_provider.dart';
 import 'providers/voice_call_provider.dart';
 import 'voice_call_log.dart';
+import '../presence/online_presence_provider.dart';
 
 class CallStoreSync extends ConsumerStatefulWidget {
   const CallStoreSync({super.key, required this.router, required this.child});
@@ -154,6 +155,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
         ref.read(voiceCallProvider.notifier).bootstrap();
         unawaited(ref.read(inCallPresenceProvider.notifier).bootstrap());
         unawaited(ref.read(userStatusProvider.notifier).bootstrap());
+        unawaited(ref.read(onlinePresenceProvider.notifier).bootstrap());
       });
     }
     if (!loggedIn && _booted && !_shutdownScheduled) {
@@ -164,6 +166,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
         await ref.read(voiceCallProvider.notifier).shutdown();
         ref.read(inCallPresenceProvider.notifier).clear();
         ref.read(userStatusProvider.notifier).clear();
+        ref.read(onlinePresenceProvider.notifier).shutdown();
         if (!mounted) return;
         _shutdownScheduled = false;
       });
