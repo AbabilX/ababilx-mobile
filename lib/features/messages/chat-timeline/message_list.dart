@@ -87,9 +87,9 @@ class MessageList extends ConsumerWidget {
       for (var i = 0; i < messages.length; i++) messages[i].id: i,
     };
     final rows = timelineRowKeys(items);
-    // DM only: reserve index 0 (newest end of a reverse list) for the typing
-    // bubble. Header "typing…" stays; groups keep the header alone for now.
-    final typingSlot = dmTypingBubbleSlot(ref, conversationId) ? 1 : 0;
+    // DMs and groups: index 0 (newest end of a reverse list) is the typing
+    // bubble. The header's "typing…" stays beside it.
+    final typingSlot = typingBubbleSlot(ref, conversationId) ? 1 : 0;
     final hasWallpaper = ref
         .watch(chatWallpaperProvider)
         .forChat(conversationId)
@@ -114,7 +114,10 @@ class MessageList extends ConsumerWidget {
       itemCount: items.length + tail.length + typingSlot,
       itemBuilder: (context, i) {
         if (typingSlot == 1 && i == 0) {
-          return DmTypingBubble(conversationId: conversationId);
+          return ChatTypingBubble(
+            conversationId: conversationId,
+            messages: messages,
+          );
         }
         final listIndex = i - typingSlot;
         if (listIndex >= items.length) {

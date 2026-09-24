@@ -5,22 +5,32 @@ import '../../settings/typing-indicators/typing_indicators_provider.dart';
 import '../chat-select/selectable_message_row.dart';
 import '../chat-timeline/message_bubble.dart';
 import '../chat-timeline/signal_bubble_metrics.dart';
+import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../wallpaper/chat_wallpaper_provider.dart';
 import 'chat_typing_provider.dart';
+import 'typing_avatars.dart';
 import 'typing_thought.dart';
 
-/// DM-only typing indicator at the newest end of the timeline.
+/// Typing indicator at the newest end of the timeline, in a DM and in a
+/// group. The header still says "typing…" / "Alice is typing…"; this bumps an
+/// animated thought-bubble icon ([HugeIcons.strokeRoundedThoughtBubble]) in.
+/// A group also has to say WHO, so the typists' faces sit in the avatar
+/// gutter an incoming group message uses.
 ///
-/// The header still shows "typing…"; this bumps an animated thought-bubble
-/// icon ([HugeIcons.strokeRoundedThoughtBubble]) when the peer types. Groups
-/// keep the header only for now.
-///
-/// Mount only inside a DM (`hasDmPeer`); [MessageList] gates the slot.
-class DmTypingBubble extends ConsumerWidget {
-  const DmTypingBubble({super.key, required this.conversationId});
+/// [MessageList] reserves the slot only where [typingBubbleSlot] says so.
+class ChatTypingBubble extends ConsumerWidget {
+  const ChatTypingBubble({
+    super.key,
+    required this.conversationId,
+    required this.messages,
+  });
 
   final String conversationId;
+
+  /// The timeline's messages, newest last — where a group typist's picture
+  /// comes from.
+  final List<ChatMessage> messages;
 
   static const _bump = Duration(milliseconds: 220);
 
@@ -31,14 +41,17 @@ class DmTypingBubble extends ConsumerWidget {
       chatTypingProvider.select((m) => m[conversationId]),
     );
     final visible = enabled && typists != null && typists.isNotEmpty;
+    final isGroup = ref.watch(
+      chatProvider.select(
+        (c) => c.conversationById(conversationId)?.hasDmPeer != true,
+      ),
+    );
+    final scheme = Theme.of(context).colorScheme;
     final hasWallpaper = ref
         .watch(chatWallpaperProvider)
         .forChat(conversationId)
         .isSet;
-    final colors = SignalBubbleColors.of(
-      Theme.of(context).colorScheme,
-      hasWallpaper: hasWallpaper,
-    );
+    final colors = SignalBubbleColors.of(scheme, hasWallpaper: hasWallpaper);
 
     // Keep the slot mounted so AnimatedSize can bump height in and out.
     return AnimatedSize(
@@ -53,9 +66,19 @@ class DmTypingBubble extends ConsumerWidget {
                 SelectableMessageRow.restingGutter,
                 4,
               ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: TypingThoughtIcon(color: colors.muted),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (isGroup) ...[
+                    TypingAvatars(
+                      typists: typists,
+                      messages: messages,
+                      ring: scheme.surface,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  TypingThoughtIcon(color: colors.muted),
+                ],
               ),
             )
           : const SizedBox(width: double.infinity),
@@ -63,10 +86,14 @@ class DmTypingBubble extends ConsumerWidget {
   }
 }
 
-/// Whether this conversation should reserve a typing-bubble slot in the list.
-bool dmTypingBubbleSlot(WidgetRef ref, String conversationId) {
+/// Whether this conversation reserves a typing slot in the list: a DM with a
+/// real peer, or a group. Never a feed (nobody there types) or Note to Self.
+bool typingBubbleSlot(WidgetRef ref, String conversationId) {
   final conversation = ref.watch(
     chatProvider.select((c) => c.conversationById(conversationId)),
   );
-  return conversation?.hasDmPeer == true;
+  if (conversation == null) return false;
+  return conversation.hasDmPeer ||
+      conversation.isGroup ||
+      conversation.isChannel;
 }
