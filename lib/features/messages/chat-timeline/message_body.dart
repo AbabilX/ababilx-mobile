@@ -8,6 +8,7 @@ import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 import '../tiptap_viewer.dart';
 import 'media-preview/chat_media_preview_meta.dart';
+import 'media_caption_layout.dart';
 import 'message_attachments.dart';
 import 'message_bubble.dart';
 import 'message_long_body.dart';
@@ -103,6 +104,7 @@ class MessageBody extends ConsumerWidget {
       final tiles = MessageAttachments(
         attachments: message.attachments,
         withCaption: !bleedMedia && plain.isNotEmpty,
+        captioned: text.isNotEmpty,
         preview: preview,
       );
       final overlay = mediaFooter;
@@ -126,7 +128,15 @@ class MessageBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (bleedMedia) ...[?media, ?caption] else ...[?caption, ?media],
+        if (bleedMedia && media != null && caption != null)
+          MediaCaptionLayout(media: media, caption: caption)
+        else if (bleedMedia) ...[
+          ?media,
+          ?caption,
+        ] else ...[
+          ?caption,
+          ?media,
+        ],
         if (message.isPending && message.pendingAttachments.isNotEmpty)
           PendingMessageAttachments(
             attachments: message.pendingAttachments,

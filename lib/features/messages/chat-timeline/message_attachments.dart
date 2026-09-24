@@ -17,6 +17,7 @@ class MessageAttachments extends StatelessWidget {
     super.key,
     required this.attachments,
     this.withCaption = false,
+    this.captioned = false,
     this.preview,
   });
 
@@ -24,6 +25,11 @@ class MessageAttachments extends StatelessWidget {
 
   /// Whether the message also carries body text, which widens a solo picture.
   final bool withCaption;
+
+  /// Text sits under the media (caption bubble). The picture keeps its
+  /// edge-to-edge shape but takes Signal's wider floor, since the caption
+  /// wraps to the picture's width.
+  final bool captioned;
 
   final ChatMediaPreviewMeta? preview;
 
@@ -54,6 +60,7 @@ class MessageAttachments extends StatelessWidget {
           AttachmentImageGrid(
             images: images,
             withCaption: withCaption,
+            captioned: captioned,
             preview: preview,
           ),
         for (final attachment in videos)
@@ -61,6 +68,7 @@ class MessageAttachments extends StatelessWidget {
             attachment: attachment,
             preview: preview,
             inset: withCaption,
+            captioned: captioned,
           ),
         for (final attachment in audio)
           VoiceAttachmentPlayer(attachment: attachment),

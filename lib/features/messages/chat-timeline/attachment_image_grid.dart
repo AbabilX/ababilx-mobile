@@ -16,6 +16,7 @@ class AttachmentImageGrid extends StatelessWidget {
     super.key,
     required this.images,
     this.withCaption = false,
+    this.captioned = false,
     this.preview,
   });
 
@@ -24,6 +25,9 @@ class AttachmentImageGrid extends StatelessWidget {
   /// A picture carrying text is held to a wider floor, so the caption is not
   /// squeezed into a narrow bubble beneath it.
   final bool withCaption;
+
+  /// Text under an edge-to-edge picture: same wider floor, no inset.
+  final bool captioned;
 
   final ChatMediaPreviewMeta? preview;
 
@@ -39,7 +43,7 @@ class AttachmentImageGrid extends StatelessWidget {
         index: 0,
         maxHeight: SignalBubbleMetrics.mediaMaxHeight,
         maxWidth: SignalBubbleMetrics.mediaMaxWidth,
-        minWidth: withCaption
+        minWidth: withCaption || captioned
             ? SignalBubbleMetrics.mediaMinWidthWithCaption
             : SignalBubbleMetrics.mediaMinWidthSolo,
         preview: preview,

@@ -21,6 +21,7 @@ class AttachmentVideoTile extends ConsumerStatefulWidget {
     required this.attachment,
     this.preview,
     this.inset = true,
+    this.captioned = false,
   });
 
   final ChatMessageAttachment attachment;
@@ -28,6 +29,10 @@ class AttachmentVideoTile extends ConsumerStatefulWidget {
 
   /// Caption / quoted clips keep an 8dp gap above. Media-only fills the bubble.
   final bool inset;
+
+  /// Text under the clip: Signal's wider floor, so the caption is not
+  /// squeezed under a narrow portrait video.
+  final bool captioned;
 
   @override
   ConsumerState<AttachmentVideoTile> createState() =>
@@ -44,6 +49,9 @@ class _AttachmentVideoTileState extends ConsumerState<AttachmentVideoTile>
     final box = soloMediaSize(
       lockedDimensions,
       maxWidth: SignalBubbleMetrics.mediaMaxWidth,
+      minWidth: widget.captioned
+          ? SignalBubbleMetrics.mediaMinWidthWithCaption
+          : 0,
     );
     return Padding(
       padding: EdgeInsets.only(top: widget.inset ? 8 : 0),

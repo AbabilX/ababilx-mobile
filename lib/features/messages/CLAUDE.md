@@ -227,6 +227,11 @@ not in a widget.
   aspect (`soloMediaSize`) — tall media shrinks width at the height ceiling;
   never stretch every photo to the ceiling. An image/video-only message (no
   caption) paints no bubble fill — `isBareMediaBubble` / `MessageBubble.transparent`.
+  **With a caption, the media decides the width and the caption wraps to it**
+  (`MediaCaptionLayout`, Signal's rule), and a solo photo/video takes the
+  240dp `mediaMinWidthWithCaption` floor (cropped, `BoxFit.cover`). In a
+  plain Column the caption laid out against the bubble cap, so a portrait
+  photo sat beside a strip of bare fill as wide as the text.
 - **Do not wrap bubble content in an `Align`.** An `Align` stretches its parent
   to the full width cap and every bubble reaches the far edge. The footer is
   always trailing (`crossAxisAlignment: end`) so time + ticks sit on the
