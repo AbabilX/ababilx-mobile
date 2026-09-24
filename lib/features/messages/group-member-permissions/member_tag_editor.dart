@@ -28,7 +28,7 @@ class MemberTagEditor extends ConsumerWidget {
     final muted = theme.colorScheme.onSurfaceVariant;
     String t(String key) => AppTranslations.translate(context, ref, key);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
