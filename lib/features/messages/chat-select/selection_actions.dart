@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
+import '../chat-details/group_permissions.dart';
 import '../chat-forward/forward_sheet.dart';
 import '../chat-timeline/delete_message_dialog.dart';
 import '../chat-timeline/message_actions.dart';
@@ -31,8 +32,12 @@ List<SelectionAction> selectionActions({
   final menu = selectionMenuState(
     selected: selected,
     currentUserId: chat.currentUserId,
-    canMessage: canMessage,
-    groupPrivacy: ref.read(activeConversationProvider)?.groupPrivacy ?? false,
+    canMessage: canMessage && (_perms(ref)?.canSend ?? true),
+    // A member barred from forwarding (server 0157) is treated as a private
+    // group would be: nothing leaves by forward.
+    groupPrivacy:
+        (ref.read(activeConversationProvider)?.groupPrivacy ?? false) ||
+        !(_perms(ref)?.canForward ?? true),
   );
   String tr(String key) => AppTranslations.translate(context, ref, key);
   void done() => ref.read(messageSelectionProvider.notifier).clear();
@@ -157,4 +162,9 @@ Future<bool> deleteSelectedMessages(
     showAppToast(context, tr('chat_delete_selected_failed'), isError: true);
   }
   return true;
+}
+
+GroupPermissions? _perms(WidgetRef ref) {
+  final conversation = ref.read(activeConversationProvider);
+  return conversation == null ? null : GroupPermissions(conversation);
 }

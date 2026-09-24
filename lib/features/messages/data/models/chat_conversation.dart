@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../../../shared/text/display_name.dart';
+import 'group_member_perms.dart';
 
 class ChatLastAttachment extends Equatable {
   const ChatLastAttachment({required this.fileName, required this.contentType});
@@ -80,6 +81,8 @@ class ChatConversation extends Equatable {
     this.addMembersRole = 'admin',
     this.myRole = '',
     this.groupPrivacy = false,
+    this.myPermissions,
+    this.defaultPermissions,
   });
 
   final String id;
@@ -177,6 +180,12 @@ class ChatConversation extends Equatable {
   /// forwarding, no Save or Share of its media or pictures, and a member list
   /// only admins see in full. Independent of anyone's privacy mode.
   final bool groupPrivacy;
+
+  /// What the viewer may do in this group (server 0157), everything for an
+  /// admin; and what every member may do. Null on a DM, and on a server that
+  /// predates member permissions — `GroupPermissions` falls back then.
+  final GroupMemberPerms? myPermissions;
+  final GroupMemberPerms? defaultPermissions;
 
   /// The viewer's admin row in this conversation. What may be done with it
   /// is decided by `GroupPermissions` in chat-details — from this row and the
@@ -324,6 +333,10 @@ class ChatConversation extends Equatable {
       addMembersRole: _jsonString(json['add_members_role']) ?? 'admin',
       myRole: _jsonString(json['my_role']) ?? '',
       groupPrivacy: json['group_privacy'] as bool? ?? false,
+      myPermissions: GroupMemberPerms.maybeFromJson(json['my_permissions']),
+      defaultPermissions: GroupMemberPerms.maybeFromJson(
+        json['default_permissions'],
+      ),
     );
   }
 
@@ -364,6 +377,8 @@ class ChatConversation extends Equatable {
     String? addMembersRole,
     String? myRole,
     bool? groupPrivacy,
+    GroupMemberPerms? myPermissions,
+    GroupMemberPerms? defaultPermissions,
   }) => ChatConversation(
     id: id,
     teamId: teamId,
@@ -423,6 +438,8 @@ class ChatConversation extends Equatable {
     addMembersRole: addMembersRole ?? this.addMembersRole,
     myRole: myRole ?? this.myRole,
     groupPrivacy: groupPrivacy ?? this.groupPrivacy,
+    myPermissions: myPermissions ?? this.myPermissions,
+    defaultPermissions: defaultPermissions ?? this.defaultPermissions,
   );
 
   @override
@@ -452,6 +469,8 @@ class ChatConversation extends Equatable {
     peerUserCover,
     myRole,
     groupPrivacy,
+    myPermissions,
+    defaultPermissions,
   ];
 }
 

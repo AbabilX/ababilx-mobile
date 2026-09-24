@@ -12,6 +12,11 @@ String groupCallErrorMessage(Object error) {
         return 'Group calls are not available yet.';
       case 'group_calls_channel_only':
         return 'Group calls only work in channels.';
+      // Group member permissions (server 0157).
+      case 'call_start_restricted':
+        return 'Admins don\'t allow you to start calls in this group.';
+      case 'member_restricted':
+        return 'Admins restricted you from this group\'s calls.';
     }
   }
   return 'Could not join the group call.';

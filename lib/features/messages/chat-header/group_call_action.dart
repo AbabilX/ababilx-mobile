@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/router/router_path.dart';
 import '../../calls/group/providers/group_call_provider.dart';
+import '../chat-details/group_permissions.dart';
 import '../data/models/chat_models.dart';
 import 'call_action_pill.dart';
 
@@ -71,6 +72,18 @@ class _GroupCallActionState extends ConsumerState<GroupCallAction> {
     // Already busy in some other call — joining a second one would drop it.
     final busyElsewhere =
         state.active && !inThisCall && !joiningThis && !inLobbyForThis;
+
+    // Member permissions (server 0157): a read-only member joins nothing, and
+    // one who may not start a call sees the button only while a call runs.
+    final perms = GroupPermissions(widget.conversation);
+    if (!perms.canSend && !inThisCall) return const SizedBox.shrink();
+    if (!perms.canStartCall &&
+        active == null &&
+        !inThisCall &&
+        !joiningThis &&
+        !inLobbyForThis) {
+      return const SizedBox.shrink();
+    }
 
     // Groups use "Meet" (not DM "Talk") — a multi-person room, not a 1:1.
     final label = inThisCall

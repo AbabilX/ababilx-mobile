@@ -54,6 +54,23 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     final convId = ev['conversation_id'] as String? ?? '';
     if (convId.isEmpty) return;
 
+    // Group member permissions (server 0157). A tag change carries the tag;
+    // a permission change is a bare ping to admins and to that member, whose
+    // own set arrives with the sidebar (`chat.conversation.updated`).
+    if (type == 'chat.member.updated') {
+      final userId = ev['from_user_id'] as String? ?? '';
+      final tag = ev['member_tag'];
+      if (tag is String) {
+        ref.read(groupMemberTagsProvider.notifier).setTag(convId, userId, tag);
+      }
+      ref.read(groupRosterRevisionProvider(convId).notifier).state++;
+      return;
+    }
+    if (type == 'chat.group_pins.updated') {
+      ref.invalidate(groupPinsProvider(convId));
+      return;
+    }
+
     if (type == 'chat.receipts.updated') {
       _applyReceiptUpdates(
         convId,

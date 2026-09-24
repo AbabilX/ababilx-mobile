@@ -13,6 +13,7 @@ import '../../jpack/screens/jpack_cover_gallery_screen.dart';
 import '../../ghost/widgets/ghost_intro_sheet.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../../../shared/media/device_gallery.dart';
+import '../chat-details/group_permissions.dart';
 import '../data/models/chat_models.dart';
 import '../data/local/composer_draft_store.dart';
 import '../data/chat_client_message_id.dart';
@@ -42,6 +43,7 @@ import 'voice_message_recorder.dart';
 import '../../../core/network/ws_client.dart';
 import '../../settings/typing-indicators/typing_indicators_provider.dart';
 import '../chat-typing/typing_sender.dart';
+import '../group-member-permissions/group_media_guard.dart';
 
 class MessageComposer extends ConsumerStatefulWidget {
   const MessageComposer({
@@ -619,6 +621,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         if (outcome.caption.isNotEmpty) _ctrl.text = outcome.caption;
         await _send();
       }
+    } on GroupMediaRestrictedException catch (e) {
+      if (!mounted) return;
+      final copy = groupMediaRestrictedCopy(e.kind);
+      _showMessage(copy.en, copy.bn);
     } on ChatAttachmentSizeException {
       if (!mounted) return;
       _showMessage(
@@ -629,6 +635,22 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       if (!mounted) return;
       _showMessage('Could not attach this file.', 'ফাইল সংযুক্ত করা যায়নি।');
     }
+  }
+
+  /// Whether a group admin left any kind open that this chip can pick
+  /// (server 0157): photos or videos for Gallery and Camera, files or music
+  /// for File. Anything else — a DM, an older server — is open.
+  bool _mediaAllowed({required bool visual}) {
+    final conversation = ref
+        .read(chatProvider)
+        .conversationById(widget.conversationId);
+    if (conversation == null) return true;
+    final perms = GroupPermissions(conversation);
+    return visual
+        ? perms.canSendMedia(GroupMediaKind.photos) ||
+              perms.canSendMedia(GroupMediaKind.videos)
+        : perms.canSendMedia(GroupMediaKind.files) ||
+              perms.canSendMedia(GroupMediaKind.music);
   }
 
   void _toggleAttachmentPanel() {
@@ -702,6 +724,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       );
       _uploads.track(run, cancelToken: token);
       await run;
+    } on GroupMediaRestrictedException catch (e) {
+      if (!mounted) return;
+      final copy = groupMediaRestrictedCopy(e.kind);
+      _showMessage(copy.en, copy.bn);
     } on ChatAttachmentSizeException {
       _showMessage(
         'Files must be 350 MB or smaller.',
@@ -1091,11 +1117,15 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                     cameraLabel: tr('chat_camera'),
                     fileLabel: tr('chat_file'),
                     contactLabel: tr('chat_contact'),
-                    onGallery: () =>
-                        _selectAttachment(ComposerAttachKind.gallery),
-                    onCamera: () =>
-                        _selectAttachment(ComposerAttachKind.camera),
-                    onFile: () => _selectAttachment(ComposerAttachKind.file),
+                    onGallery: _mediaAllowed(visual: true)
+                        ? () => _selectAttachment(ComposerAttachKind.gallery)
+                        : null,
+                    onCamera: _mediaAllowed(visual: true)
+                        ? () => _selectAttachment(ComposerAttachKind.camera)
+                        : null,
+                    onFile: _mediaAllowed(visual: false)
+                        ? () => _selectAttachment(ComposerAttachKind.file)
+                        : null,
                     onContact: _selectContact,
                     jpackLabel: tr('jpack_chip'),
                     onJPack: _jpackAction,

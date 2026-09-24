@@ -16,6 +16,9 @@ import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
 import '../../features/settings/app-icon/app_icon_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
 import '../../features/messages/chat-details/conversation_details_screen.dart';
+import '../../features/messages/data/models/chat_models.dart';
+import '../../features/messages/group-member-permissions/group_permissions_screen.dart';
+import '../../features/messages/group-member-permissions/member_permissions_route.dart';
 import '../../features/messages/chat-pins/pinned_messages_screen.dart';
 import '../../features/messages/chat-media/conversation_media_screen.dart';
 import '../../features/messages/screens/conversation_screen.dart';
@@ -259,6 +262,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/messages/:id/details',
         builder: (_, state) => ConversationDetailsScreen(
           conversationId: state.pathParameters['id']!,
+        ),
+      ),
+      // Group member permissions (server 0157). Declared before
+      // '/messages/:id' for the same reason as the routes around them.
+      GoRoute(
+        path: '/messages/:id/permissions',
+        builder: (_, state) =>
+            GroupPermissionsScreen(conversationId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/messages/:id/members/:userId/permissions',
+        builder: (_, state) => MemberPermissionsRoute(
+          conversationId: state.pathParameters['id']!,
+          userId: state.pathParameters['userId']!,
+          member: state.extra is ChatMember ? state.extra as ChatMember : null,
         ),
       ),
       GoRoute(

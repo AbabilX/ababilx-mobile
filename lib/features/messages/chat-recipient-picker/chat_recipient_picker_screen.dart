@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../chat-details/group_permissions.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../chat_list_filters.dart';
@@ -68,6 +69,9 @@ class _ChatRecipientPickerScreenState
             .where(
               (c) =>
                   c.canMessage &&
+                  // A group an admin made this member read-only in (server
+                  // 0157) takes nothing by forward either.
+                  GroupPermissions(c).canSend &&
                   c.archivedAt == null &&
                   c.id != widget.excludedConversationId,
             )

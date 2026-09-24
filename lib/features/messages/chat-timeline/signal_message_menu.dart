@@ -54,6 +54,10 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
   bool showForward = true,
   bool showCopy = true,
   bool showEdit = true,
+  // Off for a group member an admin made read-only (server 0157): replying
+  // and reacting are both sending.
+  bool showReply = true,
+  bool showReactions = true,
 }) {
   // [anchor] is in screen coordinates, but the dialog is laid out inside the
   // root navigator — which the in-call return bar pushes down by its own
@@ -77,6 +81,7 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
       focused: focused,
       isMine: isMine,
       pointer: pointer,
+      showReactions: showReactions,
       items: signalMenuItems(
         isMine: isMine,
         showThread: showThread,
@@ -88,6 +93,7 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
         showForward: showForward,
         showCopy: showCopy,
         showEdit: showEdit,
+        showReply: showReply,
       ),
       moreLabel: labels['moreReactions']!,
     ),

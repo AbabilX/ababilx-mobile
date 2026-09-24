@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../group-member-permissions/group_member_tags_provider.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
@@ -80,6 +81,17 @@ class MessageRowContent extends ConsumerWidget {
     // A name over an incoming bubble in a group, an avatar under the last one.
     final showName = isGroup && !isOwnMessage && _startsCluster;
     final showAvatar = isGroup && !isOwnMessage;
+    // The author's member tag (server 0157): the live map first, since the
+    // copy on a stored message is whatever it was when it was fetched.
+    final tag = showName && !webhook
+        ? (ref.watch(
+                groupMemberTagsProvider.select(
+                  (m) => m[message.conversationId]?[message.userId],
+                ),
+              ) ??
+              message.senderTag ??
+              '')
+        : '';
 
     void showProfile() {
       if (webhook) return;
@@ -103,16 +115,33 @@ class MessageRowContent extends ConsumerWidget {
             padding: const EdgeInsets.only(left: 12, bottom: 2),
             child: GestureDetector(
               onTap: showProfile,
-              child: Text(
-                name,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: webhook
-                      ? scheme.primary
-                      : senderNameColor(message.userId),
-                ),
-                overflow: TextOverflow.ellipsis,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: webhook
+                            ? scheme.primary
+                            : senderNameColor(message.userId),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (tag.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      tag,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),

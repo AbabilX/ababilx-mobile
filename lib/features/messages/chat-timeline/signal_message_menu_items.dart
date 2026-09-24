@@ -23,12 +23,14 @@ List<SignalMenuItem> signalMenuItems({
   bool showForward = true,
   bool showCopy = true,
   bool showEdit = true,
+  bool showReply = true,
 }) => [
-  SignalMenuItem(
-    SignalMessageAction.reply,
-    Icons.reply_rounded,
-    labels['reply']!,
-  ),
+  if (showReply)
+    SignalMenuItem(
+      SignalMessageAction.reply,
+      Icons.reply_rounded,
+      labels['reply']!,
+    ),
   if (showForward)
     SignalMenuItem(
       SignalMessageAction.forward,

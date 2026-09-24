@@ -10,6 +10,9 @@ import '../chat-forward/forward_sheet.dart';
 import '../chat-select/message_selection.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
+import '../chat-details/group_permissions.dart';
+import '../group-pins/group_pin_actions.dart';
+import '../group-pins/group_pins_provider.dart';
 import '../providers/pinned_message_provider.dart';
 import '../tiptap_plain_text.dart';
 import 'delete_message_dialog.dart';
@@ -43,6 +46,17 @@ Future<void> showMessageActions(
   final pinned = ref
       .read(pinnedMessageIdsProvider(conversationId))
       .contains(msg.id);
+  // Member permissions (server 0157). A read-only member cannot reply, react
+  // or edit; one barred from forwarding forwards nothing out of the group.
+  final perms = conversation == null ? null : GroupPermissions(conversation);
+  final canSend = perms?.canSend ?? true;
+  final canForward = perms?.canForward ?? true;
+  // Group pins are offered only to whoever may set them; everyone else's
+  // Pin row keeps meaning "for me".
+  final canPinGroup = perms?.canPinForEveryone ?? false;
+  final groupPinned =
+      canPinGroup &&
+      ref.read(groupPinnedIdsProvider(conversationId)).contains(msg.id);
 
   String tr(String key) => AppTranslations.translate(context, ref, key);
   final result = await showSignalMessageMenu(
@@ -65,12 +79,15 @@ Future<void> showMessageActions(
     // timeline, where those bars replace the header and the composer.
     showSelect: threadRootId == null,
     showPin: threadRootId == null && !msg.isPending && !msg.contentPurged,
-    pinned: pinned,
+    pinned: pinned || groupPinned,
     // The sender's own restricted photo is still theirs to forward; nobody
     // else may (the server refuses it too).
-    showForward: !isJPack && !locked && (isMine || !msg.hasProtectedMedia),
+    showForward:
+        !isJPack && !locked && canForward && (isMine || !msg.hasProtectedMedia),
     showCopy: !isJPack,
-    showEdit: !isJPack,
+    showEdit: !isJPack && canSend,
+    showReply: canSend,
+    showReactions: canSend,
     labels: {
       'dismiss': tr('chat_dismiss_message_actions'),
       'reply': tr('chat_reply'),
@@ -123,6 +140,15 @@ Future<void> showMessageActions(
           .start(conversationId: conversationId, messageId: msg.id);
     case SignalMessageAction.edit:
       await editMessageFlow(context, ref, msg);
+    case SignalMessageAction.pin when canPinGroup:
+      await chooseGroupPin(
+        context,
+        ref,
+        conversationId: conversationId,
+        messageId: msg.id,
+        pinnedForMe: pinned,
+        pinnedForEveryone: groupPinned,
+      );
     case SignalMessageAction.pin:
       await setMessagePinned(
         context,

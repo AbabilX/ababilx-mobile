@@ -11,4 +11,5 @@ export 'chat_message_quote.dart';
 export 'chat_pinned_message.dart';
 export 'chat_reaction.dart';
 export 'chat_webhook.dart';
+export 'group_member_perms.dart';
 export 'chat_sidebar_model.dart';

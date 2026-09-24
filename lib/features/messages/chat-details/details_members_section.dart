@@ -6,7 +6,7 @@ import '../../../shared/widgets/app_avatar.dart';
 import 'add_members_sheet.dart';
 import '../data/models/chat_models.dart';
 import 'avatar_preview.dart';
-import 'details_member_sheet.dart';
+import '../group-member-permissions/member_actions_menu.dart';
 import 'group_permissions.dart';
 
 /// The roster block: "N members", an Add row, then everyone, admins first
@@ -88,25 +88,34 @@ class DetailsMembersSection extends ConsumerWidget {
               member.name,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
-            trailing: member.isAdmin
-                ? Text(
-                    'Admin',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: colors.onSurfaceVariant,
-                    ),
-                  )
+            // An admin sees who an admin restricted (server 0157).
+            subtitle: member.restricted
+                ? Text(t('group_perm_restricted_label'))
                 : null,
-            onTap: () => showGroupMemberSheet(
+            // Telegram's right side: the member's tag, else "Admin".
+            trailing: _roleLabel(member, colors),
+            onTap: () => showGroupMemberMenu(
               context: context,
               ref: ref,
               conversation: conversation,
               member: member,
-              onChanged: onChanged,
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget? _roleLabel(ChatMember member, ColorScheme colors) {
+    final label = member.tag.isNotEmpty
+        ? member.tag
+        : member.isAdmin
+        ? 'Admin'
+        : null;
+    if (label == null) return null;
+    return Text(
+      label,
+      style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant),
     );
   }
 

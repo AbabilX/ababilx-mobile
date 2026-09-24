@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../privacy-mode/people/privacy_person_tile.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
@@ -67,6 +68,14 @@ class DetailsSettingsSection extends ConsumerWidget {
       // Groups only: the group's own switch (server 0154), set by admins.
       if (conversation.isGroupConversation && !conversation.isWebhook)
         GroupPrivacyTile(conversation: conversation),
+      // Groups only, admins only: what members may do (server 0157).
+      if (conversation.type == 'group' && conversation.iAmAdmin)
+        DetailsTile(
+          icon: const ChatIcon(HugeIcons.strokeRoundedKey01),
+          title: AppTranslations.translate(context, ref, 'group_perm_tile'),
+          value: _permsSummary(conversation),
+          onTap: () => context.push('/messages/${conversation.id}/permissions'),
+        ),
       PinnedMessagesTile(conversationId: conversation.id),
       DetailsTile(
         icon: const ChatIcon(HugeIcons.strokeRoundedPaintBoard),
@@ -90,4 +99,12 @@ class DetailsSettingsSection extends ConsumerWidget {
       ),
     ],
   );
+}
+
+/// "9/11" — how many of the member permissions the group leaves on.
+String _permsSummary(ChatConversation conversation) {
+  final set = (conversation.defaultPermissions ?? GroupMemberPerms.all)
+      .toJson();
+  final on = set.values.where((v) => v == true).length;
+  return '$on/${set.length}';
 }

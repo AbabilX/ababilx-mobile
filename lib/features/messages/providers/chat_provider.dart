@@ -35,6 +35,8 @@ import '../data/models/chat_models.dart';
 import '../message_e2ee/dm_key_rotation.dart';
 import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/sidebar_preview.dart';
+import '../group-member-permissions/group_member_tags_provider.dart';
+import '../group-pins/group_pins_provider.dart';
 import '../message_e2ee/vault_placeholder.dart';
 import 'chat_open_trace.dart';
 import 'chat_read_marks.dart';

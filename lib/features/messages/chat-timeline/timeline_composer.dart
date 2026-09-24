@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../chat-details/group_permissions.dart';
 import '../providers/chat_provider.dart';
 import 'composer.dart';
 import 'composer_connection_lock.dart';
@@ -32,6 +33,14 @@ class TimelineComposer extends ConsumerWidget {
     }
     if (!feedThread && conversation?.canMessage == false) {
       return ComposerConnectionLock(conversation: conversation!);
+    }
+    // An admin made this member read-only (server 0157): no text, voice,
+    // files, thread replies or reactions — so no composer at all, the
+    // thread panel's included.
+    if (conversation != null &&
+        conversation.type == 'group' &&
+        !GroupPermissions(conversation).canSend) {
+      return const ComposerLocked(messageKey: 'group_perm_restricted_send');
     }
     if (conversation?.isIncomingRequest == true) {
       return MessageRequestBar(conversation: conversation!);

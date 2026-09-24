@@ -22,6 +22,7 @@ class SignalMessageMenuSurface extends StatefulWidget {
     required this.isMine,
     required this.items,
     required this.moreLabel,
+    this.showReactions = true,
     this.pointer,
   });
 
@@ -37,6 +38,9 @@ class SignalMessageMenuSurface extends StatefulWidget {
   final bool isMine;
   final List<SignalMenuItem> items;
   final String moreLabel;
+
+  /// False draws no reaction bar and ignores the press-and-slide scrub.
+  final bool showReactions;
   final SignalMenuPointer? pointer;
 
   @override
@@ -64,7 +68,7 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
 
   void _onPointerMoved() {
     final pointer = widget.pointer;
-    if (pointer == null || !mounted) return;
+    if (pointer == null || !mounted || !widget.showReactions) return;
     final next = signalScrubSelection(
       bar: _bar,
       slots: SignalReactionBar.emojis.length + 1,
@@ -140,14 +144,15 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
             isMine: widget.isMine,
             child: widget.focused,
           ),
-          Positioned.fromRect(
-            rect: layout.bar,
-            child: SignalReactionBar(
-              moreLabel: widget.moreLabel,
-              animation: widget.animation,
-              selectedIndex: _selected,
+          if (widget.showReactions)
+            Positioned.fromRect(
+              rect: layout.bar,
+              child: SignalReactionBar(
+                moreLabel: widget.moreLabel,
+                animation: widget.animation,
+                selectedIndex: _selected,
+              ),
             ),
-          ),
           Positioned.fromRect(
             rect: layout.menu,
             child: FadeTransition(

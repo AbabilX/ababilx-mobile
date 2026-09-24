@@ -34,9 +34,12 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
   final String cameraLabel;
   final String fileLabel;
   final String contactLabel;
-  final VoidCallback onGallery;
-  final VoidCallback onCamera;
-  final VoidCallback onFile;
+
+  /// Null hides the chip: a group admin switched that kind off (server
+  /// 0157). The rail goes with Gallery — it only ever holds photos and videos.
+  final VoidCallback? onGallery;
+  final VoidCallback? onCamera;
+  final VoidCallback? onFile;
   final VoidCallback onContact;
 
   /// JPack greeting card. Null hides the chip — it is offered in a DM only.
@@ -63,31 +66,36 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
           children: [
             Divider(height: 1, color: colors.outlineVariant),
             const SizedBox(height: 10),
-            ComposerMediaRail(
-              onPick: onPickMedia,
-              selectedUris: selectedMediaUris,
-            ),
-            const SizedBox(height: 14),
+            if (onGallery != null) ...[
+              ComposerMediaRail(
+                onPick: onPickMedia,
+                selectedUris: selectedMediaUris,
+              ),
+              const SizedBox(height: 14),
+            ],
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
-                  AttachChip(
-                    label: galleryLabel,
-                    icon: HugeIcons.strokeRoundedImage01,
-                    onTap: onGallery,
-                  ),
-                  AttachChip(
-                    label: cameraLabel,
-                    icon: HugeIcons.strokeRoundedCamera01,
-                    onTap: onCamera,
-                  ),
-                  AttachChip(
-                    label: fileLabel,
-                    icon: HugeIcons.strokeRoundedFile01,
-                    onTap: onFile,
-                  ),
+                  if (onGallery != null)
+                    AttachChip(
+                      label: galleryLabel,
+                      icon: HugeIcons.strokeRoundedImage01,
+                      onTap: onGallery!,
+                    ),
+                  if (onCamera != null)
+                    AttachChip(
+                      label: cameraLabel,
+                      icon: HugeIcons.strokeRoundedCamera01,
+                      onTap: onCamera!,
+                    ),
+                  if (onFile != null)
+                    AttachChip(
+                      label: fileLabel,
+                      icon: HugeIcons.strokeRoundedFile01,
+                      onTap: onFile!,
+                    ),
                   AttachChip(
                     label: contactLabel,
                     icon: HugeIcons.strokeRoundedUserCircle,

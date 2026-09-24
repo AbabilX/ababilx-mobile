@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/media/pick_single_media.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../data/models/chat_models.dart';
+import '../group-member-permissions/group_media_guard.dart';
 import '../providers/chat_provider.dart';
 import 'composer_upload_source.dart';
 import 'pending_preview_cache.dart';
@@ -52,6 +53,12 @@ Future<void> uploadAttachments(
     final source = await load();
     if (source == null) continue;
     validateChatAttachmentSize(source.sizeBytes);
+    validateGroupMedia(
+      ref,
+      conversationId,
+      source.contentType,
+      source.fileName,
+    );
     loaded.add(source);
   }
 

@@ -23,6 +23,7 @@ class ChatMessage extends Equatable {
     this.deletedAt,
     this.userName,
     this.userAvatarUrl,
+    this.senderTag,
     this.attachments = const [],
     this.reactions = const [],
     this.threadCount = 0,
@@ -59,6 +60,11 @@ class ChatMessage extends Equatable {
   final String? deletedAt;
   final String? userName;
   final String? userAvatarUrl;
+
+  /// The author's group member tag as the server read it with this page
+  /// (0157). A live change arrives on `chat.member.updated` and wins over
+  /// this — see `groupMemberTagsProvider`.
+  final String? senderTag;
   final List<ChatMessageAttachment> attachments;
   final List<ChatReactionGroup> reactions;
   final int threadCount;
@@ -132,6 +138,7 @@ class ChatMessage extends Equatable {
     deletedAt: json['deleted_at'] as String?,
     userName: json['user_name'] as String?,
     userAvatarUrl: json['user_avatar_url'] as String?,
+    senderTag: json['sender_tag'] as String?,
     attachments: (json['attachments'] as List<dynamic>? ?? [])
         .map((e) => ChatMessageAttachment.fromJson(e as Map<String, dynamic>))
         .toList(),
@@ -185,6 +192,7 @@ class ChatMessage extends Equatable {
     if (deletedAt != null) 'deleted_at': deletedAt,
     if (userName != null) 'user_name': userName,
     if (userAvatarUrl != null) 'user_avatar_url': userAvatarUrl,
+    if (senderTag != null) 'sender_tag': senderTag,
     'attachments': attachments.map((a) => a.toJson()).toList(),
     'reactions': reactions.map((r) => r.toJson()).toList(),
     'thread_count': threadCount,
@@ -244,6 +252,7 @@ class ChatMessage extends Equatable {
     deletedAt: deletedAt ?? this.deletedAt,
     userName: userName,
     userAvatarUrl: userAvatarUrl,
+    senderTag: senderTag,
     attachments: attachments,
     reactions: reactions ?? this.reactions,
     threadCount: threadCount ?? this.threadCount,

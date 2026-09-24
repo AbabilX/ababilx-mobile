@@ -10,6 +10,7 @@ import 'details_header.dart';
 import 'details_members_section.dart';
 import 'details_settings_section.dart';
 import 'details_tile.dart';
+import '../group-member-permissions/group_member_tags_provider.dart';
 import '../group-privacy/group_privacy_lock.dart';
 import 'group_edit_sheet.dart';
 import 'group_permissions.dart';
@@ -51,6 +52,9 @@ class _ConversationDetailsScreenState
       final members = await ref
           .read(chatProvider.notifier)
           .listChannelMembers(widget.conversationId);
+      ref
+          .read(groupMemberTagsProvider.notifier)
+          .seedFromRoster(widget.conversationId, members);
       if (mounted) setState(() => _members = members);
     } catch (_) {
       // Roster is best-effort: the rest of the screen still works without it.
@@ -68,6 +72,10 @@ class _ConversationDetailsScreenState
         body: Center(child: Text('Conversation not found')),
       );
     }
+    // A member's permissions or tag changed (server 0157): redraw the roster.
+    ref.listen(groupRosterRevisionProvider(widget.conversationId), (_, _) {
+      _loadMembers();
+    });
     final group = conversation.isGroupConversation;
     final perms = GroupPermissions(conversation);
     final hasBanner = (conversation.headerBannerUrl ?? '').trim().isNotEmpty;

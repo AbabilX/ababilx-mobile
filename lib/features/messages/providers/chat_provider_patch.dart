@@ -136,6 +136,10 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
                         editInfoRole: channel.editInfoRole,
                         addMembersRole: channel.addMembersRole,
                         groupPrivacy: channel.groupPrivacy,
+                        // copyWith keeps the old set on null, which is what
+                        // a reply from a server without 0157 should do.
+                        myPermissions: channel.myPermissions,
+                        defaultPermissions: channel.defaultPermissions,
                         // A reply that carries no role — an older server's
                         // rename answered without one — must not demote the
                         // admin who just made it; keep what the list said.
