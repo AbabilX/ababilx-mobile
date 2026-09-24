@@ -3,6 +3,7 @@ import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/friendly_error.dart';
+import '../../../shared/widgets/avatar_cache.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../messages/providers/team_gate_provider.dart';
@@ -174,11 +175,13 @@ class _CrmOrganizationsScreenState
                         foregroundColor: colors.onPrimaryContainer,
                         child: item.logoUrl.isNotEmpty
                             ? ClipOval(
-                                child: Image.network(
-                                  item.logoUrl,
+                                child: Image(
+                                  image: AvatarCache.provider(item.logoUrl),
                                   width: 40,
                                   height: 40,
                                   fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) =>
+                                      const Icon(Icons.business_rounded),
                                 ),
                               )
                             : const Icon(Icons.business_rounded),

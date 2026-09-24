@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/avatar_cache.dart';
 
 /// The feed's bot picture, as a tappable circle.
 ///
@@ -44,7 +45,7 @@ class WebhookAvatarPicker extends StatelessWidget {
                 foregroundImage: photo != null
                     ? MemoryImage(photo!)
                     : (url ?? '').isNotEmpty
-                    ? NetworkImage(url!)
+                    ? AvatarCache.provider(url!)
                     : null,
                 child: _hasImage
                     ? null

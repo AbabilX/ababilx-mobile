@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../messages/tiptap_plain_text.dart';
 import '../data/models/board_models.dart';
+import '../../../shared/widgets/avatar_cache.dart';
 
 class ThreadReplySummary extends StatelessWidget {
   const ThreadReplySummary({
@@ -114,7 +114,7 @@ class _ParticipantStack extends StatelessWidget {
                 radius: 12,
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 backgroundImage: participants[i].avatarUrl != null
-                    ? CachedNetworkImageProvider(participants[i].avatarUrl!)
+                    ? AvatarCache.provider(participants[i].avatarUrl!)
                     : null,
                 child: participants[i].avatarUrl == null
                     ? Text(

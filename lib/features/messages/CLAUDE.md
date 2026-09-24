@@ -1634,3 +1634,12 @@ silently disappears on an offline start.
 wall and shared photos no longer evict faces out of the default 200-object
 store. It decodes at the drawn size (`memCacheWidth`, 2x for landscape crops)
 and has no fade, so a disk hit shows at once.
+
+Every identity picture outside `AppAvatar` reads the same store: covers and
+group banners (`GroupBannerHeader`, the group edit surfaces), the call
+screen's photo and blurred backdrop, board and CRM avatars, CRM organisation
+logos and the webhook picker (`AvatarCache.provider(url)` wherever an
+`ImageProvider` is wanted). The full-screen viewer opened from an avatar
+(`PreviewImage.identity`) reads it too, so the tapped photo opens without a
+second download. The viewer's remote fallback for everything else is now
+cached as well; it was a bare `Image.network`.

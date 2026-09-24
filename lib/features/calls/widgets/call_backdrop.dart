@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/avatar_cache.dart';
 
 /// The full-bleed backdrop behind every call surface.
 ///
@@ -44,6 +45,7 @@ class CallBackdrop extends StatelessWidget {
               tileMode: TileMode.decal,
             ),
             child: CachedNetworkImage(
+              cacheManager: AvatarCache.instance,
               imageUrl: url,
               fit: BoxFit.cover,
               placeholder: (_, _) =>

@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +16,7 @@ import 'comment_thread_page.dart';
 import 'comment_threads.dart';
 import 'kanban_comment_composer.dart';
 import 'thread_reply_summary.dart';
+import '../../../shared/widgets/avatar_cache.dart';
 
 class BoardTaskDetailPage extends ConsumerStatefulWidget {
   const BoardTaskDetailPage({
@@ -134,7 +134,7 @@ class _BoardTaskDetailPageState extends ConsumerState<BoardTaskDetailPage> {
                 leading: CircleAvatar(
                   radius: 14,
                   backgroundImage: (m.avatarUrl ?? '').isNotEmpty
-                      ? CachedNetworkImageProvider(m.avatarUrl!)
+                      ? AvatarCache.provider(m.avatarUrl!)
                       : null,
                   child: (m.avatarUrl ?? '').isEmpty
                       ? Text(m.displayName.characters.first.toUpperCase())

@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../data/models/board_models.dart';
 import '../shared/kanban_utils.dart';
+import '../../../shared/widgets/avatar_cache.dart';
 
 class KanbanTaskCard extends StatelessWidget {
   const KanbanTaskCard({
@@ -158,7 +158,7 @@ class KanbanTaskCard extends StatelessWidget {
                         if ((task.assigneeAvatarUrl ?? '').isNotEmpty)
                           CircleAvatar(
                             radius: 10,
-                            backgroundImage: CachedNetworkImageProvider(
+                            backgroundImage: AvatarCache.provider(
                               task.assigneeAvatarUrl!,
                             ),
                           )

@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../messages/tiptap_viewer.dart';
 import '../data/models/board_models.dart';
+import '../../../shared/widgets/avatar_cache.dart';
 
 class CommentMessageTile extends StatelessWidget {
   const CommentMessageTile({
@@ -32,7 +32,7 @@ class CommentMessageTile extends StatelessWidget {
           radius: 16,
           backgroundColor: colors.primaryContainer,
           backgroundImage: (comment.userAvatarUrl ?? '').isNotEmpty
-              ? CachedNetworkImageProvider(comment.userAvatarUrl!)
+              ? AvatarCache.provider(comment.userAvatarUrl!)
               : null,
           child: (comment.userAvatarUrl ?? '').isEmpty
               ? Text(

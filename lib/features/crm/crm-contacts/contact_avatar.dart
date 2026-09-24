@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../shared/text/display_name.dart';
+import '../../../shared/widgets/avatar_cache.dart';
 
 /// Web `ContactAvatar` — image or initials.
 class ContactAvatar extends StatelessWidget {
@@ -28,7 +28,7 @@ class ContactAvatar extends StatelessWidget {
       return CircleAvatar(
         radius: radius,
         backgroundColor: colors.primaryContainer,
-        backgroundImage: CachedNetworkImageProvider(url),
+        backgroundImage: AvatarCache.provider(url),
         onBackgroundImageError: (_, _) {},
         child: null,
       );

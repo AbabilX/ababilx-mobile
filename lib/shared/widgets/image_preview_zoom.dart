@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 
 import 'preview_icon.dart';
 import 'preview_image.dart';
+import 'avatar_cache.dart';
 
 class ZoomablePreviewImage extends StatefulWidget {
   const ZoomablePreviewImage({
@@ -133,8 +135,12 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
       );
     }
     if (!widget.allowRemoteFallback) return _error();
-    return Image.network(
-      widget.image.fileUrl,
+    // Cached rather than Image.network, which fetched again on every open.
+    return Image(
+      image: CachedNetworkImageProvider(
+        widget.image.fileUrl,
+        cacheManager: widget.image.identity ? AvatarCache.instance : null,
+      ),
       fit: BoxFit.contain,
       alignment: Alignment.center,
       errorBuilder: (_, _, _) => _error(),

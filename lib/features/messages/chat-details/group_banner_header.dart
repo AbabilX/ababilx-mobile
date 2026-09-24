@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
+import '../../../shared/widgets/avatar_cache.dart';
 
 /// A group's banner with its photo sitting on the bottom edge.
 ///
@@ -61,6 +62,7 @@ class GroupBannerHeader extends StatelessWidget {
                 child: url.trim().isEmpty
                     ? ColoredBox(color: colors.surfaceContainerHighest)
                     : CachedNetworkImage(
+                        cacheManager: AvatarCache.instance,
                         imageUrl: url,
                         fit: BoxFit.cover,
                         width: double.infinity,

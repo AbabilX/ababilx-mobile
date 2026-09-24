@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
 import '../data/models/chat_models.dart';
+import '../../../shared/widgets/avatar_cache.dart';
 
 /// The wide strip. Tapping anywhere on it starts the banner flow, so the
 /// badge is a label rather than the only target.
@@ -43,6 +44,7 @@ class GroupBannerSurface extends StatelessWidget {
               // falling back to the plain surface.
               if (!empty)
                 CachedNetworkImage(
+                  cacheManager: AvatarCache.instance,
                   imageUrl: url!,
                   fit: BoxFit.cover,
                   placeholder: (_, _) => const SizedBox.shrink(),

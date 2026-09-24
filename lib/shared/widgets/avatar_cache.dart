@@ -1,3 +1,5 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// Profile and group pictures, kept in the app's own cache directory (never
@@ -17,4 +19,9 @@ class AvatarCache {
       maxNrOfCacheObjects: 2000,
     ),
   );
+
+  /// For a `CircleAvatar.backgroundImage` or any other place that takes an
+  /// [ImageProvider] instead of [AppAvatar].
+  static ImageProvider provider(String url) =>
+      CachedNetworkImageProvider(url, cacheManager: instance);
 }

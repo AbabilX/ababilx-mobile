@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../shared/text/display_name.dart';
 import 'call_overlay_metrics.dart';
 import 'call_top_bar.dart' show callTextShadow;
+import '../../../shared/widgets/avatar_cache.dart';
 
 /// Circular peer face + name + status for the 1:1 call overlay.
 ///
@@ -125,6 +126,7 @@ class _PeerFace extends StatelessWidget {
       child: ClipOval(
         child: hasPhoto
             ? CachedNetworkImage(
+                cacheManager: AvatarCache.instance,
                 imageUrl: src,
                 fit: BoxFit.cover,
                 httpHeaders: _headers,

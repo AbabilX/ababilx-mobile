@@ -21,6 +21,7 @@ void openAvatarPreview(
       PreviewImage(
         fileUrl: src,
         fileName: label.isEmpty ? 'photo.jpg' : '$label.jpg',
+        identity: true,
       ),
     ],
     initialIndex: 0,
