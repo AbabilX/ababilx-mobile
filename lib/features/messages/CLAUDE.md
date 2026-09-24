@@ -177,6 +177,20 @@ pill + expand list is `call_events_collapse.dart`. A date break or any other
 message type ends the run. A single call stays the existing centered pill.
 Expanded lines use `voiceCallHistoryLabel` (Incoming/Outgoing, no duration).
 
+## Group system events (not bubbles)
+
+`message_type=system` (name/photo/member/role/privacy/pin, …) is a quiet
+centered gray line — WhatsApp/Signal style — never a Signal bubble.
+`GroupEventRow` + `groupEventLabel` mirror web `group-event-row.tsx`: the
+sentence is built on device from `meta.event` so the viewer reads "You…";
+`body` is only the unrecognized-event fallback. Wired in
+`message_list.dart` ahead of the call-event branches.
+
+Same-day consecutive system rows (≥2) fold into `"N group updates"` via
+`ChatTimelineGroupEvents` + `GroupEventsCollapse` — same shape as call
+collapse. A real chat message (or a day break) ends the run; until then
+every update stays in one stacked disclosure.
+
 ## Where the numbers come from
 
 `chat-timeline/signal_bubble_metrics.dart` holds Signal-Android's own

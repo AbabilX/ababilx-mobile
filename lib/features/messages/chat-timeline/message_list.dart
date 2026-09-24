@@ -14,6 +14,8 @@ import 'unread_divider.dart';
 import 'message_row.dart';
 import 'thread_sheet.dart';
 import 'group_call_event_row.dart';
+import 'group_event_row.dart';
+import 'group_events_collapse.dart';
 import 'timeline_items.dart';
 import 'timeline_jump_target.dart';
 import 'voice_call_event_row.dart';
@@ -146,6 +148,12 @@ class MessageList extends ConsumerWidget {
                   currentUserId: currentUserId,
                 ),
               ),
+              ChatTimelineGroupEvents(:final messages) => _inset(
+                GroupEventsCollapse(
+                  messages: messages,
+                  currentUserId: currentUserId,
+                ),
+              ),
               ChatTimelineMessage(:final message) => _buildMessage(
                 context: context,
                 message: message,
@@ -163,6 +171,11 @@ class MessageList extends ConsumerWidget {
     required ChatMessage message,
     required Map<String, int> idIndex,
   }) {
+    if (message.isSystem) {
+      return _inset(
+        GroupEventRow(message: message, currentUserId: currentUserId),
+      );
+    }
     if (message.isVoiceCall) {
       return _inset(
         VoiceCallEventRow(message: message, currentUserId: currentUserId),
@@ -205,5 +218,6 @@ bool _itemContainsMessageId(ChatTimelineItem item, String id) {
   return switch (item) {
     ChatTimelineMessage(:final message) => message.id == id,
     ChatTimelineCallEvents(:final messages) => messages.any((m) => m.id == id),
+    ChatTimelineGroupEvents(:final messages) => messages.any((m) => m.id == id),
   };
 }

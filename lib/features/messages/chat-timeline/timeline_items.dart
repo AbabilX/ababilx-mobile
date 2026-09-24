@@ -40,40 +40,85 @@ final class ChatTimelineCallEvents extends ChatTimelineItem {
   String get key => 'call-events-${messages.first.id}';
 }
 
+/// Same-day consecutive [system] group-update rows (≥2) fold into one
+/// disclosure — name/photo/member changes stacked until a real message
+/// (or a day break) splits them. Mirrors [ChatTimelineCallEvents].
+final class ChatTimelineGroupEvents extends ChatTimelineItem {
+  const ChatTimelineGroupEvents(this.messages) : assert(messages.length >= 2);
+
+  final List<ChatMessage> messages;
+
+  @override
+  ChatMessage get anchor => messages.first;
+
+  @override
+  String get key => 'group-events-${messages.first.id}';
+}
+
 bool isCallTimelineEvent(ChatMessage message) =>
     message.isVoiceCall || message.isGroupCall;
 
+bool isGroupTimelineEvent(ChatMessage message) => message.isSystem;
+
 /// Chronological [messages] (oldest → newest) → display units. Consecutive
-/// same-day call events collapse when there are at least two.
+/// same-day call events / group system events each collapse when ≥2.
 List<ChatTimelineItem> buildChatTimelineItems(List<ChatMessage> messages) {
   final items = <ChatTimelineItem>[];
   var index = 0;
   while (index < messages.length) {
     final message = messages[index];
-    if (!isCallTimelineEvent(message)) {
-      items.add(ChatTimelineMessage(message));
-      index += 1;
+    if (isCallTimelineEvent(message)) {
+      index = _appendCollapsedRun(
+        items: items,
+        messages: messages,
+        start: index,
+        matches: isCallTimelineEvent,
+        fold: ChatTimelineCallEvents.new,
+      );
       continue;
     }
-    final run = <ChatMessage>[message];
-    var lookAhead = index + 1;
-    while (lookAhead < messages.length) {
-      final next = messages[lookAhead];
-      if (!isCallTimelineEvent(next)) break;
-      if (!isSameDay(messages[lookAhead - 1].createdAt, next.createdAt)) {
-        break;
-      }
-      run.add(next);
-      lookAhead += 1;
+    if (isGroupTimelineEvent(message)) {
+      index = _appendCollapsedRun(
+        items: items,
+        messages: messages,
+        start: index,
+        matches: isGroupTimelineEvent,
+        fold: ChatTimelineGroupEvents.new,
+      );
+      continue;
     }
-    if (run.length >= 2) {
-      items.add(ChatTimelineCallEvents(run));
-    } else {
-      items.add(ChatTimelineMessage(message));
-    }
-    index = lookAhead;
+    items.add(ChatTimelineMessage(message));
+    index += 1;
   }
   return items;
+}
+
+/// Collects a same-day consecutive run starting at [start]. Returns the next
+/// unread index. A lone match stays a plain [ChatTimelineMessage].
+int _appendCollapsedRun({
+  required List<ChatTimelineItem> items,
+  required List<ChatMessage> messages,
+  required int start,
+  required bool Function(ChatMessage) matches,
+  required ChatTimelineItem Function(List<ChatMessage>) fold,
+}) {
+  final run = <ChatMessage>[messages[start]];
+  var lookAhead = start + 1;
+  while (lookAhead < messages.length) {
+    final next = messages[lookAhead];
+    if (!matches(next)) break;
+    if (!isSameDay(messages[lookAhead - 1].createdAt, next.createdAt)) {
+      break;
+    }
+    run.add(next);
+    lookAhead += 1;
+  }
+  if (run.length >= 2) {
+    items.add(fold(run));
+  } else {
+    items.add(ChatTimelineMessage(messages[start]));
+  }
+  return lookAhead;
 }
 
 /// Row keys for the `reverse: true` timeline (position 0 = newest), and the
