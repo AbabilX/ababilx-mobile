@@ -19,11 +19,8 @@ import com.ababilx.app.mediasend.ThumbnailLoader
 
 /**
  * What you see after picking: the album full-screen, the strip of everything
- * chosen, one message for the whole send, and Send.
- *
- * The message is deliberately **one caption for the album**, not one per
- * image — that is how Signal's current flow behaves, and it is also the only
- * shape our send API has (a body plus attachments).
+ * chosen, one message for the whole send, and Send. One caption for the
+ * album, not one per image — Signal's flow, and our send API's only shape.
  */
 class ReviewView @JvmOverloads constructor(
     context: Context,
@@ -39,6 +36,9 @@ class ReviewView @JvmOverloads constructor(
     var onEditRequested: ((PickedItem) -> Unit)? = null
     var onSend: ((List<PickedItem>, String, MediaQuality) -> Unit)? = null
     var onEmptied: (() -> Unit)? = null
+
+    /** The eye beside Remove: the wiring sets `allowed`, finish reads `on`. */
+    val viewOnce: ViewOnceToggle
 
     /** Level the next send will use. Handed back so Dart can remember it. */
     var quality: MediaQuality = MediaQuality.STANDARD
@@ -83,6 +83,7 @@ class ReviewView @JvmOverloads constructor(
             current()?.let { onEditRequested?.invoke(it) }
         }
         findViewById<TextView>(R.id.review_remove).setOnClickListener { removeCurrent() }
+        viewOnce = ViewOnceToggle(findViewById(R.id.review_view_once))
         findViewById<ImageButton>(R.id.review_send).setOnClickListener {
             if (items.isNotEmpty()) {
                 onSend?.invoke(items.toList(), caption.text.toString().trim(), quality)
@@ -173,11 +174,8 @@ class ReviewView @JvmOverloads constructor(
         refreshEditable()
     }
 
-    /**
-     * The editor draws on a decoded bitmap and exports a JPEG, and
-     * `MediaSendExport` copies a video untouched — so an edit made on a video
-     * frame is silently thrown away. Hide the button rather than offer it.
-     */
+    /** The editor exports a JPEG and a video is copied untouched, so an
+     *  edit on a video frame would be thrown away: hide the button. */
     private fun refreshEditable() {
         val editable = current()?.isVideo == false
         editButton.visibility = if (editable) View.VISIBLE else View.GONE
@@ -196,5 +194,6 @@ class ReviewView @JvmOverloads constructor(
     private fun refreshCount() {
         count.visibility = if (items.size > 1) View.VISIBLE else View.GONE
         count.text = items.size.toString()
+        viewOnce.refresh(items)
     }
 }

@@ -17,11 +17,13 @@ object MediaSendResult {
     const val SIZES = "sizes"
     const val CAPTION = "caption"
     const val QUALITY = "quality"
+    const val VIEW_ONCE = "view_once"
 
     fun intent(
         exported: List<MediaSendExport.Output>,
         caption: String,
         qualityCode: Int,
+        viewOnce: Boolean,
     ): Intent = Intent()
         .putStringArrayListExtra(PATHS, ArrayList(exported.map { it.path }))
         .putStringArrayListExtra(NAMES, ArrayList(exported.map { it.name }))
@@ -31,6 +33,8 @@ object MediaSendResult {
         // Echoed so Dart can remember the level the user last chose; the
         // setting lives there, not in this Activity's process.
         .putExtra(QUALITY, qualityCode)
+        // The eye beside Remove. Dart stamps it on the upload (view_seconds 0).
+        .putExtra(VIEW_ONCE, viewOnce)
 
     /** Channel payload: one map per file, plus the caption. */
     fun toChannelPayload(data: Intent?): Map<String, Any?>? {
@@ -42,6 +46,7 @@ object MediaSendResult {
         return mapOf(
             "caption" to (data.getStringExtra(CAPTION) ?: ""),
             "quality" to data.getIntExtra(QUALITY, MediaQuality.STANDARD.code),
+            "view_once" to data.getBooleanExtra(VIEW_ONCE, false),
             "items" to paths.mapIndexed { index, path ->
                 mapOf(
                     "path" to path,

@@ -26,10 +26,15 @@ class NativeMediaSendResult {
     required this.files,
     required this.caption,
     required this.quality,
+    this.viewOnce = false,
   });
 
   final List<NativeMediaFile> files;
   final String caption;
+
+  /// The eye beside Remove was on when Send was pressed. Only ever true for
+  /// an all-photo album opened with `allowViewOnce`.
+  final bool viewOnce;
 
   /// Echoed back so the caller can remember a change made in the review
   /// screen's own Media quality sheet. The setting lives in Dart.
@@ -110,6 +115,7 @@ class NativeMediaSend {
     MediaQuality quality = MediaQuality.standard,
     List<NativeMediaInput> inputs = const [],
     String initialCaption = '',
+    bool allowViewOnce = false,
   }) async {
     if (!supported) return null;
     try {
@@ -122,6 +128,7 @@ class NativeMediaSend {
         'names': [for (final input in inputs) input.fileName],
         'mimes': [for (final input in inputs) input.contentType],
         'caption': initialCaption,
+        'allowViewOnce': allowViewOnce,
       });
       if (raw == null) return null;
       final items = (raw['items'] as List<dynamic>? ?? const []);
@@ -144,6 +151,7 @@ class NativeMediaSend {
         files: files,
         caption: raw['caption'] as String? ?? '',
         quality: MediaQuality.fromCode((raw['quality'] as num?)?.toInt()),
+        viewOnce: raw['view_once'] == true,
       );
     } on MissingPluginException {
       return null;

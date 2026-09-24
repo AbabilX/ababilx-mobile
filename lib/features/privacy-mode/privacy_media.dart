@@ -74,6 +74,13 @@ Future<List<ChatAttachmentInput>?> askPrivacyMediaRules(
   List<ChatAttachmentInput> attachments,
 ) async {
   if (attachments.isEmpty) return attachments;
+  // The review screen's eye already chose view once. The API sends ONE
+  // policy per message, so a file added beside that album would inherit it:
+  // a mixed send loses the stamp and is judged like any other.
+  if (attachments.any((a) => a.viewSeconds != null)) {
+    if (allPhotos(attachments)) return attachments;
+    attachments = [for (final a in attachments) a.withPolicy(noSave: false)];
+  }
   if (conversation == null || !conversation.hasDmPeer) return attachments;
   if (!await resolvePrivacyToward(ref, conversation.peerUserId!)) {
     return attachments;

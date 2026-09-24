@@ -9,6 +9,7 @@ import '../../../shared/media/native_media_send.dart';
 import '../../../shared/media/picked_media_file.dart';
 import '../data/models/chat_models.dart';
 import 'composer_upload.dart';
+import 'composer_view_once.dart';
 
 export 'composer_pending_previews.dart' show ComposerPendingPreviews;
 export 'composer_upload_source.dart' show ChatAttachmentSizeException;
@@ -163,6 +164,7 @@ Future<ComposerAttachResult> _nativeAttach(
       ComposerAttachKind.gallery => NativeMediaStart.gallery,
     },
     quality: ref.read(mediaQualityProvider),
+    allowViewOnce: viewOnceAllowed(ref, conversationId),
   );
   if (native == null) return const ComposerAttachResult();
   await ref.read(mediaQualityProvider.notifier).set(native.quality);
@@ -170,7 +172,7 @@ Future<ComposerAttachResult> _nativeAttach(
     ref,
     conversationId: conversationId,
     sources: native.files.map(nativeFileSource).toList(),
-    onAdded: onAdded,
+    onAdded: stampViewOnce(native.viewOnce, onAdded),
     onFailed: onFailed,
     onProgress: onProgress,
     cancelToken: cancelToken,

@@ -15,6 +15,9 @@
     <string name="media_send_send">Send</string>
     <string name="media_send_edit">Edit</string>
     <string name="media_send_remove">Remove</string>
+    <string name="media_send_view_once">View once</string>
+    <string name="media_send_view_once_on">View once on: the photo opens one time, then it is gone</string>
+    <string name="media_send_view_once_off">View once off</string>
     <string name="media_send_add_more">Add more</string>
     <string name="media_send_gallery">Gallery</string>
     <string name="media_send_add_message">Add a message</string>

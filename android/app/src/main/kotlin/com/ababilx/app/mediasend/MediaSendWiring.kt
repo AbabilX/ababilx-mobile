@@ -58,6 +58,7 @@ class MediaSendWiring(
     private fun wireReview() {
         review.attach(loader, previewPx)
         review.quality = quality
+        review.viewOnce.allowed = request.allowViewOnce
         review.onBack = { nav.leaveReview() }
         review.onAddCamera = { pickers.openCamera() }
         review.onAddGallery = { nav.showGallery() }

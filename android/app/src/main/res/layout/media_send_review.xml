@@ -32,6 +32,18 @@
             android:layout_height="1dp"
             android:layout_weight="1" />
 
+        <!-- View once: only drawn for a DM whose selection is all photos
+             (ViewOnceToggle). Accent fill = on. -->
+        <ImageButton
+            android:id="@+id/review_view_once"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/ms_circle_button"
+            android:contentDescription="@string/media_send_view_once"
+            android:src="@drawable/ic_ms_view"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/review_remove"
             android:layout_width="wrap_content"

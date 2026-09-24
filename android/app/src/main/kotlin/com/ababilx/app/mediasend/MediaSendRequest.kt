@@ -20,6 +20,8 @@ class MediaSendRequest(
     val names: List<String>,
     val mimes: List<String>,
     val caption: String,
+    /** Whether the review screen may offer view once (a DM with someone else). */
+    val allowViewOnce: Boolean,
 ) {
     val startsAtGallery: Boolean get() = start == START_GALLERY
 
@@ -32,6 +34,7 @@ class MediaSendRequest(
         const val EXTRA_NAMES = "names"
         const val EXTRA_MIMES = "mimes"
         const val EXTRA_CAPTION = "caption"
+        const val EXTRA_ALLOW_VIEW_ONCE = "allow_view_once"
 
         const val START_GALLERY = "gallery"
         const val START_CAMERA = "camera"
@@ -49,6 +52,7 @@ class MediaSendRequest(
             names = intent.getStringArrayListExtra(EXTRA_NAMES).orEmpty(),
             mimes = intent.getStringArrayListExtra(EXTRA_MIMES).orEmpty(),
             caption = intent.getStringExtra(EXTRA_CAPTION).orEmpty(),
+            allowViewOnce = intent.getBooleanExtra(EXTRA_ALLOW_VIEW_ONCE, false),
         )
     }
 }

@@ -145,7 +145,8 @@ class MediaSendActivity : Activity() {
                     cancel()
                     return@post
                 }
-                setResult(RESULT_OK, MediaSendResult.intent(exported, caption, wiring.quality.code))
+                val once = review.viewOnce.on
+                setResult(RESULT_OK, MediaSendResult.intent(exported, caption, wiring.quality.code, once))
                 finish()
             }
         }
