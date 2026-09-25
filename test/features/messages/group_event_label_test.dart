@@ -21,9 +21,9 @@ ChatMessage _system({
     'event': event,
     'actor_id': actorId,
     'actor_name': actorName,
-    if (targetId != null) 'target_id': targetId,
-    if (targetName != null) 'target_name': targetName,
-    if (value != null) 'value': value,
+    'target_id': ?targetId,
+    'target_name': ?targetName,
+    'value': ?value,
   },
 );
 

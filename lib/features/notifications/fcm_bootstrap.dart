@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/providers/auth_provider.dart';
+import '../calls/group/providers/group_call_provider.dart';
+import '../calls/providers/voice_call_provider.dart';
 import 'fcm_log.dart';
+import 'full_screen_intent_prompt.dart';
 import 'providers/fcm_provider.dart';
 
 /// Starts FCM after login / cold start; attaches GoRouter for deep links.
@@ -111,6 +114,16 @@ class _FcmBootstrapState extends ConsumerState<FcmBootstrap>
       fcmLog('bootstrap.boot.done', 'permissionGranted=$granted');
       if (!mounted) return;
       ref.read(notificationPermissionProvider.notifier).setGranted(granted);
+      if (granted) {
+        unawaited(
+          FullScreenIntentPrompt.maybeAsk(
+            callLive: () =>
+                mounted &&
+                (ref.read(voiceCallProvider).active ||
+                    ref.read(groupCallProvider).active),
+          ),
+        );
+      }
     } catch (e, st) {
       fcmLog('bootstrap.boot.fail', '$e\n$st');
       if (!mounted) return;

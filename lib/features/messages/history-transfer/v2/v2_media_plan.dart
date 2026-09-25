@@ -118,8 +118,9 @@ class V2MediaPlanner {
       var remaining = file.size;
       do {
         if (entries >= maxFilesPerBatch ||
-            (offset >= batchPlainBytes && remaining > 0))
+            (offset >= batchPlainBytes && remaining > 0)) {
           next();
+        }
         final take = remaining < batchPlainBytes - offset
             ? remaining
             : batchPlainBytes - offset;

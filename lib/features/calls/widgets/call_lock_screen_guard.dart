@@ -72,20 +72,30 @@ class _CallLockScreenGuardState extends State<CallLockScreenGuard> {
     }
   }
 
-  /// After the frame: native lifts its cover when it hears the call is
-  /// visible, so the call must already be painted — and when it hears the
-  /// call is gone, the mask must already be.
+  /// A call appearing is reported after its frame: native lifts its cover
+  /// when it hears it, so the call must already be painted.
+  ///
+  /// A call leaving is reported at once. Native covers the window itself
+  /// before it drops the app behind the keyguard, so nothing waits on this
+  /// frame — and there may be no frame: with the screen off (power button,
+  /// pocket) Flutter draws nothing, a post-frame report never left, and the
+  /// app stayed over the lock screen until the next wake showed it black.
   void _publish() {
+    if (!widget.callVisible) {
+      _send();
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      unawaited(
-        AndroidCallLockScreen.setCallState(
-          visible: widget.callVisible,
-          live: widget.callLive,
-        ),
-      );
+      if (mounted) _send();
     });
   }
+
+  void _send() => unawaited(
+    AndroidCallLockScreen.setCallState(
+      visible: widget.callVisible,
+      live: widget.callLive,
+    ),
+  );
 
   @override
   void dispose() {

@@ -8,6 +8,7 @@ import 'package:ababilx/features/messages/providers/chat_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'no_pins_override.dart';
 import 'no_typing_override.dart';
 
 const _conversationId = 'c1';
@@ -50,6 +51,7 @@ class _SelectChatNotifier extends ChatNotifier {
 Widget _app(Widget child) => ProviderScope(
   overrides: [
     ...noTypingOverrides,
+    noPinsOverride,
     chatProvider.overrideWith(_SelectChatNotifier.new),
   ],
   child: MaterialApp(home: Scaffold(body: child)),
@@ -104,6 +106,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         ...noTypingOverrides,
+        noPinsOverride,
         chatProvider.overrideWith(_SelectChatNotifier.new),
       ],
     );
@@ -146,6 +149,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         ...noTypingOverrides,
+        noPinsOverride,
         chatProvider.overrideWith(_SelectChatNotifier.new),
       ],
     );

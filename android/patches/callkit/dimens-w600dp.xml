@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AbabilX: CallkitIncomingActivity sizes for tablets, 600dp and wider (the original 476dp pair). See dimens.xml. -->
+<resources>
+    <dimen name="incoming_side">30dp</dimen>
+    <dimen name="incoming_seat">180dp</dimen>
+    <dimen name="incoming_gap">56dp</dimen>
+    <dimen name="incoming_button">100dp</dimen>
+    <dimen name="incoming_button_pad">15dp</dimen>
+    <dimen name="incoming_seat_height">192dp</dimen>
+</resources>

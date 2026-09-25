@@ -151,11 +151,13 @@ class HistoryTransferNotifier extends Notifier<HistoryTransferState> {
       final active = await ref.read(historyTransferApiProvider).active();
       if (active == null ||
           active['role'] != 'source' ||
-          active['status'] != 'approved')
+          active['status'] != 'approved') {
         return;
+      }
       final id = active['id'] as String? ?? '';
-      if (id.isEmpty || await (await V2Store.open(id)).readKey(id) == null)
+      if (id.isEmpty || await (await V2Store.open(id)).readKey(id) == null) {
         return;
+      }
       await sendV2(transferId: id);
     } catch (_) {
       // Nothing to resume, or no network yet; the next launch asks again.

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import 'ringtone/android_ringtone_engine.dart';
 import 'ringtone/asset_ringtone_engine.dart';
 import 'ringtone/ringtone_engine.dart';
@@ -43,6 +45,10 @@ class CallRingtone {
     _holders.remove(holder);
     return _apply();
   }
+
+  /// Whether [holder] is asking for the ring right now.
+  @visibleForTesting
+  static bool holds(String holder) => _holders.contains(holder);
 
   static Future<void> releaseAll() {
     _holders.clear();

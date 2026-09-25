@@ -21,6 +21,14 @@ gradle.beforeProject { project ->
 
     layout.text = new File(uiSource, 'activity_callkit_incoming.xml').text
     dimens.text = new File(uiSource, 'dimens.xml').text
+    // Width and height steps (dimens-w360dp.xml -> values-w360dp/): the pair
+    // and the avatar are sized per screen so Accept never leaves a small one.
+    uiSource.listFiles().findAll { it.name ==~ /dimens-[wh]\d+dp\.xml/ }.each { step ->
+        def qualifier = step.name - 'dimens-' - '.xml'
+        def target = new File(res, "values-$qualifier/ababilx_incoming_dimens.xml")
+        target.parentFile.mkdirs()
+        target.text = step.text
+    }
     // Tablets: same pair layout (phones are forced portrait by the Activity).
     if (land.exists()) {
         land.text = new File(uiSource, 'activity_callkit_incoming.xml').text

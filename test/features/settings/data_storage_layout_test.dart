@@ -63,11 +63,17 @@ void main() {
     await pump(tester, const DataStorageScreen());
     expect(find.text('Media auto-download'), findsOneWidget);
     expect(find.text('Photos'), findsOneWidget);
-    // Defaults, rendered as the row's trailing value.
-    expect(find.text('Wi-Fi, Cellular'), findsWidgets);
-    expect(find.text('Never'), findsWidgets);
     // The total from Manage storage.
     expect(find.text('4.5 GB'), findsOneWidget);
+    // Defaults, rendered as the row's trailing value. The rows above them
+    // grow (Backup, Chat lock), so reach them the way a person would.
+    expect(find.text('Wi-Fi, Cellular'), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('Documents'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Never'), findsWidgets);
     // The footnote sits below the fold on a 320dp screen, and a ListView does
     // not build what it has not scrolled to — so this scrolls rather than
     // asserting the copy happens to be above the fold, which is a fact about

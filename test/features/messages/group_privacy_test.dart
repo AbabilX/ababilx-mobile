@@ -1,5 +1,4 @@
 import 'package:ababilx/features/messages/chat-select/selection_menu_state.dart';
-import 'package:ababilx/features/messages/data/models/chat_conversation_json.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/shared/media/media_save_lock.dart';
 import 'package:ababilx/shared/widgets/image_preview_dock.dart';

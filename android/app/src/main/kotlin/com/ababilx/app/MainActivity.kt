@@ -31,7 +31,12 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
-        callLockScreen.refresh()
+        callLockScreen.onResume()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        callLockScreen.onStop()
     }
 
     /** Incoming ACTION_SEND from another app's share sheet. */

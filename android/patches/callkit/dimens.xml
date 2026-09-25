@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- AbabilX sizes for CallkitIncomingActivity — mirror Flutter IncomingCallView. -->
+<!-- AbabilX sizes for CallkitIncomingActivity — mirror Flutter IncomingCallView.
+     These defaults are the SMALLEST phone (320-359dp wide, under 640dp tall);
+     dimens-w*.xml / dimens-h*.xml step them up. The base_margin_* and
+     size_text_* values are also the plugin's notification layouts' — leave
+     them as they are. -->
 <resources>
     <bool name="isTablet">false</bool>
     <dimen name="base_margin_half">5dp</dimen>
@@ -16,15 +20,25 @@
 
     <dimen name="base_margin_revert_x5">-50dp</dimen>
 
-    <!-- Was 120 / 60 — match Flutter ~160 avatar + ~100 action seats. -->
-    <dimen name="size_avatar">160dp</dimen>
-    <dimen name="size_button">100dp</dimen>
+    <!-- The plugin's rounded_button_* drawables still name this one. -->
     <dimen name="size_button_x2">160dp</dimen>
-    <dimen name="size_button_x2_5">180dp</dimen>
-    <!-- Comfortable gap between Decline and Accept (not edge-spread). -->
-    <dimen name="size_action_gap">56dp</dimen>
+
+    <!-- Width budget: 2 x incoming_seat + incoming_gap + 2 x incoming_side
+         must fit the narrowest width of the qualifier (here 320dp: 312). -->
+    <dimen name="incoming_side">12dp</dimen>
+    <dimen name="incoming_seat">132dp</dimen>
+    <dimen name="incoming_gap">24dp</dimen>
+    <dimen name="incoming_button">76dp</dimen>
+    <dimen name="incoming_button_pad">12dp</dimen>
+    <!-- Seat taller than wide: the label sits under the centred button. -->
+    <dimen name="incoming_seat_height">148dp</dimen>
+    <dimen name="incoming_label_gap">4dp</dimen>
+    <dimen name="incoming_name_gap">16dp</dimen>
+
+    <!-- Height budget: the header is the screen width tall (set in code). -->
+    <dimen name="size_avatar">120dp</dimen>
     <!-- Extra lift above nav/gesture inset (Activity adds nav height on top). -->
-    <dimen name="size_action_lift">72dp</dimen>
+    <dimen name="size_action_lift">16dp</dimen>
 
     <dimen name="size_text_name">26sp</dimen>
     <dimen name="size_text_action">14sp</dimen>

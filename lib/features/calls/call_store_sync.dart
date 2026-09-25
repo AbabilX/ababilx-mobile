@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/router_path.dart';
 import '../auth/providers/auth_provider.dart';
+import '../chat-lock/data/chat_lock_index.dart';
 import '../profile/providers/user_status_provider.dart';
+import 'call_exit_route.dart';
 import 'providers/in_call_presence_provider.dart';
 import 'providers/voice_call_provider.dart';
 import 'voice_call_log.dart';
@@ -211,11 +213,9 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
             phase != VoiceCallPhase.failed) {
           return;
         }
-        if (conversationId != null && conversationId.isNotEmpty) {
-          widget.router.go('/messages/$conversationId');
-        } else {
-          widget.router.go('/messages');
-        }
+        widget.router.go(
+          callExitRoute(conversationId, ChatLockIndex.cached),
+        );
       });
     });
 

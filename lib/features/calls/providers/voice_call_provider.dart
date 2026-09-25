@@ -69,6 +69,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   bool _ending = false;
   VoicePeerEngine? _preparingEngine;
   bool _offerResent = false;
+
+  /// The call this device is answering whose accept the server has not
+  /// confirmed yet. Hanging up in that window declines rather than ends.
+  String? _answeringCallId;
   final Set<String> _finishedCallIds = {};
   final Set<String> _remoteRingingCallIds = {};
   final CallKitEndedSuppress _suppressCallKitEnded = CallKitEndedSuppress();
@@ -362,6 +366,15 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       phase: _phaseName,
       source: 'acceptIncoming',
     );
+    // Answering starts now, not when the server confirms it. Held in
+    // `incomingRinging` for the round trip, the call screen drew the ringing
+    // view — Accept, Decline and the ringtone — so an Accept pressed on the
+    // notification opened the app onto a second ring. On a cold start that
+    // trip includes the whole boot, which is why it was "sometimes".
+    _answeringCallId = call.id;
+    state = state.copyWith(phase: VoiceCallPhase.connecting);
+    _startConnectWatchdog(call.id, budget: _setupBudget);
+    unawaited(IncomingCallRingtone.stop());
     try {
       await _ensureCallPermissions();
       if (operation != _operation) return;
@@ -376,6 +389,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         return;
       }
       voiceCallLog('accept.api.ok', callId: call.id, phase: 'connecting');
+      _answeringCallId = null;
       // The server now pushes "answered elsewhere" to every device on this
       // account, this one included — FCM cannot address a single device. This
       // durable mark is how the background isolate, which has none of this
@@ -522,6 +536,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     final action = switch (state.phase) {
       VoiceCallPhase.outgoingRinging => 'cancel',
       VoiceCallPhase.incomingRinging => 'decline',
+      // Answering, but the server has not recorded the accept yet: the call
+      // is still ringing there, and `end` would leave the caller hearing it.
+      VoiceCallPhase.connecting when _answeringCallId == call.id => 'decline',
       _ => 'end',
     };
     voiceCallLog(
@@ -1200,6 +1217,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     final operation = ++_operation;
     _ending = true;
     _transitioning = false;
+    _answeringCallId = null;
     _heartbeat.stop();
     state = state.copyWith(phase: phase, clearReconnectingSince: true);
     final engine = _engine;

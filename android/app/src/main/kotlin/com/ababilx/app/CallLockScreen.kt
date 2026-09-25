@@ -55,7 +55,10 @@ class CallLockScreen(private val activity: Activity) {
         apply()
     }
     private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) = refresh()
+        override fun onReceive(context: Context, intent: Intent) {
+            refresh()
+            if (intent.action == Intent.ACTION_USER_PRESENT) settleUnlock(UNLOCK_TRIES)
+        }
     }
 
     fun attach(engine: FlutterEngine) {
@@ -124,6 +127,40 @@ class CallLockScreen(private val activity: Activity) {
         apply()
     }
 
+    /** Resumed: unlocked, or back from Home or recents. */
+    fun onResume() {
+        refresh()
+        dropStaleCover()
+    }
+
+    /** No longer visible: whatever the keyguard is doing, it covers the app now. */
+    fun onStop() = dropStaleCover()
+
+    /**
+     * The cover a finished call leaves is only there while the keyguard
+     * animates back in over it. Once the app is no longer over the lock and
+     * the Activity has stopped — or resumed again, which on a locked phone
+     * means somebody unlocked it — it hides nothing but the app.
+     *
+     * Unlocking alone could not be trusted to take it down: the Activity
+     * resumes and USER_PRESENT arrives while the keyguard is still going
+     * away, and `isKeyguardLocked` stays true until its animation ends.
+     * Nothing read it again after that, so the cover stayed and the app came
+     * up black until it was left and reopened from recents.
+     */
+    private fun dropStaleCover() {
+        if (!overLock) lockWindow.cover(false)
+    }
+
+    /** USER_PRESENT can beat the keyguard's own exit; look again until it is gone. */
+    private fun settleUnlock(tries: Int) {
+        if (tries <= 0 || !keyguard.isKeyguardLocked) return
+        handler.postDelayed({
+            refresh()
+            settleUnlock(tries - 1)
+        }, UNLOCK_RETRY_MS)
+    }
+
     private fun setCallState(visible: Boolean, live: Boolean) {
         callLive = live
         val appeared = visible && !callVisible
@@ -185,5 +222,7 @@ class CallLockScreen(private val activity: Activity) {
         private const val CALL_ID = "EXTRA_CALLKIT_ID"
         private const val ACCEPT_WAIT_MS = 30_000L
         private const val RETURN_WAIT_MS = 5_000L
+        private const val UNLOCK_TRIES = 8
+        private const val UNLOCK_RETRY_MS = 250L
     }
 }

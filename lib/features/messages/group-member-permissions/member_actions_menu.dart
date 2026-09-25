@@ -35,6 +35,11 @@ Future<void> showGroupMemberMenu({
   final choice = await showModalBottomSheet<_MemberAction>(
     context: context,
     showDragHandle: true,
+    // An admin's list is seven rows. The default sheet stops at 9/16 of the
+    // screen and cut Remove off on shorter phones (and in landscape); this
+    // one grows to fit and scrolls past the screen instead.
+    isScrollControlled: true,
+    useSafeArea: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -56,79 +61,81 @@ Future<void> showGroupMemberMenu({
       }
 
       return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-              leading: ClipOval(
-                child: AppAvatar(
-                  size: 44,
-                  url: member.avatarUrl,
-                  name: member.name,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                leading: ClipOval(
+                  child: AppAvatar(
+                    size: 44,
+                    url: member.avatarUrl,
+                    name: member.name,
+                  ),
                 ),
-              ),
-              title: Text(
-                member.name,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              subtitle: Text(
-                member.tag.isNotEmpty
-                    ? member.tag
-                    : member.isAdmin
-                    ? 'Admin'
-                    : t('group_member_role'),
-              ),
-            ),
-            const Divider(height: 1),
-            row(
-              _MemberAction.profile,
-              HugeIcons.strokeRoundedUserCircle,
-              t('group_member_view_profile'),
-            ),
-            if (!isSelf)
-              row(
-                _MemberAction.message,
-                HugeIcons.strokeRoundedBubbleChat,
-                t('group_member_send_message'),
-              ),
-            if (perms.canSetTag(self: isSelf))
-              row(
-                _MemberAction.tag,
-                HugeIcons.strokeRoundedTag01,
-                t(
+                title: Text(
+                  member.name,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
                   member.tag.isNotEmpty
-                      ? 'group_member_edit_tag'
-                      : 'group_member_add_tag',
+                      ? member.tag
+                      : member.isAdmin
+                      ? 'Admin'
+                      : t('group_member_role'),
                 ),
               ),
-            if (manage)
+              const Divider(height: 1),
               row(
-                _MemberAction.role,
-                member.isAdmin
-                    ? HugeIcons.strokeRoundedUserBlock01
-                    : HugeIcons.strokeRoundedShieldUser,
-                t(
+                _MemberAction.profile,
+                HugeIcons.strokeRoundedUserCircle,
+                t('group_member_view_profile'),
+              ),
+              if (!isSelf)
+                row(
+                  _MemberAction.message,
+                  HugeIcons.strokeRoundedBubbleChat,
+                  t('group_member_send_message'),
+                ),
+              if (perms.canSetTag(self: isSelf))
+                row(
+                  _MemberAction.tag,
+                  HugeIcons.strokeRoundedTag01,
+                  t(
+                    member.tag.isNotEmpty
+                        ? 'group_member_edit_tag'
+                        : 'group_member_add_tag',
+                  ),
+                ),
+              if (manage)
+                row(
+                  _MemberAction.role,
                   member.isAdmin
-                      ? 'group_member_dismiss'
-                      : 'group_member_promote',
+                      ? HugeIcons.strokeRoundedUserBlock01
+                      : HugeIcons.strokeRoundedShieldUser,
+                  t(
+                    member.isAdmin
+                        ? 'group_member_dismiss'
+                        : 'group_member_promote',
+                  ),
                 ),
-              ),
-            if (manage && !member.isAdmin && conversation.type == 'group')
-              row(
-                _MemberAction.permissions,
-                HugeIcons.strokeRoundedKey01,
-                t('group_member_change_perms'),
-              ),
-            if (manage && !member.isAdmin)
-              row(
-                _MemberAction.remove,
-                HugeIcons.strokeRoundedUserRemove01,
-                t('group_member_remove'),
-                danger: true,
-              ),
-            const SizedBox(height: 8),
-          ],
+              if (manage && !member.isAdmin && conversation.type == 'group')
+                row(
+                  _MemberAction.permissions,
+                  HugeIcons.strokeRoundedKey01,
+                  t('group_member_change_perms'),
+                ),
+              if (manage && !member.isAdmin)
+                row(
+                  _MemberAction.remove,
+                  HugeIcons.strokeRoundedUserRemove01,
+                  t('group_member_remove'),
+                  danger: true,
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       );
     },

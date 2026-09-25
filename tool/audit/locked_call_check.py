@@ -14,6 +14,8 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
+import locked_call_scenarios as scenarios
+
 ADB = '/Users/murad/Library/Android/sdk/platform-tools/adb'
 PKG = 'com.ababilx.app'
 
@@ -90,34 +92,30 @@ def private_hidden(when):
     assert 'PRIVATE CHAT CONTENT' not in screen_text(), 'App content exposed ' + when
 
 
-def launch_then_lock_and_ring(button_x):
-    shell('input', 'keyevent', 'KEYCODE_WAKEUP')
-    shell('wm', 'dismiss-keyguard')
-    time.sleep(1)
-    shell('input', 'text', '2468')
-    shell('input', 'keyevent', '66')
-    time.sleep(1)
+def launch_then_lock_and_ring(button):
+    scenarios.unlock()
     shell('am', 'force-stop', PKG)
     shell('pm', 'grant', PKG, 'android.permission.RECORD_AUDIO')
+    shell('pm', 'grant', PKG, 'android.permission.POST_NOTIFICATIONS')
     shell('monkey', '-p', PKG, '-c', 'android.intent.category.LAUNCHER', '1')
     wait_for('RING IN FIVE SECONDS')
     tap('RING IN FIVE SECONDS')
     shell('input', 'keyevent', 'KEYCODE_SLEEP')
-    wait_for('Accept', 20)
-    # Past the ringing screen's enter animation, or the first tap is lost.
-    time.sleep(1.5)
-    # Its buttons are hit by position (Pixel_10: Decline 197, Answer 884),
-    # and pressed again until the screen is really gone.
+    scenarios.wait_ringing()
+    # Found by colour, not position: the buttons are sized per screen now
+    # (see locked_call_scenarios.py), and pressed again until the screen is
+    # really gone.
     for _ in range(3):
-        shell('input', 'tap', button_x, '1975')
+        box = scenarios.ring_buttons_when_drawn()[0][button]
+        shell('input', 'tap', str((box[0] + box[2]) // 2), str((box[1] + box[3]) // 2))
         time.sleep(2)
-        if not ringing_screen_up():
+        if not scenarios.ringing_screen_up():
             return
     raise AssertionError('The ringing screen ignored the tap')
 
 
 if '--decline' in sys.argv:
-    launch_then_lock_and_ring('197')
+    launch_then_lock_and_ring('decline')
     time.sleep(2)
     assert 'Lock test' not in screen_text(), 'Decline left the ringing screen up'
     private_hidden('after Decline')
@@ -125,7 +123,7 @@ if '--decline' in sys.argv:
     print('PASS  Decline: back to the lock screen, nothing exposed')
     sys.exit(0)
 
-launch_then_lock_and_ring('884')
+launch_then_lock_and_ring('accept')
 private_hidden('during the Accept handoff')
 wait_for('CALL CONNECTED')
 assert app_on_top(), 'The call screen is not the top activity'
@@ -135,7 +133,7 @@ assert app_instances() == 1, 'Accept started a second MainActivity'
 print('PASS  Answer: call over the secure keyguard, one MainActivity')
 
 tap('MINIMIZE')
-time.sleep(2)
+scenarios.assert_locked_and_hidden('after minimising')
 shell('input', 'keyevent', 'KEYCODE_WAKEUP')
 time.sleep(1)
 # uiautomator never idles on this lock screen — the ongoing entry's
@@ -154,7 +152,6 @@ assert 'PIN' not in screen_text(), 'Return tap asked for the PIN'
 print('PASS  Return: lock-screen notification reopens the call, no PIN')
 
 tap('END CALL')
-time.sleep(2)
+scenarios.assert_locked_and_hidden('after hang-up')
 private_hidden('after hang-up')
-assert not occluded(), 'Hang-up left the app over the keyguard'
 print('PASS  Hang up: keyguard back, nothing exposed')

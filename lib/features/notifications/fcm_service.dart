@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/api_constants.dart';
@@ -136,12 +135,9 @@ class FcmService {
       permissionGranted =
           localGranted &&
           settings.authorizationStatus != AuthorizationStatus.denied;
-      // Android 14 full-screen-intent only. Calling it on iOS throws and the
-      // catch below used to mark permission denied, so the iOS prompt could
-      // never stick.
-      if (permissionGranted && !Platform.isIOS) {
-        await FlutterCallkitIncoming.requestFullIntentPermission();
-      }
+      // Android 14's full-screen-intent page is NOT opened from here: this
+      // runs on every cold start, including the one a call's Accept causes,
+      // and on a locked phone. `FcmBootstrap` asks via FullScreenIntentPrompt.
     } catch (e) {
       fcmLog('permission.fail', e);
       if (!_isCurrent(session)) return false;

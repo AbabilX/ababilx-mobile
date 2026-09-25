@@ -1229,3 +1229,57 @@ both through `_adoptNativeAccept`:
   foreground push (`_recoverForegroundIncoming` goes through it).
 - `bootstrap` ends with `syncFromNativeIncoming()` rather than
   `_recoverNativeCall()`, so a ring that is already in state is adopted too.
+
+## Locked-call follow-ups: black screen, second Accept, small phones (2026-09-26)
+
+Four reports, each reproduced before it was fixed.
+
+```
+black after unlock      leave-cover outlived the lock; unlock never re-read it
+Accept asked twice      provider sat in incomingRinging for the accept round trip
+Accept off small phones ringing pair was 476dp on 320-411dp screens
+unlock to answer        FSI Settings page opened on every cold start
+```
+
+- **The leave-cover dies with visibility, not with a keyguard reading.**
+  `CallLockScreen` covers the window when a call leaves a locked screen, so
+  the keyguard animates back over black. It used to come down only in
+  `refresh()` when `isKeyguardLocked` read false — but the Activity resumes
+  and USER_PRESENT arrives while the keyguard is still *going away*, and that
+  flag stays true until its animation ends. Nothing read it again: the app came
+  up black until it was left and reopened from recents. Now `onStop` and
+  `onResume` drop the cover whenever the app is not over the lock (it can hide
+  nothing then), and USER_PRESENT re-checks for 2 s.
+- **A leaving call is reported to native at once, not after a frame.**
+  `CallLockScreenGuard._publish` sends `visible:false` immediately; only
+  `visible:true` waits for the call's frame. With the screen off (power
+  button, pocket) Flutter draws no frames, the post-frame report never left,
+  and the app stayed `showWhenLocked` until the next wake painted it black.
+  Native covers first on leave, so nothing depends on Dart's mask frame.
+- **Answering is `connecting` from the press.** `acceptIncoming` sets
+  `connecting` (and arms the setup watchdog, stops the in-app ring) before the
+  permission check and the POST. In `incomingRinging` the screen drew Accept,
+  Decline and the ringtone for the whole trip — on a cold start that includes
+  the boot — so a notification Accept opened onto a second ring.
+  `_answeringCallId` makes a hang-up in that window a `decline` (the server
+  still has it ringing); a late accept response is then ended as before.
+- **A call never ends into a locked chat** (`call_exit_route.dart`).
+- **Full-screen-intent permission is asked once per build**, only unlocked,
+  foreground and with no call (`notifications/full_screen_intent_prompt.dart`,
+  from `FcmBootstrap`). The Settings page is an Activity: on a locked phone
+  it demands the PIN, after an Accept it covers the call.
+- **The ringing layout is sized per screen** (`patches/callkit/dimens*.xml` →
+  `values-w360dp/`, `-w400dp/`, `-w600dp/`, `-h640dp/`, `-h720dp/`,
+  `-h800dp/`). Budget per width qualifier: `2·seat + gap + 2·side ≤ width`.
+  Keep `size_button_x2` in base dimens — the plugin's `rounded_button_*`
+  drawables name it and the build fails without it.
+
+Tests: `test/features/calls/voice_call_answering_test.dart`,
+`call_lock_screen_guard_test.dart`, `call_exit_route_test.dart`,
+`test/features/notifications/full_screen_intent_prompt_test.dart`;
+androidTest `CallkitIncomingLayoutTest` (6 widths, 320-411dp); and on an
+emulator `tool/audit/locked_call_scenarios.py` — heads-up Accept, hang up
+then unlock, call ending with the screen off, Home over the lock, taps at the
+ear, four screen sizes. The black screen reproduced there on the old code
+("100% black after 8 s") and passes now. `locked_call_check.py` finds the
+ringing buttons by colour now (uiautomator never idles over the ripples).

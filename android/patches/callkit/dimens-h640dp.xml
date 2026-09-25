@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AbabilX: CallkitIncomingActivity sizes for screens 640-719dp tall. See dimens.xml. -->
+<resources>
+    <dimen name="size_avatar">136dp</dimen>
+    <dimen name="size_action_lift">32dp</dimen>
+    <dimen name="incoming_name_gap">20dp</dimen>
+</resources>

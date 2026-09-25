@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:ababilx/features/calls/widgets/call_lock_screen_guard.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,6 +11,7 @@ void main() {
   const channel = MethodChannel('com.ababilx.app/call_lock_screen');
   final android = TargetPlatformVariant.only(TargetPlatform.android);
   late List<Map<Object?, Object?>> reports;
+  late List<SchedulerPhase> reportPhases;
   late Map<String, bool> nativeState;
   // Made inside a test body when needed: a Completer made in setUp completes
   // on the real zone, which a FakeAsync pump never runs.
@@ -17,6 +19,7 @@ void main() {
 
   setUp(() {
     reports = [];
+    reportPhases = [];
     nativeState = {'locked': false, 'overLock': false};
     slowState = null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -24,6 +27,7 @@ void main() {
           if (call.method == 'state') return slowState?.future ?? nativeState;
           if (call.method == 'setCallState') {
             reports.add(Map.of(call.arguments as Map));
+            reportPhases.add(SchedulerBinding.instance.schedulerPhase);
           }
           return null;
         });
@@ -85,6 +89,26 @@ void main() {
       expect(find.text('PRIVATE'), findsNothing);
       await tester.pump();
       expect(reports.last, {'visible': false, 'live': true});
+    },
+    variant: android,
+  );
+
+  testWidgets(
+    'a call leaving is reported while building, never after a frame a '
+    'backgrounded app may not draw',
+    (tester) async {
+      // The screen went off mid-call and the peer hung up: Flutter draws no
+      // frames, so a post-frame report never reached native, the app stayed
+      // over the keyguard, and the next wake showed a black mask.
+      nativeState = {'locked': true, 'overLock': true};
+      await tester.pumpWidget(app(visible: true));
+      await tester.pump();
+      expect(reports.last, {'visible': true, 'live': true});
+      expect(reportPhases.last, SchedulerPhase.postFrameCallbacks);
+      await tester.pumpWidget(app(visible: false, live: false));
+      expect(reports.last, {'visible': false, 'live': false});
+      expect(reportPhases.last, isNot(SchedulerPhase.postFrameCallbacks));
+      expect(find.text('PRIVATE'), findsNothing);
     },
     variant: android,
   );

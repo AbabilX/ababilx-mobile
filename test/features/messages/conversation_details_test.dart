@@ -130,6 +130,9 @@ void main() {
     Navigator.of(tester.element(find.text('View profile'))).pop();
     await tester.pumpAndSettle();
 
+    // The Add members sheet's connections refresh has no server to answer
+    // it here; let its 8 s request timeout run out before the tree goes.
+    await tester.pump(const Duration(seconds: 9));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
   });

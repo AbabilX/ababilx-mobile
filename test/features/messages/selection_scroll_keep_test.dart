@@ -9,6 +9,7 @@ import 'package:ababilx/features/messages/providers/chat_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'no_pins_override.dart';
 import 'no_typing_override.dart';
 
 const _conv = 'c1';
@@ -111,6 +112,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         ...noTypingOverrides,
+        noPinsOverride,
         chatProvider.overrideWith(_Chat.new),
         for (final m in _messages)
           for (final a in m.attachments)

@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:ababilx/features/calls/audio/telecom_audio_route.dart';
+import 'package:ababilx/features/calls/native/android_call_screen_lock.dart';
 import 'package:ababilx/features/calls/native/android_ongoing_call.dart';
 import 'package:ababilx/features/calls/widgets/call_lock_screen_guard.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +67,10 @@ class _FixtureState extends State<Fixture> {
       unawaited(
         AndroidOngoingCall.start(callId: _callId, title: 'Return to lock test'),
       );
+      // What OngoingCallSync and the call screen hold for a real call on the
+      // earpiece: the proximity lock and no screen timeout.
+      unawaited(AndroidCallScreenLock.setEarpieceCall(true));
+      unawaited(AndroidCallScreenLock.setKeepScreenOn(true));
       unawaited(_probeRoute('accepted'));
     });
   }
@@ -81,6 +86,8 @@ class _FixtureState extends State<Fixture> {
   }
 
   Future<void> _end() async {
+    unawaited(AndroidCallScreenLock.setEarpieceCall(false));
+    unawaited(AndroidCallScreenLock.setKeepScreenOn(false));
     await FlutterCallkitIncoming.endAllCalls();
     await AndroidOngoingCall.stop(force: true);
     if (mounted) {
@@ -143,6 +150,14 @@ class _FixtureState extends State<Fixture> {
                 child: const Text('MINIMIZE'),
               ),
               ElevatedButton(onPressed: _end, child: const Text('END CALL')),
+              // The peer hanging up while this phone's screen is off.
+              ElevatedButton(
+                onPressed: () => Future<void>.delayed(
+                  const Duration(seconds: 8),
+                  _end,
+                ),
+                child: const Text('END IN EIGHT SECONDS'),
+              ),
             ],
           ),
         ),
