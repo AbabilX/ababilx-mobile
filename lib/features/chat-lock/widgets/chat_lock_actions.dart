@@ -64,3 +64,30 @@ Future<bool> resetChatLockPassword(
       .lockWithPassword(conversationId, password);
   return true;
 }
+
+/// Clears every chat lock on this phone after the system fingerprint, face
+/// or screen PIN succeeds. Device-local only — the server never knew.
+Future<bool> resetAllChatLocks(BuildContext context, WidgetRef ref) async {
+  String t(String key) => AppTranslations.translate(context, ref, key);
+  if (ref.read(chatLocksProvider).isEmpty) {
+    if (context.mounted) {
+      showAppToast(context, t('chatlock_reset_all_none'));
+    }
+    return false;
+  }
+  final result = await DeviceAuth.authenticate(
+    title: t('chatlock_reset_all_prompt'),
+    subtitle: t('chatlock_reset_all_prompt_sub'),
+  );
+  if (!context.mounted) return false;
+  if (result == DeviceAuthResult.unavailable) {
+    showAppToast(context, t('chatlock_reset_needs_screen_lock'), isError: true);
+    return false;
+  }
+  if (result != DeviceAuthResult.ok) return false;
+  await ref.read(chatLocksProvider.notifier).removeAllLocks();
+  if (context.mounted) {
+    showAppToast(context, t('chatlock_reset_all_done'));
+  }
+  return true;
+}

@@ -639,6 +639,23 @@ class AppTranslations {
       'chatlock_file_too_big': 'Too large to open in a locked chat',
       'chatlock_file_cannot_open': 'This file can\'t be opened here',
       'chatlock_file_failed': 'Couldn\'t load the file. Check your connection.',
+      'chatlock_settings_title': 'Chat lock',
+      'chatlock_settings_row_sub': 'Reset every locked chat on this phone',
+      'chatlock_settings_section': 'Reset',
+      'chatlock_settings_body':
+          'Forgot a chat password? Use this phone\'s fingerprint, face or '
+          'screen lock to remove every chat lock. Locked chats return to the '
+          'ordinary chat list.',
+      'chatlock_reset_all': 'Reset all chat locks',
+      'chatlock_reset_all_sub': '{count} locked chats on this phone',
+      'chatlock_reset_all_none': 'No locked chats on this phone',
+      'chatlock_reset_all_prompt': 'Reset all chat locks',
+      'chatlock_reset_all_prompt_sub':
+          'Use fingerprint, face or your screen lock',
+      'chatlock_reset_all_done': 'All chat locks removed',
+      'chatlock_reset_all_footnote':
+          'Only this phone\'s lock can do this. AbabilX never stored your '
+          'chat passwords.',
 
       'settings_title': 'Settings',
       'settings_load_error': 'Could not load settings',
@@ -1618,6 +1635,23 @@ class AppTranslations {
       'chatlock_file_too_big': 'লক করা চ্যাটে খোলার জন্য ফাইলটি অনেক বড়',
       'chatlock_file_cannot_open': 'এই ফাইলটি এখানে খোলা যাচ্ছে না',
       'chatlock_file_failed': 'ফাইল লোড করা যায়নি। সংযোগ দেখুন।',
+      'chatlock_settings_title': 'চ্যাট লক',
+      'chatlock_settings_row_sub': 'এই ফোনের সব লক করা চ্যাট রিসেট করুন',
+      'chatlock_settings_section': 'রিসেট',
+      'chatlock_settings_body':
+          'চ্যাটের পাসওয়ার্ড ভুলে গেছেন? এই ফোনের ফিঙ্গারপ্রিন্ট, ফেস বা '
+          'স্ক্রিন লক দিয়ে সব চ্যাট লক সরিয়ে ফেলুন। লক করা চ্যাট আবার সাধারণ '
+          'তালিকায় ফিরে আসবে।',
+      'chatlock_reset_all': 'সব চ্যাট লক রিসেট',
+      'chatlock_reset_all_sub': 'এই ফোনে {count}টি লক করা চ্যাট',
+      'chatlock_reset_all_none': 'এই ফোনে কোনো লক করা চ্যাট নেই',
+      'chatlock_reset_all_prompt': 'সব চ্যাট লক রিসেট',
+      'chatlock_reset_all_prompt_sub':
+          'ফিঙ্গারপ্রিন্ট, ফেস বা স্ক্রিন লক ব্যবহার করুন',
+      'chatlock_reset_all_done': 'সব চ্যাট লক সরানো হয়েছে',
+      'chatlock_reset_all_footnote':
+          'শুধু এই ফোনের লক দিয়েই করা যায়। AbabilX আপনার চ্যাট পাসওয়ার্ড '
+          'কখনও সংরক্ষণ করেনি।',
 
       'settings_title': 'সেটিংস',
       'settings_load_error': 'সেটিংস লোড করা যায়নি',

@@ -54,6 +54,16 @@ void main() {
     expect(await ChatLockSecrets.verify('a', 'correct horse'), isFalse);
   });
 
+  test('clearAll drops every password hash', () async {
+    await ChatLockSecrets.setPassword('a', 'one');
+    await ChatLockSecrets.setPassword('b', 'two');
+    await ChatLockSecrets.clearAll();
+    expect(await ChatLockSecrets.verify('a', 'one'), isFalse);
+    expect(await ChatLockSecrets.verify('b', 'two'), isFalse);
+    final stored = await const FlutterSecureStorage().readAll();
+    expect(stored.keys.where((k) => k.startsWith('chat_lock_pw_v1_')), isEmpty);
+  });
+
   test('the password is never stored in the clear', () async {
     await ChatLockSecrets.setPassword('a', 'correct horse');
     final stored = await const FlutterSecureStorage().readAll();

@@ -50,6 +50,17 @@ abstract final class ChatLockSecrets {
   static Future<void> remove(String conversationId) =>
       _storage.delete(key: '$_prefix$conversationId');
 
+  /// Drops every chat-lock password hash. Used when all locks are reset.
+  static Future<void> clearAll() async {
+    final keys = [
+      for (final key in (await _storage.readAll()).keys)
+        if (key.startsWith(_prefix)) key,
+    ];
+    for (final key in keys) {
+      await _storage.delete(key: key);
+    }
+  }
+
   /// Stretching takes a noticeable fraction of a second in Dart, so it runs
   /// off the UI isolate — the unlock screen keeps animating meanwhile.
   static Future<Uint8List> _derive(

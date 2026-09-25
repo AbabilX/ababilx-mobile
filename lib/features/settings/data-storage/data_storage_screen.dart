@@ -63,6 +63,12 @@ class DataStorageScreen extends ConsumerWidget {
               subtitle: t('settings_backup_sub'),
               onTap: () => context.push('/settings/chat-backup'),
             ),
+            SettingsRow(
+              icon: HugeIcons.strokeRoundedSquareLock02,
+              title: t('chatlock_settings_title'),
+              subtitle: t('chatlock_settings_row_sub'),
+              onTap: () => context.push('/settings/data-storage/chat-lock'),
+            ),
             const Divider(height: 24),
             const SettingsSectionHeader('Media auto-download'),
             for (final media in AutoDownloadMedia.values)

@@ -31,6 +31,14 @@ class ChatLocksNotifier extends Notifier<Map<String, ChatLockMethod>> {
     state = next;
   }
 
+  /// Removes every lock on this phone. Chats return to the ordinary list.
+  Future<void> removeAllLocks() async {
+    await ChatLockIndex.clearAll();
+    await ChatLockSecrets.clearAll();
+    ref.read(chatLockSessionProvider.notifier).relockAll();
+    state = const {};
+  }
+
   Future<bool> verifyPassword(String conversationId, String password) =>
       ChatLockSecrets.verify(conversationId, password);
 
