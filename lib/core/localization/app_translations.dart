@@ -563,6 +563,17 @@ class AppTranslations {
       'policy_decline_signout': 'Decline & Sign Out',
       'policy_error': 'Could not save. Try again.',
 
+      'app_update_title_optional': 'Update available',
+      'app_update_title_required': 'Update required',
+      'app_update_body_optional': 'AbabilX {version} is ready.',
+      'app_update_body_required':
+          'This version of AbabilX is no longer supported. Update to {version} to keep using it.',
+      'app_update_whats_new': "What's new",
+      'app_update_action': 'Update',
+      'app_update_later': 'Later',
+      'app_update_store_failed': 'Could not open the store. Update AbabilX from Google Play.',
+      'app_update_installed': 'Installed: {version}',
+
       'settings_title': 'Settings',
       'settings_load_error': 'Could not load settings',
       'settings_notifications': 'Notifications',
@@ -1465,6 +1476,17 @@ class AppTranslations {
       'policy_accept': 'আমি সম্মত',
       'policy_decline_signout': 'প্রত্যাখ্যান ও প্রস্থান',
       'policy_error': 'সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।',
+
+      'app_update_title_optional': 'আপডেট এসেছে',
+      'app_update_title_required': 'আপডেট করা প্রয়োজন',
+      'app_update_body_optional': 'AbabilX {version} এসেছে।',
+      'app_update_body_required':
+          'AbabilX-এর এই সংস্করণ আর চলবে না। ব্যবহার চালিয়ে যেতে {version}-এ আপডেট করুন।',
+      'app_update_whats_new': 'নতুন যা আছে',
+      'app_update_action': 'আপডেট করুন',
+      'app_update_later': 'পরে',
+      'app_update_store_failed': 'স্টোর খোলা যায়নি। Google Play থেকে AbabilX আপডেট করুন।',
+      'app_update_installed': 'ইনস্টল করা: {version}',
 
       'settings_title': 'সেটিংস',
       'settings_load_error': 'সেটিংস লোড করা যায়নি',

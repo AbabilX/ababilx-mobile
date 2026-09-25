@@ -31,6 +31,9 @@ class ApiConstants {
   static const String meDiscovery = '/api/me/discovery';
   static const String meTypingIndicators = '/api/me/typing-indicators';
 
+  /// Public update check (no auth): `?platform=android&build=30`.
+  static const String appVersion = '/v1/api/app/version';
+
   /// Privacy mode (server migration 0152): typing, receipts, presence,
   /// ringing and connected-call history withheld from DM peers.
   static const String mePrivacyMode = '/api/me/privacy-mode';

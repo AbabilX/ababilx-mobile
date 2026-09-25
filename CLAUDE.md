@@ -20,6 +20,34 @@
   Decode Play's obfuscated names with the AAB's own
   `BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map`.
 
+## App update check — 2026-09-25
+
+**Every release: bump `lib/core/app_version.dart` with `version:` in
+pubspec.yaml.** `test/core/app_version_test.dart` fails when they differ. The
+installed build is a hand-written constant on purpose (no package_info plugin),
+and it is what the phone sends to the server.
+
+```
+launch (+ resume when the last answer is >6 h old)
+  GET /v1/api/app/version?platform=android&build=<appBuildNumber>   public, bare Dio
+  update_required  -> AppUpdateRequiredScreen covers the app (not during a call)
+  update_available -> bottom sheet once per build per launch; Later = 24 h snooze
+  Update           -> market://details?id=… then the https store link
+```
+
+- `lib/features/app-update/`, mounted as `AppUpdateGate` inside
+  `CallLockScreenHost` in `app.dart`. Its Stack keeps go_router's navigator in
+  slot 0 at all times (the ActiveCallBanner GlobalKey crash).
+- The forced screen sits ABOVE the navigator: no Overlay there, so nothing on
+  it may need one (no SelectableText, no tooltip). Pinned by
+  `test/features/app_update/app_update_required_screen_test.dart`.
+- A failed or malformed check never blocks: null / "no update".
+- Releases, the required flag and the minimum build are set in the web admin
+  Control Zone → App updates (`Ababil-X-frontend`). Publish only once Play
+  serves the build to everyone; a required release during a staged rollout
+  blocks phones Play has not reached. The server never forces past the newest
+  published build.
+
 **Android is the shipped, device-verified baseline.** Calls, CallKit/Telecom,
 ringtone, media send, share intake, notifications and the lock-screen call all
 work on real phones and took many rounds to settle. iOS is being brought up

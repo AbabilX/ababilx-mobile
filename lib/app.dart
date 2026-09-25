@@ -12,6 +12,7 @@ import 'features/calls/group/group_call_invite_host.dart';
 import 'features/calls/group/group_call_sync.dart';
 import 'features/calls/ongoing_call_sync.dart';
 import 'features/ghost/ghost_sync.dart';
+import 'features/app-update/app_update_gate.dart';
 import 'features/calls/widgets/active_call_banner.dart';
 import 'features/calls/widgets/call_lock_screen_host.dart';
 import 'features/local_share/local_share_sync.dart';
@@ -47,13 +48,17 @@ class AbabilXApp extends ConsumerWidget {
                         darkTheme: AppTheme.dark,
                         themeMode: themeMode,
                         routerConfig: router,
+                        // AppUpdateGate sits under the lock-screen host, so
+                        // its cover over the keyguard stays on top.
                         builder: (context, child) => CallLockScreenHost(
                           router: router,
-                          child: RootBackScope(
-                            child: GroupCallInviteHost(
-                              child: ActiveCallBanner(
-                                router: router,
-                                child: child ?? const SizedBox.shrink(),
+                          child: AppUpdateGate(
+                            child: RootBackScope(
+                              child: GroupCallInviteHost(
+                                child: ActiveCallBanner(
+                                  router: router,
+                                  child: child ?? const SizedBox.shrink(),
+                                ),
                               ),
                             ),
                           ),
