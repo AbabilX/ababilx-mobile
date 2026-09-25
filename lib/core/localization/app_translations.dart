@@ -624,7 +624,7 @@ class AppTranslations {
       'chatlock_forgot': 'Forgot password?',
       'chatlock_folder_title': 'Locked chats',
       'chatlock_folder_body':
-          'Unlock with your phone lock, or with any locked chat\'s password.',
+          'Unlock with your phone lock, or a chat password — only chats that match open.',
       'chatlock_use_phone_lock': 'Use phone lock',
       'chatlock_folder_password': 'Chat password',
       'chatlock_folder_empty':
@@ -1597,7 +1597,7 @@ class AppTranslations {
       'chatlock_forgot': 'পাসওয়ার্ড ভুলে গেছেন?',
       'chatlock_folder_title': 'লক করা চ্যাট',
       'chatlock_folder_body':
-          'ফোন লক দিয়ে, অথবা যেকোনো লক করা চ্যাটের পাসওয়ার্ড দিয়ে আনলক করুন।',
+          'ফোন লক দিয়ে, অথবা চ্যাটের পাসওয়ার্ড দিয়ে আনলক করুন — যেগুলোর পাসওয়ার্ড মিলে শুধু সেগুলো খুলবে।',
       'chatlock_use_phone_lock': 'ফোন লক ব্যবহার করুন',
       'chatlock_folder_password': 'চ্যাট পাসওয়ার্ড',
       'chatlock_folder_empty':

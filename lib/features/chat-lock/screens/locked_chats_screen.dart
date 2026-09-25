@@ -15,9 +15,10 @@ import 'locked_chats_unlock.dart';
 /// title in the chat list and nowhere else — the main list does not show a
 /// folder row, so nothing on screen says locked chats exist.
 ///
-/// Opens with the phone's own lock (and then opens every phone-lock chat
-/// with it), or with any one chat's password (which opens that chat).
-/// Leaving the list locks everything it opened again.
+/// Opens with the phone's own lock (revealing every phone-lock chat), or
+/// with a chat password (revealing every chat that accepted that password —
+/// never one locked under a different password). Leaving the list locks
+/// everything it opened again.
 class LockedChatsScreen extends ConsumerStatefulWidget {
   const LockedChatsScreen({super.key});
 
@@ -60,12 +61,12 @@ class _LockedChatsScreenState extends ConsumerState<LockedChatsScreen> {
     );
     if (!mounted || result != DeviceAuthResult.ok) return;
     final locks = ref.read(chatLocksProvider);
-    _session
-      ..openFolder()
-      ..unlockAll([
-        for (final e in locks.entries)
-          if (e.value == ChatLockMethod.device) e.key,
-      ]);
+    // Phone lock reveals only chats that use the phone lock — never a
+    // password chat, or typing any one password would be pointless.
+    _session.openFolderWith([
+      for (final e in locks.entries)
+        if (e.value == ChatLockMethod.device) e.key,
+    ]);
   }
 
   Future<void> _password(String password) async {
@@ -78,18 +79,21 @@ class _LockedChatsScreenState extends ConsumerState<LockedChatsScreen> {
     setState(() => _checking = true);
     final locks = ref.read(chatLocksProvider);
     final notifier = ref.read(chatLocksProvider.notifier);
+    // Every chat that accepted this password — two chats with the same
+    // password open together; a different password's chat stays hidden.
+    final matched = <String>[];
     for (final e in locks.entries) {
       if (e.value != ChatLockMethod.password) continue;
       if (await notifier.verifyPassword(e.key, password)) {
-        if (!mounted) return;
-        _session
-          ..openFolder()
-          ..unlock(e.key);
-        setState(() => _checking = false);
-        return;
+        matched.add(e.key);
       }
     }
     if (!mounted) return;
+    if (matched.isNotEmpty) {
+      _session.openFolderWith(matched);
+      setState(() => _checking = false);
+      return;
+    }
     _wrong++;
     if (_wrong % 5 == 0) {
       _waitUntil = DateTime.now().add(const Duration(seconds: 30));

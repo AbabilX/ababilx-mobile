@@ -6,13 +6,20 @@ import '../native/device_auth.dart';
 
 /// Which locked chats are open right now, and whether the locked-chats list
 /// is. Memory only: a restarted app starts with everything locked.
+///
+/// [folderVisible] is who the folder may name: only chats revealed by the
+/// unlock that opened it (matching password, or every phone-lock chat). A
+/// chat can leave [unlocked] when its screen closes and still stay in the
+/// folder until the folder itself closes.
 class ChatLockSessionState {
   const ChatLockSessionState({
     this.unlocked = const {},
+    this.folderVisible = const {},
     this.folderOpen = false,
   });
 
   final Set<String> unlocked;
+  final Set<String> folderVisible;
   final bool folderOpen;
 
   bool isOpen(String conversationId) => unlocked.contains(conversationId);
@@ -42,6 +49,7 @@ class ChatLockSession extends Notifier<ChatLockSessionState> {
 
   void unlockAll(Iterable<String> ids) => state = ChatLockSessionState(
     unlocked: {...state.unlocked, ...ids},
+    folderVisible: state.folderVisible,
     folderOpen: state.folderOpen,
   );
 
@@ -50,13 +58,24 @@ class ChatLockSession extends Notifier<ChatLockSessionState> {
     _set(
       ChatLockSessionState(
         unlocked: {...state.unlocked}..remove(conversationId),
+        folderVisible: state.folderVisible,
         folderOpen: state.folderOpen,
       ),
     );
   }
 
-  void openFolder() =>
-      state = ChatLockSessionState(unlocked: state.unlocked, folderOpen: true);
+  /// Opens the locked-chats folder showing only [ids], and unlocks them so a
+  /// tap reaches the chat without a second prompt. Password unlocks pass
+  /// every chat that accepted that password; phone lock passes every
+  /// device-lock chat.
+  void openFolderWith(Iterable<String> ids) {
+    final visible = ids.toSet();
+    state = ChatLockSessionState(
+      unlocked: {...state.unlocked, ...visible},
+      folderVisible: visible,
+      folderOpen: true,
+    );
+  }
 
   /// Leaving the list closes everything it opened.
   void closeFolder() => relockAll();

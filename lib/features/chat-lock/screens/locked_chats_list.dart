@@ -12,17 +12,23 @@ import '../../messages/data/models/chat_models.dart';
 import '../../messages/nickname/contact_nickname_provider.dart';
 import '../../messages/nickname/nickname_title.dart';
 import '../../messages/providers/chat_provider.dart';
-import '../providers/chat_locks_provider.dart';
+import '../providers/chat_lock_session.dart';
 
 /// The opened locked-chats list. Rows carry no message preview: the list
 /// being open says who, a chat being open says what.
+///
+/// Only chats revealed by the unlock that opened the folder — matching
+/// password, or phone-lock chats after the phone lock. Another password's
+/// chat is not named here.
 class LockedChatsList extends ConsumerWidget {
   const LockedChatsList({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     String t(String key) => AppTranslations.translate(context, ref, key);
-    final ids = ref.watch(chatLocksProvider).keys.toSet();
+    final ids = ref.watch(
+      chatLockSessionProvider.select((s) => s.folderVisible),
+    );
     final state = ref.watch(chatProvider);
     final nicknames = ref.watch(contactNicknamesProvider);
     final chats = <ChatConversation>[
