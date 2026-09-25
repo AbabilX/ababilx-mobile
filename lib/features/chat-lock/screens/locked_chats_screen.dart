@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../shared/widgets/app_toast.dart';
 import '../data/chat_lock_index.dart';
 import '../native/device_auth.dart';
 import '../providers/chat_lock_session.dart';
@@ -15,10 +16,12 @@ import 'locked_chats_unlock.dart';
 /// title in the chat list and nowhere else — the main list does not show a
 /// folder row, so nothing on screen says locked chats exist.
 ///
-/// Opens with the phone's own lock (revealing every phone-lock chat), or
-/// with a chat password (revealing every chat that accepted that password —
-/// never one locked under a different password). Leaving the list locks
-/// everything it opened again.
+/// The person picks phone lock or a chat password first; only then does a
+/// bottom sheet (and, for phone lock, the system prompt) appear. Opens with
+/// the phone's own lock (revealing every phone-lock chat), or with a chat
+/// password (revealing every chat that accepted that password — never one
+/// locked under a different password). Leaving the list locks everything it
+/// opened again.
 class LockedChatsScreen extends ConsumerStatefulWidget {
   const LockedChatsScreen({super.key});
 
@@ -30,7 +33,6 @@ class _LockedChatsScreenState extends ConsumerState<LockedChatsScreen> {
   late final ChatLockSession _session;
   bool _phoneLock = false;
   bool _checking = false;
-  String? _error;
   int _wrong = 0;
   DateTime? _waitUntil;
 
@@ -40,12 +42,11 @@ class _LockedChatsScreenState extends ConsumerState<LockedChatsScreen> {
   void initState() {
     super.initState();
     _session = ref.read(chatLockSessionProvider.notifier);
+    // Availability only — never call DeviceAuth here. The system prompt
+    // must wait until the person picks "Phone lock" in the sheet.
     DeviceAuth.available().then((available) {
       if (!mounted) return;
       setState(() => _phoneLock = available);
-      if (available && !ref.read(chatLockSessionProvider).folderOpen) {
-        _device();
-      }
     });
   }
 
@@ -56,10 +57,13 @@ class _LockedChatsScreenState extends ConsumerState<LockedChatsScreen> {
   }
 
   Future<void> _device() async {
+    setState(() => _checking = true);
     final result = await DeviceAuth.authenticate(
       title: _t('chatlock_prompt_title'),
     );
-    if (!mounted || result != DeviceAuthResult.ok) return;
+    if (!mounted) return;
+    setState(() => _checking = false);
+    if (result != DeviceAuthResult.ok) return;
     final locks = ref.read(chatLocksProvider);
     // Phone lock reveals only chats that use the phone lock — never a
     // password chat, or typing any one password would be pointless.
@@ -69,14 +73,16 @@ class _LockedChatsScreenState extends ConsumerState<LockedChatsScreen> {
     ]);
   }
 
-  Future<void> _password(String password) async {
+  /// True when at least one chat accepted [password].
+  Future<bool> _password(String password) async {
     final wait = _waitUntil;
     if (wait != null && DateTime.now().isBefore(wait)) {
-      setState(() => _error = _t('chatlock_pw_wait'));
-      return;
+      if (mounted) {
+        showAppToast(context, _t('chatlock_pw_wait'), isError: true);
+      }
+      return false;
     }
-    if (password.isEmpty || _checking) return;
-    setState(() => _checking = true);
+    if (password.isEmpty) return false;
     final locks = ref.read(chatLocksProvider);
     final notifier = ref.read(chatLocksProvider.notifier);
     // Every chat that accepted this password — two chats with the same
@@ -88,20 +94,16 @@ class _LockedChatsScreenState extends ConsumerState<LockedChatsScreen> {
         matched.add(e.key);
       }
     }
-    if (!mounted) return;
+    if (!mounted) return false;
     if (matched.isNotEmpty) {
       _session.openFolderWith(matched);
-      setState(() => _checking = false);
-      return;
+      return true;
     }
     _wrong++;
     if (_wrong % 5 == 0) {
       _waitUntil = DateTime.now().add(const Duration(seconds: 30));
     }
-    setState(() {
-      _checking = false;
-      _error = _t('chatlock_pw_wrong');
-    });
+    return false;
   }
 
   @override
@@ -114,7 +116,6 @@ class _LockedChatsScreenState extends ConsumerState<LockedChatsScreen> {
           : LockedChatsUnlock(
               phoneLock: _phoneLock,
               checking: _checking,
-              error: _error,
               onPhoneLock: _device,
               onPassword: _password,
             ),

@@ -624,9 +624,15 @@ class AppTranslations {
       'chatlock_forgot': 'Forgot password?',
       'chatlock_folder_title': 'Locked chats',
       'chatlock_folder_body':
-          'Unlock with your phone lock, or a chat password — only chats that match open.',
+          'Choose how to unlock. Only chats that match will open.',
       'chatlock_use_phone_lock': 'Use phone lock',
       'chatlock_folder_password': 'Chat password',
+      'chatlock_folder_password_sub':
+          'Opens every chat locked with that password',
+      'chatlock_folder_phone_sheet_body':
+          'Unlock chats that use this phone\'s fingerprint, face or screen lock.',
+      'chatlock_folder_password_sheet_body':
+          'Enter a locked chat\'s password. Only chats with that password open.',
       'chatlock_folder_empty':
           'No locked chats. Open a chat\'s info and turn on Chat lock.',
       'chatlock_row_locked': 'Locked chat',
@@ -1597,9 +1603,15 @@ class AppTranslations {
       'chatlock_forgot': 'পাসওয়ার্ড ভুলে গেছেন?',
       'chatlock_folder_title': 'লক করা চ্যাট',
       'chatlock_folder_body':
-          'ফোন লক দিয়ে, অথবা চ্যাটের পাসওয়ার্ড দিয়ে আনলক করুন — যেগুলোর পাসওয়ার্ড মিলে শুধু সেগুলো খুলবে।',
+          'কীভাবে আনলক করবেন বেছে নিন। যেগুলোর মিল আছে শুধু সেগুলো খুলবে।',
       'chatlock_use_phone_lock': 'ফোন লক ব্যবহার করুন',
       'chatlock_folder_password': 'চ্যাট পাসওয়ার্ড',
+      'chatlock_folder_password_sub':
+          'যে পাসওয়ার্ড দিয়ে লক, সেই চ্যাটগুলো খুলবে',
+      'chatlock_folder_phone_sheet_body':
+          'এই ফোনের ফিঙ্গারপ্রিন্ট, ফেস বা স্ক্রিন লক দিয়ে লক করা চ্যাট খুলুন।',
+      'chatlock_folder_password_sheet_body':
+          'লক করা চ্যাটের পাসওয়ার্ড দিন। যেগুলোর পাসওয়ার্ড মিলে শুধু সেগুলো খুলবে।',
       'chatlock_folder_empty':
           'কোনো লক করা চ্যাট নেই। চ্যাটের তথ্যে গিয়ে চ্যাট লক চালু করুন।',
       'chatlock_row_locked': 'লক করা চ্যাট',
