@@ -525,6 +525,48 @@ Traps:
 - Activity-scoped, like `OngoingCallChannel` and for the same reason: a
   connected call lives in the Flutter isolate.
 
+## A cheek at the ear presses nothing (2026-09-25)
+
+Reported from one phone only: the call ended when it went to the ear, and
+taking it away rang the other person again. The system's proximity lock
+blanked the panel, but that handset kept delivering touches (virtual /
+ultrasonic proximity sensors do this), so the cheek pressed Hang up, the app
+returned to the chat, and the ear leaving pressed the header's Call.
+
+`ProximityTouchGuard.kt`, owned by `CallScreenLock` and fed by
+`MainActivity.dispatchTouchEvent`:
+
+- Runs exactly when the proximity wake lock is wanted (connected, earpiece, no
+  headset). While the sensor says NEAR every touch is dropped, and a gesture
+  Flutter already holds gets a synthetic `ACTION_CANCEL`, so a cheek that
+  landed just before the sensor tripped cannot finish its tap.
+- Blocks for 600 ms after FAR — the panel wakes before the ear has left it.
+- **Outlives the call while the phone is still at the ear** (same moment
+  `RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY` gives the screen back), capped at 30 s
+  so a sensor stuck on NEAR cannot lock the app.
+- On a phone whose system already drops touches at the ear it changes nothing
+  but that 600 ms. Do not widen it to ringing or speaker calls.
+
+## The ongoing-call timer counts from the connect, not the post (2026-09-25)
+
+`setUsesChronometer` counts from the notification's `when`, which defaults to
+the moment it is built — and `OngoingCallSync` re-posts on every resume (the
+shade closing is one). So the timer restarted at 00:00 each time. Dart now
+sends `connectedAt` (DM: `VoiceCallState.connectedAt`; group: first time this
+device saw it connected) and `OngoingCallNotification` calls `setWhen`.
+
+## A first call cannot hang on setup (2026-09-25)
+
+A fresh install could sit on "Exchanging security keys…" until restarted.
+- **Identity comes from the call row** (`providers/call_identity.dart`): the
+  caller id on start, the callee id on accept, the callee on `call.incoming`.
+  The profile's first-ever load has an 8 s timeout and nothing retries it; an
+  empty `currentUserId` made `outgoing` false, so the caller never offered.
+- **Permission requests are bounded** (`call_permissions.dart`): a request
+  that throws "already running" or never returns falls back to the status.
+- **The connect watchdog is armed on entering `connecting`** (50 s), not only
+  after `prepare()`; prepare re-arms the usual 35 s.
+
 ## The 1:1 call screens are a wallpaper + glass overlay
 
 `IncomingCallView` and `ConnectedCallBody` share one design language:
