@@ -9,6 +9,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.PowerManager
 import android.util.Log
+import android.view.MotionEvent
 import android.view.WindowManager
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -51,6 +52,11 @@ class CallScreenLock(private val activity: Activity) {
 
     private var channel: MethodChannel? = null
     private var lock: PowerManager.WakeLock? = null
+
+    /** Drops touches at the ear, for phones whose system does not. */
+    private val touchGuard = ProximityTouchGuard(activity) {
+        activity.window.superDispatchTouchEvent(it)
+    }
     private var deviceCallback: AudioDeviceCallback? = null
 
     /** Dart says a call is connected and routed to the earpiece. */
@@ -80,7 +86,12 @@ class CallScreenLock(private val activity: Activity) {
         channel = null
         setWanted(false)
         setKeepScreenOn(false)
+        touchGuard.stop()
     }
+
+    /** Every touch on the Activity, routed through [ProximityTouchGuard]. */
+    fun dispatchTouch(event: MotionEvent, deliver: (MotionEvent) -> Boolean): Boolean =
+        touchGuard.dispatch(event, deliver)
 
     private fun setWanted(next: Boolean) {
         if (wanted == next) return
@@ -100,7 +111,13 @@ class CallScreenLock(private val activity: Activity) {
      * plugged in mid-call gives the screen back.
      */
     private fun apply() {
-        if (wanted && !headsetConnected()) acquire() else release()
+        if (wanted && !headsetConnected()) {
+            acquire()
+            touchGuard.start()
+        } else {
+            release()
+            touchGuard.stopWhenClear()
+        }
     }
 
     // A call has no bounded length, so a timeout would either cut the lock

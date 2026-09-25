@@ -75,15 +75,19 @@ class OngoingCallChannel(private val activity: Activity) {
                 val subtitle = call.argument<String>("subtitle") ?: "Ongoing call"
                 val sharing = call.argument<Boolean>("screenSharing") ?: false
                 val connected = call.argument<Boolean>("connected") ?: true
+                // Epoch ms; a Dart int arrives as Integer or Long by size.
+                val connectedAt = call.argument<Number>("connectedAt")?.toLong() ?: 0L
                 val requestId = nextRequestId.incrementAndGet()
                 OngoingCallBridge.awaitForeground(requestId, result)
                 val queued = if (call.method == "start") {
                     OngoingCallService.start(
                         activity, requestId, callId, title, subtitle, sharing, connected,
+                        connectedAt,
                     )
                 } else {
                     OngoingCallService.update(
                         activity, requestId, callId, title, subtitle, sharing, connected,
+                        connectedAt,
                     )
                 }
                 if (!queued) {

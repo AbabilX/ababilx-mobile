@@ -33,6 +33,7 @@ class AndroidOngoingCall {
   static String _subtitle = 'Ongoing call';
   static bool _screenSharing = false;
   static bool _connected = true;
+  static int _connectedAtMs = 0;
   static bool _running = false;
 
   /// Notification presses. Nothing is routed natively — only Dart knows
@@ -67,11 +68,16 @@ class AndroidOngoingCall {
   /// ringing has nothing to count. The CallKit plugin used to post its own
   /// "calling" entry for that phase and no longer does (see
   /// `AndroidCallParams`), so this covers it.
+  ///
+  /// [connectedAt] is when the call connected. The chronometer counts from it;
+  /// without it Android counts from the moment the notification was built, and
+  /// every re-post restarted the timer at 00:00.
   static Future<bool> start({
     required String callId,
     required String title,
     String subtitle = 'Ongoing call',
     bool connected = true,
+    DateTime? connectedAt,
   }) async {
     if (!_supported) return false;
     final sameCall = _running && callId == _callId;
@@ -79,6 +85,7 @@ class AndroidOngoingCall {
     _title = title;
     _subtitle = subtitle;
     _connected = connected;
+    _connectedAtMs = connected ? connectedAt?.millisecondsSinceEpoch ?? 0 : 0;
     // Only a different call resets the share flag; a phase change on the same
     // call must not drop the media-projection type mid-share.
     if (!sameCall) _screenSharing = false;
@@ -108,6 +115,7 @@ class AndroidOngoingCall {
     _running = false;
     _screenSharing = false;
     _connected = true;
+    _connectedAtMs = 0;
     _callId = '';
     try {
       await _methods.invokeMethod<bool>('stop');
@@ -126,6 +134,7 @@ class AndroidOngoingCall {
         'subtitle': _screenSharing ? 'Sharing your screen' : _subtitle,
         'screenSharing': _screenSharing,
         'connected': _connected,
+        'connectedAt': _connectedAtMs,
       });
       _running = ready == true;
       return _running;

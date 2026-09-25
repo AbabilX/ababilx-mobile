@@ -165,16 +165,25 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       _restoringDraft = false;
       return;
     }
-    if (_draftOwnerId.isEmpty) {
-      final ownerId = await ref.read(chatProvider.notifier).localUserId();
-      if (!mounted) return;
-      _draftOwnerId = ownerId;
+    final String draft;
+    try {
+      if (_draftOwnerId.isEmpty) {
+        final ownerId = await ref.read(chatProvider.notifier).localUserId();
+        if (!mounted) return;
+        _draftOwnerId = ownerId;
+      }
+      draft = await _draftStore.read(
+        _draftOwnerId,
+        widget.conversationId,
+        parentId: widget.parentId,
+      );
+    } catch (_) {
+      // A draft that cannot be read is lost, not a reason to keep this
+      // composer in "restoring" for its whole life — that silenced typing
+      // indicators (and draft saving) until the chat was reopened.
+      if (mounted) _restoringDraft = false;
+      return;
     }
-    final draft = await _draftStore.read(
-      _draftOwnerId,
-      widget.conversationId,
-      parentId: widget.parentId,
-    );
     if (!mounted) return;
     _restoringDraft = false;
     // Never replace text the user entered while the disk read was in flight.

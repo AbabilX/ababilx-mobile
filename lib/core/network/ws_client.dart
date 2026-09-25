@@ -103,16 +103,21 @@ class WsClient {
     if (_closed || _connecting || _connected) return;
     _connecting = true;
 
-    final token = await _storage.readJwt();
+    String? token;
+    try {
+      token = await _storage.readJwt();
+    } catch (_) {
+      // Throwing past here would leave `_connecting` true for good, and every
+      // later connect() and kick() would return without doing anything — no
+      // socket, and no calls or chat events, until the app was restarted.
+      token = null;
+    }
     if (token == null || token.isEmpty) {
       _connecting = false;
       // Stale/missing access token — refresh then retry once.
-      if (!retriedAuth && _ensureAuth != null) {
-        final ok = await _ensureAuth.call();
-        if (ok) {
-          await _connectOnce(retriedAuth: true);
-          return;
-        }
+      if (!retriedAuth && await _refreshAuth()) {
+        await _connectOnce(retriedAuth: true);
+        return;
       }
       _scheduleReconnect();
       return;
@@ -153,14 +158,23 @@ class WsClient {
       _connecting = false;
       _connected = false;
       // 401 / upgrade failure often means expired JWT — refresh once, then retry.
-      if (!retriedAuth && _ensureAuth != null) {
-        final ok = await _ensureAuth.call();
-        if (ok && !_closed) {
-          await _connectOnce(retriedAuth: true);
-          return;
-        }
+      if (!retriedAuth && await _refreshAuth() && !_closed) {
+        await _connectOnce(retriedAuth: true);
+        return;
       }
       _scheduleReconnect();
+    }
+  }
+
+  /// A refresh that throws counts as a failed one: the retry loop has to keep
+  /// going either way, or the socket stays down until the app restarts.
+  Future<bool> _refreshAuth() async {
+    final ensureAuth = _ensureAuth;
+    if (ensureAuth == null) return false;
+    try {
+      return await ensureAuth();
+    } catch (_) {
+      return false;
     }
   }
 

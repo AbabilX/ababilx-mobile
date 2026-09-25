@@ -59,6 +59,12 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
   /// forever.
   bool _clearedOrphan = false;
 
+  /// When this device first saw the group call connected. `GroupCall` carries
+  /// no join time of its own, and the chronometer needs one that does not move
+  /// each time the notification is restated.
+  String _groupCallId = '';
+  DateTime? _groupConnectedAt;
+
   @override
   void initState() {
     super.initState();
@@ -159,11 +165,16 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
         dmCall.peerName(dm.currentUserId),
         dmSubtitle,
         connected: ongoingCallUsesChronometer(dm.phase),
+        connectedAt: dm.connectedAt,
       );
       return;
     }
     if (group.phase == GroupCallPhase.connected && group.call != null) {
       final call = group.call!;
+      if (_groupCallId != call.id || _groupConnectedAt == null) {
+        _groupCallId = call.id;
+        _groupConnectedAt = DateTime.now();
+      }
       _show(
         call.id,
         call.conversationName?.trim().isNotEmpty == true
@@ -171,9 +182,12 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
             : 'Group call',
         'Ongoing group call',
         connected: true,
+        connectedAt: _groupConnectedAt,
       );
       return;
     }
+    _groupCallId = '';
+    _groupConnectedAt = null;
     if (_shownKey.isEmpty && _clearedOrphan) return;
     _clearedOrphan = true;
     _clearNotificationState();
@@ -200,8 +214,10 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     String title,
     String subtitle, {
     required bool connected,
+    DateTime? connectedAt,
   }) {
-    final key = '$callId|$title|$subtitle|$connected';
+    final since = connectedAt?.millisecondsSinceEpoch ?? 0;
+    final key = '$callId|$title|$subtitle|$connected|$since';
     if (_shownKey == key || _pendingKey == key) return;
     _notificationRetry?.cancel();
     _notificationRetry = null;
@@ -215,6 +231,7 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
         title: title,
         subtitle: subtitle,
         connected: connected,
+        connectedAt: connectedAt,
       ),
     );
   }
@@ -226,12 +243,14 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     required String title,
     required String subtitle,
     required bool connected,
+    DateTime? connectedAt,
   }) async {
     final ready = await AndroidOngoingCall.start(
       callId: callId,
       title: title,
       subtitle: subtitle,
       connected: connected,
+      connectedAt: connectedAt,
     );
     if (!mounted || epoch != _notificationEpoch) return;
     _pendingKey = '';

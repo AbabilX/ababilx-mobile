@@ -6,13 +6,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/network/ws_client.dart';
 import '../../messages/data/models/chat_conversation.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../audio/call_audio_route.dart';
 import '../call_lifecycle.dart';
+import '../call_permissions.dart';
 import '../callkit_ended_suppress.dart';
 import '../data/models/voice_call.dart';
 import '../data/models/voice_call_session.dart';
@@ -32,6 +32,7 @@ import '../voice_call_log.dart';
 import '../voice_call_ringable.dart';
 import '../webrtc/voice_peer_engine.dart';
 import '../webrtc/voice_reconnect_controller.dart';
+import 'call_identity.dart';
 import 'voice_call_state.dart';
 
 export 'voice_call_state.dart';
@@ -72,6 +73,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   final Set<String> _remoteRingingCallIds = {};
   final CallKitEndedSuppress _suppressCallKitEnded = CallKitEndedSuppress();
 
+  /// Watchdog window from entering `connecting` until the engine is prepared.
+  static const _setupBudget = Duration(seconds: 50);
+
   VoiceCallRepository get _repository => ref.read(voiceCallRepositoryProvider);
   WsClient get _ws => ref.read(wsClientProvider);
 
@@ -103,11 +107,33 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     );
     await _ws.connect();
     unawaited(prewarmCallPermissions());
+    unawaited(_ensureIdentity());
     // Not `_recoverNativeCall` alone: the socket connected above replays
     // `call.incoming` for a call still ringing on the server, so by now state
     // may already hold it as ringing — and recovery skips an active call. The
     // sync adopts an Accept CallKit recorded before this engine existed.
     await syncFromNativeIncoming();
+  }
+
+  /// The profile's first load on a fresh install can fail, and nothing retries
+  /// it. Calls take their own side from the call row now, but the names on
+  /// the call screen and the CallKit surface still come from this id.
+  Future<void> _ensureIdentity() async {
+    if (state.currentUserId.isNotEmpty) return;
+    try {
+      final me = await ref.read(profileProvider.future);
+      if (me.id.isNotEmpty && state.currentUserId.isEmpty) {
+        state = state.copyWith(currentUserId: me.id);
+      }
+      return;
+    } catch (_) {
+      // Fall through to a fresh read.
+    }
+    try {
+      await ref.read(profileProvider.notifier).refresh();
+    } catch (_) {
+      // Offline: the call row still supplies the id when a call starts.
+    }
   }
 
   Future<void> shutdown() async {
@@ -188,7 +214,16 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
             ? session.call.copyWith(calleeRingingAt: DateTime.now())
             : session.call,
         iceServers: session.iceServers,
-        currentUserId: state.currentUserId,
+        // The account that placed the call is its caller, by definition. The
+        // profile is not a safe source here: on a fresh install its first load
+        // can fail and is never retried, and an empty id made `outgoing` false
+        // — so this phone never sent the offer and the call sat on
+        // "Connecting…" until a restart loaded the cached profile.
+        currentUserId: callIdentity(
+          state.currentUserId,
+          session.call.callerId,
+          source: 'start',
+        ),
       );
       await AndroidCallUi.startOutgoing(session.call, state.currentUserId);
       if (operation != _operation) {
@@ -351,8 +386,17 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         phase: VoiceCallPhase.connecting,
         call: session.call,
         iceServers: session.iceServers,
-        currentUserId: state.currentUserId,
+        // Only the callee can accept, so the server just named this account.
+        currentUserId: callIdentity(
+          state.currentUserId,
+          session.call.calleeId,
+          source: 'accept',
+        ),
       );
+      // Armed before the engine is prepared, not after: a prepare that never
+      // returns (audio session, microphone) used to leave the call on
+      // "Connecting…" with no timeout at all.
+      _startConnectWatchdog(call.id, budget: _setupBudget);
       // Prefer marking CallKit active over endCall — endCall emits ACTION_CALL_ENDED.
       _suppressCallKitEnded.arm(call.id, source: 'accept.api.ok');
       try {
@@ -412,7 +456,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       final call = session.call;
       if (session.canControl &&
           call.status == 'accepted' &&
-          call.calleeId == state.currentUserId) {
+          (state.currentUserId.isEmpty ||
+              call.calleeId == state.currentUserId)) {
         voiceCallLog('accept.reconciled', callId: callId, phase: 'connecting');
         return session;
       }
@@ -709,7 +754,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     state = VoiceCallState(
       phase: VoiceCallPhase.incomingRinging,
       call: call,
-      currentUserId: state.currentUserId,
+      // `call.incoming` is only ever sent to the callee.
+      currentUserId: state.currentUserId.isEmpty
+          ? call.calleeId
+          : state.currentUserId,
     );
     // Accept may already have been pressed on CallKit: the app was started
     // (or brought forward) BY that press, and this event is the socket or a
@@ -812,6 +860,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         iceServers: ice,
       );
       _ringTimer?.cancel();
+      _startConnectWatchdog(call.id, budget: _setupBudget);
       voiceCallLog(
         'engine.prepare.begin',
         callId: call.id,
@@ -1053,9 +1102,16 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
   /// Never leave a call stuck on "Connecting…" when the peer never negotiates
   /// (lost signalling, no offer, ICE blocked by a restrictive network).
-  void _startConnectWatchdog(String callId) {
+  ///
+  /// [budget] is longer while the engine is still being prepared, which can
+  /// include a permission dialog; `_prepareEngine` re-arms it with the normal
+  /// window once media setup is done.
+  void _startConnectWatchdog(
+    String callId, {
+    Duration budget = const Duration(seconds: 35),
+  }) {
     _connectWatchdog?.cancel();
-    _connectWatchdog = Timer(const Duration(seconds: 35), () {
+    _connectWatchdog = Timer(budget, () {
       if (state.call?.id != callId || _wasFinished(callId)) return;
       if (state.phase != VoiceCallPhase.connecting) return;
       voiceCallLog(
@@ -1627,73 +1683,19 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
   bool _wasFinished(String callId) => _finishedCallIds.contains(callId);
 
-  /// Microphone must be granted before WebRTC capture.
-  ///
-  /// Requesting needs a foreground Activity; a CallKit accept from the lock
-  /// screen would otherwise stall. Already-granted is checked first so the
-  /// common path never touches the permission dialog.
-  Future<void> _ensureCallPermissions() async {
-    if (await Permission.microphone.isGranted) return;
-
-    final resumed =
-        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
-    if (!resumed) {
-      voiceCallLog(
-        'permission.mic.blocked',
-        callId: state.call?.id,
-        phase: _phaseName,
-        reason: 'not_granted_and_app_not_resumed',
-      );
-      throw StateError('microphone permission denied');
-    }
-
-    final microphone = await Permission.microphone.request();
-    voiceCallLog(
-      'permission.mic',
-      callId: state.call?.id,
-      reason: microphone.name,
-    );
-    if (!microphone.isGranted) {
-      throw StateError('microphone permission denied');
-    }
-    // Bluetooth is optional; a denied request falls back to earpiece/speaker.
-    await Permission.bluetoothConnect.request();
-  }
+  Future<void> _ensureCallPermissions() => CallPermissions.ensureMicrophone(
+    callId: state.call?.id,
+    phase: _phaseName,
+  );
 
   /// Camera is optional on a video call: a refusal degrades to audio rather
   /// than failing the call, so this only throws when asked from a toggle.
-  Future<bool> _ensureCameraPermission() async {
-    if (await Permission.camera.isGranted) return true;
-    final resumed =
-        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
-    if (!resumed) {
-      voiceCallLog(
-        'permission.camera.blocked',
-        callId: state.call?.id,
-        reason: 'app_not_resumed',
-      );
-      return false;
-    }
-    final status = await Permission.camera.request();
-    voiceCallLog(
-      'permission.camera',
-      callId: state.call?.id,
-      reason: status.name,
-    );
-    return status.isGranted;
-  }
+  Future<bool> _ensureCameraPermission() =>
+      CallPermissions.ensureCamera(callId: state.call?.id);
 
   /// Ask for microphone up-front so an incoming call can be answered instantly,
   /// including from the lock screen where a dialog cannot be shown.
-  Future<void> prewarmCallPermissions() async {
-    try {
-      if (await Permission.microphone.isGranted) return;
-      final status = await Permission.microphone.request();
-      voiceCallLog('permission.mic.prewarm', reason: status.name);
-    } catch (_) {
-      // Non-fatal: accept-time request remains the fallback.
-    }
-  }
+  Future<void> prewarmCallPermissions() => CallPermissions.prewarm();
 
   Future<void> _resetResources() async {
     _remoteRingingCallIds.clear();

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.view.MotionEvent
 import androidx.core.view.WindowCompat
 import com.ababilx.app.mediasend.MediaSendChannel
 import com.ababilx.call_ringer.CallRinger
@@ -148,6 +149,10 @@ class MainActivity : FlutterActivity() {
         shareIntake.handleIntent(intent, initial = false)
         ongoingCall.handleIntent(intent)
     }
+
+    /** A cheek at the ear must not press the call screen — see [ProximityTouchGuard]. */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean =
+        callScreenLock.dispatchTouch(ev) { super.dispatchTouchEvent(it) }
 
     /**
      * Home pressed. [PipController] shrinks the window only while a call is on

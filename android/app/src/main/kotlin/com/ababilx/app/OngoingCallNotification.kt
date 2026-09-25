@@ -65,6 +65,7 @@ object OngoingCallNotification {
         title: String,
         subtitle: String,
         connected: Boolean,
+        connectedAt: Long = 0L,
     ): android.app.Notification {
         ensureChannel(context)
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -80,6 +81,11 @@ object OngoingCallNotification {
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(returnToCallIntent(context, callId))
+        // The chronometer counts from `when`, which defaults to the moment the
+        // notification is BUILT. Every re-post (each return to the app, each
+        // phase change) rebuilt it, so the timer restarted from 00:00 and the
+        // status-bar call chip never showed the real duration.
+        if (connected && connectedAt > 0L) builder.setWhen(connectedAt)
 
         val hangUp = hangUpIntent(context, callId)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
