@@ -7,6 +7,7 @@ import 'package:ababilx/shared/widgets/app_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'no_typing_override.dart';
 
 /// A group, so the layout shows what only a group shows: the sender's name
 /// over the first bubble of a run and their avatar under the last. A DM draws
@@ -150,7 +151,10 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [chatProvider.overrideWith(_ClusterChatNotifier.new)],
+        overrides: [
+          ...noTypingOverrides,
+          chatProvider.overrideWith(_ClusterChatNotifier.new),
+        ],
         child: MaterialApp(
           home: Scaffold(
             body: MessageList(
@@ -183,7 +187,10 @@ void main() {
     addTearDown(controller.dispose);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [chatProvider.overrideWith(_ClusterChatNotifier.new)],
+        overrides: [
+          ...noTypingOverrides,
+          chatProvider.overrideWith(_ClusterChatNotifier.new),
+        ],
         child: MaterialApp(
           home: Scaffold(
             body: MessageList(
@@ -225,7 +232,10 @@ void main() {
     addTearDown(controller.dispose);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [chatProvider.overrideWith(_ClusterChatNotifier.new)],
+        overrides: [
+          ...noTypingOverrides,
+          chatProvider.overrideWith(_ClusterChatNotifier.new),
+        ],
         child: MaterialApp(
           home: Scaffold(
             body: MessageList(

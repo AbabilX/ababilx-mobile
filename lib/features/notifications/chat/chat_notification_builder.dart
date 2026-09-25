@@ -94,3 +94,29 @@ String? chatConversationTitle({
   required bool isGroup,
   required String pushTitle,
 }) => isGroup && pushTitle.isNotEmpty ? pushTitle : null;
+
+/// The tray entry for a chat whose notifications hide their contents (the
+/// user's choice, or a locked chat): no MessagingStyle — it would carry the
+/// sender as a person — no picture and no Reply, which would put the thread
+/// back in the shade. Mark read stays: it reveals nothing.
+AndroidNotificationDetails buildHiddenChatNotificationDetails({
+  required bool alertOnce,
+}) => AndroidNotificationDetails(
+  'chat',
+  'Chat',
+  channelDescription: 'Direct messages and mentions',
+  importance: Importance.high,
+  priority: Priority.high,
+  category: AndroidNotificationCategory.message,
+  icon: 'ic_stat_ababilx',
+  color: const Color(0xFF6366F1),
+  groupKey: chatNotificationGroupKey,
+  onlyAlertOnce: alertOnce,
+  actions: const [
+    AndroidNotificationAction(
+      chatMarkReadActionId,
+      'Mark read',
+      semanticAction: SemanticAction.markAsRead,
+    ),
+  ],
+);

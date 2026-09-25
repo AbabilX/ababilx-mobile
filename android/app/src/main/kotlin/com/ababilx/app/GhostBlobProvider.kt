@@ -126,6 +126,16 @@ class GhostBlobProvider : ContentProvider() {
       return seekableDescriptor(context, blob.bytes)
     }
 
+    /**
+     * Overwrites and forgets the named blobs only. A locked chat releases its
+     * files this way when it locks again, without touching a Ghost session.
+     */
+    fun drop(uris: List<String>) {
+      uris.forEach { uri ->
+        blobs.remove(Uri.parse(uri).lastPathSegment ?: "")?.bytes?.fill(0)
+      }
+    }
+
     /** The burn: overwrite every array, then forget it. */
     fun clear() {
       val held = blobs.values.toList()

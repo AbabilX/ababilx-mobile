@@ -66,6 +66,8 @@ class ChatConversation extends Equatable {
     this.peerLeft = false,
     this.isSelf = false,
     this.peerPrivacy = false,
+    this.receiptsHidden = false,
+    this.myReceiptsHidden = false,
     this.canMessage = true,
     this.lockReason = '',
     this.plaintextUntilKeyed = false,
@@ -128,6 +130,13 @@ class ChatConversation extends Equatable {
   /// Live flips arrive as `chat.peer_privacy`; read it through
   /// `peerPrivacyProvider`, which folds those in.
   final bool peerPrivacy;
+
+  /// Some member of this DM switched ticks off (server 0159), so neither side
+  /// is shown delivered/read and this phone draws no ticks at all.
+  /// [myReceiptsHidden] is this account's own switch. Live changes arrive as
+  /// `chat.receipts_hidden`; read through `conversationTicksHiddenProvider`.
+  final bool receiptsHidden;
+  final bool myReceiptsHidden;
   final bool canMessage;
 
   /// Why the composer is closed. Empty when [canMessage] is true.
@@ -316,6 +325,8 @@ class ChatConversation extends Equatable {
       peerLeft: json['peer_left'] as bool? ?? false,
       isSelf: json['is_self'] as bool? ?? false,
       peerPrivacy: json['peer_privacy'] as bool? ?? false,
+      receiptsHidden: json['receipts_hidden'] as bool? ?? false,
+      myReceiptsHidden: json['my_receipts_hidden'] as bool? ?? false,
       canMessage: json['can_message'] as bool? ?? true,
       lockReason: _jsonString(json['lock_reason']) ?? '',
       plaintextUntilKeyed: json['plaintext_until_keyed'] as bool? ?? false,
@@ -423,6 +434,8 @@ class ChatConversation extends Equatable {
     peerLeft: peerLeft,
     isSelf: isSelf,
     peerPrivacy: peerPrivacy,
+    receiptsHidden: receiptsHidden,
+    myReceiptsHidden: myReceiptsHidden,
     canMessage: canMessage,
     lockReason: lockReason,
     plaintextUntilKeyed: plaintextUntilKeyed,
@@ -459,6 +472,8 @@ class ChatConversation extends Equatable {
     scope,
     isSelf,
     peerPrivacy,
+    receiptsHidden,
+    myReceiptsHidden,
     canMessage,
     lockReason,
     plaintextUntilKeyed,

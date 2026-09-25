@@ -2,6 +2,7 @@ import 'package:ababilx/features/messages/chat-details/avatar_preview.dart';
 import 'package:ababilx/features/messages/chat-details/conversation_details_screen.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/features/messages/providers/chat_provider.dart';
+import 'package:ababilx/shared/widgets/image_preview_top_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -83,7 +84,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.byTooltip('Close'), findsOneWidget);
+    expect(find.byType(ImagePreviewTopBar), findsOneWidget);
     expect(find.text('Full Team.jpg'), findsOneWidget);
   });
 
@@ -112,7 +113,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.byKey(const ValueKey('header-avatar-preview')), findsNothing);
-    expect(find.byTooltip('Close'), findsNothing);
+    expect(find.byType(ImagePreviewTopBar), findsNothing);
   });
 
   testWidgets('tapping a member photo opens the viewer, not the sheet', (
@@ -153,7 +154,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.byTooltip('Close'), findsOneWidget);
+    expect(find.byType(ImagePreviewTopBar), findsOneWidget);
     expect(find.text('View profile'), findsNothing);
     expect(find.text('Badhon.jpg'), findsOneWidget);
   });

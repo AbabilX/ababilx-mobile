@@ -74,13 +74,16 @@ void main() {
     );
   });
 
-  test('queries shorter than two characters match nothing', () {
+  // One character is a search since 711e9ef (instant feedback); only a
+  // blank query matches nothing.
+  test('one character matches, a blank query matches nothing', () {
+    final chats = [_dm(id: '1', name: 'Junayed')];
     expect(
-      matchingSearchConversations(
-        [_dm(id: '1', name: 'Junayed')],
-        'J',
-        nicknames: nicknames,
-      ),
+      matchingSearchConversations(chats, 'J', nicknames: nicknames),
+      hasLength(1),
+    );
+    expect(
+      matchingSearchConversations(chats, '  ', nicknames: nicknames),
       isEmpty,
     );
   });

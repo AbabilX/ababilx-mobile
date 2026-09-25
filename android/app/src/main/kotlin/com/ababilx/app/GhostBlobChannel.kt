@@ -50,6 +50,10 @@ class GhostBlobChannel(private val activity: Activity) {
             pdfs.close(call.argument<String>("id"))
             result.success(null)
           }
+          "drop" -> {
+            GhostBlobProvider.drop(call.argument<List<String>>("uris") ?: emptyList())
+            result.success(null)
+          }
           "clear" -> {
             pdfs.closeAll()
             GhostBlobProvider.clear()

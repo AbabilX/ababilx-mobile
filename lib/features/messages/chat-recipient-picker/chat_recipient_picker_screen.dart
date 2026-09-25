@@ -11,6 +11,8 @@ import 'chat_recipient_list.dart';
 import 'chat_recipient_sections.dart';
 import 'chat_recipient_search_field.dart';
 import 'chat_recipient_target.dart';
+import '../../chat-lock/chat_lock_filter.dart';
+import '../../chat-lock/providers/chat_locks_provider.dart';
 
 typedef ChatRecipientSubmit =
     Future<void> Function(List<ChatRecipientTarget> recipients, String caption);
@@ -64,8 +66,12 @@ class _ChatRecipientPickerScreenState
         .watch(messageablePeopleProvider)
         .where((person) => person.canMessage)
         .toList();
+    final locks = ref.watch(chatLocksProvider);
     final conversations =
-        unifiedConversations(dms: chat.dms, channels: chat.channels)
+        unifiedConversations(
+              dms: withoutLockedChats(chat.dms, locks),
+              channels: withoutLockedChats(chat.channels, locks),
+            )
             .where(
               (c) =>
                   c.canMessage &&

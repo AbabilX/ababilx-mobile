@@ -6,12 +6,15 @@ import '../../../shared/media/save_to_phone_action.dart';
 import '../../../shared/media/save_to_phone_dialog.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../data/models/chat_models.dart';
+import '../../chat-lock/data/chat_lock_index.dart';
 
 /// Which attachments a "Save" on this message would actually write.
 ///
 /// A locked one is withheld by retention and has no bytes anywhere, so a
 /// message holding nothing else must not offer the action at all.
 List<ChatMessageAttachment> saveableAttachments(ChatMessage message) {
+  // A locked chat keeps its files off this phone's storage, Save included.
+  if (ChatLockIndex.cached.containsKey(message.conversationId)) return const [];
   return message.attachments
       .where((a) => !a.locked && !a.isProtected && a.fileUrl.isNotEmpty)
       .toList();

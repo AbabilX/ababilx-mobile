@@ -41,6 +41,8 @@ extension ChatConversationJson on ChatConversation {
     'peer_left': peerLeft,
     'is_self': isSelf,
     'peer_privacy': peerPrivacy,
+    'receipts_hidden': receiptsHidden,
+    'my_receipts_hidden': myReceiptsHidden,
     'can_message': canMessage,
     'lock_reason': lockReason,
     'plaintext_until_keyed': plaintextUntilKeyed,

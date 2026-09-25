@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../chat-media/shared_media_thumb.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_details_provider.dart';
+import '../../chat-lock/providers/chat_locks_provider.dart';
 
 /// Signal's "Shared media": a strip of the newest files in this conversation
 /// and a way into all of them.
@@ -26,6 +27,7 @@ class SharedMediaSection extends ConsumerWidget {
     if (items.isEmpty) return const SizedBox.shrink();
     // Videos open their own player, so the swipe gallery holds pictures only.
     final gallery = items.where((a) => a.isImage).toList();
+    final ramOnly = ref.watch(isChatLockedProvider(conversationId));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -48,6 +50,7 @@ class SharedMediaSection extends ConsumerWidget {
               attachment: items[i],
               gallery: gallery,
               size: _thumb,
+              ramOnly: ramOnly,
             ),
           ),
         ),

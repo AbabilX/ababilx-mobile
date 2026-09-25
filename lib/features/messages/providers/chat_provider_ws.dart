@@ -32,6 +32,10 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
           .onEvent(ev, state.currentUserId);
       return;
     }
+    if (type == 'chat.receipts_hidden') {
+      ref.read(receiptsHiddenOverridesProvider.notifier).onEvent(ev);
+      return;
+    }
     if (type == 'chat.privacy_person') {
       ref.read(peerPrivacyOverridesProvider.notifier).onPersonEvent(ev);
       return;

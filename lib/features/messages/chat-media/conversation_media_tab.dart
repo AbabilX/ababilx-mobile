@@ -5,6 +5,8 @@ import '../chat-timeline/attachment_file_row.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_details_provider.dart';
 import 'shared_media_thumb.dart';
+import '../../chat-lock/media/ram_file_row.dart';
+import '../../chat-lock/providers/chat_locks_provider.dart';
 
 /// One tab of the shared-media screen, paging as it is scrolled.
 ///
@@ -100,13 +102,15 @@ class _ConversationMediaTabState extends ConsumerState<ConversationMediaTab>
         ),
       );
     }
+    // A locked chat draws from memory only (see RamMessageAttachments).
+    final ramOnly = ref.watch(isChatLockedProvider(widget.conversationId));
     return NotificationListener<ScrollNotification>(
       onNotification: _onScroll,
-      child: widget.kind == 'media' ? _grid() : _files(),
+      child: widget.kind == 'media' ? _grid(ramOnly) : _files(ramOnly),
     );
   }
 
-  Widget _grid() {
+  Widget _grid(bool ramOnly) {
     const spacing = 3.0;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -125,15 +129,18 @@ class _ConversationMediaTabState extends ConsumerState<ConversationMediaTab>
             attachment: _items[i],
             gallery: gallery,
             size: cell,
+            ramOnly: ramOnly,
           ),
         );
       },
     );
   }
 
-  Widget _files() => ListView.builder(
+  Widget _files(bool ramOnly) => ListView.builder(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     itemCount: _items.length,
-    itemBuilder: (_, i) => AttachmentFileRow(attachment: _items[i]),
+    itemBuilder: (_, i) => ramOnly
+        ? RamFileRow(attachment: _items[i])
+        : AttachmentFileRow(attachment: _items[i]),
   );
 }

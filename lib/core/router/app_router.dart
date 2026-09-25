@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/chat-lock/screens/locked_chats_screen.dart';
+import '../../features/chat-lock/widgets/chat_lock_gate.dart';
 import '../../features/ghost/screens/ghost_chat_screen.dart';
 import '../../features/ghost/screens/ghost_invite_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
@@ -260,8 +262,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       // the same reason as the wallpaper route: ':id' matches one segment.
       GoRoute(
         path: '/messages/:id/details',
-        builder: (_, state) => ConversationDetailsScreen(
+        builder: (_, state) => ChatLockGate(
           conversationId: state.pathParameters['id']!,
+          child: ConversationDetailsScreen(
+            conversationId: state.pathParameters['id']!,
+          ),
         ),
       ),
       // Group member permissions (server 0157). Declared before
@@ -281,19 +286,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/messages/:id/media',
-        builder: (_, state) => ConversationMediaScreen(
+        builder: (_, state) => ChatLockGate(
           conversationId: state.pathParameters['id']!,
+          child: ConversationMediaScreen(
+            conversationId: state.pathParameters['id']!,
+          ),
         ),
       ),
       GoRoute(
         path: '/messages/:id/pins',
-        builder: (_, state) =>
-            PinnedMessagesScreen(conversationId: state.pathParameters['id']!),
+        builder: (_, state) => ChatLockGate(
+          conversationId: state.pathParameters['id']!,
+          child: PinnedMessagesScreen(
+            conversationId: state.pathParameters['id']!,
+          ),
+        ),
       ),
       GoRoute(
         path: '/messages/:id/wallpaper',
-        builder: (_, state) =>
-            ChatWallpaperScreen(conversationId: state.pathParameters['id']),
+        builder: (_, state) => ChatLockGate(
+          conversationId: state.pathParameters['id']!,
+          child: ChatWallpaperScreen(
+            conversationId: state.pathParameters['id'],
+          ),
+        ),
       ),
       GoRoute(
         path: '/profile/devices',
@@ -314,11 +330,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/messages/new',
         builder: (_, _) => const NewMessageScreen(),
       ),
+      // Locked chats (device-local). Reached by a long press on the chat
+      // list's title only. Declared before '/messages/:id' for the same
+      // reason as the routes above.
+      GoRoute(
+        path: '/messages/locked',
+        builder: (_, _) => const LockedChatsScreen(),
+      ),
       GoRoute(
         path: '/messages/:id',
-        builder: (_, state) => ConversationScreen(
+        builder: (_, state) => ChatLockGate(
           conversationId: state.pathParameters['id']!,
-          threadRootId: state.uri.queryParameters['thread'],
+          relockOnLeave: true,
+          child: ConversationScreen(
+            conversationId: state.pathParameters['id']!,
+            threadRootId: state.uri.queryParameters['thread'],
+          ),
         ),
       ),
       GoRoute(

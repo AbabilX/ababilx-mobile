@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../chat-lock/widgets/chat_lock_tile.dart';
+import '../../dm-settings/notification_text/hide_notification_text.dart';
+import '../../dm-settings/receipts/hide_ticks_tile.dart';
 import '../../privacy-mode/people/privacy_person_tile.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
@@ -65,6 +68,14 @@ class DetailsSettingsSection extends ConsumerWidget {
           name: conversation.peerUserName ?? '',
           avatarUrl: conversation.peerUserAvatar ?? '',
         ),
+      // DM only, per chat: ticks (server 0159), then this phone's own
+      // notification and lock settings. Note to Self has no ticks to hide.
+      if (conversation.hasDmPeer && !conversation.isAccountDeleted)
+        HideTicksTile(conversationId: conversation.id),
+      if (conversation.isDm) ...[
+        HideNotificationTextTile(conversationId: conversation.id),
+        ChatLockTile(conversationId: conversation.id),
+      ],
       // Groups only: the group's own switch (server 0154), set by admins.
       if (conversation.isGroupConversation && !conversation.isWebhook)
         GroupPrivacyTile(conversation: conversation),

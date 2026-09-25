@@ -6,6 +6,8 @@ import '../../attachments/widgets/attachment_gate.dart';
 import '../chat-timeline/attachment_image_tile.dart';
 import '../data/models/chat_models.dart';
 import 'shared_media_video_cell.dart';
+import '../../chat-lock/media/ram_photo_tile.dart';
+import '../../chat-lock/media/ram_photo_viewer.dart';
 
 /// One square cell in the shared-media strip and grid.
 ///
@@ -23,9 +25,13 @@ class SharedMediaThumb extends StatelessWidget {
     required this.attachment,
     required this.gallery,
     required this.size,
+    this.ramOnly = false,
   });
 
   final ChatMessageAttachment attachment;
+
+  /// A locked chat: drawn from memory, never through the attachment store.
+  final bool ramOnly;
 
   /// Every image on this screen, so the viewer can swipe past the tapped one.
   /// Videos are not in it — they open their own player.
@@ -36,6 +42,7 @@ class SharedMediaThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (ramOnly) return _ram(context);
     if (attachment.isImage) {
       final index = gallery.indexOf(attachment);
       return SizedBox(
@@ -66,6 +73,38 @@ class SharedMediaThumb extends StatelessWidget {
           context,
           source: VideoSource.file(handle.localPath!),
           fileName: attachment.fileName,
+        ),
+      ),
+    );
+  }
+
+  Widget _ram(BuildContext context) {
+    if (attachment.isImage) {
+      final urls = [for (final a in gallery) a.fileUrl];
+      final index = urls.indexOf(attachment.fileUrl);
+      return RamPhotoTile(
+        url: attachment.fileUrl,
+        size: Size.square(size),
+        radius: 6,
+        onTap: () =>
+            showRamPhotos(context, urls: urls, initial: index < 0 ? 0 : index),
+      );
+    }
+    // Streamed; the empty name keeps Save and Share off.
+    final colors = Theme.of(context).colorScheme;
+    return Material(
+      color: colors.surfaceContainerHighest,
+      borderRadius: _radius,
+      child: InkWell(
+        borderRadius: _radius,
+        onTap: () => showVideoPreview(
+          context,
+          source: VideoSource.url(attachment.fileUrl),
+          fileName: '',
+        ),
+        child: SizedBox.square(
+          dimension: size,
+          child: Icon(Icons.play_arrow_rounded, color: colors.onSurface),
         ),
       ),
     );

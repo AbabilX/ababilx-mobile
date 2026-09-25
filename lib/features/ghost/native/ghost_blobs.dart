@@ -72,6 +72,20 @@ abstract final class GhostBlobs {
     }
   }
 
+  /// Overwrites and forgets the blobs held under [keys] and nothing else —
+  /// how a locked chat lets go of its files without ending a Ghost session.
+  static Future<void> drop(Iterable<String> keys) async {
+    final uris = [for (final key in keys) ?_held.remove(key)];
+    if (uris.isEmpty || !available) return;
+    try {
+      await _channel.invokeMethod<void>('drop', {'uris': uris});
+    } on MissingPluginException {
+      _missing = true;
+    } on PlatformException {
+      // The arrays live in the other half; the next clear still gets them.
+    }
+  }
+
   /// The burn: every held array is overwritten and dropped.
   static Future<void> clear() async {
     _held.clear();

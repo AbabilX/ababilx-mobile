@@ -19,6 +19,8 @@ import 'list_fab.dart';
 import 'list_header.dart';
 import 'list_empty.dart';
 import 'recent_contacts_strip.dart';
+import '../../chat-lock/chat_lock_filter.dart';
+import '../../chat-lock/providers/chat_locks_provider.dart';
 
 class ChatList extends ConsumerStatefulWidget {
   const ChatList({super.key, this.banner});
@@ -69,12 +71,15 @@ class _ChatListState extends ConsumerState<ChatList> {
                 .toList(),
           )
         : original;
+    // Locked chats live behind a long press on the title, nowhere here.
+    final locks = ref.watch(chatLocksProvider);
+    final dms = withoutLockedChats(chat.dms, locks);
     final rows = unifiedConversations(
-      dms: chat.dms,
-      channels: chat.channels,
+      dms: dms,
+      channels: withoutLockedChats(chat.channels, locks),
       filter: _filter,
     );
-    final recentDms = recentDmsForStrip(chat.dms);
+    final recentDms = recentDmsForStrip(dms);
     return Scaffold(
       body: SafeArea(
         child: Column(

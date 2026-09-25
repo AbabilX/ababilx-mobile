@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
-import '../../privacy-mode/peer_privacy_provider.dart';
+import '../../dm-settings/receipts/receipts_hidden_provider.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import 'message_bubble.dart';
@@ -44,12 +44,12 @@ class MessageBubbleFooter extends ConsumerWidget {
     final error = Theme.of(context).colorScheme.error;
     String tr(String key) => AppTranslations.translate(context, ref, key);
     final percent = ((message.uploadProgress ?? 0) * 100).round();
-    // To a private peer (server 0152) nothing about delivery is shown — no
-    // clock, no tick, no "Sending…". A failure still says so: that is about
-    // this phone, not about them.
+    // To a private peer (server 0152), or in a DM where somebody hid ticks
+    // (0159), nothing about delivery is shown — no clock, no tick, no
+    // "Sending…". A failure still says so: that is about this phone.
     final hideTicks =
         isOwn &&
-        ref.watch(conversationPeerPrivacyProvider(message.conversationId));
+        ref.watch(conversationTicksHiddenProvider(message.conversationId));
     final label = isFailed
         ? tr('chat_tap_to_retry')
         : message.sendStatus == MessageSendStatus.uploading

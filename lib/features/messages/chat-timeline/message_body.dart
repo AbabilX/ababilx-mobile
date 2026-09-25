@@ -15,6 +15,8 @@ import 'message_long_body.dart';
 import 'pending_message_attachments.dart';
 import 'signal_bubble_metrics.dart';
 import 'user_profile_sheet.dart';
+import '../../chat-lock/media/ram_message_attachments.dart';
+import '../../chat-lock/providers/chat_locks_provider.dart';
 
 class MessageBody extends ConsumerWidget {
   const MessageBody({
@@ -101,12 +103,17 @@ class MessageBody extends ConsumerWidget {
 
     Widget? media;
     if (message.attachments.isNotEmpty) {
-      final tiles = MessageAttachments(
-        attachments: message.attachments,
-        withCaption: !bleedMedia && plain.isNotEmpty,
-        captioned: text.isNotEmpty,
-        preview: preview,
-      );
+      // A locked chat's files never go through the attachment store, which
+      // downloads to disk: memory only, see RamMessageAttachments.
+      final Widget tiles =
+          ref.watch(isChatLockedProvider(message.conversationId))
+          ? RamMessageAttachments(attachments: message.attachments)
+          : MessageAttachments(
+              attachments: message.attachments,
+              withCaption: !bleedMedia && plain.isNotEmpty,
+              captioned: text.isNotEmpty,
+              preview: preview,
+            );
       final overlay = mediaFooter;
       // Always the Stack, footer or not. The footer comes and goes as the
       // message joins or leaves a run; swapping the tree shape with it would

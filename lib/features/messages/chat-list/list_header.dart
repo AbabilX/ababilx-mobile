@@ -27,7 +27,8 @@ import 'you-sheet/you_sheet_action.dart';
 /// a single tap on the title open the You sheet through [_openYouSheet].
 /// Double-tap on the title flips privacy mode on the spot (same PUT as
 /// Settings → Privacy mode) — no page, just the switch; the badge beside
-/// the title is the confirmation.
+/// the title is the confirmation. A long press opens the locked chats,
+/// which appear nowhere else.
 ///
 /// The scanner sits here because it is the one action that answers a prompt on
 /// another screen — a desktop waiting to sign in, or a new device waiting for
@@ -72,6 +73,9 @@ class ChatListHeader extends ConsumerWidget {
                     behavior: HitTestBehavior.opaque,
                     onTap: () => _openYouSheet(context, ref),
                     onDoubleTap: () => _togglePrivacyMode(context, ref),
+                    // The only door to locked chats: nothing on screen
+                    // says they exist.
+                    onLongPress: () => context.push('/messages/locked'),
                     child: SizedBox(
                       width: double.infinity,
                       child: Row(

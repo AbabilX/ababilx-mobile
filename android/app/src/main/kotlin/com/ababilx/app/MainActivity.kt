@@ -79,6 +79,9 @@ class MainActivity : FlutterActivity() {
     /** Ghost Chat files, held in memory and opened without touching disk. */
     private val ghostBlobs by lazy { GhostBlobChannel(this) }
 
+    /** Fingerprint, face or screen lock for a locked chat. */
+    private val deviceAuth by lazy { DeviceAuthChannel(this) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
@@ -105,6 +108,7 @@ class MainActivity : FlutterActivity() {
         mediaStore.attach(flutterEngine)
         secureWindow.attach(flutterEngine)
         ghostBlobs.attach(flutterEngine)
+        deviceAuth.attach(flutterEngine)
     }
 
     /**
@@ -130,9 +134,11 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        // The media-send flow answers its own MethodChannel call; anything
-        // else belongs to a Flutter plugin and must keep going to super.
+        // The media-send flow and the chat-lock confirm screen answer their
+        // own MethodChannel calls; anything else belongs to a Flutter plugin
+        // and must keep going to super.
         if (mediaSend.onActivityResult(requestCode, resultCode, data)) return
+        if (deviceAuth.onActivityResult(requestCode, resultCode)) return
         super.onActivityResult(requestCode, resultCode, data)
     }
 

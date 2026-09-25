@@ -21,6 +21,7 @@ import 'features/notifications/chat_push_notification.dart';
 import 'features/notifications/local_notifications.dart';
 import 'features/notifications/fcm_log.dart';
 import 'features/notifications/vitals/push_latency_store.dart';
+import 'features/chat-lock/data/chat_lock_index.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -158,6 +159,10 @@ void main() async {
       androidCallkitBackgroundHandler,
     );
   }
+
+  // Before the first frame, so the chat list leaves locked chats out from
+  // its very first paint.
+  await ChatLockIndex.preload();
 
   runApp(const ProviderScope(child: AbabilXApp()));
 }

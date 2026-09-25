@@ -7,6 +7,7 @@ import 'package:ababilx/features/messages/providers/chat_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'no_typing_override.dart';
 
 class _DelayedSearchNotifier extends ChatNotifier {
   final ready = Completer<void>();
@@ -98,7 +99,10 @@ Future<void> _openSearch(
 void main() {
   testWidgets('chat search redraws when local results arrive', (tester) async {
     final container = ProviderContainer(
-      overrides: [chatProvider.overrideWith(_DelayedSearchNotifier.new)],
+      overrides: [
+        ...noTypingOverrides,
+        chatProvider.overrideWith(_DelayedSearchNotifier.new),
+      ],
     );
     addTearDown(container.dispose);
 
@@ -120,7 +124,10 @@ void main() {
 
   testWidgets('name-matched chats render above message hits', (tester) async {
     final container = ProviderContainer(
-      overrides: [chatProvider.overrideWith(_ChatsThenMessagesNotifier.new)],
+      overrides: [
+        ...noTypingOverrides,
+        chatProvider.overrideWith(_ChatsThenMessagesNotifier.new),
+      ],
     );
     addTearDown(container.dispose);
 
@@ -146,7 +153,10 @@ void main() {
     tester,
   ) async {
     final container = ProviderContainer(
-      overrides: [chatProvider.overrideWith(_ChatsThenMessagesNotifier.new)],
+      overrides: [
+        ...noTypingOverrides,
+        chatProvider.overrideWith(_ChatsThenMessagesNotifier.new),
+      ],
     );
     addTearDown(container.dispose);
 
@@ -162,7 +172,10 @@ void main() {
     tester,
   ) async {
     final container = ProviderContainer(
-      overrides: [chatProvider.overrideWith(_ScopedNotifier.new)],
+      overrides: [
+        ...noTypingOverrides,
+        chatProvider.overrideWith(_ScopedNotifier.new),
+      ],
     );
     addTearDown(container.dispose);
     String? picked;

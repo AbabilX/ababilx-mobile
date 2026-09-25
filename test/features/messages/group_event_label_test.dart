@@ -41,11 +41,7 @@ void main() {
   test('uses you when the viewer is the target', () {
     expect(
       groupEventLabel(
-        _system(
-          event: 'member_added',
-          targetId: 'me',
-          targetName: 'Murad',
-        ),
+        _system(event: 'member_added', targetId: 'me', targetName: 'Murad'),
         'me',
       ),
       'Alice added you',

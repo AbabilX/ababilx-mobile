@@ -7,6 +7,7 @@ import 'package:ababilx/features/profile/providers/profile_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'no_typing_override.dart';
 
 class _ChatListNotifier extends ChatNotifier {
   @override
@@ -45,6 +46,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...noTypingOverrides,
           chatProvider.overrideWith(_ChatListNotifier.new),
           profileProvider.overrideWith(_ProfileNotifier.new),
         ],

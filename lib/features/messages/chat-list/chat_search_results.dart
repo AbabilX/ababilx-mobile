@@ -11,6 +11,8 @@ import 'chat_search_matches.dart';
 import 'chat_search_section_header.dart';
 import 'chat_search_suggestions.dart';
 import 'conversation_row.dart';
+import '../../chat-lock/providers/chat_locks_provider.dart';
+import '../../chat-lock/chat_lock_filter.dart';
 
 /// Signal-Android order: name-matched chats, then message keyword hits.
 ///
@@ -50,16 +52,24 @@ class ChatSearchResults extends ConsumerWidget {
       return Center(child: Text(tr('chat_search_min_chars')));
     }
 
+    // Searching everything never reaches into a locked chat: not its name,
+    // not its messages. Searching inside it (conversationId) is its own.
+    final locks = ref.watch(chatLocksProvider);
     final chats = conversationId != null
         ? const <ChatConversation>[]
         : matchingSearchConversations(
-            unifiedConversations(dms: chat.dms, channels: chat.channels),
+            unifiedConversations(
+              dms: withoutLockedChats(chat.dms, locks),
+              channels: withoutLockedChats(chat.channels, locks),
+            ),
             needle,
             nicknames: nicknames,
             currentUserId: chat.currentUserId,
           );
     final messages = conversationId == null
         ? chat.searchResults
+              .where((message) => !locks.containsKey(message.conversationId))
+              .toList()
         : chat.searchResults
               .where((message) => message.conversationId == conversationId)
               .toList();

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../providers/wall_provider.dart';
 import '../providers/wall_ui_provider.dart';
+import '../../chat-lock/chat_lock_filter.dart';
+import '../../chat-lock/providers/chat_locks_provider.dart';
 
 Future<void> showWallForwardSheet(
   BuildContext context,
@@ -39,7 +41,10 @@ class _WallForwardSheetState extends ConsumerState<_WallForwardSheet> {
   @override
   Widget build(BuildContext context) {
     final chat = ref.watch(chatProvider);
-    final targets = [...chat.channels, ...chat.dms];
+    final targets = withoutLockedChats([
+      ...chat.channels,
+      ...chat.dms,
+    ], ref.watch(chatLocksProvider));
     final colors = Theme.of(context).colorScheme;
     final maxH = MediaQuery.sizeOf(context).height * 0.72;
 

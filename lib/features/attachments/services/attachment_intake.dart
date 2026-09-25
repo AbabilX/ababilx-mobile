@@ -19,15 +19,31 @@ import 'attachment_queue.dart';
 /// opaque HTTP cache that could evict them at any time and gave the UI no way
 /// to know whether a file was actually on disk.
 class AttachmentIntake {
-  AttachmentIntake(this._blobs, this._refs, this._queue, this._gate);
+  AttachmentIntake(
+    this._blobs,
+    this._refs,
+    this._queue,
+    this._gate, {
+    bool Function(String conversationId)? isLocked,
+  }) : _isLocked = isLocked ?? _never;
 
   final AttachmentBlobStore _blobs;
   final AttachmentRefStore _refs;
   final AttachmentQueue _queue;
   final AutoDownloadGate _gate;
+
+  /// A locked chat's files are held in memory only (chat lock), so nothing
+  /// arriving in one is indexed, downloaded or retried here.
+  final bool Function(String conversationId) _isLocked;
+
+  static bool _never(String _) => false;
   final Map<String, int> _lastRetryMs = {};
 
-  Future<void> onMessages(List<ChatMessage> messages) async {
+  Future<void> onMessages(List<ChatMessage> all) async {
+    final messages = [
+      for (final m in all)
+        if (!_isLocked(m.conversationId)) m,
+    ];
     final entries = <AttachmentRefEntry>[];
     for (final message in messages) {
       for (final attachment in message.attachments) {

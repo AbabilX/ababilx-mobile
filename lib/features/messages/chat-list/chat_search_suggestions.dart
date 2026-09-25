@@ -7,6 +7,8 @@ import '../providers/chat_provider.dart';
 import 'chat_search_section_header.dart';
 import 'conversation_row.dart';
 import 'recent_contacts_strip.dart';
+import '../../chat-lock/chat_lock_filter.dart';
+import '../../chat-lock/providers/chat_locks_provider.dart';
 
 /// What the search screen shows before anything is typed: the people and
 /// groups most likely to be the target, one tap from opening. A bare
@@ -25,10 +27,11 @@ class ChatSearchSuggestions extends ConsumerWidget {
     final chat = ref.watch(chatProvider);
     String tr(String key) => AppTranslations.translate(context, ref, key);
 
-    final people = recentDmsForStrip(chat.dms);
+    final locks = ref.watch(chatLocksProvider);
+    final people = recentDmsForStrip(withoutLockedChats(chat.dms, locks));
     final groups = unifiedConversations(
       dms: const [],
-      channels: chat.channels,
+      channels: withoutLockedChats(chat.channels, locks),
     ).take(_groupLimit).toList();
 
     if (people.isEmpty && groups.isEmpty) {

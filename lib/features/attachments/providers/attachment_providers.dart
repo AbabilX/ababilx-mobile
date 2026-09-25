@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/network_probe.dart';
 import '../../messages/data/local/chat_sidebar_cache.dart'
     show chatLocalDbProvider;
+import '../../chat-lock/data/chat_lock_index.dart';
 import '../../messages/data/models/chat_attachment.dart';
 import '../auto_download/auto_download_gate.dart';
 import '../auto_download/auto_download_store.dart';
@@ -112,6 +113,7 @@ final attachmentAdopterProvider = Provider<AttachmentAdopter>(
     ref.watch(attachmentPathsProvider),
     ref.watch(attachmentQueueProvider),
     dimensions: ref.watch(attachmentDimensionReaderProvider),
+    isLocked: (id) => ChatLockIndex.cached.containsKey(id),
   ),
 );
 
@@ -146,6 +148,8 @@ final attachmentIntakeProvider = Provider<AttachmentIntake>(
     ref.watch(attachmentRefStoreProvider),
     ref.watch(attachmentQueueProvider),
     ref.watch(autoDownloadGateProvider),
+    // Read at call time: a chat locked after this was built still counts.
+    isLocked: (id) => ChatLockIndex.cached.containsKey(id),
   ),
 );
 

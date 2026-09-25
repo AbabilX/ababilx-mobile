@@ -10,6 +10,7 @@ import '../../../core/network/first_load_timeout.dart';
 import '../../../core/network/ws_client.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../../notifications/chat/chat_notification_presenter.dart';
+import '../../dm-settings/receipts/receipts_hidden_provider.dart';
 import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../privacy-mode/privacy_media.dart';
 import '../../notifications/providers/fcm_provider.dart';
@@ -42,6 +43,8 @@ import 'chat_open_trace.dart';
 import 'chat_read_marks.dart';
 import 'chat_state.dart';
 import 'received_message_buffer.dart';
+import '../../chat-lock/chat_lock_filter.dart';
+import '../../chat-lock/providers/chat_locks_provider.dart';
 
 export 'chat_open_trace.dart' show ChatOpenTrace;
 export 'chat_state.dart';
@@ -379,7 +382,12 @@ final chatProvider = NotifierProvider<ChatNotifier, ChatState>(
 
 final totalUnreadProvider = Provider<int>((ref) {
   final chat = ref.watch(chatProvider);
-  return totalUnread(chat.dms, chat.channels);
+  // A locked chat's unread would show on the tab while the chat is hidden.
+  final locks = ref.watch(chatLocksProvider);
+  return totalUnread(
+    withoutLockedChats(chat.dms, locks),
+    withoutLockedChats(chat.channels, locks),
+  );
 });
 
 final activeConversationProvider = Provider<ChatConversation?>((ref) {

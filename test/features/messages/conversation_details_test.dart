@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'no_pins_override.dart';
+import 'no_typing_override.dart';
 
 ChatConversation _group() => const ChatConversation(
   id: 'g1',
@@ -61,7 +62,11 @@ void main() {
   testWidgets('group details renders and tears down cleanly', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [noPinsOverride, chatProvider.overrideWith(_Notifier.new)],
+        overrides: [
+          ...noTypingOverrides,
+          noPinsOverride,
+          chatProvider.overrideWith(_Notifier.new),
+        ],
         child: const MaterialApp(
           home: ConversationDetailsScreen(conversationId: 'g1'),
         ),
@@ -87,7 +92,11 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [noPinsOverride, chatProvider.overrideWith(_Notifier.new)],
+        overrides: [
+          ...noTypingOverrides,
+          noPinsOverride,
+          chatProvider.overrideWith(_Notifier.new),
+        ],
         child: const MaterialApp(
           home: ConversationDetailsScreen(conversationId: 'g1'),
         ),

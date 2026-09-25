@@ -11,6 +11,14 @@ import 'attachment_dimension_reader.dart';
 import 'attachment_paths.dart';
 import 'attachment_queue.dart';
 
+/// The conversation a fresh upload belongs to, read off its URL: the server
+/// names every new object `chat/<conversation id>/<uuid>.<ext>`. Null for
+/// anything else (a pre-0145 `teams/…` object, a foreign URL).
+String? uploadConversationId(String fileUrl) =>
+    _conversationInUrl.firstMatch(fileUrl)?.group(1);
+
+final _conversationInUrl = RegExp(r'/chat/([0-9a-fA-F-]{36})/');
+
 /// Files the sender already has, filed under the URL they were uploaded to.
 ///
 /// Without this the composer uploads a photo, the message comes back, and the
@@ -29,7 +37,22 @@ class AttachmentAdopter {
     this._paths,
     this._queue, {
     this._dimensions,
+    this._isLocked,
   });
+
+  /// A locked chat keeps its files in memory only (chat lock). Every
+  /// adoption follows a fresh upload, and a fresh upload's object key is
+  /// `chat/<conversation id>/…` (server `AttachmentPrefix`), so the URL alone
+  /// says which chat it belongs to — one check here covers the composer,
+  /// voice notes, the camera and share intake.
+  final bool Function(String conversationId)? _isLocked;
+
+  bool _lockedUpload(String fileUrl) {
+    final check = _isLocked;
+    if (check == null) return false;
+    final id = uploadConversationId(fileUrl);
+    return id != null && check(id);
+  }
 
   final AttachmentBlobStore _blobs;
   final AttachmentDedupeStore _dedupe;
@@ -77,7 +100,7 @@ class AttachmentAdopter {
     required Future<File> Function(File target) write,
   }) async {
     final urlKey = attachmentUrlKey(fileUrl);
-    if (urlKey.isEmpty) return;
+    if (urlKey.isEmpty || _lockedUpload(fileUrl)) return;
     try {
       // Already on disk under this key — a retry of the same send, or the
       // object came back from a dedupe hit. Nothing to do.

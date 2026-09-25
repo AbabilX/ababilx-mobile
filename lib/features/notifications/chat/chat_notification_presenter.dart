@@ -3,7 +3,9 @@ import '../local_notifications.dart';
 import '../notification_router.dart';
 import 'chat_notification_builder.dart';
 import 'chat_notification_dismissals.dart';
+import 'chat_notification_hidden.dart';
 import 'chat_notification_ids.dart';
+import 'chat_notification_privacy.dart';
 import 'chat_notification_store.dart';
 import 'chat_push_attachments.dart';
 import 'chat_push_image.dart';
@@ -25,6 +27,12 @@ class ChatNotificationPresenter {
   }) async {
     final conversationId = data['conversation_id']?.toString() ?? '';
     final messageId = data['message_id']?.toString() ?? '';
+    // A locked chat, or one set to hide its notifications: name, text and
+    // picture never reach the tray, and nothing is decrypted for it.
+    if (await ChatNotificationPrivacy.isHidden(conversationId)) {
+      await postHiddenChatNotification(local, data);
+      return;
+    }
     if (conversationId.isEmpty || messageId.isEmpty) {
       // Nothing to thread this into — show it flat rather than not at all.
       await local.show(

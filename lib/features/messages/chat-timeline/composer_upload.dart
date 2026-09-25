@@ -12,6 +12,8 @@ import '../group-member-permissions/group_media_guard.dart';
 import '../providers/chat_provider.dart';
 import 'composer_upload_source.dart';
 import 'pending_preview_cache.dart';
+import '../../chat-lock/data/chat_lock_index.dart';
+import '../../ghost/providers/ghost_temp_files.dart';
 
 export 'composer_upload_source.dart';
 
@@ -97,6 +99,14 @@ Future<void> uploadAttachments(
       ? _uploadConcurrency
       : reserved.length;
   await Future.wait(List.generate(lanes, (_) => lane()));
+  // A locked chat keeps nothing on this phone: the picker's or camera's own
+  // copy in our cache goes once it is uploaded. Only paths inside the cache
+  // directory are touched, never the user's original in the gallery.
+  if (ChatLockIndex.cached.containsKey(conversationId)) {
+    for (final source in loaded) {
+      await GhostTempFiles.deletePickerCopy(source.localPath);
+    }
+  }
 }
 
 class _Reserved {
@@ -187,7 +197,10 @@ Future<bool> _transfer(
     return false;
   }
   report(sizeBytes, sizeBytes);
-  if (slot.source.localPath == null && bytes != null) {
+  // A locked chat writes nothing to disk, not even this preview copy.
+  if (slot.source.localPath == null &&
+      bytes != null &&
+      !ChatLockIndex.cached.containsKey(conversationId)) {
     await _cacheBytesForPreview(slot.presign.publicUrl, slot.source, bytes);
   }
   await _adopt(ref, slot, bytes);

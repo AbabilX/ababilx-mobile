@@ -13,6 +13,7 @@ import 'message_link_preview.dart';
 import 'message_quote_block.dart';
 import 'quoted_bubble_layout.dart';
 import 'signal_bubble_metrics.dart';
+import '../../chat-lock/data/chat_lock_index.dart';
 
 /// Image/video attachments only, no caption or quote — the media is the
 /// surface, so [MessageBubble] paints no fill behind it.
@@ -107,7 +108,11 @@ class MessageBubbleContent extends StatelessWidget {
         ? null
         : JPackPayload.tryParse(message.body);
     if (jpack != null) return _jpack(jpack);
-    final previewUrl = message.isDeleted
+    // No link card in a locked chat: its picture and text would be cached
+    // on disk, outside the lock.
+    final previewUrl =
+        message.isDeleted ||
+            ChatLockIndex.cached.containsKey(message.conversationId)
         ? null
         : messageLinkPreviewUrl(
             plainBody: tiptapToPlainText(message.body),

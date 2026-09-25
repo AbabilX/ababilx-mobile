@@ -1,11 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../chat-lock/data/chat_lock_index.dart';
+import '../../chat-lock/media/ram_media_cache.dart';
 import '../../messages/data/local/chat_archive_wiper.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/safety_number/safety_number_store.dart';
 import '../../notifications/chat/chat_notification_store.dart';
 import '../../notifications/chat/chat_notification_dismissals.dart';
+import '../../notifications/chat/chat_notification_privacy.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../team/data/team_repository.dart';
@@ -25,6 +28,12 @@ class AccountDataWiper {
     await _ref.read(teamRepositoryProvider).clearCache(strict: true);
     await ChatNotificationStore.clearAll(strict: true);
     await ChatNotificationDismissals.clearAll();
+    // Locks and hidden-notification choices belong to the old account's
+    // chats; the next account must not inherit them (passwords go with
+    // clearAllPrivateData below).
+    await ChatLockIndex.clearAll();
+    await ChatNotificationPrivacy.clearAll();
+    await RamMediaCache.release();
     await _ref.read(localNotificationsProvider).cancelAll(strict: true);
     await _ref.read(secureStorageProvider).clearAllPrivateData();
   }
