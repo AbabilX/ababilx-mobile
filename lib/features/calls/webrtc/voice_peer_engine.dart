@@ -125,16 +125,34 @@ class VoicePeerEngine {
 
   bool get cameraOn => _camera != null;
 
+  /// Speaker pressed by the user, before or during [prepare]; null = never.
+  bool? _speakerChoice;
+
+  /// The route this call is on: the user's choice, else loudspeaker for a
+  /// call with the camera open (the phone is held out) and earpiece otherwise.
+  bool get speakerOn => CallAudioRoute.startsOnSpeaker(
+    chosen: _speakerChoice,
+    camera: _camera != null,
+  );
+
   /// [video] opens the camera before the first offer/answer so a video call
   /// negotiates once. Starting it after `connected` instead would have both
   /// sides re-offer at the same instant, and colliding offers are dropped.
   /// A camera that cannot open (permission, hardware) degrades to audio.
+  ///
+  /// [speaker] is a Speaker press made while the call was still ringing, when
+  /// there was nothing to route. Forcing the earpiece here regardless is what
+  /// sent a caller who chose the loudspeaker back to the earpiece on answer.
   Future<void> prepare({
     required List<IceServer> iceServers,
     bool video = false,
+    bool? speaker,
   }) async {
     if (_disposed) throw StateError('Voice peer engine is disposed');
     if (ready) return;
+    // A press that reached this engine already (while the camera permission
+    // was asked) is newer than the one the caller read before.
+    _speakerChoice ??= speaker;
 
     final hasTurn = iceServers.any(
       (s) =>
@@ -153,9 +171,9 @@ class VoicePeerEngine {
     // Not `Helper.setAndroidAudioConfiguration`: that configures flutter_webrtc's
     // audio manager, which LiveKit disables app-wide — see [CallAudioRoute].
     // Earpiece, like every dialler: a call answered and lifted to the ear must
-    // not come out of the loudspeaker. The Speaker button is the way up from
-    // here, and `CallScreenLock`'s proximity blanking keys off this same route.
-    await CallAudioRoute.activate(speaker: false);
+    // not come out of the loudspeaker — unless Speaker was already pressed.
+    // `CallScreenLock`'s proximity blanking keys off this same route.
+    await CallAudioRoute.activate(speaker: _speakerChoice ?? false);
     if (_disposed) return;
     await _ensureAudioSessionIfNeeded();
     if (_disposed) return;
@@ -272,9 +290,9 @@ class VoicePeerEngine {
     }
     // Re-assert the route once media is attached: opening the microphone can
     // move the phone off its route on its own. `force` is false for the
-    // earpiece on purpose, so a connected headset still wins. A video call
-    // opens on the loudspeaker: the phone is held out to see the picture.
-    if (!_disposed) await CallAudioRoute.setSpeaker(_camera != null);
+    // earpiece on purpose, so a connected headset still wins. Read after every
+    // await above, so a press made while media was opening is the one applied.
+    if (!_disposed) await CallAudioRoute.setSpeaker(speakerOn);
   }
 
   // ---- camera -------------------------------------------------------------
@@ -650,7 +668,10 @@ class VoicePeerEngine {
     }
   }
 
-  Future<void> setSpeaker(bool enabled) => CallAudioRoute.setSpeaker(enabled);
+  Future<void> setSpeaker(bool enabled) {
+    _speakerChoice = enabled;
+    return CallAudioRoute.setSpeaker(enabled);
+  }
 
   /// Sharing a screen turns the camera off: the far side shows one or the
   /// other, never both. The share's own renegotiation covers the swap.

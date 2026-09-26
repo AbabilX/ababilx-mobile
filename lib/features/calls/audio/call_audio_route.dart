@@ -45,6 +45,13 @@ class CallAudioRoute {
 
   static void bindCall(String callId) => _callId = callId;
 
+  /// Where a DM call's audio goes once its media opens: the user's Speaker
+  /// press if there was one — made while ringing, it has nothing to route and
+  /// is only remembered — else the loudspeaker with the camera on, since the
+  /// phone is held out to see the picture, else the earpiece.
+  static bool startsOnSpeaker({required bool? chosen, required bool camera}) =>
+      chosen ?? camera;
+
   /// LiveKit's communication preset — the same mode, focus, stream and
   /// attributes the call used to ask flutter_webrtc for — plus forced routing,
   /// which some Android devices need or they keep a DM call on a stale route.

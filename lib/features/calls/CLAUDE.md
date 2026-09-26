@@ -760,6 +760,14 @@ audio routing:
   loudspeaker, and proximity blanking keys off the same flag. `prepare` mirrors
   it into `state.speaker` explicitly rather than trusting the default, because
   an earlier call in the same session may have left it on.
+- **A Speaker press made while ringing is kept** (2026-09-26, "pressed
+  loudspeaker while calling, went back to the earpiece on answer"). No engine
+  exists while ringing, so the press only sets `state.speakerChosen`;
+  `_prepareEngine` passes `state.speakerChoice` into `prepare(speaker:)`, and a
+  press during prepare goes to `_preparingEngine`. `CallAudioRoute.startsOnSpeaker`
+  is the one rule: the choice, else camera → speaker, else earpiece. The
+  provider mirrors `engine.speakerOn` — never plain `cameraOn`, which was the
+  bug. Pinned by `test/features/calls/call_speaker_choice_test.dart`.
 - `setSpeaker(on)` — the Speaker button; `force: on` so an explicit press wins
   over a connected headset.
 - `release()` — on engine dispose; drops focus and restores the normal mode.

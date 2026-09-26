@@ -218,6 +218,9 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
             ? session.call.copyWith(calleeRingingAt: DateTime.now())
             : session.call,
         iceServers: session.iceServers,
+        // Same call as "Calling…": a Speaker press made there still stands.
+        speaker: state.speaker,
+        speakerChosen: state.speakerChosen,
         // The account that placed the call is its caller, by definition. The
         // profile is not a safe source here: on a fresh install its first load
         // can fail and is never retried, and an empty id made `outgoing` false
@@ -400,6 +403,8 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         phase: VoiceCallPhase.connecting,
         call: session.call,
         iceServers: session.iceServers,
+        speaker: state.speaker,
+        speakerChosen: state.speakerChosen,
         // Only the callee can accept, so the server just named this account.
         currentUserId: callIdentity(
           state.currentUserId,
@@ -575,10 +580,14 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
   }
 
+  /// Works in every phase. Before the engine exists (ringing) the choice is
+  /// only recorded, and `_prepareEngine` opens the media on it; while the
+  /// engine is being prepared it goes to that engine, which applies the
+  /// newest press when its media is attached.
   Future<void> toggleSpeaker() async {
     final next = !state.speaker;
-    await _engine?.setSpeaker(next);
-    state = state.copyWith(speaker: next);
+    state = state.copyWith(speaker: next, speakerChosen: true);
+    await (_engine ?? _preparingEngine)?.setSpeaker(next);
   }
 
   Future<void> toggleCamera() async {
@@ -1009,7 +1018,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     try {
       final video = call.isVideo && await _ensureCameraPermission();
       if (_wasFinished(callId) || state.call?.id != callId) return;
-      await engine.prepare(iceServers: session.iceServers, video: video);
+      await engine.prepare(
+        iceServers: session.iceServers,
+        video: video,
+        speaker: state.speakerChoice,
+      );
     } finally {
       if (identical(_preparingEngine, engine)) _preparingEngine = null;
       if (_wasFinished(callId) || state.call?.id != callId) {
@@ -1049,11 +1062,12 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     if (state.muted) {
       await engine.setMuted(true);
     }
-    // Mirrors the route VoicePeerEngine just applied (loudspeaker for a call
-    // that opened with the camera, earpiece otherwise). Explicit rather than
-    // relying on the default, because a previous call in this session may
-    // have left the flag on.
-    state = state.copyWith(speaker: engine.cameraOn);
+    // Mirrors the route VoicePeerEngine just applied: a Speaker press made
+    // while ringing, else loudspeaker for a call that opened with the camera,
+    // earpiece otherwise. Never plain `cameraOn`: that reset a caller who had
+    // chosen the loudspeaker back to the earpiece the moment the call was
+    // answered.
+    state = state.copyWith(speaker: engine.speakerOn);
     voiceCallLog('engine.prepare.ok', callId: callId, phase: _phaseName);
     _startConnectWatchdog(callId);
   }

@@ -22,6 +22,7 @@ class VoiceCallState {
     this.currentUserId = '',
     this.muted = false,
     this.speaker = false,
+    this.speakerChosen = false,
     this.screenSharing = false,
     this.reconnectingSince,
     this.remoteScreenStream,
@@ -44,6 +45,14 @@ class VoiceCallState {
   final String currentUserId;
   final bool muted;
   final bool speaker;
+
+  /// The user pressed Speaker on this call. Pressed before the media exists
+  /// (ringing, connecting) it has nothing to route yet, so the engine reads
+  /// [speakerChoice] when it opens the call; untouched, the call's own
+  /// default applies (earpiece, loudspeaker for video).
+  final bool speakerChosen;
+
+  bool? get speakerChoice => speakerChosen ? speaker : null;
   final bool screenSharing;
 
   /// When the current recovery began, or null when media is flowing. The call
@@ -109,6 +118,7 @@ class VoiceCallState {
     String? currentUserId,
     bool? muted,
     bool? speaker,
+    bool? speakerChosen,
     bool? screenSharing,
     DateTime? reconnectingSince,
     bool clearReconnectingSince = false,
@@ -138,6 +148,7 @@ class VoiceCallState {
     currentUserId: currentUserId ?? this.currentUserId,
     muted: muted ?? this.muted,
     speaker: speaker ?? this.speaker,
+    speakerChosen: speakerChosen ?? this.speakerChosen,
     screenSharing: screenSharing ?? this.screenSharing,
     reconnectingSince: clearReconnectingSince
         ? null
