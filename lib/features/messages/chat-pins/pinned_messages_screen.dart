@@ -13,6 +13,7 @@ import '../wallpaper/chat_wallpaper_provider.dart';
 import 'pinned_message_item.dart';
 import 'pinned_messages_chrome.dart';
 import 'pinned_messages_notice.dart';
+import 'unpin_all_sheet.dart';
 
 /// Every message the caller pinned in one chat, drawn the way Telegram's
 /// "N Pinned Messages" does: the chat's wallpaper, the real bubbles in chat
@@ -127,29 +128,8 @@ class _PinnedMessagesScreenState extends ConsumerState<PinnedMessagesScreen> {
   }
 
   Future<void> _unpinAll(List<String> ids) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialog) => AlertDialog(
-        title: Text(
-          _tr('chat_unpin_all_confirm').replaceAll('{count}', '${ids.length}'),
-        ),
-        content: Text(_tr('chat_unpin_all_body')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialog).pop(false),
-            child: Text(_tr('cancel')),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(dialog).colorScheme.error,
-            ),
-            onPressed: () => Navigator.of(dialog).pop(true),
-            child: Text(_tr('chat_unpin_all')),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
+    final confirmed = await confirmUnpinAll(context, ref, ids.length);
+    if (!confirmed || !mounted) return;
     setState(() => _unpinningAll = true);
     final ok = await unpinAllMessages(context, ref, widget.conversationId, ids);
     if (!mounted) return;
