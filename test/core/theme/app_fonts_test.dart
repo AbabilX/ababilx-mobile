@@ -34,15 +34,22 @@ void main() {
       final assets = RegExp(r'asset: (\S+)').allMatches(block!.group(1)!);
       expect(assets, isNotEmpty);
       for (final asset in assets) {
-        expect(File(asset.group(1)!).existsSync(), isTrue,
-            reason: '${asset.group(1)} is missing');
+        expect(
+          File(asset.group(1)!).existsSync(),
+          isTrue,
+          reason: '${asset.group(1)} is missing',
+        );
       }
     }
   });
 
-  test('Bengali in the app text theme is drawn by Shohid Abu Sayed', () async {
-    final loader = FontLoader('ShohidAbuSayed')
-      ..addFont(rootBundle.load('assets/fonts/shohid_abu_sayed/LiShohidAbuSayedUnicode.ttf'));
+  test('Bengali in the app text theme is drawn by Noto Sans Bengali', () async {
+    final loader = FontLoader('NotoSansBengali')
+      ..addFont(
+        rootBundle.load(
+          'assets/fonts/noto_sans_bengali/NotoSansBengali-Regular.ttf',
+        ),
+      );
     await loader.load();
 
     final theme = buildAppTextTheme(
@@ -50,11 +57,14 @@ void main() {
       Typography.material2021().black,
     );
     final app = _width(theme.bodyLarge!);
-    final sayed = _width(const TextStyle(fontFamily: 'ShohidAbuSayed'));
+    final noto = _width(const TextStyle(fontFamily: 'NotoSansBengali'));
     final unresolved = _width(const TextStyle(fontFamily: 'NoSuchFont'));
 
-    expect(app, closeTo(sayed, 0.01));
-    expect(unresolved, isNot(closeTo(sayed, 0.01)),
-        reason: 'the check cannot tell Shohid Abu Sayed from the default font');
+    expect(app, closeTo(noto, 0.01));
+    expect(
+      unresolved,
+      isNot(closeTo(noto, 0.01)),
+      reason: 'the check cannot tell Noto Sans Bengali from the default font',
+    );
   });
 }

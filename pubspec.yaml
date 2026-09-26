@@ -155,14 +155,23 @@ flutter:
         - asset: assets/fonts/lato/Lato-BlackItalic.ttf
           weight: 900
           style: italic
-    # Bengali, via fontFamilyFallback (AppFonts). One weight: Flutter does
-    # not fake bold, so Bengali stays regular in bold styles. Lipighor EULA
-    # in the folder.
-    - family: ShohidAbuSayed
+    # Bengali, via fontFamilyFallback (AppFonts). Noto Sans Bengali static
+    # weights 400-900 (the app uses nothing lighter). Real weights, so bold
+    # Bangla is bold. SIL OFL 1.1, licence in the folder.
+    - family: NotoSansBengali
       fonts:
-        - asset: assets/fonts/shohid_abu_sayed/LiShohidAbuSayedUnicode.ttf
-        - asset: assets/fonts/shohid_abu_sayed/LiShohidAbuSayedUnicode-Italic.ttf
-          style: italic
+        - asset: assets/fonts/noto_sans_bengali/NotoSansBengali-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/noto_sans_bengali/NotoSansBengali-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/noto_sans_bengali/NotoSansBengali-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/noto_sans_bengali/NotoSansBengali-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/noto_sans_bengali/NotoSansBengali-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/noto_sans_bengali/NotoSansBengali-Black.ttf
+          weight: 900
   assets:
     - assets/icon/icon.png
     # Drawn in Settings → App icon as the mark on each alternate plate.

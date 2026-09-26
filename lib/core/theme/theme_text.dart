@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 /// Bundled UI typefaces. Latin glyphs come from Lato; Bengali falls
-/// through to Li Shohid Abu Sayed. Glyphs neither has (archaic vocalics,
+/// through to Noto Sans Bengali (weights 400-900). Glyphs neither has (archaic vocalics,
 /// currency fractions) come from the system font. Login wordmark stays
 /// Fredoka.
 abstract final class AppFonts {
   static const family = 'Lato';
-  static const fallback = <String>['ShohidAbuSayed'];
+  static const fallback = <String>['NotoSansBengali'];
 }
 
 TextTheme buildAppTextTheme(ColorScheme scheme, TextTheme base) {
