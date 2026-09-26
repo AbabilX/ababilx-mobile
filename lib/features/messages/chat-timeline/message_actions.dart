@@ -34,6 +34,13 @@ Future<void> showMessageActions(
   SignalMenuPointer? pointer,
 }) async {
   if (msg.isDeleted) return;
+  // The menu is a route, and closing a route hands focus back to whatever
+  // held it — the composer keeps focus after the keyboard is swiped away, so
+  // Pin, Copy or Save brought the keyboard back up. When the keyboard is down
+  // nobody is typing: drop the focus first. Reply and Edit still ask for it.
+  if (View.of(context).viewInsets.bottom == 0) {
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
   final isMine = msg.userId == ref.read(chatProvider).currentUserId;
   final conversation = ref.read(chatProvider).conversationById(conversationId);
   final isDm = conversation?.isDm ?? true;

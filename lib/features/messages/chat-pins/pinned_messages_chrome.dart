@@ -4,12 +4,14 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../shared/widgets/app_bar_back_button.dart';
 import '../chat_icon.dart';
 
-/// Telegram's floating header: a round back button and a title pill over a
-/// fade, so the pins scroll underneath instead of stopping at an app bar.
+/// Telegram's floating header: a round back button, a title pill and, while
+/// there is something to clear, "Unpin all" on the right — all over a fade,
+/// so the pins scroll underneath instead of stopping at an app bar.
 class PinnedMessagesTopBar extends StatelessWidget {
-  const PinnedMessagesTopBar({super.key, required this.title});
+  const PinnedMessagesTopBar({super.key, required this.title, this.trailing});
 
   final String title;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -28,39 +30,45 @@ class PinnedMessagesTopBar extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(12, top + 8, 12, 24),
-        child: Stack(
-          alignment: Alignment.center,
+        child: Row(
           children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _Pill(
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () => Navigator.of(context).maybePop(),
-                  child: SizedBox.square(
-                    dimension: 44,
-                    child: const Center(child: AppBarBackIcon()),
-                  ),
-                ),
-              ),
-            ),
             _Pill(
-              shape: const StadiumBorder(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 11,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => Navigator.of(context).maybePop(),
+                child: const SizedBox.square(
+                  dimension: 44,
+                  child: Center(child: AppBarBackIcon()),
                 ),
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: colors.onSurface,
-                    fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Center(
+                child: _Pill(
+                  shape: const StadiumBorder(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 11,
+                    ),
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: colors.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
+            const SizedBox(width: 8),
+            // Keeps the title centred on the screen when there is no action.
+            trailing ?? const SizedBox(width: 44),
           ],
         ),
       ),
@@ -68,9 +76,10 @@ class PinnedMessagesTopBar extends StatelessWidget {
   }
 }
 
-/// The full-width "Unpin all messages" bar pinned to the bottom.
-class PinnedMessagesUnpinAllBar extends StatelessWidget {
-  const PinnedMessagesUnpinAllBar({
+/// "Unpin all" in the header: an icon and a short label on a pill, a spinner
+/// while the unpins run ([onPressed] null).
+class PinnedMessagesUnpinAllButton extends StatelessWidget {
+  const PinnedMessagesUnpinAllButton({
     super.key,
     required this.label,
     required this.onPressed,
@@ -82,30 +91,40 @@ class PinnedMessagesUnpinAllBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final bottom = MediaQuery.viewPaddingOf(context).bottom;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, bottom + 12),
-      child: _Pill(
-        shape: const StadiumBorder(),
-        child: InkWell(
-          customBorder: const StadiumBorder(),
-          onTap: onPressed,
-          child: SizedBox(
-            height: 52,
-            width: double.infinity,
-            child: Center(
-              child: onPressed == null
-                  ? const SizedBox.square(
+    return _Pill(
+      shape: const StadiumBorder(),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onPressed,
+        child: SizedBox(
+          height: 44,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: onPressed == null
+                ? const Center(
+                    child: SizedBox.square(
                       dimension: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      label,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
                     ),
-            ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ChatIcon(
+                        HugeIcons.strokeRoundedPinOff,
+                        size: 20,
+                        color: colors.error,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        label,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: colors.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),
@@ -128,64 +147,4 @@ class _Pill extends StatelessWidget {
     clipBehavior: Clip.antiAlias,
     child: child,
   );
-}
-
-/// Centred icon + text for the empty and failed states.
-class PinnedMessagesNotice extends StatelessWidget {
-  const PinnedMessagesNotice({
-    super.key,
-    required this.title,
-    this.body,
-    this.action,
-  });
-
-  final String title;
-  final String? body;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Material(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(
-            alpha: 0.94,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ChatIcon(
-                  HugeIcons.strokeRoundedPin,
-                  size: 40,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium,
-                ),
-                if (body != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    body!,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-                ?action,
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

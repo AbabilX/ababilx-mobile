@@ -367,6 +367,7 @@ class AppTranslations {
       'chat_pins_title_one': '1 Pinned Message',
       'chat_pins_title': '{count} Pinned Messages',
       'chat_unpin_all': 'Unpin all messages',
+      'chat_unpin_all_short': 'Unpin all',
       'chat_unpin_all_confirm': 'Unpin all {count} messages?',
       'chat_unpin_all_body':
           'Only your pins are removed. The messages stay in the chat.',
@@ -1380,6 +1381,7 @@ class AppTranslations {
       'chat_pins_title_one': '১টি পিন করা বার্তা',
       'chat_pins_title': '{count}টি পিন করা বার্তা',
       'chat_unpin_all': 'সব বার্তার পিন সরান',
+      'chat_unpin_all_short': 'সব আনপিন',
       'chat_unpin_all_confirm': 'সব {count}টি বার্তার পিন সরাবেন?',
       'chat_unpin_all_body': 'শুধু আপনার পিন সরবে। বার্তাগুলো চ্যাটেই থাকবে।',
       'chat_go_to_message': 'বার্তায় যান',

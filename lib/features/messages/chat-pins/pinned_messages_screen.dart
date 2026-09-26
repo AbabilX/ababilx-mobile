@@ -12,12 +12,13 @@ import '../wallpaper/chat_wallpaper_background.dart';
 import '../wallpaper/chat_wallpaper_provider.dart';
 import 'pinned_message_item.dart';
 import 'pinned_messages_chrome.dart';
+import 'pinned_messages_notice.dart';
 
 /// Every message the caller pinned in one chat, drawn the way Telegram's
 /// "N Pinned Messages" does: the chat's wallpaper, the real bubbles in chat
 /// order with the newest at the bottom, a go-to arrow beside each, and
-/// "Unpin all messages" underneath. Choosing one answers its id to whoever
-/// opened this screen, which walks the chat to it.
+/// "Unpin all" in the header (asks first). Choosing one answers its id to
+/// whoever opened this screen, which walks the chat to it.
 class PinnedMessagesScreen extends ConsumerStatefulWidget {
   const PinnedMessagesScreen({super.key, required this.conversationId});
 
@@ -54,20 +55,19 @@ class _PinnedMessagesScreenState extends ConsumerState<PinnedMessagesScreen> {
               top: 0,
               left: 0,
               right: 0,
-              child: PinnedMessagesTopBar(title: title),
-            ),
-            if (messages.isNotEmpty)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: PinnedMessagesUnpinAllBar(
-                  label: _tr('chat_unpin_all'),
-                  onPressed: _unpinningAll
-                      ? null
-                      : () => _unpinAll(messages.map((m) => m.id).toList()),
-                ),
+              child: PinnedMessagesTopBar(
+                title: title,
+                trailing: messages.isEmpty
+                    ? null
+                    : PinnedMessagesUnpinAllButton(
+                        label: _tr('chat_unpin_all_short'),
+                        onPressed: _unpinningAll
+                            ? null
+                            : () =>
+                                  _unpinAll(messages.map((m) => m.id).toList()),
+                      ),
               ),
+            ),
           ],
         ),
       ),
@@ -107,7 +107,7 @@ class _PinnedMessagesScreenState extends ConsumerState<PinnedMessagesScreen> {
       reverse: true,
       padding: EdgeInsets.only(
         top: insets.top + 84,
-        bottom: insets.bottom + 84,
+        bottom: insets.bottom + 16,
       ),
       itemCount: messages.length,
       itemBuilder: (context, i) {
@@ -140,6 +140,9 @@ class _PinnedMessagesScreenState extends ConsumerState<PinnedMessagesScreen> {
             child: Text(_tr('cancel')),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(dialog).colorScheme.error,
+            ),
             onPressed: () => Navigator.of(dialog).pop(true),
             child: Text(_tr('chat_unpin_all')),
           ),
