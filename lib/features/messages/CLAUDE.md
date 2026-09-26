@@ -1718,6 +1718,9 @@ through `changeConversationMute` — muted → unmute at once, no sheet
 (Signal); not muted → `showMuteOptionsSheet`: 1 h · 8 h · 1 day · 1 week ·
 Always · Only mentions (groups only; in a DM every message is to you) ·
 Custom. The chat header has no ⋮ — Mute and Search live in details.
+Chat-list long press keeps `shellBottomBarHiddenProvider` true through the
+chooser **and** the mute options sheet — restoring between them put the
+pill over the mute sheet.
 
 - **No dialog, anywhere — the user's rule.** Custom is a
   `CupertinoDatePicker` on a SECOND PAGE of the same sheet

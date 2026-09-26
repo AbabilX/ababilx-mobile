@@ -40,24 +40,27 @@ class _ChatListState extends ConsumerState<ChatList> {
   ///
   /// The floating nav pill is a `Positioned` in the shell's Stack, painted
   /// OVER this branch's navigator — so a sheet raised from here comes up
-  /// underneath it, scrim and all. Hiding the bar for the duration is the
-  /// shell's own answer to that (`shellBottomBarHiddenProvider`, same as the
-  /// You sheet), and the `finally` is load-bearing: a sheet dismissed by a
-  /// back gesture must not leave the app with no navigation.
+  /// underneath it, scrim and all. Hiding the bar covers BOTH the chooser
+  /// and any follow-up sheet (mute options): restoring it in between would
+  /// paint the pill over the mute sheet. The `finally` is load-bearing — a
+  /// sheet dismissed by a back gesture must not leave the app with no nav.
   Future<void> _openActions(ChatConversation conversation) async {
     final title = ref
         .read(contactNicknamesProvider)
         .titleFor(conversation, ref.read(chatProvider).currentUserId);
     final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
-    ConversationAction? action;
     hidden.state = true;
     try {
-      action = await showConversationActionsSheet(context, conversation, title);
+      final action = await showConversationActionsSheet(
+        context,
+        conversation,
+        title,
+      );
+      if (action == null || !mounted) return;
+      await runConversationAction(context, ref, conversation, title, action);
     } finally {
       hidden.state = false;
     }
-    if (action == null || !mounted) return;
-    await runConversationAction(context, ref, conversation, title, action);
   }
 
   @override
