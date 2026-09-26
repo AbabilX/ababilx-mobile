@@ -35,5 +35,8 @@ mixin _ChatResyncMixin
       }
     }
     unawaited(retryPendingMessages());
+    // Private messages that arrived while the socket was away are only on
+    // the server until this phone takes them (server 0160).
+    unawaited((this as _ChatPrivateMixin).pullPrivatePending());
   }
 }

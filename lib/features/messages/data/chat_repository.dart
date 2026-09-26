@@ -213,6 +213,10 @@ class ChatRepository {
   Future<void> acknowledgeMessages(String status, List<String> messageIds) =>
       _devices.acknowledge(status, messageIds);
 
+  /// This phone's messaging device id, registering it first if needed.
+  Future<String> chatDeviceId() async =>
+      (await _devices.ensureRegistered()).deviceId;
+
   Future<Map<String, dynamic>> getE2eeVault() => _e2ee.getVault();
   Future<void> putE2eeVault(Map<String, dynamic> data) => _e2ee.putVault(data);
   Future<void> putE2eeIdentity(Map<String, dynamic> publicJwk) =>

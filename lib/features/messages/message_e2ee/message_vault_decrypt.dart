@@ -16,8 +16,18 @@ extension MessageVaultDecrypt on MessageVault {
     ChatMessage message,
     String currentUserId,
   ) async {
-    final quote = message.quote;
-    if (quote == null || !quote.isEncrypted) return null;
+    var quote = message.quote;
+    if (quote == null) {
+      // A private-chat reply whose original the server no longer holds:
+      // resolved from local history, and a plaintext one is already readable.
+      final id = message.privateQuoteId;
+      final lookup = privateQuoteLookup;
+      if (id == null || lookup == null) return null;
+      quote = await lookup(message.conversationId, id);
+      if (quote == null || !quote.isEncrypted) return quote;
+    } else if (!quote.isEncrypted) {
+      return null;
+    }
     final decrypted = await decryptMessage(
       ChatMessage(
         id: quote.messageId,

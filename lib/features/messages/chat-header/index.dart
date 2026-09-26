@@ -25,6 +25,7 @@ import '../nickname/nickname_title.dart';
 import '../chat-typing/typing_text.dart';
 import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../privacy-mode/privacy_status_label.dart';
+import '../../private-chat/private_chat_state.dart';
 import '../../presence/peer_presence_label.dart';
 
 /// Conversation top bar — used inside the scroll shell (auto-hides on scroll).
@@ -47,9 +48,11 @@ class ChatHeader extends ConsumerWidget {
     // these would report the viewer's own presence back at them.
     // A private peer (server 0152) shows "Privacy" and nothing else about
     // what they are doing — not in a call, not a status.
-    final peerPrivate = ref.watch(
-      conversationPeerPrivacyProvider(conversation.id),
-    );
+    // Private chat (server 0160) hides the same things both ways.
+    final privateChat = ref.watch(isPrivateChatProvider(conversation.id));
+    final peerPrivate =
+        privateChat ||
+        ref.watch(conversationPeerPrivacyProvider(conversation.id));
     final peerInCall =
         conversation.hasDmPeer &&
         !peerPrivate &&
@@ -137,9 +140,11 @@ class ChatHeader extends ConsumerWidget {
                               ),
                             )
                           else if (peerPrivate)
-                            const Padding(
-                              padding: EdgeInsets.only(top: 2),
-                              child: PrivacyStatusLabel(),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: PrivacyStatusLabel(
+                                privateChat: privateChat,
+                              ),
                             )
                           else if (peerInCall)
                             const Padding(

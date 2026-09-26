@@ -580,6 +580,29 @@ class AppTranslations {
       'dm_hide_ticks_on': 'On — you won\'t see theirs either',
       'dm_hide_ticks_peer': 'They turned ticks off in this chat',
       'dm_hide_ticks_off': 'Off',
+      'private_chat': 'Private chat',
+      'private_chat_on': 'On — messages leave the server once delivered',
+      'private_chat_on_them': 'They turned it on — it applies to both of you',
+      'private_chat_off': 'Off',
+      'private_chat_sheet_title': 'Turn on private chat?',
+      'private_chat_point_server':
+          'New messages are deleted from our server as soon as their phone has them.',
+      'private_chat_point_status':
+          'Neither of you sees the other online, typing, ticks or ringing.',
+      'private_chat_point_screens': 'Screenshots are blocked on both phones.',
+      'private_chat_point_calls': 'Calls leave no history on either side.',
+      'private_chat_point_media':
+          'Photos and files stay inside the app — no saving, sharing or forwarding.',
+      'private_chat_point_phone':
+          'Messages live only on your phones. Keep your recovery code safe.',
+      'private_chat_turn_on': 'Turn on',
+      'private_chat_off_title': 'Turn off private chat?',
+      'private_chat_off_body':
+          'New messages will be kept on the server again. Messages already sent stay private.',
+      'private_chat_turn_off': 'Turn off',
+      'private_chat_needs_connection':
+          'Private chat needs an accepted connection with this person.',
+      'chat_status_private_chat': 'Private chat',
       'dm_setting_failed': 'Couldn\'t change that. Try again.',
       'dm_hide_notif_text': 'Hide notification text',
       'dm_hide_notif_text_locked': 'Always hidden while the chat is locked',
@@ -1593,6 +1616,29 @@ class AppTranslations {
       'dm_hide_ticks_on': 'চালু — আপনিও তাদের টিক দেখবেন না',
       'dm_hide_ticks_peer': 'তারা এই চ্যাটে টিক বন্ধ করেছে',
       'dm_hide_ticks_off': 'বন্ধ',
+      'private_chat': 'প্রাইভেট চ্যাট',
+      'private_chat_on': 'চালু — পৌঁছানোর পর বার্তা সার্ভার থেকে মুছে যায়',
+      'private_chat_on_them': 'তারা চালু করেছে — দুজনের জন্যই প্রযোজ্য',
+      'private_chat_off': 'বন্ধ',
+      'private_chat_sheet_title': 'প্রাইভেট চ্যাট চালু করবেন?',
+      'private_chat_point_server':
+          'নতুন বার্তা তাদের ফোনে পৌঁছানো মাত্র আমাদের সার্ভার থেকে মুছে যায়।',
+      'private_chat_point_status':
+          'আপনারা কেউ কারও অনলাইন, টাইপিং, টিক বা রিং হওয়া দেখবেন না।',
+      'private_chat_point_screens': 'দুই ফোনেই স্ক্রিনশট বন্ধ থাকে।',
+      'private_chat_point_calls': 'কলের কোনো ইতিহাস কোনো পাশে থাকে না।',
+      'private_chat_point_media':
+          'ছবি ও ফাইল অ্যাপের ভেতরেই থাকে — সেভ, শেয়ার বা ফরোয়ার্ড করা যায় না।',
+      'private_chat_point_phone':
+          'বার্তা শুধু আপনাদের ফোনে থাকে। রিকভারি কোড নিরাপদে রাখুন।',
+      'private_chat_turn_on': 'চালু করুন',
+      'private_chat_off_title': 'প্রাইভেট চ্যাট বন্ধ করবেন?',
+      'private_chat_off_body':
+          'নতুন বার্তা আবার সার্ভারে রাখা হবে। আগে পাঠানো বার্তা প্রাইভেট থাকবে।',
+      'private_chat_turn_off': 'বন্ধ করুন',
+      'private_chat_needs_connection':
+          'প্রাইভেট চ্যাটের জন্য এই ব্যক্তির সাথে গৃহীত সংযোগ দরকার।',
+      'chat_status_private_chat': 'প্রাইভেট চ্যাট',
       'dm_setting_failed': 'পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।',
       'dm_hide_notif_text': 'নোটিফিকেশনের লেখা লুকান',
       'dm_hide_notif_text_locked': 'চ্যাট লক থাকলে সবসময় লুকানো',

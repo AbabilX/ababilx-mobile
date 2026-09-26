@@ -18,6 +18,7 @@ class ChatMessage extends Equatable {
     this.parentId,
     this.revision = 0,
     this.contentPurged = false,
+    this.privateChat = false,
     required this.createdAt,
     this.editedAt,
     this.deletedAt,
@@ -55,6 +56,12 @@ class ChatMessage extends Equatable {
   final String? parentId;
   final int revision;
   final bool contentPurged;
+
+  /// Sent while private chat was on (server 0160). The server drops it once
+  /// the recipient's phones have it, so this phone's copy is the only one:
+  /// never saved out, shared or forwarded, edits / reactions / deletes travel
+  /// as private ops, and replies are quotes resolved from local history.
+  final bool privateChat;
   final String createdAt;
   final String? editedAt;
   final String? deletedAt;
@@ -122,6 +129,15 @@ class ChatMessage extends Equatable {
   }
 
   bool get isGroupCall => messageType == 'group_call';
+
+  /// The message a private-chat reply quotes, by id only (server 0160). The
+  /// quoted message may already be gone from the server, so the phone looks
+  /// it up in its own history — see `resolvePrivateQuote`.
+  String? get privateQuoteId {
+    final id = meta?['private_quote_id'];
+    return id is String && id.isNotEmpty ? id : null;
+  }
+
   bool get isPending => sendStatus != MessageSendStatus.sent;
   bool get isEncrypted => encryptionVersion == 1 && encryptedBody != null;
 
@@ -133,6 +149,7 @@ class ChatMessage extends Equatable {
     parentId: json['parent_id'] as String?,
     revision: (json['revision'] as num?)?.toInt() ?? 0,
     contentPurged: json['content_purged'] == true,
+    privateChat: json['private_chat'] == true,
     createdAt: json['created_at'] as String? ?? '',
     editedAt: json['edited_at'] as String?,
     deletedAt: json['deleted_at'] as String?,
@@ -183,6 +200,7 @@ class ChatMessage extends Equatable {
     'id': id,
     'revision': revision,
     'content_purged': contentPurged,
+    if (privateChat) 'private_chat': true,
     'conversation_id': conversationId,
     'user_id': userId,
     'body': body,
@@ -239,6 +257,7 @@ class ChatMessage extends Equatable {
     int? encryptionVersion,
     int? encryptionKeyVersion,
     ChatMessageQuote? quote,
+    bool? privateChat,
   }) => ChatMessage(
     id: id ?? this.id,
     conversationId: conversationId,
@@ -247,6 +266,7 @@ class ChatMessage extends Equatable {
     parentId: parentId,
     revision: revision,
     contentPurged: contentPurged,
+    privateChat: privateChat ?? this.privateChat,
     createdAt: createdAt,
     editedAt: editedAt ?? this.editedAt,
     deletedAt: deletedAt ?? this.deletedAt,
@@ -290,6 +310,7 @@ class ChatMessage extends Equatable {
     uploadProgress,
     delivery,
     quote,
+    privateChat,
   ];
 }
 

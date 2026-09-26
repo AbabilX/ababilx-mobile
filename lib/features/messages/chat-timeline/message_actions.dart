@@ -47,7 +47,10 @@ Future<void> showMessageActions(
   final isDm = conversation?.isDm ?? true;
   // A private group (server 0154) keeps everything inside it: no Save, no
   // Forward — for the sender too. The server refuses the forward as well.
-  final locked = conversation?.groupPrivacy ?? false;
+  // A private-chat message (server 0160) lives on the two phones only: the
+  // same no Save / no Forward, and no Pin — a pin names a server row that is
+  // about to go.
+  final locked = (conversation?.groupPrivacy ?? false) || msg.privateChat;
   // A Khaam is a card: a forwarded copy would share its id (and its opened
   // state), editing would overwrite it, and its body is a payload, not text.
   final isKhaam = KhaamPayload.tryParse(msg.body) != null;
@@ -86,7 +89,11 @@ Future<void> showMessageActions(
     // panel has room for neither — so the door only opens on the main
     // timeline, where those bars replace the header and the composer.
     showSelect: threadRootId == null,
-    showPin: threadRootId == null && !msg.isPending && !msg.contentPurged,
+    showPin:
+        threadRootId == null &&
+        !msg.isPending &&
+        !msg.contentPurged &&
+        !msg.privateChat,
     pinned: pinned || groupPinned,
     // The sender's own restricted photo is still theirs to forward; nobody
     // else may (the server refuses it too).

@@ -67,6 +67,8 @@ SelectionMenuState selectionMenuState({
   final anyProtected = selected.any(
     (m) => m.userId != currentUserId && m.hasProtectedMedia,
   );
+  // Private chat (server 0160): kept on the two phones, never copied out.
+  final anyPrivate = selected.any((m) => m.privateChat);
 
   final forward =
       !anyDeleted &&
@@ -77,6 +79,7 @@ SelectionMenuState selectionMenuState({
       // A private group (server 0154) forwards nothing, the sender's own
       // messages included; the server refuses it too.
       !groupPrivacy &&
+      !anyPrivate &&
       selected.length <= maxForwardableMessages;
 
   return SelectionMenuState(
@@ -87,6 +90,7 @@ SelectionMenuState selectionMenuState({
         single != null &&
         !anyKhaam &&
         !groupPrivacy &&
+        !anyPrivate &&
         canSaveMessageAttachments(single),
     edit:
         single != null &&

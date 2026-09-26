@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../private-chat/private_chat_state.dart';
 import '../../privacy-mode/people/privacy_people_provider.dart';
 import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../privacy-mode/privacy_secure_scope.dart';
@@ -128,9 +129,10 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
         .isActiveIn(widget.conversationId);
     // The other side's privacy mode (server 0152) means this phone must not
     // capture the chat: FLAG_SECURE for as long as it is on screen.
-    final peerPrivate = ref.watch(
-      conversationPeerPrivacyProvider(widget.conversationId),
-    );
+    // Private chat (server 0160) blocks it on both phones.
+    final peerPrivate =
+        ref.watch(conversationPeerPrivacyProvider(widget.conversationId)) ||
+        ref.watch(isPrivateChatProvider(widget.conversationId));
     // Warm the own switch and per-person choices while the chat is open, so
     // the photo sheet does not wait on their first load at send time.
     ref.watch(privacyModeProvider);

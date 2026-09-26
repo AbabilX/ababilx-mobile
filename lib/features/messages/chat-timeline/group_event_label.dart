@@ -56,6 +56,11 @@ String groupEventLabel(ChatMessage message, String currentUserId) {
       return value == 'on'
           ? '$actor turned on group privacy'
           : '$actor turned off group privacy';
+    // A DM's line, not a group's (server 0160) — rendered by the same row.
+    case 'private_chat_changed':
+      return value == 'on'
+          ? '$actor turned on private chat'
+          : '$actor turned off private chat';
     default:
       return message.body;
   }

@@ -6,6 +6,10 @@ mixin _ChatMutateMixin
   ChatRepository get repo;
 
   Future<void> toggleReaction(String messageId, String emoji) async {
+    final private = _privateTarget(messageId);
+    if (private != null) {
+      return (this as _ChatPrivateOpsMixin).reactPrivately(private, emoji);
+    }
     final reactions = await repo.toggleReaction(messageId, emoji);
     final convId = state.activeConversationId;
     if (convId == null) return;
@@ -19,6 +23,10 @@ mixin _ChatMutateMixin
   Future<void> editMessage(String messageId, String body) async {
     final convId = state.activeConversationId;
     if (convId == null) return;
+    final private = _privateTarget(messageId);
+    if (private != null) {
+      return (this as _ChatPrivateOpsMixin).editPrivately(private, body);
+    }
     final conversation = state.conversationById(convId);
     // Encryption follows the ROW being edited, inside a conversation that may
     // hold a key at all — never `isDm`. A personal group is E2EE too, and the
@@ -76,15 +84,39 @@ mixin _ChatMutateMixin
   }
 
   Future<void> deleteMessage(String messageId) async {
+    final private = _privateTarget(messageId);
+    if (private != null) {
+      return (this as _ChatPrivateOpsMixin).deletePrivately(private);
+    }
     await repo.deleteMessage(messageId);
     await _forgetMessage(messageId);
   }
 
   /// "Delete for me": gone on this account's devices, untouched for the rest
   /// of the conversation. Locally it is the same forgetting as a delete.
+  ///
+  /// A private-chat message is usually already gone from the server (0160),
+  /// so the server half is best effort there and the local forget is what
+  /// counts.
   Future<void> hideMessage(String messageId) async {
-    await repo.hideMessage(messageId);
+    if (_privateTarget(messageId) != null) {
+      try {
+        await repo.hideMessage(messageId);
+      } catch (_) {}
+    } else {
+      await repo.hideMessage(messageId);
+    }
     await _forgetMessage(messageId);
+  }
+
+  /// The loaded private-chat message [messageId] names in the open
+  /// conversation, or null for an ordinary one — which keeps the ordinary
+  /// endpoints.
+  ChatMessage? _privateTarget(String messageId) {
+    final convId = state.activeConversationId;
+    if (convId == null) return null;
+    final found = _findEditableMessage(convId, messageId);
+    return (found?.privateChat ?? false) ? found : null;
   }
 
   Future<void> _forgetMessage(String messageId) async {

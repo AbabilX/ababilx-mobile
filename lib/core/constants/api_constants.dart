@@ -287,6 +287,12 @@ class ApiConstants {
   ) => action.isEmpty
       ? independentChatConversation(conversationId)
       : '$independentChatConversations/$conversationId/$action';
+  // Private chat (server 0160): a phone's pull of what it still owes custody
+  // for, and its acknowledgement once those are on disk.
+  static const String privateChatPending =
+      '$independentChatRoot/private/pending';
+  static const String privateChatCustody =
+      '$independentChatRoot/private/custody';
   static String independentChatVoiceCalls(String conversationId) =>
       '$independentChatConversations/$conversationId/calls';
   // Ghost Chat: invite, then act on the session. No message endpoint exists —

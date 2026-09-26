@@ -274,6 +274,9 @@ mixin _ChatActionsMixin
       // Same local row as persistOutbox — clientRef is the history key, the
       // server id rides in the payload. Never delete-and-reinsert.
       (this as _ChatCacheMixin).persistMessageAsync(msg);
+      // Private chat (server 0160) holds the message until this phone says
+      // it has it too; its own socket echo lands as already settled.
+      unawaited((this as _ChatPrivateMixin).takePrivateCustody([msg]));
       return msg;
     } catch (_) {
       // ── Step 4: Mark the bubble as failed so user can retry ───────────────

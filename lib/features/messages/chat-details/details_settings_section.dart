@@ -8,6 +8,7 @@ import '../../chat-lock/widgets/chat_lock_tile.dart';
 import '../../dm-settings/notification_text/hide_notification_text.dart';
 import '../../dm-settings/receipts/hide_ticks_tile.dart';
 import '../../privacy-mode/people/privacy_person_tile.dart';
+import '../../private-chat/private_chat_tile.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../group-privacy/group_privacy_tile.dart';
@@ -57,6 +58,10 @@ class DetailsSettingsSection extends ConsumerWidget {
             ref.read(chatProvider).currentUserId,
           ),
         ),
+      // DM only: private chat binds both people in it (server 0160). First,
+      // because it changes more than anything below it.
+      if (conversation.hasDmPeer && !conversation.isAccountDeleted)
+        PrivateChatTile(conversationId: conversation.id),
       // DM only: privacy mode never reaches past one person (server 0153).
       // Not for a deleted account — there is nobody left to hide from.
       if (conversation.hasDmPeer && !conversation.isAccountDeleted)

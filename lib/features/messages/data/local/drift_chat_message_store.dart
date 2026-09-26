@@ -182,6 +182,26 @@ class DriftChatMessageStore {
     } catch (_) {}
   }
 
+  /// One settled message by its server id, or null. Drift is a full mirror
+  /// of every write, so it can answer for either platform. Uses the V9
+  /// expression index on `\$.id`.
+  Future<ChatMessage?> byId(String messageId) async {
+    if (messageId.isEmpty) return null;
+    try {
+      final rows = await _db
+          .customSelect(
+            "SELECT * FROM cached_messages WHERE json_extract(payload_json, '\$.id') = ? LIMIT 1",
+            variables: [Variable.withString(messageId)],
+            readsFrom: {_db.cachedMessages},
+          )
+          .map((row) => _db.cachedMessages.map(row.data))
+          .get();
+      return rows.isEmpty ? null : messageFromRow(rows.first);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> remove(String messageId) async {
     if (messageId.isEmpty) return;
     await (_db.delete(

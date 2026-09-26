@@ -33,6 +33,12 @@ class ChatNotificationPresenter {
       await postHiddenChatNotification(local, data);
       return;
     }
+    // Private chat (server 0160): the push carries no content, and the entry
+    // offers no reply from the shade.
+    if (data['private_chat']?.toString() == '1') {
+      await postHiddenChatNotification(local, data, private: true);
+      return;
+    }
     if (conversationId.isEmpty || messageId.isEmpty) {
       // Nothing to thread this into — show it flat rather than not at all.
       await local.show(

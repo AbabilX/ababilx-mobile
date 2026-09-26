@@ -95,6 +95,7 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       final sorted = canonicalChatMessages(messages);
       _acknowledge(conversationId, page.messages);
       await cache.stageFeedPage(sorted);
+      unawaited((this as _ChatPrivateMixin).takePrivateCustody(sorted));
       // The disk half may still be reading; its page is older than this one
       // or equal to it, and merging after it keeps both.
       await hydration;
@@ -204,6 +205,7 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       final sorted = canonicalChatMessages(messages);
       _acknowledge(conversationId, page.messages);
       await cache.stageFeedPage(sorted);
+      unawaited((this as _ChatPrivateMixin).takePrivateCustody(sorted));
       if (isDisposed) return;
       final latest = state.feeds[key] ?? feed;
       final merged = canonicalChatMessages([...latest.messages, ...sorted]);

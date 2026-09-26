@@ -7,6 +7,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../privacy-mode/privacy_status_label.dart';
+import '../../private-chat/private_chat_state.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/group/providers/group_call_provider.dart';
@@ -237,10 +238,12 @@ class DetailsHeader extends ConsumerWidget {
         ),
       );
     }
-    if (ref.watch(conversationPeerPrivacyProvider(conversation.id))) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 6),
-        child: PrivacyStatusLabel(),
+    final privateChat = ref.watch(isPrivateChatProvider(conversation.id));
+    if (privateChat ||
+        ref.watch(conversationPeerPrivacyProvider(conversation.id))) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: PrivacyStatusLabel(privateChat: privateChat),
       );
     }
     final inCall = ref.watch(isUserInCallProvider(conversation.peerUserId));

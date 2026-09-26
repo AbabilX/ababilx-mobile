@@ -1667,3 +1667,46 @@ the peer is private toward), but no mobile provider listened.
 - Snapshot missed when the socket connected before the provider subscribed?
   The server's minute-tick re-broadcast (`RefreshConnectedPresence`) fills it
   within 60 s.
+
+# Private chat: this phone IS the only copy (2026-09-26, server 0160)
+
+Full contract in the root `CLAUDE.md`. What bites on this side:
+
+```
+arrives (WS / page / pull)  ->  messageStore.saveAll  ->  takePrivateMedia
+                            ->  POST /api/chat/private/custody   (never before)
+```
+
+- **`takePrivateCustody` is the only thing that may confirm custody**, and it
+  runs from every path a private message can arrive by: `_onMessageCreated`,
+  `_onMessageUpdated` (a timed photo expiring releases its held message), both
+  feed page loads, `pullPrivatePending` and — for this phone's own sends —
+  `sendMessage` right after confirm (its socket echo lands as already settled
+  and returns early). It takes OWN messages and ops too: the server holds them
+  for the author's phones as well. Reordering it so the POST comes before the
+  disk write or the download loses the message for good — the server deletes
+  on that POST. Only `ready` counts as downloaded; never treat
+  `permanentlyFailed` as taken.
+- **`pullPrivatePending` runs at bootstrap and in `resyncNow`** (reconnect +
+  foreground), chat opened or not; one at a time, 10 pages max, because an
+  unopened timed photo comes back on every page.
+- **Nothing server-side ever deletes the local row.** Purging writes no
+  deletion marker and the feed merge never drops rows the server stopped
+  returning. Do not add a "reconcile with server" step for private DMs.
+- **Edit / react / delete go through `_ChatPrivateOpsMixin`** whenever the row
+  carries `private_chat` — `_privateTarget` in `chat_provider_mutate.dart`
+  routes them. The ordinary endpoints 404 on a purged row. Received ops apply
+  in `applyPrivateOp`, which checks authorship itself (`privateOpEffect`): the
+  server cannot once the target is gone.
+- **Quotes**: `meta.private_quote_id` is resolved in `MessageVault._decryptQuote`
+  via `privateQuoteLookup` (drift `byId`), same conversation only. Drift is the
+  lookup because it mirrors every write on both platforms.
+- **Sidebar**: `last_message_private` rows keep the preview already on screen
+  (`keepPrivatePreviews` in `fetchSidebar`); unread comes from the server's
+  `private_unread`, so pulled messages never bump it again.
+- Screenshot lock and "no ticks" need nothing new: the server reports
+  `peer_privacy` true on both rows. `isPrivateChatProvider` only makes them
+  immediate after this phone's own toggle, and swaps "Privacy" for
+  "Private chat" in the header.
+- Manual Settings → Data and storage clears still mark private media absent;
+  the server copy is gone, so that one is permanent. Auto-eviction is not wired.

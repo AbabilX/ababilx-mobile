@@ -36,6 +36,21 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       ref.read(receiptsHiddenOverridesProvider.notifier).onEvent(ev);
       return;
     }
+    if (type == 'chat.private_chat') {
+      ref.read(privateChatOverridesProvider.notifier).onEvent(ev);
+      return;
+    }
+    if (type == 'chat.private_op') {
+      final op = ev['private_op'];
+      if (op is Map) {
+        unawaited(
+          (this as _ChatPrivateMixin).applyPrivateOp(
+            PrivateOp.fromJson(Map<String, dynamic>.from(op)),
+          ),
+        );
+      }
+      return;
+    }
     if (type == 'chat.privacy_person') {
       ref.read(peerPrivacyOverridesProvider.notifier).onPersonEvent(ev);
       return;
@@ -287,6 +302,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     }
     unawaited(ref.read(attachmentIntakeProvider).onMessage(msg));
     (this as _ChatCacheMixin).persistMessageAsync(msg);
+    unawaited((this as _ChatPrivateMixin).takePrivateCustody([msg]));
   }
 
   Future<void> _onMessageUpdated(
@@ -315,6 +331,9 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     }
     unawaited(ref.read(attachmentIntakeProvider).onMessage(msg));
     (this as _ChatCacheMixin).persistMessageAsync(msg);
+    // A timed photo that just expired is what releases a held private
+    // message (server 0160): custody waits for it.
+    unawaited((this as _ChatPrivateMixin).takePrivateCustody([msg]));
   }
 
   void initRealtime() {

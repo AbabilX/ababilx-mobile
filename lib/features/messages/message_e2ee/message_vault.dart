@@ -8,6 +8,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../data/chat_repository.dart';
 import '../data/local/chat_key_cache.dart';
+import '../data/local/chat_message_store.dart';
+import '../../private-chat/private_quote.dart';
 import '../data/models/chat_message.dart';
 import '../data/models/chat_message_quote.dart';
 import 'p256_ecdh.dart';
@@ -96,6 +98,13 @@ class MessageVault {
   bool get isStartingNewChat => _newChatPending;
   Future<void> Function(String userId)? onHistoryReset;
 
+  /// Finds what a private-chat reply quotes (server 0160) in this phone's own
+  /// history: the original may be gone from the server, so the reply carries
+  /// only its id (`meta.private_quote_id`). Unset in the FCM isolate, which
+  /// has no history to look in.
+  Future<ChatMessageQuote?> Function(String conversationId, String messageId)?
+  privateQuoteLookup;
+
   /// Reads the freshly generated code once and forgets it.
   String? takePendingRecoveryCode() {
     final code = _pendingRecoveryCode;
@@ -178,9 +187,17 @@ class MessageVault {
 }
 
 final messageVaultProvider = Provider<MessageVault>(
-  (ref) => MessageVault(
-    ref.watch(chatRepositoryProvider),
-    const SecureStorage(FlutterSecureStorage()),
-    ref.watch(chatKeyCacheProvider),
-  )..onHistoryReset = (userId) => cleanNewChatHistory(ref, userId),
+  (ref) =>
+      MessageVault(
+          ref.watch(chatRepositoryProvider),
+          const SecureStorage(FlutterSecureStorage()),
+          ref.watch(chatKeyCacheProvider),
+        )
+        ..onHistoryReset = ((userId) => cleanNewChatHistory(ref, userId))
+        ..privateQuoteLookup = ((conversationId, messageId) =>
+            resolvePrivateQuote(
+              ref.read(chatMessageStoreProvider),
+              conversationId,
+              messageId,
+            )),
 );

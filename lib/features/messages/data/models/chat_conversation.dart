@@ -68,6 +68,9 @@ class ChatConversation extends Equatable {
     this.peerPrivacy = false,
     this.receiptsHidden = false,
     this.myReceiptsHidden = false,
+    this.privateChat = false,
+    this.privateChatBy = '',
+    this.lastMessagePrivate = false,
     this.canMessage = true,
     this.lockReason = '',
     this.plaintextUntilKeyed = false,
@@ -137,6 +140,19 @@ class ChatConversation extends Equatable {
   /// `chat.receipts_hidden`; read through `conversationTicksHiddenProvider`.
   final bool receiptsHidden;
   final bool myReceiptsHidden;
+
+  /// Private chat (server 0160): the server drops each message once the
+  /// recipient's phones have it, and neither side sees the other's typing,
+  /// ticks, presence or ringing. Either member switched it on
+  /// ([privateChatBy]); live changes arrive as `chat.private_chat` — read it
+  /// through `conversationPrivateChatProvider`.
+  final bool privateChat;
+  final String privateChatBy;
+
+  /// The newest message was private and is already gone from the server, so
+  /// the last-message fields here describe nothing: the list keeps its own
+  /// preview (the phone's newest copy) instead of blanking it.
+  final bool lastMessagePrivate;
   final bool canMessage;
 
   /// Why the composer is closed. Empty when [canMessage] is true.
@@ -327,6 +343,9 @@ class ChatConversation extends Equatable {
       peerPrivacy: json['peer_privacy'] as bool? ?? false,
       receiptsHidden: json['receipts_hidden'] as bool? ?? false,
       myReceiptsHidden: json['my_receipts_hidden'] as bool? ?? false,
+      privateChat: json['private_chat'] as bool? ?? false,
+      privateChatBy: _jsonString(json['private_chat_by']) ?? '',
+      lastMessagePrivate: json['last_message_private'] as bool? ?? false,
       canMessage: json['can_message'] as bool? ?? true,
       lockReason: _jsonString(json['lock_reason']) ?? '',
       plaintextUntilKeyed: json['plaintext_until_keyed'] as bool? ?? false,
@@ -388,6 +407,9 @@ class ChatConversation extends Equatable {
     String? addMembersRole,
     String? myRole,
     bool? groupPrivacy,
+    bool? privateChat,
+    String? privateChatBy,
+    bool? lastMessagePrivate,
     GroupMemberPerms? myPermissions,
     GroupMemberPerms? defaultPermissions,
   }) => ChatConversation(
@@ -436,6 +458,9 @@ class ChatConversation extends Equatable {
     peerPrivacy: peerPrivacy,
     receiptsHidden: receiptsHidden,
     myReceiptsHidden: myReceiptsHidden,
+    privateChat: privateChat ?? this.privateChat,
+    privateChatBy: privateChatBy ?? this.privateChatBy,
+    lastMessagePrivate: lastMessagePrivate ?? this.lastMessagePrivate,
     canMessage: canMessage,
     lockReason: lockReason,
     plaintextUntilKeyed: plaintextUntilKeyed,
@@ -474,6 +499,9 @@ class ChatConversation extends Equatable {
     peerPrivacy,
     receiptsHidden,
     myReceiptsHidden,
+    privateChat,
+    privateChatBy,
+    lastMessagePrivate,
     canMessage,
     lockReason,
     plaintextUntilKeyed,

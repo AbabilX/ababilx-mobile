@@ -13,6 +13,11 @@ import '../../notifications/chat/chat_notification_presenter.dart';
 import '../../dm-settings/receipts/receipts_hidden_provider.dart';
 import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../privacy-mode/privacy_media.dart';
+import '../../private-chat/private_chat_api.dart';
+import '../../private-chat/private_chat_preview.dart';
+import '../../private-chat/private_chat_state.dart';
+import '../../private-chat/private_custody_media.dart';
+import '../../private-chat/private_op.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -63,6 +68,8 @@ part 'chat_provider_thread_prefetch.dart';
 part 'chat_provider_history_restore.dart';
 part 'chat_provider_resync.dart';
 part 'chat_provider_preview.dart';
+part 'chat_provider_private.dart';
+part 'chat_provider_private_ops.dart';
 
 class ChatNotifier extends Notifier<ChatState>
     with
@@ -79,7 +86,9 @@ class ChatNotifier extends Notifier<ChatState>
         _ChatThreadPrefetchMixin,
         _ChatHistoryRestoreMixin,
         _ChatResyncMixin,
-        _ChatPreviewMixin {
+        _ChatPreviewMixin,
+        _ChatPrivateMixin,
+        _ChatPrivateOpsMixin {
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
   WsClient get _ws => ref.read(wsClientProvider);
   bool _realtimeStarted = false;
@@ -193,6 +202,9 @@ class ChatNotifier extends Notifier<ChatState>
     } catch (_) {}
     initRealtime();
     _bootstrapped = true;
+    // Private chat (server 0160): take whatever the server is holding for
+    // this phone, chat opened or not, before its 7 days run out.
+    unawaited(pullPrivatePending());
     // Resumes a recovery restore that was killed mid-run. No-ops when the
     // pending flag is unset, so ordinary launches never pull again.
     unawaited(startHistoryRestoreIfNeeded());
@@ -308,7 +320,12 @@ class ChatNotifier extends Notifier<ChatState>
       final stale = <String>{};
       final dms = sortDms(
         _readMarks.apply(
-          await decryptPreviews(data.dms, userId),
+          // A private DM whose newest message the server already let go
+          // keeps the preview this phone drew from its own copy.
+          keepPrivatePreviews(
+            await decryptPreviews(data.dms, userId),
+            state.dms,
+          ),
           activeId: active,
           stale: stale,
         ),

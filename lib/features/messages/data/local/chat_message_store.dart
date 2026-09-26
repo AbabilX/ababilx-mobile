@@ -213,6 +213,17 @@ class ChatMessageStore {
 
   Future<void> saveOne(ChatMessage message) => saveAll([message]);
 
+  /// One settled message by server id from this phone's history, or null —
+  /// how a private-chat op finds its target and a private quote its original
+  /// after the server has let both go (server 0160). A message deleted here
+  /// stays deleted.
+  Future<ChatMessage?> byId(String messageId) async {
+    final found = await _drift.byId(messageId);
+    if (found == null) return null;
+    final kept = deletions.filter([found]);
+    return kept.isEmpty ? null : kept.first;
+  }
+
   Future<List<ChatMessage>> listUnsent() async {
     final native = _android;
     if (native != null) {

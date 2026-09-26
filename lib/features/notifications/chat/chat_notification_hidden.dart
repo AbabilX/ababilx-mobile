@@ -12,10 +12,16 @@ import 'chat_notification_store.dart';
 ///
 /// The payload keeps only what a tap and Mark read need: the ciphertext and
 /// the sender's name stay out of the PendingIntent too.
+///
+/// A private-chat push (server 0160, `private_chat=1`) goes through here too,
+/// with [private] set: the server sent no text to begin with, and the entry
+/// names the sender — "Alice · New private message" — which is what that
+/// chat promised, while still carrying nothing to reply from.
 Future<void> postHiddenChatNotification(
   LocalNotifications local,
-  Map<String, dynamic> data,
-) async {
+  Map<String, dynamic> data, {
+  bool private = false,
+}) async {
   final conversationId = data['conversation_id']?.toString() ?? '';
   final messageId = data['message_id']?.toString() ?? '';
   final now = DateTime.now();
@@ -38,10 +44,13 @@ Future<void> postHiddenChatNotification(
   );
   if (await ChatNotificationDismissals.readSince(conversationId, now)) return;
   final count = upsert.messages.where((m) => !m.fromMe).length;
+  final sender = (data['sender_name'] ?? data['title'])?.toString() ?? '';
   await local.showDetails(
     id: chatNotificationId(conversationId),
-    title: 'AbabilX',
-    body: count > 1 ? '$count new messages' : 'New message',
+    title: private && sender.isNotEmpty ? sender : 'AbabilX',
+    body: private
+        ? (count > 1 ? '$count new private messages' : 'New private message')
+        : (count > 1 ? '$count new messages' : 'New message'),
     payload: LocalNotifications.encodePayload(
       NotificationRouter.pathForData(bare),
       bare,
