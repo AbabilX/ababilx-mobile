@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../khaam/data/khaam_payload.dart';
 import 'chat_attachment.dart';
 
 /// One page of a conversation's shared files, newest first.
@@ -25,6 +26,8 @@ class ChatMediaPage extends Equatable {
   factory ChatMediaPage.fromJson(Map<String, dynamic> json) => ChatMediaPage(
     items: (json['items'] as List? ?? [])
         .map((e) => ChatMessageAttachment.fromJson(e as Map<String, dynamic>))
+        // A Khaam's photo belongs to its card, not to the chat's media.
+        .where((a) => !isKhaamPhotoFile(a.fileName))
         .toList(),
     nextCursor: json['next_cursor'] as String? ?? '',
     hasMore: json['has_more'] as bool? ?? false,

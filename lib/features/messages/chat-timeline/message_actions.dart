@@ -73,7 +73,7 @@ Future<void> showMessageActions(
     pointer: pointer,
     isMine: isMine,
     showThread: !isDm && threadRootId == null,
-    showSave: !locked && canSaveMessageAttachments(msg),
+    showSave: !isKhaam && !locked && canSaveMessageAttachments(msg),
     // Selection has a top bar and an action bar of its own, and a thread
     // panel has room for neither — so the door only opens on the main
     // timeline, where those bars replace the header and the composer.

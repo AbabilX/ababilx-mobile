@@ -8,9 +8,10 @@ import 'crop_render.dart';
 import 'crop_transform.dart';
 
 /// The shape of the crop window. An avatar is a circle you drag a face into; a
-/// banner is a wide strip. Nothing else about the editor differs, so the shape
-/// is a parameter rather than a second screen.
-enum CropShape { circle, wide }
+/// banner is a wide strip; a photo is a 3:4 portrait (a Khaam envelope's upper panel). Nothing
+/// else about the editor differs, so the shape is a parameter rather than a
+/// second screen.
+enum CropShape { circle, wide, photo }
 
 /// Full-screen crop panel: the photo stays visible around the window, you
 /// pinch and drag, then rotate / flip / reset before committing.
@@ -36,7 +37,11 @@ class ImageCropEditor extends StatefulWidget {
 
   /// Width over height of the crop window. 3:1 is the ratio a header strip is
   /// actually drawn at, so what is framed here is what appears there.
-  double get aspectRatio => shape == CropShape.circle ? 1 : 3;
+  double get aspectRatio => switch (shape) {
+    CropShape.circle => 1,
+    CropShape.wide => 3,
+    CropShape.photo => 3 / 4,
+  };
 
   ui.Size get outputSize =>
       ui.Size(outputWidth.toDouble(), outputWidth / aspectRatio);

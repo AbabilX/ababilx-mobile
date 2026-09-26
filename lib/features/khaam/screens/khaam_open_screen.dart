@@ -16,7 +16,10 @@ import '../providers/khaam_open_provider.dart';
 import '../widgets/khaam_card.dart';
 import '../widgets/khaam_card_entrance.dart';
 import '../widgets/khaam_confetti.dart';
+import '../widgets/khaam_cover_art.dart';
+import '../widgets/khaam_caption.dart';
 import '../widgets/khaam_open_footer.dart';
+import '../widgets/khaam_photo.dart';
 import '../widgets/khaam_scratch_foil.dart';
 
 /// A Khaam, full screen: the card rises into place, the message waits under
@@ -73,7 +76,6 @@ class _KhaamOpenScreenState extends ConsumerState<KhaamOpenScreen>
     final phase = open.phase;
     final sealed = phase == KhaamOpenPhase.sealed;
     final cover = khaamCoverById(widget.payload.coverId);
-    final theme = Theme.of(context);
     final senderName = widget.isOwn
         ? t('khaam_you')
         : safeDisplayName(widget.message.userName, fallback: 'Ababil X');
@@ -88,28 +90,8 @@ class _KhaamOpenScreenState extends ConsumerState<KhaamOpenScreen>
     });
 
     final text = widget.payload.message.trim();
-    final message = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 128),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-          child: AnimatedScale(
-            scale: sealed ? 0.94 : 1,
-            duration: const Duration(milliseconds: 520),
-            curve: Curves.easeOutBack,
-            child: Text(
-              text.isEmpty ? t(cover.nameKey) : text,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: Color.lerp(cover.flap, theme.colorScheme.onSurface, .15),
-                height: 1.3,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    final photo = khaamPhotoOf(widget.message, widget.payload);
+    final box = khaamPhotoBox(khaamEnvelopeWidth(context, width));
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -124,7 +106,7 @@ class _KhaamOpenScreenState extends ConsumerState<KhaamOpenScreen>
           if (phase != KhaamOpenPhase.loading)
             Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(vertical: 72),
+                padding: const EdgeInsets.symmetric(vertical: 48),
                 // A scratch must never turn into a scroll.
                 physics: sealed
                     ? const NeverScrollableScrollPhysics()
@@ -135,16 +117,30 @@ class _KhaamOpenScreenState extends ConsumerState<KhaamOpenScreen>
                     cover: cover,
                     width: width,
                     fromLabel: t('khaam_from').replaceAll('{name}', senderName),
+                    // The memory takes the cover's place once the foil lifts.
+                    photo: photo == null || sealed
+                        ? null
+                        : KhaamPhoto(
+                            attachment: photo,
+                            width: box.width,
+                            height: box.height,
+                            radius: 0,
+                          ),
                     senderName: senderName,
                     senderAvatar: widget.isOwn
                         ? null
                         : widget.message.userAvatarUrl,
-                    body: KhaamScratchFoil(
+                    caption: KhaamScratchFoil(
                       cover: cover,
                       hint: t('khaam_scratch_hint'),
                       cleared: !sealed,
                       onScratchedEnough: _reveal,
-                      child: message,
+                      radius: 10,
+                      child: KhaamCaption(
+                        cover: cover,
+                        text: text,
+                        sealed: sealed,
+                      ),
                     ),
                     footer: KhaamOpenFooter(
                       cover: cover,

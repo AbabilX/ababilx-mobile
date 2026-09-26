@@ -136,18 +136,12 @@ class KhaamFoilPainter extends CustomPainter {
       old.hintStyle != hintStyle;
 }
 
-/// The foil as a still strip — the unopened bubble's "scratch me" promise.
+/// The foil, still, filling its box — the unopened bubble's flap.
 class KhaamFoilStrip extends StatelessWidget {
-  const KhaamFoilStrip({
-    super.key,
-    required this.cover,
-    required this.hint,
-    this.height = 40,
-  });
+  const KhaamFoilStrip({super.key, required this.cover, required this.hint});
 
   final KhaamCover cover;
   final String hint;
-  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -155,9 +149,7 @@ class KhaamFoilStrip extends StatelessWidget {
       color: Color.lerp(cover.accent, Colors.black, 0.62),
       fontWeight: FontWeight.w700,
     );
-    return SizedBox(
-      height: height,
-      width: double.infinity,
+    return SizedBox.expand(
       child: CustomPaint(
         painter: KhaamFoilPainter(
           cover: cover,

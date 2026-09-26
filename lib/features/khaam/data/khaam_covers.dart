@@ -37,7 +37,7 @@ class KhaamCover {
   final Color top;
   final Color bottom;
 
-  /// The lower flap the seal sits on.
+  /// The lower flap the caption is written on.
   final Color flap;
 
   /// Seal and ornament colour.

@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../messages/chat-select/message_selection.dart';
-import '../../messages/chat_icon.dart';
 import '../../messages/data/models/chat_models.dart';
 import '../data/khaam_covers.dart';
 import '../data/khaam_payload.dart';
 import '../data/khaam_status.dart';
 import '../providers/khaam_providers.dart';
 import '../screens/khaam_open_route.dart';
-import 'khaam_cover_band.dart';
+import 'khaam_cover_art.dart';
+import 'khaam_caption.dart';
+import 'khaam_envelope_face.dart';
 import 'khaam_foil_painter.dart';
+import 'khaam_photo.dart';
 
 /// A Khaam in the timeline. Fills the bubble edge to edge, like media; the
 /// bubble's own footer (time, ticks) sits under it.
 ///
 /// The receiver sees the cover and a strip of foil until they scratch the
-/// card open — the message is never printed here before that.
+/// card open — the message is never printed here before that. No label and
+/// no status row: the cover and the foil already say what this is.
 class KhaamBubbleCard extends ConsumerWidget {
   const KhaamBubbleCard({
     super.key,
@@ -27,7 +29,9 @@ class KhaamBubbleCard extends ConsumerWidget {
     required this.isOwn,
   });
 
-  static const width = 232.0;
+  static const width = 200.0;
+  static const _envelope = width;
+  static final _photo = khaamPhotoBox(_envelope);
 
   final ChatMessage message;
   final KhaamPayload payload;
@@ -44,9 +48,8 @@ class KhaamBubbleCard extends ConsumerWidget {
     final selecting = ref.watch(messageSelectionProvider).isActive;
     final failed = message.sendStatus == MessageSendStatus.failed;
     final state = khaamStatus(isOwn: isOwn, opened: opened);
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final text = payload.message.trim();
+    final photo = khaamPhotoOf(message, payload);
 
     final status = switch (state) {
       KhaamStatus.sent => t('khaam_sent'),
@@ -54,77 +57,29 @@ class KhaamBubbleCard extends ConsumerWidget {
       KhaamStatus.unopened => t('khaam_tap_to_open'),
     };
 
+    // The portrait envelope and nothing else: foil on the flap until opened,
+    // then the message there and the memory photo in the upper panel.
     final card = SizedBox(
       width: width,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          KhaamCoverBand(
+          KhaamEnvelopeFace(
             cover: cover,
-            width: width,
-            height: 112,
-            child: Positioned(
-              left: 12,
-              right: 12,
-              bottom: 10,
-              child: Text(
-                t(cover.nameKey),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  shadows: const [Shadow(blurRadius: 6, color: Colors.black38)],
-                ),
-              ),
-            ),
-          ),
-          Container(
-            color: colors.surfaceContainerLowest,
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-            child: state == KhaamStatus.unopened
+            width: _envelope,
+            photo: photo == null || state == KhaamStatus.unopened
+                ? null
+                : KhaamPhoto(
+                    attachment: photo,
+                    width: _photo.width,
+                    height: _photo.height,
+                    radius: 0,
+                    open: false,
+                  ),
+            caption: state == KhaamStatus.unopened
                 ? KhaamFoilStrip(cover: cover, hint: t('khaam_scratch_hint'))
-                : Text(
-                    text.isEmpty ? t(cover.nameKey) : text,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      height: 1.3,
-                    ),
-                  ),
-          ),
-          Container(
-            color: colors.surfaceContainerLowest,
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            child: Row(
-              children: [
-                ChatIcon(
-                  HugeIcons.strokeRoundedMailLove01,
-                  size: 14,
-                  color: cover.flap,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  t('khaam_chip'),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  status,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: state == KhaamStatus.unopened
-                        ? cover.flap
-                        : colors.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+                : KhaamCaption(cover: cover, text: text),
           ),
         ],
       ),

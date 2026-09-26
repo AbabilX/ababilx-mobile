@@ -1,7 +1,11 @@
+import 'dart:typed_data';
+
+import 'package:flutter/widgets.dart' show StringCharacters;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../messages/data/chat_client_message_id.dart';
 import '../data/khaam_covers.dart';
+import '../data/khaam_payload.dart';
 
 /// Everything the compose screen shows, and nothing it merely renders.
 class KhaamComposeState {
@@ -13,6 +17,7 @@ class KhaamComposeState {
     this.messageIndex = 0,
     this.custom = false,
     this.busy = false,
+    this.photo,
   });
 
   /// Minted once per compose screen.
@@ -29,15 +34,24 @@ class KhaamComposeState {
   final bool custom;
   final bool busy;
 
+  /// The memory photo, already cropped to the envelope's 3:4 panel as a JPEG. Null for none.
+  final Uint8List? photo;
+
   List<String> get defaults => cover.messagesFor(lang);
 
   String get defaultMessage =>
       defaults.isEmpty ? '' : defaults[messageIndex % defaults.length];
 
   /// What goes out: the typed text, or the ready-made one when left empty.
+  /// Capped at [khaamCaptionMaxChars] too, so a paste or an old draft can
+  /// never carry more than the envelope's flap holds.
   String get outgoingMessage {
     final typed = message.trim();
-    return typed.isEmpty ? defaultMessage : typed;
+    final text = typed.isEmpty ? defaultMessage : typed;
+    final chars = text.characters;
+    return chars.length <= khaamCaptionMaxChars
+        ? text
+        : chars.take(khaamCaptionMaxChars).toString().trim();
   }
 
   KhaamComposeState copyWith({
@@ -47,6 +61,8 @@ class KhaamComposeState {
     int? messageIndex,
     bool? custom,
     bool? busy,
+    Uint8List? photo,
+    bool clearPhoto = false,
   }) => KhaamComposeState(
     khaamId: khaamId,
     cover: cover ?? this.cover,
@@ -55,6 +71,7 @@ class KhaamComposeState {
     messageIndex: messageIndex ?? this.messageIndex,
     custom: custom ?? this.custom,
     busy: busy ?? this.busy,
+    photo: clearPhoto ? null : (photo ?? this.photo),
   );
 }
 
@@ -71,6 +88,7 @@ class KhaamComposeNotifier
 
   void typeMessage(String text) =>
       state = state.copyWith(message: text, custom: text.trim().isNotEmpty);
+
 
   /// Next ready-made message. Replaces whatever was typed — that is the ask.
   void shuffle() {
@@ -93,6 +111,10 @@ class KhaamComposeNotifier
   }
 
   void setBusy(bool busy) => state = state.copyWith(busy: busy);
+
+  void setPhoto(Uint8List photo) => state = state.copyWith(photo: photo);
+
+  void clearPhoto() => state = state.copyWith(clearPhoto: true);
 }
 
 final khaamComposeProvider = NotifierProvider.autoDispose

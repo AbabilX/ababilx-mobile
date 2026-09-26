@@ -60,7 +60,8 @@ SelectionMenuState selectionMenuState({
     (m) => !m.isDeleted && tiptapToPlainText(m.body).trim().isNotEmpty,
   );
   final allMine = selected.every((m) => m.userId == currentUserId);
-  // A Khaam is a card, not text: never forwarded, copied or edited.
+  // A Khaam is a card, not text: never forwarded, copied, edited or saved
+  // (its photo is part of the surprise).
   final anyKhaam = selected.any((m) => KhaamPayload.tryParse(m.body) != null);
 
   final anyProtected = selected.any(
@@ -82,7 +83,11 @@ SelectionMenuState selectionMenuState({
     reply: single != null && !anyDeleted && !anyPending && canMessage,
     forward: forward,
     copy: anyText && !anySealed && !anyKhaam,
-    save: single != null && !groupPrivacy && canSaveMessageAttachments(single),
+    save:
+        single != null &&
+        !anyKhaam &&
+        !groupPrivacy &&
+        canSaveMessageAttachments(single),
     edit:
         single != null &&
         allMine &&

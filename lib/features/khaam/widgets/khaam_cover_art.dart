@@ -9,14 +9,24 @@ const khaamCoverAspect = 1 / 1.6;
 
 /// Where the upper panel meets the flap, as a fraction of the height: the
 /// edges sit at [_flapEdge] and the curve dips to [_flapDip] in the middle,
-/// which puts its lowest point — and the seal — at 0.75.
+/// which puts its lowest point at 0.84; the caption sits on the flap below it.
 const _flapEdge = 0.66;
 const _flapDip = 0.84;
 
-/// Centre of the seal on a cover of [size].
-Offset khaamSealCenter(Size size) => Offset(size.width / 2, size.height * 0.75);
+/// Where the caption sits: on the flap, below the lowest point of its curve,
+/// inset from the sides — inside the envelope, never under it.
+Rect khaamCaptionBox(Size size) => Rect.fromLTRB(
+  size.width * 0.08,
+  size.height * _flapDip + size.width * 0.03,
+  size.width * 0.92,
+  size.height - size.width * 0.05,
+);
 
-double khaamSealRadius(Size size) => size.width * 0.17;
+/// The box a memory photo fills on an envelope of [width]: the whole upper
+/// panel, down to the lowest point of the flap's curve. Portrait — about
+/// 3:4, which is the crop frame — and clipped by [khaamUpperPath].
+Size khaamPhotoBox(double width) =>
+    Size(width, width / khaamCoverAspect * _flapDip);
 
 /// Everything above the flap's curve.
 Path khaamUpperPath(Size size) => Path()
@@ -54,8 +64,6 @@ class KhaamCoverArt extends StatelessWidget {
     required this.cover,
     required this.width,
     this.part = KhaamCoverPart.full,
-    this.showSeal = true,
-    this.sealLabel = '✉',
     this.radius,
     this.child,
   });
@@ -63,8 +71,6 @@ class KhaamCoverArt extends StatelessWidget {
   final KhaamCover cover;
   final double width;
   final KhaamCoverPart part;
-  final bool showSeal;
-  final String sealLabel;
   final double? radius;
 
   /// Drawn over the upper panel (message, sender) — the art stays behind it.
@@ -74,8 +80,6 @@ class KhaamCoverArt extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = Size(width, width / khaamCoverAspect);
     final r = radius ?? width * 0.06;
-    final center = khaamSealCenter(size);
-    final sealR = khaamSealRadius(size);
     return SizedBox.fromSize(
       size: size,
       child: ClipRRect(
@@ -96,72 +100,9 @@ class KhaamCoverArt extends StatelessWidget {
                 height: size.height * _flapEdge,
                 child: child!,
               ),
-            if (showSeal && part != KhaamCoverPart.upper)
-              Positioned(
-                left: center.dx - sealR,
-                top: center.dy - sealR,
-                width: sealR * 2,
-                height: sealR * 2,
-                child: KhaamSeal(cover: cover, label: sealLabel),
-              ),
           ],
         ),
       ),
-    );
-  }
-}
-
-/// The round gold button on the flap — WeChat's 開, ours says ✉ or "খুলুন".
-class KhaamSeal extends StatelessWidget {
-  const KhaamSeal({super.key, required this.cover, required this.label});
-
-  final KhaamCover cover;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, box) {
-        final d = box.biggest.shortestSide;
-        final ink = Color.lerp(cover.flap, Colors.black, 0.25)!;
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              center: const Alignment(-0.3, -0.35),
-              colors: [
-                Color.lerp(cover.accent, Colors.white, 0.45)!,
-                cover.accent,
-                Color.lerp(cover.accent, Colors.black, 0.12)!,
-              ],
-              stops: const [0, 0.6, 1],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.28),
-                blurRadius: d * 0.18,
-                offset: Offset(0, d * 0.06),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Padding(
-              padding: EdgeInsets.all(d * 0.12),
-              child: FittedBox(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: ink.withValues(alpha: 0.85),
-                    fontWeight: FontWeight.w700,
-                    fontSize: d * 0.42,
-                    height: 1,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }

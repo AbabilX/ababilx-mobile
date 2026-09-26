@@ -1,18 +1,23 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../shared/text/display_name.dart';
 import '../../../shared/widgets/app_toast.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../data/khaam_covers.dart';
 import '../data/khaam_payload.dart';
+import '../data/khaam_photo_pick.dart';
 import '../data/khaam_send.dart';
 import '../providers/khaam_compose_provider.dart';
-import '../widgets/khaam_compose_parts.dart';
 import '../widgets/khaam_bottom_bar.dart';
 import '../widgets/khaam_compose_dock.dart';
 import '../widgets/khaam_dock_row.dart';
+import '../widgets/khaam_compose_preview.dart';
 import 'khaam_cover_gallery_screen.dart';
 
 /// Message and cover, then send. Pops `true` once the Khaam is in the
@@ -67,28 +72,36 @@ class _KhaamComposeScreenState extends ConsumerState<KhaamComposeScreen> {
     _notifier.setCover(cover);
   }
 
+  Future<void> _pickPhoto() async {
+    final t = AppTranslations.translate(context, ref, 'khaam_photo_add');
+    final photo = await pickKhaamPhoto(context, t);
+    if (photo != null && mounted) _notifier.setPhoto(photo);
+  }
+
   Future<void> _send() async {
     FocusScope.of(context).unfocus();
     final draft = ref.read(khaamComposeProvider(widget.initialCover));
-    final payload = KhaamPayload(
-      id: draft.khaamId,
-      coverId: draft.cover.id,
-      message: draft.outgoingMessage,
-      lang: draft.lang,
-    );
     _notifier.setBusy(true);
-    final delivered = await sendKhaam(
+    final result = await sendKhaam(
       ref,
       conversationId: widget.conversationId,
-      payload: payload,
+      payload: KhaamPayload(
+        id: draft.khaamId,
+        coverId: draft.cover.id,
+        message: draft.outgoingMessage,
+        lang: draft.lang,
+      ),
+      photo: draft.photo,
     );
     if (!mounted) return;
-    if (!delivered) {
-      showAppToast(
-        context,
-        AppTranslations.translate(context, ref, 'khaam_send_failed'),
-        isError: true,
-      );
+    String t(String key) => AppTranslations.translate(context, ref, key);
+    if (result == KhaamSendResult.photoFailed) {
+      _notifier.setBusy(false);
+      showAppToast(context, t('khaam_photo_failed'), isError: true);
+      return;
+    }
+    if (result == KhaamSendResult.pending) {
+      showAppToast(context, t('khaam_send_failed'), isError: true);
     }
     Navigator.of(context).pop(true);
   }
@@ -97,9 +110,11 @@ class _KhaamComposeScreenState extends ConsumerState<KhaamComposeScreen> {
   Widget build(BuildContext context) {
     String t(String key) => AppTranslations.translate(context, ref, key);
     final provider = khaamComposeProvider(widget.initialCover);
-    final theme = Theme.of(context);
     final draft = ref.watch(provider);
     final cover = draft.cover;
+    // What the receiver reads: this account's own name and photo.
+    final profile = ref.watch(profileProvider).valueOrNull;
+    final me = safeDisplayName(profile?.name, fallback: 'Ababil X');
 
     ref.listen(provider.select((s) => s.message), (_, next) {
       if (_messageCtrl.text == next) return;
@@ -129,29 +144,27 @@ class _KhaamComposeScreenState extends ConsumerState<KhaamComposeScreen> {
                 ),
                 sliver: SliverList.list(
                   children: [
-                    KhaamSettingRow(
-                      child: TextField(
-                        controller: _messageCtrl,
-                        maxLength: 80,
-                        minLines: 1,
-                        maxLines: 3,
-                        onChanged: _notifier.typeMessage,
-                        style: theme.textTheme.titleMedium,
-                        decoration: InputDecoration(
-                          hintText: t('khaam_message_hint'),
-                          counterText: '',
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          filled: false,
-                          isDense: true,
-                        ),
-                      ),
+                    KhaamMessageField(
+                      controller: _messageCtrl,
+                      hint: t('khaam_message_hint'),
+                      onChanged: _notifier.typeMessage,
                     ),
-                    const SizedBox(height: 28),
-                    KhaamCardPreview(
+                    const SizedBox(height: 24),
+                    KhaamComposePreview(
                       cover: cover,
+                      width: math.min(
+                        MediaQuery.sizeOf(context).width - 32,
+                        340,
+                      ),
+                      fromLabel: t('khaam_from').replaceAll('{name}', me),
+                      senderName: me,
+                      senderAvatar: profile?.avatarUrl,
                       message: draft.outgoingMessage,
+                      photo: draft.photo,
+                      addLabel: t('khaam_photo_add'),
+                      changeLabel: t('khaam_photo_change'),
+                      onPick: _pickPhoto,
+                      onRemove: _notifier.clearPhoto,
                     ),
                   ],
                 ),

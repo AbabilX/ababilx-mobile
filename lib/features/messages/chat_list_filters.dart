@@ -144,7 +144,10 @@ ChatListPreview chatListPreview(
     if (_looksLikeJson(text)) text = '';
   }
 
-  final files = conv.previewAttachments
+  // A Khaam's photo is part of the card: no "Photo" chip beside its label.
+  final files = khaam != null
+      ? const <ChatLastAttachment>[]
+      : conv.previewAttachments
       .where((a) => a.fileName.trim().isNotEmpty || a.contentType.isNotEmpty)
       .toList();
 

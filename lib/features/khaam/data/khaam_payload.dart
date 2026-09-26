@@ -7,6 +7,16 @@ const khaamWireKey = 'jpack';
 /// What a Khaam reads as anywhere the card is not drawn.
 String khaamLabel(String lang) => lang == 'bn' ? '💌 খাম' : '💌 Khaam';
 
+/// Longest caption a Khaam takes. It is written on the envelope's flap, two
+/// short lines at most; every ready-made message fits (the longest is 34).
+const khaamCaptionMaxChars = 36;
+
+/// A Khaam's photo rides as the message's own attachment under this name, so
+/// the card can find it and every list of a chat's media can leave it out.
+String khaamPhotoFileName(String id) => 'khaam-$id.jpg';
+
+bool isKhaamPhotoFile(String fileName) => fileName.startsWith('khaam-');
+
 /// A Khaam as it travels: inside the message body, not beside it.
 ///
 /// A Khaam is a greeting card — a cover and a message — and carries no money.
@@ -28,6 +38,7 @@ class KhaamPayload {
     required this.coverId,
     required this.message,
     this.lang = 'bn',
+    this.photo,
   });
 
   /// 2 dropped the amount. A v1 body still parses; its amount is ignored.
@@ -39,12 +50,16 @@ class KhaamPayload {
   final String message;
   final String lang;
 
+  /// File name of the attached memory photo, or null for a card without one.
+  final String? photo;
+
   Map<String, dynamic> toJson() => {
     'v': version,
     'id': id,
     'cover': coverId,
     'message': message,
     'lang': lang,
+    'photo': ?photo,
   };
 
   /// The line every client that does not know Khaam shows instead.
@@ -80,6 +95,7 @@ class KhaamPayload {
         coverId: j['cover'] is String ? j['cover'] as String : 'classic',
         message: j['message'] is String ? j['message'] as String : '',
         lang: j['lang'] is String ? j['lang'] as String : 'bn',
+        photo: j['photo'] is String ? j['photo'] as String : null,
       );
     } catch (_) {
       return null;
