@@ -2,6 +2,11 @@ part of 'ghost_provider.dart';
 
 /// The peer connection's life: connect, stay alive, recover a drop — and give
 /// up after [ghostLostGrace], which burns.
+///
+/// ICE notices a dead path only after several seconds of failed consent
+/// checks, so on its own a 5 s rule would really be ~10 s. Both phones also
+/// ping over the channel every [ghostPingEvery]; [ghostLostGrace] of silence
+/// burns, and the offline phone's own watchdog burns it there too.
 mixin _GhostLink on _GhostBase {
   Future<void> _startPeer({required bool isOfferer}) async {
     final ready = _ready;
@@ -36,6 +41,32 @@ mixin _GhostLink on _GhostBase {
       final id = state.session?.id;
       if (id != null) unawaited(_api.heartbeat(id).catchError((_) {}));
     });
+    _pingTimer ??= Timer.periodic(ghostPingEvery, (_) => _pingTick());
+  }
+
+  void _pingTick() {
+    final silent = _sinceHeard?.elapsed;
+    if (silent != null && silent > ghostLostGrace) {
+      _lost('silent');
+      return;
+    }
+    final peer = _peer;
+    if (peer == null || !peer.open) return;
+    unawaited(
+      peer.channel!
+          .send(RTCDataChannelMessage(const GhostPingFrame().encode()))
+          .catchError((_) {}),
+    );
+  }
+
+  @override
+  void _heard({required bool ping}) {
+    final watch = _sinceHeard;
+    if (watch != null) {
+      watch.reset();
+    } else if (ping) {
+      _sinceHeard = Stopwatch()..start();
+    }
   }
 
   void _onHealthy() {
@@ -91,8 +122,9 @@ mixin _GhostLink on _GhostBase {
 
   /// Leaving the app ends the chat, but not instantly: a file picker or a
   /// glance at a notification also sends the app to the background, and
-  /// burning on those would make the feature unusable. The grace matches a
-  /// dropped connection's. [AppLifecycleState.detached] is the process going
+  /// burning on those would make the feature unusable, so it gets
+  /// [ghostBackgroundGrace] — the app is still online and pinging while
+  /// paused, so the 5 s offline rule does not apply. [AppLifecycleState.detached] is the process going
   /// away — no grace, the peer is told now while a frame can still be sent.
   void onAppLifecycle(AppLifecycleState lifecycle) {
     if (!state.inSession || state.phase == GhostPhase.invited) return;
@@ -102,7 +134,7 @@ mixin _GhostLink on _GhostBase {
         _backgroundTimer = null;
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
-        _backgroundTimer ??= Timer(ghostLostGrace, () {
+        _backgroundTimer ??= Timer(ghostBackgroundGrace, () {
           _backgroundTimer = null;
           if (state.inSession) {
             _finish(GhostEndReason.leave, byMe: true, notifyServer: true);

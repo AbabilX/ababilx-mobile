@@ -95,7 +95,9 @@ mixin _GhostContent on _GhostBase {
 
   @override
   void _onText(String raw) {
-    switch (GhostFrame.decode(raw)) {
+    final frame = GhostFrame.decode(raw);
+    _heard(ping: frame is GhostPingFrame);
+    switch (frame) {
       case GhostTextFrame(:final id, :final body):
         _typingExpiry?.cancel();
         state = state.copyWith(peerTyping: false);
@@ -129,12 +131,14 @@ mixin _GhostContent on _GhostBase {
         _finish(GhostEndReason.burn, byMe: false, notifyServer: false);
       case GhostLeaveFrame():
         _finish(GhostEndReason.leave, byMe: false, notifyServer: false);
+      case GhostPingFrame():
       case null:
     }
   }
 
   @override
   void _onBinary(Uint8List bytes) {
+    _heard(ping: false);
     final id = _assembler.current?.id;
     if (id == null) return;
     switch (_assembler.add(bytes)) {

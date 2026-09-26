@@ -1,16 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import '../../../shared/widgets/app_toast.dart';
-import '../../messages/chat_icon.dart';
+import '../../messages/chat-timeline/composer_input_bar_buttons.dart';
 import '../providers/ghost_provider.dart';
+import 'ghost_attach.dart';
 import 'ghost_labels.dart';
-import 'ghost_pick.dart';
-import 'ghost_send_preview.dart';
 
-/// Text, attach, send. Disabled until the phones are connected.
+/// Text, attach, send — drawn like the DM composer (`ComposerInputBar`): one
+/// rounded pill and one accent circle beside it. Disabled until the phones
+/// are connected.
 ///
 /// The field turns off the keyboard's suggestions and personalised learning:
 /// Gboard and friends otherwise remember what was typed here, which is a copy
@@ -41,69 +43,9 @@ class _GhostComposerState extends ConsumerState<GhostComposer> {
   }
 
   Future<void> _attach() async {
-    final source = await showModalBottomSheet<GhostPickSource>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheet) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final (src, icon, key) in [
-              (
-                GhostPickSource.gallery,
-                HugeIcons.strokeRoundedImage01,
-                'ghost_photo',
-              ),
-              (
-                GhostPickSource.camera,
-                HugeIcons.strokeRoundedCamera01,
-                'ghost_camera',
-              ),
-              (
-                GhostPickSource.file,
-                HugeIcons.strokeRoundedFile01,
-                'ghost_file',
-              ),
-            ])
-              ListTile(
-                leading: ChatIcon(icon),
-                title: Text(ghostText(ref, key)),
-                onTap: () => Navigator.of(sheet).pop(src),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (source == null) return;
-    try {
-      final picked = await pickForGhost(source);
-      if (picked == null || !mounted) return;
-      final rules = await showGhostSendPreview(context, picked);
-      // Backed out, or the chat ended under the preview (which disposes this
-      // composer): the picked bytes were only ever in RAM; clear them.
-      if (rules == null || !mounted) {
-        picked.bytes.fillRange(0, picked.bytes.length, 0);
-        return;
-      }
-      await ref
-          .read(ghostProvider.notifier)
-          .sendFile(picked.name, picked.mime, picked.bytes, rules: rules);
-    } on GhostFileTooLarge {
-      if (mounted) {
-        showAppToast(
-          context,
-          ghostText(ref, 'ghost_err_file_too_large'),
-          isError: true,
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        showAppToast(
-          context,
-          ghostText(ref, 'ghost_err_generic'),
-          isError: true,
-        );
-      }
+    final source = await chooseGhostSource(context, ref);
+    if (source != null && mounted) {
+      await pickAndSendGhost(context, ref, source);
     }
   }
 
@@ -116,54 +58,86 @@ class _GhostComposerState extends ConsumerState<GhostComposer> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+          padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              IconButton(
-                onPressed: on ? _attach : null,
-                icon: const ChatIcon(HugeIcons.strokeRoundedAttachment01),
-              ),
               Expanded(
-                child: TextField(
-                  controller: _text,
-                  enabled: on,
-                  minLines: 1,
-                  maxLines: 5,
-                  maxLength: 4000,
-                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                  enableSuggestions: false,
-                  autocorrect: false,
-                  enableIMEPersonalizedLearning: false,
-                  textCapitalization: TextCapitalization.sentences,
-                  onChanged: ref.read(ghostProvider.notifier).onDraftChanged,
-                  decoration: InputDecoration(
-                    hintText: ghostText(ref, 'ghost_message_hint'),
-                    counterText: '',
-                    filled: true,
-                    fillColor: colors.surfaceContainerHighest,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide.none,
-                    ),
+                child: IgnorePointer(
+                  ignoring: !on,
+                  child: Opacity(
+                    opacity: on ? 1 : 0.5,
+                    child: _pill(colors, on),
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              IconButton.filled(
-                onPressed: on ? _send : null,
-                icon: const ChatIcon(
-                  HugeIcons.strokeRoundedSent,
-                  color: Colors.white,
+              const SizedBox(width: 8),
+              Opacity(
+                opacity: on ? 1 : 0.5,
+                child: AccentCircle(
+                  sending: false,
+                  label: ghostText(ref, 'ghost_send'),
+                  icon: HugeIcons.strokeRoundedSend,
+                  rotated: false,
+                  onTap: on ? _send : null,
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _pill(ColorScheme colors, bool on) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 48),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(26),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const SizedBox(width: 16),
+          Expanded(
+            child: TextField(
+              controller: _text,
+              enabled: on,
+              minLines: 1,
+              maxLines: 5,
+              maxLength: 4000,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              enableSuggestions: false,
+              autocorrect: false,
+              enableIMEPersonalizedLearning: false,
+              textCapitalization: TextCapitalization.sentences,
+              onChanged: ref.read(ghostProvider.notifier).onDraftChanged,
+              style: const TextStyle(fontSize: 16, height: 1.3),
+              decoration: InputDecoration(
+                hintText: ghostText(ref, 'ghost_message_hint'),
+                hintMaxLines: 1,
+                hintStyle: TextStyle(
+                  fontSize: 16,
+                  color: colors.onSurfaceVariant,
+                ),
+                counterText: '',
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
+              ),
+            ),
+          ),
+          PillIcon(
+            icon: HugeIcons.strokeRoundedAttachment,
+            tooltip: ghostText(ref, 'ghost_attach'),
+            onTap: () => unawaited(_attach()),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
     );
   }

@@ -48,6 +48,15 @@ The key sealing lives with the rest of the key code:
   pause the app, so `paused` starts a 30 s grace and `resumed` cancels it;
   `detached` leaves immediately. A camera session longer than 30 s burns the
   chat, and that is the accepted edge.
+- **Offline 5 s burns both phones** (2026-09-26, user's rule). ICE alone
+  notices a dead path only after several seconds, so each phone also sends
+  `{"t":"ping"}` every 1 s and `_pingTick` burns after `ghostLostGrace` (5 s)
+  of hearing nothing — any frame or chunk counts. The phone that went offline
+  burns on its own watchdog; the other one burns on its own. The watchdog arms
+  only after the peer's FIRST ping, so a build that never pings (older app) is
+  never judged silent — it falls back to the ICE drop timer, also 5 s now.
+  Background grace is a separate constant (`ghostBackgroundGrace`, 30 s): the
+  app still pings while paused.
 - **The flame asks nothing.** The user asked for "instantly". Back asks,
   because back is pressed by accident far more often than a flame.
 - `GhostSecureWindow` calls `com.ababilx.app/secure_window` `setSecure`
@@ -66,6 +75,7 @@ offered again for the rest of the session via `GhostState.lastRules`).
 file header  "view":"once"|5|10|30   photos only; absent = no timer
              "save":true             absent = view only
 {"t":"viewed","id":…}                receiver -> sender: a timed photo is gone
+{"t":"ping"}                         every 1 s, liveness (see Rules)
 ```
 
 - **Timed photo** (`GhostItemRules.timer`): never drawn in the receiver's

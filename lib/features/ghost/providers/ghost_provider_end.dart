@@ -100,11 +100,13 @@ mixin _GhostEnd on _GhostBase {
       _heartbeat,
       _backgroundTimer,
       _typingExpiry,
+      _pingTimer,
     ]) {
       timer?.cancel();
     }
     _inviteTimer = _connectTimer = _lostTimer = _heartbeat = null;
-    _backgroundTimer = _typingExpiry = null;
+    _backgroundTimer = _typingExpiry = _pingTimer = null;
+    _sinceHeard = null;
     _typingSentAt = null;
     _sender?.cancel();
     _sender = null;

@@ -10,6 +10,8 @@ import '../providers/ghost_provider.dart';
 import '../providers/ghost_state.dart';
 import 'ghost_labels.dart';
 
+const _flame = Color(0xFFFF5A1F);
+
 /// Back leaves (and so burns, after asking); the flame burns at once.
 ///
 /// The flame asks nothing. It is the feature: whoever presses it wants the
@@ -76,22 +78,31 @@ class GhostHeader extends ConsumerWidget implements PreferredSizeWidget {
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 8),
-          child: IconButton.filledTonal(
-            tooltip: ghostText(ref, 'ghost_burn'),
-            onPressed: canBurn
-                ? () {
-                    HapticFeedback.heavyImpact();
-                    ref.read(ghostProvider.notifier).burn();
-                  }
-                : null,
-            style: IconButton.styleFrom(
-              backgroundColor: const Color(0xFFFF5A1F).withValues(alpha: 0.16),
-            ),
-            icon: const ChatIcon(
-              HugeIcons.strokeRoundedFire,
-              size: 24,
-              strokeWidth: 1.8,
-              color: Color(0xFFFF5A1F),
+          child: Tooltip(
+            message: ghostText(ref, 'ghost_burn'),
+            child: FilledButton.tonalIcon(
+              onPressed: canBurn
+                  ? () {
+                      HapticFeedback.heavyImpact();
+                      ref.read(ghostProvider.notifier).burn();
+                    }
+                  : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: _flame.withValues(alpha: 0.16),
+                foregroundColor: _flame,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.fromLTRB(10, 0, 14, 0),
+              ),
+              icon: const ChatIcon(
+                HugeIcons.strokeRoundedFire03,
+                size: 20,
+                strokeWidth: 1.8,
+                color: _flame,
+              ),
+              label: Text(
+                ghostText(ref, 'ghost_burn_short'),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ),

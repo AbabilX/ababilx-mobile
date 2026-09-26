@@ -950,6 +950,8 @@ class AppTranslations {
       'ghost_banner':
           'End-to-end encrypted, straight between your two phones. Nothing here is saved anywhere. Tap the flame to burn it for both of you.',
       'ghost_burn': 'Burn chat',
+      'ghost_burn_short': 'Burn',
+      'ghost_attach': 'Attach',
       'ghost_invite_title': '{name} invites you to a Ghost Chat',
       'ghost_invite_body':
           'A private chat straight between your two phones. Nothing is saved, and either of you can burn it.',
@@ -1942,6 +1944,8 @@ class AppTranslations {
       'ghost_banner':
           'এন্ড-টু-এন্ড এনক্রিপ্টেড, সরাসরি আপনাদের দুই ফোনের মধ্যে। এখানের কিছুই কোথাও সেভ হয় না। দুজনের জন্য পুড়িয়ে দিতে আগুনের আইকনে চাপুন।',
       'ghost_burn': 'চ্যাট পুড়িয়ে দিন',
+      'ghost_burn_short': 'পোড়ান',
+      'ghost_attach': 'সংযুক্ত করুন',
       'ghost_invite_title': '{name} আপনাকে ঘোস্ট চ্যাটে ডাকছেন',
       'ghost_invite_body':
           'আপনাদের দুই ফোনের মধ্যে সরাসরি একটি প্রাইভেট চ্যাট। কিছুই সেভ হয় না, আর দুজনের যে কেউ এটি পুড়িয়ে দিতে পারেন।',

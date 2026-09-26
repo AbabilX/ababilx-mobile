@@ -16,7 +16,7 @@ import 'ghost_item_rules.dart';
 /// <binary chunk> × ceil(size / 16 KiB)
 /// {"t":"viewed","id":"…"}   // a timed photo ran out: both phones zero it
 /// {"t":"typing","on":true}
-/// {"t":"burn"}   {"t":"leave"}
+/// {"t":"burn"}   {"t":"leave"}   {"t":"ping"}   // ping: every 1 s, liveness
 /// ```
 ///
 /// Nothing in a frame is ever written to disk or to the server.
@@ -43,6 +43,7 @@ sealed class GhostFrame {
       'viewed' => GhostViewedFrame._from(json),
       'burn' => const GhostBurnFrame(),
       'leave' => const GhostLeaveFrame(),
+      'ping' => const GhostPingFrame(),
       _ => null,
     };
   }
@@ -173,6 +174,12 @@ class GhostLeaveFrame extends GhostFrame {
   const GhostLeaveFrame();
   @override
   String encode() => '{"t":"leave"}';
+}
+
+class GhostPingFrame extends GhostFrame {
+  const GhostPingFrame();
+  @override
+  String encode() => '{"t":"ping"}';
 }
 
 /// The peer chose this name, and it becomes a temp file name when a file is

@@ -122,7 +122,7 @@ class _Banner extends ConsumerWidget {
         child: Row(
           children: [
             ChatIcon(
-              HugeIcons.strokeRoundedLockKey,
+              HugeIcons.strokeRoundedGhost,
               size: 20,
               color: colors.onSurfaceVariant,
             ),

@@ -32,8 +32,16 @@ part 'ghost_provider_view.dart';
 /// How long an invite rings — the server's `PendingTTL`.
 const ghostInviteWindow = Duration(seconds: 60);
 
-/// A drop shorter than this reconnects; longer burns (the user's rule).
-const ghostLostGrace = Duration(seconds: 30);
+/// Offline longer than this burns both phones (the user's rule, 2026-09-26):
+/// a dropped path, or a peer that has gone silent on the channel.
+const ghostLostGrace = Duration(seconds: 5);
+
+/// Liveness ping cadence; five missed in a row is [ghostLostGrace].
+const ghostPingEvery = Duration(seconds: 1);
+
+/// Backgrounded (file picker, camera, a glance elsewhere) before it burns.
+/// Separate from [ghostLostGrace]: the app is still online while paused.
+const ghostBackgroundGrace = Duration(seconds: 30);
 
 /// Accepted but never connected: the other phone died between the two.
 const ghostConnectTimeout = Duration(seconds: 25);
@@ -50,8 +58,12 @@ abstract class _GhostBase extends Notifier<GhostState> {
   /// accept response does, so incoming signals wait on this, never on a null.
   Completer<void> _ready = Completer<void>();
   Timer? _inviteTimer, _connectTimer, _lostTimer, _heartbeat, _backgroundTimer;
-  Timer? _typingExpiry;
+  Timer? _typingExpiry, _pingTimer;
   DateTime? _typingSentAt;
+
+  /// Time since the peer last sent anything; armed by its first ping, so a
+  /// build that never pings is never judged silent.
+  Stopwatch? _sinceHeard;
 
   GhostApi get _api => ref.read(ghostApiProvider);
   WsClient get _ws => ref.read(wsClientProvider);
@@ -69,6 +81,7 @@ abstract class _GhostBase extends Notifier<GhostState> {
   void _onText(String raw);
   void _onBinary(Uint8List bytes);
   void _onPeerViewed(String id);
+  void _heard({required bool ping});
   void _lost(String why);
   void _finish(String reason, {required bool byMe, required bool notifyServer});
   void _teardown();

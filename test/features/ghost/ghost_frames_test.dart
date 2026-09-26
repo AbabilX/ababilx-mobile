@@ -19,6 +19,7 @@ void main() {
         const GhostTypingFrame(on: true),
         const GhostBurnFrame(),
         const GhostLeaveFrame(),
+        const GhostPingFrame(),
       ];
       for (final frame in frames) {
         final decoded = GhostFrame.decode(frame.encode());
