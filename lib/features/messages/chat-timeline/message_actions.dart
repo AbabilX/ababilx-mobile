@@ -16,6 +16,7 @@ import '../group-pins/group_pins_provider.dart';
 import '../providers/pinned_message_provider.dart';
 import '../tiptap_plain_text.dart';
 import 'delete_message_dialog.dart';
+import 'edit_message_sheet.dart';
 import 'pinned_message_actions.dart';
 import 'reaction_emoji_picker.dart';
 import 'save_message_attachments.dart';
@@ -196,7 +197,11 @@ Future<void> editMessageFlow(
   WidgetRef ref,
   ChatMessage msg,
 ) async {
-  final edited = await _editDialog(context, ref, tiptapToPlainText(msg.body));
+  final edited = await showEditMessageSheet(
+    context,
+    ref,
+    tiptapToPlainText(msg.body),
+  );
   if (edited == null) return;
   try {
     await ref
@@ -240,31 +245,6 @@ Future<void> copyMessageText(
         AppTranslations.translate(context, ref, 'chat_copied_clipboard'),
       ),
       duration: const Duration(seconds: 2),
-    ),
-  );
-}
-
-Future<String?> _editDialog(
-  BuildContext context,
-  WidgetRef ref,
-  String initial,
-) {
-  final ctrl = TextEditingController(text: initial);
-  return showDialog<String>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(AppTranslations.translate(context, ref, 'chat_edit_message')),
-      content: TextField(controller: ctrl, maxLines: 4),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: Text(AppTranslations.translate(context, ref, 'cancel')),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-          child: Text(AppTranslations.translate(context, ref, 'chat_save')),
-        ),
-      ],
     ),
   );
 }
