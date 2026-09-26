@@ -182,7 +182,7 @@ class ChatConversation extends Equatable {
   bool get isIncomingRequest => !isSelf && requestState == 'incoming';
 
   /// The server's answer at fetch time. A timed mute can lapse while the row
-  /// sits in memory, so UI reads `isMutedNow` (chat-mute/mute_state.dart).
+  /// sits in memory, so UI reads `isMutedNow` (chat-mute/mute_choice.dart).
   final bool muted;
 
   /// When a timed mute ends; null = until unmuted (migration 0162).

@@ -66,12 +66,16 @@ extension ChatConversationMute on ChatConversation {
   }
 }
 
-/// "5:30 PM" today, "Tomorrow 9:00 AM", "Mon 9:00 AM" this week, else a date.
+/// "5:30 PM" today, "tomorrow 9:00 AM", "Mon 9:00 AM" this week, else a date.
 String formatMuteEnd(DateTime end, {DateTime? now}) {
   final today = now ?? DateTime.now();
-  final day = DateTime(end.year, end.month, end.day);
-  final start = DateTime(today.year, today.month, today.day);
-  final days = day.difference(start).inDays;
+  // Calendar days counted in UTC: a local midnight-to-midnight across a DST
+  // change is 23 h, which `inDays` reads as 0 and "tomorrow" as today.
+  final days = DateTime.utc(
+    end.year,
+    end.month,
+    end.day,
+  ).difference(DateTime.utc(today.year, today.month, today.day)).inDays;
   final time = DateFormat('h:mm a').format(end);
   if (days <= 0) return time;
   if (days == 1) return 'tomorrow $time';

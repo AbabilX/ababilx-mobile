@@ -49,8 +49,11 @@ class HeaderMenuButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Compact: it shares the trailing row with the call pill, and a full
+    // 48dp target squeezes the title on a narrow phone.
     return IconButton(
       tooltip: 'More',
+      visualDensity: VisualDensity.compact,
       onPressed: () => _open(context, ref),
       icon: ChatIcon(
         HugeIcons.strokeRoundedMoreVertical,

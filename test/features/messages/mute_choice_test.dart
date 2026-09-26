@@ -75,6 +75,16 @@ void main() {
     );
   });
 
+  test('a day across a DST change still reads as tomorrow', () {
+    // Pure calendar arithmetic: a 23-hour local day must not collapse.
+    final now = DateTime(2026, 3, 28, 22);
+    expect(
+      formatMuteEnd(DateTime(2026, 3, 29, 9), now: now),
+      'tomorrow 9:00 AM',
+    );
+    expect(formatMuteEnd(DateTime(2026, 3, 28, 23), now: now), '11:00 PM');
+  });
+
   test('server answer parses and an unmute clears the end time', () {
     final r = MuteResult.fromJson({
       'muted': true,
