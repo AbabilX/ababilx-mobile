@@ -109,10 +109,19 @@ class _GhostSyncState extends ConsumerState<GhostSync>
     return widget.child;
   }
 
+  /// Runs [action] after the next frame — and makes sure there IS one.
+  ///
+  /// `addPostFrameCallback` never schedules a frame itself. An invite comes in
+  /// over the socket and changes nothing anyone draws, so on a still screen
+  /// (an open DM, Settings) the callback waited for some unrelated repaint
+  /// and the invite never appeared; only the chat list, which repaints on
+  /// every socket event, showed it.
   void _after(Object? Function() action) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    final binding = WidgetsBinding.instance;
+    binding.addPostFrameCallback((_) {
       if (mounted) action();
     });
+    binding.ensureVisualUpdate();
   }
 
   void _leaveGhostRoutes() {

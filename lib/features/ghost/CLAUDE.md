@@ -57,6 +57,11 @@ The key sealing lives with the rest of the key code:
   never judged silent — it falls back to the ICE drop timer, also 5 s now.
   Background grace is a separate constant (`ghostBackgroundGrace`, 30 s): the
   app still pings while paused.
+- **`GhostSync._after` must call `ensureVisualUpdate()`** (2026-09-26).
+  `addPostFrameCallback` alone waits for a frame someone else schedules; a
+  socket invite redraws nothing, so on a still screen the invite route was
+  never pushed. It "worked" only on the chat list, which repaints on every
+  socket event.
 - **The flame asks nothing.** The user asked for "instantly". Back asks,
   because back is pressed by accident far more often than a flame.
 - `GhostSecureWindow` calls `com.ababilx.app/secure_window` `setSecure`
