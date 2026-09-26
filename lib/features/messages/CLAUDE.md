@@ -1713,16 +1713,15 @@ arrives (WS / page / pull)  ->  messageStore.saveAll  ->  takePrivateMedia
 
 # Mute options — bottom sheets only (2026-09-27, server 0162)
 
-`chat-mute/`: tapping Mute (details button, chat-list long press, the chat
-header ⋮) goes through `changeConversationMute` — muted → unmute at once, no
-sheet (Signal); not muted → `showMuteOptionsSheet`: 1 h · 8 h · 1 day ·
-1 week · Always · Only mentions (groups only; in a DM every message is to
-you) · Custom.
+`chat-mute/`: tapping Mute (details button, chat-list long press) goes
+through `changeConversationMute` — muted → unmute at once, no sheet
+(Signal); not muted → `showMuteOptionsSheet`: 1 h · 8 h · 1 day · 1 week ·
+Always · Only mentions (groups only; in a DM every message is to you) ·
+Custom. The chat header has no ⋮ — Mute and Search live in details.
 
 - **No dialog, anywhere — the user's rule.** Custom is a
   `CupertinoDatePicker` on a SECOND PAGE of the same sheet
-  (`mute_custom_page.dart`), never `showDatePicker` / `showTimePicker`; the
-  header ⋮ opens a bottom sheet, never a `PopupMenuButton`.
+  (`mute_custom_page.dart`), never `showDatePicker` / `showTimePicker`.
   `mute_sheet_test.dart` fails if any of those appear.
 - **Read `isMutedNow`, never `muted`.** A timed mute lapses in memory with no
   event; `muted` is only the server's answer at fetch time. Same for

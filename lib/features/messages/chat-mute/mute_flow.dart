@@ -8,8 +8,8 @@ import 'mute_choice.dart';
 import 'mute_options_sheet.dart';
 
 /// The one mute gesture every entry point shares (details, chat-list long
-/// press, chat header). Muted → unmute at once, Signal's arrangement: there is
-/// nothing to choose. Not muted → the options sheet, then the write.
+/// press). Muted → unmute at once, Signal's arrangement: there is nothing to
+/// choose. Not muted → the options sheet, then the write.
 ///
 /// [context] must outlive the sheet — pass the screen's, never a sheet's.
 Future<void> changeConversationMute(

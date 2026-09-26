@@ -1,4 +1,3 @@
-import 'package:ababilx/features/messages/chat-header/header_menu_button.dart';
 import 'package:ababilx/features/messages/chat-mute/mute_choice.dart';
 import 'package:ababilx/features/messages/chat-mute/mute_flow.dart';
 import 'package:ababilx/features/messages/chat-mute/mute_options_sheet.dart';
@@ -214,51 +213,5 @@ void main() {
     await tester.tap(find.text('For 1 week'));
     await tester.pumpAndSettle();
     expect(notifier.calls.single?.duration, const Duration(days: 7));
-  });
-
-  testWidgets('header ⋮ opens a bottom sheet, then the mute options', (
-    tester,
-  ) async {
-    final notifier = _MuteNotifier(_group);
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [chatProvider.overrideWith(() => notifier)],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: HeaderMenuButton(conversation: _group, title: 'Team'),
-          ),
-        ),
-      ),
-    );
-    await tester.tap(find.byType(HeaderMenuButton));
-    await tester.pumpAndSettle();
-    expect(find.byType(BottomSheet), findsOneWidget);
-    expect(find.text('Mute notifications'), findsOneWidget);
-    expect(find.text('Search in chat'), findsOneWidget);
-    _expectNoDialog();
-
-    await tester.tap(find.text('Mute notifications'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Only mentions'));
-    await tester.pumpAndSettle();
-    expect(notifier.calls.single?.mentionsOnly, isTrue);
-  });
-
-  testWidgets('header sheet says what the current mute is', (tester) async {
-    final muted = _group.copyWith(muted: true, muteMode: 'mentions');
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [chatProvider.overrideWith(() => _MuteNotifier(muted))],
-        child: MaterialApp(
-          home: Scaffold(
-            body: HeaderMenuButton(conversation: muted, title: 'Team'),
-          ),
-        ),
-      ),
-    );
-    await tester.tap(find.byType(HeaderMenuButton));
-    await tester.pumpAndSettle();
-    expect(find.text('Unmute notifications'), findsOneWidget);
-    expect(find.text('Only mentions'), findsOneWidget);
   });
 }

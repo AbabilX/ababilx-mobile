@@ -17,7 +17,6 @@ import '../providers/chat_provider.dart';
 import '../providers/chat_connections_provider.dart';
 import '../chat-mute/mute_choice.dart';
 import 'call_action_pill.dart';
-import 'header_menu_button.dart';
 import 'header_avatar.dart';
 import 'header_back_button.dart';
 import 'group_call_action.dart';
@@ -217,7 +216,6 @@ class ChatHeader extends ConsumerWidget {
                 // a DM (peer-to-peer) and anything you cannot post into.
                 if (conversation.canGroupCall)
                   GroupCallAction(conversation: conversation),
-                HeaderMenuButton(conversation: conversation, title: title),
               ],
             ),
             centerMiddle: true,
