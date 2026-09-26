@@ -13,7 +13,6 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
     String? lastMessageAttachmentName,
     List<ChatLastAttachment>? lastMessageAttachments,
     bool clearLastMessageAttachment = false,
-    bool? muted,
     bool? pinned,
     String? name,
     ChatMessage? lastMessage,
@@ -32,7 +31,6 @@ mixin _ChatPatchMixin on Notifier<ChatState> {
         lastMessageAttachmentName: lastMessageAttachmentName,
         lastMessageAttachments: lastMessageAttachments,
         clearLastMessageAttachment: clearLastMessageAttachment,
-        muted: muted ?? c.muted,
         pinned: pinned ?? c.pinned,
         name: name,
       );

@@ -1710,3 +1710,27 @@ arrives (WS / page / pull)  ->  messageStore.saveAll  ->  takePrivateMedia
   "Private chat" in the header.
 - Manual Settings → Data and storage clears still mark private media absent;
   the server copy is gone, so that one is permanent. Auto-eviction is not wired.
+
+# Mute options — bottom sheets only (2026-09-27, server 0162)
+
+`chat-mute/`: tapping Mute (details button, chat-list long press, the chat
+header ⋮) goes through `changeConversationMute` — muted → unmute at once, no
+sheet (Signal); not muted → `showMuteOptionsSheet`: 1 h · 8 h · 1 day ·
+1 week · Always · Only mentions (groups only; in a DM every message is to
+you) · Custom.
+
+- **No dialog, anywhere — the user's rule.** Custom is a
+  `CupertinoDatePicker` on a SECOND PAGE of the same sheet
+  (`mute_custom_page.dart`), never `showDatePicker` / `showTimePicker`; the
+  header ⋮ opens a bottom sheet, never a `PopupMenuButton`.
+  `mute_sheet_test.dart` fails if any of those appear.
+- **Read `isMutedNow`, never `muted`.** A timed mute lapses in memory with no
+  event; `muted` is only the server's answer at fetch time. Same for
+  `isMentionsOnlyMute` / `muteStatusLabel`.
+- Presets send `for_seconds` (server clock), Custom sends `until`. The row is
+  patched from the SERVER's answer (`setMute`), so a timed mute caches the end
+  the server settled on; `copyWith(clearMutedUntil:)` is how "Always" drops a
+  previous end time.
+- The phone never suppresses a notification itself: the server skips the push.
+- The web only shows the mute; control stays here. Do not port the sheet to
+  the web.

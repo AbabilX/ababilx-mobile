@@ -1,5 +1,6 @@
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
+import '../chat-mute/mute_choice.dart';
 import 'models/chat_models.dart';
 import 'chat_endpoints.dart';
 
@@ -119,13 +120,15 @@ class ChatConversationsApi {
     return data['forwarded_to'] as int? ?? 0;
   }
 
-  Future<bool> muteConversation(String conversationId, bool muted) async {
+  /// Mute with [choice], or unmute when it is null (server 0162). The answer
+  /// carries the end time the server settled on, which is what gets cached.
+  Future<MuteResult> setMute(String conversationId, MuteChoice? choice) async {
     final res = await _client.post(
       _endpoints.action(conversationId, 'mute'),
-      data: {'muted': muted},
+      data: choice?.toBody() ?? {'muted': false},
     );
     final data = unwrapApiData<Map<String, dynamic>>(res);
-    return data['muted'] as bool? ?? muted;
+    return MuteResult.fromJson(data);
   }
 
   /// Pin or unpin for this account. A fifth pin comes back as 409

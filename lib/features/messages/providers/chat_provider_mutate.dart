@@ -265,11 +265,24 @@ mixin _ChatMutateMixin
   Future<void> discardUpload(String conversationId, String fileUrl) =>
       repo.discardUpload(conversationId, fileUrl);
 
-  Future<void> muteConversation(String id, bool muted) async {
-    await repo.muteConversation(id, muted);
+  /// Mute with [choice], or unmute when null. Patched from the server's
+  /// answer, not the request, so a timed mute caches the server's end time.
+  Future<void> setMute(String id, MuteChoice? choice) async {
+    final result = await repo.setMute(id, choice);
+    List<ChatConversation> apply(List<ChatConversation> list) => [
+      for (final c in list)
+        c.id != id
+            ? c
+            : c.copyWith(
+                muted: result.muted,
+                mutedUntil: result.until,
+                clearMutedUntil: result.until == null,
+                muteMode: result.mode,
+              ),
+    ];
     state = state.copyWith(
-      dms: patchList(state.dms, id, muted: muted),
-      channels: patchList(state.channels, id, muted: muted),
+      dms: apply(state.dms),
+      channels: apply(state.channels),
     );
   }
 

@@ -6,6 +6,7 @@ import 'chat_device_repository.dart';
 import 'chat_endpoints.dart';
 import 'chat_e2ee_api.dart';
 import 'chat_e2ee_history_api.dart';
+import '../chat-mute/mute_choice.dart';
 import 'chat_conversations_api.dart';
 import 'chat_messages_api.dart';
 import 'chat_webhooks_api.dart';
@@ -274,8 +275,8 @@ class ChatRepository {
     List<Map<String, dynamic>> envelopes,
   ) => _e2ee.backfillConversationKey(conversationId, envelopes);
 
-  Future<bool> muteConversation(String conversationId, bool muted) =>
-      _conversations.muteConversation(conversationId, muted);
+  Future<MuteResult> setMute(String conversationId, MuteChoice? choice) =>
+      _conversations.setMute(conversationId, choice);
 
   Future<bool> pinConversation(String conversationId, bool pinned) =>
       _conversations.pinConversation(conversationId, pinned);

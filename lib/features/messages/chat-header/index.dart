@@ -15,7 +15,9 @@ import '../data/models/chat_models.dart';
 import '../nav_back.dart';
 import '../providers/chat_provider.dart';
 import '../providers/chat_connections_provider.dart';
+import '../chat-mute/mute_choice.dart';
 import 'call_action_pill.dart';
+import 'header_menu_button.dart';
 import 'header_avatar.dart';
 import 'header_back_button.dart';
 import 'group_call_action.dart';
@@ -188,11 +190,13 @@ class ChatHeader extends ConsumerWidget {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (conversation.muted)
+                if (conversation.isMutedNow)
                   Padding(
                     padding: const EdgeInsets.only(right: 4),
                     child: ChatIcon(
-                      HugeIcons.strokeRoundedNotificationOff01,
+                      conversation.isMentionsOnlyMute
+                          ? HugeIcons.strokeRoundedAt
+                          : HugeIcons.strokeRoundedNotificationOff01,
                       size: 18,
                       color: colors.onSurfaceVariant,
                     ),
@@ -213,6 +217,7 @@ class ChatHeader extends ConsumerWidget {
                 // a DM (peer-to-peer) and anything you cannot post into.
                 if (conversation.canGroupCall)
                   GroupCallAction(conversation: conversation),
+                HeaderMenuButton(conversation: conversation, title: title),
               ],
             ),
             centerMiddle: true,

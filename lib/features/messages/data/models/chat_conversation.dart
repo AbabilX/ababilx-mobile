@@ -76,6 +76,8 @@ class ChatConversation extends Equatable {
     this.plaintextUntilKeyed = false,
     this.requestState = 'none',
     this.muted = false,
+    this.mutedUntil,
+    this.muteMode = 'all',
     this.pinned = false,
     this.memberAvatars = const [],
     this.memberCount,
@@ -178,7 +180,16 @@ class ChatConversation extends Equatable {
   /// A note to self can never be a request: the server reports `none`, and a
   /// bar offering to accept or block yourself would replace the composer.
   bool get isIncomingRequest => !isSelf && requestState == 'incoming';
+
+  /// The server's answer at fetch time. A timed mute can lapse while the row
+  /// sits in memory, so UI reads `isMutedNow` (chat-mute/mute_state.dart).
   final bool muted;
+
+  /// When a timed mute ends; null = until unmuted (migration 0162).
+  final DateTime? mutedUntil;
+
+  /// `all` or `mentions` — the latter lets @mentions and replies through.
+  final String muteMode;
 
   /// Kept at the top of this member's own list. Per-member like [muted], so
   /// pinning a group reorders it for nobody else. The server caps it at four
@@ -351,6 +362,10 @@ class ChatConversation extends Equatable {
       plaintextUntilKeyed: json['plaintext_until_keyed'] as bool? ?? false,
       requestState: json['request_state'] as String? ?? 'none',
       muted: json['muted'] as bool? ?? false,
+      mutedUntil: DateTime.tryParse(
+        json['muted_until'] as String? ?? '',
+      )?.toLocal(),
+      muteMode: json['mute_mode'] as String? ?? 'all',
       pinned: json['pinned'] as bool? ?? false,
       memberAvatars: (json['member_avatars'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
@@ -397,6 +412,10 @@ class ChatConversation extends Equatable {
     // is not sealed.
     bool clearLastMessageEncryption = false,
     bool? muted,
+    DateTime? mutedUntil,
+    // null above means "keep"; an "Always" mute has to clear the end time.
+    bool clearMutedUntil = false,
+    String? muteMode,
     bool? pinned,
     String? name,
     String? requestState,
@@ -466,6 +485,8 @@ class ChatConversation extends Equatable {
     plaintextUntilKeyed: plaintextUntilKeyed,
     requestState: requestState ?? this.requestState,
     muted: muted ?? this.muted,
+    mutedUntil: clearMutedUntil ? null : (mutedUntil ?? this.mutedUntil),
+    muteMode: muteMode ?? this.muteMode,
     pinned: pinned ?? this.pinned,
     memberAvatars: memberAvatars,
     memberCount: memberCount,
@@ -491,6 +512,8 @@ class ChatConversation extends Equatable {
     lastMessageAttachmentName,
     lastMessageAttachments,
     muted,
+    mutedUntil,
+    muteMode,
     pinned,
     name,
     peerUserName,

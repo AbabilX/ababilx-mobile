@@ -10,6 +10,7 @@ import '../../calls/widgets/in_call_label.dart';
 import '../../local_share/providers/local_share_providers.dart';
 import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
+import '../chat-mute/mute_choice.dart';
 import '../chat_icon.dart';
 import '../chat_list_filters.dart';
 import '../chat_unread_badge.dart';
@@ -139,11 +140,14 @@ class ConversationRow extends ConsumerWidget {
                                 ),
                               ),
                             ],
-                            if (conversation.muted)
+                            if (conversation.isMutedNow)
                               Padding(
                                 padding: const EdgeInsets.only(left: 6),
                                 child: ChatIcon(
-                                  HugeIcons.strokeRoundedNotificationOff01,
+                                  conversation.isMentionsOnlyMute
+                                      ? HugeIcons.strokeRoundedAt
+                                      : HugeIcons
+                                            .strokeRoundedNotificationOff01,
                                   size: 14,
                                   color: colors.onSurfaceVariant,
                                 ),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
+import '../chat-mute/mute_flow.dart';
 import 'conversation_actions_sheet.dart';
 import 'conversation_end_action.dart';
 
@@ -31,10 +32,9 @@ Future<void> runConversationAction(
       );
     case ConversationAction.mute:
     case ConversationAction.unmute:
-      await notifier.muteConversation(
-        conversation.id,
-        action == ConversationAction.mute,
-      );
+      // Mute opens the options sheet on the LIST's context; the long-press
+      // sheet that chose this is already gone.
+      await changeConversationMute(context, ref, conversation);
     case ConversationAction.markRead:
       await notifier.markConversationRead(conversation.id);
     case ConversationAction.end:

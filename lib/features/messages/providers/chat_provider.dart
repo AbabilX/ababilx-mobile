@@ -21,6 +21,7 @@ import '../../private-chat/private_op.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../chat-mute/mute_choice.dart';
 import '../chat_thread_prefetch.dart';
 import '../chat_utils.dart';
 import '../history-restore/history_restore_flag.dart';

@@ -51,6 +51,8 @@ extension ChatConversationJson on ChatConversation {
     'plaintext_until_keyed': plaintextUntilKeyed,
     'request_state': requestState,
     'muted': muted,
+    'muted_until': mutedUntil?.toUtc().toIso8601String(),
+    'mute_mode': muteMode,
     'pinned': pinned,
     'member_avatars': memberAvatars,
     'member_count': memberCount,

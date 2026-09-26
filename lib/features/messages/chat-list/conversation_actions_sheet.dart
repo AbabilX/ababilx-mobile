@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../chat-mute/mute_choice.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 
@@ -56,7 +57,7 @@ Future<ConversationAction?> showConversationActionsSheet(
 List<Widget> _tiles(BuildContext context, ChatConversation conversation) {
   void choose(ConversationAction action) => Navigator.of(context).pop(action);
   final pinned = conversation.pinned;
-  final muted = conversation.muted;
+  final muted = conversation.isMutedNow;
   final isGroup = conversation.isGroupConversation;
 
   return [

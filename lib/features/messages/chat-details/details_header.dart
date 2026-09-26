@@ -18,6 +18,8 @@ import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
 import '../chat-header/start_audio_call.dart';
 import '../chat-list/chat_search.dart';
+import '../chat-mute/mute_choice.dart';
+import '../chat-mute/mute_flow.dart';
 import '../chat-timeline/user_profile_sheet.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
@@ -174,17 +176,16 @@ class DetailsHeader extends ConsumerWidget {
             const SizedBox(width: 16),
             DetailsActionButton(
               icon: ChatIcon(
-                conversation.muted
+                conversation.isMentionsOnlyMute
+                    ? HugeIcons.strokeRoundedAt
+                    : conversation.isMutedNow
                     ? HugeIcons.strokeRoundedNotificationOff01
                     : HugeIcons.strokeRoundedNotification01,
               ),
-              label: conversation.muted ? 'Unmute' : 'Mute',
-              active: conversation.muted,
-              onTap: () => unawaited(
-                ref
-                    .read(chatProvider.notifier)
-                    .muteConversation(conversation.id, !conversation.muted),
-              ),
+              label: conversation.isMutedNow ? 'Unmute' : 'Mute',
+              active: conversation.isMutedNow,
+              onTap: () =>
+                  unawaited(changeConversationMute(context, ref, conversation)),
             ),
             const SizedBox(width: 16),
             DetailsActionButton(
