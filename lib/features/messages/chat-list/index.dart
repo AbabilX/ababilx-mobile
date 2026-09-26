@@ -74,9 +74,14 @@ class _ChatListState extends ConsumerState<ChatList> {
     // Locked chats live behind a long press on the title, nowhere here.
     final locks = ref.watch(chatLocksProvider);
     final dms = withoutLockedChats(chat.dms, locks);
+    final channels = withoutLockedChats(chat.channels, locks);
+    final filters = availableChatListFilters([...dms, ...channels]);
+    // A pill whose last chat went away (read the last unread, left the last
+    // group) takes the selection back to All rather than an empty list.
+    if (!filters.contains(_filter)) _filter = ChatListFilter.all;
     final rows = unifiedConversations(
       dms: dms,
-      channels: withoutLockedChats(chat.channels, locks),
+      channels: channels,
       filter: _filter,
     );
     final recentDms = recentDmsForStrip(dms);
@@ -97,6 +102,7 @@ class _ChatListState extends ConsumerState<ChatList> {
                     context.push('/messages/${conversation.id}'),
               ),
             FilterChipsRow(
+              filters: filters,
               filter: _filter,
               onChanged: (next) => setState(() => _filter = next),
             ),

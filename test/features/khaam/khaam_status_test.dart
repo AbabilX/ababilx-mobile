@@ -1,11 +1,11 @@
-import 'package:ababilx/features/jpack/data/jpack_status.dart';
+import 'package:ababilx/features/khaam/data/khaam_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('ours is always sent; theirs is unopened until opened', () {
-    expect(jpackStatus(isOwn: true, opened: false), JPackStatus.sent);
-    expect(jpackStatus(isOwn: true, opened: true), JPackStatus.sent);
-    expect(jpackStatus(isOwn: false, opened: false), JPackStatus.unopened);
-    expect(jpackStatus(isOwn: false, opened: true), JPackStatus.opened);
+    expect(khaamStatus(isOwn: true, opened: false), KhaamStatus.sent);
+    expect(khaamStatus(isOwn: true, opened: true), KhaamStatus.sent);
+    expect(khaamStatus(isOwn: false, opened: false), KhaamStatus.unopened);
+    expect(khaamStatus(isOwn: false, opened: true), KhaamStatus.opened);
   });
 }

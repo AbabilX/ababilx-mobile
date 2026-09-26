@@ -31,6 +31,7 @@ class ConversationAvatar extends ConsumerWidget {
         avatars: conversation.memberAvatars,
         avatarUrl: conversation.avatarUrl,
         name: title,
+        webhook: conversation.isWebhook,
         size: 52,
       );
     }

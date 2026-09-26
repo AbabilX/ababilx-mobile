@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../data/jpack_covers.dart';
-import 'jpack_cover_art.dart';
+import '../data/khaam_covers.dart';
+import 'khaam_cover_art.dart';
 
 const _grayscale = ColorFilter.matrix(<double>[
   0.2126, 0.7152, 0.0722, 0, 0, //
@@ -13,8 +13,8 @@ const _grayscale = ColorFilter.matrix(<double>[
 /// One cover in the gallery grid. The cover already in use is grayed out
 /// instead of ringed — desaturated and faded into the page background, so it
 /// reads the same in light and dark themes.
-class JPackCoverTile extends StatelessWidget {
-  const JPackCoverTile({
+class KhaamCoverTile extends StatelessWidget {
+  const KhaamCoverTile({
     super.key,
     required this.cover,
     required this.name,
@@ -23,7 +23,7 @@ class JPackCoverTile extends StatelessWidget {
     required this.onTap,
   });
 
-  final JPackCover cover;
+  final KhaamCover cover;
   final String name;
   final double artWidth;
   final bool selected;
@@ -37,8 +37,8 @@ class JPackCoverTile extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Hero(
-          tag: 'jpack-cover-${cover.id}',
-          child: JPackCoverArt(cover: cover, width: artWidth),
+          tag: 'khaam-cover-${cover.id}',
+          child: KhaamCoverArt(cover: cover, width: artWidth),
         ),
         const SizedBox(height: 6),
         Padding(

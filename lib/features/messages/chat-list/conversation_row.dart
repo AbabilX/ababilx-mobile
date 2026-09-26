@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/localization/app_translations.dart';
+import '../../khaam/providers/khaam_providers.dart';
 import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../calls/providers/in_call_presence_provider.dart';
 import '../../calls/widgets/in_call_label.dart';
@@ -41,7 +43,12 @@ class ConversationRow extends ConsumerWidget {
     final title = ref
         .watch(contactNicknamesProvider)
         .titleFor(conversation, currentUserId);
-    final preview = chatListPreview(conversation, currentUserId);
+    final preview = chatListPreview(
+      conversation,
+      currentUserId,
+      lang: ref.watch(appLanguageProvider),
+      openedKhaams: ref.watch(khaamOpenedIdsProvider).valueOrNull ?? const {},
+    );
     final typingText = conversation.isSelf || conversation.isWebhook
         ? ''
         : watchTypingText(

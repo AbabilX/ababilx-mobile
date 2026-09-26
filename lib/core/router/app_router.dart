@@ -41,6 +41,8 @@ import '../../features/crm/screens/crm_organizations_screen.dart';
 import '../../features/crm/screens/crm_organization_detail_screen.dart';
 import '../../features/calls/group/screens/group_call_lobby_screen.dart';
 import '../../features/calls/group/screens/group_call_screen.dart';
+import '../../features/calls/call-info/call_info_path.dart';
+import '../../features/calls/call-info/call_info_screen.dart';
 import '../../features/calls/screens/calls_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
@@ -265,6 +267,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       // swallow it, since ':id' matches a single segment only.
       // Signal's conversation settings. Declared before '/messages/:id' for
       // the same reason as the wallpaper route: ':id' matches one segment.
+      // WhatsApp's Call info: one contact's calls on one day, from the call
+      // log's stacked row. Outside the shell, like a chat.
+      GoRoute(
+        path: '/call-info/:id',
+        builder: (_, state) => CallInfoScreen(
+          conversationId: state.pathParameters['id']!,
+          day: parseCallInfoDay(state.uri.queryParameters['day']),
+        ),
+      ),
       GoRoute(
         path: '/messages/:id/details',
         builder: (_, state) => ChatLockGate(

@@ -1,11 +1,35 @@
 import 'package:intl/intl.dart';
 
-import '../jpack/data/jpack_preview.dart';
+import '../khaam/data/khaam_preview.dart';
 import 'data/models/chat_models.dart';
 import 'markdown/message_markdown_preview.dart';
 import 'tiptap_plain_text.dart';
 
-enum ChatListFilter { all, unread }
+enum ChatListFilter { all, unread, groups, webhooks }
+
+/// Groups means every conversation with a roster people post into — a
+/// channel converted by 0145 is a group in all but name. Feeds are their own
+/// pill: they are read-only and would bury the groups people talk in.
+bool matchesChatListFilter(ChatConversation c, ChatListFilter filter) =>
+    switch (filter) {
+      ChatListFilter.all => true,
+      ChatListFilter.unread => c.unreadCount > 0,
+      ChatListFilter.groups => c.isGroup || c.isChannel,
+      ChatListFilter.webhooks => c.isWebhook,
+    };
+
+/// The pills worth drawing: a filter with nothing behind it is not offered,
+/// and All only appears once there is something else to choose. Empty means
+/// the row is hidden.
+List<ChatListFilter> availableChatListFilters(List<ChatConversation> all) {
+  final options = [
+    for (final f in ChatListFilter.values)
+      if (f != ChatListFilter.all &&
+          all.any((c) => matchesChatListFilter(c, f)))
+        f,
+  ];
+  return options.isEmpty ? const [] : [ChatListFilter.all, ...options];
+}
 
 List<ChatConversation> unifiedConversations({
   required List<ChatConversation> dms,
@@ -25,10 +49,8 @@ List<ChatConversation> unifiedConversations({
         DateTime.tryParse(b.lastMessageAt ?? '')?.millisecondsSinceEpoch ?? 0;
     return tb.compareTo(ta);
   });
-  if (filter == ChatListFilter.unread) {
-    return all.where((c) => c.unreadCount > 0).toList();
-  }
-  return all;
+  if (filter == ChatListFilter.all) return all;
+  return all.where((c) => matchesChatListFilter(c, filter)).toList();
 }
 
 List<ChatConversation> recentDmsForStrip(
@@ -88,14 +110,30 @@ class ChatListPreview {
   }
 }
 
-ChatListPreview chatListPreview(ChatConversation conv, String? currentUserId) {
+/// [openedKhaams] decides whether a Khaam's message may show: the sender's own
+/// card always, a received one only once scratched open on this phone.
+ChatListPreview chatListPreview(
+  ChatConversation conv,
+  String? currentUserId, {
+  String lang = 'bn',
+  Set<String> openedKhaams = const {},
+}) {
   final rawBody = conv.lastMessageBody?.trim() ?? '';
   final hasBody = rawBody.isNotEmpty && !isTiptapEmpty(rawBody);
   var text = '';
 
-  final jpack = hasBody ? jpackPreviewText(rawBody) : null;
-  if (jpack != null) {
-    text = jpack;
+  final sentByMe =
+      (currentUserId?.trim() ?? '').isNotEmpty &&
+      conv.lastMessageUserId?.trim() == currentUserId?.trim();
+  final khaam = hasBody
+      ? khaamPreviewText(
+          rawBody,
+          lang: lang,
+          reveal: (id) => sentByMe || openedKhaams.contains(id),
+        )
+      : null;
+  if (khaam != null) {
+    text = khaam;
   } else if (hasBody) {
     text = tiptapToPreviewText(rawBody);
     if (text.isEmpty || _looksLikeJson(text)) {

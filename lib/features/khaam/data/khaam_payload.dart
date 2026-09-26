@@ -1,18 +1,29 @@
 import 'dart:convert';
 
-/// A JPack as it travels: inside the message body, not beside it.
+/// The key under `attrs` in the body. Still `jpack` — the feature's first
+/// name — because every card already sent carries it.
+const khaamWireKey = 'jpack';
+
+/// What a Khaam reads as anywhere the card is not drawn.
+String khaamLabel(String lang) => lang == 'bn' ? '💌 খাম' : '💌 Khaam';
+
+/// A Khaam as it travels: inside the message body, not beside it.
 ///
-/// A JPack is a greeting card — a cover and a message — and carries no money.
+/// A Khaam is a greeting card — a cover and a message — and carries no money.
 ///
 /// The send API carries `body` and nothing else a client chooses — no
 /// `message_type`, no `meta` — and in a DM only `body` is sealed. So the card
 /// rides as a TipTap doc whose `attrs.jpack` holds the data, and whose one
 /// paragraph is a readable line. Everything that reads a body as text
-/// (`tiptapToPlainText`: chat-list previews, notifications, search, web,
-/// desktop, older builds of this app) ignores `attrs` and shows that line;
-/// this build finds `attrs.jpack` and draws the card.
-class JPackPayload {
-  const JPackPayload({
+/// (chat-list previews, notifications, search, web, desktop, older builds of
+/// this app) ignores `attrs` and shows that line; this build finds
+/// `attrs.jpack` and draws the card.
+///
+/// The line is the label alone, never the message: the message is a
+/// surprise until the receiver scratches the card open, so a notification or
+/// a preview must not give it away.
+class KhaamPayload {
+  const KhaamPayload({
     required this.id,
     required this.coverId,
     required this.message,
@@ -36,19 +47,16 @@ class JPackPayload {
     'lang': lang,
   };
 
-  /// The line every client that does not know JPack shows instead.
-  String get fallbackText {
-    final text = message.trim();
-    return text.isEmpty ? '💌 JPack' : '💌 JPack · $text';
-  }
+  /// The line every client that does not know Khaam shows instead.
+  String get fallbackText => khaamLabel(lang);
 
-  static final _cache = <String, JPackPayload?>{};
+  static final _cache = <String, KhaamPayload?>{};
 
-  /// The JPack in [body], or null for every other message. Memoised on the
+  /// The Khaam in [body], or null for every other message. Memoised on the
   /// body string: bubbles call this on every rebuild while scrolling.
-  static JPackPayload? tryParse(String? body) {
+  static KhaamPayload? tryParse(String? body) {
     final trimmed = body?.trim() ?? '';
-    // Cheap reject first — almost every body is not a JPack.
+    // Cheap reject first — almost every body is not a Khaam.
     if (trimmed.isEmpty || !trimmed.contains('"jpack"')) return null;
     if (_cache.containsKey(trimmed)) return _cache[trimmed];
     final parsed = _parse(trimmed);
@@ -57,17 +65,17 @@ class JPackPayload {
     return parsed;
   }
 
-  static JPackPayload? _parse(String body) {
+  static KhaamPayload? _parse(String body) {
     try {
       final decoded = jsonDecode(body);
       if (decoded is! Map || decoded['type'] != 'doc') return null;
       final attrs = decoded['attrs'];
       if (attrs is! Map) return null;
-      final j = attrs['jpack'];
+      final j = attrs[khaamWireKey];
       if (j is! Map) return null;
       final id = j['id'];
       if (id is! String || id.isEmpty) return null;
-      return JPackPayload(
+      return KhaamPayload(
         id: id,
         coverId: j['cover'] is String ? j['cover'] as String : 'classic',
         message: j['message'] is String ? j['message'] as String : '',
@@ -79,10 +87,10 @@ class JPackPayload {
   }
 }
 
-/// The message body for [payload]. See [JPackPayload] for why it is a doc.
-String encodeJPackBody(JPackPayload payload) => jsonEncode({
+/// The message body for [payload]. See [KhaamPayload] for why it is a doc.
+String encodeKhaamBody(KhaamPayload payload) => jsonEncode({
   'type': 'doc',
-  'attrs': {'jpack': payload.toJson()},
+  'attrs': {khaamWireKey: payload.toJson()},
   'content': [
     {
       'type': 'paragraph',

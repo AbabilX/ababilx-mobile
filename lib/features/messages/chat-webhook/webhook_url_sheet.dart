@@ -42,7 +42,7 @@ class _WebhookUrlSheet extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    isNew ? 'Webhook feed created' : 'New webhook URL',
+                    isNew ? 'Flock created' : 'New webhook URL',
                     style: text.titleMedium,
                   ),
                 ),
@@ -51,7 +51,7 @@ class _WebhookUrlSheet extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               isNew
-                  ? 'Members can read this feed. Only this URL can post to it.'
+                  ? 'Members can read this flock. Only this URL can post to it.'
                   : 'The previous URL stopped working the moment this one was '
                         'made. Update whatever was posting to it.',
               style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),

@@ -4,15 +4,17 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
-import '../../messages/providers/chat_provider.dart';
 import '../data/call_log_seen_storage.dart';
 import '../group/providers/group_call_provider.dart';
 import '../providers/call_log_provider.dart';
 import '../providers/voice_call_provider.dart';
 import 'call_log_cluster.dart';
 import 'call_log_format.dart';
+import '../call-info/call_info_path.dart';
 import 'call_log_row.dart';
+import 'call_redial.dart';
 import 'calls_empty.dart';
+import 'calls_list_chrome.dart';
 
 enum _CallFilter { all, missed }
 
@@ -84,24 +86,8 @@ class _CallsListState extends ConsumerState<CallsList> {
     markMissedCallsSeen(now);
   }
 
-  /// Redial a 1:1 call when the conversation is still in the sidebar;
-  /// otherwise just open it, which is also the only sane action for a group.
-  void _call(String conversationId, bool isGroup) {
-    final conversation = ref
-        .read(chatProvider)
-        .conversationById(conversationId);
-    if (!isGroup && conversation != null && conversation.isDm) {
-      // UI already nulls the button while busy; keep the hard gate so a
-      // stale callback cannot start a second call underneath the first.
-      if (ref.read(voiceCallProvider).active ||
-          ref.read(groupCallProvider).active) {
-        return;
-      }
-      ref.read(voiceCallProvider.notifier).startOutgoing(conversation);
-      return;
-    }
-    context.push('/messages/$conversationId');
-  }
+  void _call(String conversationId, bool isGroup) =>
+      redialCall(context, ref, conversationId, isGroup: isGroup);
 
   List<_CallListItem> _items(List<CallLogCluster> rows, String lang) {
     final items = <_CallListItem>[];
@@ -132,9 +118,13 @@ class _CallsListState extends ConsumerState<CallsList> {
     // rebuilds only when the log changes — ListView.builder scrolling does not
     // rebuild this widget.
     final allRows = clusterCallLog(log.calls);
-    final rows = _filter == _CallFilter.missed
-        ? allRows.where((row) => row.lead.missed).toList()
-        : allRows;
+    // One row per contact per day; the date sections keep days apart and the
+    // row opens that day's calls (WhatsApp's Call info).
+    final rows = stackCallLogByContact(
+      _filter == _CallFilter.missed
+          ? log.calls.where((c) => c.missed).toList()
+          : log.calls,
+    );
     final items = _items(rows, lang);
     final unseenMissed = allRows.where((row) => row.lead.missed);
     final missedCount = _lastSeenMissedAt == null
@@ -148,7 +138,7 @@ class _CallsListState extends ConsumerState<CallsList> {
       appBar: AppBar(
         title: Text(t('calls_title')),
         actions: [
-          _CallFilterAction(
+          CallFilterAction(
             icon: Icons.call_rounded,
             label: t('calls_all'),
             selected: _filter == _CallFilter.all,
@@ -157,7 +147,7 @@ class _CallsListState extends ConsumerState<CallsList> {
           Badge(
             isLabelVisible: missedCount > 0,
             label: Text('$missedCount'),
-            child: _CallFilterAction(
+            child: CallFilterAction(
               icon: Icons.call_missed_rounded,
               label: t('calls_missed_filter'),
               selected: _filter == _CallFilter.missed,
@@ -254,7 +244,7 @@ class _CallsListState extends ConsumerState<CallsList> {
                               }
                               final item = items[i];
                               if (item is _CallSectionItem) {
-                                return _CallSectionHeader(title: item.title);
+                                return CallSectionHeader(title: item.title);
                               }
                               final cluster = (item as _CallRowItem).cluster;
                               final entry = cluster.lead;
@@ -264,8 +254,11 @@ class _CallsListState extends ConsumerState<CallsList> {
                                     entry: entry,
                                     count: cluster.count,
                                     lang: lang,
+                                    // That contact's calls on that day.
                                     onTap: () => context.push(
-                                      '/messages/${entry.conversationId}',
+                                      entry.conversationId.isEmpty
+                                          ? '/messages/'
+                                          : callInfoPath(entry),
                                     ),
                                     // Group trailing is "open chat", not a
                                     // redial — leave it tappable while busy.
@@ -292,47 +285,4 @@ class _CallsListState extends ConsumerState<CallsList> {
             ),
     );
   }
-}
-
-class _CallFilterAction extends StatelessWidget {
-  const _CallFilterAction({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    if (selected) {
-      return IconButton.filledTonal(
-        onPressed: onPressed,
-        tooltip: label,
-        icon: Icon(icon),
-      );
-    }
-    return IconButton(onPressed: onPressed, tooltip: label, icon: Icon(icon));
-  }
-}
-
-class _CallSectionHeader extends StatelessWidget {
-  const _CallSectionHeader({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
-    child: Text(
-      title,
-      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-        fontWeight: FontWeight.w700,
-      ),
-    ),
-  );
 }

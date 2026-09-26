@@ -1,12 +1,15 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+import '../chat_icon.dart';
 import '../../../shared/widgets/avatar_cache.dart';
 
 /// The feed's bot picture, as a tappable circle.
 ///
 /// A feed has no member whose face could stand in for it, so an unset picture
-/// draws the link glyph rather than an initial — the same fallback the
+/// draws the Flock glyph rather than an initial — the same fallback the
 /// timeline uses for a webhook message.
 class WebhookAvatarPicker extends StatelessWidget {
   const WebhookAvatarPicker({
@@ -49,7 +52,11 @@ class WebhookAvatarPicker extends StatelessWidget {
                     : null,
                 child: _hasImage
                     ? null
-                    : Icon(Icons.link_rounded, color: colors.primary, size: 28),
+                    : ChatIcon(
+                        HugeIcons.strokeRoundedWebhook,
+                        color: colors.primary,
+                        size: 28,
+                      ),
               ),
               CircleAvatar(
                 radius: 12,

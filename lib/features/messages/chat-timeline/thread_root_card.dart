@@ -70,7 +70,7 @@ class ThreadRootCard extends ConsumerWidget {
     // no profile to open.
     final webhook = root.isWebhook;
     final name = webhook
-        ? (root.webhookSourceName ?? 'Webhook')
+        ? (root.webhookSourceName ?? 'Flock')
         : (root.userName ?? 'Unknown');
     final replyCount = root.threadCount;
     // A private group (server 0154) forwards nothing.

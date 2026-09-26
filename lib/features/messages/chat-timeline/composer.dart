@@ -9,7 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../privacy-mode/privacy_media.dart';
 import '../../../core/localization/app_translations.dart';
-import '../../jpack/screens/jpack_cover_gallery_screen.dart';
+import '../../khaam/screens/khaam_cover_gallery_screen.dart';
 import '../../ghost/widgets/ghost_intro_sheet.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../../../shared/media/device_gallery.dart';
@@ -763,16 +763,16 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     unawaited(_shareContact());
   }
 
-  /// JPack is one sender, one receiver: offered in a DM with a peer, on the
+  /// Khaam is one sender, one receiver: offered in a DM with a peer, on the
   /// main timeline only.
-  VoidCallback? get _jpackAction {
+  VoidCallback? get _khaamAction {
     if (widget.parentId != null) return null;
     final conv = ref.read(chatProvider).conversationById(widget.conversationId);
     if (conv == null || !conv.hasDmPeer) return null;
     return () {
       _closeAttachmentPanel();
       unawaited(
-        openJPackFlow(
+        openKhaamFlow(
           context,
           conversationId: widget.conversationId,
           recipientName: conv.displayTitle(
@@ -1136,8 +1136,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                         ? () => _selectAttachment(ComposerAttachKind.file)
                         : null,
                     onContact: _selectContact,
-                    jpackLabel: tr('jpack_chip'),
-                    onJPack: _jpackAction,
+                    khaamLabel: tr('khaam_chip'),
+                    onKhaam: _khaamAction,
                     ghostLabel: tr('ghost_chip'),
                     onGhost: _ghostAction,
                     onPickMedia: _pickFromRail,

@@ -3,23 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/text/name_search.dart';
-import '../data/jpack_covers.dart';
-import '../providers/jpack_compose_provider.dart';
+import '../data/khaam_covers.dart';
+import '../providers/khaam_compose_provider.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
-import '../widgets/jpack_bottom_bar.dart';
-import '../widgets/jpack_cover_art.dart';
-import '../widgets/jpack_cover_tile.dart';
-import '../widgets/jpack_search_field.dart';
-import 'jpack_compose_screen.dart';
+import '../widgets/khaam_bottom_bar.dart';
+import '../widgets/khaam_cover_art.dart';
+import '../widgets/khaam_cover_tile.dart';
+import '../widgets/khaam_search_field.dart';
+import 'khaam_compose_screen.dart';
 
 /// The chip in the chat's + panel lands here: pick a cover, then fill it in.
-Future<void> openJPackFlow(
+Future<void> openKhaamFlow(
   BuildContext context, {
   required String conversationId,
   required String recipientName,
 }) => Navigator.of(context).push(
   MaterialPageRoute<void>(
-    builder: (_) => JPackCoverGalleryScreen(
+    builder: (_) => KhaamCoverGalleryScreen(
       conversationId: conversationId,
       recipientName: recipientName,
     ),
@@ -28,8 +28,8 @@ Future<void> openJPackFlow(
 
 /// Every cover, two to a row. Opened from the chat it leads on to the compose
 /// screen; opened from the compose screen ([picking]) it hands a cover back.
-class JPackCoverGalleryScreen extends ConsumerStatefulWidget {
-  const JPackCoverGalleryScreen({
+class KhaamCoverGalleryScreen extends ConsumerStatefulWidget {
+  const KhaamCoverGalleryScreen({
     super.key,
     required this.conversationId,
     required this.recipientName,
@@ -43,14 +43,14 @@ class JPackCoverGalleryScreen extends ConsumerStatefulWidget {
   final bool picking;
 
   @override
-  ConsumerState<JPackCoverGalleryScreen> createState() =>
-      _JPackCoverGalleryScreenState();
+  ConsumerState<KhaamCoverGalleryScreen> createState() =>
+      _KhaamCoverGalleryScreenState();
 }
 
-class _JPackCoverGalleryScreenState
-    extends ConsumerState<JPackCoverGalleryScreen> {
+class _KhaamCoverGalleryScreenState
+    extends ConsumerState<KhaamCoverGalleryScreen> {
   late final TextEditingController _searchCtrl = TextEditingController(
-    text: ref.read(jpackCoverQueryProvider(widget.picking)),
+    text: ref.read(khaamCoverQueryProvider(widget.picking)),
   );
 
   @override
@@ -60,11 +60,11 @@ class _JPackCoverGalleryScreenState
   }
 
   void _setQuery(String v) {
-    ref.read(jpackCoverQueryProvider(widget.picking).notifier).state = v.trim();
+    ref.read(khaamCoverQueryProvider(widget.picking).notifier).state = v.trim();
     setState(() {});
   }
 
-  Future<void> _choose(BuildContext context, JPackCover cover) async {
+  Future<void> _choose(BuildContext context, KhaamCover cover) async {
     final navigator = Navigator.of(context);
     if (widget.picking) {
       navigator.pop(cover);
@@ -72,7 +72,7 @@ class _JPackCoverGalleryScreenState
     }
     final sent = await navigator.push<bool>(
       MaterialPageRoute(
-        builder: (_) => JPackComposeScreen(
+        builder: (_) => KhaamComposeScreen(
           conversationId: widget.conversationId,
           recipientName: widget.recipientName,
           initialCover: cover,
@@ -85,11 +85,11 @@ class _JPackCoverGalleryScreenState
   @override
   Widget build(BuildContext context) {
     String t(String key) => AppTranslations.translate(context, ref, key);
-    final query = ref.watch(jpackCoverQueryProvider(widget.picking));
+    final query = ref.watch(khaamCoverQueryProvider(widget.picking));
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final covers = [
-      for (final c in jpackCovers)
+      for (final c in khaamCovers)
         if (matchesNameQuery(query, [t(c.nameKey), ...c.keywords])) c,
     ];
 
@@ -106,7 +106,7 @@ class _JPackCoverGalleryScreenState
                 return CustomScrollView(
                   slivers: [
                     SliverAppBar(
-                      title: Text(t('jpack_covers_title')),
+                      title: Text(t('khaam_covers_title')),
                       centerTitle: true,
                       floating: true,
                       snap: true,
@@ -116,7 +116,7 @@ class _JPackCoverGalleryScreenState
                         hasScrollBody: false,
                         child: Center(
                           child: Text(
-                            t('jpack_no_covers'),
+                            t('khaam_no_covers'),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: colors.onSurfaceVariant,
                             ),
@@ -138,10 +138,10 @@ class _JPackCoverGalleryScreenState
                                 crossAxisSpacing: gap,
                                 mainAxisSpacing: gap,
                                 mainAxisExtent:
-                                    artWidth / jpackCoverAspect + 34,
+                                    artWidth / khaamCoverAspect + 34,
                               ),
                           itemCount: covers.length,
-                          itemBuilder: (_, i) => JPackCoverTile(
+                          itemBuilder: (_, i) => KhaamCoverTile(
                             cover: covers[i],
                             name: t(covers[i].nameKey),
                             artWidth: artWidth,
@@ -157,10 +157,10 @@ class _JPackCoverGalleryScreenState
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: JPackBottomBar(
-              child: JPackSearchField(
+            child: KhaamBottomBar(
+              child: KhaamSearchField(
                 controller: _searchCtrl,
-                hintText: t('jpack_search_hint'),
+                hintText: t('khaam_search_hint'),
                 onChanged: _setQuery,
               ),
             ),

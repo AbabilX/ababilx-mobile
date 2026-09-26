@@ -2,10 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../data/jpack_covers.dart';
+import '../data/khaam_covers.dart';
 
-/// A JPack envelope is 1 : 1.6, like the red packets it is modelled on.
-const jpackCoverAspect = 1 / 1.6;
+/// A Khaam envelope is 1 : 1.6, like the red packets it is modelled on.
+const khaamCoverAspect = 1 / 1.6;
 
 /// Where the upper panel meets the flap, as a fraction of the height: the
 /// edges sit at [_flapEdge] and the curve dips to [_flapDip] in the middle,
@@ -14,12 +14,12 @@ const _flapEdge = 0.66;
 const _flapDip = 0.84;
 
 /// Centre of the seal on a cover of [size].
-Offset jpackSealCenter(Size size) => Offset(size.width / 2, size.height * 0.75);
+Offset khaamSealCenter(Size size) => Offset(size.width / 2, size.height * 0.75);
 
-double jpackSealRadius(Size size) => size.width * 0.17;
+double khaamSealRadius(Size size) => size.width * 0.17;
 
 /// Everything above the flap's curve.
-Path jpackUpperPath(Size size) => Path()
+Path khaamUpperPath(Size size) => Path()
   ..moveTo(0, 0)
   ..lineTo(size.width, 0)
   ..lineTo(size.width, size.height * _flapEdge)
@@ -32,7 +32,7 @@ Path jpackUpperPath(Size size) => Path()
   ..close();
 
 /// The flap: the curve and everything below it.
-Path jpackLowerPath(Size size) => Path()
+Path khaamLowerPath(Size size) => Path()
   ..moveTo(0, size.height * _flapEdge)
   ..quadraticBezierTo(
     size.width / 2,
@@ -44,25 +44,25 @@ Path jpackLowerPath(Size size) => Path()
   ..lineTo(0, size.height)
   ..close();
 
-enum JPackCoverPart { full, upper, lower }
+enum KhaamCoverPart { full, upper, lower }
 
 /// One cover, drawn. The gallery, the chat card and the open screen all use
 /// this, so a cover looks the same everywhere it appears.
-class JPackCoverArt extends StatelessWidget {
-  const JPackCoverArt({
+class KhaamCoverArt extends StatelessWidget {
+  const KhaamCoverArt({
     super.key,
     required this.cover,
     required this.width,
-    this.part = JPackCoverPart.full,
+    this.part = KhaamCoverPart.full,
     this.showSeal = true,
     this.sealLabel = '✉',
     this.radius,
     this.child,
   });
 
-  final JPackCover cover;
+  final KhaamCover cover;
   final double width;
-  final JPackCoverPart part;
+  final KhaamCoverPart part;
   final bool showSeal;
   final String sealLabel;
   final double? radius;
@@ -72,10 +72,10 @@ class JPackCoverArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = Size(width, width / jpackCoverAspect);
+    final size = Size(width, width / khaamCoverAspect);
     final r = radius ?? width * 0.06;
-    final center = jpackSealCenter(size);
-    final sealR = jpackSealRadius(size);
+    final center = khaamSealCenter(size);
+    final sealR = khaamSealRadius(size);
     return SizedBox.fromSize(
       size: size,
       child: ClipRRect(
@@ -85,10 +85,10 @@ class JPackCoverArt extends StatelessWidget {
           children: [
             Positioned.fill(
               child: CustomPaint(
-                painter: JPackCoverPainter(cover: cover, part: part),
+                painter: KhaamCoverPainter(cover: cover, part: part),
               ),
             ),
-            if (child != null && part != JPackCoverPart.lower)
+            if (child != null && part != KhaamCoverPart.lower)
               Positioned(
                 left: 0,
                 right: 0,
@@ -96,13 +96,13 @@ class JPackCoverArt extends StatelessWidget {
                 height: size.height * _flapEdge,
                 child: child!,
               ),
-            if (showSeal && part != JPackCoverPart.upper)
+            if (showSeal && part != KhaamCoverPart.upper)
               Positioned(
                 left: center.dx - sealR,
                 top: center.dy - sealR,
                 width: sealR * 2,
                 height: sealR * 2,
-                child: JPackSeal(cover: cover, label: sealLabel),
+                child: KhaamSeal(cover: cover, label: sealLabel),
               ),
           ],
         ),
@@ -112,10 +112,10 @@ class JPackCoverArt extends StatelessWidget {
 }
 
 /// The round gold button on the flap — WeChat's 開, ours says ✉ or "খুলুন".
-class JPackSeal extends StatelessWidget {
-  const JPackSeal({super.key, required this.cover, required this.label});
+class KhaamSeal extends StatelessWidget {
+  const KhaamSeal({super.key, required this.cover, required this.label});
 
-  final JPackCover cover;
+  final KhaamCover cover;
   final String label;
 
   @override
@@ -166,17 +166,17 @@ class JPackSeal extends StatelessWidget {
   }
 }
 
-class JPackCoverPainter extends CustomPainter {
-  JPackCoverPainter({required this.cover, this.part = JPackCoverPart.full});
+class KhaamCoverPainter extends CustomPainter {
+  KhaamCoverPainter({required this.cover, this.part = KhaamCoverPart.full});
 
-  final JPackCover cover;
-  final JPackCoverPart part;
+  final KhaamCover cover;
+  final KhaamCoverPart part;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (part != JPackCoverPart.lower) {
+    if (part != KhaamCoverPart.lower) {
       canvas.save();
-      canvas.clipPath(jpackUpperPath(size));
+      canvas.clipPath(khaamUpperPath(size));
       final rect = Offset.zero & size;
       canvas.drawRect(
         rect,
@@ -191,8 +191,8 @@ class JPackCoverPainter extends CustomPainter {
       _paintMotif(canvas, upper, size.width);
       canvas.restore();
     }
-    if (part != JPackCoverPart.upper) {
-      final lower = jpackLowerPath(size);
+    if (part != KhaamCoverPart.upper) {
+      final lower = khaamLowerPath(size);
       // A soft shadow along the curve lifts the flap off the panel.
       canvas.drawPath(
         lower.shift(Offset(0, -size.width * 0.012)),
@@ -619,6 +619,6 @@ class JPackCoverPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(JPackCoverPainter old) =>
+  bool shouldRepaint(KhaamCoverPainter old) =>
       old.cover.id != cover.id || old.part != part;
 }

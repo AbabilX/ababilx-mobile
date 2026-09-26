@@ -1,18 +1,19 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// JPacks opened on this phone, by JPack id. Device-local: there is no server
-/// record of an opened JPack.
-class JPackOpenedStore {
-  const JPackOpenedStore();
+/// Khaams opened on this phone, by Khaam id. Device-local: there is no server
+/// record of an opened Khaam.
+class KhaamOpenedStore {
+  const KhaamOpenedStore();
 
+  /// Still the first name's key, so cards opened before the rename stay open.
   static const _key = 'ababilx_jpack_opened';
 
   /// Enough to cover any chat still on the phone; the oldest drop off.
   static const _maxIds = 1000;
 
-  Future<bool> isOpened(String id) async {
+  Future<Set<String>> all() async {
     final prefs = await SharedPreferences.getInstance();
-    return (prefs.getStringList(_key) ?? const <String>[]).contains(id);
+    return (prefs.getStringList(_key) ?? const <String>[]).toSet();
   }
 
   Future<void> markOpened(String id) async {

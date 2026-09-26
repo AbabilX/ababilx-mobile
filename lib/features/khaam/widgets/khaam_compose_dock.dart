@@ -5,8 +5,8 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../core/router/shell_bottom_bar/nav_tab_item.dart';
 
 /// The compose page's dock items, drawn as the shell's nav tabs.
-class JPackComposeDock extends StatelessWidget {
-  const JPackComposeDock({
+class KhaamComposeDock extends StatelessWidget {
+  const KhaamComposeDock({
     super.key,
     required this.langLabel,
     required this.captionsLabel,

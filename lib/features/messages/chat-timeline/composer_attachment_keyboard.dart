@@ -24,8 +24,8 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
     required this.onContact,
     required this.onPickMedia,
     this.selectedMediaUris = const [],
-    this.jpackLabel = 'JPack',
-    this.onJPack,
+    this.khaamLabel = 'Khaam',
+    this.onKhaam,
     this.ghostLabel = 'Ghost Chat',
     this.onGhost,
   });
@@ -42,9 +42,9 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
   final VoidCallback? onFile;
   final VoidCallback onContact;
 
-  /// JPack greeting card. Null hides the chip — it is offered in a DM only.
-  final String jpackLabel;
-  final VoidCallback? onJPack;
+  /// Khaam greeting card. Null hides the chip — it is offered in a DM only.
+  final String khaamLabel;
+  final VoidCallback? onKhaam;
 
   /// Ghost Chat. Null hides the chip — a DM with an accepted connection only.
   final String ghostLabel;
@@ -101,11 +101,11 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
                     icon: HugeIcons.strokeRoundedUserCircle,
                     onTap: onContact,
                   ),
-                  if (onJPack != null)
+                  if (onKhaam != null)
                     AttachChip(
-                      label: jpackLabel,
+                      label: khaamLabel,
                       icon: HugeIcons.strokeRoundedGift,
-                      onTap: onJPack!,
+                      onTap: onKhaam!,
                     ),
                   if (onGhost != null)
                     AttachChip(

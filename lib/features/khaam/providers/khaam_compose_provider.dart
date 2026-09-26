@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../messages/data/chat_client_message_id.dart';
-import '../data/jpack_covers.dart';
+import '../data/khaam_covers.dart';
 
 /// Everything the compose screen shows, and nothing it merely renders.
-class JPackComposeState {
-  const JPackComposeState({
-    required this.jpackId,
+class KhaamComposeState {
+  const KhaamComposeState({
+    required this.khaamId,
     required this.cover,
     this.message = '',
     this.lang = 'bn',
@@ -16,8 +16,8 @@ class JPackComposeState {
   });
 
   /// Minted once per compose screen.
-  final String jpackId;
-  final JPackCover cover;
+  final String khaamId;
+  final KhaamCover cover;
   final String message;
 
   /// Default messages are Bangla until the user asks for English.
@@ -40,15 +40,15 @@ class JPackComposeState {
     return typed.isEmpty ? defaultMessage : typed;
   }
 
-  JPackComposeState copyWith({
-    JPackCover? cover,
+  KhaamComposeState copyWith({
+    KhaamCover? cover,
     String? message,
     String? lang,
     int? messageIndex,
     bool? custom,
     bool? busy,
-  }) => JPackComposeState(
-    jpackId: jpackId,
+  }) => KhaamComposeState(
+    khaamId: khaamId,
     cover: cover ?? this.cover,
     message: message ?? this.message,
     lang: lang ?? this.lang,
@@ -58,12 +58,12 @@ class JPackComposeState {
   );
 }
 
-class JPackComposeNotifier
-    extends AutoDisposeFamilyNotifier<JPackComposeState, JPackCover> {
+class KhaamComposeNotifier
+    extends AutoDisposeFamilyNotifier<KhaamComposeState, KhaamCover> {
   @override
-  JPackComposeState build(JPackCover initialCover) {
-    final seed = JPackComposeState(
-      jpackId: newChatClientMessageId(),
+  KhaamComposeState build(KhaamCover initialCover) {
+    final seed = KhaamComposeState(
+      khaamId: newChatClientMessageId(),
       cover: initialCover,
     );
     return seed.copyWith(message: seed.defaultMessage);
@@ -87,7 +87,7 @@ class JPackComposeNotifier
     state = next.custom ? next : next.copyWith(message: next.defaultMessage);
   }
 
-  void setCover(JPackCover cover) {
+  void setCover(KhaamCover cover) {
     final next = state.copyWith(cover: cover, messageIndex: 0);
     state = next.custom ? next : next.copyWith(message: next.defaultMessage);
   }
@@ -95,13 +95,13 @@ class JPackComposeNotifier
   void setBusy(bool busy) => state = state.copyWith(busy: busy);
 }
 
-final jpackComposeProvider = NotifierProvider.autoDispose
-    .family<JPackComposeNotifier, JPackComposeState, JPackCover>(
-      JPackComposeNotifier.new,
+final khaamComposeProvider = NotifierProvider.autoDispose
+    .family<KhaamComposeNotifier, KhaamComposeState, KhaamCover>(
+      KhaamComposeNotifier.new,
     );
 
 /// The gallery's search text. Keyed by `picking` because the chat's gallery
 /// and the compose screen's cover picker can both be on the stack at once.
-final jpackCoverQueryProvider = StateProvider.autoDispose.family<String, bool>(
+final khaamCoverQueryProvider = StateProvider.autoDispose.family<String, bool>(
   (ref, picking) => '',
 );

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
-import '../../jpack/data/jpack_payload.dart';
+import '../../khaam/data/khaam_payload.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../chat-forward/forward_sheet.dart';
 import '../chat-select/message_selection.dart';
@@ -40,9 +40,9 @@ Future<void> showMessageActions(
   // A private group (server 0154) keeps everything inside it: no Save, no
   // Forward — for the sender too. The server refuses the forward as well.
   final locked = conversation?.groupPrivacy ?? false;
-  // A JPack is a card: a forwarded copy would share its id (and its opened
+  // A Khaam is a card: a forwarded copy would share its id (and its opened
   // state), editing would overwrite it, and its body is a payload, not text.
-  final isJPack = JPackPayload.tryParse(msg.body) != null;
+  final isKhaam = KhaamPayload.tryParse(msg.body) != null;
   final pinned = ref
       .read(pinnedMessageIdsProvider(conversationId))
       .contains(msg.id);
@@ -83,9 +83,9 @@ Future<void> showMessageActions(
     // The sender's own restricted photo is still theirs to forward; nobody
     // else may (the server refuses it too).
     showForward:
-        !isJPack && !locked && canForward && (isMine || !msg.hasProtectedMedia),
-    showCopy: !isJPack,
-    showEdit: !isJPack && canSend,
+        !isKhaam && !locked && canForward && (isMine || !msg.hasProtectedMedia),
+    showCopy: !isKhaam,
+    showEdit: !isKhaam && canSend,
     showReply: canSend,
     showReactions: canSend,
     labels: {

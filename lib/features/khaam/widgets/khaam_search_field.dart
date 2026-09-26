@@ -3,9 +3,9 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../messages/chat_icon.dart';
 
-/// Search input that sits inside [JPackBottomBar]'s capsule.
-class JPackSearchField extends StatelessWidget {
-  const JPackSearchField({
+/// Search input that sits inside [KhaamBottomBar]'s capsule.
+class KhaamSearchField extends StatelessWidget {
+  const KhaamSearchField({
     super.key,
     required this.controller,
     required this.hintText,

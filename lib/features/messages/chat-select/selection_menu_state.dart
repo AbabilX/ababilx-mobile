@@ -1,4 +1,4 @@
-import '../../jpack/data/jpack_payload.dart';
+import '../../khaam/data/khaam_payload.dart';
 import '../chat-timeline/save_message_attachments.dart';
 import '../data/models/chat_models.dart';
 import '../message_e2ee/vault_placeholder.dart';
@@ -60,8 +60,8 @@ SelectionMenuState selectionMenuState({
     (m) => !m.isDeleted && tiptapToPlainText(m.body).trim().isNotEmpty,
   );
   final allMine = selected.every((m) => m.userId == currentUserId);
-  // A JPack is a card, not text: never forwarded, copied or edited.
-  final anyJPack = selected.any((m) => JPackPayload.tryParse(m.body) != null);
+  // A Khaam is a card, not text: never forwarded, copied or edited.
+  final anyKhaam = selected.any((m) => KhaamPayload.tryParse(m.body) != null);
 
   final anyProtected = selected.any(
     (m) => m.userId != currentUserId && m.hasProtectedMedia,
@@ -71,7 +71,7 @@ SelectionMenuState selectionMenuState({
       !anyDeleted &&
       !anyPending &&
       !anySealed &&
-      !anyJPack &&
+      !anyKhaam &&
       !anyProtected &&
       // A private group (server 0154) forwards nothing, the sender's own
       // messages included; the server refuses it too.
@@ -81,7 +81,7 @@ SelectionMenuState selectionMenuState({
   return SelectionMenuState(
     reply: single != null && !anyDeleted && !anyPending && canMessage,
     forward: forward,
-    copy: anyText && !anySealed && !anyJPack,
+    copy: anyText && !anySealed && !anyKhaam,
     save: single != null && !groupPrivacy && canSaveMessageAttachments(single),
     edit:
         single != null &&
@@ -89,7 +89,7 @@ SelectionMenuState selectionMenuState({
         !anyDeleted &&
         !anyPending &&
         !anySealed &&
-        !anyJPack &&
+        !anyKhaam &&
         anyText,
     // Anything can be deleted for me; only the sender's own rows for
     // everyone — the server refuses anybody else's.

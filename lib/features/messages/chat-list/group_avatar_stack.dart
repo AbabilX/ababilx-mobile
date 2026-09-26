@@ -16,7 +16,12 @@ class GroupAvatarStack extends StatelessWidget {
     this.avatarUrl,
     this.name,
     this.size = 48,
+    this.webhook = false,
   });
+
+  /// A feed (Flock) has no members whose faces could stand in for it, so an
+  /// unset picture draws the Flock glyph instead of a montage.
+  final bool webhook;
 
   final List<String> avatars;
 
@@ -32,6 +37,17 @@ class GroupAvatarStack extends StatelessWidget {
     if (own.isNotEmpty) {
       return ClipOval(
         child: AppAvatar(size: size, url: own, name: name),
+      );
+    }
+    if (webhook) {
+      return AppAvatar(
+        size: size,
+        name: name,
+        fallback: ChatIcon(
+          HugeIcons.strokeRoundedWebhook,
+          size: size * 0.5,
+          color: colors.primary,
+        ),
       );
     }
     final pics = avatars.where((u) => u.trim().isNotEmpty).take(3).toList();

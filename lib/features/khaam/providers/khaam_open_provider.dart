@@ -1,47 +1,47 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../messages/data/models/chat_models.dart';
-import '../data/jpack_payload.dart';
-import '../data/jpack_status.dart';
-import 'jpack_providers.dart';
+import '../data/khaam_payload.dart';
+import '../data/khaam_status.dart';
+import 'khaam_providers.dart';
 
-enum JPackOpenPhase {
+enum KhaamOpenPhase {
   loading,
 
-  /// Waiting for the swipe.
+  /// Foil still on: waiting for the scratch.
   sealed,
 
   /// Opened just now, or opened before, or ours.
   revealed,
 }
 
-class JPackOpenState {
-  const JPackOpenState({
-    this.phase = JPackOpenPhase.loading,
+class KhaamOpenState {
+  const KhaamOpenState({
+    this.phase = KhaamOpenPhase.loading,
     this.celebrate = false,
   });
 
-  final JPackOpenPhase phase;
+  final KhaamOpenPhase phase;
 
   /// True only for the open that just happened — confetti plays once, never
   /// on a revisit.
   final bool celebrate;
 }
 
-class JPackOpenArgs {
-  const JPackOpenArgs({
+class KhaamOpenArgs {
+  const KhaamOpenArgs({
     required this.message,
     required this.payload,
     required this.isOwn,
   });
 
   final ChatMessage message;
-  final JPackPayload payload;
+  final KhaamPayload payload;
   final bool isOwn;
 
   @override
   bool operator ==(Object other) =>
-      other is JPackOpenArgs &&
+      other is KhaamOpenArgs &&
       other.payload.id == payload.id &&
       other.message.id == message.id &&
       other.isOwn == isOwn;
@@ -50,49 +50,46 @@ class JPackOpenArgs {
   int get hashCode => Object.hash(payload.id, message.id, isOwn);
 }
 
-class JPackOpenNotifier
-    extends AutoDisposeFamilyNotifier<JPackOpenState, JPackOpenArgs> {
+class KhaamOpenNotifier
+    extends AutoDisposeFamilyNotifier<KhaamOpenState, KhaamOpenArgs> {
   bool _disposed = false;
 
   @override
-  JPackOpenState build(JPackOpenArgs args) {
+  KhaamOpenState build(KhaamOpenArgs args) {
     // The screen can close while a read is in flight; a write after that
     // would land on a disposed notifier.
     _disposed = false;
     ref.onDispose(() => _disposed = true);
     _load(args);
-    return const JPackOpenState();
+    return const KhaamOpenState();
   }
 
-  Future<void> _load(JPackOpenArgs args) async {
-    final opened = await ref
-        .read(jpackOpenedStoreProvider)
-        .isOpened(args.payload.id);
+  Future<void> _load(KhaamOpenArgs args) async {
+    final ids = await ref.read(khaamOpenedIdsProvider.future);
+    final opened = ids.contains(args.payload.id);
     if (_disposed) return;
-    final status = jpackStatus(isOwn: args.isOwn, opened: opened);
-    state = JPackOpenState(
-      phase: status == JPackStatus.unopened
-          ? JPackOpenPhase.sealed
-          : JPackOpenPhase.revealed,
+    final status = khaamStatus(isOwn: args.isOwn, opened: opened);
+    state = KhaamOpenState(
+      phase: status == KhaamStatus.unopened
+          ? KhaamOpenPhase.sealed
+          : KhaamOpenPhase.revealed,
     );
   }
 
-  /// The swipe finished.
+  /// Enough foil is gone (or Reveal all was pressed).
   Future<void> open() async {
-    if (state.phase != JPackOpenPhase.sealed) return;
-    final id = arg.payload.id;
+    if (state.phase != KhaamOpenPhase.sealed) return;
     // Mark before the screen changes, so leaving mid-animation still counts.
-    await ref.read(jpackOpenedStoreProvider).markOpened(id);
+    await ref.read(khaamOpenedIdsProvider.notifier).markOpened(arg.payload.id);
     if (_disposed) return;
-    ref.invalidate(jpackOpenedProvider(id));
-    state = const JPackOpenState(
-      phase: JPackOpenPhase.revealed,
+    state = const KhaamOpenState(
+      phase: KhaamOpenPhase.revealed,
       celebrate: true,
     );
   }
 }
 
-final jpackOpenProvider = NotifierProvider.autoDispose
-    .family<JPackOpenNotifier, JPackOpenState, JPackOpenArgs>(
-      JPackOpenNotifier.new,
+final khaamOpenProvider = NotifierProvider.autoDispose
+    .family<KhaamOpenNotifier, KhaamOpenState, KhaamOpenArgs>(
+      KhaamOpenNotifier.new,
     );

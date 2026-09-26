@@ -90,7 +90,19 @@ class DetailsHeader extends ConsumerWidget {
             ),
           )
         else
-          _tappableAvatar(context, url: avatar, name: title),
+          _tappableAvatar(
+            context,
+            url: avatar,
+            name: title,
+            // A Flock with no picture: its glyph, not a letter.
+            fallback: conversation.isWebhook
+                ? ChatIcon(
+                    HugeIcons.strokeRoundedWebhook,
+                    size: 48,
+                    color: colors.primary,
+                  )
+                : null,
+          ),
         const SizedBox(height: 14),
         InkWell(
           borderRadius: BorderRadius.circular(10),
@@ -251,9 +263,10 @@ Widget _tappableAvatar(
   BuildContext context, {
   required String? url,
   required String name,
+  Widget? fallback,
 }) {
   final photo = ClipOval(
-    child: AppAvatar(size: 96, url: url, name: name),
+    child: AppAvatar(size: 96, url: url, name: name, fallback: fallback),
   );
   if (previewPhotoUrl(url) == null) return photo;
   return Semantics(

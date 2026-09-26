@@ -3,10 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 /// One burst of confetti, played once from [origin] (fractions of the box).
-/// Drawn by hand so JPack adds no package — see the plan's note on
+/// Drawn by hand so Khaam adds no package — see the plan's note on
 /// `pubspec.yaml` being an Android change.
-class JPackConfetti extends StatefulWidget {
-  const JPackConfetti({
+class KhaamConfetti extends StatefulWidget {
+  const KhaamConfetti({
     super.key,
     required this.colors,
     this.origin = const Alignment(0, -0.2),
@@ -20,10 +20,10 @@ class JPackConfetti extends StatefulWidget {
   final Duration duration;
 
   @override
-  State<JPackConfetti> createState() => _JPackConfettiState();
+  State<KhaamConfetti> createState() => _KhaamConfettiState();
 }
 
-class _JPackConfettiState extends State<JPackConfetti>
+class _KhaamConfettiState extends State<KhaamConfetti>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final List<_Particle> _particles;

@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 
-import '../data/jpack_covers.dart';
-import 'jpack_cover_art.dart';
+import '../data/khaam_covers.dart';
+import 'khaam_cover_art.dart';
 
 /// The card as it will arrive, message drawn over the cover.
-class JPackCardPreview extends StatelessWidget {
-  const JPackCardPreview({
+class KhaamCardPreview extends StatelessWidget {
+  const KhaamCardPreview({
     super.key,
     required this.cover,
     required this.message,
   });
 
-  final JPackCover cover;
+  final KhaamCover cover;
   final String message;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Hero(
-        tag: 'jpack-cover-${cover.id}',
+        tag: 'khaam-cover-${cover.id}',
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
-          child: JPackCoverArt(
+          child: KhaamCoverArt(
             key: ValueKey(cover.id),
             cover: cover,
             width: 200,

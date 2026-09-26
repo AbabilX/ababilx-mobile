@@ -1,17 +1,17 @@
-import 'package:ababilx/features/jpack/data/jpack_payload.dart';
+import 'package:ababilx/features/khaam/data/khaam_payload.dart';
 import 'package:ababilx/features/messages/tiptap_encode.dart';
 import 'package:ababilx/features/messages/tiptap_plain_text.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const payload = JPackPayload(
+  const payload = KhaamPayload(
     id: 'jp-1',
     coverId: 'eid',
     message: 'ঈদ মোবারক!',
   );
 
   test('round-trips through the message body', () {
-    final parsed = JPackPayload.tryParse(encodeJPackBody(payload))!;
+    final parsed = KhaamPayload.tryParse(encodeKhaamBody(payload))!;
     expect(parsed.id, 'jp-1');
     expect(parsed.coverId, 'eid');
     expect(parsed.message, 'ঈদ মোবারক!');
@@ -19,27 +19,42 @@ void main() {
   });
 
   test('carries no money', () {
-    expect(encodeJPackBody(payload), isNot(contains('amount')));
-    expect(encodeJPackBody(payload), isNot(contains('৳')));
+    expect(encodeKhaamBody(payload), isNot(contains('amount')));
+    expect(encodeKhaamBody(payload), isNot(contains('৳')));
   });
 
-  test('clients without JPack read the fallback line', () {
+  test('the fallback line never carries the message', () {
+    // Web, desktop, search and older builds read this line. The message is
+    // a surprise until the receiver scratches the card open.
+    expect(tiptapToPlainText(encodeKhaamBody(payload)), '💌 খাম');
+    expect(encodeKhaamBody(payload), contains('ঈদ মোবারক!')); // in attrs only
     expect(
-      tiptapToPlainText(encodeJPackBody(payload)),
-      '💌 JPack · ঈদ মোবারক!',
-    );
-    expect(
-      const JPackPayload(
+      const KhaamPayload(
         id: 'x',
         coverId: 'classic',
-        message: ' ',
+        message: 'hi',
+        lang: 'en',
       ).fallbackText,
-      '💌 JPack',
+      '💌 Khaam',
     );
   });
 
-  test('a JPack sent by an older build still opens as a card', () {
-    final parsed = JPackPayload.tryParse(
+  test('notifications and quotes hide the message of an old card too', () {
+    // Sent before 2026-09-26: the fallback paragraph still holds the text.
+    const old =
+        '{"type":"doc","attrs":{"jpack":{"v":2,"id":"o","cover":"eid",'
+        '"message":"secret","lang":"en"}},"content":[{"type":"paragraph",'
+        '"content":[{"type":"text","text":"💌 JPack · secret"}]}]}';
+    expect(tiptapToPreviewText(old), '💌 Khaam');
+  });
+
+  test('the wire key stays jpack so sent cards keep opening', () {
+    expect(khaamWireKey, 'jpack');
+    expect(encodeKhaamBody(payload), contains('"jpack"'));
+  });
+
+  test('a Khaam sent by an older build still opens as a card', () {
+    final parsed = KhaamPayload.tryParse(
       '{"type":"doc","attrs":{"jpack":{"v":1,"id":"old","cover":"eid",'
       '"amount":500,"currency":"BDT","message":"hi"}}}',
     )!;
@@ -47,27 +62,27 @@ void main() {
     expect(parsed.message, 'hi');
   });
 
-  test('ordinary messages are not JPacks', () {
-    expect(JPackPayload.tryParse(null), isNull);
-    expect(JPackPayload.tryParse(''), isNull);
-    expect(JPackPayload.tryParse('hello jpack'), isNull);
-    expect(JPackPayload.tryParse(encodeTiptapBody(plain: 'hi')), isNull);
+  test('ordinary messages are not Khaams', () {
+    expect(KhaamPayload.tryParse(null), isNull);
+    expect(KhaamPayload.tryParse(''), isNull);
+    expect(KhaamPayload.tryParse('hello khaam'), isNull);
+    expect(KhaamPayload.tryParse(encodeTiptapBody(plain: 'hi')), isNull);
     // A user typing the word inside ordinary text.
     expect(
-      JPackPayload.tryParse(encodeTiptapBody(plain: '"jpack" {"type"}')),
+      KhaamPayload.tryParse(encodeTiptapBody(plain: '"jpack" {"type"}')),
       isNull,
     );
   });
 
-  test('a malformed JPack is rejected', () {
+  test('a malformed Khaam is rejected', () {
     expect(
-      JPackPayload.tryParse('{"type":"doc","attrs":{"jpack":{"id":""}}}'),
+      KhaamPayload.tryParse('{"type":"doc","attrs":{"jpack":{"id":""}}}'),
       isNull,
     );
     expect(
-      JPackPayload.tryParse('{"type":"doc","attrs":{"jpack":{"cover":"eid"}}}'),
+      KhaamPayload.tryParse('{"type":"doc","attrs":{"jpack":{"cover":"eid"}}}'),
       isNull,
     );
-    expect(JPackPayload.tryParse('{"type":"doc","attrs":{"jpack":'), isNull);
+    expect(KhaamPayload.tryParse('{"type":"doc","attrs":{"jpack":'), isNull);
   });
 }

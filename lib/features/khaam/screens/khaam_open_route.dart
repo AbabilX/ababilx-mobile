@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../messages/data/models/chat_models.dart';
-import '../data/jpack_payload.dart';
-import 'jpack_open_screen.dart';
+import '../data/khaam_payload.dart';
+import 'khaam_open_screen.dart';
 
-/// Opens a JPack from its bubble. The receiver swipes it open; anybody else —
+/// Opens a Khaam from its bubble. The receiver swipes it open; anybody else —
 /// the sender, or the receiver a second time — goes straight to the card.
-Future<void> openJPack(
+Future<void> openKhaam(
   BuildContext context, {
   required ChatMessage message,
-  required JPackPayload payload,
+  required KhaamPayload payload,
   required bool isOwn,
 }) {
   return Navigator.of(context, rootNavigator: true).push(
@@ -19,7 +19,7 @@ Future<void> openJPack(
       transitionDuration: const Duration(milliseconds: 260),
       reverseTransitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (_, _, _) =>
-          JPackOpenScreen(message: message, payload: payload, isOwn: isOwn),
+          KhaamOpenScreen(message: message, payload: payload, isOwn: isOwn),
       transitionsBuilder: (_, animation, _, child) => FadeTransition(
         opacity: animation,
         child: ScaleTransition(

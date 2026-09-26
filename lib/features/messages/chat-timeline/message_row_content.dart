@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../group-member-permissions/group_member_tags_provider.dart';
 import '../../../shared/widgets/app_avatar.dart';
+import '../chat_icon.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -58,7 +60,7 @@ class MessageRowContent extends ConsumerWidget {
     // open a profile for. Its name is the feed's, carried in meta.
     final webhook = message.isWebhook;
     final name = webhook
-        ? (message.webhookSourceName ?? 'Webhook')
+        ? (message.webhookSourceName ?? 'Flock')
         : ref
               .watch(contactNicknamesProvider)
               .resolve(userId: message.userId, name: message.userName);
@@ -206,10 +208,10 @@ class MessageRowContent extends ConsumerWidget {
                           url: avatarUrl,
                           name: name,
                           // A feed with no picture has no initial worth
-                          // drawing — "W" for Webhook says nothing.
+                          // drawing — the Flock glyph, same as its pill.
                           fallback: webhook
-                              ? Icon(
-                                  Icons.link_rounded,
+                              ? ChatIcon(
+                                  HugeIcons.strokeRoundedWebhook,
                                   size: SignalBubbleMetrics.avatarSize * 0.5,
                                   color: scheme.primary,
                                 )

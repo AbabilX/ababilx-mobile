@@ -73,7 +73,7 @@ class _WebhookSettingsSectionState
         if (widget.conversation.isPersonal)
           DetailsTile(
             icon: const Icon(Icons.person_outline_rounded),
-            title: 'Personal feed',
+            title: 'Personal flock',
             value: 'Belongs to your account, not to a workspace',
           ),
         DetailsTile(
@@ -84,7 +84,7 @@ class _WebhookSettingsSectionState
         ),
         DetailsTile(
           icon: const Icon(Icons.photo_camera_outlined),
-          title: 'Feed photo',
+          title: 'Flock photo',
           value: avatar == null ? 'Not set' : 'Set',
           onTap: _busy ? null : _pickPhoto,
           trailing: _busy
@@ -111,7 +111,7 @@ class _WebhookSettingsSectionState
       builder: (ctx) => AlertDialog(
         title: const Text('Generate a new URL?'),
         content: const Text(
-          'Whatever is posting to this feed stops working until you give it '
+          'Whatever is posting to this flock stops working until you give it '
           'the new URL. The current one cannot be recovered.',
         ),
         actions: [
@@ -160,7 +160,7 @@ class _WebhookSettingsSectionState
         _justSaved = saved.isEmpty ? null : saved;
         showAppToast(
           context,
-          bytes == null ? 'Feed photo removed' : 'Feed photo updated',
+          bytes == null ? 'Flock photo removed' : 'Flock photo updated',
         );
       }
     } catch (_) {

@@ -40,7 +40,7 @@ class ChatMediaPreviewMeta {
     final subtitle = formatChatTime(message.createdAt);
     return ChatMediaPreviewMeta(
       title: message.isWebhook
-          ? (message.webhookSourceName ?? 'Webhook')
+          ? (message.webhookSourceName ?? 'Flock')
           : (isOwn ? 'You' : senderName),
       subtitle: subtitle.isEmpty ? null : subtitle,
       caption: caption.isEmpty ? null : caption,

@@ -1,5 +1,5 @@
-/// Where a JPack stands, from the point of view of this phone.
-enum JPackStatus {
+/// Where a Khaam stands, from the point of view of this phone.
+enum KhaamStatus {
   /// Received, not opened yet.
   unopened,
 
@@ -10,7 +10,7 @@ enum JPackStatus {
   sent,
 }
 
-JPackStatus jpackStatus({required bool isOwn, required bool opened}) {
-  if (isOwn) return JPackStatus.sent;
-  return opened ? JPackStatus.opened : JPackStatus.unopened;
+KhaamStatus khaamStatus({required bool isOwn, required bool opened}) {
+  if (isOwn) return KhaamStatus.sent;
+  return opened ? KhaamStatus.opened : KhaamStatus.unopened;
 }

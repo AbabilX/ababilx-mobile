@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../chat_icon.dart';
+
 class NewMessageAction extends StatelessWidget {
   const NewMessageAction({
     super.key,
-    required this.icon,
+    this.icon,
+    this.hugeIcon,
     required this.label,
     required this.onTap,
   });
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// Hugeicons path data; wins over [icon].
+  final List<List<dynamic>>? hugeIcon;
   final String label;
   final VoidCallback onTap;
 
@@ -25,7 +31,13 @@ class NewMessageAction extends StatelessWidget {
               radius: 22,
               backgroundColor: colors.surfaceContainerHighest,
               foregroundColor: colors.onSurfaceVariant,
-              child: Icon(icon, size: 24),
+              child: hugeIcon != null
+                  ? ChatIcon(
+                      hugeIcon!,
+                      size: 24,
+                      color: colors.onSurfaceVariant,
+                    )
+                  : Icon(icon, size: 24),
             ),
             const SizedBox(width: 16),
             Text(label, style: Theme.of(context).textTheme.titleMedium),

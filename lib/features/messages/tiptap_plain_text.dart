@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../khaam/data/khaam_payload.dart';
 import 'markdown/message_markdown_preview.dart';
 
 /// True when body is empty / empty TipTap doc (web `isTiptapEmpty`).
@@ -30,9 +31,13 @@ bool isTiptapEmpty(String? value) {
 /// multi-line body has to fit one line. Never use it for a message body — that
 /// is what flattened every paragraph into one run-on line.
 /// Markdown syntax is stripped first, since a preview line cannot render it.
-String tiptapToPreviewText(String? value) => markdownToPreviewText(
-  tiptapToPlainText(value),
-).replaceAll(RegExp(r'\s+'), ' ').trim();
+/// A Khaam is its label alone — cards sent before 2026-09-26 still carry the
+/// message in their fallback line, and a notification must not spoil it.
+String tiptapToPreviewText(String? value) =>
+    KhaamPayload.tryParse(value)?.fallbackText ??
+    markdownToPreviewText(
+      tiptapToPlainText(value),
+    ).replaceAll(RegExp(r'\s+'), ' ').trim();
 
 /// Display labels of every `mention` node, longest first.
 ///

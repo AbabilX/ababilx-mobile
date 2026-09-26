@@ -59,11 +59,7 @@ class HomeShell extends ConsumerWidget {
     final teamResolved = ref.watch(teamGateProvider).hasValue;
     final onDeniedRoute =
         teamResolved &&
-        shellRouteAccessDenied(
-          location,
-          hasTeam: hasTeam,
-          showCrm: showCrm,
-        );
+        shellRouteAccessDenied(location, hasTeam: hasTeam, showCrm: showCrm);
     if (onDeniedRoute) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) context.go('/messages');

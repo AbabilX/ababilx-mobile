@@ -5,25 +5,25 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
-import '../data/jpack_covers.dart';
-import '../data/jpack_payload.dart';
-import '../data/jpack_send.dart';
-import '../providers/jpack_compose_provider.dart';
-import '../widgets/jpack_compose_parts.dart';
-import '../widgets/jpack_bottom_bar.dart';
-import '../widgets/jpack_compose_dock.dart';
-import '../widgets/jpack_dock_row.dart';
-import 'jpack_cover_gallery_screen.dart';
+import '../data/khaam_covers.dart';
+import '../data/khaam_payload.dart';
+import '../data/khaam_send.dart';
+import '../providers/khaam_compose_provider.dart';
+import '../widgets/khaam_compose_parts.dart';
+import '../widgets/khaam_bottom_bar.dart';
+import '../widgets/khaam_compose_dock.dart';
+import '../widgets/khaam_dock_row.dart';
+import 'khaam_cover_gallery_screen.dart';
 
-/// Message and cover, then send. Pops `true` once the JPack is in the
+/// Message and cover, then send. Pops `true` once the Khaam is in the
 /// conversation.
 ///
-/// All screen state lives in [jpackComposeProvider]. The only `State` here
+/// All screen state lives in [khaamComposeProvider]. The only `State` here
 /// holds the message controller, which `ref.listen` keeps in step with the
 /// notifier when the dice, the language switch or a cover changes the text
 /// from outside the field.
-class JPackComposeScreen extends ConsumerStatefulWidget {
-  const JPackComposeScreen({
+class KhaamComposeScreen extends ConsumerStatefulWidget {
+  const KhaamComposeScreen({
     super.key,
     required this.conversationId,
     required this.recipientName,
@@ -32,19 +32,19 @@ class JPackComposeScreen extends ConsumerStatefulWidget {
 
   final String conversationId;
   final String recipientName;
-  final JPackCover initialCover;
+  final KhaamCover initialCover;
 
   @override
-  ConsumerState<JPackComposeScreen> createState() => _JPackComposeScreenState();
+  ConsumerState<KhaamComposeScreen> createState() => _KhaamComposeScreenState();
 }
 
-class _JPackComposeScreenState extends ConsumerState<JPackComposeScreen> {
+class _KhaamComposeScreenState extends ConsumerState<KhaamComposeScreen> {
   late final TextEditingController _messageCtrl = TextEditingController(
-    text: ref.read(jpackComposeProvider(widget.initialCover)).message,
+    text: ref.read(khaamComposeProvider(widget.initialCover)).message,
   );
 
-  JPackComposeNotifier get _notifier =>
-      ref.read(jpackComposeProvider(widget.initialCover).notifier);
+  KhaamComposeNotifier get _notifier =>
+      ref.read(khaamComposeProvider(widget.initialCover).notifier);
 
   @override
   void dispose() {
@@ -52,10 +52,10 @@ class _JPackComposeScreenState extends ConsumerState<JPackComposeScreen> {
     super.dispose();
   }
 
-  Future<void> _pickCover(JPackCover current) async {
-    final cover = await Navigator.of(context).push<JPackCover>(
+  Future<void> _pickCover(KhaamCover current) async {
+    final cover = await Navigator.of(context).push<KhaamCover>(
       MaterialPageRoute(
-        builder: (_) => JPackCoverGalleryScreen(
+        builder: (_) => KhaamCoverGalleryScreen(
           conversationId: widget.conversationId,
           recipientName: widget.recipientName,
           selectedId: current.id,
@@ -69,15 +69,15 @@ class _JPackComposeScreenState extends ConsumerState<JPackComposeScreen> {
 
   Future<void> _send() async {
     FocusScope.of(context).unfocus();
-    final draft = ref.read(jpackComposeProvider(widget.initialCover));
-    final payload = JPackPayload(
-      id: draft.jpackId,
+    final draft = ref.read(khaamComposeProvider(widget.initialCover));
+    final payload = KhaamPayload(
+      id: draft.khaamId,
       coverId: draft.cover.id,
       message: draft.outgoingMessage,
       lang: draft.lang,
     );
     _notifier.setBusy(true);
-    final delivered = await sendJPack(
+    final delivered = await sendKhaam(
       ref,
       conversationId: widget.conversationId,
       payload: payload,
@@ -86,7 +86,7 @@ class _JPackComposeScreenState extends ConsumerState<JPackComposeScreen> {
     if (!delivered) {
       showAppToast(
         context,
-        AppTranslations.translate(context, ref, 'jpack_send_failed'),
+        AppTranslations.translate(context, ref, 'khaam_send_failed'),
         isError: true,
       );
     }
@@ -96,7 +96,7 @@ class _JPackComposeScreenState extends ConsumerState<JPackComposeScreen> {
   @override
   Widget build(BuildContext context) {
     String t(String key) => AppTranslations.translate(context, ref, key);
-    final provider = jpackComposeProvider(widget.initialCover);
+    final provider = khaamComposeProvider(widget.initialCover);
     final theme = Theme.of(context);
     final draft = ref.watch(provider);
     final cover = draft.cover;
@@ -115,7 +115,7 @@ class _JPackComposeScreenState extends ConsumerState<JPackComposeScreen> {
           CustomScrollView(
             slivers: [
               SliverAppBar(
-                title: Text(t('jpack_send_title')),
+                title: Text(t('khaam_send_title')),
                 centerTitle: true,
                 floating: true,
                 snap: true,
@@ -129,7 +129,7 @@ class _JPackComposeScreenState extends ConsumerState<JPackComposeScreen> {
                 ),
                 sliver: SliverList.list(
                   children: [
-                    JPackSettingRow(
+                    KhaamSettingRow(
                       child: TextField(
                         controller: _messageCtrl,
                         maxLength: 80,
@@ -138,7 +138,7 @@ class _JPackComposeScreenState extends ConsumerState<JPackComposeScreen> {
                         onChanged: _notifier.typeMessage,
                         style: theme.textTheme.titleMedium,
                         decoration: InputDecoration(
-                          hintText: t('jpack_message_hint'),
+                          hintText: t('khaam_message_hint'),
                           counterText: '',
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
@@ -149,7 +149,7 @@ class _JPackComposeScreenState extends ConsumerState<JPackComposeScreen> {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    JPackCardPreview(
+                    KhaamCardPreview(
                       cover: cover,
                       message: draft.outgoingMessage,
                     ),
@@ -160,18 +160,18 @@ class _JPackComposeScreenState extends ConsumerState<JPackComposeScreen> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: JPackBottomBar(
-              action: JPackSendPill(
+            child: KhaamBottomBar(
+              action: KhaamSendPill(
                 icon: HugeIcons.strokeRoundedSent,
                 color: cover.flap,
-                label: t('jpack_send_title'),
+                label: t('khaam_send_title'),
                 busy: draft.busy,
                 onTap: _send,
               ),
-              child: JPackComposeDock(
+              child: KhaamComposeDock(
                 langLabel: draft.lang == 'bn' ? 'বাংলা' : 'English',
-                captionsLabel: t('jpack_tab_captions'),
-                coverLabel: t('jpack_cover'),
+                captionsLabel: t('khaam_tab_captions'),
+                coverLabel: t('khaam_cover'),
                 onLang: () =>
                     _notifier.setLang(draft.lang == 'bn' ? 'en' : 'bn'),
                 onCaptions: _notifier.shuffle,

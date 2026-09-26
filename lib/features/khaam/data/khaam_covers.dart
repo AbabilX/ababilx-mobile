@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// What is drawn on the upper half of a cover. Painted in code
-/// (`jpack_cover_art.dart`), so a cover costs no asset and stays sharp.
+/// (`khaam_cover_art.dart`), so a cover costs no asset and stays sharp.
 enum CoverMotif {
   classic,
   eid,
@@ -13,8 +13,8 @@ enum CoverMotif {
   victory,
 }
 
-class JPackCover {
-  const JPackCover({
+class KhaamCover {
+  const KhaamCover({
     required this.id,
     required this.nameKey,
     required this.motif,
@@ -59,10 +59,10 @@ class JPackCover {
 const _gold = Color(0xFFF2CE8A);
 const _red = Color(0xFFE8503F);
 
-const jpackCovers = <JPackCover>[
-  JPackCover(
+const khaamCovers = <KhaamCover>[
+  KhaamCover(
     id: 'classic',
-    nameKey: 'jpack_cover_classic',
+    nameKey: 'khaam_cover_classic',
     motif: CoverMotif.classic,
     top: Color(0xFFF0634F),
     bottom: Color(0xFFD9412F),
@@ -87,9 +87,9 @@ const jpackCovers = <JPackCover>[
       ],
     },
   ),
-  JPackCover(
+  KhaamCover(
     id: 'eid',
-    nameKey: 'jpack_cover_eid',
+    nameKey: 'khaam_cover_eid',
     motif: CoverMotif.eid,
     top: Color(0xFF1F6E55),
     bottom: Color(0xFF0E4636),
@@ -112,9 +112,9 @@ const jpackCovers = <JPackCover>[
       ],
     },
   ),
-  JPackCover(
+  KhaamCover(
     id: 'boishakh',
-    nameKey: 'jpack_cover_boishakh',
+    nameKey: 'khaam_cover_boishakh',
     motif: CoverMotif.boishakh,
     top: Color(0xFFFFF6EA),
     bottom: Color(0xFFF7E3C8),
@@ -137,9 +137,9 @@ const jpackCovers = <JPackCover>[
       ],
     },
   ),
-  JPackCover(
+  KhaamCover(
     id: 'birthday',
-    nameKey: 'jpack_cover_birthday',
+    nameKey: 'khaam_cover_birthday',
     motif: CoverMotif.birthday,
     top: Color(0xFFFF8FB1),
     bottom: Color(0xFF9B6BFF),
@@ -162,9 +162,9 @@ const jpackCovers = <JPackCover>[
       ],
     },
   ),
-  JPackCover(
+  KhaamCover(
     id: 'wedding',
-    nameKey: 'jpack_cover_wedding',
+    nameKey: 'khaam_cover_wedding',
     motif: CoverMotif.wedding,
     top: Color(0xFF8E1B3A),
     bottom: Color(0xFF5A0F24),
@@ -187,9 +187,9 @@ const jpackCovers = <JPackCover>[
       ],
     },
   ),
-  JPackCover(
+  KhaamCover(
     id: 'congrats',
-    nameKey: 'jpack_cover_congrats',
+    nameKey: 'khaam_cover_congrats',
     motif: CoverMotif.congrats,
     top: Color(0xFF2EC4B6),
     bottom: Color(0xFF137A8C),
@@ -212,9 +212,9 @@ const jpackCovers = <JPackCover>[
       ],
     },
   ),
-  JPackCover(
+  KhaamCover(
     id: 'thanks',
-    nameKey: 'jpack_cover_thanks',
+    nameKey: 'khaam_cover_thanks',
     motif: CoverMotif.thanks,
     top: Color(0xFF3FB68B),
     bottom: Color(0xFF1F7F62),
@@ -237,9 +237,9 @@ const jpackCovers = <JPackCover>[
       ],
     },
   ),
-  JPackCover(
+  KhaamCover(
     id: 'victory',
-    nameKey: 'jpack_cover_victory',
+    nameKey: 'khaam_cover_victory',
     motif: CoverMotif.victory,
     top: Color(0xFF0B8A4E),
     bottom: Color(0xFF006A4E),
@@ -264,6 +264,6 @@ const jpackCovers = <JPackCover>[
   ),
 ];
 
-/// A received JPack may name a cover this build does not have; it still draws.
-JPackCover jpackCoverById(String id) =>
-    jpackCovers.firstWhere((c) => c.id == id, orElse: () => jpackCovers.first);
+/// A received Khaam may name a cover this build does not have; it still draws.
+KhaamCover khaamCoverById(String id) =>
+    khaamCovers.firstWhere((c) => c.id == id, orElse: () => khaamCovers.first);

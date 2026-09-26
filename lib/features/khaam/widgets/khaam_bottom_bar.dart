@@ -6,8 +6,8 @@ import '../../messages/chat_icon.dart';
 
 /// The app's floating bottom capsule dock, laid out exactly like
 /// `ShellBottomBar`: one wide capsule, and an optional circle beside it.
-class JPackBottomBar extends StatelessWidget {
-  const JPackBottomBar({super.key, required this.child, this.action});
+class KhaamBottomBar extends StatelessWidget {
+  const KhaamBottomBar({super.key, required this.child, this.action});
 
   final Widget child;
   final Widget? action;
@@ -34,8 +34,8 @@ class JPackBottomBar extends StatelessWidget {
 }
 
 /// The accent circle beside the dock — send.
-class JPackSendPill extends StatelessWidget {
-  const JPackSendPill({
+class KhaamSendPill extends StatelessWidget {
+  const KhaamSendPill({
     super.key,
     required this.icon,
     required this.color,

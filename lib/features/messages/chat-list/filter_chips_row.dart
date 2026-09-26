@@ -7,7 +7,10 @@ import '../chat_icon.dart';
 import '../chat_list_filters.dart';
 
 /// One horizontally scrollable row of pills above the conversation list:
-/// All | Unread messages.
+/// All | Unread messages | Groups | Flock (webhook feeds; Ababil = a flock
+/// of birds) — each only while something is behind it
+/// (`availableChatListFilters`), and the row is gone when All would be the
+/// only pill.
 ///
 /// Personal and Workspaces pills used to sit here too. Since the server's
 /// migration 0145 every conversation is personal — no workspace owns one — so
@@ -15,40 +18,49 @@ import '../chat_list_filters.dart';
 class FilterChipsRow extends ConsumerWidget {
   const FilterChipsRow({
     super.key,
+    required this.filters,
     required this.filter,
     required this.onChanged,
   });
 
+  final List<ChatListFilter> filters;
   final ChatListFilter filter;
   final ValueChanged<ChatListFilter> onChanged;
 
+  static const _labels = {
+    ChatListFilter.all: 'chat_all',
+    ChatListFilter.unread: 'chat_unread',
+    ChatListFilter.groups: 'chat_groups',
+    ChatListFilter.webhooks: 'chat_filter_webhooks',
+  };
+
+  static final _icons = {
+    ChatListFilter.unread: HugeIcons.strokeRoundedMailOpen01,
+    ChatListFilter.groups: HugeIcons.strokeRoundedUserGroup,
+    ChatListFilter.webhooks: HugeIcons.strokeRoundedWebhook,
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unread = filter == ChatListFilter.unread;
-
-    void select(ChatListFilter next) {
-      if (next != filter) onChanged(next);
-    }
-
+    if (filters.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       height: 36,
-      child: ListView(
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-        children: [
-          _Chip(
-            label: AppTranslations.translate(context, ref, 'chat_all'),
-            selected: !unread,
-            onTap: () => select(ChatListFilter.all),
-          ),
-          const SizedBox(width: 8),
-          _Chip(
-            label: AppTranslations.translate(context, ref, 'chat_unread'),
-            icon: HugeIcons.strokeRoundedMailOpen01,
-            selected: unread,
-            onTap: () => select(ChatListFilter.unread),
-          ),
-        ],
+        itemCount: filters.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final option = filters[i];
+          return _Chip(
+            label: AppTranslations.translate(context, ref, _labels[option]!),
+            icon: _icons[option],
+            selected: option == filter,
+            onTap: () {
+              if (option != filter) onChanged(option);
+            },
+          );
+        },
       ),
     );
   }

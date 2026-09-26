@@ -213,9 +213,7 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
             phase != VoiceCallPhase.failed) {
           return;
         }
-        widget.router.go(
-          callExitRoute(conversationId, ChatLockIndex.cached),
-        );
+        widget.router.go(callExitRoute(conversationId, ChatLockIndex.cached));
       });
     });
 

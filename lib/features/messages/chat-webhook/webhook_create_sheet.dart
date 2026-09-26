@@ -60,7 +60,7 @@ class _WebhookCreateSheetState extends ConsumerState<_WebhookCreateSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('New webhook feed', style: text.titleMedium),
+          Text('New flock', style: text.titleMedium),
           const SizedBox(height: 4),
           Text(
             'A group nobody can post into. Messages arrive over its URL.',
@@ -79,7 +79,7 @@ class _WebhookCreateSheetState extends ConsumerState<_WebhookCreateSheet> {
             maxLength: 80,
             textInputAction: TextInputAction.done,
             decoration: const InputDecoration(
-              labelText: 'Feed name',
+              labelText: 'Flock name',
               hintText: 'Deploys',
             ),
             onChanged: (_) => setState(() {}),
@@ -95,7 +95,7 @@ class _WebhookCreateSheetState extends ConsumerState<_WebhookCreateSheet> {
           const SizedBox(height: 12),
           FilledButton(
             onPressed: _busy || _name.text.trim().isEmpty ? null : _create,
-            child: Text(_busy ? 'Creating…' : 'Create feed'),
+            child: Text(_busy ? 'Creating…' : 'Create flock'),
           ),
         ],
       ),
@@ -123,7 +123,7 @@ class _WebhookCreateSheetState extends ConsumerState<_WebhookCreateSheet> {
           await chat.setWebhookAvatar(conversation, _photo);
         } catch (_) {
           if (mounted) {
-            showAppToast(context, 'Feed created, photo failed', isError: true);
+            showAppToast(context, 'Flock created, photo failed', isError: true);
           }
         }
       }
@@ -133,7 +133,7 @@ class _WebhookCreateSheetState extends ConsumerState<_WebhookCreateSheet> {
     } catch (error) {
       if (mounted) {
         setState(() => _busy = false);
-        showAppToast(context, 'Could not create feed', isError: true);
+        showAppToast(context, 'Could not create flock', isError: true);
       }
     }
   }

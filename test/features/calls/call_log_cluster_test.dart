@@ -109,6 +109,41 @@ void main() {
     });
   });
 
+  group('stackCallLogByContact (the call log default)', () {
+    test('one contact on one day is one row, whatever the calls were', () {
+      // Hours apart, both directions, missed and answered, another contact in
+      // between: all of it is the same person that day.
+      final rows = stackCallLogByContact([
+        _call(id: 'a', minutesAgo: 0),
+        _call(id: 'b', conversation: 'conv2', minutesAgo: 30),
+        _call(id: 'c', direction: 'outgoing', minutesAgo: 120),
+        _call(id: 'd', missed: true, minutesAgo: 300),
+      ]);
+      expect(rows.map((r) => r.lead.id), ['a', 'b']);
+      expect(rows.map((r) => r.count), [3, 1]);
+    });
+
+    test('a new day starts a new row for the same contact', () {
+      // _base is 18:00, so 19 hours back is the previous day.
+      final rows = stackCallLogByContact([
+        _call(id: 'a', minutesAgo: 0),
+        _call(id: 'b', minutesAgo: 60),
+        _call(id: 'c', minutesAgo: 19 * 60),
+        _call(id: 'd', minutesAgo: 20 * 60),
+      ]);
+      expect(rows.map((r) => r.lead.id), ['a', 'c']);
+      expect(rows.map((r) => r.count), [2, 2]);
+    });
+
+    test('calls with no conversation id stay apart', () {
+      final rows = stackCallLogByContact([
+        _call(id: 'a', conversation: ''),
+        _call(id: 'b', conversation: '', minutesAgo: 2),
+      ]);
+      expect(rows, hasLength(2));
+    });
+  });
+
   group('formatting is localized', () {
     test('bn renders the subtitle in Bangla', () {
       final missed = _call(missed: true);

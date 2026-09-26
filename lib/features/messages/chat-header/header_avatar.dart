@@ -30,6 +30,7 @@ class ChatHeaderAvatar extends StatelessWidget {
         avatars: conversation.memberAvatars,
         avatarUrl: conversation.avatarUrl,
         name: title,
+        webhook: conversation.isWebhook,
         size: size,
       );
     }

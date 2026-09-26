@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -105,7 +106,7 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
                 // still loading as well as when there is genuinely no
                 // workspace — the row simply went missing.
                 NewMessageAction(
-                  icon: Icons.link_rounded,
+                  hugeIcon: HugeIcons.strokeRoundedWebhook,
                   label: tr('chat_new_webhook_feed'),
                   onTap: _newWebhookFeed,
                 ),

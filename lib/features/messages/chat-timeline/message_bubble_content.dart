@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../jpack/data/jpack_payload.dart';
-import '../../jpack/widgets/jpack_bubble.dart';
+import '../../khaam/data/khaam_payload.dart';
+import '../../khaam/widgets/khaam_bubble.dart';
 import '../../../shared/link-preview/link_preview_builder.dart';
 import '../../../shared/link-preview/link_preview_data.dart';
 import '../data/models/chat_models.dart';
@@ -102,12 +102,12 @@ class MessageBubbleContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // A JPack rides inside an ordinary body (see `JPackPayload`); it draws as
+    // A Khaam rides inside an ordinary body (see `KhaamPayload`); it draws as
     // its card, edge to edge like media, with the footer under it.
-    final jpack = message.isDeleted
+    final khaam = message.isDeleted
         ? null
-        : JPackPayload.tryParse(message.body);
-    if (jpack != null) return _jpack(jpack);
+        : KhaamPayload.tryParse(message.body);
+    if (khaam != null) return _khaam(khaam);
     // No link card in a locked chat: its picture and text would be cached
     // on disk, outside the lock.
     final previewUrl =
@@ -152,13 +152,13 @@ class MessageBubbleContent extends StatelessWidget {
     );
   }
 
-  Widget _jpack(JPackPayload payload) {
+  Widget _khaam(KhaamPayload payload) {
     final footer = _footer();
     return Column(
       crossAxisAlignment: _footerSide,
       mainAxisSize: MainAxisSize.min,
       children: [
-        JPackBubbleCard(message: message, payload: payload, isOwn: isOwn),
+        KhaamBubbleCard(message: message, payload: payload, isOwn: isOwn),
         if (footer != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(

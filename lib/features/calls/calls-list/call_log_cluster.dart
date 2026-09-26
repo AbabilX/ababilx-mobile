@@ -62,3 +62,27 @@ bool _joins(CallLogEntry lead, CallLogEntry child, Duration window) =>
     lead.direction == child.direction &&
     lead.missed == child.missed &&
     lead.startedAt.difference(child.startedAt).abs() <= window;
+
+/// What the Talks tab shows: every call with one contact on one calendar day
+/// is a single row, whatever its direction, outcome or gap — the date sections
+/// still keep days apart, and the row opens that day's Call info.
+///
+/// The row sits where that contact's newest call of the day sat and shows that
+/// call. A call with no conversation id never stacks. The day is read the way
+/// `callDateHeading` reads it, so a row never straddles a section. Newest-first
+/// in, newest-first out, and a day split across a page boundary merges by
+/// itself once the next page lands, as [clusterCallLog] does.
+List<CallLogCluster> stackCallLogByContact(List<CallLogEntry> calls) {
+  final rows = <String, CallLogCluster>{};
+  for (final call in calls) {
+    final at = call.startedAt;
+    final key = call.conversationId.isEmpty
+        ? 'call:${call.id}'
+        : '${call.conversationId}|${at.year}-${at.month}-${at.day}';
+    final row = rows[key];
+    rows[key] = row == null
+        ? CallLogCluster(lead: call, count: 1)
+        : CallLogCluster(lead: row.lead, count: row.count + 1);
+  }
+  return rows.values.toList();
+}

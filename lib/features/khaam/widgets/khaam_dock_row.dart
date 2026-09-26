@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// The message box: a plain filled capsule, no border, no shadow.
-class JPackSettingRow extends StatelessWidget {
-  const JPackSettingRow({super.key, required this.child});
+class KhaamSettingRow extends StatelessWidget {
+  const KhaamSettingRow({super.key, required this.child});
 
   final Widget child;
 
