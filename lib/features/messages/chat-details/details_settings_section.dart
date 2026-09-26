@@ -16,10 +16,10 @@ import '../nickname/nickname_sheet.dart';
 import '../providers/chat_provider.dart';
 import '../safety_number/safety_number_tile.dart';
 import 'details_tile.dart';
-import 'pinned_messages_tile.dart';
 
 /// The settings block under the header: nickname, safety number and privacy
-/// for a DM, then pins, wallpaper and notifications for every conversation.
+/// for a DM, then wallpaper for every conversation. Pins and Mute live in the
+/// header's button row.
 class DetailsSettingsSection extends ConsumerWidget {
   const DetailsSettingsSection({super.key, required this.conversation});
 
@@ -87,26 +87,10 @@ class DetailsSettingsSection extends ConsumerWidget {
           value: _permsSummary(conversation),
           onTap: () => context.push('/messages/${conversation.id}/permissions'),
         ),
-      PinnedMessagesTile(conversationId: conversation.id),
       DetailsTile(
         icon: const ChatIcon(HugeIcons.strokeRoundedPaintBoard),
         title: 'Chat color & wallpaper',
         onTap: () => context.push('/messages/${conversation.id}/wallpaper'),
-      ),
-      DetailsTile(
-        icon: ChatIcon(
-          conversation.muted
-              ? HugeIcons.strokeRoundedNotificationOff01
-              : HugeIcons.strokeRoundedNotification01,
-        ),
-        title: 'Sounds & notifications',
-        value: conversation.muted ? 'Muted' : 'All messages',
-        trailing: Switch(
-          value: !conversation.muted,
-          onChanged: (on) => ref
-              .read(chatProvider.notifier)
-              .muteConversation(conversation.id, !on),
-        ),
       ),
     ],
   );

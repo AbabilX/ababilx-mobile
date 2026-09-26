@@ -25,6 +25,7 @@ import '../providers/chat_provider.dart';
 import 'avatar_preview.dart';
 import 'details_action_button.dart';
 import 'group_banner_header.dart';
+import 'pinned_messages_action.dart';
 
 /// The top of the details screen: picture, name, what this chat is, and the
 /// row of square actions. Signal puts the name itself on a chevron for a 1:1
@@ -202,6 +203,7 @@ class DetailsHeader extends ConsumerWidget {
                 }
               },
             ),
+            PinnedMessagesAction(conversationId: conversation.id),
           ],
         ),
         const SizedBox(height: 20),

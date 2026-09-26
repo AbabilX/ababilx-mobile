@@ -359,7 +359,7 @@ class AppTranslations {
       'chat_pinned_messages': 'Pinned messages',
       'chat_pinned_toast': 'Pinned. Find it in chat details.',
       'chat_pin_limit': 'You can pin up to 50 messages in a chat.',
-      'chat_pins_none': 'None',
+      'chat_pins_action': 'Pins',
       'chat_pins_empty_title': 'No pinned messages',
       'chat_pins_empty_body':
           'Long-press a message and choose Pin message to keep it here. Only you see your pins.',
@@ -1372,7 +1372,7 @@ class AppTranslations {
       'chat_pinned_messages': 'পিন করা বার্তা',
       'chat_pinned_toast': 'পিন হয়েছে। চ্যাটের বিস্তারিত পাতায় পাবেন।',
       'chat_pin_limit': 'একটি চ্যাটে সর্বোচ্চ ৫০টি বার্তা পিন করা যায়।',
-      'chat_pins_none': 'নেই',
+      'chat_pins_action': 'পিন',
       'chat_pins_empty_title': 'কোনো পিন করা বার্তা নেই',
       'chat_pins_empty_body':
           'কোনো বার্তা চেপে ধরে "বার্তা পিন করুন" বেছে নিন। আপনার পিন শুধু আপনিই দেখেন।',
