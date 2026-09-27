@@ -17,11 +17,9 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
     required this.galleryLabel,
     required this.cameraLabel,
     required this.fileLabel,
-    required this.contactLabel,
     required this.onGallery,
     required this.onCamera,
     required this.onFile,
-    required this.onContact,
     required this.onPickMedia,
     this.selectedMediaUris = const [],
     this.khaamLabel = 'Khaam',
@@ -33,14 +31,12 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
   final String galleryLabel;
   final String cameraLabel;
   final String fileLabel;
-  final String contactLabel;
 
   /// Null hides the chip: a group admin switched that kind off (server
   /// 0157). The rail goes with Gallery — it only ever holds photos and videos.
   final VoidCallback? onGallery;
   final VoidCallback? onCamera;
   final VoidCallback? onFile;
-  final VoidCallback onContact;
 
   /// Khaam greeting card. Null hides the chip — it is offered in a DM only.
   final String khaamLabel;
@@ -96,11 +92,6 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
                       icon: HugeIcons.strokeRoundedFile01,
                       onTap: onFile!,
                     ),
-                  AttachChip(
-                    label: contactLabel,
-                    icon: HugeIcons.strokeRoundedUserCircle,
-                    onTap: onContact,
-                  ),
                   if (onKhaam != null)
                     AttachChip(
                       label: khaamLabel,

@@ -39,7 +39,6 @@ import 'composer_recent_selection_label.dart';
 import 'composer_reply_banner.dart';
 import 'composer_reply_target.dart';
 import 'reaction_emoji_picker.dart';
-import 'composer_share_contact.dart';
 import 'composer_text_actions.dart';
 import 'voice_message_recorder.dart';
 import '../../../core/network/ws_client.dart';
@@ -804,11 +803,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     _focus.requestFocus();
   }
 
-  void _selectContact() {
-    _closeAttachmentPanel();
-    unawaited(_shareContact());
-  }
-
   /// Khaam is one sender, one receiver: offered in a DM with a peer, on the
   /// main timeline only.
   VoidCallback? get _khaamAction {
@@ -1031,13 +1025,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
   }
 
-  Future<void> _shareContact() async {
-    final member = await showShareContactSheet(context);
-    if (member == null || !mounted) return;
-    insertComposerText(_ctrl, formatSharedContact(member));
-    _focus.requestFocus();
-  }
-
   void _showMessage(String english, String bangla) {
     if (!mounted) return;
     final language = ref.read(appLanguageProvider);
@@ -1174,7 +1161,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                     galleryLabel: tr('chat_gallery'),
                     cameraLabel: tr('chat_camera'),
                     fileLabel: tr('chat_file'),
-                    contactLabel: tr('chat_contact'),
                     onGallery: _mediaAllowed(visual: true)
                         ? () => _selectAttachment(ComposerAttachKind.gallery)
                         : null,
@@ -1184,7 +1170,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                     onFile: _mediaAllowed(visual: false)
                         ? () => _selectAttachment(ComposerAttachKind.file)
                         : null,
-                    onContact: _selectContact,
                     khaamLabel: tr('khaam_chip'),
                     onKhaam: _khaamAction,
                     ghostLabel: tr('ghost_chip'),
