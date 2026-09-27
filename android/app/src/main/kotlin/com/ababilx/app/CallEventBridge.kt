@@ -7,6 +7,7 @@ import com.ababilx.call_ringer.CallRinger
 import com.ababilx.call_ringer.CallkitSurface
 import com.hiennv.flutter_callkit_incoming.CallkitBackgroundExecutor
 import com.hiennv.flutter_callkit_incoming.CallkitEventCallback
+import com.hiennv.flutter_callkit_incoming.CallkitRingSilence
 import com.hiennv.flutter_callkit_incoming.FlutterCallkitIncomingPlugin
 import com.hiennv.flutter_callkit_incoming.getPluginCallbackHandle
 
@@ -46,6 +47,9 @@ object CallEventBridge : CallkitEventCallback {
         // The plugin keeps a WeakReference; this object is a static singleton,
         // so the reference stays alive for the life of the process.
         FlutterCallkitIncomingPlugin.registerEventCallback(this)
+        // A volume key — on the ringing screen, on MainActivity, or through
+        // Telecom's onSilence while any app is in front — quiets our tone.
+        CallkitRingSilence.handler = { CallRinger.silence() }
     }
 
     override fun onCallEvent(event: CallkitEventCallback.CallEvent, callData: Bundle) {

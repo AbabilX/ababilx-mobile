@@ -39,6 +39,8 @@
     <dimen name="size_avatar">120dp</dimen>
     <!-- Extra lift above nav/gesture inset (Activity adds nav height on top). -->
     <dimen name="size_action_lift">16dp</dimen>
+    <!-- Space between the Message pill and the Decline/Accept pair. -->
+    <dimen name="incoming_message_gap">4dp</dimen>
 
     <dimen name="size_text_name">26sp</dimen>
     <dimen name="size_text_action">14sp</dimen>

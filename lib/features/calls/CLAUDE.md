@@ -64,6 +64,62 @@ makes a ring duck or stop when anything else touches audio.
 `MAX_RING_MS` backstop. The ringer is deliberately deaf to screen state, audio
 focus, and volume. Adding a stop for any of those recreates the original bug.
 
+**Silence is the one user stop, and it is a KEY, not a volume change**
+(2026-09-27, a user report: "volume down should silence the ringer").
+`CallRinger.silence()` stops the player but keeps the holders, sets a
+`silenced` flag that `ensurePlaying` honours (so the CallKit → in-app hand-off
+does not bring the tone back) and clears when the last holder lets go. Three
+doors reach it, all through `CallkitRingSilence.request()` (patch file
+`patches/callkit/CallkitRingSilence.kt`, hook installed by
+`CallEventBridge.install`, which also stops the plugin's vibrator):
+
+```
+Telecom Connection.onSilence   volume/power key while ringing, any app in front (API 29+)
+CallkitIncomingActivity        onKeyDown VOLUME_UP|DOWN (was: stop the plugin's SILENT player)
+MainActivity.dispatchKeyEvent  first VOLUME_UP|DOWN while CallRinger.isSilenceable(); after that, volume
+in-app Silence button          IncomingCallRingtone.silence() -> CallRinger.silence
+```
+
+`VOLUME_CHANGED_ACTION` stays ignored — an OEM ring ramp sends it too, and
+reacting to it is the original bug. The upstream Signify branch in the
+Activity only ever stopped the plugin's player, which plays `silent_ring`, so
+volume-down did nothing audible before this.
+
+## Decline with a message (2026-09-27)
+
+Both ringing surfaces offer it; the text is sent into the call's DM, sealed on
+the phone by `sendChatNotificationReply` — the shade-reply sender, which runs
+in any isolate. `decline-message/`:
+
+```
+in-app    IncomingCallView  Message -> DeclineMessagePanel (inline, NOT a route:
+          the screen closes itself with a pop, a sheet route would take it)
+          -> VoiceCallScreen._declineWithMessage: declineIncoming + send
+native    extra.decline_replies (+ labels) on 1:1 CallKit params only
+          -> CallkitDeclineReplies.kt: pill + preset sheet on the Activity
+          -> decline broadcast with extra.decline_message
+          -> whichever isolate gets the decline event sends it
+             (voice_call_provider / android_call_background)
+```
+
+- Presets only on the native screen (no typing over a lock screen); the
+  in-app sheet also takes free text. Opening the sheet silences the tone.
+- Sealing needs our user id: `state.currentUserId` in the UI isolate,
+  `readLocalDataOwnerUserId` in the background one. With neither the send is
+  refused — a DM is never sent in plaintext.
+- Native labels follow the app language remembered by `HomeShell`
+  (`DeclineReplies.rememberLanguage`, SharedPreferences) — the background
+  isolate has no profile. English until a profile has loaded once.
+- A group invite carries no `decline_replies`, so its Activity hides the pill.
+- A native send that fails posts a notification holding the text (title
+  `call_decline_message_failed`), like a failed shade reply. The in-app one
+  toasts via `showAppToastIn` with the root overlay captured BEFORE the
+  decline pops the screen (a Navigator's own context sits above its overlay).
+- Replying to a stranger's call is a reply: the server's "replying accepts"
+  rule settles their message request, as a reply from the chat would.
+- The in-app "Silenced" line reflects only the Silence button / Message
+  sheet; a volume-key silence quiets the tone without telling Dart.
+
 **Plugin muted, not removed.** `AndroidParams.ringtonePath: 'silent_ring'`
 (1 s silent WAV in `res/raw/`) in `native/android_call_ui.dart` and
 `native/android_group_call_params.dart`. The plugin still contributes the
@@ -581,9 +637,12 @@ A fresh install could sit on "Exchanging security keys…" until restarted.
   Audio-only never auto-hides — Mute / End must stay reachable without a tap.
 - **Minimize:** a small chevron in the top-left safe area leaves the screen
   without hanging up (`ActiveCallBanner` / return bar takes over).
-- **Incoming** keeps only Answer + Decline (no Mute/Camera/Share yet) — large
-  paired circles centered with a comfortable gap (`incomingActionGap`), not
-  `spaceBetween` to the screen edges.
+- **Incoming** (rebuilt 2026-09-27): "AbabilX voice/video call" label on top,
+  the caller in the flexible middle (FittedBox, so a short phone scales the
+  face instead of running it into the buttons), then a small Message · Silence
+  row, then the large Decline / Answer pair (`IncomingCallPair`, centered with
+  `incomingActionGap`, not `spaceBetween`). Answer shows a camera for video.
+  Still no Mute/Camera/Share before answering.
   **Outgoing / connected** uses Mute · Camera · Screen Share · Speaker + End.
 - Labels: Incoming hang-up says **Decline**; live hang-up says **End**.
   Captions hide in landscape; semantics keep the names.

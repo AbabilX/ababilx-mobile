@@ -117,6 +117,25 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
+        <!-- Decline with a message: shown only when Dart sent replies
+             (1:1 calls). CallkitDeclineReplies binds it. -->
+        <TextView
+            android:id="@+id/tvDeclineMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="@dimen/incoming_message_gap"
+            android:background="@drawable/ababilx_incoming_pill"
+            android:gravity="center"
+            android:minHeight="44dp"
+            android:paddingStart="22dp"
+            android:paddingEnd="22dp"
+            android:text="Message"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/size_text_action"
+            android:visibility="gone"
+            tools:ignore="HardcodedText" />
+
         <!-- Centered pair (not edge-spread). Bottom lift applied in Activity. -->
         <LinearLayout
             android:id="@+id/llAction"
@@ -216,5 +235,19 @@
         </LinearLayout>
 
     </LinearLayout>
+
+    <!-- Decline-with-message choices, filled by CallkitDeclineReplies. -->
+    <LinearLayout
+        android:id="@+id/llDeclineReplies"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/ababilx_incoming_sheet"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="12dp"
+        android:visibility="gone" />
 
 </RelativeLayout>

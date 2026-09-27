@@ -15,6 +15,7 @@ gradle.beforeProject { project ->
     if (project.name != 'flutter_callkit_incoming') return
     def dir = new File(project.projectDir, 'src/main/kotlin/com/hiennv/flutter_callkit_incoming')
     new File(dir, 'CallkitCallLifecycle.kt').text = new File(lifecycleSource, 'CallkitCallLifecycle.kt').text
+    new File(dir, 'CallkitRingSilence.kt').text = new File(lifecycleSource, 'CallkitRingSilence.kt').text
 
     def connection = new File(dir, 'CallkitConnection.kt')
     replaceLifecycle(connection,
@@ -41,6 +42,18 @@ gradle.beforeProject { project ->
     replaceLifecycle(connection, '    private fun finishWithCause(cause: Int)',
         '    internal fun finishWithCause(cause: Int)')
     replaceLifecycle(connection, '        unregister(callId)', '        unregister(callId, this)')
+    // A volume/power key while ringing reaches a self-managed call only here
+    // (API 29+); the ringer is ours to quiet. See CallkitRingSilence.
+    replaceLifecycle(connection,
+        """    override fun onHold() {
+        super.onHold()""",
+        """    override fun onSilence() {
+        Log.d(TAG, "onSilence id=\$callId")
+        CallkitRingSilence.request()
+    }
+
+    override fun onHold() {
+        super.onHold()""")
 
     def service = new File(dir, 'CallkitConnectionService.kt')
     replaceLifecycle(service, '        return connection',

@@ -1,3 +1,7 @@
+import 'dart:io' show Platform;
+
+import 'package:call_ringer/call_ringer.dart';
+
 import 'call_ringtone.dart';
 
 /// In-app incoming ringtone for the 1:1 DM call screen (foreground).
@@ -18,4 +22,11 @@ class IncomingCallRingtone {
   static Future<void> start() => CallRingtone.hold(_holder);
 
   static Future<void> stop() => CallRingtone.release(_holder);
+
+  /// The Silence button: the sound goes, the call keeps ringing on screen.
+  /// On Android the native player also drops the CallKit hold's sound and
+  /// stays quiet for the rest of this ring (a volume key does the same
+  /// natively); elsewhere there is only this screen's tone to stop.
+  static Future<void> silence() =>
+      Platform.isAndroid ? CallRinger.silence() : stop();
 }

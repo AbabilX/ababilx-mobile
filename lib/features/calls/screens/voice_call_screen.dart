@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/router/root_back.dart';
 import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../privacy-mode/privacy_secure_scope.dart';
+import '../../../shared/widgets/app_toast.dart';
+import '../data/models/voice_call.dart';
+import '../decline-message/decline_message_send.dart';
 import '../incoming_call_ringtone.dart';
 import '../native/android_call_screen_lock.dart';
 import '../providers/voice_call_provider.dart';
@@ -99,6 +102,30 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     });
   }
 
+  /// Decline, then write [text] into the call's DM. The screen closes with
+  /// the decline, so a failure is reported on the root overlay, which stays.
+  void _declineWithMessage(VoiceCall session, String myUserId, String text) {
+    final notifier = ref.read(voiceCallProvider.notifier);
+    final lang = ref.read(appLanguageProvider);
+    // Looked up now: this screen is gone by the time the send returns.
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    unawaited(IncomingCallRingtone.stop());
+    unawaited(notifier.declineIncoming());
+    unawaited(() async {
+      final sent = await sendCallDeclineMessage(
+        conversationId: session.conversationId,
+        text: text,
+        myUserId: myUserId,
+      );
+      if (sent) return;
+      showAppToastIn(
+        overlay,
+        AppTranslations.of(lang, 'call_decline_message_failed'),
+        isError: true,
+      );
+    }());
+  }
+
   /// Leave the screen, not the call. `popOrGoHome` is what handles a call
   /// opened straight from a push, where there is no history to pop back into.
   void _leave() => popOrGoHome(context);
@@ -128,10 +155,19 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
         active: peerPrivate,
         child: Scaffold(
           backgroundColor: Colors.transparent,
+          // The reply sheet lifts itself over the keyboard; resizing the
+          // whole ringing screen under it would squash the caller's face.
+          resizeToAvoidBottomInset: false,
           body: IncomingCallView(
             peerName: call.peerName,
             peerAvatar: call.peerAvatar,
+            video: session?.isVideo ?? false,
             lang: lang,
+            onSilence: IncomingCallRingtone.silence,
+            onDeclineWithMessage: session == null
+                ? null
+                : (text) =>
+                      _declineWithMessage(session, call.currentUserId, text),
             onDecline: () {
               unawaited(IncomingCallRingtone.stop());
               notifier.declineIncoming();

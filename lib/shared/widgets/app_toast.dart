@@ -26,9 +26,22 @@ void showAppToast(
   BuildContext context,
   String message, {
   bool isError = false,
+}) => showAppToastIn(
+  Overlay.maybeOf(context, rootOverlay: true),
+  message,
+  isError: isError,
+);
+
+/// [showAppToast] for a caller that outlives its own context: look the root
+/// overlay up while the widget is still mounted, keep it, and report an
+/// async result on it later. A Navigator's context does not work for this —
+/// it sits ABOVE the navigator's overlay, so the lookup finds nothing.
+void showAppToastIn(
+  OverlayState? overlay,
+  String message, {
+  bool isError = false,
 }) {
-  final overlay = Overlay.maybeOf(context, rootOverlay: true);
-  if (overlay == null || message.trim().isEmpty) return;
+  if (overlay == null || !overlay.mounted || message.trim().isEmpty) return;
   _remove(_current);
   late final OverlayEntry entry;
   entry = OverlayEntry(

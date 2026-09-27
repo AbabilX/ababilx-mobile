@@ -34,8 +34,16 @@ gradle.beforeProject { project ->
         land.text = new File(uiSource, 'activity_callkit_incoming.xml').text
     }
 
-    def activity = new File(project.projectDir,
-        'src/main/kotlin/com/hiennv/flutter_callkit_incoming/CallkitIncomingActivity.kt')
+    // Decline with a message: the pill + sheet drawables and the helper that
+    // fills them (patches/callkit/CallkitDeclineReplies.kt).
+    ['ababilx_incoming_pill.xml', 'ababilx_incoming_sheet.xml'].each { name ->
+        new File(res, "drawable/$name").text = new File(uiSource, name).text
+    }
+    def kotlinDir = new File(project.projectDir, 'src/main/kotlin/com/hiennv/flutter_callkit_incoming')
+    new File(kotlinDir, 'CallkitDeclineReplies.kt').text =
+        new File(uiSource, 'CallkitDeclineReplies.kt').text
+
+    def activity = new File(kotlinDir, 'CallkitIncomingActivity.kt')
     patchSource(activity,
         '''        val params = llAction.layoutParams as MarginLayoutParams
         params.setMargins(0, 0, 0, Utils.getNavigationBarHeight(this@CallkitIncomingActivity))
@@ -66,4 +74,61 @@ gradle.beforeProject { project ->
         '''        // AbabilX: no deprecated bar-colour calls (Play, Android 15). The
         // theme's translucent bars keep the screen edge to edge.''',
         'edge-to-edge-bar-colours')
+
+    patchSource(activity,
+        '''        ivDeclineCall.setOnClickListener {
+            onDeclineClick()
+        }''',
+        '''        ivDeclineCall.setOnClickListener {
+            onDeclineClick()
+        }
+        // AbabilX: Message pill -> preset replies -> decline carrying the text.
+        CallkitDeclineReplies.bind(
+            this,
+            intent.extras?.getBundle(CallkitConstants.EXTRA_CALLKIT_INCOMING_DATA),
+        ) { text -> onDeclineWithMessage(text) }''',
+        'decline-message-bind')
+
+    patchSource(activity,
+        '''    private fun finishDelayed() {''',
+        '''    // AbabilX: the red button's decline, with the chosen reply on the event.
+    private fun onDeclineWithMessage(text: String) {
+        val data = CallkitDeclineReplies.withMessage(
+            intent.extras?.getBundle(CallkitConstants.EXTRA_CALLKIT_INCOMING_DATA),
+            text,
+        )
+        sendBroadcast(
+            CallkitIncomingBroadcastReceiver.getIntentDecline(this@CallkitIncomingActivity, data),
+        )
+        finishTask()
+    }
+
+    private fun finishDelayed() {''',
+        'decline-message-action')
+
+    // Either volume key silences the ring. The tone is the app's CallRinger,
+    // not the plugin's player, so the upstream VOLUME_DOWN-only branch that
+    // stopped the plugin's (silent) player never quieted anything.
+    patchSource(activity,
+        '''        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            val soundPlayerManager = FlutterCallkitIncomingPlugin.getInstance()?.getCallkitSoundPlayerManager()
+            if (soundPlayerManager?.isPlaying == true) {
+                soundPlayerManager.stop()
+                return true 
+            }
+        }''',
+        '''        // AbabilX: a volume key silences the ring, the phone dialer's gesture.
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            CallkitRingSilence.request()
+            return true
+        }''',
+        'volume-key-silence')
+
+    patchSource(activity,
+        '''    override fun onBackPressed() {}''',
+        '''    // AbabilX: Back closes the reply sheet; the ringing screen itself stays.
+    override fun onBackPressed() {
+        CallkitDeclineReplies.close(this)
+    }''',
+        'decline-message-back')
 }

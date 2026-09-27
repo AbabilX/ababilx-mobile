@@ -4,4 +4,5 @@
     <dimen name="size_avatar">160dp</dimen>
     <dimen name="size_action_lift">56dp</dimen>
     <dimen name="incoming_name_gap">20dp</dimen>
+    <dimen name="incoming_message_gap">16dp</dimen>
 </resources>

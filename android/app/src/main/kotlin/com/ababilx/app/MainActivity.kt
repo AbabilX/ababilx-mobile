@@ -4,11 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.core.view.WindowCompat
 import com.ababilx.app.backup.LocalBackupChannel
 import com.ababilx.app.mediasend.MediaSendChannel
 import com.ababilx.call_ringer.CallRinger
+import com.hiennv.flutter_callkit_incoming.CallkitRingSilence
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -33,6 +35,32 @@ class MainActivity : FlutterActivity() {
     override fun onResume() {
         super.onResume()
         callLockScreen.onResume()
+    }
+
+    /** The volume-key press that silenced a ring; its release is ours too. */
+    private var silencingKey: Int? = null
+
+    /**
+     * A volume key while a call rings silences it, as the phone's own dialer
+     * does; the call keeps ringing on screen. Checked before Flutter sees the
+     * key. Only the first press is taken: once the ring is quiet, volume keys
+     * are volume again (so a live call's volume is never held hostage).
+     */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val volumeKey = event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
+            event.keyCode == KeyEvent.KEYCODE_VOLUME_UP
+        if (volumeKey) {
+            if (event.action == KeyEvent.ACTION_DOWN && CallRinger.isSilenceable()) {
+                silencingKey = event.keyCode
+                CallkitRingSilence.request()
+                return true
+            }
+            if (event.action == KeyEvent.ACTION_UP && silencingKey == event.keyCode) {
+                silencingKey = null
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onStop() {

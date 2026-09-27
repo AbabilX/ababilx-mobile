@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/calls/decline-message/decline_replies.dart';
 import '../../features/crm/providers/crm_contacts_ui_provider.dart';
 import '../../features/crm/providers/crm_followups_ui_provider.dart';
 import '../../features/crm/providers/crm_leads_ui_provider.dart';
@@ -11,6 +14,7 @@ import '../../features/messages/providers/team_gate_provider.dart';
 import '../../features/local-backup/ui/local_backup_watcher.dart';
 import '../../features/notifications/widgets/notification_vitals_watcher.dart';
 import '../../features/policy/widgets/policy_gate_overlay.dart';
+import '../../features/profile/providers/profile_provider.dart';
 import '../../features/wall/providers/wall_ui_provider.dart';
 import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/crm_list_bar.dart';
@@ -32,6 +36,18 @@ class HomeShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // A call shown from a push has no profile to read; its ringing screen's
+    // reply texts use the language remembered here (written on change only).
+    // Only a loaded profile counts: the 'en' fallback before it arrives must
+    // not overwrite a remembered Bangla.
+    // valueOrNull, never value: Riverpod 2 rethrows a failed profile load
+    // from `.value`, and this is the shell. select: only the language.
+    final profileLang = ref.watch(
+      profileProvider.select((p) => p.valueOrNull?.appLanguage),
+    );
+    if (profileLang != null) {
+      unawaited(DeclineReplies.rememberLanguage(profileLang.toLowerCase()));
+    }
     final hasTeam = ref.watch(hasTeamProvider);
     final showCrm = ref.watch(canViewCrmProvider);
     final navPrefs = ref.watch(shellNavPrefsProvider);

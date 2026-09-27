@@ -6,6 +6,7 @@ import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
 import '../data/models/voice_call.dart';
+import '../decline-message/decline_replies.dart';
 import '../ringtone/ring_holders.dart';
 import 'android_call_lock_screen.dart';
 import 'android_call_params.dart';
@@ -18,11 +19,13 @@ class AndroidCallUi {
   static final Set<String> _showingCallIds = <String>{};
 
   static Future<void> showIncomingFromCall(VoiceCall call) async {
-    await _showOnce(AndroidCallParams.fromCall(call));
+    final replies = await DeclineReplies.nativeExtra();
+    await _showOnce(AndroidCallParams.fromCall(call, replies: replies));
   }
 
   static Future<void> showIncomingFromPush(Map<String, dynamic> data) async {
-    final params = AndroidCallParams.fromPush(data);
+    final replies = await DeclineReplies.nativeExtra();
+    final params = AndroidCallParams.fromPush(data, replies: replies);
     if (params.id.isEmpty) return;
     await _showOnce(params);
   }

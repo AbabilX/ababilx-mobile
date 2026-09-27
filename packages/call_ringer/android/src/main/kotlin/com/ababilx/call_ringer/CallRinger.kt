@@ -33,6 +33,12 @@ import android.util.Log
  * the call was answered, the call ended, or the ring window expired. Screen
  * state, volume changes and audio focus are deliberately not consulted — a
  * `MediaPlayer` that requests no focus is never paused behind our back.
+ *
+ * The one user-driven stop is [silence]: a volume KEY press (never the
+ * `VOLUME_CHANGED_ACTION` broadcast, which an OEM ring ramp also sends) or the
+ * in-app Silence button. The call keeps ringing on screen; only the sound
+ * goes, and it stays gone for this ring even when the ringing UI hands over
+ * from CallKit to the Flutter screen and re-takes its hold.
  */
 object CallRinger {
 
@@ -46,6 +52,9 @@ object CallRinger {
 
     private var player: MediaPlayer? = null
     private var expiry: Runnable? = null
+
+    /** Set by [silence]; cleared when the last holder lets go (ring over). */
+    private var silenced = false
 
     /**
      * Ring on behalf of [holder] (`native`, `flutter`). Idempotent.
@@ -68,14 +77,44 @@ object CallRinger {
     @Synchronized
     fun release(holder: String) {
         holders.remove(holder)
-        if (holders.isEmpty()) stopPlayer()
+        if (holders.isEmpty()) {
+            silenced = false
+            stopPlayer()
+        }
     }
 
     @Synchronized
     fun releaseAll() {
         holders.clear()
+        silenced = false
         stopPlayer()
     }
+
+    /**
+     * Quiet this ring without ending it: the holders stay, so the call still
+     * reads as ringing and a later [hold] does not bring the tone back.
+     * Returns whether anything was ringing, so a key handler knows whether
+     * the press was meant for the ring or for the volume.
+     */
+    @Synchronized
+    fun silence(): Boolean {
+        if (holders.isEmpty()) return false
+        val wasPlaying = player != null
+        silenced = true
+        stopPlayer()
+        // stopPlayer cancels the backstop; the holders still need it.
+        armExpiry()
+        Log.i(TAG, "silenced by user")
+        return wasPlaying
+    }
+
+    /**
+     * A call is ringing and has not been silenced yet — the only time a
+     * volume key belongs to the ring. Once quiet, keys are volume again, so
+     * a hold that somehow outlived its call can cost one key press at most.
+     */
+    @Synchronized
+    fun isSilenceable(): Boolean = holders.isNotEmpty() && !silenced
 
     /** Hold [holder] and play from the top even if it was already ringing. */
     @Synchronized
@@ -88,6 +127,11 @@ object CallRinger {
 
     private fun ensurePlaying(context: Context) {
         if (holders.isEmpty() || player != null) return
+        if (silenced) {
+            // Quiet, but still ringing: keep the backstop that ends the hold.
+            armExpiry()
+            return
+        }
         if (!audioAllowed(context)) {
             // Silent / vibrate-only phone: the notification still vibrates.
             Log.i(TAG, "ringer muted by ringer mode")

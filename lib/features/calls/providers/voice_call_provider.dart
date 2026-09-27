@@ -7,6 +7,7 @@ import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../decline-message/decline_message_send.dart';
 import '../../../core/network/ws_client.dart';
 import '../../messages/data/models/chat_conversation.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -1324,6 +1325,13 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
           source: 'callkit',
         );
         unawaited(declineIncoming(callKitParams.id));
+        // The ringing Activity's Message button declines with a reply.
+        unawaited(
+          sendCallDeclineMessageFromExtra(
+            callKitParams.extra,
+            myUserId: state.currentUserId,
+          ),
+        );
       case CallEventActionCallEnded(:final callKitParams):
         final id = callKitParams.id;
         final suppressed = _suppressCallKitEnded.consume(id);

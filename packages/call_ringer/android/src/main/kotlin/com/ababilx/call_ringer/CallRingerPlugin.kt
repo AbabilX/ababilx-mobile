@@ -50,6 +50,7 @@ class CallRingerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 CallRinger.releaseAll()
                 result.success(null)
             }
+            "silence" -> result.success(CallRinger.silence())
             // Same reason this package exists at all: the CallKit surface has
             // to be closable from whichever engine is alive, background
             // isolate included. See [CallkitSurface] for why the plugin's own

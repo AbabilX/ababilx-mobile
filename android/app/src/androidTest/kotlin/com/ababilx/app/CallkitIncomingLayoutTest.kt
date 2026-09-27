@@ -74,6 +74,8 @@ class CallkitIncomingLayoutTest {
         root.findViewById<TextView>(CR.id.tvNameCaller).text =
             "A caller with a very long display name that cannot fit"
         root.findViewById<TextView>(CR.id.tvNumber).text = "AbabilX voice call"
+        // A 1:1 call shows the decline-with-message pill; lay out that case.
+        root.findViewById<TextView>(CR.id.tvDeclineMessage).visibility = View.VISIBLE
         root.measure(
             View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY),
@@ -129,6 +131,11 @@ class CallkitIncomingLayoutTest {
         assertTrue("name off screen at $where: $name", name.left >= 0 && name.right <= laid.width)
         val actions = laid.rect(CR.id.llAction)
         assertTrue("name runs into the buttons at $where", name.bottom <= actions.top)
+        val message = laid.rect(CR.id.tvDeclineMessage)
+        assertTrue("Message pill off screen at $where: $message", screen.contains(message))
+        assertTrue("Message pill squashed at $where", laid.dp(message.height()) >= 40f)
+        assertTrue("name runs into the Message pill at $where", name.bottom <= message.top)
+        assertTrue("Message pill overlaps the pair at $where", message.bottom <= actions.top)
         assertTrue("buttons below the screen at $where", actions.bottom <= laid.height)
     }
 

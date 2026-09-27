@@ -39,6 +39,11 @@ class CallRinger {
   /// Stop ringing outright, whoever asked for it.
   static Future<void> releaseAll() => _invoke('releaseAll', null);
 
+  /// Quiet the ring without ending the call — the Silence button, and the
+  /// same thing a volume key does natively. Stays quiet for the rest of this
+  /// ring, across the CallKit to in-app hand-off.
+  static Future<void> silence() => _invoke('silence', null);
+
   static Future<void> _invoke(
     String method,
     String? holder, [

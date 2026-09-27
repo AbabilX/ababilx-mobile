@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../decline-message/decline_message_send.dart';
 import '../ringtone/callkit_ring_events.dart';
 
 const _acceptGracePrefix = 'voice_call_accept_grace_';
@@ -48,6 +49,8 @@ Future<void> androidCallkitBackgroundHandler(CallEvent event) async {
       return;
     case CallEventActionCallDecline(:final callKitParams):
       await _postAction(raw, callKitParams.id, 'decline');
+      // "Decline with message" on the locked / killed-app ringing screen.
+      await sendCallDeclineMessageFromExtra(callKitParams.extra);
     case CallEventActionCallEnded(:final callKitParams):
       final id = callKitParams.id;
       if (id.isEmpty) return;

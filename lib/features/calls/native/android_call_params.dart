@@ -24,7 +24,12 @@ class AndroidCallParams {
   static const _text = '#FFFFFF';
   static const _answer = '#3AB55B';
 
-  static CallKitParams fromCall(VoiceCall call) => _incoming(
+  /// [replies] is [DeclineReplies.nativeExtra]: the Message button on the
+  /// full-screen ringing Activity and its preset texts.
+  static CallKitParams fromCall(
+    VoiceCall call, {
+    Map<String, String> replies = const {},
+  }) => _incoming(
     callId: call.id,
     conversationId: call.conversationId,
     callerId: call.callerId,
@@ -32,9 +37,13 @@ class AndroidCallParams {
     callerAvatarUrl: call.callerAvatarUrl,
     expiresAt: call.expiresAt,
     video: call.isVideo,
+    replies: replies,
   );
 
-  static CallKitParams fromPush(Map<String, dynamic> data) {
+  static CallKitParams fromPush(
+    Map<String, dynamic> data, {
+    Map<String, String> replies = const {},
+  }) {
     final expiresAt =
         DateTime.tryParse(data['expires_at']?.toString() ?? '')?.toLocal() ??
         DateTime.now().add(const Duration(seconds: 60));
@@ -46,6 +55,7 @@ class AndroidCallParams {
       callerAvatarUrl: data['caller_avatar_url']?.toString(),
       expiresAt: expiresAt,
       video: data['mode']?.toString() == 'video',
+      replies: replies,
     );
   }
 
@@ -86,6 +96,7 @@ class AndroidCallParams {
     required String? callerAvatarUrl,
     required DateTime expiresAt,
     bool video = false,
+    Map<String, String> replies = const {},
   }) {
     final remaining = expiresAt.difference(DateTime.now()).inMilliseconds;
     return CallKitParams(
@@ -114,6 +125,7 @@ class AndroidCallParams {
         'caller_avatar_url': callerAvatarUrl ?? '',
         'expires_at': expiresAt.toUtc().toIso8601String(),
         'mode': video ? 'video' : 'audio',
+        ...replies,
       },
       android: AndroidParams(
         isCustomNotification: true,

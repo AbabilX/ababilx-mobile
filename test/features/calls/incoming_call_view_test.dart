@@ -111,4 +111,130 @@ void main() {
     expect(find.byIcon(Icons.call_rounded), findsOneWidget);
     expect(find.byIcon(Icons.call_end_rounded), findsOneWidget);
   });
+
+  Widget withExtras({
+    ValueChanged<String>? onMessage,
+    Future<void> Function()? onSilence,
+    Size size = const Size(390, 844),
+  }) => MaterialApp(
+    home: MediaQuery(
+      data: MediaQueryData(size: size),
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: IncomingCallView(
+          peerName: 'Rahim Uddin',
+          peerAvatar: null,
+          onDecline: () {},
+          onAccept: () {},
+          onDeclineWithMessage: onMessage,
+          onSilence: onSilence,
+        ),
+      ),
+    ),
+  );
+
+  testWidgets('Message opens the replies and a pick declines with it', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final sent = <String>[];
+    var silenced = 0;
+    await tester.pumpWidget(
+      withExtras(onMessage: sent.add, onSilence: () async => silenced++),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
+    await tester.pump();
+    expect(find.text('Decline with message'), findsOneWidget);
+    // Choosing words should not happen over a shouting ringtone.
+    expect(silenced, 1);
+
+    await tester.tap(find.text("I'll call you back soon."));
+    await tester.pump();
+    expect(sent, ["I'll call you back soon."]);
+  });
+
+  testWidgets('a written reply is sent as typed', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final sent = <String>[];
+    await tester.pumpWidget(withExtras(onMessage: sent.add));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), '  Driving, 10 min  ');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Decline and send'));
+    await tester.pump();
+    expect(sent, ['Driving, 10 min']);
+  });
+
+  testWidgets('closing the replies returns to the ringing screen', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final sent = <String>[];
+    await tester.pumpWidget(withExtras(onMessage: sent.add));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
+    await tester.pump();
+    await tester.tap(find.text('Decline with message'));
+    await tester.tapAt(const Offset(195, 100));
+    await tester.pump();
+    expect(find.text('Decline with message'), findsNothing);
+    expect(sent, isEmpty);
+  });
+
+  testWidgets('Silence quiets the ring once and says so', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var silenced = 0;
+    await tester.pumpWidget(withExtras(onSilence: () async => silenced++));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byIcon(Icons.notifications_off_outlined));
+    await tester.pump();
+    // Now shown as already quiet, and a second press does nothing.
+    await tester.tap(
+      find.byIcon(Icons.notifications_off_rounded),
+      warnIfMissed: false,
+    );
+    await tester.pump();
+    expect(silenced, 1);
+    expect(find.text('Silenced'), findsOneWidget);
+    expect(find.text('Incoming call…'), findsNothing);
+  });
+
+  testWidgets('no conversation, no Message button', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(withExtras(onSilence: () async {}));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Message'), findsNothing);
+    expect(find.text('Silence'), findsOneWidget);
+  });
+
+  testWidgets('a short phone keeps the caller clear of the buttons', (
+    tester,
+  ) async {
+    const size = Size(360, 640);
+    await tester.binding.setSurfaceSize(size);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      withExtras(onMessage: (_) {}, onSilence: () async {}, size: size),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(tester.takeException(), isNull);
+    final status = tester.getBottomLeft(find.text('Incoming call…'));
+    final message = tester.getTopLeft(
+      find.byIcon(Icons.chat_bubble_outline_rounded),
+    );
+    expect(status.dy, lessThan(message.dy));
+  });
 }
