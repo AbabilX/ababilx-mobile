@@ -943,6 +943,10 @@ class AppTranslations {
       'group_privacy_members_hidden':
           'Only admins can see everyone in this group',
       'group_privacy_members_count': '{count} members',
+      'group_members_see_all': 'See all members',
+      'group_members_title': 'Members',
+      'group_members_search': 'Search members',
+      'group_members_no_match': 'No members found',
       'group_perm_tile': 'Permissions',
       'group_perm_title_user': 'User Permissions',
       'group_perm_title_group': 'Permissions',
@@ -2065,6 +2069,10 @@ class AppTranslations {
       'group_privacy_members_hidden':
           'এই গ্রুপের সবাইকে শুধু অ্যাডমিনরা দেখতে পারবেন',
       'group_privacy_members_count': '{count} জন সদস্য',
+      'group_members_see_all': 'সব সদস্য দেখুন',
+      'group_members_title': 'সদস্য',
+      'group_members_search': 'সদস্য খুঁজুন',
+      'group_members_no_match': 'কোনো সদস্য পাওয়া যায়নি',
       'group_perm_tile': 'অনুমতি',
       'group_perm_title_user': 'সদস্যের অনুমতি',
       'group_perm_title_group': 'অনুমতি',

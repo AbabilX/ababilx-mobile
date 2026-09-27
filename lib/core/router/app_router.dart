@@ -18,6 +18,7 @@ import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
 import '../../features/settings/app-icon/app_icon_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
 import '../../features/messages/chat-details/conversation_details_screen.dart';
+import '../../features/messages/chat-details/group_members_screen.dart';
 import '../../features/messages/data/models/chat_models.dart';
 import '../../features/messages/group-member-permissions/group_permissions_screen.dart';
 import '../../features/messages/group-member-permissions/member_permissions_route.dart';
@@ -303,6 +304,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           conversationId: state.pathParameters['id']!,
           userId: state.pathParameters['userId']!,
           member: state.extra is ChatMember ? state.extra as ChatMember : null,
+        ),
+      ),
+      // Every member of a group, from "See all members" on details. The
+      // roster details already holds rides in `extra` so it paints at once.
+      GoRoute(
+        path: '/messages/:id/members',
+        builder: (_, state) => ChatLockGate(
+          conversationId: state.pathParameters['id']!,
+          child: GroupMembersScreen(
+            conversationId: state.pathParameters['id']!,
+            initialMembers: state.extra is List<ChatMember>
+                ? state.extra as List<ChatMember>
+                : const [],
+          ),
         ),
       ),
       GoRoute(

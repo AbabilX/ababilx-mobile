@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
-import '../../../shared/widgets/app_avatar.dart';
-import 'add_members_sheet.dart';
+import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
-import 'avatar_preview.dart';
-import '../group-member-permissions/member_actions_menu.dart';
+import 'add_members_sheet.dart';
+import 'details_member_tile.dart';
 import 'group_permissions.dart';
 
-/// The roster block: "N members", an Add row, then everyone, admins first
-/// (the server already orders them that way).
+/// The roster block: "N members", an Add row, then the first
+/// [previewCount] people, admins first (the server already orders them that
+/// way). A longer roster ends in "See all members", which opens the full
+/// list on its own page.
 class DetailsMembersSection extends ConsumerWidget {
   const DetailsMembersSection({
     super.key,
@@ -24,6 +27,9 @@ class DetailsMembersSection extends ConsumerWidget {
   final List<ChatMember> members;
   final bool loading;
   final VoidCallback onChanged;
+
+  /// How many members the details screen draws before "See all".
+  static const previewCount = 4;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -80,66 +86,37 @@ class DetailsMembersSection extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
           ),
-        ...members.map(
-          (member) => ListTile(
+        for (final member in members.take(previewCount))
+          DetailsMemberTile(conversation: conversation, member: member),
+        if (members.length > previewCount)
+          ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-            leading: _memberAvatar(context, member),
+            leading: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHighest,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: ChatIcon(HugeIcons.strokeRoundedUserMultiple),
+              ),
+            ),
             title: Text(
-              member.name,
+              t('group_members_see_all'),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
-            // An admin sees who an admin restricted (server 0157).
-            subtitle: member.restricted
-                ? Text(t('group_perm_restricted_label'))
-                : null,
-            // Telegram's right side: the member's tag, else "Admin".
-            trailing: _roleLabel(member, colors),
-            onTap: () => showGroupMemberMenu(
-              context: context,
-              ref: ref,
-              conversation: conversation,
-              member: member,
+            trailing: ChatIcon(
+              HugeIcons.strokeRoundedArrowRight01,
+              size: 18,
+              color: colors.onSurfaceVariant,
+            ),
+            onTap: () => context.push(
+              '/messages/${conversation.id}/members',
+              extra: members,
             ),
           ),
-        ),
       ],
-    );
-  }
-
-  Widget? _roleLabel(ChatMember member, ColorScheme colors) {
-    final label = member.tag.isNotEmpty
-        ? member.tag
-        : member.isAdmin
-        ? 'Admin'
-        : null;
-    if (label == null) return null;
-    return Text(
-      label,
-      style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant),
-    );
-  }
-
-  /// The face opens the picture; the rest of the row still opens the
-  /// member sheet. A letter fallback has no photo, so it stays on the row.
-  Widget _memberAvatar(BuildContext context, ChatMember member) {
-    final photo = ClipOval(
-      child: AppAvatar(size: 44, url: member.avatarUrl, name: member.name),
-    );
-    if (previewPhotoUrl(member.avatarUrl) == null) return photo;
-    return Semantics(
-      button: true,
-      label: 'View photo',
-      excludeSemantics: true,
-      child: GestureDetector(
-        key: ValueKey('member-avatar-preview-${member.userId}'),
-        behavior: HitTestBehavior.opaque,
-        onTap: () => openAvatarPreview(
-          context,
-          url: member.avatarUrl,
-          name: member.name,
-        ),
-        child: photo,
-      ),
     );
   }
 
