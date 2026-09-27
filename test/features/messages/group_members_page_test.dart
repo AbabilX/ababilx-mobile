@@ -97,6 +97,11 @@ void main() {
       expect(find.text(name), findsOneWidget);
     }
 
+    // Search lives in the header, top right; the field replaces the title.
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.byTooltip('Search members'));
+    await tester.pumpAndSettle();
+    expect(find.text('6 members'), findsNothing);
     await tester.enterText(find.byType(TextField), 'far');
     await tester.pumpAndSettle();
     expect(find.text('Farhan'), findsOneWidget);
@@ -105,6 +110,13 @@ void main() {
     await tester.enterText(find.byType(TextField), 'zzz');
     await tester.pumpAndSettle();
     expect(find.text('No members found'), findsOneWidget);
+
+    // Close clears the query and brings the title back.
+    await tester.tap(find.byTooltip('Search members'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('6 members'), findsOneWidget);
+    expect(find.text('Farhan'), findsOneWidget);
   });
 
   testWidgets('four or fewer members draw no See all row', (tester) async {

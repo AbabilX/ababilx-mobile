@@ -1585,7 +1585,8 @@ details → **Pinned messages** (count as the value) opens
 the chat's wallpaper, the timeline's own bubbles (`MessageRowContent`, so
 names, reactions and media match the chat) in chat order with the newest at
 the bottom, a round go-to arrow beside each, a floating back button + title
-pill, and **Unpin all messages** at the bottom (confirm, one DELETE each — no
+pill (same header as the group members page), and **Unpin all** as a
+floating pill at the bottom centre (`unpin_all_fab.dart`; confirm, one DELETE each — no
 bulk route — then close). Long press a bubble for Go to / Unpin. Tapping a
 bubble or its arrow pops the pins screen and details with the message id
 (`context.pop(id)`), and the chat header that pushed details walks the

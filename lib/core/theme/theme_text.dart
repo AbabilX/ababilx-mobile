@@ -11,7 +11,7 @@ abstract final class AppFonts {
 
 TextTheme buildAppTextTheme(ColorScheme scheme, TextTheme base) {
   final on = scheme.onSurface;
-  return base
+  final themed = base
       .copyWith(
         displayLarge: TextStyle(
           fontSize: 57,
@@ -65,4 +65,32 @@ TextTheme buildAppTextTheme(ColorScheme scheme, TextTheme base) {
         bodyColor: on,
         displayColor: on,
       );
+  // Last, so the whole-style overrides above cannot bring tracking back.
+  return _withoutTracking(themed);
+}
+
+/// Material's styles carry letterSpacing (0.1-0.5). Tracking is added
+/// between glyphs, and in Bengali that pulls a vowel sign (া ি ী ে) or a
+/// nukta off its consonant: য়া reads "য় া", মি splits. Every style starts at
+/// 0 so Bangla shapes as one cluster; a style that sets its own tracking
+/// must not do it on text that can be Bangla (see `latinTracking`).
+TextTheme _withoutTracking(TextTheme t) {
+  TextStyle? z(TextStyle? s) => s?.copyWith(letterSpacing: 0);
+  return t.copyWith(
+    displayLarge: z(t.displayLarge),
+    displayMedium: z(t.displayMedium),
+    displaySmall: z(t.displaySmall),
+    headlineLarge: z(t.headlineLarge),
+    headlineMedium: z(t.headlineMedium),
+    headlineSmall: z(t.headlineSmall),
+    titleLarge: z(t.titleLarge),
+    titleMedium: z(t.titleMedium),
+    titleSmall: z(t.titleSmall),
+    bodyLarge: z(t.bodyLarge),
+    bodyMedium: z(t.bodyMedium),
+    bodySmall: z(t.bodySmall),
+    labelLarge: z(t.labelLarge),
+    labelMedium: z(t.labelMedium),
+    labelSmall: z(t.labelSmall),
+  );
 }

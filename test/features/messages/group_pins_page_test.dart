@@ -1,4 +1,5 @@
 import 'package:ababilx/core/localization/app_translations.dart';
+import 'package:ababilx/features/messages/chat-pins/chat_pin_search.dart';
 import 'package:ababilx/features/messages/chat-pins/chat_pins_provider.dart';
 import 'package:ababilx/features/messages/chat-pins/pinned_messages_screen.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
@@ -97,5 +98,45 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Go to message'), findsWidgets);
     expect(find.text('Unpin message'), findsNothing);
+  });
+
+  testWidgets('search in the header narrows pins and hides Unpin all', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _overrides(),
+        child: const MaterialApp(
+          home: PinnedMessagesScreen(conversationId: 'g1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Unpin all'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Search pins'));
+    await tester.pumpAndSettle();
+    expect(find.text('Unpin all'), findsNothing);
+    await tester.enterText(find.byType(TextField), 'meeting');
+    await tester.pumpAndSettle();
+    expect(find.text('Meeting at 5'), findsOneWidget);
+    expect(find.text('Group rules'), findsNothing);
+    expect(find.text('My note'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), 'zzz');
+    await tester.pumpAndSettle();
+    expect(find.text('No pinned messages match'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Search pins'));
+    await tester.pumpAndSettle();
+    expect(find.text('Group rules'), findsOneWidget);
+    expect(find.text('Unpin all'), findsOneWidget);
+  });
+
+  test('a pin matches on its sender or its text', () {
+    expect(pinMatchesQuery(_shared, 'alice'), isTrue);
+    expect(pinMatchesQuery(_shared, 'RULES'), isTrue);
+    expect(pinMatchesQuery(_shared, 'meeting'), isFalse);
   });
 }

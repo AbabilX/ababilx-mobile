@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../group-pins/group_pins_provider.dart';
-import '../providers/chat_provider.dart';
 import '../providers/pinned_message_provider.dart';
 import '../wallpaper/chat_wallpaper_background.dart';
-import '../wallpaper/chat_wallpaper_provider.dart';
+import 'chat_pin_search.dart';
 import 'chat_pin_unpin.dart';
 import 'chat_pins_provider.dart';
-import 'pinned_message_item.dart';
+import 'header_search_field.dart';
+import 'pinned_messages_list.dart';
 import 'pinned_messages_chrome.dart';
 import 'pinned_messages_notice.dart';
+import 'unpin_all_fab.dart';
 import 'unpin_all_sheet.dart';
 
 /// Every message the caller pinned in one chat, drawn the way Telegram's
 /// "N Pinned Messages" does: the chat's wallpaper, the real bubbles in chat
 /// order with the newest at the bottom, a go-to arrow beside each, and
-/// "Unpin all" in the header (asks first). Choosing one answers its id to
-/// whoever opened this screen, which walks the chat to it. A group lists its
+/// "Unpin all" floating at the bottom (asks first). Choosing one answers its
+/// id to whoever opened this screen, which walks the chat to it. A group lists its
 /// shared pins here too, marked "Pinned for everyone" — there is no pin bar
 /// over the timeline, in a group or a DM.
 class PinnedMessagesScreen extends ConsumerStatefulWidget {
@@ -34,6 +36,13 @@ class PinnedMessagesScreen extends ConsumerStatefulWidget {
 
 class _PinnedMessagesScreenState extends ConsumerState<PinnedMessagesScreen> {
   bool _unpinningAll = false;
+  bool _searching = false;
+  String _query = '';
+
+  void _closeSearch() => setState(() {
+    _searching = false;
+    _query = '';
+  });
 
   String _tr(String key) => AppTranslations.translate(context, ref, key);
 
@@ -48,25 +57,49 @@ class _PinnedMessagesScreenState extends ConsumerState<PinnedMessagesScreen> {
       1 => _tr('chat_pins_title_one'),
       final n => _tr('chat_pins_title').replaceAll('{count}', '$n'),
     };
-    return Scaffold(
+    // Unpin all acts on every pin, so it steps aside while a search narrows
+    // the list — a filtered page must not look like what it would clear.
+    final fab = unpinnable > 0 && !_searching;
+    final page = Scaffold(
+      // Unpin all floats bottom centre; the header is the group members
+      // page's: back, title capsule, search on the right.
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: !fab
+          ? null
+          : UnpinAllFab(
+              label: _tr('chat_unpin_all_short'),
+              onPressed: _unpinningAll
+                  ? null
+                  : () => _unpinAll(view, unpinnable),
+            ),
       body: ChatWallpaperBackground(
         conversationId: id,
         child: Stack(
           children: [
-            Positioned.fill(child: _body(pins, view)),
+            Positioned.fill(child: _body(pins, view, fab: fab)),
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: PinnedMessagesTopBar(
                 title: title,
-                trailing: unpinnable == 0
+                middle: _searching
+                    ? HeaderSearchField(
+                        hint: _tr('chat_pins_search'),
+                        autofocus: true,
+                        onChanged: (v) => setState(() => _query = v),
+                      )
+                    : null,
+                trailing: view.entries.isEmpty
                     ? null
-                    : PinnedMessagesUnpinAllButton(
-                        label: _tr('chat_unpin_all_short'),
-                        onPressed: _unpinningAll
-                            ? null
-                            : () => _unpinAll(view, unpinnable),
+                    : PinnedMessagesCircleButton(
+                        icon: _searching
+                            ? HugeIcons.strokeRoundedCancel01
+                            : HugeIcons.strokeRoundedSearch01,
+                        tooltip: _tr('chat_pins_search'),
+                        onPressed: _searching
+                            ? _closeSearch
+                            : () => setState(() => _searching = true),
                       ),
               ),
             ),
@@ -74,9 +107,21 @@ class _PinnedMessagesScreenState extends ConsumerState<PinnedMessagesScreen> {
         ),
       ),
     );
+    // Back closes the search before it leaves the page.
+    return PopScope(
+      canPop: !_searching,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeSearch();
+      },
+      child: page,
+    );
   }
 
-  Widget _body(AsyncValue<ChatPinsView> pins, ChatPinsView view) {
+  Widget _body(
+    AsyncValue<ChatPinsView> pins,
+    ChatPinsView view, {
+    required bool fab,
+  }) {
     final id = widget.conversationId;
     if (pins.isLoading && !pins.hasValue) {
       return const Center(child: CircularProgressIndicator());
@@ -98,44 +143,15 @@ class _PinnedMessagesScreenState extends ConsumerState<PinnedMessagesScreen> {
         body: _tr('chat_pins_empty_body'),
       );
     }
-    final userId = ref.watch(chatProvider.select((c) => c.currentUserId));
-    final isGroup = ref.watch(
-      chatProvider.select(
-        (c) => c.conversationById(id)?.isGroupConversation ?? false,
-      ),
-    );
-    final hasWallpaper = ref.watch(chatWallpaperProvider).forChat(id).isSet;
-    final insets = MediaQuery.viewPaddingOf(context);
-    // Newest at the bottom, like the chat itself: a reversed list opens there.
-    return ListView.builder(
-      reverse: true,
-      padding: EdgeInsets.only(
-        top: insets.top + 84,
-        bottom: insets.bottom + 16,
-      ),
-      itemCount: view.entries.length,
-      itemBuilder: (context, i) {
-        final entry = view.entries[i];
-        final message = entry.message;
-        return PinnedMessageItem(
-          key: ValueKey(message.id),
-          message: message,
-          isOwn: message.userId == userId,
-          isGroup: isGroup,
-          hasWallpaper: hasWallpaper,
-          pinnedForEveryone: isGroup && entry.everyone,
-          onOpen: () => context.pop(message.id),
-          onUnpin: view.canUnpin(entry)
-              ? () => unpinChatPin(
-                  context,
-                  ref,
-                  id,
-                  entry,
-                  canPinGroup: view.canPinGroup,
-                )
-              : null,
-        );
-      },
+    final shown = filterPins(view.entries, _query);
+    if (shown.isEmpty) {
+      return PinnedMessagesNotice(title: _tr('chat_pins_no_match'));
+    }
+    return PinnedMessagesList(
+      conversationId: id,
+      entries: shown,
+      view: view,
+      fab: fab,
     );
   }
 

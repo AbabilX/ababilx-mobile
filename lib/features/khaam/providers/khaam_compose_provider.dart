@@ -89,7 +89,6 @@ class KhaamComposeNotifier
   void typeMessage(String text) =>
       state = state.copyWith(message: text, custom: text.trim().isNotEmpty);
 
-
   /// Next ready-made message. Replaces whatever was typed — that is the ask.
   void shuffle() {
     final next = state.copyWith(

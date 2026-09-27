@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/text/name_search.dart';
-import '../../../shared/widgets/app_bar_back_button.dart';
+import '../chat-pins/header_search_field.dart';
+import '../chat-pins/pinned_messages_chrome.dart';
 import '../data/models/chat_models.dart';
 import '../group-member-permissions/group_member_tags_provider.dart';
 import '../group-privacy/group_privacy_lock.dart';
 import '../providers/chat_provider.dart';
 import 'details_member_tile.dart';
-import 'members_search_field.dart';
 
 /// Every member of a group, reached from "See all members" on the details
 /// screen (which shows only the first few). Same rows, same member sheet, a
@@ -34,6 +35,7 @@ class _GroupMembersScreenState extends ConsumerState<GroupMembersScreen> {
   late bool _loading = widget.initialMembers.isEmpty;
   bool _failed = false;
   String _query = '';
+  bool _searching = false;
 
   String _t(String key) => AppTranslations.translate(context, ref, key);
 
@@ -64,6 +66,11 @@ class _GroupMembersScreenState extends ConsumerState<GroupMembersScreen> {
     if (mounted) setState(() => _loading = false);
   }
 
+  void _closeSearch() => setState(() {
+    _searching = false;
+    _query = '';
+  });
+
   @override
   Widget build(BuildContext context) {
     // A role, tag, removal or add anywhere redraws the list (server 0157).
@@ -74,23 +81,59 @@ class _GroupMembersScreenState extends ConsumerState<GroupMembersScreen> {
       chatProvider.select((c) => c.conversationById(widget.conversationId)),
     );
     final count = _members.length;
-    return GroupPrivacyLock(
+    // The Pins page's floating header: round back button + title capsule,
+    // the list scrolling underneath the fade.
+    final page = GroupPrivacyLock(
       conversationId: widget.conversationId,
       child: Scaffold(
-        appBar: AppBar(
-          leading: const AppBarBackButton(),
-          title: Text(
-            count == 0
-                ? _t('group_members_title')
-                : _t(
-                    'group_privacy_members_count',
-                  ).replaceAll('{count}', '$count'),
-          ),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: conversation == null
+                  ? const SizedBox.shrink()
+                  : _body(conversation),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: PinnedMessagesTopBar(
+                title: count == 0
+                    ? _t('group_members_title')
+                    : _t(
+                        'group_privacy_members_count',
+                      ).replaceAll('{count}', '$count'),
+                // Searching swaps the title capsule for the field and the
+                // search button for a close button.
+                middle: _searching
+                    ? HeaderSearchField(
+                        hint: _t('group_members_search'),
+                        autofocus: true,
+                        onChanged: (value) => setState(() => _query = value),
+                      )
+                    : null,
+                trailing: PinnedMessagesCircleButton(
+                  icon: _searching
+                      ? HugeIcons.strokeRoundedCancel01
+                      : HugeIcons.strokeRoundedSearch01,
+                  tooltip: _t('group_members_search'),
+                  onPressed: _searching
+                      ? _closeSearch
+                      : () => setState(() => _searching = true),
+                ),
+              ),
+            ),
+          ],
         ),
-        body: conversation == null
-            ? const SizedBox.shrink()
-            : _body(conversation),
       ),
+    );
+    // Back closes the search before it leaves the page.
+    return PopScope(
+      canPop: !_searching,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeSearch();
+      },
+      child: page,
     );
   }
 
@@ -115,38 +158,32 @@ class _GroupMembersScreenState extends ConsumerState<GroupMembersScreen> {
         : _members
               .where((m) => matchesNameQuery(_query, [m.name, m.tag]))
               .toList();
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: MembersSearchField(
-            hint: _t('group_members_search'),
-            onChanged: (value) => setState(() => _query = value),
-          ),
-        ),
-        Expanded(
-          child: shown.isEmpty
-              ? Center(
-                  child: Text(
-                    _t('group_members_no_match'),
-                    style: TextStyle(color: colors.onSurfaceVariant),
-                  ),
-                )
-              : ListView.builder(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.viewPaddingOf(context).bottom + 16,
-                  ),
-                  itemCount: shown.length,
-                  itemBuilder: (_, i) => DetailsMemberTile(
-                    key: ValueKey(shown[i].userId),
-                    conversation: conversation,
-                    member: shown[i],
-                  ),
-                ),
-        ),
-      ],
+    final insets = MediaQuery.viewPaddingOf(context);
+    return ListView.builder(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: EdgeInsets.only(
+        top: insets.top + 68,
+        bottom: insets.bottom + 16,
+      ),
+      itemCount: shown.isEmpty ? 1 : shown.length,
+      itemBuilder: (_, i) {
+        if (shown.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 48),
+            child: Text(
+              _t('group_members_no_match'),
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colors.onSurfaceVariant),
+            ),
+          );
+        }
+        final member = shown[i];
+        return DetailsMemberTile(
+          key: ValueKey(member.userId),
+          conversation: conversation,
+          member: member,
+        );
+      },
     );
   }
 }

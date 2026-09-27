@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../text/latin_tracking.dart';
 
 /// Primary CTA button styled after authentic Material 3 Filled/Tonal Button.
 class GradientButton extends StatelessWidget {
@@ -59,10 +60,10 @@ class GradientButton extends StatelessWidget {
                   ],
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
-                      letterSpacing: 0.1,
+                      letterSpacing: latinTracking(label, 0.1),
                     ),
                   ),
                 ],

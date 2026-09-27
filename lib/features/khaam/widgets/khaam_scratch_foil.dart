@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../data/khaam_covers.dart';
 import 'khaam_foil_painter.dart';
+import '../../../shared/text/latin_tracking.dart';
 
 /// Foil over [child] that a finger scratches away.
 ///
@@ -130,7 +131,7 @@ class _KhaamScratchFoilState extends State<KhaamScratchFoil>
     final hintStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
       color: Color.lerp(widget.cover.accent, Colors.black, 0.62),
       fontWeight: FontWeight.w800,
-      letterSpacing: 0.3,
+      letterSpacing: latinTracking(widget.hint, 0.3),
     );
     return Stack(
       children: [

@@ -5,11 +5,17 @@ import '../chat_icon.dart';
 
 /// A quiet pill: filled, no outline, small icon — the theme's input style
 /// (outlined, 48dp icon box) is for forms, not a list filter.
-class MembersSearchField extends StatelessWidget {
-  const MembersSearchField({super.key, required this.hint, required this.onChanged});
+class HeaderSearchField extends StatelessWidget {
+  const HeaderSearchField({
+    super.key,
+    required this.hint,
+    required this.onChanged,
+    this.autofocus = false,
+  });
 
   final String hint;
   final ValueChanged<String> onChanged;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -24,13 +30,15 @@ class MembersSearchField extends StatelessWidget {
       height: 44,
       child: TextField(
         onChanged: onChanged,
+        autofocus: autofocus,
         textInputAction: TextInputAction.search,
         textAlignVertical: TextAlignVertical.center,
         style: text,
         decoration: InputDecoration(
           isDense: true,
           filled: true,
-          fillColor: colors.surfaceContainerHighest,
+          // The header capsules' frosted fill, so it reads as one of them.
+          fillColor: colors.surfaceContainerHighest.withValues(alpha: 0.94),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12),
           hintText: hint,
           hintStyle: text.copyWith(color: colors.onSurfaceVariant),

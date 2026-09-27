@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/models/crm_models.dart';
 import '../shared/crm_dates.dart';
 import '../shared/crm_ui.dart';
+import '../../../shared/text/latin_tracking.dart';
 
 class TimelineTab extends StatelessWidget {
   const TimelineTab({
@@ -58,7 +59,7 @@ class TimelineTab extends StatelessWidget {
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: colors.onSurfaceVariant,
-                  letterSpacing: 0.4,
+                  letterSpacing: latinTracking(day, 0.4),
                 ),
               ),
             ),

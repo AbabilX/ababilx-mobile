@@ -9,6 +9,7 @@ import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
 import '../providers/chat_provider.dart';
 import '../providers/team_gate_provider.dart';
+import '../../../shared/text/latin_tracking.dart';
 
 Future<void> showUserProfileSheet({
   required BuildContext context,
@@ -174,7 +175,7 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
+                  letterSpacing: latinTracking(widget.role!, 0.5),
                   color: colors.onPrimaryContainer,
                 ),
               ),

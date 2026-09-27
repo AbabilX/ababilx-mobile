@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../link-preview/link_preview_builder.dart';
 import '../link-preview/link_preview_photo.dart';
 import '../link-preview/link_safety.dart';
+import '../text/latin_tracking.dart';
 
 /// Extract http(s) URLs from plain text, in the order they were written.
 List<String> extractUrls(String text, {int max = 3}) {
@@ -80,7 +81,10 @@ class LinkPreviewCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.4,
+                                  letterSpacing: latinTracking(
+                                    preview.siteName ?? previewDomain(url),
+                                    0.4,
+                                  ),
                                   color: scheme.onSurfaceVariant,
                                 ),
                               ),

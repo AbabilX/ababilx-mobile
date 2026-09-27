@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/text/latin_tracking.dart';
 
 /// Signal's day marker: centred, small, and set on a chip once a wallpaper is
 /// behind it so the label stays readable over a photo.
@@ -20,7 +21,7 @@ class ChatDateDivider extends StatelessWidget {
       style: TextStyle(
         color: colors.onSurfaceVariant,
         fontSize: 12,
-        letterSpacing: 0.4,
+        letterSpacing: latinTracking(label, 0.4),
         fontWeight: FontWeight.w500,
       ),
     );

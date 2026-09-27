@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'call_glass_circle.dart';
 import 'call_overlay_metrics.dart';
 import 'call_top_bar.dart' show callTextShadow;
+import '../../../shared/text/latin_tracking.dart';
 
 /// Decline / Answer on the ringing screen — large paired seats, centred with
 /// a comfortable gap rather than spread to the edges. Answer shows a camera
@@ -95,7 +96,7 @@ class IncomingCallKindLabel extends StatelessWidget {
             color: color,
             fontSize: m.statusFont * 0.9,
             fontWeight: FontWeight.w500,
-            letterSpacing: 0.2,
+            letterSpacing: latinTracking(text, 0.2),
             shadows: callTextShadow,
           ),
         ),

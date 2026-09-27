@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/widgets/app_bar_back_button.dart';
 import '../chat_icon.dart';
 
-/// Telegram's floating header: a round back button, a title pill and, while
-/// there is something to clear, "Unpin all" on the right — all over a fade,
-/// so the pins scroll underneath instead of stopping at an app bar.
+/// Telegram's floating header: a round back button, a title pill and an
+/// optional round action on the right — all over a fade, so the list scrolls
+/// underneath instead of stopping at an app bar.
+/// Also the group members page's header; [middle] replaces the title
+/// capsule there while searching.
 class PinnedMessagesTopBar extends StatelessWidget {
-  const PinnedMessagesTopBar({super.key, required this.title, this.trailing});
+  const PinnedMessagesTopBar({
+    super.key,
+    required this.title,
+    this.trailing,
+    this.middle,
+  });
 
   final String title;
   final Widget? trailing;
+  final Widget? middle;
 
   @override
   Widget build(BuildContext context) {
@@ -45,26 +52,29 @@ class PinnedMessagesTopBar extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Center(
-                child: _Pill(
-                  shape: const StadiumBorder(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 11,
-                    ),
-                    child: Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: colors.onSurface,
-                        fontWeight: FontWeight.w600,
+              child:
+                  middle ??
+                  Center(
+                    child: _Pill(
+                      shape: const StadiumBorder(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 11,
+                        ),
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: colors.onSurface,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
             ),
             const SizedBox(width: 8),
             // Keeps the title centred on the screen when there is no action.
@@ -76,59 +86,39 @@ class PinnedMessagesTopBar extends StatelessWidget {
   }
 }
 
-/// "Unpin all" in the header: an icon and a short label on a pill, a spinner
-/// while the unpins run ([onPressed] null).
-class PinnedMessagesUnpinAllButton extends StatelessWidget {
-  const PinnedMessagesUnpinAllButton({
+/// A round 44dp header button on the same frosted fill (search, close).
+class PinnedMessagesCircleButton extends StatelessWidget {
+  const PinnedMessagesCircleButton({
     super.key,
-    required this.label,
+    required this.icon,
     required this.onPressed,
+    this.tooltip,
   });
 
-  final String label;
-  final VoidCallback? onPressed;
+  final List<List<dynamic>> icon;
+  final VoidCallback onPressed;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return _Pill(
-      shape: const StadiumBorder(),
+    final button = _Pill(
+      shape: const CircleBorder(),
       child: InkWell(
-        customBorder: const StadiumBorder(),
+        customBorder: const CircleBorder(),
         onTap: onPressed,
-        child: SizedBox(
-          height: 44,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: onPressed == null
-                ? const Center(
-                    child: SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ChatIcon(
-                        HugeIcons.strokeRoundedPinOff,
-                        size: 20,
-                        color: colors.error,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        label,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: colors.error,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+        child: SizedBox.square(
+          dimension: 44,
+          child: Center(
+            child: ChatIcon(
+              icon,
+              size: 22,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ),
       ),
     );
+    return tooltip == null ? button : Tooltip(message: tooltip, child: button);
   }
 }
 
