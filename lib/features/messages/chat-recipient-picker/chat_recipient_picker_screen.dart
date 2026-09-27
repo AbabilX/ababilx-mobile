@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../chat-details/group_permissions.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
-import '../chat_list_filters.dart';
+import '../data/models/chat_conversation.dart';
 import '../providers/chat_provider.dart';
 import '../providers/messageable_people_provider.dart';
+import 'chat_recipient_eligible.dart';
 import 'chat_recipient_list.dart';
 import 'chat_recipient_sections.dart';
 import 'chat_recipient_search_field.dart';
 import 'chat_recipient_target.dart';
-import '../../chat-lock/chat_lock_filter.dart';
 import '../../chat-lock/providers/chat_locks_provider.dart';
 
 typedef ChatRecipientSubmit =
@@ -26,6 +25,7 @@ class ChatRecipientPickerScreen extends ConsumerStatefulWidget {
     this.initialCaption = '',
     this.showCaption = false,
     this.excludedConversationId,
+    this.preselectedConversationId = '',
   });
 
   final String actionLabel;
@@ -33,6 +33,9 @@ class ChatRecipientPickerScreen extends ConsumerStatefulWidget {
   final String initialCaption;
   final bool showCaption;
   final String? excludedConversationId;
+
+  /// Ticked once it appears in the list (a Direct Share target).
+  final String preselectedConversationId;
 
   @override
   ConsumerState<ChatRecipientPickerScreen> createState() =>
@@ -45,6 +48,7 @@ class _ChatRecipientPickerScreenState
   late final TextEditingController _caption;
   final _selected = <String, ChatRecipientTarget>{};
   bool _sending = false;
+  bool _preselected = false;
 
   @override
   void initState() {
@@ -67,21 +71,13 @@ class _ChatRecipientPickerScreenState
         .where((person) => person.canMessage)
         .toList();
     final locks = ref.watch(chatLocksProvider);
-    final conversations =
-        unifiedConversations(
-              dms: withoutLockedChats(chat.dms, locks),
-              channels: withoutLockedChats(chat.channels, locks),
-            )
-            .where(
-              (c) =>
-                  c.canMessage &&
-                  // A group an admin made this member read-only in (server
-                  // 0157) takes nothing by forward either.
-                  GroupPermissions(c).canSend &&
-                  c.archivedAt == null &&
-                  c.id != widget.excludedConversationId,
-            )
-            .toList();
+    final conversations = shareableConversations(
+      dms: chat.dms,
+      channels: chat.channels,
+      locks: locks,
+      excludedConversationId: widget.excludedConversationId,
+    );
+    _preselect(conversations, chat.currentUserId);
     final query = _search.text.trim();
     final sections = buildChatRecipientSections(
       conversations: conversations,
@@ -89,11 +85,8 @@ class _ChatRecipientPickerScreenState
       currentUserId: chat.currentUserId,
       query: query,
     );
-    // The send bar sits in the body, not in `bottomNavigationBar`: Scaffold
-    // lays that slot out against the full screen height and never lifts it for
-    // the keyboard, so the caption field ended up behind the IME with no way
-    // to see what was being typed. The body *is* inset by `viewInsets`, so a
-    // bar at the end of this column rides above the keyboard.
+    // Send bar in the body, not `bottomNavigationBar`: only the body is inset
+    // by `viewInsets`, so only there does the caption ride above the keyboard.
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -127,8 +120,7 @@ class _ChatRecipientPickerScreenState
     );
   }
 
-  // The enclosing SafeArea already holds the gesture inset, so this only
-  // needs its own surface and padding.
+  // The enclosing SafeArea already holds the gesture inset.
   Widget _sendBar() => Material(
     color: Theme.of(context).colorScheme.surface,
     child: Padding(
@@ -163,14 +155,9 @@ class _ChatRecipientPickerScreenState
     ),
   );
 
-  /// The spinner must come back for ANY outcome, including one nobody
-  /// anticipated. A submit that threw used to leave the button spinning with
-  /// the exception going nowhere, so the screen simply stopped.
-  ///
-  /// Reporting failure is the caller's job and every `onSubmit` does it — but
-  /// this catch is the last thing standing between an unforeseen throw and a
-  /// Send that says nothing at all, which is exactly how the share flow's
-  /// `startDm` failure stayed invisible. It swallowed silently until now.
+  /// The spinner must come back for ANY outcome. Reporting failure is the
+  /// caller's job, but this catch is the last thing between an unforeseen
+  /// throw (the share flow's `startDm` once) and a Send that says nothing.
   Future<void> _submit() async {
     setState(() => _sending = true);
     try {
@@ -182,6 +169,17 @@ class _ChatRecipientPickerScreenState
     } finally {
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  // Applied once, in build: the chat list may still be loading on open.
+  void _preselect(List<ChatConversation> list, String userId) {
+    final id = widget.preselectedConversationId;
+    if (_preselected || id.isEmpty) return;
+    final match = list.where((c) => c.id == id);
+    if (match.isEmpty) return;
+    _preselected = true;
+    final target = ChatRecipientTarget.conversation(match.first, userId);
+    _selected[target.selectionKey] = target;
   }
 
   void _toggle(ChatRecipientTarget target) => setState(() {

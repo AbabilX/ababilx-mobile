@@ -144,6 +144,7 @@ class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
       actionLabel: AppTranslations.translate(context, ref, 'chat_send'),
       initialCaption: payload.text,
       showCaption: true,
+      preselectedConversationId: pending.targetConversationId,
       onSubmit: (targets, body) => _send(payload, targets, body),
     );
   }

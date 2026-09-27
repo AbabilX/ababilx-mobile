@@ -32,6 +32,8 @@ class ShareIntakeChannel(private val activity: Activity) {
     fun attach(engine: FlutterEngine) {
         MethodChannel(engine.dartExecutor.binaryMessenger, METHOD_CHANNEL)
             .setMethodCallHandler(::onMethod)
+        // Direct Share targets are the other half of the share sheet.
+        DirectShareChannel(activity.applicationContext).attach(engine)
 
         EventChannel(engine.dartExecutor.binaryMessenger, EVENT_CHANNEL)
             .setStreamHandler(object : EventChannel.StreamHandler {

@@ -76,6 +76,25 @@ class _ShareIntakeSyncState extends ConsumerState<ShareIntakeSync> {
     });
   }
 
+  /// A Direct Share shortcut tapped from the launcher's long press: open that
+  /// chat, over the chat list so back lands somewhere.
+  void _openShortcutIfPending() {
+    final id = ref.read(shortcutOpenProvider);
+    if (id == null) return;
+    if (!(ref.read(authProvider).valueOrNull ?? false)) return;
+    if (!ref.read(messageEntryReadyProvider)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || ref.read(shortcutOpenProvider) != id) return;
+      ref.read(shortcutOpenProvider.notifier).state = null;
+      widget.router.go('/messages');
+      // Same beat as a notification tap: the list settles, then the chat.
+      Future<void>.delayed(
+        const Duration(milliseconds: 50),
+        () => widget.router.push('/messages/$id'),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // All three are watched: a share can land before sign-in, a sign-in can
@@ -84,7 +103,9 @@ class _ShareIntakeSyncState extends ConsumerState<ShareIntakeSync> {
     ref.watch(shareIntakeProvider);
     ref.watch(authProvider);
     ref.watch(messageEntryReadyProvider);
+    ref.watch(shortcutOpenProvider);
     _openPickerIfPending();
+    _openShortcutIfPending();
     return widget.child;
   }
 }

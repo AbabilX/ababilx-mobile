@@ -56,10 +56,18 @@ class SharedFile extends Equatable {
 /// What another app shared: any number of files, plus whatever text came along
 /// (a browser sends a URL, a notes app sends plain text).
 class SharedPayload extends Equatable {
-  const SharedPayload({this.files = const [], this.text = ''});
+  const SharedPayload({
+    this.files = const [],
+    this.text = '',
+    this.targetConversationId = '',
+  });
 
   final List<SharedFile> files;
   final String text;
+
+  /// Set when the user picked one of our Direct Share targets in the system
+  /// sheet: that chat is already chosen, so the picker opens with it ticked.
+  final String targetConversationId;
 
   bool get isEmpty => files.isEmpty && text.trim().isEmpty;
   bool get hasFiles => files.isNotEmpty;
@@ -88,6 +96,7 @@ class SharedPayload extends Equatable {
       final payload = SharedPayload(
         files: files,
         text: (json['text'] as String? ?? '').trim(),
+        targetConversationId: json['target_conversation_id'] as String? ?? '',
       );
       return payload.isEmpty ? null : payload;
     } catch (_) {
@@ -95,8 +104,22 @@ class SharedPayload extends Equatable {
     }
   }
 
+  /// The chat a Direct Share shortcut asks to open when it is tapped from the
+  /// launcher's long-press menu, or null for anything else.
+  static String? openConversationId(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final json = jsonDecode(raw);
+      if (json is! Map<String, dynamic>) return null;
+      final id = json['open_conversation'];
+      return id is String && id.isNotEmpty ? id : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
-  List<Object?> get props => [files, text];
+  List<Object?> get props => [files, text, targetConversationId];
 }
 
 /// `*/*` and `application/octet-stream` are what an app sends when it does not

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Direct Share: chats published by DirectShareShortcuts appear in the system
+     share sheet for anything ShareIntakeActivity accepts. The category must
+     match DirectShareShortcuts.CATEGORY. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <share-target android:targetClass="com.ababilx.app.ShareIntakeActivity">
+        <data android:mimeType="*/*" />
+        <category android:name="com.ababilx.app.sharing.CATEGORY_SHARE_TARGET" />
+    </share-target>
+</shortcuts>

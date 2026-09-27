@@ -206,6 +206,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <activity-alias
             android:name=".LauncherCalendar"
@@ -219,6 +224,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <activity-alias
             android:name=".LauncherCalculator"
@@ -232,6 +242,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <activity-alias
             android:name=".LauncherNotes"
@@ -245,6 +260,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <!-- Kept out of the picker solely so users who selected a former
              icon retain a launch entry after upgrading. The next icon
@@ -261,6 +281,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <activity-alias
             android:name=".LauncherEmber"
@@ -274,6 +299,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <activity-alias
             android:name=".LauncherPulse"
@@ -287,6 +317,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <activity-alias
             android:name=".LauncherWeather"
@@ -300,6 +335,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <activity-alias
             android:name=".LauncherInk"
@@ -313,6 +353,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <activity-alias
             android:name=".LauncherIndigo"
@@ -326,6 +371,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <activity-alias
             android:name=".LauncherForest"
@@ -339,6 +389,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Direct Share targets (DirectShareShortcuts). Read from the
+                 enabled launcher alias, so every alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/share_shortcuts"/>
         </activity-alias>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

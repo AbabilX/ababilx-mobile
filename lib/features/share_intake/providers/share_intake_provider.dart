@@ -53,6 +53,11 @@ class ShareIntakeNotifier extends Notifier<SharedPayload?> {
   }
 
   void _accept(String? raw) {
+    final open = SharedPayload.openConversationId(raw);
+    if (open != null) {
+      ref.read(shortcutOpenProvider.notifier).state = open;
+      return;
+    }
     final payload = SharedPayload.tryParse(raw);
     if (payload == null) return;
     state = payload;
@@ -74,3 +79,7 @@ final shareIntakeProvider =
     NotifierProvider<ShareIntakeNotifier, SharedPayload?>(
       ShareIntakeNotifier.new,
     );
+
+/// A chat a Direct Share shortcut asked to open from the launcher's long-press
+/// menu. [ShareIntakeSync] routes to it once signed in, then clears it.
+final shortcutOpenProvider = StateProvider<String?>((ref) => null);

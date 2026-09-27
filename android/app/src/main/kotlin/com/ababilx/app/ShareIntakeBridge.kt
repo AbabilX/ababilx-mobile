@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
+import androidx.core.content.pm.ShortcutManagerCompat
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -79,6 +80,12 @@ object ShareIntakeBridge {
      */
     fun parse(context: Context, intent: Intent?): String? {
         if (intent == null) return null
+        if (intent.action == DirectShareShortcuts.ACTION_OPEN) {
+            // A Direct Share shortcut tapped from the launcher's long press.
+            val id = intent.getStringExtra(DirectShareShortcuts.EXTRA_CONVERSATION_ID)
+            if (id.isNullOrBlank()) return null
+            return JSONObject().put("open_conversation", id).toString()
+        }
         val uris = when (intent.action) {
             Intent.ACTION_SEND -> listOfNotNull(streamExtra(intent))
             Intent.ACTION_SEND_MULTIPLE -> streamListExtra(intent)
@@ -96,6 +103,13 @@ object ShareIntakeBridge {
         return JSONObject().apply {
             put("text", text)
             put("files", files)
+            // Picked from a Direct Share target: the chat is already chosen.
+            put(
+                "target_conversation_id",
+                DirectShareShortcuts.conversationIdOf(
+                    intent.getStringExtra(ShortcutManagerCompat.EXTRA_SHORTCUT_ID),
+                ) ?: "",
+            )
         }.toString()
     }
 

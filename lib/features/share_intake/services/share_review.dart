@@ -75,6 +75,7 @@ Future<ShareReviewResult> reviewSharedPayload(
         ...untouched,
       ],
       text: result.caption.isEmpty ? payload.text : result.caption,
+      targetConversationId: payload.targetConversationId,
     ),
     quality: result.quality,
   );

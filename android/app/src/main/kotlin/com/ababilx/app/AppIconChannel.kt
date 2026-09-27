@@ -86,6 +86,8 @@ class AppIconChannel(private val context: Context) {
                     PackageManager.DONT_KILL_APP,
                 )
             }
+            // Share targets are tied to the alias and hidden under a disguise.
+            DirectShareShortcuts.onIconChanged(context)
             true
         } catch (error: Exception) {
             Log.w(TAG, "could not switch icon to $id", error)
