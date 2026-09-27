@@ -24,6 +24,7 @@ import '../../profile/providers/profile_provider.dart';
 import '../chat-mute/mute_choice.dart';
 import '../chat_thread_prefetch.dart';
 import '../chat_utils.dart';
+import '../history-restore/history_restore_count.dart';
 import '../history-restore/history_restore_flag.dart';
 import '../history-restore/history_restore_job.dart';
 import '../history-restore/history_restore_state.dart';
@@ -69,6 +70,7 @@ part 'chat_provider_thread_prefetch.dart';
 part 'chat_provider_history_restore.dart';
 part 'chat_provider_resync.dart';
 part 'chat_provider_preview.dart';
+part 'chat_provider_local_preview.dart';
 part 'chat_provider_private.dart';
 part 'chat_provider_private_ops.dart';
 
@@ -88,6 +90,7 @@ class ChatNotifier extends Notifier<ChatState>
         _ChatHistoryRestoreMixin,
         _ChatResyncMixin,
         _ChatPreviewMixin,
+        _ChatLocalPreviewMixin,
         _ChatPrivateMixin,
         _ChatPrivateOpsMixin {
   ChatRepository get _repo => ref.read(chatRepositoryProvider);
@@ -323,9 +326,12 @@ class ChatNotifier extends Notifier<ChatState>
         _readMarks.apply(
           // A private DM whose newest message the server already let go
           // keeps the preview this phone drew from its own copy.
-          keepPrivatePreviews(
-            await decryptPreviews(data.dms, userId),
-            state.dms,
+          await withLocalPreviews(
+            keepPrivatePreviews(
+              await decryptPreviews(data.dms, userId),
+              state.dms,
+            ),
+            userId,
           ),
           activeId: active,
           stale: stale,
@@ -333,7 +339,10 @@ class ChatNotifier extends Notifier<ChatState>
       );
       final channels = sortChannels(
         _readMarks.apply(
-          await decryptPreviews(data.channels, userId),
+          await withLocalPreviews(
+            await decryptPreviews(data.channels, userId),
+            userId,
+          ),
           activeId: active,
           stale: stale,
         ),

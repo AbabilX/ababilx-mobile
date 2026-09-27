@@ -726,6 +726,16 @@ auto-download, and never marks read or touches the in-memory feed. An open
 chat is skipped so the timeline keeps ownership. The list shows
 `HistoryRestoreBanner` while it runs.
 
+**The banner counts messages, not chats** (2026-09-27): "Restoring
+messages… 1,234 / 5,678". The total is `POST
+/api/chat/recovery/message-count {conversation_ids}` — counted by the server
+with the walk's own rules (`ChatVisibleToViewerSQL`, replies only under a
+visible root with a live reply, content-purged rows out), pinned against a
+real `ListChatMessages` walk by
+`db/chat/e2ee/recovery/chat_recovery_count_integration_test.go`. The phone
+adds each saved page's `messages.length`. No answer (old server, offline) =
+the running count alone. Label: `historyRestoreLabel`.
+
 The flag is the whole "once" guarantee. `complete()` runs when the job
 finishes (success, failure, or nothing to pull). `mark()` is a no-op after
 that, so a later launch or opening a DM cannot start another sweep. A kill

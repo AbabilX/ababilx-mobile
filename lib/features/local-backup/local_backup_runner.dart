@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -11,6 +13,7 @@ import '../messages/data/local/chat_sidebar_cache.dart';
 import '../messages/data/models/chat_conversation.dart';
 import '../messages/message_e2ee/message_vault.dart';
 import '../messages/providers/chat_provider.dart';
+import '../profile/providers/profile_provider.dart';
 import 'data/backup_key_store.dart';
 import 'data/local_backup_failure.dart';
 import 'data/local_backup_settings.dart';
@@ -22,18 +25,20 @@ import 'platform/backup_folder_channel.dart';
 import 'restore/backup_importer.dart';
 import 'restore/restored_body_store.dart';
 
-/// `AbabilX-<8 chars of the account id>-` — every file one account writes
-/// starts with it, so pruning never touches another account's backups in a
-/// shared folder.
-String backupTag(String userId) =>
-    'AbabilX-${userId.replaceAll('-', '').padRight(8, '0').substring(0, 8)}-';
-
-String backupFileName(String userId, DateTime at) {
+/// `<username>-2026-09-27-170138.abxbackup` — the person's own handle, so the
+/// file is recognisable in a file manager. Cosmetic only: whose backup it is
+/// comes from the header's account id (Kotlin `BackupHeader`), because a
+/// handle can change or be empty. The handle is `[a-z0-9._-]` already
+/// (server NormalizeUsername); anything else is dropped anyway, and no handle
+/// falls back to "ababilx".
+String backupFileName(String username, DateTime at) {
   String two(int v) => v.toString().padLeft(2, '0');
+  final safe = username.toLowerCase().replaceAll(RegExp(r'[^a-z0-9._-]'), '');
+  final base = safe.replaceAll(RegExp(r'^[._-]+|[._-]+$'), '');
   final stamp =
-      '${at.year}${two(at.month)}${two(at.day)}-'
+      '${at.year}-${two(at.month)}-${two(at.day)}-'
       '${two(at.hour)}${two(at.minute)}${two(at.second)}';
-  return '${backupTag(userId)}$stamp.abxbackup';
+  return '${base.isEmpty ? 'ababilx' : base}-$stamp.abxbackup';
 }
 
 /// Wires the pure pieces (exporter, importer, format) to this app's store,
@@ -67,7 +72,8 @@ class LocalBackupRunner {
     final store = _ref.read(chatMessageStoreProvider);
     final blobs = _ref.read(attachmentBlobStoreProvider);
     final now = DateTime.now();
-    final name = backupFileName(userId, now);
+    final username = _ref.read(profileProvider).valueOrNull?.username ?? '';
+    final name = backupFileName(username, now);
     final dir = await _work('out');
     await dir.create(recursive: true);
     final temp = File('${dir.path}/$name');
@@ -94,11 +100,16 @@ class LocalBackupRunner {
         conversations: await _conversations(userId),
       ).run(writer, onProgress: onProgress, shouldContinue: shouldContinue);
       await writer.close();
+      debugPrint(
+        '[LocalBackup] export: messages=${stats.messages} '
+        'files=${stats.files} unreadable=${stats.unreadable} '
+        'bytes=${await temp.length()}',
+      );
       final entry = await folder.write(
         folderUri: folderUri,
         sourcePath: temp.path,
         name: name,
-        tag: backupTag(userId),
+        owner: userId,
       );
       return (entry, stats);
     } catch (_) {
@@ -143,10 +154,18 @@ class LocalBackupRunner {
     try {
       await folder.copyToCache(documentUri, temp.path);
       final header = await BackupFileReader.readHeader(temp);
+      debugPrint(
+        '[LocalBackup] restore: file=${await temp.length()}B '
+        'owner=${header.userId} me=$userId',
+      );
       if (header.userId != userId) throw const BackupWrongAccountError();
       final key = await _ref.read(backupKeyStoreProvider).keyFor(userId);
       await syncChatDeletions(_ref, userId);
       final store = _ref.read(chatMessageStoreProvider);
+      // A fresh start marks every chat "history before now is gone", and the
+      // whole backup is older than that — the case it exists for. Deletes
+      // still hold; only the watermark is looked past, on this device.
+      await store.deletions.admitRestoredHistory();
       final bodies = _ref.read(restoredBodyStoreProvider);
       final adopter = _ref.read(attachmentAdopterProvider);
       final stats = await BackupImporter(
@@ -156,7 +175,14 @@ class LocalBackupRunner {
         tempDir: Directory('${dir.path}/files'),
       ).run(temp, key, onProgress: onProgress, shouldContinue: shouldContinue);
       // Chats already opened this session read their pages again from disk.
-      _ref.read(chatProvider.notifier).resetFeedHydration();
+      final chat = _ref.read(chatProvider.notifier)..resetFeedHydration();
+      // The list reads its previews from the phone where the server has none.
+      unawaited(chat.fetchSidebarSilent().catchError((_) {}));
+      final onDisk = await store.exportPage(limit: 2000);
+      debugPrint(
+        '[LocalBackup] restore done: messages=${stats.messages} '
+        'files=${stats.files} rowsOnDisk>=${onDisk.length}',
+      );
       return stats;
     } finally {
       try {

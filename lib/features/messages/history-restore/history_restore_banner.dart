@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/localization/app_translations.dart';
 import 'history_restore_state.dart';
@@ -14,14 +15,10 @@ class HistoryRestoreBanner extends ConsumerWidget {
     final restore = ref.watch(historyRestoreProvider);
     if (!restore.running) return const SizedBox.shrink();
     final colors = Theme.of(context).colorScheme;
-    final label = AppTranslations.translate(
-      context,
-      ref,
-      'history_restore_banner',
+    final progress = historyRestoreLabel(
+      (key) => AppTranslations.translate(context, ref, key),
+      restore,
     );
-    final progress = restore.total > 0
-        ? '$label  ${restore.done}/${restore.total}'
-        : label;
     return Material(
       color: colors.surfaceContainerLow,
       child: Padding(
@@ -48,4 +45,28 @@ class HistoryRestoreBanner extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Messages, never chats: "1,234 / 5,678" once the server has counted, the
+/// running number before that (or against an older server). A message that
+/// arrives mid-restore can push the count past the total, so the total grows
+/// with it rather than read "5,679 / 5,678".
+String historyRestoreLabel(
+  String Function(String key) tr,
+  HistoryRestoreState restore,
+) {
+  final format = NumberFormat.decimalPattern();
+  final done = restore.messages;
+  final total = restore.messageTotal;
+  if (total != null) {
+    return tr('history_restore_messages')
+        .replaceAll('{done}', format.format(done))
+        .replaceAll('{total}', format.format(done > total ? done : total));
+  }
+  if (done > 0) {
+    return tr(
+      'history_restore_messages_running',
+    ).replaceAll('{done}', format.format(done));
+  }
+  return tr('history_restore_banner');
 }

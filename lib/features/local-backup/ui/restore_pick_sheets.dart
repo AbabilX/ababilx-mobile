@@ -4,7 +4,6 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../messages/chat_icon.dart';
-import '../local_backup_runner.dart';
 import '../platform/backup_folder_channel.dart';
 import 'local_backup_labels.dart';
 
@@ -60,7 +59,6 @@ Future<BackupFolderEntry?> pickBackupEntry(
   required String userId,
 }) {
   String tr(String key) => AppTranslations.translate(context, ref, key);
-  final tag = backupTag(userId);
   final now = DateTime.now();
   return showModalBottomSheet<BackupFolderEntry>(
     context: context,
@@ -96,7 +94,7 @@ Future<BackupFolderEntry?> pickBackupEntry(
               for (final entry in entries)
                 _EntryTile(
                   entry: entry,
-                  mine: entry.name.startsWith(tag),
+                  mine: entry.owner == userId,
                   when: backupTimeLabel(
                     DateTime.fromMillisecondsSinceEpoch(entry.modifiedMs),
                     now: now,

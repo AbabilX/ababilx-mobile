@@ -28,9 +28,25 @@ object BackupFolder {
     private const val PARTIAL = ".partial"
     private const val MIME = "application/octet-stream"
 
-    data class Entry(val uri: Uri, val name: String, val bytes: Long, val modifiedMs: Long) {
-        fun toMap(): Map<String, Any> =
-            mapOf("uri" to uri.toString(), "name" to name, "bytes" to bytes, "modifiedMs" to modifiedMs)
+    /**
+     * [owner] is the account id from the file's clear header, never guessed
+     * from the name: the name carries the username, which can change or be
+     * empty, and a folder can hold several people's backups.
+     */
+    data class Entry(
+        val uri: Uri,
+        val name: String,
+        val bytes: Long,
+        val modifiedMs: Long,
+        val owner: String?,
+    ) {
+        fun toMap(): Map<String, Any?> = mapOf(
+            "uri" to uri.toString(),
+            "name" to name,
+            "bytes" to bytes,
+            "modifiedMs" to modifiedMs,
+            "owner" to owner,
+        )
     }
 
     fun hasAccess(context: Context, tree: Uri): Boolean =
@@ -67,11 +83,13 @@ object BackupFolder {
             while (cursor.moveToNext()) {
                 val name = cursor.getString(1) ?: continue
                 if (!name.endsWith(EXTENSION) && !name.endsWith(EXTENSION + PARTIAL)) continue
+                val uri = DocumentsContract.buildDocumentUriUsingTree(tree, cursor.getString(0))
                 out += Entry(
-                    DocumentsContract.buildDocumentUriUsingTree(tree, cursor.getString(0)),
+                    uri,
                     name,
                     if (cursor.isNull(2)) 0L else cursor.getLong(2),
                     if (cursor.isNull(3)) 0L else cursor.getLong(3),
+                    BackupHeader.owner(context, uri),
                 )
             }
         }
@@ -80,19 +98,19 @@ object BackupFolder {
 
     /**
      * Copies [source] in as [name], then keeps only the newest [keep] backups
-     * that carry [tag] — this account's. Another account's files in the same
-     * folder are never touched.
+     * whose header names [owner] — this account's. Another account's files in
+     * the same folder are never touched, whatever they are called.
      *
      * Written as `name.partial` and renamed when complete, so a copy cut short
      * (the phone died, the folder vanished) can never be taken for a backup,
      * and pruning never counts it. The old files are removed only after the new
      * one is whole — a failed run costs nothing that was already there.
      */
-    fun write(context: Context, tree: Uri, source: File, name: String, tag: String, keep: Int): Entry {
+    fun write(context: Context, tree: Uri, source: File, name: String, owner: String, keep: Int): Entry {
         val resolver = context.contentResolver
         val root = rootDocument(tree)
         list(context, tree)
-            .filter { it.name.startsWith(tag) && it.name.endsWith(PARTIAL) }
+            .filter { it.owner == owner && it.name.endsWith(PARTIAL) }
             .forEach { runCatching { DocumentsContract.deleteDocument(resolver, it.uri) } }
 
         val partial = create(resolver, root, name + PARTIAL)
@@ -113,11 +131,11 @@ object BackupFolder {
             }
 
         list(context, tree)
-            .filter { it.name.startsWith(tag) && it.name.endsWith(EXTENSION) }
-            .sortedByDescending { it.name }
+            .filter { it.owner == owner && it.name.endsWith(EXTENSION) }
+            .sortedByDescending { it.modifiedMs }
             .drop(keep)
             .forEach { runCatching { DocumentsContract.deleteDocument(resolver, it.uri) } }
-        return Entry(final, name, source.length(), System.currentTimeMillis())
+        return Entry(final, name, source.length(), System.currentTimeMillis(), owner)
     }
 
     /** Copies a picked backup into the app's cache so Dart can read it. */

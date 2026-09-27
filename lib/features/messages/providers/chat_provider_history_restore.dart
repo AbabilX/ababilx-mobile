@@ -63,6 +63,12 @@ mixin _ChatHistoryRestoreMixin
     if (ids.isEmpty || stopped()) return;
     final status = ref.read(historyRestoreProvider.notifier);
     status.begin(ids.length);
+    // The banner counts messages, not chats; the total arrives beside the walk.
+    unawaited(
+      fetchRestoreMessageTotal(ref, ids).then((total) {
+        if (total != null && !stopped()) status.setMessageTotal(total);
+      }),
+    );
     var failed = false;
     try {
       await syncChatDeletions(ref, userId);
@@ -107,6 +113,8 @@ mixin _ChatHistoryRestoreMixin
         final restored = canonicalChatMessages(messages);
         await messageStore.saveRecovered(restored, fromBackup: false);
         if (stopped()) return;
+        // Every row the server handed over, the same rows its count counts.
+        ref.read(historyRestoreProvider.notifier).addMessages(messages.length);
         // Persisted first, then shown: an open chat fills in as the restore
         // reaches it instead of after the whole account is done.
         mergeRestoredPage(

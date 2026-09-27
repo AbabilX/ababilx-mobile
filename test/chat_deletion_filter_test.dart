@@ -68,4 +68,54 @@ void main() {
     ]);
     expect(filter.allows(message('later', '2026-09-12T00:00:00Z')), false);
   });
+  group('local backup restore after a fresh start', () {
+    // Delete chat at 09-01, then start fresh at 09-09 (0164 marker).
+    final fresh = <String, dynamic>{
+      ...clear,
+      'explicit_through_at': '2026-09-01T00:00:00Z',
+    };
+    test('an old server keeps through_at as the only rule', () async {
+      await filter.admitRestoredHistory();
+      expect(filter.allows(message('old', '2026-09-05T00:00:00Z')), false);
+    });
+    test('restore sees past the watermark but not the delete', () async {
+      await filter.replace([fresh]);
+      expect(filter.allows(message('old', '2026-09-05T00:00:00Z')), false);
+      await filter.admitRestoredHistory();
+      expect(filter.allows(message('kept', '2026-09-05T00:00:00Z')), true);
+      expect(filter.allows(message('deleted', '2026-08-30T00:00:00Z')), false);
+      final reloaded = ChatDeletionFilter();
+      await reloaded.load('user');
+      expect(reloaded.allows(message('kept', '2026-09-05T00:00:00Z')), true);
+    });
+    test('a fresh start with no delete admits everything', () async {
+      await filter.replace([
+        {...clear, 'explicit_through_at': null},
+      ]);
+      await filter.admitRestoredHistory();
+      expect(filter.allows(message('any', '2020-01-01T00:00:00Z')), true);
+    });
+    test(
+      'the next fresh start or delete applies the watermark again',
+      () async {
+        await filter.replace([fresh]);
+        await filter.admitRestoredHistory();
+        await filter.replace([
+          {
+            ...fresh,
+            'through_at': '2026-09-20T00:00:00Z',
+            'deleted_at': '2026-09-20T00:00:00Z',
+          },
+        ]);
+        expect(filter.allows(message('kept', '2026-09-05T00:00:00Z')), false);
+      },
+    );
+    test('a whole-chat delete still wins', () async {
+      await filter.replace([
+        {...fresh, 'entire_conversation': true},
+      ]);
+      await filter.admitRestoredHistory();
+      expect(filter.allows(message('kept', '2026-09-05T00:00:00Z')), false);
+    });
+  });
 }

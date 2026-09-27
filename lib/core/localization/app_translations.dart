@@ -253,6 +253,8 @@ class AppTranslations {
       'recovery_clean_failed':
           'Your reset succeeded. Tap Continue to finish clearing this phone.',
       'history_restore_banner': 'Restoring messages…',
+      'history_restore_messages': 'Restoring messages… {done} / {total}',
+      'history_restore_messages_running': 'Restoring messages… {done}',
       'recovery_continue': 'Continue',
       'recovery_cancel': 'Cancel',
       'recovery_saving': 'Starting fresh…',
@@ -1377,6 +1379,8 @@ class AppTranslations {
       'recovery_clean_failed':
           'রিসেট হয়েছে। এই ফোন পরিষ্কার করা শেষ করতে চালিয়ে যান চাপুন।',
       'history_restore_banner': 'মেসেজ ফিরিয়ে আনা হচ্ছে…',
+      'history_restore_messages': 'মেসেজ ফিরিয়ে আনা হচ্ছে… {done} / {total}',
+      'history_restore_messages_running': 'মেসেজ ফিরিয়ে আনা হচ্ছে… {done}',
       'recovery_continue': 'চালিয়ে যান',
       'recovery_cancel': 'বাতিল',
       'recovery_saving': 'নতুনভাবে শুরু হচ্ছে…',

@@ -7,12 +7,16 @@ class BackupFolderEntry {
     required this.name,
     required this.bytes,
     required this.modifiedMs,
+    this.owner,
   });
 
   final String uri;
   final String name;
   final int bytes;
   final int modifiedMs;
+
+  /// Account id from the file's header; null when it is not a backup.
+  final String? owner;
 
   bool get isPartial => name.endsWith('.partial');
 
@@ -22,6 +26,7 @@ class BackupFolderEntry {
         name: map['name'] as String? ?? '',
         bytes: (map['bytes'] as num?)?.toInt() ?? 0,
         modifiedMs: (map['modifiedMs'] as num?)?.toInt() ?? 0,
+        owner: map['owner'] as String?,
       );
 }
 
@@ -80,19 +85,19 @@ class BackupFolderChannel {
     ].where((e) => !e.isPartial).toList();
   }
 
-  /// Copies a finished file in, then keeps the newest [keep] with [tag].
+  /// Copies a finished file in, then keeps this [owner]'s newest [keep].
   Future<BackupFolderEntry> write({
     required String folderUri,
     required String sourcePath,
     required String name,
-    required String tag,
+    required String owner,
     int keep = 2,
   }) async {
     final map = await _channel.invokeMapMethod<String, dynamic>('writeBackup', {
       'uri': folderUri,
       'source': sourcePath,
       'name': name,
-      'tag': tag,
+      'owner': owner,
       'keep': keep,
     });
     return BackupFolderEntry.fromMap(map ?? const {});

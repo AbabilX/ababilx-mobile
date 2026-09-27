@@ -1,6 +1,7 @@
 /// Base URL for the AbabilX backend.
 class ApiConstants {
   static const chatDeletions = "/api/me/chat-deletions";
+  static const chatRestoreMessageCount = "/api/chat/recovery/message-count";
   ApiConstants._();
 
   static const String baseUrl = 'https://api.ababilx.com';

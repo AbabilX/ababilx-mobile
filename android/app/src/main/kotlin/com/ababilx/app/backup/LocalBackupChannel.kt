@@ -65,7 +65,7 @@ class LocalBackupChannel(private val activity: Activity) {
                 tree(call),
                 File(required(call, "source")),
                 required(call, "name"),
-                required(call, "tag"),
+                required(call, "owner"),
                 call.argument<Int>("keep") ?: 2,
             ).toMap()
             "copyToCache" -> BackupFolder.copyToCache(
