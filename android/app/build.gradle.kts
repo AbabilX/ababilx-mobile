@@ -92,4 +92,8 @@ dependencies {
     implementation("androidx.viewpager2:viewpager2:1.1.0")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("net.zetetic:sqlcipher-android:4.17.0")
+    // Direct Share chat pictures (DirectShareImages). The same version the
+    // CallKit plugin already ships, so it adds nothing to the APK; Play flags
+    // a hand-rolled HttpURLConnection + BitmapFactory pair as a memory risk.
+    implementation("io.coil-kt:coil:1.4.0")
 }
