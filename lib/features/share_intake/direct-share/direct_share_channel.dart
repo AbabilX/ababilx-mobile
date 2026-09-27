@@ -13,10 +13,17 @@ class DirectShareChannel {
   bool get _supported => !kIsWeb && Platform.isAndroid;
 
   /// Replaces the share sheet's targets with [targets], best first.
-  Future<void> publish(List<Map<String, Object>> targets) async {
+  /// [hidden] are locked chats: a copy pinned to the home screen is blanked.
+  Future<void> publish(
+    List<Map<String, Object>> targets,
+    List<String> hidden,
+  ) async {
     if (!_supported) return;
     try {
-      await _method.invokeMethod<void>('publish', {'targets': targets});
+      await _method.invokeMethod<void>('publish', {
+        'targets': targets,
+        'hidden': hidden,
+      });
     } on PlatformException catch (e) {
       debugPrint('[direct-share] publish failed: $e');
     }

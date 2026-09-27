@@ -30,8 +30,14 @@ void main() {
   });
 
   test('a launcher shortcut tap is an open, never a share', () {
-    const raw = '{"open_conversation":"c9"}';
-    expect(SharedPayload.openConversationId(raw), 'c9');
+    const id = '3f2b9c1e-8a4d-4f6b-9c2e-1d7a5b8e0f34';
+    const raw = '{"open_conversation":"$id"}';
+    expect(SharedPayload.openConversationId(raw), id);
+    // Exported activity: a crafted id must never become a sub-route.
+    expect(
+      SharedPayload.openConversationId('{"open_conversation":"$id/details"}'),
+      isNull,
+    );
     expect(SharedPayload.tryParse(raw), isNull);
     expect(SharedPayload.openConversationId('{"text":"x"}'), isNull);
   });

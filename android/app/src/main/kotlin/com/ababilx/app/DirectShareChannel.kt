@@ -17,7 +17,13 @@ class DirectShareChannel(private val context: Context) {
                 when (call.method) {
                     "publish" -> {
                         val raw = call.argument<List<Map<String, Any?>>>("targets").orEmpty()
-                        DirectShareShortcuts.publishAsync(context, raw.mapNotNull(::target))
+                        val hidden = call.argument<List<String>>("hidden").orEmpty()
+                            .filter(DirectShareShortcuts::isConversationId)
+                        DirectShareShortcuts.publishAsync(
+                            context,
+                            raw.mapNotNull(::target),
+                            hidden,
+                        )
                         result.success(null)
                     }
                     "clear" -> {
@@ -31,7 +37,7 @@ class DirectShareChannel(private val context: Context) {
 
     private fun target(map: Map<String, Any?>): DirectShareShortcuts.Target? {
         val id = map["id"] as? String ?: return null
-        if (id.isBlank()) return null
+        if (!DirectShareShortcuts.isConversationId(id)) return null
         return DirectShareShortcuts.Target(
             conversationId = id,
             name = map["name"] as? String ?: "",

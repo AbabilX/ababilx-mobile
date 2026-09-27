@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../shared/widgets/voice_url_player.dart';
 import '../../attachments/widgets/attachment_gate.dart';
 import '../data/models/chat_models.dart';
+import 'voice_attachment_waiting.dart';
 
 class VoiceAttachmentPlayer extends StatelessWidget {
   const VoiceAttachmentPlayer({super.key, required this.attachment});
@@ -19,6 +20,8 @@ class VoiceAttachmentPlayer extends StatelessWidget {
       height: 40,
       width: 220,
       showSize: false,
+      waiting: (_, handle) =>
+          VoiceAttachmentWaiting(attachment: attachment, handle: handle),
       ready: (_, handle) => VoiceUrlPlayer(
         source: AudioSourceRef.file(handle.localPath!),
         fileName: attachment.fileName,

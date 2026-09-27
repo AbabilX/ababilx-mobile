@@ -15,6 +15,7 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The round picture on a Direct Share target. The system draws the AbabilX
@@ -28,6 +29,14 @@ import java.security.MessageDigest
 object DirectShareAvatars {
 
     private const val MAX_BYTES = 2L * 1024 * 1024
+    private const val DIR = "direct_share_avatars"
+
+    /** A picture that would not load is not asked for again this soon. */
+    private const val RETRY_AFTER_MS = 15 * 60 * 1000L
+
+    // Every publish runs on one worker; a dead CDN must not stall each of them
+    // for the full timeout, eight times over.
+    private val failedAt = ConcurrentHashMap<String, Long>()
 
     private val PALETTE = intArrayOf(
         0xFF5C6BC0.toInt(),
@@ -47,12 +56,40 @@ object DirectShareAvatars {
         return IconCompat.createWithBitmap(bitmap)
     }
 
+    /** A plain grey disc: what a retired pinned shortcut is repainted with. */
+    fun blank(context: Context): IconCompat {
+        val size = (context.resources.displayMetrics.density * 72).toInt().coerceIn(96, 288)
+        val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.LTGRAY }
+        Canvas(out).drawCircle(size / 2f, size / 2f, size / 2f, fill)
+        return IconCompat.createWithBitmap(out)
+    }
+
+    /** Drops cached pictures no current target uses (changed or gone). */
+    fun prune(context: Context, urls: List<String>) {
+        val keep = urls.filter { it.isNotEmpty() }.map(::sha256).toSet()
+        File(context.cacheDir, DIR).listFiles()?.forEach { file ->
+            if (file.name !in keep) file.delete()
+        }
+    }
+
     private fun photo(context: Context, url: String, size: Int): Bitmap? {
         if (!url.startsWith("https://")) return null
-        val file = cached(context, url) ?: return null
+        val failed = failedAt[url]
+        if (failed != null && System.currentTimeMillis() - failed < RETRY_AFTER_MS) return null
+        val file = cached(context, url)
+        if (file == null) {
+            failedAt[url] = System.currentTimeMillis()
+            return null
+        }
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.path, bounds)
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            // A captive portal's HTML answers 200 too; do not keep it forever.
+            file.delete()
+            failedAt[url] = System.currentTimeMillis()
+            return null
+        }
         var sample = 1
         while (bounds.outWidth / (sample * 2) >= size && bounds.outHeight / (sample * 2) >= size) {
             sample *= 2
@@ -61,12 +98,13 @@ object DirectShareAvatars {
             file.path,
             BitmapFactory.Options().apply { inSampleSize = sample },
         ) ?: return null
+        failedAt.remove(url)
         return circle(decoded, size)
     }
 
     /** One download per picture; the file name is a hash, never the URL. */
     private fun cached(context: Context, url: String): File? {
-        val dir = File(context.cacheDir, "direct_share_avatars").apply { mkdirs() }
+        val dir = File(context.cacheDir, DIR).apply { mkdirs() }
         val file = File(dir, sha256(url))
         if (file.length() > 0) return file
         val partial = File(dir, "${file.name}.part")

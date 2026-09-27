@@ -105,18 +105,24 @@ class SharedPayload extends Equatable {
   }
 
   /// The chat a Direct Share shortcut asks to open when it is tapped from the
-  /// launcher's long-press menu, or null for anything else.
+  /// launcher's long-press menu, or null for anything else. The receiving
+  /// activity is exported, so any app can send this: only a UUID goes on to
+  /// become a route, never a path like `x/details`.
   static String? openConversationId(String? raw) {
     if (raw == null || raw.isEmpty) return null;
     try {
       final json = jsonDecode(raw);
       if (json is! Map<String, dynamic>) return null;
       final id = json['open_conversation'];
-      return id is String && id.isNotEmpty ? id : null;
+      return id is String && _uuid.hasMatch(id) ? id : null;
     } catch (_) {
       return null;
     }
   }
+
+  static final _uuid = RegExp(
+    r'^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$',
+  );
 
   @override
   List<Object?> get props => [files, text, targetConversationId];

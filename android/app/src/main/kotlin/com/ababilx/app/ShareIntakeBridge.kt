@@ -83,7 +83,7 @@ object ShareIntakeBridge {
         if (intent.action == DirectShareShortcuts.ACTION_OPEN) {
             // A Direct Share shortcut tapped from the launcher's long press.
             val id = intent.getStringExtra(DirectShareShortcuts.EXTRA_CONVERSATION_ID)
-            if (id.isNullOrBlank()) return null
+            if (!DirectShareShortcuts.isConversationId(id)) return null
             return JSONObject().put("open_conversation", id).toString()
         }
         val uris = when (intent.action) {

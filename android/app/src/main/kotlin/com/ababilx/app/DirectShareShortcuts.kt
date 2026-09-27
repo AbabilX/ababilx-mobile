@@ -53,24 +53,35 @@ object DirectShareShortcuts {
     // One worker: avatars are downloaded, and two publishes must not interleave.
     private val worker = Executors.newSingleThreadExecutor()
 
+    /** Conversation ids are UUIDs; anything else in an intent is refused. */
+    private val UUID_SHAPE = Regex("^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$")
+
     /** What Dart last asked for, so switching back from a disguise restores it. */
     @Volatile
     private var last: List<Target> = emptyList()
 
+    @Volatile
+    private var lastHidden: List<String> = emptyList()
+
+    fun isConversationId(value: String?): Boolean = value != null && UUID_SHAPE.matches(value)
+
     fun conversationIdOf(shortcutId: String?): String? =
         shortcutId?.takeIf { it.startsWith(PREFIX) }
             ?.removePrefix(PREFIX)
-            ?.takeIf { it.isNotBlank() }
+            ?.takeIf(::isConversationId)
 
-    fun publishAsync(context: Context, targets: List<Target>) {
+    /** [hidden]: locked chats, whose pinned copies must lose name and picture. */
+    fun publishAsync(context: Context, targets: List<Target>, hidden: List<String>) {
         last = targets
+        lastHidden = hidden
         val app = context.applicationContext
-        worker.execute { publish(app, targets) }
+        worker.execute { publish(app, targets, hidden) }
     }
 
     /** Signed out: nothing of the last account may stay in the share sheet. */
     fun clearAsync(context: Context) {
         last = emptyList()
+        lastHidden = emptyList()
         val app = context.applicationContext
         worker.execute { removeAll(app) }
     }
@@ -79,11 +90,15 @@ object DirectShareShortcuts {
     fun onIconChanged(context: Context) {
         val app = context.applicationContext
         worker.execute {
-            if (isDisguised(app)) removeAll(app) else if (last.isNotEmpty()) publish(app, last)
+            if (isDisguised(app)) {
+                removeAll(app)
+            } else if (last.isNotEmpty()) {
+                publish(app, last, lastHidden)
+            }
         }
     }
 
-    private fun publish(context: Context, targets: List<Target>) {
+    private fun publish(context: Context, targets: List<Target>, hidden: List<String>) {
         try {
             val launcher = launcherComponent(context)
             if (launcher == null || isDisguised(launcher)) {
@@ -94,12 +109,15 @@ object DirectShareShortcuts {
             val shortcuts = targets.take(max).mapIndexed { rank, target ->
                 build(context, launcher, target, rank)
             }
+            DirectShareAvatars.prune(context, targets.take(max).map { it.avatarUrl })
             val keep = shortcuts.map { it.id }.toSet()
             // Long-lived shortcuts outlive setDynamicShortcuts in the system's
             // cache, so a chat that left the list (locked, left, deleted) has
             // to be removed from there by name.
             val stale = known(context).filter { it !in keep }
             if (stale.isNotEmpty()) ShortcutManagerCompat.removeLongLivedShortcuts(context, stale)
+            DirectSharePins.retire(context, hidden.map { PREFIX + it })
+            DirectSharePins.restore(context, shortcuts)
             if (!ShortcutManagerCompat.setDynamicShortcuts(context, shortcuts)) {
                 Log.w(TAG, "rate limited; kept the previous targets")
             }
@@ -141,6 +159,7 @@ object DirectShareShortcuts {
             val ids = known(context)
             if (ids.isNotEmpty()) ShortcutManagerCompat.removeLongLivedShortcuts(context, ids)
             ShortcutManagerCompat.removeAllDynamicShortcuts(context)
+            DirectSharePins.retire(context, DirectSharePins.pinnedIds(context, PREFIX))
         } catch (error: Exception) {
             Log.w(TAG, "clear failed", error)
         }
