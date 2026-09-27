@@ -20,7 +20,6 @@ import '../chat-header/start_audio_call.dart';
 import '../chat-list/chat_search.dart';
 import '../chat-mute/mute_choice.dart';
 import '../chat-mute/mute_flow.dart';
-import '../chat-timeline/user_profile_sheet.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../note_to_self_avatar.dart';
@@ -108,42 +107,17 @@ class DetailsHeader extends ConsumerWidget {
                 : null,
           ),
         const SizedBox(height: 14),
-        InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: conversation.hasDmPeer && !conversation.isAccountDeleted
-              ? () => showUserProfileSheet(
-                  context: context,
-                  ref: ref,
-                  userId: conversation.peerUserId!,
-                  userName: conversation.peerUserName,
-                  userAvatarUrl: conversation.peerUserAvatar,
-                )
-              : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (conversation.hasDmPeer && !conversation.isAccountDeleted)
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 24,
-                    color: colors.onSurfaceVariant,
-                  ),
-              ],
-            ),
+        // Not tappable: this screen already IS the person's page, and the
+        // profile sheet it used to open only offered "Direct Message" — the
+        // chat you came from.
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
           ),
         ),
         _subtitle(context, ref, colors),

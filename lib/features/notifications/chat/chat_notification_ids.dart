@@ -9,6 +9,12 @@ library;
 int chatNotificationId(String conversationId) =>
     conversationId.hashCode & 0x7fffffff;
 
+/// Tag of the entry Android itself draws for a plaintext chat push (webhook
+/// feeds). FCM posts it as (tag, id 0). MUST match `notify.ChatPushTag` in
+/// ababilx-server and `chatPushTag` in ababilx-notification.
+String chatSystemNotificationTag(String conversationId) =>
+    'chat_$conversationId';
+
 /// Action ids come back on the notification response, so they are the contract
 /// between the button and the handler.
 const chatReplyActionId = 'chat_reply';

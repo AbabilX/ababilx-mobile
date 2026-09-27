@@ -54,9 +54,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
   });
 
-  testWidgets('a swipe still reaches the next photo after zooming', (
-    tester,
-  ) async {
+  testWidgets('panning a zoomed photo never changes photos', (tester) async {
     await _openGallery(tester, images);
     final center = tester.getCenter(find.byType(PageView));
     await tester.tapAt(center);
@@ -65,22 +63,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(_scale(tester), greaterThan(1.2));
 
+    // Dragging to the right-hand edge of the photo is looking at it.
+    final pan = await tester.startGesture(center);
+    await pan.moveBy(const Offset(-600, 0));
+    await pan.up();
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<PageView>(find.byType(PageView)).controller!.page,
+      closeTo(0, 0.01),
+    );
+    expect(_scale(tester), greaterThan(1.2));
+
+    // Zoomed back out, the same swipe moves on.
+    await tester.tapAt(center);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tapAt(center);
+    await tester.pumpAndSettle();
+    expect(_scale(tester), closeTo(1, 0.01));
     final swipe = await tester.startGesture(center);
     await swipe.moveBy(const Offset(-600, 0));
     await swipe.up();
     await tester.pumpAndSettle();
-
-    expect(find.text('second.jpg'), findsWidgets);
     expect(
       tester.widget<PageView>(find.byType(PageView)).controller!.page,
       closeTo(1, 0.01),
     );
-
-    final back = await tester.startGesture(center);
-    await back.moveBy(const Offset(600, 0));
-    await back.up();
-    await tester.pumpAndSettle();
-    expect(_scale(tester), closeTo(1, 0.01));
   });
 
   testWidgets('a normal horizontal swipe changes photos', (tester) async {

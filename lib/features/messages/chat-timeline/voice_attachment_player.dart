@@ -11,18 +11,18 @@ class VoiceAttachmentPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 7),
-      child: AttachmentGate(
-        attachment: attachment,
-        reserveSpace: true,
-        height: 58,
-        width: 240,
-        showSize: false,
-        ready: (_, handle) => VoiceUrlPlayer(
-          source: AudioSourceRef.file(handle.localPath!),
-          fileName: attachment.fileName,
-        ),
+    // The bubble's own inset is the only padding: a second pill with its own
+    // fill and padding inside it read as a box in a box.
+    return AttachmentGate(
+      attachment: attachment,
+      reserveSpace: true,
+      height: 40,
+      width: 220,
+      showSize: false,
+      ready: (_, handle) => VoiceUrlPlayer(
+        source: AudioSourceRef.file(handle.localPath!),
+        fileName: attachment.fileName,
+        flat: true,
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
 import 'audio_source_ref.dart';
+import 'voice_flat_layout.dart';
 
 export 'audio_source_ref.dart';
 
@@ -15,11 +16,16 @@ class VoiceUrlPlayer extends StatelessWidget {
     required this.source,
     required this.fileName,
     this.compact = false,
+    this.flat = false,
   });
 
   final AudioSourceRef source;
   final String fileName;
   final bool compact;
+
+  /// Inside a chat bubble: no pill of its own (the bubble already is one),
+  /// a round play button and a bar that takes the remaining width.
+  final bool flat;
 
   Duration get _namedDuration {
     final match = RegExp(r'voice-message-(\d+)s').firstMatch(fileName);
@@ -62,6 +68,17 @@ class VoiceUrlPlayer extends StatelessWidget {
                 1.0,
               );
 
+        final clock = _clock(
+          playing || position > Duration.zero ? position : duration,
+        );
+        if (flat) {
+          return VoiceFlatLayout(
+            playing: playing,
+            progress: progress,
+            clock: clock,
+            onToggle: () => _toggle(context),
+          );
+        }
         return Material(
           color: colors.primaryContainer,
           borderRadius: BorderRadius.circular(18),
@@ -83,23 +100,14 @@ class VoiceUrlPlayer extends StatelessWidget {
                   const SizedBox(width: 8),
                   SizedBox(
                     width: compact ? 72 : 104,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 4,
-                        backgroundColor: colors.onPrimaryContainer.withValues(
-                          alpha: 0.22,
-                        ),
-                        color: colors.onPrimaryContainer,
-                      ),
+                    child: voiceProgressBar(
+                      progress,
+                      colors.onPrimaryContainer,
                     ),
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    _clock(
-                      playing || position > Duration.zero ? position : duration,
-                    ),
+                    clock,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: colors.onPrimaryContainer,

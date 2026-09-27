@@ -7,6 +7,7 @@ import 'chat_notification_hidden.dart';
 import 'chat_notification_ids.dart';
 import 'chat_notification_privacy.dart';
 import 'chat_notification_store.dart';
+import 'chat_system_entry.dart';
 import 'chat_push_attachments.dart';
 import 'chat_push_image.dart';
 
@@ -14,9 +15,8 @@ import 'chat_push_image.dart';
 ///
 /// An encrypted DM arrives as ciphertext only, so the entry is posted first
 /// with the placeholder and rewritten once the text is decrypted. Posting
-/// first is deliberate: decrypting needs the vault and often the network, and
-/// a notification that waits for that is a notification the user may never
-/// see if the background isolate is killed first.
+/// first is deliberate: decrypting needs the vault and often the network — a
+/// notification waiting on that dies with a killed background isolate.
 class ChatNotificationPresenter {
   const ChatNotificationPresenter._();
 
@@ -134,8 +134,7 @@ class ChatNotificationPresenter {
     fromMe: true,
   );
 
-  /// Drops a conversation's entry and its stored thread — the user has read it
-  /// somewhere else.
+  /// Drops a conversation's entries (ours + the OS-drawn one) and its thread.
   static Future<void> dismiss(
     LocalNotifications local,
     String conversationId,
@@ -145,6 +144,7 @@ class ChatNotificationPresenter {
     await ChatNotificationDismissals.mark(conversationId);
     await ChatNotificationStore.clear(conversationId);
     await local.cancel(chatNotificationId(conversationId));
+    await cancelChatSystemEntry(conversationId);
   }
 
   static Future<void> _post(

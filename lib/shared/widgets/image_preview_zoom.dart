@@ -47,6 +47,13 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
   double _dragY = 0;
   bool _multiPointer = false;
 
+  /// Set when a gesture begins on a zoomed photo. Panning a zoomed photo
+  /// to its edge is looking at the photo, never a request for the next one —
+  /// zoom back out (double-tap or pinch) to swipe.
+  bool _startedZoomed = false;
+
+  bool get _zoomed => _transform.value.getMaxScaleOnAxis() > 1.05;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -68,7 +75,7 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
   void _onDoubleTap() {
     final pos = _doubleTapDetails?.localPosition;
     if (pos == null) return;
-    if (_transform.value.getMaxScaleOnAxis() > 1.05) {
+    if (_zoomed) {
       _transform.value = Matrix4.identity();
       return;
     }
@@ -94,6 +101,7 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
           _dragX = 0;
           _dragY = 0;
           _multiPointer = false;
+          _startedZoomed = _zoomed;
         },
         onInteractionUpdate: (details) {
           if (details.pointerCount > 1) {
@@ -109,6 +117,8 @@ class _ZoomablePreviewImageState extends State<ZoomablePreviewImage>
         onInteractionEnd: (_) {
           final threshold = MediaQuery.sizeOf(context).width * 0.2;
           if (!_multiPointer &&
+              !_startedZoomed &&
+              !_zoomed &&
               _dragX.abs() > threshold &&
               _dragX.abs() > _dragY.abs() * 1.2) {
             widget.onSwipe?.call(_dragX < 0 ? 1 : -1);
