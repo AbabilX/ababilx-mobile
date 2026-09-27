@@ -11,10 +11,10 @@ import '../local_backup_provider.dart';
 import 'local_backup_restore_flow.dart';
 
 /// Invisible host in the home shell for the two things local backup does on
-/// its own: the daily run, and the one-time "Restore from a backup?".
+/// its own: the scheduled run, and the one-time "Restore from a backup?".
 ///
-/// Daily means "when the app is used, at most once in 20 hours" — there is no
-/// background job yet, on purpose: a backup reads the unlocked message key,
+/// Scheduled means "when the app opens, at most once in 12 hours" — there is
+/// no background job yet, on purpose: a backup reads the unlocked message key,
 /// which lives in this process, and a WorkManager isolate would have to
 /// rebuild the whole vault to do it. The run waits 20 s after launch or resume
 /// so it never competes with the chat list loading.

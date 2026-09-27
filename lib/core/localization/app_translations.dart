@@ -142,7 +142,7 @@ class AppTranslations {
           'The file is locked to your AbabilX account: signing in as you opens it, and no recovery code is needed. It is not end-to-end encrypted. AbabilX holds the key and your phone holds the file, so keep the folder private.',
       'local_backup_enable_title': 'Turn on local backup?',
       'local_backup_enable_point_daily':
-          'Once a day, a copy of your chats is saved to a folder you choose. The two newest copies are kept.',
+          'Every 12 hours, when you open the app, a copy of your chats is saved to a folder you choose. The two newest copies are kept.',
       'local_backup_enable_point_account':
           'Only your AbabilX account can open it. You will not need your recovery code.',
       'local_backup_enable_point_key':
@@ -1292,7 +1292,7 @@ class AppTranslations {
           'ফাইলটি আপনার AbabilX অ্যাকাউন্টে লক করা: আপনার অ্যাকাউন্টে সাইন ইন করলেই খোলে, রিকভারি কোড লাগে না। এটি এন্ড-টু-এন্ড এনক্রিপ্টেড নয়। চাবি AbabilX-এর কাছে আর ফাইল আপনার ফোনে, তাই ফোল্ডারটি গোপন রাখুন।',
       'local_backup_enable_title': 'লোকাল ব্যাকআপ চালু করবেন?',
       'local_backup_enable_point_daily':
-          'দিনে একবার আপনার চ্যাটের একটি কপি আপনার বাছাই করা ফোল্ডারে সেভ হয়। সবচেয়ে নতুন দুটি কপি রাখা হয়।',
+          'প্রতি ১২ ঘণ্টায়, অ্যাপ খুললে, আপনার চ্যাটের একটি কপি আপনার বাছাই করা ফোল্ডারে সেভ হয়। সবচেয়ে নতুন দুটি কপি রাখা হয়।',
       'local_backup_enable_point_account':
           'শুধু আপনার AbabilX অ্যাকাউন্টই এটি খুলতে পারে। রিকভারি কোড লাগবে না।',
       'local_backup_enable_point_key':

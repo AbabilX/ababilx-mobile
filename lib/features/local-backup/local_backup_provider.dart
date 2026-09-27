@@ -42,7 +42,7 @@ class LocalBackupState {
   );
 }
 
-/// Settings → Backup → Local backup, and the daily run behind it.
+/// Settings → Backup → Local backup, and the scheduled run behind it.
 ///
 /// Every setting is this account's on this phone (see [LocalBackupSettings]).
 /// One run at a time, backup or restore; a second asks answer "busy".
@@ -50,9 +50,9 @@ class LocalBackupNotifier extends Notifier<LocalBackupState> {
   static const _store = LocalBackupSettingsStore();
   static const _folder = BackupFolderChannel();
 
-  /// A day, less a margin, so someone who opens the app at about the same
-  /// time every day still gets one backup a day rather than one every two.
-  static const dailyInterval = Duration(hours: 20);
+  /// Twice a day, checked when the app opens or comes back. Each run is a
+  /// full copy, so no file depends on an earlier one; the two newest are kept.
+  static const backupInterval = Duration(hours: 12);
 
   bool _cancelled = false;
   String _userId = '';
@@ -166,7 +166,7 @@ class LocalBackupNotifier extends Notifier<LocalBackupState> {
     }
   }
 
-  /// The daily run. Silent: a failure is recorded for the screen, never
+  /// The scheduled run (every [backupInterval]). Silent: a failure is recorded for the screen, never
   /// raised over whatever the person is doing.
   Future<void> runIfDue() async {
     // Re-read every time: the account may have changed since the last run,
@@ -176,7 +176,7 @@ class LocalBackupNotifier extends Notifier<LocalBackupState> {
     if (!s.enabled || !s.hasFolder || state.busy) return;
     final last = s.lastBackupMs;
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (last != null && now - last < dailyInterval.inMilliseconds) return;
+    if (last != null && now - last < backupInterval.inMilliseconds) return;
     await backUpNow();
   }
 
