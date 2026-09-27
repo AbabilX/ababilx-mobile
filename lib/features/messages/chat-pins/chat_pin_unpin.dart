@@ -20,11 +20,26 @@ Future<void> unpinChatPin(
   required bool canPinGroup,
 }) async {
   final id = entry.message.id;
-  if (entry.everyone && canPinGroup) {
-    await setGroupPinned(context, ref, conversationId, id, pinned: false);
+  final shared = entry.everyone && canPinGroup;
+  // A failed group unpin stops here, so the row is never half taken down.
+  if (shared &&
+      !await setGroupPinned(context, ref, conversationId, id, pinned: false)) {
+    return;
   }
-  if (entry.mine && context.mounted) {
-    await setMessagePinned(context, ref, conversationId, id, pinned: false);
+  if (!entry.mine || !context.mounted) return;
+  final ok = await setMessagePinned(
+    context,
+    ref,
+    conversationId,
+    id,
+    pinned: false,
+  );
+  // The row stays when the group still pins it; say so, or Unpin looks dead.
+  if (ok && entry.everyone && !shared && context.mounted) {
+    showAppToast(
+      context,
+      AppTranslations.translate(context, ref, 'group_pin_still_shared'),
+    );
   }
 }
 

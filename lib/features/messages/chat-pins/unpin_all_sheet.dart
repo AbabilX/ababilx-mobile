@@ -8,11 +8,13 @@ import '../chat_icon.dart';
 /// The warning before "Unpin all": a bottom sheet, like the app's other
 /// confirmations, with the destructive choice in red. Answers true only when
 /// the red button was pressed — a swipe down or Cancel keeps every pin.
+/// [forEveryone] warns that a group's shared pins go for every member.
 Future<bool> confirmUnpinAll(
   BuildContext context,
   WidgetRef ref,
-  int count,
-) async {
+  int count, {
+  bool forEveryone = false,
+}) async {
   String tr(String key) => AppTranslations.translate(context, ref, key);
   final go = await showModalBottomSheet<bool>(
     context: context,
@@ -34,7 +36,9 @@ Future<bool> confirmUnpinAll(
               ),
               const SizedBox(height: 6),
               Text(
-                tr('chat_unpin_all_body'),
+                tr(
+                  forEveryone ? 'group_unpin_all_body' : 'chat_unpin_all_body',
+                ),
                 style: text.bodyMedium?.copyWith(
                   color: colors.onSurfaceVariant,
                 ),

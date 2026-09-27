@@ -73,8 +73,8 @@ Future<void> chooseGroupPin(
   );
 }
 
-/// Pins or unpins one message for every member.
-Future<void> setGroupPinned(
+/// Pins or unpins one message for every member; answers whether it went.
+Future<bool> setGroupPinned(
   BuildContext context,
   WidgetRef ref,
   String conversationId,
@@ -92,13 +92,15 @@ Future<void> setGroupPinned(
     if (pinned && context.mounted) {
       showAppToast(context, tr('chat_pinned_toast'));
     }
+    return true;
   } catch (error) {
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
     final key = switch (serverErrorCode(error)) {
       'chat_group_pin_limit' => 'group_pin_limit',
       'pin_restricted' => 'group_perm_err_pin',
       _ => 'chat_pin_failed',
     };
     showAppToast(context, tr(key), isError: true);
+    return false;
   }
 }

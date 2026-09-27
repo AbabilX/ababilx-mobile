@@ -202,7 +202,7 @@ void main() {
     tester,
   ) async {
     final api = await mountPins(tester);
-    await tester.tap(find.text('Unpin all messages'));
+    await tester.tap(find.text('Unpin all'));
     await tester.pumpAndSettle();
     expect(find.text('Unpin all 2 messages?'), findsOneWidget);
     await tester.tap(find.text('Unpin all messages').last);

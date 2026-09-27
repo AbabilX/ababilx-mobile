@@ -140,7 +140,12 @@ class _PinnedMessagesScreenState extends ConsumerState<PinnedMessagesScreen> {
   }
 
   Future<void> _unpinAll(ChatPinsView view, int count) async {
-    final confirmed = await confirmUnpinAll(context, ref, count);
+    final confirmed = await confirmUnpinAll(
+      context,
+      ref,
+      count,
+      forEveryone: view.canPinGroup && view.entries.any((e) => e.everyone),
+    );
     if (!confirmed || !mounted) return;
     setState(() => _unpinningAll = true);
     final ok = await unpinAllChatPins(

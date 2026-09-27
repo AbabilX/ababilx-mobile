@@ -9,8 +9,9 @@ import '../providers/pinned_message_provider.dart';
 import 'timeline_jump.dart';
 
 /// Pins or unpins one message for the caller alone. A pin has no bar in the
-/// chat any more, so pinning says where the list lives.
-Future<void> setMessagePinned(
+/// chat any more, so pinning says where the list lives. Answers whether it
+/// went.
+Future<bool> setMessagePinned(
   BuildContext context,
   WidgetRef ref,
   String conversationId,
@@ -26,8 +27,9 @@ Future<void> setMessagePinned(
     if (pinned && context.mounted) {
       showAppToast(context, tr('chat_pinned_toast'));
     }
+    return true;
   } catch (error) {
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
     final limit =
         error is DioException &&
         error.response?.statusCode == 409 &&
@@ -37,6 +39,7 @@ Future<void> setMessagePinned(
       tr(limit ? 'chat_pin_limit' : 'chat_pin_failed'),
       isError: true,
     );
+    return false;
   }
 }
 

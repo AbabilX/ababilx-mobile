@@ -1004,6 +1004,10 @@ class AppTranslations {
       'group_pin_unpin_me': 'Unpin for me',
       'group_pin_limit': 'A group can have up to 50 pinned messages.',
       'group_pin_for_everyone': 'Pinned for everyone',
+      'group_pin_still_shared':
+          'Removed from your pins. It stays pinned for everyone.',
+      'group_unpin_all_body':
+          'Pins shared with the group are removed for every member. The messages stay in the chat.',
       'privacy_person_sheet_title': 'Privacy with {name}',
       'privacy_person_follow': 'Follow my setting',
       'privacy_person_follow_on': 'Privacy mode is on right now',
@@ -2121,6 +2125,10 @@ class AppTranslations {
       'group_pin_unpin_me': 'আমার জন্য আনপিন করুন',
       'group_pin_limit': 'একটি গ্রুপে সর্বোচ্চ ৫০টি বার্তা পিন করা যায়।',
       'group_pin_for_everyone': 'সবার জন্য পিন করা',
+      'group_pin_still_shared':
+          'আপনার পিন থেকে সরানো হয়েছে। সবার জন্য পিন করা থাকবে।',
+      'group_unpin_all_body':
+          'গ্রুপের শেয়ার করা পিন সব সদস্যের জন্য সরবে। বার্তাগুলো চ্যাটেই থাকবে।',
       'privacy_person_sheet_title': '{name}-এর সাথে প্রাইভেসি',
       'privacy_person_follow': 'আমার সেটিং মেনে চলুক',
       'privacy_person_follow_on': 'প্রাইভেসি মোড এখন চালু',
