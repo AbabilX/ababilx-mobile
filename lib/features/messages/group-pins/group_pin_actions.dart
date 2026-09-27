@@ -88,6 +88,10 @@ Future<void> setGroupPinned(
         ? await putGroupPin(client, conversationId, messageId)
         : await deleteGroupPin(client, conversationId, messageId);
     ref.invalidate(groupPinsProvider(conversationId));
+    // No bar over the chat any more; say where the pin went, as a DM does.
+    if (pinned && context.mounted) {
+      showAppToast(context, tr('chat_pinned_toast'));
+    }
   } catch (error) {
     if (!context.mounted) return;
     final key = switch (serverErrorCode(error)) {

@@ -61,6 +61,7 @@ void main() {
       ProviderScope(
         overrides: [
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(
             () => _Notifier(_group(avatarUrl: 'https://cdn.example/g.jpg'), [
               const ChatMember(
@@ -93,6 +94,7 @@ void main() {
       ProviderScope(
         overrides: [
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(
             () => _Notifier(_group(), const [
               ChatMember(
@@ -123,6 +125,7 @@ void main() {
       ProviderScope(
         overrides: [
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(
             () => _Notifier(_group(), const [
               ChatMember(

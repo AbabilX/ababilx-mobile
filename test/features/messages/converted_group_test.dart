@@ -44,6 +44,7 @@ Future<void> openDetails(WidgetTester tester, ChatConversation group) async {
     ProviderScope(
       overrides: [
         noPinsOverride,
+        noGroupPinsOverride,
         chatProvider.overrideWith(() => _Notifier(group)),
       ],
       child: const MaterialApp(
@@ -90,6 +91,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(() => _Notifier(group)),
         ],
       );

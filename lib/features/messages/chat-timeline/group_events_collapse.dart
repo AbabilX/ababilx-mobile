@@ -97,10 +97,7 @@ class _GroupEventsCollapseState extends State<GroupEventsCollapse> {
 }
 
 class _GroupEventLine extends StatelessWidget {
-  const _GroupEventLine({
-    required this.message,
-    required this.currentUserId,
-  });
+  const _GroupEventLine({required this.message, required this.currentUserId});
 
   final ChatMessage message;
   final String currentUserId;

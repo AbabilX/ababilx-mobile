@@ -74,22 +74,25 @@ void main() {
       expect(items.single, isA<ChatTimelineMessage>());
     });
 
-    test('collapses same-day consecutive system events until a real message', () {
-      final items = buildChatTimelineItems([
-        _msg(id: '1', createdAt: '2026-09-08T14:00:00Z', type: 'system'),
-        _msg(id: '2', createdAt: '2026-09-08T14:01:00Z', type: 'system'),
-        _msg(id: '3', createdAt: '2026-09-08T14:02:00Z', type: 'system'),
-        _msg(id: '4', createdAt: '2026-09-08T14:03:00Z', type: 'text'),
-        _msg(id: '5', createdAt: '2026-09-08T14:04:00Z', type: 'system'),
-        _msg(id: '6', createdAt: '2026-09-08T14:05:00Z', type: 'system'),
-      ]);
-      expect(items, hasLength(3));
-      final first = items[0] as ChatTimelineGroupEvents;
-      expect(first.messages.map((m) => m.id), ['1', '2', '3']);
-      expect(items[1], isA<ChatTimelineMessage>());
-      final second = items[2] as ChatTimelineGroupEvents;
-      expect(second.messages.map((m) => m.id), ['5', '6']);
-    });
+    test(
+      'collapses same-day consecutive system events until a real message',
+      () {
+        final items = buildChatTimelineItems([
+          _msg(id: '1', createdAt: '2026-09-08T14:00:00Z', type: 'system'),
+          _msg(id: '2', createdAt: '2026-09-08T14:01:00Z', type: 'system'),
+          _msg(id: '3', createdAt: '2026-09-08T14:02:00Z', type: 'system'),
+          _msg(id: '4', createdAt: '2026-09-08T14:03:00Z', type: 'text'),
+          _msg(id: '5', createdAt: '2026-09-08T14:04:00Z', type: 'system'),
+          _msg(id: '6', createdAt: '2026-09-08T14:05:00Z', type: 'system'),
+        ]);
+        expect(items, hasLength(3));
+        final first = items[0] as ChatTimelineGroupEvents;
+        expect(first.messages.map((m) => m.id), ['1', '2', '3']);
+        expect(items[1], isA<ChatTimelineMessage>());
+        final second = items[2] as ChatTimelineGroupEvents;
+        expect(second.messages.map((m) => m.id), ['5', '6']);
+      },
+    );
 
     test('does not collapse system events across a day boundary', () {
       final items = buildChatTimelineItems([

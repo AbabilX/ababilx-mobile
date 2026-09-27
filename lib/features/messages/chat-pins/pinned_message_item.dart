@@ -10,7 +10,8 @@ import '../data/models/chat_models.dart';
 
 /// One pin drawn as the chat draws it — the timeline's own bubble, sender name
 /// and reactions — with Telegram's round "go to" arrow on the open side.
-/// Tapping either jumps; a long press offers Go to / Unpin.
+/// Tapping either jumps; a long press offers Go to / Unpin (Unpin only when
+/// [onUnpin] is set — a member cannot take down the group's shared pin).
 class PinnedMessageItem extends ConsumerWidget {
   const PinnedMessageItem({
     super.key,
@@ -20,6 +21,7 @@ class PinnedMessageItem extends ConsumerWidget {
     required this.hasWallpaper,
     required this.onOpen,
     required this.onUnpin,
+    this.pinnedForEveryone = false,
   });
 
   final ChatMessage message;
@@ -27,7 +29,8 @@ class PinnedMessageItem extends ConsumerWidget {
   final bool isGroup;
   final bool hasWallpaper;
   final VoidCallback onOpen;
-  final VoidCallback onUnpin;
+  final VoidCallback? onUnpin;
+  final bool pinnedForEveryone;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,14 +39,22 @@ class PinnedMessageItem extends ConsumerWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onOpen,
         onLongPress: () => _showActions(context, ref),
-        child: MessageRowContent(
-          message: message,
-          pulse: kAlwaysCompleteAnimation,
-          isSending: false,
-          isFailed: false,
-          isOwnMessage: isOwn,
-          isGroup: isGroup,
-          hasWallpaper: hasWallpaper,
+        child: Column(
+          crossAxisAlignment: isOwn
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+          children: [
+            if (pinnedForEveryone) const _EveryoneTag(),
+            MessageRowContent(
+              message: message,
+              pulse: kAlwaysCompleteAnimation,
+              isSending: false,
+              isFailed: false,
+              isOwnMessage: isOwn,
+              isGroup: isGroup,
+              hasWallpaper: hasWallpaper,
+            ),
+          ],
         ),
       ),
     );
@@ -82,16 +93,61 @@ class PinnedMessageItem extends ConsumerWidget {
               title: Text(tr('chat_go_to_message')),
               onTap: () => Navigator.of(sheet).pop(onOpen),
             ),
-            ListTile(
-              leading: const ChatIcon(HugeIcons.strokeRoundedPinOff),
-              title: Text(tr('chat_unpin_message')),
-              onTap: () => Navigator.of(sheet).pop(onUnpin),
-            ),
+            if (onUnpin != null)
+              ListTile(
+                leading: const ChatIcon(HugeIcons.strokeRoundedPinOff),
+                title: Text(tr('chat_unpin_message')),
+                onTap: () => Navigator.of(sheet).pop(onUnpin),
+              ),
           ],
         ),
       ),
     );
     action?.call();
+  }
+}
+
+/// "Pinned for everyone" over a group's shared pin, so it reads apart from
+/// the caller's own.
+class _EveryoneTag extends ConsumerWidget {
+  const _EveryoneTag();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4, left: 4, right: 4),
+      child: Material(
+        color: colors.surfaceContainerHighest.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ChatIcon(
+                HugeIcons.strokeRoundedMegaphone01,
+                size: 14,
+                color: colors.primary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                AppTranslations.translate(
+                  context,
+                  ref,
+                  'group_pin_for_everyone',
+                ),
+                style: TextStyle(
+                  color: colors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

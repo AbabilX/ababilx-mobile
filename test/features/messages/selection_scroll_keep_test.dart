@@ -113,6 +113,7 @@ void main() {
       overrides: [
         ...noTypingOverrides,
         noPinsOverride,
+        noGroupPinsOverride,
         chatProvider.overrideWith(_Chat.new),
         for (final m in _messages)
           for (final a in m.attachments)

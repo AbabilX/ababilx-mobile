@@ -21,10 +21,10 @@ void main() {
     });
 
     test('each pill appears only while something is behind it', () {
-      expect(
-        availableChatListFilters([_conv('a', 'dm', unread: 2)]),
-        [ChatListFilter.all, ChatListFilter.unread],
-      );
+      expect(availableChatListFilters([_conv('a', 'dm', unread: 2)]), [
+        ChatListFilter.all,
+        ChatListFilter.unread,
+      ]);
       expect(
         availableChatListFilters([_conv('a', 'dm'), _conv('g', 'group')]),
         [ChatListFilter.all, ChatListFilter.groups],

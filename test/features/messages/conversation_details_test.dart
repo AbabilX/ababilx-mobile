@@ -65,6 +65,7 @@ void main() {
         overrides: [
           ...noTypingOverrides,
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(_Notifier.new),
         ],
         child: const MaterialApp(
@@ -95,6 +96,7 @@ void main() {
         overrides: [
           ...noTypingOverrides,
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(_Notifier.new),
         ],
         child: const MaterialApp(

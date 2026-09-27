@@ -181,6 +181,7 @@ void main() {
     Widget composer() => ProviderScope(
       overrides: [
         noPinsOverride,
+        noGroupPinsOverride,
         chatProvider.overrideWith(_ComposerNotifier.new),
       ],
       child: const MaterialApp(
@@ -206,7 +207,11 @@ void main() {
   ) async {
     Future<void> mount(ChatNotifier Function() notifier) => tester.pumpWidget(
       ProviderScope(
-        overrides: [noPinsOverride, chatProvider.overrideWith(notifier)],
+        overrides: [
+          noPinsOverride,
+          noGroupPinsOverride,
+          chatProvider.overrideWith(notifier),
+        ],
         child: const MaterialApp(
           home: Scaffold(
             body: MessageComposer(conversationId: 'conversation-1'),
@@ -235,6 +240,7 @@ void main() {
       ProviderScope(
         overrides: [
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(_ComposerNotifier.new),
           composerDraftStoreProvider.overrideWithValue(store),
         ],
@@ -260,6 +266,7 @@ void main() {
       ProviderScope(
         overrides: [
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(_ComposerNotifier.new),
           composerDraftStoreProvider.overrideWithValue(store),
         ],
@@ -287,6 +294,7 @@ void main() {
       ProviderScope(
         overrides: [
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(_CompletingComposerNotifier.new),
           composerDraftStoreProvider.overrideWithValue(store),
           _sendResultProvider.overrideWithValue(result),
@@ -317,6 +325,7 @@ void main() {
       ProviderScope(
         overrides: [
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(_ComposerNotifier.new),
         ],
         child: MaterialApp(
@@ -353,6 +362,7 @@ void main() {
       ProviderScope(
         overrides: [
           noPinsOverride,
+          noGroupPinsOverride,
           chatProvider.overrideWith(_TimelineNotifier.new),
         ],
         child: const MaterialApp(

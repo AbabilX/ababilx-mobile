@@ -5,11 +5,12 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../chat_icon.dart';
-import '../providers/pinned_message_provider.dart';
+import '../chat-pins/chat_pins_provider.dart';
 import 'details_action_button.dart';
 
-/// "Pins" beside Search on the details screen, drawn only while this chat has
-/// a pin — a button that opens an empty list is a dead control. Choosing a
+/// "Pins" beside Search on the details screen — DMs and groups alike, the
+/// caller's own pins and a group's shared ones — drawn only while there is
+/// one — a button that opens an empty list is a dead control. Choosing a
 /// pin closes this screen with its id, and the chat under it walks to it.
 /// Carries its own leading gap so the row stays even when it is absent.
 class PinnedMessagesAction extends ConsumerWidget {
@@ -20,7 +21,11 @@ class PinnedMessagesAction extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final count =
-        ref.watch(pinnedMessagesProvider(conversationId)).valueOrNull?.length ??
+        ref
+            .watch(chatPinsProvider(conversationId))
+            .valueOrNull
+            ?.entries
+            .length ??
         0;
     if (count == 0) return const SizedBox.shrink();
     return Row(

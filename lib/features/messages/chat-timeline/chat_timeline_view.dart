@@ -5,7 +5,8 @@ import '../chat-select/message_selection.dart';
 import '../chat-select/selection_bar.dart';
 import '../chat-select/selection_top_bar.dart';
 import '../data/models/chat_models.dart';
-import '../group-pins/group_pins_bar.dart';
+import '../group-pins/group_pins_provider.dart';
+import '../providers/chat_provider.dart';
 import '../providers/pinned_message_provider.dart';
 import '../safety_number/safety_number_banner.dart';
 import 'message_list.dart';
@@ -73,6 +74,14 @@ class ChatTimelineView extends ConsumerWidget {
     // chat is open without rebuilding the timeline when it lands.
     if (threadRootId == null) {
       ref.listen(pinnedMessagesProvider(conversationId), (_, _) {});
+      // A group's shared pins (server 0157) live on the same Pins page, not in
+      // a bar over the list; the menu still needs them for its label.
+      final isGroup = ref.watch(
+        chatProvider.select(
+          (c) => c.conversationById(conversationId)?.type == 'group',
+        ),
+      );
+      if (isGroup) ref.listen(groupPinsProvider(conversationId), (_, _) {});
     }
 
     return Column(
@@ -124,15 +133,6 @@ class ChatTimelineView extends ConsumerWidget {
                   unreadCount: unreadCount,
                   leading: leading,
                 ),
-                // The group's shared pins (server 0157) sit over the list, as
-                // Telegram's do; nothing is drawn outside a group.
-                if (threadRootId == null)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    child: GroupPinsBar(conversationId: conversationId),
-                  ),
                 Positioned(
                   right: 0,
                   bottom: 0,

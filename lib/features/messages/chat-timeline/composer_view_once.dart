@@ -11,8 +11,7 @@ import '../providers/chat_provider.dart';
 /// member to open it would burn it for everyone. Not Note to Self: nobody to
 /// hide it from.
 bool viewOnceAllowed(WidgetRef ref, String conversationId) =>
-    ref.read(chatProvider).conversationById(conversationId)?.hasDmPeer ??
-    false;
+    ref.read(chatProvider).conversationById(conversationId)?.hasDmPeer ?? false;
 
 /// Wraps [onAdded] so every upload of a view-once album carries
 /// `view_seconds: 0` (which also means no saving). Photos only: the eye is

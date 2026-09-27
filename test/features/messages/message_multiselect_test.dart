@@ -52,6 +52,7 @@ Widget _app(Widget child) => ProviderScope(
   overrides: [
     ...noTypingOverrides,
     noPinsOverride,
+    noGroupPinsOverride,
     chatProvider.overrideWith(_SelectChatNotifier.new),
   ],
   child: MaterialApp(home: Scaffold(body: child)),
@@ -107,6 +108,7 @@ void main() {
       overrides: [
         ...noTypingOverrides,
         noPinsOverride,
+        noGroupPinsOverride,
         chatProvider.overrideWith(_SelectChatNotifier.new),
       ],
     );
@@ -150,6 +152,7 @@ void main() {
       overrides: [
         ...noTypingOverrides,
         noPinsOverride,
+        noGroupPinsOverride,
         chatProvider.overrideWith(_SelectChatNotifier.new),
       ],
     );

@@ -148,8 +148,10 @@ ChatListPreview chatListPreview(
   final files = khaam != null
       ? const <ChatLastAttachment>[]
       : conv.previewAttachments
-      .where((a) => a.fileName.trim().isNotEmpty || a.contentType.isNotEmpty)
-      .toList();
+            .where(
+              (a) => a.fileName.trim().isNotEmpty || a.contentType.isNotEmpty,
+            )
+            .toList();
 
   // If the body exists but tiptap parsing yields nothing (e.g. the API
   // truncated the JSON at 120 chars), leave text empty so the preview shows
