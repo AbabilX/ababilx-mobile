@@ -46,11 +46,14 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
         )
         db.execSQL("CREATE TABLE migration_scopes (scope TEXT PRIMARY KEY NOT NULL)")
         createLookupIndexes(db)
+        RestoredBodies.create(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         // V1 -> V2: additive indexes only; building them reads the table once.
         if (oldVersion < 2) createLookupIndexes(db)
+        // V2 -> V3: text restored from a local backup (RestoredBodies).
+        if (oldVersion < 3) RestoredBodies.create(db)
     }
 
     /**
@@ -249,6 +252,7 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
             "json_extract(payload_json, '\$.id') = ?",
             arrayOf(messageId),
         )
+        RestoredBodies.remove(writableDatabase, messageId)
     }
 
     fun unsent(): List<String> {
@@ -264,10 +268,12 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
 
     fun clearConversation(conversationId: String) {
         writableDatabase.delete("messages", "conversation_id = ?", arrayOf(conversationId))
+        RestoredBodies.removeOrphans(writableDatabase)
     }
 
     fun clearAll() {
         writableDatabase.delete("messages", null, null)
+        RestoredBodies.clear(writableDatabase)
     }
 
     /**
@@ -295,7 +301,7 @@ class ChatMessageDatabase(context: Context) : SQLiteOpenHelper(
 
     private companion object {
         const val DATABASE_NAME = "ababilx_messages.db"
-        const val DATABASE_VERSION = 2
+        const val DATABASE_VERSION = 3
 
         /** Local retention backstop. The phone outlives the server's window. */
         const val MAX_KEEP = 200_000

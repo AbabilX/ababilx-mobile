@@ -39,6 +39,11 @@ class ChatFocusReporter {
   /// top one speaks; popping it hands the claim back to the one below.
   static final List<ChatFocusReporter> _stack = [];
 
+  /// The conversation of the chat screen on top, visible or not — who
+  /// "active" goes back to when the screen above it closes.
+  static String? get topConversationId =>
+      _stack.isEmpty ? null : _stack.last.conversationId;
+
   final WsClient ws;
   final String conversationId;
 

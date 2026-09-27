@@ -1,5 +1,16 @@
 part of 'message_vault.dart';
 
+class EncryptedDmPayload {
+  const EncryptedDmPayload({
+    required this.encryptedBody,
+    required this.nonce,
+    required this.keyVersion,
+  });
+  final String encryptedBody;
+  final String nonce;
+  final int keyVersion;
+}
+
 /// Wire-format helpers. Every value crossing the API is base64url without
 /// padding and every AES-GCM ciphertext is `ciphertext || 16-byte tag`, which
 /// is exactly what WebCrypto emits on the web client.

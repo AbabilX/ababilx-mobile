@@ -1,0 +1,141 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:cryptography/cryptography.dart';
+
+import 'backup_crypto.dart';
+import 'backup_header.dart';
+
+/// Streams frames and files into one sealed backup file.
+///
+/// Memory is bounded by one record: frames buffer up to [frameRecordBytes] of
+/// NDJSON before they are gzipped and sealed, and a file is read and sealed
+/// [filePartBytes] at a time, so a phone with 200 000 messages and a thousand
+/// photos costs the same peak as one with ten. Only ciphertext ever reaches
+/// the disk.
+class BackupFileWriter {
+  BackupFileWriter._(this._file, this._sink, this._key, this._digest);
+
+  static const frameRecordBytes = 256 * 1024;
+  static const filePartBytes = 512 * 1024;
+
+  static Future<BackupFileWriter> create(
+    File file, {
+    required List<int> accountKey,
+    required String userId,
+    required int createdAtMs,
+  }) async {
+    final salt = BackupCrypto.randomBytes(BackupCrypto.saltBytes);
+    final header = EncodedHeader.of(
+      BackupHeader(
+        userId: userId,
+        salt: salt,
+        keyCheck: await BackupCrypto.keyCheck(accountKey, salt),
+        createdAtMs: createdAtMs,
+      ),
+    );
+    final key = await BackupCrypto.fileKey(accountKey, salt);
+    final sink = file.openWrite();
+    sink
+      ..add(BackupFormat.magic)
+      ..add(u32(header.bytes.length))
+      ..add(header.bytes);
+    return BackupFileWriter._(file, sink, key, header.digest);
+  }
+
+  final File _file;
+  final IOSink _sink;
+  final SecretKey _key;
+  final String _digest;
+  final _frames = BytesBuilder(copy: false);
+  int _index = 0;
+  int _frameCount = 0;
+  int _fileCount = 0;
+  bool _closed = false;
+
+  int get framesWritten => _frameCount;
+  int get filesWritten => _fileCount;
+
+  Future<void> addFrame(Map<String, dynamic> frame) async {
+    _frames.add(utf8.encode('${jsonEncode(frame)}\n'));
+    _frameCount++;
+    if (_frames.length >= frameRecordBytes) await _flushFrames();
+  }
+
+  /// A `file` frame followed by the file's bytes. The frame is flushed first
+  /// so the reader meets it before the parts it names. Returns false, having
+  /// written nothing, when the source cannot be read.
+  Future<bool> addFile(Map<String, dynamic> frame, File source) async {
+    RandomAccessFile? input;
+    try {
+      input = await source.open();
+    } catch (_) {
+      return false;
+    }
+    try {
+      final size = await input.length();
+      await addFrame({...frame, 't': 'file', 's': size});
+      await _flushFrames();
+      var left = size;
+      while (left > 0) {
+        final part = await input.read(
+          left < filePartBytes ? left : filePartBytes,
+        );
+        if (part.isEmpty) break;
+        await _record(BackupRecordType.filePart, part);
+        left -= part.length;
+      }
+      _fileCount++;
+      return true;
+    } finally {
+      await input.close();
+    }
+  }
+
+  Future<void> close() async {
+    if (_closed) return;
+    await _flushFrames();
+    await _record(
+      BackupRecordType.end,
+      utf8.encode(jsonEncode({'frames': _frameCount, 'files': _fileCount})),
+    );
+    _closed = true;
+    await _sink.flush();
+    await _sink.close();
+  }
+
+  /// Stops and removes the partial file. A half-written backup must never sit
+  /// where a restore could pick it up.
+  Future<void> abort() async {
+    if (!_closed) {
+      _closed = true;
+      try {
+        await _sink.close();
+      } catch (_) {}
+    }
+    try {
+      if (await _file.exists()) await _file.delete();
+    } catch (_) {}
+  }
+
+  Future<void> _flushFrames() async {
+    if (_frames.isEmpty) return;
+    await _record(BackupRecordType.frames, gzip.encode(_frames.takeBytes()));
+  }
+
+  Future<void> _record(int type, List<int> body) async {
+    final plain = Uint8List(body.length + 1)
+      ..[0] = type
+      ..setRange(1, body.length + 1, body);
+    final sealed = await BackupCrypto.seal(
+      _key,
+      BackupCrypto.recordAad(_digest, _index),
+      plain,
+    );
+    _sink
+      ..add(u32(sealed.length))
+      ..add(sealed);
+    _index++;
+  }
+}

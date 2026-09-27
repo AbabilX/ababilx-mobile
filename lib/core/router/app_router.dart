@@ -47,6 +47,7 @@ import '../../features/calls/screens/calls_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
 import '../../features/settings/chat-backup/chat_backup_screen.dart';
+import '../../features/local-backup/ui/local_backup_screen.dart';
 import '../../features/settings/data-storage/chat_lock_settings_screen.dart';
 import '../../features/settings/data-storage/data_storage_screen.dart';
 import '../../features/settings/data-storage/storage_management_screen.dart';
@@ -241,6 +242,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/chat-backup/recovery-codes',
         builder: (_, _) => const RecoveryCodesScreen(),
+      ),
+      GoRoute(
+        path: '/settings/chat-backup/local',
+        builder: (_, _) => const LocalBackupScreen(),
       ),
       GoRoute(
         path: '/settings/chat-backup',

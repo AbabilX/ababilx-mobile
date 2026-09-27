@@ -30,6 +30,7 @@ class ApiConstants {
   static const String meSessionsRevokeOthers = '/api/me/sessions/revoke-others';
   static const String meDiscovery = '/api/me/discovery';
   static const String meTypingIndicators = '/api/me/typing-indicators';
+  static const String meBackupKey = '/api/me/backup-key';
 
   /// Public update check (no auth): `?platform=android&build=30`.
   static const String appVersion = '/v1/api/app/version';

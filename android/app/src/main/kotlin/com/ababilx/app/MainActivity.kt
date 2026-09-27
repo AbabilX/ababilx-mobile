@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.MotionEvent
 import androidx.core.view.WindowCompat
+import com.ababilx.app.backup.LocalBackupChannel
 import com.ababilx.app.mediasend.MediaSendChannel
 import com.ababilx.call_ringer.CallRinger
 import io.flutter.embedding.android.FlutterActivity
@@ -87,6 +88,9 @@ class MainActivity : FlutterActivity() {
     /** Fingerprint, face or screen lock for a locked chat. */
     private val deviceAuth by lazy { DeviceAuthChannel(this) }
 
+    /** Local backup folder and file pickers (features/local-backup). */
+    private val localBackup by lazy { LocalBackupChannel(this) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
@@ -114,6 +118,7 @@ class MainActivity : FlutterActivity() {
         secureWindow.attach(flutterEngine)
         ghostBlobs.attach(flutterEngine)
         deviceAuth.attach(flutterEngine)
+        localBackup.attach(flutterEngine)
     }
 
     /**
@@ -144,6 +149,7 @@ class MainActivity : FlutterActivity() {
         // and must keep going to super.
         if (mediaSend.onActivityResult(requestCode, resultCode, data)) return
         if (deviceAuth.onActivityResult(requestCode, resultCode)) return
+        if (localBackup.onActivityResult(requestCode, resultCode, data)) return
         super.onActivityResult(requestCode, resultCode, data)
     }
 

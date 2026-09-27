@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../local-backup/data/local_backup_settings.dart';
 import '../providers/chat_provider.dart';
 
 import 'archive_api.dart';
@@ -71,6 +72,9 @@ class ArchiveNotifier extends Notifier<ArchiveState> {
     final id = await ref.read(chatProvider.notifier).ensureCurrentUserId();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('archive_recovery_pending_$id', true);
+    // Same moment for the local backup: a new install just got this
+    // account's messages back, so offer the local copy once.
+    await const LocalBackupSettingsStore().armRestoreOffer(id);
   }
 
   Future<void> restoreAfterRecovery() => _recoveryRun ??=

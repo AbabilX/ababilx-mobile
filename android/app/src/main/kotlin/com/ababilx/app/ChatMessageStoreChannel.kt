@@ -81,6 +81,17 @@ class ChatMessageStoreChannel(context: android.content.Context) {
                         )
                         null
                     }
+                    "putRestored" -> background(result) {
+                        val rows = call.argument<Map<String, String>>("rows").orEmpty()
+                        RestoredBodies.putAll(database.writableDatabase, rows)
+                        null
+                    }
+                    "restored" -> background(result, reader) {
+                        RestoredBodies.get(
+                            database.readableDatabase,
+                            requiredString(call.argument("messageId")),
+                        )
+                    }
                     "clearAll" -> background(result) {
                         database.clearAll()
                         null

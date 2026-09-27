@@ -370,6 +370,35 @@ class ChatNotifier extends Notifier<ChatState>
     if (id != null && !isValidConversationId(id)) return;
     state = state.copyWith(
       activeConversationId: id,
+      clearActiveConversation: id == null,
+      clearThreadRoot: true,
+      clearReplyTo: true,
+    );
+  }
+
+  /// A conversation screen closed. "Active" goes back to the chat screen still
+  /// under it ([next]), or is cleared. It used to stay set after leaving,
+  /// because `copyWith` could not null it: messages arriving in a chat nobody
+  /// was looking at were acknowledged as read to their sender, the unread
+  /// badge never moved and the tray entry was dismissed.
+  ///
+  /// Checks the current value first, so a leave that lands after the next
+  /// screen already claimed "active" changes nothing.
+  void leaveConversation(
+    String conversationId, {
+    String? threadRootId,
+    String? next,
+  }) {
+    if (isDisposed || state.activeConversationId != conversationId) return;
+    if (threadRootId != null) {
+      // A thread closing leaves its conversation open underneath.
+      if (state.threadRootId == threadRootId) setThreadRootId(null);
+      return;
+    }
+    if (next == conversationId) return;
+    state = state.copyWith(
+      activeConversationId: next,
+      clearActiveConversation: next == null,
       clearThreadRoot: true,
       clearReplyTo: true,
     );

@@ -37,6 +37,14 @@ class ChatBackupScreen extends ConsumerWidget {
               body: t('backup_recent_body'),
             ),
             const Divider(height: 24),
+            SettingsSectionHeader(t('local_backup_section')),
+            SettingsRow(
+              icon: HugeIcons.strokeRoundedFolder01,
+              title: t('local_backup_title'),
+              subtitle: t('local_backup_row_hint'),
+              onTap: () => context.push('/settings/chat-backup/local'),
+            ),
+            const Divider(height: 24),
             SettingsSectionHeader(t('backup_section_recovery')),
             SettingsRow(
               icon: HugeIcons.strokeRoundedKey01,

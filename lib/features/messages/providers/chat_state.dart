@@ -99,6 +99,7 @@ class ChatState {
     bool? sidebarLoading,
     String? currentUserId,
     String? activeConversationId,
+    bool clearActiveConversation = false,
     String? threadRootId,
     bool clearThreadRoot = false,
     ChatMessage? replyToMessage,
@@ -115,7 +116,12 @@ class ChatState {
     channels: channels ?? this.channels,
     sidebarLoading: sidebarLoading ?? this.sidebarLoading,
     currentUserId: currentUserId ?? this.currentUserId,
-    activeConversationId: activeConversationId ?? this.activeConversationId,
+    // `null` alone keeps the old id (every field here does); leaving a chat
+    // needs the flag, or the chat stays "active" and its next message is
+    // acknowledged as read to the sender.
+    activeConversationId: clearActiveConversation
+        ? null
+        : (activeConversationId ?? this.activeConversationId),
     threadRootId: clearThreadRoot ? null : (threadRootId ?? this.threadRootId),
     replyToMessage: clearReplyTo
         ? null

@@ -10,6 +10,7 @@ import '../data/chat_repository.dart';
 import '../data/local/chat_key_cache.dart';
 import '../data/local/chat_message_store.dart';
 import '../../private-chat/private_quote.dart';
+import '../../local-backup/restore/restored_body_store.dart';
 import '../data/models/chat_message.dart';
 import '../data/models/chat_message_quote.dart';
 import 'p256_ecdh.dart';
@@ -18,6 +19,7 @@ import 'recovery_key.dart';
 import '../data/chat_recovery_api.dart';
 
 part 'message_vault_backfill.dart';
+part 'message_vault_backup.dart';
 part 'message_vault_decrypt.dart';
 part 'message_vault_envelope.dart';
 part 'message_vault_ghost.dart';
@@ -38,17 +40,6 @@ part 'message_vault_local_code.dart';
 /// OS secure storage and proceed directly to chat. `setup` remains only for
 /// compatibility with older gate callers; new provisioning returns `ready`.
 enum VaultIdentityState { ready, setup, unlock }
-
-class EncryptedDmPayload {
-  const EncryptedDmPayload({
-    required this.encryptedBody,
-    required this.nonce,
-    required this.keyVersion,
-  });
-  final String encryptedBody;
-  final String nonce;
-  final int keyVersion;
-}
 
 class MessageVault {
   MessageVault(this._repo, this._storage, [this._keyCache]);
@@ -104,6 +95,10 @@ class MessageVault {
   /// has no history to look in.
   Future<ChatMessageQuote?> Function(String conversationId, String messageId)?
   privateQuoteLookup;
+
+  /// Text a local backup brought back for a message no key opens any more
+  /// (features/local-backup). Asked only after the key path has failed.
+  Future<String?> Function(String messageId, String userId)? restoredBodyLookup;
 
   /// Reads the freshly generated code once and forgets it.
   String? takePendingRecoveryCode() {
@@ -199,5 +194,7 @@ final messageVaultProvider = Provider<MessageVault>(
               ref.read(chatMessageStoreProvider),
               conversationId,
               messageId,
-            )),
+            ))
+        ..restoredBodyLookup = ((messageId, userId) =>
+            ref.read(restoredBodyStoreProvider).lookup(messageId, userId)),
 );

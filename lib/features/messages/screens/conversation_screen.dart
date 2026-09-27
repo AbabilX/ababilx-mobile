@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -44,9 +46,16 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     conversationId: widget.conversationId,
   );
 
+  /// Captured while mounted, for [dispose]: `ref` throws there (the element
+  /// is already unmounted), and a throw out of dispose also skips riverpod
+  /// closing this screen's `watch` subscriptions — every later chat update
+  /// then marked a dead element dirty (`_ElementLifecycle.defunct`).
+  late final ProviderContainer _container;
+
   @override
   void initState() {
     super.initState();
+    _container = ProviderScope.containerOf(context, listen: false);
     // Opened from a push notification this screen can mount before anything
     // else has loaded chat, so it starts the bootstrap itself instead of
     // racing whatever ChatStoreSync is doing.
@@ -99,17 +108,33 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     // Arrivals over the socket move the read marker as they land; this catches
     // the ones that came in with the socket down, so backing out of a chat
     // never leaves it showing unread messages the reader has just seen.
-    if (widget.threadRootId == null) {
-      ref
-          .read(chatProvider.notifier)
-          .markConversationRead(widget.conversationId)
-          .ignore();
-    }
-    ref.read(chatProvider.notifier).setActiveConversation(null);
-    ref.read(chatProvider.notifier).setThreadRootId(null);
-    // Leaving the chat leaves the mode: the bars belong to this screen, and a
-    // selection that survived it would be waiting on the next visit.
-    ref.read(messageSelectionProvider.notifier).clear();
+    //
+    // Every provider write waits for this frame to finish. flutter_riverpod
+    // refuses a provider change inside a widget lifecycle (debug throws "Tried
+    // to modify a provider while the widget tree was building"), and anything
+    // thrown out of dispose skips riverpod closing this screen's `watch`
+    // subscriptions — each later chat update then hit a dead element
+    // (`_ElementLifecycle.defunct`). A new chat screen claims "active" in a
+    // post-frame callback, which runs before this microtask, so the guarded
+    // leave below never undoes it.
+    final container = _container;
+    final id = widget.conversationId;
+    final thread = widget.threadRootId;
+    final next = ChatFocusReporter.topConversationId;
+    scheduleMicrotask(() {
+      try {
+        final chat = container.read(chatProvider.notifier);
+        if (thread == null) chat.markConversationRead(id).ignore();
+        chat.leaveConversation(id, threadRootId: thread, next: next);
+        // Leaving the chat leaves the mode: the bars belong to this screen,
+        // and a selection that survived it would wait for the next visit.
+        if (thread == null) {
+          container.read(messageSelectionProvider.notifier).clear();
+        }
+      } catch (_) {
+        // The container went with the app; there is nothing left to update.
+      }
+    });
     super.dispose();
   }
 

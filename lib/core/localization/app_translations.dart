@@ -91,6 +91,89 @@ class AppTranslations {
       'recovery_copied': 'Copied',
       'settings_backup': 'Backup',
       'settings_backup_sub': '180-day cloud history and recovery code',
+      'local_backup_section': 'On this phone',
+      'local_backup_title': 'Local backup',
+      'local_backup_row_hint':
+          'A daily copy of your chats in a folder you pick',
+      'local_backup_switch_hint':
+          'Every day, a copy of your chats is saved to a folder you pick. Bring them back after a reinstall, on a new phone, or if you lose your recovery code.',
+      'local_backup_folder': 'Folder',
+      'local_backup_last': 'Last backup',
+      'local_backup_never': 'Not yet',
+      'local_backup_now': 'Back up now',
+      'local_backup_running': 'Backing up… {n} messages',
+      'local_backup_done': 'Backup saved',
+      'local_backup_today': 'Today',
+      'local_backup_yesterday': 'Yesterday',
+      'local_backup_section_what': 'What to back up',
+      'local_backup_text': 'Text messages',
+      'local_backup_text_hint': 'Always included',
+      'local_backup_photos': 'Photos',
+      'local_backup_voice': 'Voice notes',
+      'local_backup_videos': 'Videos',
+      'local_backup_documents': 'Documents',
+      'local_backup_media_note':
+          'Only files already downloaded on this phone go in.',
+      'local_backup_section_chats': 'Chats',
+      'local_backup_dms': 'Direct messages',
+      'local_backup_groups': 'Groups',
+      'local_backup_nothing':
+          'Nothing is selected, so no backup can be made. Turn on at least one.',
+      'local_backup_protected_note':
+          'Private chats, view-once photos and media the sender did not allow saving are never backed up.',
+      'local_backup_restore': 'Restore from a backup',
+      'local_backup_restore_hint': 'Bring back chats from a backup file',
+      'local_backup_security_note':
+          'The file is locked to your AbabilX account: signing in as you opens it, and no recovery code is needed. It is not end-to-end encrypted. AbabilX holds the key and your phone holds the file, so keep the folder private.',
+      'local_backup_enable_title': 'Turn on local backup?',
+      'local_backup_enable_point_daily':
+          'Once a day, a copy of your chats is saved to a folder you choose. The two newest copies are kept.',
+      'local_backup_enable_point_account':
+          'Only your AbabilX account can open it. You will not need your recovery code.',
+      'local_backup_enable_point_key':
+          'It is not end-to-end encrypted: AbabilX holds the key and your phone holds the file. Someone with both could read it.',
+      'local_backup_enable_point_folder':
+          'Pick a folder only you use. An app that syncs that folder to the cloud copies the file too.',
+      'local_backup_choose_folder': 'Choose folder',
+      'local_backup_turned_off':
+          'Local backup is off. Backups already saved stay in the folder.',
+      'local_backup_restore_offer_title': 'Restore from a backup?',
+      'local_backup_restore_offer_body':
+          'If you kept a local backup of your chats, you can bring it back now.',
+      'local_backup_restore_now': 'Restore',
+      'local_backup_not_now': 'Not now',
+      'local_backup_restore_source_title': 'Where is your backup?',
+      'local_backup_restore_from_folder': 'Choose backup folder',
+      'local_backup_restore_from_file': 'Choose a backup file',
+      'local_backup_restore_pick_title': 'Choose a backup',
+      'local_backup_restore_empty': 'There are no backups in this folder.',
+      'local_backup_other_account': 'another account',
+      'local_backup_restoring': 'Restoring… {n} messages',
+      'local_backup_restore_keep_open':
+          'Keep AbabilX open until this finishes.',
+      'local_backup_restored': 'Restored {n} messages',
+      'local_backup_error_not_backup':
+          'This is not an AbabilX backup, or a newer version of the app made it.',
+      'local_backup_error_wrong_account':
+          'This backup belongs to a different AbabilX account.',
+      'local_backup_error_incomplete':
+          'This backup file is incomplete. Try the other backup in the folder.',
+      'local_backup_error_damaged':
+          'This backup file is damaged and cannot be read.',
+      'local_backup_error_cancelled': 'Cancelled',
+      'local_backup_error_folder':
+          'This phone lost access to the backup folder. Choose it again.',
+      'local_backup_error_nothing': 'Nothing is selected to back up.',
+      'local_backup_error_locked':
+          'Unlock your messages first, then try again.',
+      'local_backup_error_busy': 'A backup or restore is already running.',
+      'local_backup_error_key':
+          'Could not reach AbabilX to unlock the backup. Check your connection.',
+      'local_backup_error_folder_refused':
+          'Android does not allow backup files in this folder. Recordings, Music and Pictures only take media. Choose a folder in Documents or Download.',
+      'local_backup_error_folder_io':
+          'Could not use the backup folder. Check that it still exists.',
+      'local_backup_error_generic': 'Something went wrong. Try again.',
       'backup_section_recent': 'While you chat',
       'backup_recent_title': 'Your last 180 days save automatically',
       'backup_recent_body':
@@ -1133,6 +1216,88 @@ class AppTranslations {
       'recovery_copied': 'কপি হয়েছে',
       'settings_backup': 'ব্যাকআপ',
       'settings_backup_sub': '১৮০ দিন ক্লাউড ইতিহাস ও রিকভারি কোড',
+      'local_backup_section': 'এই ফোনে',
+      'local_backup_title': 'লোকাল ব্যাকআপ',
+      'local_backup_row_hint':
+          'আপনার বাছাই করা ফোল্ডারে প্রতিদিন চ্যাটের একটি কপি',
+      'local_backup_switch_hint':
+          'প্রতিদিন আপনার চ্যাটের একটি কপি আপনার বাছাই করা ফোল্ডারে সেভ হয়। অ্যাপ আবার ইনস্টল করলে, নতুন ফোনে, বা রিকভারি কোড হারালেও সেগুলো ফিরিয়ে আনতে পারবেন।',
+      'local_backup_folder': 'ফোল্ডার',
+      'local_backup_last': 'শেষ ব্যাকআপ',
+      'local_backup_never': 'এখনো হয়নি',
+      'local_backup_now': 'এখনই ব্যাকআপ নিন',
+      'local_backup_running': 'ব্যাকআপ চলছে… {n}টি মেসেজ',
+      'local_backup_done': 'ব্যাকআপ সেভ হয়েছে',
+      'local_backup_today': 'আজ',
+      'local_backup_yesterday': 'গতকাল',
+      'local_backup_section_what': 'কী ব্যাকআপ হবে',
+      'local_backup_text': 'টেক্সট মেসেজ',
+      'local_backup_text_hint': 'সবসময় থাকে',
+      'local_backup_photos': 'ছবি',
+      'local_backup_voice': 'ভয়েস নোট',
+      'local_backup_videos': 'ভিডিও',
+      'local_backup_documents': 'ডকুমেন্ট',
+      'local_backup_media_note':
+          'শুধু এই ফোনে আগে থেকে ডাউনলোড হওয়া ফাইলগুলোই যায়।',
+      'local_backup_section_chats': 'চ্যাট',
+      'local_backup_dms': 'ডাইরেক্ট মেসেজ',
+      'local_backup_groups': 'গ্রুপ',
+      'local_backup_nothing':
+          'কিছুই বাছাই করা নেই, তাই ব্যাকআপ হবে না। অন্তত একটি চালু করুন।',
+      'local_backup_protected_note':
+          'প্রাইভেট চ্যাট, একবার দেখার ছবি আর যে মিডিয়া প্রেরক সেভ করতে দেননি — এগুলো কখনো ব্যাকআপ হয় না।',
+      'local_backup_restore': 'ব্যাকআপ থেকে ফিরিয়ে আনুন',
+      'local_backup_restore_hint': 'ব্যাকআপ ফাইল থেকে চ্যাট ফিরিয়ে আনুন',
+      'local_backup_security_note':
+          'ফাইলটি আপনার AbabilX অ্যাকাউন্টে লক করা: আপনার অ্যাকাউন্টে সাইন ইন করলেই খোলে, রিকভারি কোড লাগে না। এটি এন্ড-টু-এন্ড এনক্রিপ্টেড নয়। চাবি AbabilX-এর কাছে আর ফাইল আপনার ফোনে, তাই ফোল্ডারটি গোপন রাখুন।',
+      'local_backup_enable_title': 'লোকাল ব্যাকআপ চালু করবেন?',
+      'local_backup_enable_point_daily':
+          'দিনে একবার আপনার চ্যাটের একটি কপি আপনার বাছাই করা ফোল্ডারে সেভ হয়। সবচেয়ে নতুন দুটি কপি রাখা হয়।',
+      'local_backup_enable_point_account':
+          'শুধু আপনার AbabilX অ্যাকাউন্টই এটি খুলতে পারে। রিকভারি কোড লাগবে না।',
+      'local_backup_enable_point_key':
+          'এটি এন্ড-টু-এন্ড এনক্রিপ্টেড নয়: চাবি AbabilX-এর কাছে আর ফাইল আপনার ফোনে। দুটোই যার কাছে থাকবে সে পড়তে পারবে।',
+      'local_backup_enable_point_folder':
+          'এমন ফোল্ডার বাছুন যা শুধু আপনি ব্যবহার করেন। কোনো অ্যাপ ফোল্ডারটি ক্লাউডে সিঙ্ক করলে ফাইলটিও কপি হয়ে যায়।',
+      'local_backup_choose_folder': 'ফোল্ডার বাছুন',
+      'local_backup_turned_off':
+          'লোকাল ব্যাকআপ বন্ধ। আগের ব্যাকআপগুলো ফোল্ডারেই থাকবে।',
+      'local_backup_restore_offer_title': 'ব্যাকআপ থেকে ফিরিয়ে আনবেন?',
+      'local_backup_restore_offer_body':
+          'চ্যাটের লোকাল ব্যাকআপ রেখে থাকলে এখনই ফিরিয়ে আনতে পারেন।',
+      'local_backup_restore_now': 'ফিরিয়ে আনুন',
+      'local_backup_not_now': 'এখন নয়',
+      'local_backup_restore_source_title': 'আপনার ব্যাকআপ কোথায়?',
+      'local_backup_restore_from_folder': 'ব্যাকআপ ফোল্ডার বাছুন',
+      'local_backup_restore_from_file': 'একটি ব্যাকআপ ফাইল বাছুন',
+      'local_backup_restore_pick_title': 'একটি ব্যাকআপ বাছুন',
+      'local_backup_restore_empty': 'এই ফোল্ডারে কোনো ব্যাকআপ নেই।',
+      'local_backup_other_account': 'অন্য অ্যাকাউন্ট',
+      'local_backup_restoring': 'ফিরিয়ে আনা হচ্ছে… {n}টি মেসেজ',
+      'local_backup_restore_keep_open':
+          'শেষ না হওয়া পর্যন্ত AbabilX খোলা রাখুন।',
+      'local_backup_restored': '{n}টি মেসেজ ফিরিয়ে আনা হয়েছে',
+      'local_backup_error_not_backup':
+          'এটি AbabilX ব্যাকআপ নয়, অথবা অ্যাপের নতুন সংস্করণে তৈরি।',
+      'local_backup_error_wrong_account':
+          'এই ব্যাকআপটি অন্য একটি AbabilX অ্যাকাউন্টের।',
+      'local_backup_error_incomplete':
+          'এই ব্যাকআপ ফাইলটি অসম্পূর্ণ। ফোল্ডারের অন্য ব্যাকআপটি চেষ্টা করুন।',
+      'local_backup_error_damaged': 'এই ব্যাকআপ ফাইলটি নষ্ট, পড়া যাচ্ছে না।',
+      'local_backup_error_cancelled': 'বাতিল হয়েছে',
+      'local_backup_error_folder':
+          'এই ফোন ব্যাকআপ ফোল্ডারে ঢোকার অনুমতি হারিয়েছে। ফোল্ডারটি আবার বাছুন।',
+      'local_backup_error_nothing': 'ব্যাকআপের জন্য কিছুই বাছাই করা নেই।',
+      'local_backup_error_locked':
+          'আগে আপনার মেসেজ আনলক করুন, তারপর আবার চেষ্টা করুন।',
+      'local_backup_error_busy': 'একটি ব্যাকআপ বা রিস্টোর আগে থেকেই চলছে।',
+      'local_backup_error_key':
+          'ব্যাকআপ খুলতে AbabilX-এ পৌঁছানো যায়নি। ইন্টারনেট সংযোগ দেখুন।',
+      'local_backup_error_folder_refused':
+          'Android এই ফোল্ডারে ব্যাকআপ ফাইল রাখতে দেয় না। Recordings, Music, Pictures শুধু মিডিয়া নেয়। Documents বা Download-এর ভেতরে একটি ফোল্ডার বাছুন।',
+      'local_backup_error_folder_io':
+          'ব্যাকআপ ফোল্ডার ব্যবহার করা যায়নি। ফোল্ডারটি এখনো আছে কিনা দেখুন।',
+      'local_backup_error_generic': 'কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।',
       'backup_section_recent': 'চ্যাট করার সময়',
       'backup_recent_title': 'গত ১৮০ দিনের মেসেজ নিজে থেকেই সেভ হয়',
       'backup_recent_body':

@@ -8,6 +8,7 @@ import '../../features/crm/providers/crm_leads_ui_provider.dart';
 import '../../features/crm/providers/crm_organizations_ui_provider.dart';
 import '../../features/messages/providers/chat_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
+import '../../features/local-backup/ui/local_backup_watcher.dart';
 import '../../features/notifications/widgets/notification_vitals_watcher.dart';
 import '../../features/policy/widgets/policy_gate_overlay.dart';
 import '../../features/wall/providers/wall_ui_provider.dart';
@@ -99,6 +100,7 @@ class HomeShell extends ConsumerWidget {
         children: [
           Positioned.fill(child: child),
           const NotificationVitalsWatcher(),
+          const LocalBackupWatcher(),
           const PolicyGateOverlay(),
           if (bar != null)
             Positioned(

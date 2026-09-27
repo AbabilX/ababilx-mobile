@@ -62,31 +62,55 @@ extension MessageVaultDecrypt on MessageVault {
       return message.copyWith(body: 'Encrypted message', quote: quote);
     }
     try {
-      // Memory, then this device's own stored envelope, then the network —
-      // see [MessageVaultKeyCache._readKey]. Reading starts on the device so a
-      // phone with no connection reads its history rather than drawing
-      // "Unable to decrypt this message" over messages it already holds.
-      final key = await _readKey(
-        message.conversationId,
-        currentUserId,
-        message.encryptionKeyVersion,
-      );
-      if (key == null || key.version != message.encryptionKeyVersion) {
-        throw StateError('Secure message key is unavailable');
-      }
-      final clear = await _aes.decrypt(
-        _box(message.encryptedBody!, message.encryptionNonce!),
-        secretKey: key.key,
-        aad: utf8.encode(
-          'ababilx-dm-v1:${message.conversationId}:${key.version}:${message.userId}',
-        ),
-      );
-      return message.copyWith(body: utf8.decode(clear), quote: quote);
+      final body = await _openSealedBody(message, currentUserId);
+      return message.copyWith(body: body, quote: quote);
     } catch (_) {
+      // A message no key opens may still have come back from a local backup,
+      // which carries its text (features/local-backup, after "start fresh").
+      final restored = await _restoredBody(message.id, currentUserId);
       return message.copyWith(
-        body: 'Unable to decrypt this message',
+        body: restored ?? 'Unable to decrypt this message',
         quote: quote,
       );
+    }
+  }
+
+  /// The ciphertext opened under its conversation key, or a throw — never a
+  /// placeholder, so callers that must not keep one (the local backup) can
+  /// tell a failure from a message.
+  Future<String> _openSealedBody(
+    ChatMessage message,
+    String currentUserId,
+  ) async {
+    // Memory, then this device's own stored envelope, then the network — see
+    // [MessageVaultKeyCache._readKey]. Reading starts on the device so a phone
+    // with no connection reads its history rather than drawing "Unable to
+    // decrypt this message" over messages it already holds.
+    final key = await _readKey(
+      message.conversationId,
+      currentUserId,
+      message.encryptionKeyVersion,
+    );
+    if (key == null || key.version != message.encryptionKeyVersion) {
+      throw StateError('Secure message key is unavailable');
+    }
+    final clear = await _aes.decrypt(
+      _box(message.encryptedBody!, message.encryptionNonce!),
+      secretKey: key.key,
+      aad: utf8.encode(
+        'ababilx-dm-v1:${message.conversationId}:${key.version}:${message.userId}',
+      ),
+    );
+    return utf8.decode(clear);
+  }
+
+  Future<String?> _restoredBody(String messageId, String userId) async {
+    final lookup = restoredBodyLookup;
+    if (lookup == null || messageId.isEmpty) return null;
+    try {
+      return await lookup(messageId, userId);
+    } catch (_) {
+      return null;
     }
   }
 
