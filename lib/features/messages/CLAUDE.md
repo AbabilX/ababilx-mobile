@@ -1746,3 +1746,28 @@ pill over the mute sheet.
 - The phone never suppresses a notification itself: the server skips the push.
 - The web only shows the mute; control stays here. Do not port the sheet to
   the web.
+
+# Keyboard stickers and GIFs (2026-09-27)
+
+Reported as "can't send stickers or GIFs". Gboard, Samsung Keyboard and
+SwiftKey insert them through Android's commit-content API, and a `TextField`
+with no `contentInsertionConfiguration` makes the keyboard answer "AbabilX
+doesn't support image insertion here". The chat field now declares one
+(`composer_keyboard_content.dart`: gif, webp, png, jpeg).
+
+- **Sent on insert, alone** (Signal / WhatsApp): the item becomes a
+  `PickedMediaFile`, takes the ordinary upload path (`uploadAttachments`),
+  and its `onReady` calls `_send(only: …)` — the uploading bubble appears at
+  once. `only` posts those attachments and nothing else: the typed text, its
+  mentions, the durable draft and the pending strip are left for the next
+  send. A reply target, if one is set, is used (the sticker answers it).
+- A DM where privacy mode applies still shows the timer / saving sheet first;
+  that is privacy mode's contract, not a delay to remove.
+- Bytes are uploaded untouched (no re-encode), so a GIF or animated WebP
+  stays animated; the timeline's `FileImage` plays it.
+- Offered only when the group lets this member send photos
+  (`_mediaAllowed(visual: true)`); otherwise the field stays text-only and the
+  keyboard says so itself. Server permission check is unchanged.
+- Main composer only. The thread composer shares it; the edit sheet and Ghost
+  Chat do not take keyboard images.
+- Pinned by `test/features/messages/composer_keyboard_content_test.dart`.

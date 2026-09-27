@@ -26,6 +26,8 @@ import 'composer_uploads_gate.dart';
 import 'composer_attachment_keyboard.dart';
 import 'composer_expanded_shell.dart';
 import 'composer_input_bar.dart';
+import 'composer_keyboard_content.dart';
+import 'composer_upload.dart';
 import 'composer_highlight_controller.dart';
 import 'composer_mention_candidates.dart';
 import 'composer_mention_picker.dart';
@@ -372,29 +374,40 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     super.dispose();
   }
 
-  Future<void> _send() async {
+  /// Posts the draft: typed text plus the pending strip.
+  ///
+  /// [only] posts those attachments alone instead — a keyboard sticker or
+  /// GIF, which goes out the moment it is inserted, as on Signal and
+  /// WhatsApp. The typed text, its mentions and the pending strip stay where
+  /// they are for the next send.
+  Future<void> _send({List<ChatAttachmentInput>? only}) async {
     // The native review screen calls back after its Activity closes; a
     // composer rebuilt meanwhile must not run the send on a dead `ref`.
     if (!mounted) return;
-    if (_selectedRecent.isNotEmpty) {
+    final draftSend = only == null;
+    if (draftSend && _selectedRecent.isNotEmpty) {
       await _reviewSelectedRecents();
       return;
     }
-    final plain = _ctrl.text.trim();
-    if (plain.isEmpty && _pending.isEmpty) return;
+    final plain = draftSend ? _ctrl.text.trim() : '';
+    var outgoing = List<ChatAttachmentInput>.of(only ?? _pending);
+    if (plain.isEmpty && outgoing.isEmpty) return;
     // Privacy mode: after the preview, the timer / saving sheet (server 0152).
     // Only a send carrying attachments waits for it; text goes straight out.
-    if (_pending.isNotEmpty) {
+    if (outgoing.isNotEmpty) {
       final ruled = await askPrivacyMediaRules(
         context,
         ref,
         ref.read(chatProvider).conversationById(widget.conversationId),
-        List.of(_pending),
+        outgoing,
       );
       if (ruled == null || !mounted) return;
-      _pending
-        ..clear()
-        ..addAll(ruled);
+      outgoing = List.of(ruled);
+      if (draftSend) {
+        _pending
+          ..clear()
+          ..addAll(ruled);
+      }
     }
     final uploading = _uploads.busy;
     final reply = ComposerReplyTarget.resolve(
@@ -405,8 +418,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     final body = plain.isEmpty
         ? ''
         : encodeTiptapBody(plain: plain, mentionByLabel: _mentionByLabel);
-    final attachments = List<ChatAttachmentInput>.of(_pending);
-    final mentionedIds = _mentionedUserIds.toList();
+    final attachments = outgoing;
+    final mentionedIds = draftSend ? _mentionedUserIds.toList() : <String>[];
 
     final notifier = ref.read(chatProvider.notifier);
     String? clientRef;
@@ -438,29 +451,32 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       _publishUploadProgress(uploadBubble);
     }
     clientRef ??= newChatClientMessageId();
-    await _draftStore.bindSend(
-      _draftOwnerId,
-      widget.conversationId,
-      clientRef,
-      _ctrl.text,
-      parentId: widget.parentId,
-    );
-    _mentionedUserIds.clear();
-    _mentionByLabel.clear();
-    _pickedAll = false;
-    if (!mounted) return;
-    // Clear the visible composer immediately, but retain the durable draft
-    // until delivery succeeds. If the send fails, recreation restores the
-    // text; if the user starts another draft meanwhile, that newer text wins.
-    _persistTextChanges = false;
-    _sendInFlight = true;
-    _typing?.stop();
-    _ctrl.clear();
-    _persistTextChanges = true;
-    setState(() {
-      _pending.clear();
-      _showMentions = false;
-    });
+    if (draftSend) {
+      await _draftStore.bindSend(
+        _draftOwnerId,
+        widget.conversationId,
+        clientRef,
+        _ctrl.text,
+        parentId: widget.parentId,
+      );
+      _mentionedUserIds.clear();
+      _mentionByLabel.clear();
+      _pickedAll = false;
+      if (!mounted) return;
+      // Clear the visible composer immediately, but retain the durable draft
+      // until delivery succeeds. If the send fails, recreation restores the
+      // text; if the user starts another draft meanwhile, that newer text
+      // wins.
+      _persistTextChanges = false;
+      _sendInFlight = true;
+      _typing?.stop();
+      _ctrl.clear();
+      _persistTextChanges = true;
+      setState(() {
+        _pending.clear();
+        _showMentions = false;
+      });
+    }
 
     // Start the optimistic insert before asking the timeline to reveal it.
     // Keep this compose session focused, matching Signal's continuous-send UX.
@@ -477,7 +493,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       }
       if (!mounted) return;
       if (_sendCancelled) {
-        _sendInFlight = false;
+        if (draftSend) _sendInFlight = false;
         notifier.removeUploadingMessage(
           widget.conversationId,
           clientRef,
@@ -494,7 +510,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         parentId: reply.parentId,
       );
       if (uploadBubble!.attachments.isEmpty && body.isEmpty) {
-        _sendInFlight = false;
+        if (draftSend) _sendInFlight = false;
         notifier.removeUploadingMessage(
           widget.conversationId,
           clientRef,
@@ -518,9 +534,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       clientMessageId: clientRef,
       reusePending: uploading,
     );
-    _sendInFlight = false;
+    if (draftSend) _sendInFlight = false;
     if (sentMsg != null) {
       unawaited(purgeSentTimedMedia(ref, attachments));
+    }
+    if (sentMsg != null && draftSend) {
       await _draftStore.completeSend(
         _draftOwnerId,
         widget.conversationId,
@@ -630,19 +648,56 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         if (outcome.caption.isNotEmpty) _ctrl.text = outcome.caption;
         await _send();
       }
-    } on GroupMediaRestrictedException catch (e) {
-      if (!mounted) return;
-      final copy = groupMediaRestrictedCopy(e.kind);
+    } catch (error) {
+      _attachFailed(error);
+    }
+  }
+
+  /// One place that turns an attach failure into words, for every door.
+  void _attachFailed(Object error) {
+    if (!mounted) return;
+    if (error is GroupMediaRestrictedException) {
+      final copy = groupMediaRestrictedCopy(error.kind);
       _showMessage(copy.en, copy.bn);
-    } on ChatAttachmentSizeException {
-      if (!mounted) return;
+    } else if (error is ChatAttachmentSizeException) {
       _showMessage(
         'Files must be 350 MB or smaller.',
         'ফাইল ৩৫০ MB বা তার কম হতে হবে।',
       );
-    } catch (_) {
-      if (!mounted) return;
+    } else {
       _showMessage('Could not attach this file.', 'ফাইল সংযুক্ত করা যায়নি।');
+    }
+  }
+
+  /// A sticker or GIF the keyboard inserted (Gboard, Samsung, SwiftKey). It
+  /// is sent on its own the moment it is inserted — no pending strip, no
+  /// Send tap — while the upload runs behind the usual uploading bubble.
+  Future<void> _attachInserted(KeyboardInsertedContent content) async {
+    final picked = keyboardContentFile(content);
+    if (picked == null) {
+      _showMessage(
+        'This keyboard item cannot be sent.',
+        'কিবোর্ডের এই আইটেমটি পাঠানো যাবে না।',
+      );
+      return;
+    }
+    try {
+      final token = CancelToken();
+      final inserted = <ChatAttachmentInput>[];
+      final run = uploadAttachments(
+        ref,
+        conversationId: widget.conversationId,
+        sources: [pickedFileSource(picked)],
+        onAdded: inserted.add,
+        onFailed: _dropPending,
+        onProgress: _onUploadProgress,
+        onReady: () => unawaited(_send(only: inserted)),
+        cancelToken: token,
+      );
+      _uploads.track(run, cancelToken: token);
+      await run;
+    } catch (error) {
+      _attachFailed(error);
     }
   }
 
@@ -733,17 +788,8 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       );
       _uploads.track(run, cancelToken: token);
       await run;
-    } on GroupMediaRestrictedException catch (e) {
-      if (!mounted) return;
-      final copy = groupMediaRestrictedCopy(e.kind);
-      _showMessage(copy.en, copy.bn);
-    } on ChatAttachmentSizeException {
-      _showMessage(
-        'Files must be 350 MB or smaller.',
-        'ফাইল ৩৫০ MB বা তার কম হতে হবে।',
-      );
-    } catch (_) {
-      _showMessage('Could not attach this file.', 'ফাইল সংযুক্ত করা যায়নি।');
+    } catch (error) {
+      _attachFailed(error);
     }
   }
 
@@ -1101,6 +1147,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         onVoice: () => unawaited(_startVoiceRecording()),
         onPlus: _toggleAttachmentPanel,
         onSend: _send,
+        onContentInserted: _mediaAllowed(visual: true)
+            ? (content) => unawaited(_attachInserted(content))
+            : null,
         cameraTooltip: tr('chat_camera'),
         voiceTooltip: tr('chat_tap_to_record'),
         attachTooltip: tr('chat_attach'),

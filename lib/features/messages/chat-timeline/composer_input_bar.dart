@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'composer_input_bar_buttons.dart';
+import 'composer_keyboard_content.dart';
 
 /// Signal's composer: one pill holding emoji, the text field, camera and mic,
 /// with a single accent circle beside it.
@@ -25,6 +26,7 @@ class ComposerInputBar extends StatelessWidget {
     required this.onPlus,
     required this.onSend,
     this.preparingVoice = false,
+    this.onContentInserted,
     this.emojiTooltip = 'Emoji',
     this.cameraTooltip = 'Camera',
     this.voiceTooltip = 'Voice',
@@ -46,6 +48,9 @@ class ComposerInputBar extends StatelessWidget {
   final VoidCallback onVoice;
   final VoidCallback onPlus;
   final VoidCallback onSend;
+
+  /// A sticker or GIF from the keyboard. Null leaves the field text-only.
+  final ValueChanged<KeyboardInsertedContent>? onContentInserted;
   final String emojiTooltip;
   final String cameraTooltip;
   final String voiceTooltip;
@@ -83,6 +88,12 @@ class ComposerInputBar extends StatelessWidget {
                       maxLines: 5,
                       style: const TextStyle(fontSize: 16, height: 1.3),
                       textCapitalization: TextCapitalization.sentences,
+                      contentInsertionConfiguration: onContentInserted == null
+                          ? null
+                          : ContentInsertionConfiguration(
+                              onContentInserted: onContentInserted!,
+                              allowedMimeTypes: keyboardContentMimeTypes,
+                            ),
                       decoration: InputDecoration(
                         hintText: hint,
                         // A long peer name ("Message Junayed Ahamed") wrapped
