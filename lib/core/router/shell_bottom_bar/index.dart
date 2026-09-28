@@ -70,34 +70,37 @@ class ShellBottomBar extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: ShellPillChrome(
-                child: SizedBox(
-                  height: ShellPillMetrics.height,
-                  child: isOrganizations
-                      ? OrganizationsActionPill(
-                          organizationsLabel: organizationsLabel,
-                          addLabel: addLabel,
-                          canAdd: canAdd,
-                          onAdd: onAdd ?? () {},
-                        )
-                      : isContacts
-                      ? ContactsScopePill(
-                          selectedIsMine: contactsMineSelected,
-                          addLabel: addLabel,
-                          mineLabel: mineLabel,
-                          allLabel: allLabel,
-                          canAdd: canAdd,
-                          onAdd: onAdd ?? () {},
-                          onSelectMine: onSelectMine ?? () {},
-                          onSelectAll: onSelectAll ?? () {},
-                        )
-                      : NavPill(
-                          tabs: tabs,
-                          selectedIndex: selectedIndex,
-                          onSelect: onSelect ?? (_) {},
-                          labelOf: labelOf ?? (tab) => tab.labelKey,
-                          unread: unread,
-                        ),
+              child: _fitHome(
+                home: !isContacts && !isOrganizations,
+                child: ShellPillChrome(
+                  child: SizedBox(
+                    height: ShellPillMetrics.height,
+                    child: isOrganizations
+                        ? OrganizationsActionPill(
+                            organizationsLabel: organizationsLabel,
+                            addLabel: addLabel,
+                            canAdd: canAdd,
+                            onAdd: onAdd ?? () {},
+                          )
+                        : isContacts
+                        ? ContactsScopePill(
+                            selectedIsMine: contactsMineSelected,
+                            addLabel: addLabel,
+                            mineLabel: mineLabel,
+                            allLabel: allLabel,
+                            canAdd: canAdd,
+                            onAdd: onAdd ?? () {},
+                            onSelectMine: onSelectMine ?? () {},
+                            onSelectAll: onSelectAll ?? () {},
+                          )
+                        : NavPill(
+                            tabs: tabs,
+                            selectedIndex: selectedIndex,
+                            onSelect: onSelect ?? (_) {},
+                            labelOf: labelOf ?? (tab) => tab.labelKey,
+                            unread: unread,
+                          ),
+                  ),
                 ),
               ),
             ),
@@ -110,6 +113,19 @@ class ShellBottomBar extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// Home bar only: as wide as its tabs ask for (never under
+  /// [NavPill.minWidth]), centred, so fewer tabs mean a narrower capsule. Never
+  /// wider than the room the screen leaves it.
+  Widget _fitHome({required bool home, required Widget child}) {
+    if (!home || tabs.isEmpty) return child;
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: NavPill.widthFor(tabs.length)),
+        child: child,
       ),
     );
   }

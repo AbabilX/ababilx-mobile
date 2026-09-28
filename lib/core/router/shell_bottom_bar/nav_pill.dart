@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'nav_tab_item.dart';
@@ -27,6 +29,17 @@ class NavPill extends StatelessWidget {
   final int unread;
 
   static const double height = ShellPillMetrics.height;
+
+  /// Room each tab asks for. The bar is as wide as its tabs want, so an
+  /// account with fewer destinations gets a narrower capsule; on a small
+  /// screen the bar stops at the available width and the tabs share it.
+  static const double tabWidth = 84;
+
+  /// Floor for the capsule, so two tabs do not shrink it to a sliver.
+  static const double minWidth = 240;
+
+  /// Width the capsule asks for with [count] tabs.
+  static double widthFor(int count) => math.max(minWidth, count * tabWidth);
 
   @override
   Widget build(BuildContext context) {

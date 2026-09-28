@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../features/messages/chat_icon.dart';
+import 'shell_pill_metrics.dart';
 
 /// One navigation destination inside the shared capsule.
 class NavTabItem extends StatelessWidget {
@@ -21,23 +22,30 @@ class NavTabItem extends StatelessWidget {
   final VoidCallback onTap;
   final int badgeCount;
 
+  /// Space between the capsule's edge and the chosen tab's background.
+  static const double _gap = 6;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     // Ordinary text colours, and the neutral surface tone behind the chosen
     // tab — the same quiet square the details and Talks buttons wear.
     final color = selected ? scheme.onSurface : scheme.onSurfaceVariant;
+    // Concentric with the capsule: its radius is half the pill height, so the
+    // chosen tab, inset by [_gap] on every side, takes that radius minus the
+    // gap — the two curves then run parallel instead of clashing at the ends.
+    final radius = BorderRadius.circular(ShellPillMetrics.height / 2 - _gap);
 
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: radius,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          margin: const EdgeInsets.all(_gap),
           decoration: BoxDecoration(
             color: selected ? scheme.surfaceContainerHigh : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: radius,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
