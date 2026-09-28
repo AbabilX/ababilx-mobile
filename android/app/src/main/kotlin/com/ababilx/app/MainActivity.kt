@@ -80,6 +80,9 @@ class MainActivity : FlutterActivity() {
     /** Proximity blanking at the ear, and no screen timeout on a call screen. */
     private val callScreenLock by lazy { CallScreenLock(this) }
 
+    /** The caller's ringback tone while the other phone rings. */
+    private val callRingback by lazy { CallRingback(this) }
+
     /** MediaStore behind the in-app photo grid (composer + avatar picker). */
     private val mediaGallery by lazy { MediaGalleryChannel(this) }
 
@@ -134,6 +137,7 @@ class MainActivity : FlutterActivity() {
         ongoingCall.handleIntent(intent)
         pip.attach(flutterEngine)
         callScreenLock.attach(flutterEngine)
+        callRingback.attach(flutterEngine)
         callAudioTelecom.attach(flutterEngine)
         mediaGallery.attach(flutterEngine)
         mediaSend.attach(flutterEngine)
@@ -234,6 +238,7 @@ class MainActivity : FlutterActivity() {
         // Releases the proximity lock: a wake lock outliving the Activity would
         // keep the panel dark with no call left to justify it.
         callScreenLock.dispose()
+        callRingback.dispose()
         callLockScreen.dispose()
         mediaGallery.dispose()
         mediaSend.dispose()

@@ -1,36 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
-import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../data/call_log_seen_storage.dart';
 import '../group/providers/group_call_provider.dart';
 import '../providers/call_log_provider.dart';
 import '../providers/voice_call_provider.dart';
 import 'call_log_cluster.dart';
-import 'call_log_format.dart';
-import '../call-info/call_info_path.dart';
-import 'call_log_row.dart';
 import 'call_redial.dart';
-import 'calls_empty.dart';
-import 'calls_list_chrome.dart';
+import 'calls_app_bar.dart';
+import 'calls_body.dart';
+import 'calls_search.dart';
+import '../favorites/call_favorite.dart';
+import '../favorites/call_favorite_sheet.dart';
+import '../favorites/call_favorites_strip.dart';
 
 enum _CallFilter { all, missed }
-
-sealed class _CallListItem {
-  const _CallListItem();
-}
-
-class _CallSectionItem extends _CallListItem {
-  const _CallSectionItem(this.title);
-  final String title;
-}
-
-class _CallRowItem extends _CallListItem {
-  const _CallRowItem(this.cluster);
-  final CallLogCluster cluster;
-}
 
 /// Call history tab. Bootstraps itself the way the chat screens do, so a cold
 /// open straight onto /calls works with nothing else having run first.
@@ -45,6 +30,11 @@ class _CallsListState extends ConsumerState<CallsList> {
   final _scroll = ScrollController();
   _CallFilter _filter = _CallFilter.all;
   DateTime? _lastSeenMissedAt;
+  bool _searching = false;
+  String _query = '';
+
+  /// Pages fetched for the current query, capped by [callSearchPageCap].
+  int _searchPages = 0;
 
   @override
   void initState() {
@@ -86,22 +76,29 @@ class _CallsListState extends ConsumerState<CallsList> {
     markMissedCallsSeen(now);
   }
 
+  void _closeSearch() => setState(() {
+    _searching = false;
+    _query = '';
+  });
+
+  /// A search reaches past the loaded pages: while it has too few rows to
+  /// scroll (so the scroll listener never fires), fetch the next page.
+  void _pageForSearch(CallLogState log) {
+    if (_query.trim().isEmpty ||
+        !log.hasMore ||
+        log.loading ||
+        log.loadingMore ||
+        _searchPages >= callSearchPageCap) {
+      return;
+    }
+    _searchPages++;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(callLogProvider.notifier).loadMore();
+    });
+  }
+
   void _call(String conversationId, bool isGroup) =>
       redialCall(context, ref, conversationId, isGroup: isGroup);
-
-  List<_CallListItem> _items(List<CallLogCluster> rows, String lang) {
-    final items = <_CallListItem>[];
-    String? lastSection;
-    for (final cluster in rows) {
-      final section = callDateHeading(cluster.lead.startedAt, lang: lang);
-      if (section != lastSection) {
-        items.add(_CallSectionItem(section));
-        lastSection = section;
-      }
-      items.add(_CallRowItem(cluster));
-    }
-    return items;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -121,11 +118,14 @@ class _CallsListState extends ConsumerState<CallsList> {
     // One row per contact per day; the date sections keep days apart and the
     // row opens that day's calls (WhatsApp's Call info).
     final rows = stackCallLogByContact(
-      _filter == _CallFilter.missed
-          ? log.calls.where((c) => c.missed).toList()
-          : log.calls,
+      searchCallLog(
+        _filter == _CallFilter.missed
+            ? log.calls.where((c) => c.missed).toList()
+            : log.calls,
+        _query,
+      ),
     );
-    final items = _items(rows, lang);
+    _pageForSearch(log);
     final unseenMissed = allRows.where((row) => row.lead.missed);
     final missedCount = _lastSeenMissedAt == null
         ? unseenMissed.length
@@ -133,156 +133,56 @@ class _CallsListState extends ConsumerState<CallsList> {
               .where((row) => row.lead.startedAt.isAfter(_lastSeenMissedAt!))
               .length;
     String t(String key) => AppTranslations.of(lang, key);
+    Future<void> refresh() => ref.read(callLogProvider.notifier).load();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(t('calls_title')),
-        actions: [
-          CallFilterAction(
-            icon: Icons.call_rounded,
-            label: t('calls_all'),
-            selected: _filter == _CallFilter.all,
-            onPressed: () => setState(() => _filter = _CallFilter.all),
-          ),
-          Badge(
-            isLabelVisible: missedCount > 0,
-            label: Text('$missedCount'),
-            child: CallFilterAction(
-              icon: Icons.call_missed_rounded,
-              label: t('calls_missed_filter'),
-              selected: _filter == _CallFilter.missed,
-              onPressed: _openMissedFilter,
+    final page = Scaffold(
+      appBar: CallsAppBar(
+        t: t,
+        searching: _searching,
+        missedOnly: _filter == _CallFilter.missed,
+        missedCount: missedCount,
+        onSearch: () => setState(() => _searching = true),
+        onCloseSearch: _closeSearch,
+        onQuery: (value) => setState(() {
+          _query = value;
+          _searchPages = 0;
+        }),
+        onAll: () => setState(() => _filter = _CallFilter.all),
+        onMissed: _openMissedFilter,
+      ),
+      // Favourites stay up whatever the history is doing (loading, empty,
+      // failed) — they are on the phone. A search hides them.
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!_searching) const CallFavoritesStrip(),
+          Expanded(
+            child: CallsBody(
+              log: log,
+              rows: rows,
+              lang: lang,
+              searchQuery: _query.trim(),
+              controller: _scroll,
+              callBusy: callBusy,
+              onRefresh: refresh,
+              onCall: _call,
+              onLongPress: (entry) => showCallFavoriteSheet(
+                context,
+                ref,
+                CallFavorite.fromEntry(entry),
+              ),
             ),
           ),
-          const SizedBox(width: 8),
         ],
       ),
-      body: log.loading && log.calls.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(strokeWidth: 2.5),
-                  const SizedBox(height: 16),
-                  Text(
-                    t('calls_loading'),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : log.calls.isEmpty
-          // Both states pull to refresh — the failure copy says so, and it
-          // was the one screen where it was not true: the empty branch sat
-          // outside the RefreshIndicator, so the only way out of a failed
-          // load was leaving the tab. AlwaysScrollable is what gives a
-          // one-screen child something to drag.
-          ? RefreshIndicator(
-              onRefresh: () => ref.read(callLogProvider.notifier).load(),
-              child: LayoutBuilder(
-                builder: (context, box) => ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    SizedBox(
-                      height: box.maxHeight,
-                      child: CallsEmpty(
-                        error: log.error,
-                        lang: lang,
-                        // Calls start from a conversation, so the first-run
-                        // button hands the user to the tab that has one.
-                        // go(), not push(): Messages is a sibling shell tab.
-                        onStart: () => context.go('/messages'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () => ref.read(callLogProvider.notifier).load(),
-                    child: rows.isEmpty
-                        ? LayoutBuilder(
-                            builder: (context, box) => ListView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              children: [
-                                SizedBox(
-                                  height: box.maxHeight,
-                                  child: CallsEmpty(
-                                    missedOnly: true,
-                                    lang: lang,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            controller: _scroll,
-                            padding: EdgeInsets.only(
-                              bottom: ShellPillMetrics.contentBottom(context),
-                            ),
-                            itemCount: items.length + (log.loadingMore ? 1 : 0),
-                            itemBuilder: (context, i) {
-                              if (i >= items.length) {
-                                return const Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Center(
-                                    child: SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-                              final item = items[i];
-                              if (item is _CallSectionItem) {
-                                return CallSectionHeader(title: item.title);
-                              }
-                              final cluster = (item as _CallRowItem).cluster;
-                              final entry = cluster.lead;
-                              return Column(
-                                children: [
-                                  CallLogRow(
-                                    entry: entry,
-                                    count: cluster.count,
-                                    lang: lang,
-                                    // That contact's calls on that day.
-                                    onTap: () => context.push(
-                                      entry.conversationId.isEmpty
-                                          ? '/messages/'
-                                          : callInfoPath(entry),
-                                    ),
-                                    // Group trailing is "open chat", not a
-                                    // redial — leave it tappable while busy.
-                                    onCall: entry.isGroup
-                                        ? () => _call(
-                                            entry.conversationId,
-                                            entry.isGroup,
-                                          )
-                                        : callBusy
-                                        ? null
-                                        : () => _call(
-                                            entry.conversationId,
-                                            entry.isGroup,
-                                          ),
-                                  ),
-                                  const Divider(height: 1, indent: 84),
-                                ],
-                              );
-                            },
-                          ),
-                  ),
-                ),
-              ],
-            ),
+    );
+    // Back closes the search before it leaves the tab.
+    return PopScope(
+      canPop: !_searching,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeSearch();
+      },
+      child: page,
     );
   }
 }

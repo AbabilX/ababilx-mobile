@@ -17,6 +17,7 @@ class CallsEmpty extends StatelessWidget {
     this.error,
     this.onStart,
     this.missedOnly = false,
+    this.searchQuery = '',
     this.lang = 'en',
   });
 
@@ -29,6 +30,9 @@ class CallsEmpty extends StatelessWidget {
   /// The history exists, but the active Missed filter has no matches.
   final bool missedOnly;
 
+  /// A search is open and nothing matches it; wins over [missedOnly].
+  final String searchQuery;
+
   final String lang;
 
   @override
@@ -36,6 +40,7 @@ class CallsEmpty extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final failed = error != null;
+    final searched = !failed && searchQuery.isNotEmpty;
     String t(String key) => AppTranslations.of(lang, key);
 
     return Center(
@@ -47,6 +52,8 @@ class CallsEmpty extends StatelessWidget {
             Icon(
               failed
                   ? Icons.cloud_off_rounded
+                  : searched
+                  ? Icons.search_off_rounded
                   : missedOnly
                   ? Icons.phone_in_talk_rounded
                   : Icons.call_rounded,
@@ -58,6 +65,8 @@ class CallsEmpty extends StatelessWidget {
               t(
                 failed
                     ? 'calls_error_title'
+                    : searched
+                    ? 'calls_search_empty_title'
                     : missedOnly
                     ? 'calls_no_missed_title'
                     : 'calls_empty_title',
@@ -66,13 +75,17 @@ class CallsEmpty extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              t(
-                failed
-                    ? 'calls_error_body'
-                    : missedOnly
-                    ? 'calls_no_missed_body'
-                    : 'calls_empty_body',
-              ),
+              searched
+                  ? t(
+                      'calls_search_empty_body',
+                    ).replaceAll('{query}', searchQuery)
+                  : t(
+                      failed
+                          ? 'calls_error_body'
+                          : missedOnly
+                          ? 'calls_no_missed_body'
+                          : 'calls_empty_body',
+                    ),
               textAlign: TextAlign.center,
               style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),

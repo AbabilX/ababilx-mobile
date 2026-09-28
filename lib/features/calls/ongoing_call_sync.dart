@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'group/providers/group_call_provider.dart';
+import 'native/android_call_ringback.dart';
 import 'native/android_call_screen_lock.dart';
 import 'native/android_ongoing_call.dart';
 import 'ongoing_call_notice.dart';
@@ -91,6 +92,7 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     unawaited(_actions?.cancel());
     unawaited(AndroidOngoingCall.stop());
     unawaited(AndroidCallScreenLock.setEarpieceCall(false));
+    unawaited(AndroidCallRingback.stop());
     super.dispose();
   }
 
@@ -154,6 +156,7 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     final dm = ref.read(voiceCallProvider);
     final group = ref.read(groupCallProvider);
     _syncProximity(dm, group);
+    unawaited(AndroidCallRingback.sync(dm));
     final dmCall = dm.call;
     final dmSubtitle = ongoingCallSubtitle(
       dm.phase,
@@ -194,17 +197,25 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     unawaited(AndroidOngoingCall.stop(force: true));
   }
 
-  /// The screen blanks at the ear only for a call that is actually up and
-  /// actually on the earpiece — Signal's `LockManager` engages proximity in
-  /// `IN_CALL` and nowhere else. A ringing call is one the user is looking at,
-  /// and a call on speaker is one the phone is nowhere near.
+  /// The screen blanks at the ear for a call on the earpiece that the user is
+  /// holding to their face: connected, and — as in Signal, which enters
+  /// `IN_CALL` the moment an outgoing call starts — while the caller listens
+  /// to it ring and while it connects. An INCOMING ring is still excluded:
+  /// that is a call the user is looking at. A call on speaker is one the
+  /// phone is nowhere near.
   ///
   /// Headsets are not checked here: the native side watches the audio devices
   /// itself, so a headset plugged in mid-call gives the screen back without
   /// Dart having to notice.
   void _syncProximity(VoiceCallState dm, GroupCallState group) {
+    final dmAtEar = switch (dm.phase) {
+      VoiceCallPhase.outgoingRinging ||
+      VoiceCallPhase.connecting ||
+      VoiceCallPhase.connected => true,
+      _ => false,
+    };
     final earpiece =
-        (dm.phase == VoiceCallPhase.connected && !dm.speaker) ||
+        (dmAtEar && !dm.speaker) ||
         (group.phase == GroupCallPhase.connected && !group.speaker);
     unawaited(AndroidCallScreenLock.setEarpieceCall(earpiece));
   }

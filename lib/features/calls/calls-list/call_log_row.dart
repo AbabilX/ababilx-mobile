@@ -19,6 +19,7 @@ class CallLogRow extends StatelessWidget {
     required this.entry,
     required this.onTap,
     required this.onCall,
+    this.onLongPress,
     this.count = 1,
     this.lang = 'en',
   });
@@ -26,6 +27,9 @@ class CallLogRow extends StatelessWidget {
   final CallLogEntry entry;
   final VoidCallback onTap;
   final VoidCallback? onCall;
+
+  /// Favourite / open chat, for a 1:1 row; null for a group.
+  final VoidCallback? onLongPress;
   final int count;
   final String lang;
 
@@ -58,6 +62,7 @@ class CallLogRow extends StatelessWidget {
       label: '$title, $subtitle',
       child: ListTile(
         onTap: onTap,
+        onLongPress: onLongPress,
         minTileHeight: 72,
         contentPadding: const EdgeInsets.fromLTRB(20, 6, 12, 6),
         leading: entry.isGroup

@@ -552,10 +552,10 @@ separate locks fix it, both from Signal's `LockManager`, both in
 
 - **`PROXIMITY_SCREEN_OFF_WAKE_LOCK`** — the system's own answer, so the sensor
   decides when the panel is off and nothing here has to poll. Held only while
-  a call is **connected** and **on the earpiece**: a ringing call is one the
-  user is looking at, and speakerphone means the phone is nowhere near a face.
-  Signal engages proximity in `IN_CALL` and nowhere else; `_syncProximity` in
-  `OngoingCallSync` is the same rule.
+  a call is **outgoing-ringing, connecting or connected** and **on the
+  earpiece** (widened from connected-only 2026-09-29): an INCOMING ring is one
+  the user is looking at, and speakerphone means the phone is nowhere near a
+  face. `_syncProximity` in `OngoingCallSync`.
 - **`FLAG_KEEP_SCREEN_ON`** — otherwise the display sleeps on the system
   timeout mid-call and the user has to unlock the phone to hang up.
 
@@ -1350,3 +1350,42 @@ then unlock, call ending with the screen off, Home over the lock, taps at the
 ear, four screen sizes. The black screen reproduced there on the old code
 ("100% black after 8 s") and passes now. `locked_call_check.py` finds the
 ringing buttons by colour now (uiautomator never idles over the ripples).
+
+## Caller ringback + proximity while calling (2026-09-29)
+
+- **Ringback**: `CallRingback.kt` (channel `com.ababilx.app/call_ringback`),
+  driven by `AndroidCallRingback.sync` from `OngoingCallSync`. Plays the
+  platform's `ToneGenerator.TONE_SUP_RINGTONE` on `STREAM_VOICE_CALL` only
+  while the caller's screen says "Ringing…" (`outgoingRinging` +
+  `calleeRingingAt`, user's call). "Calling…" is silent, so a privacy-mode
+  callee — who never reports ringing — gives a silent wait. Signal's `OutgoingRinger` model; its sound file is
+  AGPL, hence the system tone. Sets `MODE_IN_COMMUNICATION` only if no call
+  mode is set, and **must hand it back before connect**: LiveKit saves the
+  mode it finds and restores it after the call, so leaving ours in place
+  strands the phone in communication mode. A Speaker press while ringing
+  moves the tone to the loudspeaker.
+- **Proximity** now also covers `outgoingRinging` and `connecting` (Signal
+  enters `IN_CALL` at outgoing start). An incoming ring still never blanks.
+
+## Talks tab search (2026-09-29)
+
+Search icon in the Talks header (`calls_app_bar.dart`) swaps the title for
+`HeaderSearchField`; Back closes it first. Client-side by name over the loaded
+history (`calls_search.dart`, `matchesNameQuery` — decorated and Bangla names
+match); the server has no call-log search. While a query is open the tab pages
+further on its own, at most `callSearchPageCap` (10) pages per query, so a bad
+cursor cannot loop. The Missed filter still applies under a search.
+
+## Talks favourites (2026-09-29)
+
+`favorites/`: a strip at the top of Talks — tap = call (`redialCall`),
+long press = remove / open chat, "+" = picker over the phone's own DM list.
+Long press on a 1:1 history row offers the same sheet. **Device-local, no
+server**: SharedPreferences `call_favorites_v1:<local data owner id>` —
+per account, so another account on the phone never sees the list and the
+same account gets it back after signing in again. Name + picture are stored
+with each entry, so the strip draws offline; the live conversation (nickname,
+new photo) wins when the phone has it. DMs only (a group has no one-tap call
+here), 12 max, Note to Self / locked / deleted accounts excluded. Hidden while
+searching. Header order is All · Missed · Search, nudged 1dp down to sit on
+the "Calls" title (measured on device).
