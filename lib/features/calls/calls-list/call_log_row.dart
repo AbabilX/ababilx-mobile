@@ -110,30 +110,54 @@ class CallLogRow extends StatelessWidget {
           enabled: onCall != null,
           label: actionLabel,
           excludeSemantics: true,
-          child: IconButton.filledTonal(
-            onPressed: onCall,
-            icon: Icon(
-              entry.isGroup
-                  ? Icons.arrow_forward_rounded
-                  : entry.isScreenShare
-                  ? Icons.screen_share_outlined
-                  : entry.isVideo
-                  ? Icons.videocam_rounded
-                  : Icons.call_rounded,
-            ),
-            tooltip: actionLabel,
-            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-            style: IconButton.styleFrom(
-              foregroundColor: scheme.primary,
-              backgroundColor: scheme.primaryContainer,
-              // Custom colors above would otherwise keep the button looking
-              // live after onPressed goes null — spell out the disabled look.
-              disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
-              disabledBackgroundColor: scheme.onSurface.withValues(alpha: 0.12),
-            ),
-          ),
+          child: entry.isGroup
+              ? IconButton.filledTonal(
+                  onPressed: onCall,
+                  icon: const Icon(Icons.arrow_forward_rounded),
+                  tooltip: actionLabel,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 44,
+                    height: 44,
+                  ),
+                  style: _actionStyle(scheme),
+                )
+              // A bare phone glyph says nothing about what it does — the word
+              // "Talk" is the tab's own name for a call.
+              : FilledButton.tonalIcon(
+                  onPressed: onCall,
+                  icon: Icon(
+                    entry.isScreenShare
+                        ? Icons.screen_share_outlined
+                        : entry.isVideo
+                        ? Icons.videocam_rounded
+                        : Icons.call_rounded,
+                    size: 20,
+                  ),
+                  label: Text(AppTranslations.of(lang, 'call_info_talk')),
+                  style: _actionStyle(scheme).copyWith(
+                    minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
+                    padding: const WidgetStatePropertyAll(
+                      EdgeInsets.symmetric(horizontal: 14),
+                    ),
+                  ),
+                ),
         ),
       ),
     );
   }
 }
+
+ButtonStyle _actionStyle(ColorScheme scheme) => ButtonStyle(
+  foregroundColor: WidgetStateProperty.resolveWith(
+    (states) => states.contains(WidgetState.disabled)
+        ? scheme.onSurface.withValues(alpha: 0.38)
+        : scheme.primary,
+  ),
+  // Custom colors would otherwise keep the button looking live after
+  // onPressed goes null — spell out the disabled look.
+  backgroundColor: WidgetStateProperty.resolveWith(
+    (states) => states.contains(WidgetState.disabled)
+        ? scheme.onSurface.withValues(alpha: 0.12)
+        : scheme.primaryContainer,
+  ),
+);
