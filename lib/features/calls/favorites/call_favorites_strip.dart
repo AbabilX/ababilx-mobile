@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../calls-list/call_redial.dart';
-import '../calls-list/calls_list_chrome.dart';
 import '../group/providers/group_call_provider.dart';
 import '../providers/voice_call_provider.dart';
 import 'call_favorite_picker.dart';
@@ -30,7 +29,6 @@ class CallFavoritesStrip extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        CallSectionHeader(title: AppTranslations.of(lang, 'calls_favorites')),
         SizedBox(
           height: 92,
           child: ListView.separated(

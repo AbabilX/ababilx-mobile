@@ -8,6 +8,10 @@ AppBarTheme buildAppBarTheme(ColorScheme scheme) {
   return AppBarTheme(
     backgroundColor: Colors.transparent,
     elevation: 0,
+    // M3 tints a bar once content scrolls under it; the bar must keep the
+    // screen's own background instead.
+    scrolledUnderElevation: 0,
+    surfaceTintColor: Colors.transparent,
     systemOverlayStyle: lightIcons
         ? SystemUiOverlayStyle.light
         : SystemUiOverlayStyle.dark,
