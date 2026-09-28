@@ -110,6 +110,8 @@ class CallsEmpty extends StatelessWidget {
                 icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
                 label: Text(t('calls_empty_action')),
                 style: FilledButton.styleFrom(
+                  backgroundColor: scheme.surfaceContainerHigh,
+                  foregroundColor: scheme.onSurface,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 12,

@@ -17,10 +17,16 @@ class CallFilterAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (selected) {
+      final scheme = Theme.of(context).colorScheme;
+      // Neutral square, accent glyph: on, without a coloured block.
       return IconButton.filledTonal(
         onPressed: onPressed,
         tooltip: label,
         icon: Icon(icon),
+        style: IconButton.styleFrom(
+          backgroundColor: scheme.surfaceContainerHigh,
+          foregroundColor: scheme.primary,
+        ),
       );
     }
     return IconButton(onPressed: onPressed, tooltip: label, icon: Icon(icon));

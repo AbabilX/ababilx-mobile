@@ -147,34 +147,32 @@ class CallLogRow extends StatelessWidget {
   }
 }
 
-/// The Talk button carries no fill — a primary-coloured word and glyph inside
-/// a thin outline, so it still reads as a button.
-ButtonStyle _talkStyle(ColorScheme scheme) => ButtonStyle(
-  foregroundColor: WidgetStateProperty.resolveWith(
-    (states) => states.contains(WidgetState.disabled)
-        ? scheme.onSurface.withValues(alpha: 0.38)
-        : scheme.primary,
-  ),
-  side: WidgetStateProperty.resolveWith(
-    (states) => BorderSide(
-      color: states.contains(WidgetState.disabled)
-          ? scheme.onSurface.withValues(alpha: 0.12)
-          : scheme.primary,
-    ),
+/// Same neutral square as the details screen's action buttons: the surface
+/// tone with an ordinary text colour, so a row's button is quiet and the
+/// missed-call red is still the only colour on the row.
+ButtonStyle _talkStyle(ColorScheme scheme) => _neutralStyle(scheme).copyWith(
+  shape: WidgetStatePropertyAll(
+    RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
   ),
 );
 
-ButtonStyle _actionStyle(ColorScheme scheme) => ButtonStyle(
+ButtonStyle _actionStyle(ColorScheme scheme) => _neutralStyle(scheme).copyWith(
+  shape: WidgetStatePropertyAll(
+    RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  ),
+);
+
+ButtonStyle _neutralStyle(ColorScheme scheme) => ButtonStyle(
   foregroundColor: WidgetStateProperty.resolveWith(
     (states) => states.contains(WidgetState.disabled)
         ? scheme.onSurface.withValues(alpha: 0.38)
-        : scheme.primary,
+        : scheme.onSurface,
   ),
   // Custom colors would otherwise keep the button looking live after
   // onPressed goes null — spell out the disabled look.
   backgroundColor: WidgetStateProperty.resolveWith(
     (states) => states.contains(WidgetState.disabled)
         ? scheme.onSurface.withValues(alpha: 0.12)
-        : scheme.primaryContainer,
+        : scheme.surfaceContainerHigh,
   ),
 );

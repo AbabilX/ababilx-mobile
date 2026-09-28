@@ -18,18 +18,17 @@ class DetailsActionButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  /// Muted / in-call state: the square fills with the accent instead of the
-  /// container tint, the way Signal shows a toggle that is currently on.
+  /// Muted / in-call state. The square stays the neutral surface — only the
+  /// glyph takes the accent — so a toggle that is on still reads as on
+  /// without a coloured block.
   final bool active;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final enabled = onTap != null;
-    final background = active
-        ? colors.primary
-        : colors.primaryContainer.withValues(alpha: enabled ? 1 : 0.4);
-    final foreground = active ? colors.onPrimary : colors.onPrimaryContainer;
+    final background = colors.surfaceContainerHigh;
+    final foreground = active ? colors.primary : colors.onSurface;
 
     return Opacity(
       opacity: enabled ? 1 : 0.5,
