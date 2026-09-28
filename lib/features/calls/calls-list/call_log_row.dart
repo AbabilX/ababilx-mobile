@@ -123,7 +123,7 @@ class CallLogRow extends StatelessWidget {
                 )
               // A bare phone glyph says nothing about what it does — the word
               // "Talk" is the tab's own name for a call.
-              : FilledButton.tonalIcon(
+              : TextButton.icon(
                   onPressed: onCall,
                   icon: Icon(
                     entry.isScreenShare
@@ -134,7 +134,7 @@ class CallLogRow extends StatelessWidget {
                     size: 20,
                   ),
                   label: Text(AppTranslations.of(lang, 'call_info_talk')),
-                  style: _actionStyle(scheme).copyWith(
+                  style: _talkStyle(scheme).copyWith(
                     minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
                     padding: const WidgetStatePropertyAll(
                       EdgeInsets.symmetric(horizontal: 14),
@@ -146,6 +146,23 @@ class CallLogRow extends StatelessWidget {
     );
   }
 }
+
+/// The Talk button carries no fill — a primary-coloured word and glyph inside
+/// a thin outline, so it still reads as a button.
+ButtonStyle _talkStyle(ColorScheme scheme) => ButtonStyle(
+  foregroundColor: WidgetStateProperty.resolveWith(
+    (states) => states.contains(WidgetState.disabled)
+        ? scheme.onSurface.withValues(alpha: 0.38)
+        : scheme.primary,
+  ),
+  side: WidgetStateProperty.resolveWith(
+    (states) => BorderSide(
+      color: states.contains(WidgetState.disabled)
+          ? scheme.onSurface.withValues(alpha: 0.12)
+          : scheme.primary,
+    ),
+  ),
+);
 
 ButtonStyle _actionStyle(ColorScheme scheme) => ButtonStyle(
   foregroundColor: WidgetStateProperty.resolveWith(
