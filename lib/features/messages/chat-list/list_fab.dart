@@ -22,7 +22,7 @@ class ChatListFab extends StatelessWidget {
         _ActionButton(
           heroTag: 'chat-camera',
           onPressed: onCamera,
-          backgroundColor: colors.surfaceContainerHighest,
+          backgroundColor: colors.surfaceContainerHigh,
           foregroundColor: colors.onSurface,
           icon: HugeIcons.strokeRoundedCamera01,
         ),
@@ -30,8 +30,8 @@ class ChatListFab extends StatelessWidget {
         _ActionButton(
           heroTag: 'chat-new-message',
           onPressed: onNewMessage,
-          backgroundColor: colors.primaryContainer,
-          foregroundColor: colors.onPrimaryContainer,
+          backgroundColor: colors.surfaceContainerHigh,
+          foregroundColor: colors.onSurface,
           icon: HugeIcons.strokeRoundedEdit02,
         ),
       ],

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A toggle that is on: neutral surface with a white ring, so the Send
+     button stays the only accent-coloured control on the review screen. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="@color/media_send_surface" />
+    <stroke android:width="2dp" android:color="@color/media_send_on_dark" />
+</shape>

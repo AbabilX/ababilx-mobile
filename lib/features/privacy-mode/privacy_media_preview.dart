@@ -95,7 +95,7 @@ class _PrivacyMediaPreviewState extends ConsumerState<_PrivacyMediaPreview> {
                       avatar: ChatIcon(
                         HugeIcons.strokeRoundedTimer02,
                         size: 18,
-                        color: timed ? colors.primary : null,
+                        color: colors.onSurface,
                       ),
                       label: Text(ghostTimerLabel(ref, _rules.timer)),
                       onPressed: _pickTimer,

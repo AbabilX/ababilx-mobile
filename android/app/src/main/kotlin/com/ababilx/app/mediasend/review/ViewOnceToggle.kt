@@ -45,7 +45,7 @@ class ViewOnceToggle(private val button: ImageButton) {
 
     private fun paint() {
         button.setBackgroundResource(
-            if (on) R.drawable.ms_circle_accent else R.drawable.ms_circle_button,
+            if (on) R.drawable.ms_circle_on else R.drawable.ms_circle_button,
         )
         button.isSelected = on
     }

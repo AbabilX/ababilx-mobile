@@ -17,7 +17,7 @@ class UnpinAllFab extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Material(
-      color: colors.surfaceContainerHighest,
+      color: colors.surfaceContainerHigh,
       shape: const StadiumBorder(),
       elevation: 4,
       shadowColor: Colors.black54,
