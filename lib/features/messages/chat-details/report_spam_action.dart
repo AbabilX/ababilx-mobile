@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_toast.dart';
+import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_details_provider.dart';
@@ -26,7 +28,7 @@ class DetailsReportTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DetailsTile(
-      icon: const Icon(Icons.report_gmailerrorred_rounded),
+      icon: const ChatIcon(HugeIcons.strokeRoundedAlert02),
       title: 'Report spam',
       destructive: true,
       onTap: () => _confirm(context, ref),

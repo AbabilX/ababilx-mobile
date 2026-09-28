@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:go_router/go_router.dart';
 
+import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'details_block_tile.dart';
@@ -25,7 +27,7 @@ class DetailsDangerActions extends ConsumerWidget {
       children: [
         if (group)
           DetailsTile(
-            icon: const Icon(Icons.logout_rounded),
+            icon: const ChatIcon(HugeIcons.strokeRoundedLogout01),
             title: 'Leave group',
             destructive: true,
             onTap: () => _confirm(
@@ -42,7 +44,7 @@ class DetailsDangerActions extends ConsumerWidget {
           )
         else ...[
           DetailsTile(
-            icon: const Icon(Icons.delete_outline_rounded),
+            icon: const ChatIcon(HugeIcons.strokeRoundedDelete02),
             title: conversation.isSelf ? 'Delete notes' : 'Delete chat',
             destructive: true,
             onTap: () => _confirm(
@@ -76,7 +78,7 @@ class DetailsDangerActions extends ConsumerWidget {
           DetailsReportTile(conversation: conversation),
         if (group && GroupPermissions(conversation).canManage)
           DetailsTile(
-            icon: const Icon(Icons.delete_forever_outlined),
+            icon: const ChatIcon(HugeIcons.strokeRoundedDelete04),
             title: 'Delete group',
             destructive: true,
             onTap: () => _confirm(

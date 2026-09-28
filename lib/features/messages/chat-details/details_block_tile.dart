@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../core/network/friendly_error.dart';
 import '../../../shared/widgets/app_toast.dart';
+import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/blocked_connections_provider.dart';
 import '../providers/chat_connections_provider.dart';
@@ -46,8 +48,10 @@ class _DetailsBlockTileState extends ConsumerState<DetailsBlockTile> {
     }
     final blockedByMe = blocked?.any((c) => c.user.userId == peerId) ?? false;
     return DetailsTile(
-      icon: Icon(
-        blockedByMe ? Icons.check_circle_outline_rounded : Icons.block_rounded,
+      icon: ChatIcon(
+        blockedByMe
+            ? HugeIcons.strokeRoundedUserCheck01
+            : HugeIcons.strokeRoundedUserBlock01,
       ),
       title: _tr(blockedByMe ? 'chat_unblock' : 'chat_block'),
       destructive: !blockedByMe,
