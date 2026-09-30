@@ -18,6 +18,7 @@ import 'features/calls/native/call_answered_guard.dart';
 import 'features/calls/native/missed_call_notice.dart';
 import 'features/calls/native/voice_call_ended_guard.dart';
 import 'features/ghost/ghost_push.dart';
+import 'features/notifications/chat_push_delivered.dart';
 import 'features/notifications/chat_push_notification.dart';
 import 'features/notifications/local_notifications.dart';
 import 'features/notifications/fcm_log.dart';
@@ -145,6 +146,9 @@ Future<void> _handleChatPushInBackground(Map<String, dynamic> data) async {
     // Never log the payload, decrypted text or raw plugin errors here.
     fcmLog('push.background.chat.fail', error.runtimeType);
   }
+  // After the notification, so the tray never waits on the network. The
+  // socket that used to send this tick is closed in the background now.
+  await postChatPushDelivered(data);
 }
 
 /// Data-only pushes carry no notification block, so the preview the server

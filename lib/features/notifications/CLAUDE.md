@@ -3,8 +3,10 @@
 ## Phones "going to sleep" — 2026-09-30
 
 FCM priority policy (silent pushes go normal), ring-first call gate, missed-call
-notice, background socket/Local Share suspension, refresh no longer signs out on
-a network error, `adb logcat -s AbabilXPush` for demotion. Mechanism, files and
+notice, background socket/Local Share suspension, delivered tick sent from the
+push (`chat_push_delivered.dart`, since the socket that sent it is closed in
+the background), refresh no longer signs out on a network error,
+`adb logcat -s AbabilXPush` for demotion. Mechanism, files and
 deploy notes: [PUSH_RELIABILITY_FIX.md](PUSH_RELIABILITY_FIX.md#round-2--phones-going-to-sleep--2026-09-30).
 **Never send a push high priority unless the phone shows something for it.**
 

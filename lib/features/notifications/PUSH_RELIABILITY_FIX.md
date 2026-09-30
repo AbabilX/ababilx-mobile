@@ -111,6 +111,16 @@ the socket is suspended 2 min after backgrounding (Signal's
 `maxBackgroundTime`) unless a 1:1 call, group call or Ghost Chat holds it
 (`features/realtime/`). Resume reconnects and resyncs.
 
+The socket was also what sent the **delivered tick** (`chat_provider_ws.dart`),
+so suspending it left a pocketed phone's messages on one tick until the app
+opened. The FCM background handler now sends it from the push itself
+(`chat_push_delivered.dart`, WhatsApp's moment): after the tray entry, with
+the push's `message_id` and the already-registered messaging device, never
+registering one, never "read". Best effort; the server ignores repeats and
+unknown devices. Not covered, because no Dart runs for them: muted chats (the
+server sends no push), pushes carrying a notification block (feeds, a
+converted group never keyed) and iOS — those still tick on open.
+
 **Also fixed:** `ApiClient` wiped the session when a token refresh failed for
 *any* reason — a timeout on a phone just out of Doze signed the user out. Now
 only a 401/403 from the refresh endpoint does (`RefreshOutcome`).
