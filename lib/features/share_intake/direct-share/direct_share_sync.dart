@@ -19,6 +19,11 @@ import 'direct_share_targets.dart';
 /// which Android rate-limits. A throttle, not a debounce: a busy group that
 /// changes the list every second would otherwise never publish at all.
 /// Signed out, the row is cleared.
+///
+/// A new message in one of those chats is also reported as usage
+/// ([directShareUsed]): Android ranks — and on many phones admits — share
+/// targets by it, so without it the sheet showed only the one chat ever
+/// picked there.
 class DirectShareSync extends ConsumerStatefulWidget {
   const DirectShareSync({super.key, required this.child});
 
@@ -35,6 +40,9 @@ class _DirectShareSyncState extends ConsumerState<DirectShareSync> {
   /// What was last sent to Kotlin; null until the first send of this launch,
   /// so every launch publishes once.
   String? _sent;
+
+  /// Newest message per published chat at the last look.
+  Map<String, String> _activity = const {};
 
   @override
   void initState() {
@@ -59,6 +67,7 @@ class _DirectShareSyncState extends ConsumerState<DirectShareSync> {
     if (!signedIn) {
       if (_sent == '') return;
       _sent = '';
+      _activity = const {};
       unawaited(_channel.clear());
       return;
     }
@@ -75,10 +84,17 @@ class _DirectShareSyncState extends ConsumerState<DirectShareSync> {
     );
     final targets = directShareTargets(shareable, chat.currentUserId);
     final hidden = locks.keys.toList()..sort();
+    final activity = directShareActivity(shareable);
+    final used = directShareUsed(_activity, activity);
+    _activity = activity;
     final signature = jsonEncode([targets, hidden]);
-    if (signature == _sent) return;
-    _sent = signature;
-    unawaited(_channel.publish(targets, hidden));
+    if (signature != _sent) {
+      _sent = signature;
+      unawaited(_channel.publish(targets, hidden));
+    }
+    // After the publish: the same Kotlin worker runs both in order, and only
+    // a published chat can be reported.
+    unawaited(_channel.reportUsed(used));
   }
 
   @override

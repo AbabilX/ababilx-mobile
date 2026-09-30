@@ -26,6 +26,11 @@ class DirectShareChannel(private val context: Context) {
                         )
                         result.success(null)
                     }
+                    "reportUsed" -> {
+                        val ids = call.argument<List<String>>("ids").orEmpty()
+                        DirectShareShortcuts.reportUsedAsync(context, ids)
+                        result.success(null)
+                    }
                     "clear" -> {
                         DirectShareShortcuts.clearAsync(context)
                         result.success(null)

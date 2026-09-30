@@ -37,7 +37,7 @@ object DirectShareShortcuts {
     const val EXTRA_CONVERSATION_ID = "com.ababilx.app.extra.CONVERSATION_ID"
 
     private const val TAG = "DirectShare"
-    private const val PREFIX = "conv_"
+    internal const val PREFIX = "conv_"
 
     /** The sheet shows four to eight; more only costs avatar downloads. */
     private const val MAX = 8
@@ -120,6 +120,8 @@ object DirectShareShortcuts {
             DirectSharePins.restore(context, shortcuts)
             if (!ShortcutManagerCompat.setDynamicShortcuts(context, shortcuts)) {
                 Log.w(TAG, "rate limited; kept the previous targets")
+            } else {
+                DirectShareUsage.seed(context, shortcuts.map { it.id })
             }
         } catch (error: Exception) {
             Log.w(TAG, "publish failed", error)
@@ -160,8 +162,17 @@ object DirectShareShortcuts {
             if (ids.isNotEmpty()) ShortcutManagerCompat.removeLongLivedShortcuts(context, ids)
             ShortcutManagerCompat.removeAllDynamicShortcuts(context)
             DirectSharePins.retire(context, DirectSharePins.pinnedIds(context, PREFIX))
+            DirectShareUsage.forget(context)
         } catch (error: Exception) {
             Log.w(TAG, "clear failed", error)
+        }
+    }
+
+    /** Chats that just had a message; see [DirectShareUsage]. */
+    fun reportUsedAsync(context: Context, conversationIds: List<String>) {
+        val app = context.applicationContext
+        worker.execute {
+            if (!isDisguised(app)) DirectShareUsage.report(app, known(app), conversationIds)
         }
     }
 

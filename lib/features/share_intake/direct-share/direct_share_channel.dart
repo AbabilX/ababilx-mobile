@@ -29,6 +29,17 @@ class DirectShareChannel {
     }
   }
 
+  /// Chats that just had a message, oldest first: Android ranks the share
+  /// sheet by this usage and shows little without it.
+  Future<void> reportUsed(List<String> ids) async {
+    if (!_supported || ids.isEmpty) return;
+    try {
+      await _method.invokeMethod<void>('reportUsed', {'ids': ids});
+    } on PlatformException catch (e) {
+      debugPrint('[direct-share] report failed: $e');
+    }
+  }
+
   Future<void> clear() async {
     if (!_supported) return;
     try {

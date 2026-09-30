@@ -78,4 +78,46 @@ void main() {
     expect(kotlin, contains(category));
     expect(xml, contains('com.ababilx.app.ShareIntakeActivity'));
   });
+
+  test('usage: only chats with a new message, oldest first', () {
+    final before = directShareActivity([
+      _dm('a', '2026-09-30T10:00:00Z'),
+      _dm('b', '2026-09-30T09:00:00Z'),
+      _dm('c', '2026-09-30T08:00:00Z'),
+    ]);
+    final now = directShareActivity([
+      _dm('c', '2026-09-30T10:02:00Z'),
+      _dm('b', '2026-09-30T10:01:00Z'),
+      _dm('a', '2026-09-30T10:00:00Z'),
+      _dm('stranger', '2026-09-30T10:03:00Z', request: 'incoming'),
+    ]);
+    expect(directShareUsed(before, now), ['b', 'c']);
+    expect(directShareUsed(now, now), isEmpty);
+  });
+
+  test('usage: the first look of a launch reports nothing', () {
+    final now = directShareActivity([_dm('a', '2026-09-30T10:00:00Z')]);
+    expect(directShareUsed(const {}, now), isEmpty);
+  });
+
+  test('usage: a chat that just entered the row counts', () {
+    final before = directShareActivity([_dm('a', '2026-09-30T10:00:00Z')]);
+    final now = directShareActivity([
+      _dm('new', '2026-09-30T10:05:00Z'),
+      _dm('a', '2026-09-30T10:00:00Z'),
+    ]);
+    expect(directShareUsed(before, now), ['new']);
+  });
+
+  test('usage: a deleted last message or a reformatted time is not use', () {
+    final before = directShareActivity([
+      _dm('a', '2026-09-30T10:00:00Z'),
+      _dm('b', '2026-09-30T09:00:00Z'),
+    ]);
+    final now = directShareActivity([
+      _dm('a', '2026-09-30T10:00:00.000Z'),
+      _dm('b', '2026-09-30T08:00:00Z'),
+    ]);
+    expect(directShareUsed(before, now), isEmpty);
+  });
 }
