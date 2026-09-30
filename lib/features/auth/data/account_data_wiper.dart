@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../calls/data/call_log_cache.dart';
 import '../../chat-lock/data/chat_lock_index.dart';
 import '../../chat-lock/media/ram_media_cache.dart';
 import '../../messages/data/local/chat_archive_wiper.dart';
@@ -33,6 +34,8 @@ class AccountDataWiper {
     // clearAllPrivateData below).
     await ChatLockIndex.clearAll();
     await ChatNotificationPrivacy.clearAll();
+    // Names and times of the old account's calls.
+    await CallLogCache.clear();
     await RamMediaCache.release();
     await _ref.read(localNotificationsProvider).cancelAll(strict: true);
     await _ref.read(secureStorageProvider).clearAllPrivateData();

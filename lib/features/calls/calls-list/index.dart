@@ -11,6 +11,7 @@ import 'call_log_cluster.dart';
 import 'call_redial.dart';
 import 'calls_app_bar.dart';
 import 'calls_body.dart';
+import 'calls_list_refresh.dart';
 import 'calls_search.dart';
 import '../favorites/call_favorite.dart';
 import '../favorites/call_favorite_sheet.dart';
@@ -27,7 +28,8 @@ class CallsList extends ConsumerStatefulWidget {
   ConsumerState<CallsList> createState() => _CallsListState();
 }
 
-class _CallsListState extends ConsumerState<CallsList> with SwipeTabVisits {
+class _CallsListState extends ConsumerState<CallsList>
+    with SwipeTabVisits, CallsListRefresh {
   final _scroll = ScrollController();
   _CallFilter _filter = _CallFilter.all;
   DateTime? _lastSeenMissedAt;
@@ -41,16 +43,13 @@ class _CallsListState extends ConsumerState<CallsList> with SwipeTabVisits {
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
+    startCallLogRefresh();
     _openVisit();
   }
 
   /// Every visit, not once: the Chats/Talks pager keeps this tab alive.
   void _openVisit() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final log = ref.read(callLogProvider);
-      ref.read(callLogProvider.notifier).load(silent: log.calls.isNotEmpty);
-    });
+    refreshCallLogOnVisit();
     lastSeenMissedCallAt().then((at) {
       if (mounted) setState(() => _lastSeenMissedAt = at);
     });
@@ -71,6 +70,7 @@ class _CallsListState extends ConsumerState<CallsList> with SwipeTabVisits {
 
   @override
   void dispose() {
+    stopCallLogRefresh();
     _scroll.dispose();
     if (tabActive) markMissedCallsSeen(DateTime.now());
     super.dispose();
@@ -126,6 +126,7 @@ class _CallsListState extends ConsumerState<CallsList> with SwipeTabVisits {
     final callBusy =
         ref.watch(voiceCallProvider.select((s) => s.active)) ||
         ref.watch(groupCallProvider.select((s) => s.active));
+    watchCallsEnding();
 
     // Clustered over the whole accumulated list, not per page: a run split
     // across a page boundary merges by itself once the next page lands. This

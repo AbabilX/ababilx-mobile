@@ -79,6 +79,27 @@ class CallLogEntry {
     endedAt: _date(json['ended_at']),
     durationSec: json['duration_sec'] as int? ?? 0,
   );
+
+  /// The server's own shape, so the phone's saved copy reads back through
+  /// [CallLogEntry.fromJson] exactly like a fresh page.
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'kind': kind,
+    'scope': scope,
+    'conversation_id': conversationId,
+    'team_id': teamId,
+    'mode': mode,
+    'status': status,
+    'direction': direction,
+    'missed': missed,
+    'peer_user_id': peerUserId,
+    'title': title,
+    'avatar_url': avatarUrl,
+    'started_at': startedAt.toUtc().toIso8601String(),
+    'answered_at': answeredAt?.toUtc().toIso8601String(),
+    'ended_at': endedAt?.toUtc().toIso8601String(),
+    'duration_sec': durationSec,
+  };
 }
 
 /// One page of history plus the cursor for the next one.
@@ -94,4 +115,9 @@ class CallLogPage {
         .toList(),
     nextCursor: json['next_cursor'] as String? ?? '',
   );
+
+  Map<String, dynamic> toJson() => {
+    'calls': [for (final c in calls) c.toJson()],
+    'next_cursor': nextCursor,
+  };
 }

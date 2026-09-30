@@ -81,6 +81,13 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   missed calls seen on hide, reloads on show, closes its search on hide (its
   PopScope would swallow Back on Chats), and only the visible tab may raise
   the vault unlock sheet. Wall / CRM / Board are not in the pager.
+- **Talks is local-first** (2026-09-30, `calls/data/call_log_cache.dart`,
+  `calls-list/calls_list_refresh.dart`): the newest page is saved per account
+  (`call_log_cache_v1`, wiped on account switch) and drawn before any request.
+  The server is asked once per launch on the first visit, then only when a
+  call ended, the app resumed, 5 min passed, or pull-to-refresh; the hidden
+  pager build fetches nothing. A refresh merges into the list
+  (`mergeFirstPage`) instead of cutting it back to page 1.
 
 ## Zones
 
