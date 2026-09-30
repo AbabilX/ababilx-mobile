@@ -15,6 +15,7 @@ import 'features/calls/native/android_group_call_ui.dart';
 import 'features/calls/native/background_voice_call_gate.dart';
 import 'features/calls/native/answered_elsewhere.dart';
 import 'features/calls/native/call_answered_guard.dart';
+import 'features/calls/native/missed_call_notice.dart';
 import 'features/calls/native/voice_call_ended_guard.dart';
 import 'features/ghost/ghost_push.dart';
 import 'features/notifications/chat_push_notification.dart';
@@ -57,12 +58,17 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
   switch (type) {
     case 'voice_call':
+      // Ring first, ask second — see BackgroundVoiceCallGate.
       if (!await BackgroundVoiceCallGate.shouldPresent(data)) return;
       await AndroidCallUi.showIncomingFromPush(data);
+      await BackgroundVoiceCallGate.dismissIfOver(
+        data['call_id']?.toString() ?? '',
+      );
     case 'voice_call_ended':
       final callId = data['call_id']?.toString() ?? '';
       if (callId.isNotEmpty) await VoiceCallEndedGuard.markEnded(callId);
       await AndroidCallUi.endCall(callId);
+      await MissedCallNotice.showIfMissed(data);
     case 'voice_call_answered':
       // Another device on this account picked up. Only the ringing surface
       // goes away — this is NOT a terminal event, so the call is deliberately

@@ -3,6 +3,9 @@
 ## Recent reliability fixes — 2026-09-23
 
 - Push/sleep audit: [failure mechanism, recovery changes, tests and device-validation limits](lib/features/notifications/PUSH_RELIABILITY_FIX.md).
+- 2026-09-30 round 2 (same file): FCM demotion by silent high-priority
+  pushes, ring-first call gate, missed-call notice, socket + Local Share
+  suspended in background, `adb logcat -s AbabilXPush`.
 - Connections → Blocked people now exposes the existing server unblock API.
   See [mobile chat notes](lib/features/messages/CLAUDE.md#unblock-connections--2026-09-23).
   Unblocking removes your block; reconnecting still requires a new request.

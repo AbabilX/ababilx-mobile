@@ -23,6 +23,7 @@ extension WsClientRevive on WsClient {
   Future<void> kick() async {
     if (!_started) return;
     _closed = false;
+    _suspended = false;
     if (_connected || _connecting) return;
     _reconnectTimer?.cancel();
     _backoffMs = WsClient._minBackoffMs;

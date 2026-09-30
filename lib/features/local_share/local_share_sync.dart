@@ -32,6 +32,13 @@ class _LocalShareSyncState extends ConsumerState<LocalShareSync>
     with WidgetsBindingObserver {
   bool _booted = false;
 
+  /// Discovery has been started once; before that there is nothing to pause.
+  bool _discovering = false;
+
+  /// Discovery is stopped because the app left the screen (see
+  /// [NearbyDevicesNotifier.pauseDiscovery]).
+  bool _discoveryPaused = false;
+
   @override
   void initState() {
     super.initState();
@@ -46,10 +53,26 @@ class _LocalShareSyncState extends ConsumerState<LocalShareSync>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Wi-Fi may have changed while backgrounded — force a fresh
-    // announce/scan so a network switch doesn't leave stale/missing peers.
-    if (state == AppLifecycleState.resumed && _booted) {
-      ref.read(nearbyDevicesProvider.notifier).refresh();
+    if (!_booted || !_discovering) return;
+    final nearby = ref.read(nearbyDevicesProvider.notifier);
+    switch (state) {
+      case AppLifecycleState.resumed:
+        if (_discoveryPaused) {
+          _discoveryPaused = false;
+          // Restarting announces and scans at once, which is also what a
+          // Wi-Fi change while backgrounded needs.
+          unawaited(nearby.startDiscovery());
+        } else {
+          nearby.refresh();
+        }
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        if (_discoveryPaused) return;
+        _discoveryPaused = true;
+        unawaited(nearby.pauseDiscovery());
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
     }
   }
 
@@ -62,6 +85,13 @@ class _LocalShareSyncState extends ConsumerState<LocalShareSync>
     await ref.read(localShareSessionsProvider.notifier).startServer();
     if (!mounted) return;
     await ref.read(nearbyDevicesProvider.notifier).startDiscovery();
+    if (!mounted) return;
+    _discovering = true;
+    // The app may have left the screen while the server was starting.
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle != null && lifecycle != AppLifecycleState.resumed) {
+      didChangeAppLifecycleState(lifecycle);
+    }
   }
 
   Future<void> _handleIncoming(

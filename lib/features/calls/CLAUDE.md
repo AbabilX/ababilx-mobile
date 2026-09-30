@@ -4,6 +4,21 @@
 > editing anything under `ringtone/`, `native/`, `audio/`, or
 > `packages/call_ringer/`.
 
+## Push-driven ring: ring first, ask second (2026-09-30)
+
+`native/background_voice_call_gate.dart`. A `voice_call` push rings after
+LOCAL checks only (call id, pushed expiry, `VoiceCallEndedGuard`,
+`CallAnsweredGuard`). Then `dismissIfOver` asks the API and takes the ring down
+only on a terminal status — never on `accepted`, which may be this device's
+own answer landing before its answered mark is written. The old gate fetched
+the call first and rang nothing on any error; from a sleeping phone (expired
+JWT → refresh → retry, cold isolate, 6 s) that failed often, and each failure
+was a missed call plus a silent high-priority push that made FCM demote the
+phone. The callee's `voice_call_ended` with `missed_call=1` now posts CallKit's
+missed-call entry (`native/missed_call_notice.dart`, same id as the timeout's,
+so never twice). The entry has no "Call back" button: nothing handled it.
+Why: `../notifications/PUSH_RELIABILITY_FIX.md` round 2.
+
 ## Incoming-call ringtone — DO NOT REWORK
 
 Shipped 2026-08-25 after a "ringtone dies ~2 s in" bug; verified working on

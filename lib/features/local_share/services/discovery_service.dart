@@ -108,7 +108,8 @@ class LocalDiscoveryService {
     int port = defaultPort,
     Function(LocalDevice)? onFound,
   }) async {
-    final localIps = await _ipService.getLocalIps();
+    // LAN interfaces only — never sweep the carrier's network over mobile data.
+    final localIps = await _ipService.getLanIps();
     if (localIps.isEmpty) return;
 
     final targets = <String>[];

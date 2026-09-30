@@ -9,6 +9,7 @@ import '../constants/api_constants.dart';
 import '../storage/secure_storage.dart';
 import 'api_client.dart';
 
+part 'ws_client_background.dart';
 part 'ws_client_revive.dart';
 
 typedef WsEventHandler = void Function(Map<String, dynamic> event);
@@ -32,6 +33,11 @@ class WsClient {
   /// that gets kicked would start a retry loop against an endpoint it has no
   /// token for.
   bool _started = false;
+
+  /// Closed on purpose because the app has been in the background a while —
+  /// see [WsClientBackground.suspend]. [connect] and [WsClientRevive.kick]
+  /// clear it; nothing else may reconnect a suspended socket.
+  bool _suspended = false;
   bool _connected = false;
   int _backoffMs = 1000;
   final _events = StreamController<Map<String, dynamic>>.broadcast();
@@ -58,6 +64,7 @@ class WsClient {
 
   Future<void> connect() async {
     _closed = false;
+    _suspended = false;
     _started = true;
     if (_connected || _connecting) return;
     await _connectOnce();
@@ -70,33 +77,6 @@ class WsClient {
     _channel?.sink.close();
     _channel = null;
     _connected = false;
-  }
-
-  bool send(Map<String, dynamic> payload) {
-    final ch = _channel;
-    if (ch == null || !_connected) return false;
-    try {
-      ch.sink.add(jsonEncode(payload));
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> sendWhenConnected(
-    Map<String, dynamic> payload, {
-    Duration timeout = const Duration(seconds: 8),
-  }) async {
-    if (send(payload)) return true;
-    final ready = reconnects.first;
-    await connect();
-    if (send(payload)) return true;
-    try {
-      await ready.timeout(timeout);
-    } catch (_) {
-      return false;
-    }
-    return send(payload);
   }
 
   Future<void> _connectOnce({bool retriedAuth = false}) async {
@@ -135,6 +115,13 @@ class WsClient {
       );
       _channel = channel;
       await channel.ready;
+      if (_closed) {
+        // Suspended or signed out mid-handshake: nobody wants this socket.
+        _connecting = false;
+        _channel = null;
+        await channel.sink.close();
+        return;
+      }
       _connected = true;
       _connecting = false;
 

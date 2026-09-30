@@ -10,6 +10,7 @@ import '../calls/call_lifecycle.dart';
 import '../calls/native/android_call_ui.dart';
 import '../calls/native/android_group_call_ui.dart';
 import '../calls/native/background_voice_call_gate.dart';
+import '../calls/native/missed_call_notice.dart';
 import '../calls/native/voice_call_ended_guard.dart';
 import 'chat/chat_notification_presenter.dart';
 import 'chat_push_notification.dart';
@@ -353,6 +354,7 @@ class FcmService {
       final callId = data['call_id']?.toString() ?? '';
       await VoiceCallEndedGuard.markEnded(callId);
       await AndroidCallUi.endCall(callId);
+      await MissedCallNotice.showIfMissed(data);
       return;
     }
     if (type == 'voice_call_answered' || type == 'group_call_joined') {
@@ -382,6 +384,9 @@ class FcmService {
       if (type == 'voice_call') {
         if (!await BackgroundVoiceCallGate.shouldPresent(data)) return;
         await AndroidCallUi.showIncomingFromPush(data);
+        await BackgroundVoiceCallGate.dismissIfOver(
+          data['call_id']?.toString() ?? '',
+        );
       } else {
         await AndroidGroupCallUi.showIncomingFromPush(data);
       }

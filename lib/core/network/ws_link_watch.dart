@@ -65,6 +65,9 @@ class _WsLinkWatchState extends ConsumerState<WsLinkWatch>
     _lastResults = results;
     if (action == WsLinkAction.none) return;
     final ws = ref.read(wsClientProvider);
+    // Let go on purpose in the background; a Wi-Fi change must not bring it
+    // back. Resuming the app does.
+    if (ws.suspended) return;
     // The interface it was opened on is gone either way, so the old socket is
     // scrap. Going offline stops there — there is nothing to connect onto, and
     // the backoff will be waiting when a route comes back.

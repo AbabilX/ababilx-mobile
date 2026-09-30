@@ -110,11 +110,13 @@ class AndroidCallParams {
       type: video ? 1 : 0,
       duration: remaining.clamp(1000, 60000),
       callingNotification: _noOngoingNotification,
+      // No "Call back" button: CallKit sends its press to Dart as an event
+      // nothing here handles, so it only ever dismissed the entry. Tapping
+      // the entry itself opens the app.
       missedCallNotification: NotificationParams(
         showNotification: true,
         subtitle: video ? 'Missed video call' : 'Missed voice call',
-        callbackText: 'Call back',
-        isShowCallback: true,
+        isShowCallback: false,
       ),
       extra: {
         'type': 'voice_call',

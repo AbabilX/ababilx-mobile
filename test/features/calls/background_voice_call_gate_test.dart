@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final now = DateTime(2026, 9, 3, 12);
 
-  VoiceCall call(String status, {DateTime? expiresAt}) => VoiceCall(
-    id: 'call-1',
+  VoiceCall call(String status, {String id = 'call-1'}) => VoiceCall(
+    id: id,
     teamId: '',
     conversationId: 'conversation-1',
     callerId: 'caller-1',
@@ -14,7 +14,7 @@ void main() {
     status: status,
     callerName: 'Caller',
     calleeName: 'Callee',
-    expiresAt: expiresAt ?? now.add(const Duration(seconds: 30)),
+    expiresAt: now.add(const Duration(seconds: 30)),
     createdAt: now,
   );
 
@@ -24,60 +24,106 @@ void main() {
         .toIso8601String(),
   };
 
-  test('presents only an authoritative ringing call', () async {
-    final result = await BackgroundVoiceCallGate.shouldPresent(
-      push(),
-      now: now,
-      endedLookup: (_) async => false,
-      lookup: (_) async => call('ringing'),
-    );
-    expect(result, isTrue);
-  });
+  Future<bool> no(String _) async => false;
+  Future<bool> yes(String _) async => true;
 
-  for (final status in ['accepted', 'cancelled', 'declined', 'ended']) {
-    test('rejects a server call in $status state', () async {
+  group('shouldPresent (local checks, no network)', () {
+    test('rings a fresh push', () async {
       final result = await BackgroundVoiceCallGate.shouldPresent(
         push(),
         now: now,
-        endedLookup: (_) async => false,
-        lookup: (_) async => call(status),
+        endedLookup: no,
+        answeredLookup: no,
+      );
+      expect(result, isTrue);
+    });
+
+    test('rejects a push with no call id', () async {
+      final result = await BackgroundVoiceCallGate.shouldPresent(
+        {'expires_at': now.add(const Duration(seconds: 30)).toIso8601String()},
+        now: now,
+        endedLookup: no,
+        answeredLookup: no,
       );
       expect(result, isFalse);
     });
-  }
 
-  test('rejects a terminal push observed before incoming', () async {
-    final result = await BackgroundVoiceCallGate.shouldPresent(
-      push(),
-      now: now,
-      endedLookup: (_) async => true,
-      lookup: (_) async => call('ringing'),
-    );
-    expect(result, isFalse);
+    test('rejects an expired push', () async {
+      final result = await BackgroundVoiceCallGate.shouldPresent(
+        push(expiresAt: now.subtract(const Duration(seconds: 1))),
+        now: now,
+        endedLookup: no,
+        answeredLookup: no,
+      );
+      expect(result, isFalse);
+    });
+
+    test('rejects a call whose terminal push arrived first', () async {
+      final result = await BackgroundVoiceCallGate.shouldPresent(
+        push(),
+        now: now,
+        endedLookup: yes,
+        answeredLookup: no,
+      );
+      expect(result, isFalse);
+    });
+
+    test('rejects a redelivered offer this device already answered', () async {
+      final result = await BackgroundVoiceCallGate.shouldPresent(
+        push(),
+        now: now,
+        endedLookup: no,
+        answeredLookup: yes,
+      );
+      expect(result, isFalse);
+    });
   });
 
-  test('rejects an expired push without querying the server', () async {
-    var queried = false;
-    final result = await BackgroundVoiceCallGate.shouldPresent(
-      push(expiresAt: now.subtract(const Duration(seconds: 1))),
-      now: now,
-      endedLookup: (_) async => false,
-      lookup: (_) async {
-        queried = true;
-        return call('ringing');
+  group('dismissIfOver (after the ring is up)', () {
+    Future<List<String>> run(Future<VoiceCall> Function(String) lookup) async {
+      final actions = <String>[];
+      await BackgroundVoiceCallGate.dismissIfOver(
+        'call-1',
+        lookup: lookup,
+        markEnded: (id) async => actions.add('mark:$id'),
+        dismiss: (id) async => actions.add('dismiss:$id'),
+      );
+      return actions;
+    }
+
+    for (final status in [
+      'cancelled',
+      'declined',
+      'missed',
+      'ended',
+      'failed',
+    ]) {
+      test('takes the ring down when the server says $status', () async {
+        final actions = await run((_) async => call(status));
+        expect(actions, ['mark:call-1', 'dismiss:call-1']);
+      });
+    }
+
+    test('keeps ringing while the server says ringing', () async {
+      expect(await run((_) async => call('ringing')), isEmpty);
+    });
+
+    test(
+      'never ends an accepted call — it may be this device answering',
+      () async {
+        expect(await run((_) async => call('accepted')), isEmpty);
       },
     );
-    expect(result, isFalse);
-    expect(queried, isFalse);
-  });
 
-  test('fails closed when authoritative lookup fails', () async {
-    final result = await BackgroundVoiceCallGate.shouldPresent(
-      push(),
-      now: now,
-      endedLookup: (_) async => false,
-      lookup: (_) async => throw Exception('offline'),
+    test(
+      'keeps ringing when the lookup fails (offline, 401, timeout)',
+      () async {
+        expect(await run((_) async => throw Exception('offline')), isEmpty);
+      },
     );
-    expect(result, isFalse);
+
+    test('ignores an answer about a different call', () async {
+      expect(await run((_) async => call('cancelled', id: 'other')), isEmpty);
+    });
   });
 }

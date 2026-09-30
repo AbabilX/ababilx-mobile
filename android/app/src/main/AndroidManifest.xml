@@ -439,6 +439,19 @@
             android:exported="false"
             android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"/>
 
+        <!-- Logs delivered vs requested FCM priority (logcat tag AbabilXPush),
+             the only way to see FCM demoting this install. Listens beside the
+             plugin's receiver on the same broadcast; only Google Play services
+             holds the SEND permission. See PushPriorityReceiver.kt. -->
+        <receiver
+            android:name=".PushPriorityReceiver"
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+            </intent-filter>
+        </receiver>
+
         <!-- flutter_local_notifications: scheduled notification receivers -->
         <receiver
             android:exported="false"

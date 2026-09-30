@@ -1,5 +1,13 @@
 # Chat notifications (Android)
 
+## Phones "going to sleep" — 2026-09-30
+
+FCM priority policy (silent pushes go normal), ring-first call gate, missed-call
+notice, background socket/Local Share suspension, refresh no longer signs out on
+a network error, `adb logcat -s AbabilXPush` for demotion. Mechanism, files and
+deploy notes: [PUSH_RELIABILITY_FIX.md](PUSH_RELIABILITY_FIX.md#round-2--phones-going-to-sleep--2026-09-30).
+**Never send a push high priority unless the phone shows something for it.**
+
 ## Registration recovery audit — 2026-09-23
 
 See [PUSH_RELIABILITY_FIX.md](PUSH_RELIABILITY_FIX.md) for the failure mechanism,

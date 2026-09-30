@@ -68,6 +68,23 @@ class NearbyDevicesNotifier extends StateNotifier<Map<String, LocalDevice>> {
     );
   }
 
+  /// Stops announcing, listening and re-probing while the app is not on
+  /// screen. The 4 s multicast announce and the 10 s peer probe used to run for
+  /// as long as the process lived — all night on a phone that never froze
+  /// background apps — and background battery drain is exactly what Samsung's
+  /// "sleeping apps" (and every other OEM battery manager) punish by cutting
+  /// the app off from its pushes. The receive server stays up: it costs
+  /// nothing while idle, and a transfer already running keeps going.
+  Future<void> pauseDiscovery() async {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _pruneTimer?.cancel();
+    _pruneTimer = null;
+    await _subscription?.cancel();
+    _subscription = null;
+    await _discoveryService.stop();
+  }
+
   Future<void> _announceAndScan() async {
     await _discoveryService.announce(currentDevice: _currentDevice);
     unawaited(

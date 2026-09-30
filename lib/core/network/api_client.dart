@@ -42,9 +42,15 @@ class ApiClient {
             return;
           }
 
-          final refreshed = await _tryRefreshToken();
-          if (!refreshed) {
-            await _storage.clearAuthSession();
+          final refresh = await _tryRefreshToken();
+          if (refresh != RefreshOutcome.refreshed) {
+            // Only the server saying no ends the session. A refresh that
+            // could not be asked — radio still waking, a timeout, a 5xx — used
+            // to sign the phone out too, and one asked from a background
+            // isolate on a phone just out of Doze is exactly that request.
+            if (refresh == RefreshOutcome.rejected) {
+              await _storage.clearAuthSession();
+            }
             handler.next(error);
             return;
           }
@@ -67,9 +73,9 @@ class ApiClient {
 
   late final Dio _dio;
   final SecureStorage _storage;
-  Future<bool>? _refreshInFlight;
+  Future<RefreshOutcome>? _refreshInFlight;
 
-  Future<bool> _tryRefreshToken() {
+  Future<RefreshOutcome> _tryRefreshToken() {
     _refreshInFlight ??= _refreshAccessToken().whenComplete(() {
       _refreshInFlight = null;
     });
@@ -77,11 +83,12 @@ class ApiClient {
   }
 
   /// Used by the WebSocket client before (re)connect — WS has no Dio 401 retry.
-  Future<bool> ensureFreshAccessToken() => _tryRefreshToken();
+  Future<bool> ensureFreshAccessToken() async =>
+      await _tryRefreshToken() == RefreshOutcome.refreshed;
 
-  Future<bool> _refreshAccessToken() async {
+  Future<RefreshOutcome> _refreshAccessToken() async {
     final refreshToken = await _storage.readRefreshToken();
-    if (refreshToken == null) return false;
+    if (refreshToken == null) return RefreshOutcome.rejected;
 
     try {
       final response = await _dio.post(
@@ -89,17 +96,21 @@ class ApiClient {
         data: {'refresh_token': refreshToken},
       );
       final body = response.data as Map<String, dynamic>?;
-      if (body == null || body['success'] != true) return false;
+      if (body == null || body['success'] != true) {
+        return RefreshOutcome.unavailable;
+      }
 
       final access = (body['access_token'] ?? body['token']) as String?;
       final nextRefresh = (body['refresh_token'] ?? refreshToken) as String;
-      if (access == null) return false;
+      if (access == null) return RefreshOutcome.unavailable;
 
       await _storage.writeJwt(access);
       await _storage.writeRefreshToken(nextRefresh);
-      return true;
+      return RefreshOutcome.refreshed;
+    } on DioException catch (e) {
+      return refreshOutcomeForStatus(e.response?.statusCode);
     } catch (_) {
-      return false;
+      return RefreshOutcome.unavailable;
     }
   }
 
@@ -127,6 +138,26 @@ class ApiClient {
   Future<Response<T>> delete<T>(String path, {dynamic data}) =>
       _dio.delete<T>(path, data: data);
 }
+
+/// What asking for a new access token came to.
+enum RefreshOutcome {
+  refreshed,
+
+  /// The server refused the refresh token: expired, revoked, unknown. The
+  /// session is over.
+  rejected,
+
+  /// The question never got an answer — offline, timeout, 5xx. The session
+  /// may be perfectly good; nothing is deleted.
+  unavailable,
+}
+
+/// A refresh that failed with HTTP [status]: only 401/403 mean the server
+/// looked at the token and said no.
+RefreshOutcome refreshOutcomeForStatus(int? status) =>
+    status == 401 || status == 403
+    ? RefreshOutcome.rejected
+    : RefreshOutcome.unavailable;
 
 /// Unwraps AbabilX `{ success, data, error }` envelope (same as web `apiFetch`).
 T unwrapApiData<T>(Response response) {
