@@ -18,7 +18,7 @@ import '../data/qr_login_repository.dart';
 /// hands it this account's message key, which is the only way a new device can
 /// read messages at all — the server has no copy to give it; a
 /// **history-transfer** code asks for the messages and files this phone still
-/// holds, including the ones the server let go at 180 days; a **user** code is
+/// holds, including the ones the server let go at 120 days; a **user** code is
 /// somebody's handle, and opens a chat with them.
 ///
 /// The two device codes show what is being approved first, and declining calls

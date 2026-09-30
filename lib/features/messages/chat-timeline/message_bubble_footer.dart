@@ -15,6 +15,10 @@ import 'signal_bubble_metrics.dart';
 /// [onMedia] is a picture/video bubble: the row sits on the image, so it
 /// takes a light overlay colour instead of the bubble's muted foreground,
 /// and drops the gap that a text footer needs above itself.
+///
+/// [onClear] is a sticker or GIF with no bubble behind it: white on the
+/// chat's own background is unreadable in a light theme, so the row gets a
+/// small pill of the bubble's fill and its ordinary muted ink.
 class MessageBubbleFooter extends ConsumerWidget {
   const MessageBubbleFooter({
     super.key,
@@ -25,6 +29,7 @@ class MessageBubbleFooter extends ConsumerWidget {
     required this.isFailed,
     required this.pulse,
     this.onMedia = false,
+    this.onClear = false,
   });
 
   final ChatMessage message;
@@ -34,6 +39,7 @@ class MessageBubbleFooter extends ConsumerWidget {
   final bool isFailed;
   final Animation<double> pulse;
   final bool onMedia;
+  final bool onClear;
 
   /// Same exception as the lightbox caption and details banner chrome: the
   /// photo is not a themed surface, so the overlay has to pick its own ink.
@@ -57,7 +63,8 @@ class MessageBubbleFooter extends ConsumerWidget {
         : isSending && !hideTicks
         ? tr('chat_sending')
         : formatChatTime(message.createdAt);
-    final ink = onMedia ? _onMediaInk : colors.muted;
+    final shadowed = onMedia && !onClear;
+    final ink = shadowed ? _onMediaInk : colors.muted;
 
     final row = Row(
       mainAxisSize: MainAxisSize.min,
@@ -70,7 +77,7 @@ class MessageBubbleFooter extends ConsumerWidget {
             color: isFailed ? error : ink,
             fontWeight: isFailed ? FontWeight.w500 : FontWeight.normal,
             // Readable on a photo without a scrim behind the row.
-            shadows: onMedia
+            shadows: shadowed
                 ? const [Shadow(blurRadius: 6, color: Color(0xCC000000))]
                 : null,
           ),
@@ -86,6 +93,18 @@ class MessageBubbleFooter extends ConsumerWidget {
         ],
       ],
     );
+    if (onClear) {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.background,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          child: row,
+        ),
+      );
+    }
     if (onMedia) return row;
     return Padding(padding: const EdgeInsets.only(top: 2), child: row);
   }

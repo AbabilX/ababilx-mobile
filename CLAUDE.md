@@ -68,6 +68,19 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   when `hasTeam`. Turning a switch off hides the tab from the bar only;
   deep links still open the route. Leaving a team still redirects
   `/wall` `/board` `/crm` to Messages via `shellRouteAccessDenied`.
+- **Chats ↔ Talks swipe** (2026-09-30, `core/router/swipe_tab_pager.dart` +
+  `home_tab_pager.dart`): `/messages` and `/calls` build ONE `MaterialPage`
+  keyed `home-tab-pager`, so a route change updates the page and the
+  `PageView` inside just moves. Do not give them separate keys again — the
+  pager would be rebuilt on every tab change. The route stays the truth; a
+  swipe calls `context.go` only when the page settles. **Both pages are built
+  up front and kept alive** — building one as the finger moved (Chats also
+  re-decrypted previews + refetched) is what made the first version stutter.
+  So initState/dispose no longer mean opened/closed: per-visit work uses
+  `SwipeTabActive` / `SwipeTabVisits` (`swipe_tab_active.dart`) — Talks marks
+  missed calls seen on hide, reloads on show, closes its search on hide (its
+  PopScope would swallow Back on Chats), and only the visible tab may raise
+  the vault unlock sheet. Wall / CRM / Board are not in the pager.
 
 ## Zones
 

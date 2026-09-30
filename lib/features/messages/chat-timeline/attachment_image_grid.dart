@@ -5,6 +5,7 @@ import 'attachment_album_geometry.dart';
 import 'attachment_image_tile.dart';
 import 'media-preview/chat_media_preview_meta.dart';
 import 'signal_bubble_metrics.dart';
+import 'sticker_media.dart';
 
 /// Multi-image album: fills the bubble's available width × [mediaMaxHeight],
 /// equal cells, row 1 then row 2, `+N` on the last cell when both rows are full.
@@ -48,6 +49,7 @@ class AttachmentImageGrid extends StatelessWidget {
             : SignalBubbleMetrics.mediaMinWidthSolo,
         preview: preview,
         inset: withCaption,
+        clear: isStickerLike(images.first),
       );
     }
     return Padding(

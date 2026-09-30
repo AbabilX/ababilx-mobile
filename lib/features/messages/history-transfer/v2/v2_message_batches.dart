@@ -13,7 +13,7 @@ import 'v2_store.dart';
 
 /// Seals every confirmed message on this phone into v2 message batches on
 /// disk. No age cutoff: the phone is the archive, and anything older than the
-/// server's six months is exactly what the destination is missing.
+/// server's 120 days is exactly what the destination is missing.
 ///
 /// Each batch is one gzip member of NDJSON frames — header, a `conv` frame
 /// before the first message that names it, messages oldest first, `end` — so a

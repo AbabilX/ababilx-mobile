@@ -86,3 +86,10 @@ List<CallLogCluster> stackCallLogByContact(List<CallLogEntry> calls) {
   }
   return rows.values.toList();
 }
+
+/// Missed rows newer than [seenAt] — the count the Missed filter shows. With
+/// no mark yet, every missed row counts.
+int unseenMissedCount(List<CallLogCluster> rows, DateTime? seenAt) => rows
+    .where((row) => row.lead.missed)
+    .where((row) => seenAt == null || row.lead.startedAt.isAfter(seenAt))
+    .length;

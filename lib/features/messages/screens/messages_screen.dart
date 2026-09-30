@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/router/swipe_tab_active.dart';
 import '../../../shared/widgets/portrait_lock_scope.dart';
 import '../chat-list/index.dart';
 import '../history-restore/recovery_progress_banner.dart';
@@ -60,7 +61,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
       unawaited(chat.fetchSidebar(silent: true));
     }
     setState(() => _vaultUnlocked = unlocked);
-    if (!unlocked) _openUnlockSheet();
+    // Built early by the Chats/Talks pager while Talks is on screen: Talks
+    // asks then, and the banner here still offers it.
+    if (!unlocked && SwipeTabActive.read(context)) _openUnlockSheet();
   }
 
   Future<void> _openUnlockSheet() async {

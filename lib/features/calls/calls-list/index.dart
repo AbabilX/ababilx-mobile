@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../core/router/swipe_tab_active.dart';
 import '../data/call_log_seen_storage.dart';
 import '../group/providers/group_call_provider.dart';
 import '../providers/call_log_provider.dart';
@@ -26,7 +27,7 @@ class CallsList extends ConsumerStatefulWidget {
   ConsumerState<CallsList> createState() => _CallsListState();
 }
 
-class _CallsListState extends ConsumerState<CallsList> {
+class _CallsListState extends ConsumerState<CallsList> with SwipeTabVisits {
   final _scroll = ScrollController();
   _CallFilter _filter = _CallFilter.all;
   DateTime? _lastSeenMissedAt;
@@ -40,6 +41,11 @@ class _CallsListState extends ConsumerState<CallsList> {
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
+    _openVisit();
+  }
+
+  /// Every visit, not once: the Chats/Talks pager keeps this tab alive.
+  void _openVisit() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final log = ref.read(callLogProvider);
@@ -51,11 +57,22 @@ class _CallsListState extends ConsumerState<CallsList> {
   }
 
   @override
+  void onTabShown() => _openVisit();
+
+  /// Leaving clears the badge for next time, and closes a search whose
+  /// PopScope would otherwise swallow Back on Chats.
+  @override
+  void onTabHidden() {
+    markMissedCallsSeen(DateTime.now());
+    _searching = false;
+    _query = '';
+    _searchPages = 0;
+  }
+
+  @override
   void dispose() {
     _scroll.dispose();
-    // Visiting the tab clears the badge for next time; this visit still
-    // shows whatever count it opened with.
-    markMissedCallsSeen(DateTime.now());
+    if (tabActive) markMissedCallsSeen(DateTime.now());
     super.dispose();
   }
 
@@ -126,12 +143,7 @@ class _CallsListState extends ConsumerState<CallsList> {
       ),
     );
     _pageForSearch(log);
-    final unseenMissed = allRows.where((row) => row.lead.missed);
-    final missedCount = _lastSeenMissedAt == null
-        ? unseenMissed.length
-        : unseenMissed
-              .where((row) => row.lead.startedAt.isAfter(_lastSeenMissedAt!))
-              .length;
+    final missedCount = unseenMissedCount(allRows, _lastSeenMissedAt);
     String t(String key) => AppTranslations.of(lang, key);
     Future<void> refresh() => ref.read(callLogProvider.notifier).load();
 

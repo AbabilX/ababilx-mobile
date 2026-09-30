@@ -16,7 +16,6 @@ import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
 import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
 import '../../features/settings/app-icon/app_icon_screen.dart';
-import '../../features/messages/screens/messages_screen.dart';
 import '../../features/messages/chat-details/conversation_details_screen.dart';
 import '../../features/messages/chat-details/group_members_screen.dart';
 import '../../features/messages/data/models/chat_models.dart';
@@ -44,7 +43,6 @@ import '../../features/calls/group/screens/group_call_lobby_screen.dart';
 import '../../features/calls/group/screens/group_call_screen.dart';
 import '../../features/calls/call-info/call_info_path.dart';
 import '../../features/calls/call-info/call_info_screen.dart';
-import '../../features/calls/screens/calls_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
 import '../../features/settings/chat-backup/chat_backup_screen.dart';
@@ -65,6 +63,7 @@ import '../../features/settings/screens/navigation_settings_screen.dart';
 import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import 'home_shell.dart';
+import 'home_tab_pager.dart';
 import '../../features/settings/recovery-codes/recovery_codes_screen.dart';
 import '../../features/messages/message_e2ee/message_entry_ready.dart';
 import '../../features/messages/message_e2ee/message_recovery_screen.dart';
@@ -150,8 +149,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (_, _, child) => HomeShell(child: child),
         routes: [
-          GoRoute(path: '/messages', builder: (_, _) => const MessagesScreen()),
-          GoRoute(path: '/calls', builder: (_, _) => const CallsScreen()),
+          // One page for both, so a swipe moves between them.
+          GoRoute(
+            path: '/messages',
+            pageBuilder: (_, state) => homeTabPage(state, 0),
+          ),
+          GoRoute(
+            path: '/calls',
+            pageBuilder: (_, state) => homeTabPage(state, 1),
+          ),
           GoRoute(path: '/wall', builder: (_, _) => const WallScreen()),
           GoRoute(
             path: '/crm/organizations',

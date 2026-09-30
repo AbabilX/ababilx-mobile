@@ -13,6 +13,7 @@ import 'message_link_preview.dart';
 import 'message_quote_block.dart';
 import 'quoted_bubble_layout.dart';
 import 'signal_bubble_metrics.dart';
+import 'sticker_media.dart';
 import '../../chat-lock/data/chat_lock_index.dart';
 
 /// Image/video attachments only, no caption or quote — the media is the
@@ -88,7 +89,7 @@ class MessageBubbleContent extends StatelessWidget {
   // full width cap and every bubble would reach the far edge.
   static const CrossAxisAlignment _footerSide = CrossAxisAlignment.end;
 
-  Widget? _footer({bool onMedia = false}) => showFooter
+  Widget? _footer({bool onMedia = false, bool onClear = false}) => showFooter
       ? MessageBubbleFooter(
           message: message,
           colors: colors,
@@ -97,6 +98,7 @@ class MessageBubbleContent extends StatelessWidget {
           isFailed: isFailed,
           pulse: pulse,
           onMedia: onMedia,
+          onClear: onClear,
         )
       : null;
 
@@ -132,7 +134,10 @@ class MessageBubbleContent extends StatelessWidget {
         message: message,
         colors: colors,
         bleedMedia: true,
-        mediaFooter: _footer(onMedia: true),
+        mediaFooter: _footer(
+          onMedia: true,
+          onClear: isBareMediaBubble(message) && isStickerMessage(message),
+        ),
       );
     }
 

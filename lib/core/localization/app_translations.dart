@@ -105,7 +105,7 @@ class AppTranslations {
       'recovery_copy': 'Copy code',
       'recovery_copied': 'Copied',
       'settings_backup': 'Backup',
-      'settings_backup_sub': '180-day cloud history and recovery code',
+      'settings_backup_sub': '120-day cloud history and recovery code',
       'local_backup_section': 'On this phone',
       'local_backup_title': 'Local backup',
       'local_backup_row_hint':
@@ -190,14 +190,14 @@ class AppTranslations {
           'Could not use the backup folder. Check that it still exists.',
       'local_backup_error_generic': 'Something went wrong. Try again.',
       'backup_section_recent': 'While you chat',
-      'backup_recent_title': 'Your last 180 days save automatically',
+      'backup_recent_title': 'Your last 120 days save automatically',
       'backup_recent_body':
           'Messages sync to our servers as you send and receive them. They stay '
-          'there for 180 days, end-to-end encrypted — only your devices can read '
+          'there for 120 days, end-to-end encrypted — only your devices can read '
           'them. A new phone or desktop can load that recent history when you sign in.',
       'backup_recovery_footnote':
           'Save your recovery code so you can unlock messages on another device. '
-          'Older than 180 days stays only on phones that already have it.',
+          'Older than 120 days stays only on phones that already have it.',
       'backup_section_recovery': 'Recovery',
       'backup_section_archive': 'Extra encrypted backup',
       'backup_status_checking': 'Checking…',
@@ -207,7 +207,7 @@ class AppTranslations {
       'backup_status_restoring': 'Restoring…',
       'backup_detail_none':
           'Optional: upload a snapshot of what is on this phone (including older '
-          'than 180 days). Does not duplicate chat on this device.',
+          'than 120 days). Does not duplicate chat on this device.',
       'backup_detail_other_device': 'Last upload was from another device.',
       'backup_detail_last': 'Last backup on this phone: {when}',
       'backup_progress_packed': '{n} messages packed',
@@ -1269,7 +1269,7 @@ class AppTranslations {
       'recovery_copy': 'কোড কপি করুন',
       'recovery_copied': 'কপি হয়েছে',
       'settings_backup': 'ব্যাকআপ',
-      'settings_backup_sub': '১৮০ দিন ক্লাউড ইতিহাস ও রিকভারি কোড',
+      'settings_backup_sub': '১২০ দিন ক্লাউড ইতিহাস ও রিকভারি কোড',
       'local_backup_section': 'এই ফোনে',
       'local_backup_title': 'লোকাল ব্যাকআপ',
       'local_backup_row_hint':
@@ -1353,14 +1353,14 @@ class AppTranslations {
           'ব্যাকআপ ফোল্ডার ব্যবহার করা যায়নি। ফোল্ডারটি এখনো আছে কিনা দেখুন।',
       'local_backup_error_generic': 'কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।',
       'backup_section_recent': 'চ্যাট করার সময়',
-      'backup_recent_title': 'গত ১৮০ দিনের মেসেজ নিজে থেকেই সেভ হয়',
+      'backup_recent_title': 'গত ১২০ দিনের মেসেজ নিজে থেকেই সেভ হয়',
       'backup_recent_body':
-          'মেসেজ পাঠানো ও পাওয়ার সাথে সাথে সার্ভারে সিঙ্ক হয়। সেখানে ১৮০ দিন '
+          'মেসেজ পাঠানো ও পাওয়ার সাথে সাথে সার্ভারে সিঙ্ক হয়। সেখানে ১২০ দিন '
           'থাকে, এন্ড-টু-এন্ড এনক্রিপ্টেড — শুধু আপনার ডিভাইস পড়তে পারে। নতুন ফোন '
           'বা ডেস্কটপে সাইন ইন করলে এই সাম্প্রতিক ইতিহাস লোড হতে পারে।',
       'backup_recovery_footnote':
           'রিকভারি কোড সংরক্ষণ করুন, যাতে অন্য ডিভাইসে মেসেজ আনলক করতে পারেন। '
-          '১৮০ দিনের বেশি পুরোনো শুধু যে ফোনে আগে থেকে আছে সেখানেই থাকে।',
+          '১২০ দিনের বেশি পুরোনো শুধু যে ফোনে আগে থেকে আছে সেখানেই থাকে।',
       'backup_section_recovery': 'রিকভারি',
       'backup_section_archive': 'অতিরিক্ত এনক্রিপ্টেড ব্যাকআপ',
       'backup_status_checking': 'পরীক্ষা করা হচ্ছে…',
@@ -1369,7 +1369,7 @@ class AppTranslations {
       'backup_status_backing_up': 'ব্যাকআপ হচ্ছে…',
       'backup_status_restoring': 'রিস্টোর হচ্ছে…',
       'backup_detail_none':
-          'ঐচ্ছিক: এই ফোনে যা আছে তার স্ন্যাপশট আপলোড (১৮০ দিনের বেশি পুরোনোসহ)। '
+          'ঐচ্ছিক: এই ফোনে যা আছে তার স্ন্যাপশট আপলোড (১২০ দিনের বেশি পুরোনোসহ)। '
           'এই ডিভাইসের চ্যাটে ডুপ্লিকেট বানায় না।',
       'backup_detail_other_device': 'শেষ আপলোড অন্য ডিভাইস থেকে হয়েছে।',
       'backup_detail_last': 'এই ফোনে শেষ ব্যাকআপ: {when}',

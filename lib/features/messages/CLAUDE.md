@@ -745,7 +745,7 @@ sign-out preserves it with the rest of the local archive. Ordinary
 `restoreTrustedIdentity` / setup never set the flag.
 
 Older pages stay on scroll-back, same as before. The server still only holds
-180 days — this is not the encrypted archive and not history-transfer.
+120 days — this is not the encrypted archive and not history-transfer.
 
 **The reversal is the lesson.** For a few hours this was server-side escrow with
 a 6-digit emailed code. Convenient, and not end-to-end: a machine with the

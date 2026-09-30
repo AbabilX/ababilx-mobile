@@ -18,7 +18,7 @@ part 'chat_message_export.dart';
 /// device.
 ///
 /// This is NOT the retention policy and must not be read as one. The phone is
-/// the archive and deliberately outlives the server, which keeps six months —
+/// the archive and deliberately outlives the server, which keeps 120 days —
 /// see CHAT_RETENTION.md. This exists so a runaway feed cannot fill the disk;
 /// at 200k messages a conversation is already far past anything the server
 /// still holds.

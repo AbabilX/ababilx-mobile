@@ -24,6 +24,7 @@ class AttachmentImageTile extends ConsumerStatefulWidget {
     this.radius,
     this.preview,
     this.inset = true,
+    this.clear = false,
   });
 
   final ChatMessageAttachment attachment;
@@ -51,6 +52,10 @@ class AttachmentImageTile extends ConsumerStatefulWidget {
   /// inside the bubble. Overlay bubbles turn this off so the photo *is* the
   /// bubble and the time sits on the image, not in a chrome strip.
   final bool inset;
+
+  /// A sticker or GIF ([isStickerLike]): no fill under it and never cropped,
+  /// so its clear pixels show the chat, not a grey block.
+  final bool clear;
 
   @override
   ConsumerState<AttachmentImageTile> createState() =>
@@ -107,8 +112,11 @@ class _AttachmentImageTileState extends ConsumerState<AttachmentImageTile>
       borderRadius: _shape,
       // The placeholder's own fill stays under the picture, so the first
       // decode fades in over the same colour the tile was already showing.
+      // A sticker has clear pixels, and that fill would show through them.
       child: ColoredBox(
-        color: colors.surfaceContainerHighest,
+        color: widget.clear
+            ? Colors.transparent
+            : colors.surfaceContainerHighest,
         child: Image(
           image: displaySizedImage(
             FileImage(handle.file!),
@@ -118,7 +126,7 @@ class _AttachmentImageTileState extends ConsumerState<AttachmentImageTile>
           ),
           width: box.width,
           height: box.height,
-          fit: BoxFit.cover,
+          fit: widget.clear ? BoxFit.contain : BoxFit.cover,
           gaplessPlayback: true,
           frameBuilder: fadeInImageFrame,
           errorBuilder: (_, _, _) => _broken(context),
