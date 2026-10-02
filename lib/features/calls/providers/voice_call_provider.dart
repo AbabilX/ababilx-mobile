@@ -186,7 +186,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     if (!conversation.canMessage || conversation.peerUserId == null) {
       state = state.copyWith(
         phase: VoiceCallPhase.failed,
-        error: 'This teammate is no longer available.',
+        error: 'This person is no longer available.',
       );
       return;
     }

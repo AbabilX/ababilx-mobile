@@ -21,7 +21,7 @@ class LockedFilePlaceholder extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'This file is locked — the workspace passed the free plan file limit. Upgrade to unlock it.',
+          'This file is no longer available.',
         ),
       ),
     );

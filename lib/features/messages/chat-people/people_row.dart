@@ -11,11 +11,7 @@ class PeopleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final detail = user.username.isNotEmpty
-        ? '@${user.username}'
-        : user.sharedWorkspace
-        ? 'Shared workspace'
-        : null;
+    final detail = user.username.isNotEmpty ? '@${user.username}' : null;
     return ListTile(
       leading: AppAvatar(size: 42, url: user.avatarUrl, name: user.name),
       title: Text(user.name),

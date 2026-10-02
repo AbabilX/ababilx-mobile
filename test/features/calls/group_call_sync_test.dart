@@ -5,7 +5,6 @@ import 'package:ababilx/features/calls/group/group_call_sync.dart';
 import 'package:ababilx/features/calls/group/providers/group_call_provider.dart';
 import 'package:ababilx/features/calls/widgets/active_call_banner.dart';
 import 'package:ababilx/features/calls/widgets/call_return_bar.dart';
-import 'package:ababilx/features/messages/providers/team_gate_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,12 +35,10 @@ class _Call extends GroupCallNotifier {
   }
 }
 
-final _team = StateProvider<bool>((ref) => false);
 final _initialPhase = Provider((ref) => GroupCallPhase.idle);
 
 Future<(_Call, ProviderContainer)> mount(
   WidgetTester tester, {
-  required bool hasTeam,
   bool connected = false,
 }) async {
   final router = GoRouter(
@@ -51,11 +48,9 @@ Future<(_Call, ProviderContainer)> mount(
     overrides: [
       authProvider.overrideWith(_Auth.new),
       groupCallProvider.overrideWith(_Call.new),
-      _team.overrideWith((ref) => hasTeam),
       _initialPhase.overrideWithValue(
         connected ? GroupCallPhase.connected : GroupCallPhase.idle,
       ),
-      hasTeamProvider.overrideWith((ref) => ref.watch(_team)),
     ],
   );
   addTearDown(container.dispose);
@@ -80,11 +75,7 @@ void main() {
   testWidgets('transient auth loading preserves the call, logout ends it', (
     tester,
   ) async {
-    final (call, container) = await mount(
-      tester,
-      hasTeam: false,
-      connected: true,
-    );
+    final (call, container) = await mount(tester, connected: true);
     final auth = container.read(authProvider.notifier) as _Auth;
     auth.loading();
     await tester.pump();
@@ -101,37 +92,11 @@ void main() {
   testWidgets('personal group calls bootstrap without workspace membership', (
     tester,
   ) async {
-    final (call, _) = await mount(tester, hasTeam: false);
+    final (call, _) = await mount(tester);
     expect(
       call.boots,
       1,
       reason: 'Personal group calls must receive lifecycle/native events.',
-    );
-    await tester.pumpWidget(const SizedBox());
-  });
-
-  testWidgets('workspace gate changes must not remove a live call return bar', (
-    tester,
-  ) async {
-    final (call, container) = await mount(
-      tester,
-      hasTeam: true,
-      connected: true,
-    );
-    expect(call.boots, 1);
-    expect(find.byType(CallReturnBar), findsOneWidget);
-    container.read(_team.notifier).state = false;
-    await tester.pump();
-    await tester.pump();
-    expect(
-      find.byType(CallReturnBar),
-      findsOneWidget,
-      reason: 'The live call return bar must survive team gate changes.',
-    );
-    expect(
-      call.shutdowns,
-      0,
-      reason: 'Workspace membership does not own a personal group call.',
     );
     await tester.pumpWidget(const SizedBox());
   });

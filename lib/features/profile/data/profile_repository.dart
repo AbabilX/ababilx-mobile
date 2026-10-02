@@ -14,13 +14,6 @@ class AppUser extends Equatable {
     this.username = '',
     this.avatarUrl = '',
     this.coverUrl = '',
-    this.plan = 'free',
-    this.premiumUntil,
-    this.effectivePlan = 'free',
-    this.planExpired = false,
-    this.showPlanExpiredDialog = false,
-    this.slackConnected = false,
-    this.githubConnected = false,
     this.githubUsername = '',
     this.appLanguage = 'en',
     this.acceptPolicy = true,
@@ -43,13 +36,6 @@ class AppUser extends Equatable {
   /// Wide profile cover (`users.cover_url`). Same object the DM details
   /// header draws behind the other person's avatar.
   final String coverUrl;
-  final String plan;
-  final String? premiumUntil;
-  final String effectivePlan;
-  final bool planExpired;
-  final bool showPlanExpiredDialog;
-  final bool slackConnected;
-  final bool githubConnected;
   final String githubUsername;
   final String appLanguage;
   final bool acceptPolicy;
@@ -70,14 +56,6 @@ class AppUser extends Equatable {
     username: json['username'] as String? ?? '',
     avatarUrl: json['avatar_url'] as String? ?? '',
     coverUrl: json['cover_url'] as String? ?? '',
-    plan: json['plan'] as String? ?? 'free',
-    premiumUntil: json['premium_until'] as String?,
-    effectivePlan:
-        json['effective_plan'] as String? ?? json['plan'] as String? ?? 'free',
-    planExpired: json['plan_expired'] as bool? ?? false,
-    showPlanExpiredDialog: json['show_plan_expired_dialog'] as bool? ?? false,
-    slackConnected: json['slack_connected'] as bool? ?? false,
-    githubConnected: json['github_connected'] as bool? ?? false,
     githubUsername: json['github_username'] as String? ?? '',
     appLanguage: json['app_language'] as String? ?? 'en',
     acceptPolicy: json['accept_policy'] as bool? ?? true,
@@ -94,13 +72,6 @@ class AppUser extends Equatable {
     'username': username,
     'avatar_url': avatarUrl,
     'cover_url': coverUrl,
-    'plan': plan,
-    'premium_until': premiumUntil,
-    'effective_plan': effectivePlan,
-    'plan_expired': planExpired,
-    'show_plan_expired_dialog': showPlanExpiredDialog,
-    'slack_connected': slackConnected,
-    'github_connected': githubConnected,
     'github_username': githubUsername,
     'app_language': appLanguage,
     'accept_policy': acceptPolicy,
@@ -124,13 +95,6 @@ class AppUser extends Equatable {
     username: username ?? this.username,
     avatarUrl: avatarUrl ?? this.avatarUrl,
     coverUrl: coverUrl ?? this.coverUrl,
-    plan: plan,
-    premiumUntil: premiumUntil,
-    effectivePlan: effectivePlan,
-    planExpired: planExpired,
-    showPlanExpiredDialog: showPlanExpiredDialog,
-    slackConnected: slackConnected,
-    githubConnected: githubConnected,
     githubUsername: githubUsername,
     appLanguage: appLanguage,
     acceptPolicy: acceptPolicy ?? this.acceptPolicy,
@@ -143,9 +107,7 @@ class AppUser extends Equatable {
   factory AppUser.fromMeParts({
     required Map<String, dynamic> session,
     required Map<String, dynamic> profile,
-    required Map<String, dynamic> plan,
-    required Map<String, dynamic> connections,
-  }) => AppUser.fromJson({...session, ...profile, ...plan, ...connections});
+  }) => AppUser.fromJson({...session, ...profile});
 
   @override
   List<Object?> get props => [
@@ -154,9 +116,6 @@ class AppUser extends Equatable {
     username,
     avatarUrl,
     coverUrl,
-    plan,
-    slackConnected,
-    githubConnected,
     acceptPolicy,
     policyVersion,
     independentChat,
@@ -174,21 +133,12 @@ class ProfileRepository {
     try {
       final sessionFuture = _getMePart(ApiConstants.me);
       final profileFuture = _getMePart(ApiConstants.meProfile);
-      final planFuture = _getMePart(ApiConstants.mePlan);
-      final connectionsFuture = _getMePart(ApiConstants.meConnections);
 
-      final parts = await Future.wait([
-        sessionFuture,
-        profileFuture,
-        planFuture,
-        connectionsFuture,
-      ]);
+      final parts = await Future.wait([sessionFuture, profileFuture]);
 
       final user = AppUser.fromMeParts(
         session: parts[0],
         profile: parts[1],
-        plan: parts[2],
-        connections: parts[3],
       );
 
       // Persist to local cache for instant offline restore

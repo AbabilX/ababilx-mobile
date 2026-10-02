@@ -116,8 +116,8 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'This is the name people see next to your messages, in group '
-            'member lists and in your workspace.',
+            'This is the name people see next to your messages and in '
+            'group member lists.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSurfaceVariant,
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../calls/data/call_log_cache.dart';
@@ -13,7 +14,6 @@ import '../../notifications/chat/chat_notification_dismissals.dart';
 import '../../notifications/chat/chat_notification_privacy.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
-import '../../team/data/team_repository.dart';
 
 /// Signal-style account switch: remove everything private to the old account,
 /// but never touch files the user exported to AbabilXStorage.
@@ -27,7 +27,10 @@ class AccountDataWiper {
     await _ref.read(chatArchiveWiperProvider).clear(clearCurrentUser: true);
     await _ref.read(safetyNumberStoreProvider).forgetAll();
     await _ref.read(profileRepositoryProvider).clearCache(strict: true);
-    await _ref.read(teamRepositoryProvider).clearCache(strict: true);
+    // Team cache left by builds that still had workspace features.
+    await (await SharedPreferences.getInstance()).remove(
+      'ababilx_cached_my_team',
+    );
     await ChatNotificationStore.clearAll(strict: true);
     await ChatNotificationDismissals.clearAll();
     // Locks and hidden-notification choices belong to the old account's

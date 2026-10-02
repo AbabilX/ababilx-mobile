@@ -16,7 +16,6 @@ class ConnectionRow extends StatelessWidget {
     required this.messageLabel,
     required this.removeLabel,
     required this.blockLabel,
-    required this.sharedWorkspaceLabel,
   });
 
   final ChatConnection connection;
@@ -26,7 +25,6 @@ class ConnectionRow extends StatelessWidget {
   final String messageLabel;
   final String removeLabel;
   final String blockLabel;
-  final String sharedWorkspaceLabel;
 
   static ButtonStyle _flatAction(
     BuildContext context, {
@@ -48,11 +46,7 @@ class ConnectionRow extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final user = connection.user;
-    final subtitle = user.username.isNotEmpty
-        ? '@${user.username}'
-        : user.sharedWorkspace
-        ? sharedWorkspaceLabel
-        : null;
+    final subtitle = user.username.isNotEmpty ? '@${user.username}' : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

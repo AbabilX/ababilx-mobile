@@ -18,24 +18,6 @@ const notificationChannels = <AndroidNotificationChannel>[
     description: 'General AbabilX alerts',
     importance: Importance.defaultImportance,
   ),
-  AndroidNotificationChannel(
-    'standup_alerts',
-    'Standup alerts',
-    description: 'Standup pre-send reminders',
-    importance: Importance.high,
-  ),
-  AndroidNotificationChannel(
-    'team_updates',
-    'Team updates',
-    description: 'Team membership and activity',
-    importance: Importance.defaultImportance,
-  ),
-  AndroidNotificationChannel(
-    'ai_assistant',
-    'AI assistant',
-    description: 'AI assistant alerts',
-    importance: Importance.defaultImportance,
-  ),
   // Both Go senders' channelFor() can return this id. Ringing pushes are sent
   // data-only today and short-circuit before that switch, so nothing reaches
   // it in practice — but a channel id no channel answers to makes FCM quietly
@@ -58,13 +40,20 @@ const notificationChannels = <AndroidNotificationChannel>[
   ),
 ];
 
-/// Channels earlier builds created for Wall and Board, deleted on init so
-/// Android's notification settings stop listing features the phone dropped.
-const retiredNotificationChannelIds = ['board', 'wall'];
+/// Channels earlier builds created for workspace features (Wall, Board,
+/// standup, team updates, the AI assistant), deleted on init so Android's
+/// notification settings list only what this chat app still posts.
+const retiredNotificationChannelIds = [
+  'board',
+  'wall',
+  'standup_alerts',
+  'team_updates',
+  'ai_assistant',
+];
 
-/// Wall and Board pushes the server still sends; the phone has no screen for
-/// them any more.
-bool isWallOrBoardPush(String? type) => const {
+/// Workspace pushes the server still sends to every device; this app is chat
+/// only and has no screen for them.
+bool isWorkspacePush(String? type) => const {
   'wall_mention',
   'wall_comment',
   'wall_reply',
@@ -75,4 +64,7 @@ bool isWallOrBoardPush(String? type) => const {
   'kanban_watcher',
   'board_notes',
   'board_notes_mention',
+  'pre_send_review',
+  'ai_assistant',
+  'team_member_left',
 }.contains(type);

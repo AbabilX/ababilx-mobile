@@ -7,7 +7,6 @@ class ChatUserSummary extends Equatable {
     this.username = '',
     this.avatarUrl = '',
     this.connection = 'none',
-    this.sharedWorkspace = false,
     this.canMessage = false,
     this.privacyMode = false,
   });
@@ -17,7 +16,6 @@ class ChatUserSummary extends Equatable {
   final String username;
   final String avatarUrl;
   final String connection;
-  final bool sharedWorkspace;
   final bool canMessage;
 
   /// The person has privacy mode on (server migration 0152): nobody can put
@@ -31,7 +29,6 @@ class ChatUserSummary extends Equatable {
         username: _jsonString(json['username']),
         avatarUrl: _jsonString(json['avatar_url']),
         connection: _jsonString(json['connection'], fallback: 'none'),
-        sharedWorkspace: json['shared_workspace'] == true,
         canMessage: json['can_message'] == true,
         privacyMode: json['privacy_mode'] == true,
       );
@@ -43,7 +40,6 @@ class ChatUserSummary extends Equatable {
     username,
     avatarUrl,
     connection,
-    sharedWorkspace,
     canMessage,
     privacyMode,
   ];

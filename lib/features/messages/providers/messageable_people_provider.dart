@@ -5,7 +5,6 @@ import '../data/models/chat_connection.dart';
 import '../data/models/chat_conversation.dart';
 import 'chat_connections_provider.dart';
 import 'chat_provider.dart';
-import 'team_gate_provider.dart';
 
 /// Everyone the New message screen offers before anything is typed.
 ///
@@ -17,11 +16,7 @@ import 'team_gate_provider.dart';
 ///
 /// The rule is now "anyone I already have something open with":
 ///
-///   accepted connection · open DM · request I sent · workspace colleague
-///
-/// A workspace colleague is a suggestion and nothing more: opening the DM is
-/// free, and the first message in it is a request they answer like anyone
-/// else's. Sharing a workspace settles nothing (the server's migration 0145).
+///   accepted connection · open DM · request I sent
 ///
 /// Blocked peers are excluded, and the richest summary wins where a person
 /// arrives from more than one source — a connection carries a username and a
@@ -41,19 +36,6 @@ final messageablePeopleProvider = Provider<List<ChatUserSummary>>((ref) {
   for (final dm in chat.dms) {
     final peer = _dmPeer(dm, me);
     if (peer != null) people.putIfAbsent(peer.userId, () => peer);
-  }
-  for (final member in ref.watch(teamMembersProvider)) {
-    if (member.userId == me) continue;
-    people.putIfAbsent(
-      member.userId,
-      () => ChatUserSummary(
-        userId: member.userId,
-        name: member.displayName,
-        avatarUrl: member.avatarUrl ?? '',
-        sharedWorkspace: true,
-        canMessage: true,
-      ),
-    );
   }
 
   final result = people.values.toList();
@@ -79,9 +61,9 @@ ChatUserSummary? _dmPeer(ChatConversation dm, String? me) {
 ///
 /// Narrower than [messageablePeopleProvider] on purpose, and the server
 /// enforces it (`CanInviteToGroup`): a DM to a stranger is a request they can
-/// refuse, but nobody gets a prompt before landing in a group. Offering a
-/// workspace colleague here only to have the add answer `connection_required`
-/// would be a dead row.
+/// refuse, but nobody gets a prompt before landing in a group. Offering anyone
+/// else here only to have the add answer `connection_required` would be a dead
+/// row.
 ///
 /// A connection in privacy mode is left out too: nobody may add them to a
 /// group (`peer_privacy_mode`). A live `chat.peer_privacy` flip wins over the

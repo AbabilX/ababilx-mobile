@@ -74,7 +74,7 @@ class _WebhookSettingsSectionState
           DetailsTile(
             icon: const Icon(Icons.person_outline_rounded),
             title: 'Personal flock',
-            value: 'Belongs to your account, not to a workspace',
+            value: 'Belongs to your account',
           ),
         DetailsTile(
           icon: const Icon(Icons.link_rounded),

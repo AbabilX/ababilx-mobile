@@ -112,9 +112,8 @@ class _TargetRow extends StatelessWidget {
 }
 
 String _subtitle(ChatConversation c) {
-  if (c.isChannel) return c.isPersonal ? 'Group' : 'Channel';
-  if (c.isGroup) return 'Group';
-  return c.isPersonal ? 'Direct message' : 'Workspace';
+  if (c.isChannel || c.isGroup) return 'Group';
+  return 'Direct message';
 }
 
 class _NoTargets extends StatelessWidget {

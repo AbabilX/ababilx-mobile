@@ -5,7 +5,6 @@ import '../../../shared/widgets/app_avatar.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../providers/chat_provider.dart';
-import '../providers/team_gate_provider.dart';
 import 'reaction_details.dart';
 import 'user_profile_sheet.dart';
 
@@ -146,10 +145,6 @@ class _ReactorList extends ConsumerWidget {
     final known = reactorAvatarIndex(
       chat,
       selfAvatar: ref.watch(profileProvider).valueOrNull?.avatarUrl,
-      extra: {
-        for (final m in ref.watch(teamMembersProvider))
-          if ((m.avatarUrl ?? '').isNotEmpty) m.userId: m.avatarUrl!,
-      },
     );
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),

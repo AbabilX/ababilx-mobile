@@ -14,7 +14,7 @@ import '../settings-hub/settings_row.dart';
 /// Notification settings.
 ///
 /// Per-channel toggles live in the Android system UI, not here — the app
-/// creates its channels (chat, calls, standup, AI) and Android owns their
+/// creates its channels (chat, calls, Ghost Chat) and Android owns their
 /// sound and importance from that point on. Duplicating them in-app would show
 /// a switch that the OS can silently disagree with, so this screen states
 /// permission status and hands off.

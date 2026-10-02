@@ -10,7 +10,6 @@ import '../../features/auth/email/email_auth_routes.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/profile/screens/sessions_screen.dart';
 import '../../features/profile/providers/profile_provider.dart';
-import '../../features/messages/providers/team_gate_provider.dart';
 import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
 import '../../features/settings/app-icon/app_icon_screen.dart';
 import '../../features/messages/chat-details/conversation_details_screen.dart';
@@ -74,7 +73,6 @@ final _routerRefreshNotifierProvider = Provider<_RouterRefreshNotifier>((ref) {
     // (tryQuietMessageEntry), and clearing on that transition would undo it.
     if (!isLoggedIn) ref.read(messageEntryReadyProvider.notifier).state = false;
     ref.invalidate(profileProvider);
-    ref.invalidate(teamGateProvider);
   });
   ref.onDispose(notifier.dispose);
   return notifier;

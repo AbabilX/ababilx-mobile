@@ -23,8 +23,6 @@ class ApiConstants {
   // User
   static const String me = '/api/me';
   static const String meProfile = '/api/me/profile';
-  static const String mePlan = '/api/me/plan';
-  static const String meConnections = '/api/me/connections';
   static const String meStatus = '/api/me/status';
   static const String meAcceptPolicy = '/api/me/accept-policy';
   static const String meSessions = '/api/me/sessions';
@@ -50,8 +48,6 @@ class ApiConstants {
   static const String meUsername = '/api/me/username';
   static const String meUploadPresign = '/api/me/upload/presign';
 
-  // Team
-  static const String teamsMe = '/api/teams/me';
 
   // Chat
   static const String chatConversations = '/api/teams/chat/conversations';

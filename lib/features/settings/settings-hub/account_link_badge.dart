@@ -4,10 +4,9 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../messages/chat_icon.dart';
 import '../../profile/data/profile_repository.dart';
 
-enum AccountLink { google, github, slack, qr }
+enum AccountLink { google, github, qr }
 
-/// How you signed in, plus GitHub/Slack if those are linked — one icon each,
-/// no duplicate when GitHub is both the provider and a connection.
+/// How you signed in — one icon.
 List<AccountLink> accountLinks(AppUser user) {
   final links = <AccountLink>[];
   final seen = <AccountLink>{};
@@ -24,10 +23,6 @@ List<AccountLink> accountLinks(AppUser user) {
     case 'qr':
       add(AccountLink.qr);
   }
-  if (user.githubConnected || user.githubUsername.trim().isNotEmpty) {
-    add(AccountLink.github);
-  }
-  if (user.slackConnected) add(AccountLink.slack);
   return links;
 }
 
@@ -35,14 +30,12 @@ extension AccountLinkVisual on AccountLink {
   String get brand => switch (this) {
     AccountLink.google => 'Google',
     AccountLink.github => 'GitHub',
-    AccountLink.slack => 'Slack',
     AccountLink.qr => 'QR',
   };
 
   List<List<dynamic>> get icon => switch (this) {
     AccountLink.google => HugeIcons.strokeRoundedGoogle,
     AccountLink.github => HugeIcons.strokeRoundedGithub,
-    AccountLink.slack => HugeIcons.strokeRoundedSlack,
     AccountLink.qr => HugeIcons.strokeRoundedQrCode,
   };
 }

@@ -8,8 +8,6 @@ import '../../calls/widgets/in_call_label.dart';
 import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
 import '../providers/chat_provider.dart';
-import '../providers/team_gate_provider.dart';
-import '../../../shared/text/latin_tracking.dart';
 
 Future<void> showUserProfileSheet({
   required BuildContext context,
@@ -23,16 +21,10 @@ Future<void> showUserProfileSheet({
   final currentUserId = ref.read(chatProvider).currentUserId;
   final isSelf = userId == currentUserId;
 
-  // Try to match with team members for extra details (role, email, preferred avatar/name).
-  final teamMembers = ref.read(teamMembersProvider);
-  final teamMember = teamMembers.where((tm) => tm.userId == userId).firstOrNull;
-
-  final displayName =
-      teamMember?.displayName ??
-      (userName != null && userName.isNotEmpty ? userName : 'User');
-  final avatarUrl = teamMember?.avatarUrl ?? userAvatarUrl;
-  final role = teamMember?.role;
-  final email = teamMember?.email;
+  final displayName = userName != null && userName.isNotEmpty
+      ? userName
+      : 'User';
+  final avatarUrl = userAvatarUrl;
 
   await showModalBottomSheet<void>(
     context: context,
@@ -46,8 +38,6 @@ Future<void> showUserProfileSheet({
         userId: userId,
         displayName: displayName,
         avatarUrl: avatarUrl,
-        role: role,
-        email: email,
         isSelf: isSelf,
         ref: ref,
       );
@@ -60,8 +50,6 @@ class _UserProfileSheetContent extends StatefulWidget {
     required this.userId,
     required this.displayName,
     this.avatarUrl,
-    this.role,
-    this.email,
     required this.isSelf,
     required this.ref,
   });
@@ -69,8 +57,6 @@ class _UserProfileSheetContent extends StatefulWidget {
   final String userId;
   final String displayName;
   final String? avatarUrl;
-  final String? role;
-  final String? email;
   final bool isSelf;
   final WidgetRef ref;
 
@@ -150,37 +136,6 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
               );
             },
           ),
-
-          if (widget.email != null && widget.email!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              widget.email!,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colors.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-
-          if (widget.role != null && widget.role!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: colors.primaryContainer.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                widget.role!.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: latinTracking(widget.role!, 0.5),
-                  color: colors.onPrimaryContainer,
-                ),
-              ),
-            ),
-          ],
 
           const SizedBox(height: 24),
           const Divider(height: 1),

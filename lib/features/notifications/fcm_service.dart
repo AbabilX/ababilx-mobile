@@ -344,10 +344,10 @@ class FcmService {
     final channel = _channelFor(data['type']?.toString());
 
     final type = data['type'];
-    if (isWallOrBoardPush(type?.toString())) {
-      // Wall and Board are gone from the phone; the server still sends their
-      // pushes to every device, so a tray line here would open nothing.
-      fcmLog('push.foreground.skip', 'wall/board push: $type');
+    if (isWorkspacePush(type?.toString())) {
+      // Workspace features are gone from the phone; the server still sends
+      // their pushes to every device, so a tray line here would open nothing.
+      fcmLog('push.foreground.skip', 'workspace push: $type');
       return;
     }
     if (isGhostPush(data)) {
@@ -494,12 +494,6 @@ class FcmService {
         return 'chat';
       case 'voice_call':
         return 'voice_calls';
-      case 'pre_send_review':
-        return 'standup_alerts';
-      case 'ai_assistant':
-        return 'ai_assistant';
-      case 'team_member_left':
-        return 'team_updates';
       default:
         return 'general';
     }

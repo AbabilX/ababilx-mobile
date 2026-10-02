@@ -7,17 +7,6 @@ class NotificationRouter {
     final conversationId = data['conversation_id']?.toString();
     final messageId = data['message_id']?.toString();
     switch (type) {
-      case 'pre_send_review':
-        return '/settings';
-      case 'ai_assistant':
-        // Proactive nudges about a chat open it; anything else (a task or a
-        // wall post, which the phone no longer has) lands on Messages.
-        if (conversationId != null && conversationId.isNotEmpty) {
-          return '/messages/$conversationId';
-        }
-        return '/messages';
-      case 'team_member_left':
-        return '/settings';
       case 'chat_dm':
       case 'chat_mention':
       case 'chat_message':

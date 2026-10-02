@@ -221,7 +221,6 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
           messageLabel: t('chat_message'),
           removeLabel: t('chat_remove'),
           blockLabel: t('chat_block'),
-          sharedWorkspaceLabel: t('chat_shared_workspace'),
           onOpenChat: () => unawaited(_openChat(connection.user.userId)),
           onRemove: () async {
             final ok = await confirmRemoveConnection(context, ref, name: name);
