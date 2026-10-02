@@ -33,13 +33,18 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
         debugPrint('[ChatCache] hydrateSidebarFromCache: cached row is empty');
         return false;
       }
+      final dms = sortDms(
+        cached.dms.map((this as ChatNotifier).visiblePreview).toList(),
+      );
+      final channels = sortChannels(
+        cached.channels.map((this as ChatNotifier).visiblePreview).toList(),
+      );
+      // Faces decoded before the rows exist, so the list's first paint has
+      // them (bounded to a few hundred ms, never a wait on the network).
+      await warmChatListAvatars([...dms.take(24), ...channels.take(12)]);
       state = state.copyWith(
-        dms: sortDms(
-          cached.dms.map((this as ChatNotifier).visiblePreview).toList(),
-        ),
-        channels: sortChannels(
-          cached.channels.map((this as ChatNotifier).visiblePreview).toList(),
-        ),
+        dms: dms,
+        channels: channels,
         sidebarLoading: false,
       );
       return true;

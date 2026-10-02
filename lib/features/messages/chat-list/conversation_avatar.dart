@@ -9,6 +9,7 @@ import '../../privacy-mode/peer_privacy_provider.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../note_to_self_avatar.dart';
+import 'chat_list_avatars.dart';
 import 'group_avatar_stack.dart';
 
 /// The picture at the start of a chat-list row, with the peer's online dot
@@ -32,6 +33,7 @@ class ConversationAvatar extends ConsumerWidget {
         avatarUrl: conversation.avatarUrl,
         name: title,
         webhook: conversation.isWebhook,
+        owner: conversationAvatarOwner(conversation),
         size: 52,
       );
     }
@@ -52,6 +54,7 @@ class ConversationAvatar extends ConsumerWidget {
     final avatar = AppAvatar(
       size: 52,
       url: deleted ? null : conversation.peerUserAvatar,
+      owner: conversationAvatarOwner(conversation),
       name: deleted ? null : title,
       fallback: ChatIcon(
         HugeIcons.strokeRoundedUser02,

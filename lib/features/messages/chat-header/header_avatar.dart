@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
+import '../chat-list/chat_list_avatars.dart';
 import '../chat-list/group_avatar_stack.dart';
 import '../data/models/chat_models.dart';
 import '../note_to_self_avatar.dart';
@@ -31,6 +32,7 @@ class ChatHeaderAvatar extends StatelessWidget {
         avatarUrl: conversation.avatarUrl,
         name: title,
         webhook: conversation.isWebhook,
+        owner: conversationAvatarOwner(conversation),
         size: size,
       );
     }
@@ -41,6 +43,7 @@ class ChatHeaderAvatar extends StatelessWidget {
       child: AppAvatar(
         size: size,
         url: conversation.isAccountDeleted ? null : conversation.peerUserAvatar,
+        owner: conversationAvatarOwner(conversation),
         name: conversation.isAccountDeleted ? null : title,
         fallback: conversation.isAccountDeleted
             ? Icon(

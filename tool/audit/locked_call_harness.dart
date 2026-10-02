@@ -3,7 +3,7 @@
 // call screen, minimising it, and the ongoing-call notification.
 import 'dart:async';
 
-import 'package:ababilx/features/calls/audio/telecom_audio_route.dart';
+import 'package:ababilx/features/calls/audio/call_audio_route.dart';
 import 'package:ababilx/features/calls/native/android_call_screen_lock.dart';
 import 'package:ababilx/features/calls/native/android_ongoing_call.dart';
 import 'package:ababilx/features/calls/widgets/call_lock_screen_guard.dart';
@@ -75,12 +75,14 @@ class _FixtureState extends State<Fixture> {
     });
   }
 
-  /// Telecom hosts the call once CallKit's Answer ran, and only then. The
-  /// check reads these lines back from logcat.
+  /// Telecom hosts the call once CallKit's Answer ran, and only then; the
+  /// native audio owner asks Telecom then. The check reads these lines back
+  /// from logcat.
   Future<void> _probeRoute(String when) async {
+    CallAudioRoute.bindCall(_callId);
     for (final speaker in [false, true]) {
-      final handled = await TelecomAudioRoute.route(_callId, speaker: speaker);
-      debugPrint('[harness] route $when speaker=$speaker handled=$handled');
+      await CallAudioRoute.setSpeaker(speaker);
+      debugPrint('[harness] route $when speaker=$speaker');
       await Future<void>.delayed(const Duration(seconds: 1));
     }
   }

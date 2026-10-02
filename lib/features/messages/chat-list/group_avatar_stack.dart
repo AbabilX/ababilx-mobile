@@ -17,7 +17,11 @@ class GroupAvatarStack extends StatelessWidget {
     this.name,
     this.size = 48,
     this.webhook = false,
+    this.owner,
   });
+
+  /// `conv:<id>` for the group's own photo, so a changed photo swaps quietly.
+  final String? owner;
 
   /// A feed (Flock) has no members whose faces could stand in for it, so an
   /// unset picture draws the Flock glyph instead of a montage.
@@ -36,7 +40,7 @@ class GroupAvatarStack extends StatelessWidget {
     final own = avatarUrl?.trim() ?? '';
     if (own.isNotEmpty) {
       return ClipOval(
-        child: AppAvatar(size: size, url: own, name: name),
+        child: AppAvatar(size: size, url: own, name: name, owner: owner),
       );
     }
     if (webhook) {

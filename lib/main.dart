@@ -24,6 +24,7 @@ import 'features/notifications/local_notifications.dart';
 import 'features/notifications/fcm_log.dart';
 import 'features/notifications/vitals/push_latency_store.dart';
 import 'features/chat-lock/data/chat_lock_index.dart';
+import 'shared/avatar-store/avatar_store.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -173,6 +174,9 @@ void main() async {
   // Before the first frame, so the chat list leaves locked chats out from
   // its very first paint.
   await ChatLockIndex.preload();
+  // Before the first frame too: every avatar lookup after this is
+  // synchronous, so a face on the phone is never drawn as a letter first.
+  await AvatarStore.instance.init();
 
   runApp(const ProviderScope(child: AbabilXApp()));
 }

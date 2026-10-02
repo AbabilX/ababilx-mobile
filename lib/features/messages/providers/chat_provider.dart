@@ -21,6 +21,7 @@ import '../../private-chat/private_op.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../chat-list/chat_list_avatars.dart';
 import '../chat-mute/mute_choice.dart';
 import '../chat_thread_prefetch.dart';
 import '../chat_utils.dart';
@@ -367,6 +368,7 @@ class ChatNotifier extends Notifier<ChatState>
         '[ChatCache] fetchSidebar: network ok, dms=${dms.length} '
         'channels=${channels.length} currentUserId=${state.currentUserId}',
       );
+      prefetchChatListAvatars([...dms, ...channels]);
       await persistSidebar(ChatSidebar(channels: channels, dms: dms));
     } catch (e) {
       // Keep cached rows on network failure — never clear local state
