@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/localization/app_translations.dart';
+import '../../audio/call_audio_devices.dart';
+import '../../audio/call_audio_output.dart';
+import '../../widgets/call_audio_output_sheet.dart';
 import '../call_icons.dart';
 import '../group_call_status.dart';
 import '../providers/group_call_state.dart';
@@ -32,6 +35,10 @@ class GroupCallHeader extends ConsumerWidget {
     final palette = CallColors.of(context);
     final lang = ref.watch(appLanguageProvider);
     String tr(String key) => AppTranslations.of(lang, key);
+    final face = CallAudioButtonFace.of(
+      ref.watch(callAudioDevicesProvider).valueOrNull ?? CallAudioDevices.empty,
+      speaker: state.speaker,
+    );
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -94,15 +101,20 @@ class GroupCallHeader extends ConsumerWidget {
               ),
               if (state.phase == GroupCallPhase.connected)
                 _HeaderButton(
-                  icon: state.speaker
-                      ? CallIcons.speakerOn
-                      : CallIcons.speakerOff,
-                  label: tr(
-                    state.speaker
-                        ? 'group_call_speaker'
-                        : 'group_call_earpiece',
-                  ),
-                  active: state.speaker,
+                  icon: switch (face.output) {
+                    CallAudioOutput.handset => CallIcons.speakerOff,
+                    CallAudioOutput.bluetooth => CallIcons.bluetoothAudio,
+                    CallAudioOutput.wiredHeadset => CallIcons.wiredHeadset,
+                    _ => CallIcons.speakerOn,
+                  },
+                  label: face.dropdown
+                      ? tr('call_audio_output')
+                      : tr(
+                          state.speaker
+                              ? 'group_call_speaker'
+                              : 'group_call_earpiece',
+                        ),
+                  active: face.selected,
                   onTap: onToggleSpeaker,
                 ),
               _HeaderButton(

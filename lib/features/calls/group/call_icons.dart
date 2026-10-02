@@ -24,6 +24,8 @@ class CallIcons {
   static const CallGlyph close = HugeIcons.strokeRoundedCancel01;
   static const CallGlyph speakerOn = HugeIcons.strokeRoundedVolumeHigh;
   static const CallGlyph speakerOff = HugeIcons.strokeRoundedEar;
+  static const CallGlyph bluetoothAudio = HugeIcons.strokeRoundedBluetooth;
+  static const CallGlyph wiredHeadset = HugeIcons.strokeRoundedHeadphones;
   static const CallGlyph join = HugeIcons.strokeRoundedHeadphones;
   static const CallGlyph alert = HugeIcons.strokeRoundedAlert01;
 }

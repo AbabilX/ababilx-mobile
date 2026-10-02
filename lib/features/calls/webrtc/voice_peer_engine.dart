@@ -170,10 +170,10 @@ class VoicePeerEngine {
     // capture and routing start in a call session rather than in media mode.
     // Not `Helper.setAndroidAudioConfiguration`: that configures flutter_webrtc's
     // audio manager, which LiveKit disables app-wide — see [CallAudioRoute].
-    // Earpiece, like every dialler: a call answered and lifted to the ear must
-    // not come out of the loudspeaker — unless Speaker was already pressed.
-    // `CallScreenLock`'s proximity blanking keys off this same route.
-    await CallAudioRoute.activate(speaker: _speakerChoice ?? false);
+    // Earpiece by default, like every dialler, speaker for a video call — and
+    // a connected Bluetooth or wired headset ahead of both, as in Signal —
+    // unless Speaker was already pressed while ringing.
+    await CallAudioRoute.activate(chosen: _speakerChoice, video: video);
     if (_disposed) return;
     await _ensureAudioSessionIfNeeded();
     if (_disposed) return;
@@ -288,11 +288,10 @@ class VoicePeerEngine {
         voiceCallLog('camera.open.failed', reason: e.toString());
       }
     }
-    // Re-assert the route once media is attached: opening the microphone can
-    // move the phone off its route on its own. `force` is false for the
-    // earpiece on purpose, so a connected headset still wins. Read after every
-    // await above, so a press made while media was opening is the one applied.
-    if (!_disposed) await CallAudioRoute.setSpeaker(speakerOn);
+    // iOS: re-assert the route once media is attached; opening the
+    // microphone can move the phone off it. Android's native owner watches
+    // the route itself and puts the user's choice back when it moves.
+    if (!_disposed && Platform.isIOS) await CallAudioRoute.setSpeaker(speakerOn);
   }
 
   // ---- camera -------------------------------------------------------------
@@ -338,6 +337,8 @@ class VoicePeerEngine {
     }
     onLocalCameraChanged(camera.stream, front: camera.front);
     if (!renegotiate) return; // the caller's offer/answer sends the map
+    // Turned on mid-call: off the earpiece onto the speaker, a headset stays.
+    unawaited(CallAudioRoute.cameraStarted());
     await _sendMediaMap();
     if (needsOffer || droppedScreen) await _renegotiate();
   }

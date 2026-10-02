@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/router/root_back.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../group_call_status.dart';
+import '../../audio/call_audio_devices.dart';
+import '../../audio/call_audio_output.dart';
+import '../../widgets/call_audio_output_sheet.dart';
 import '../../native/android_call_screen_lock.dart';
 import '../../native/android_pip.dart';
 import '../../widgets/pip_call_view.dart';
@@ -99,8 +104,15 @@ class _GroupCallScreenState extends ConsumerState<GroupCallScreen> {
               view: _view,
               onView: (next) => setState(() => _view = next),
               onParticipants: () => showParticipantsSheet(context),
-              onToggleSpeaker: () =>
-                  ref.read(groupCallProvider.notifier).toggleSpeaker(),
+              onToggleSpeaker: () => unawaited(
+                pressCallAudioOutput(
+                  context,
+                  ref.read(callAudioDevicesProvider).valueOrNull ??
+                      CallAudioDevices.empty,
+                  lang: ref.read(appLanguageProvider),
+                  fallback: ref.read(groupCallProvider.notifier).toggleSpeaker,
+                ),
+              ),
               onMinimize: _minimize,
             ),
             const SizedBox(height: 12),

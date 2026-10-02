@@ -8,6 +8,8 @@ import 'package:livekit_client/livekit_client.dart';
 
 import '../../../../core/network/ws_client.dart';
 import '../../../profile/providers/profile_provider.dart';
+import '../../audio/call_audio_devices.dart';
+import '../../audio/call_audio_output.dart';
 import '../../audio/call_audio_route.dart';
 import '../../call_lifecycle.dart';
 import '../../call_ringtone.dart';
@@ -75,6 +77,13 @@ class GroupCallNotifier extends GroupCallBase
     ref.listen(profileProvider, (_, next) {
       final id = next.valueOrNull?.id;
       if (id != null && id.isNotEmpty) _currentUserId = id;
+    });
+    // `speaker` follows what Android's call-audio owner is playing on.
+    ref.listen(callAudioDevicesProvider, (_, next) {
+      final devices = next.valueOrNull;
+      if (devices == null || !devices.known || _room == null) return;
+      final speaker = devices.active == CallAudioOutput.speaker;
+      if (speaker != state.speaker) state = state.copyWith(speaker: speaker);
     });
     _invites = GroupCallInvites(
       onChanged: (invite) {
@@ -159,9 +168,9 @@ class GroupCallNotifier extends GroupCallBase
         await leaveOnce(call.id);
         return;
       }
-      // A DM call leaves LiveKit in manual audio mode (see [CallAudioRoute]);
-      // a Room only configures the session when it manages it.
-      await CallAudioRoute.restoreForRoom();
+      // Android: the call's audio belongs to the native owner (Signal's
+      // SignalAudioManager), loudspeaker by default, a headset ahead of it.
+      await CallAudioRoute.activateRoom(callId: call.id);
       final room = Room(
         roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
       );
@@ -175,7 +184,7 @@ class GroupCallNotifier extends GroupCallBase
       if (micOn && (state.lobby?.joinMuted ?? false)) {
         await room.localParticipant?.setMicrophoneEnabled(false);
       }
-      await CallAudioRoute.preferRoomSpeaker(true, callId: call.id);
+      await CallAudioRoute.preferRoomSpeaker(true);
       if (_room != room || joinEpoch != _joinEpoch) return;
       state = state.copyWith(
         phase: GroupCallPhase.connected,

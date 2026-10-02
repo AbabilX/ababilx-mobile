@@ -9,9 +9,11 @@ mixin GroupCallMedia on GroupCallBase {
     syncRoom();
   }
 
+  /// The two-way switch: iOS, or Android before the device list arrives.
+  /// Android's picker goes through [CallAudioRoute.select].
   Future<void> toggleSpeaker() async {
     final next = !state.speaker;
-    await CallAudioRoute.preferRoomSpeaker(next, callId: state.call?.id);
+    await CallAudioRoute.toggleRoomSpeaker(next);
     state = state.copyWith(speaker: next);
   }
 

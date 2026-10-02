@@ -873,75 +873,66 @@ Files that change together: `webrtc/voice_reconnect_controller.dart`,
 `call_status_text.dart`, and server-side `services/voicecall/signal.go` +
 `ice.go`.
 
-## Call audio routing — speaker vs earpiece
+## Call audio routing — earpiece, speaker, Bluetooth, wired (2026-10-02)
 
-`livekit_client`'s Android plugin runs
-`AudioSwitchManager.setAudioSessionManagementEnabled(false)` in
-`onAttachedToEngine` (`LiveKitPlugin.kt`), at app start, process-wide. Every
-flutter_webrtc audio call is a **no-op** from then on: `setSpeakerphoneOn`,
-`selectAudioOutput`, `setAndroidAudioConfiguration`, session start. That is why
-the Speaker button did nothing and DM calls always came out of the earpiece.
+Report: "connected a headset / Bluetooth during a call, the app does not
+recognise it". The user asked for Signal's solution, 100%. It is now Signal's
+model: **one native owner of a call's audio**, ported from Signal-Android's
+`SignalAudioManager` family (AGPL: read, never pasted).
 
-`audio/call_audio_route.dart` is the fix and the only place a DM call may touch
-audio routing:
+```
+android/.../callaudio/
+  CallAudioSession.kt        channel com.ababilx.app/call_audio; one manager per call
+  CallAudioManager.kt        base: "call-audio" thread, focus, mode, mic mute, create()
+  CallAudioManager31.kt      Android 12+  = FullSignalAudioManagerApi31
+  CallAudioManagerLegacy.kt  below 12     = FullSignalAudioManager
+  CallBluetoothManager.kt    + CallBluetoothReceiver.kt = SignalBluetoothManager (SCO)
+  TelecomCallAudioManager.kt Telecom-hosted call = TelecomAudioManager
+  CallAudioDevice.kt         AudioDevice + AudioDeviceMapping + AudioOutputOption
+patches/callkit/CallkitAudioRoutes.kt   Connection.onCallAudioStateChanged -> app
+```
 
-- `activate(speaker:)` — before `getUserMedia` in `VoicePeerEngine.prepare`;
-  applies LiveKit's communication session (`MODE_IN_COMMUNICATION`, focus,
-  `STREAM_VOICE_CALL`, `forceAudioRouting: true`) and the starting route. That
-  route is the **earpiece** (changed 2026-09-04 from an "audible default" of
-  speaker): a call answered and lifted to the ear must not come out of the
-  loudspeaker, and proximity blanking keys off the same flag. `prepare` mirrors
-  it into `state.speaker` explicitly rather than trusting the default, because
-  an earlier call in the same session may have left it on.
-- **A Speaker press made while ringing is kept** (2026-09-26, "pressed
-  loudspeaker while calling, went back to the earpiece on answer"). No engine
-  exists while ringing, so the press only sets `state.speakerChosen`;
-  `_prepareEngine` passes `state.speakerChoice` into `prepare(speaker:)`, and a
-  press during prepare goes to `_preparingEngine`. `CallAudioRoute.startsOnSpeaker`
-  is the one rule: the choice, else camera → speaker, else earpiece. The
-  provider mirrors `engine.speakerOn` — never plain `cameraOn`, which was the
-  bug. Pinned by `test/features/calls/call_speaker_choice_test.dart`.
-- `setSpeaker(on)` — the Speaker button; `force: on` so an explicit press wins
-  over a connected headset.
-- `release()` — on engine dispose; drops focus and restores the normal mode.
-  Leaves LiveKit in **manual** mode, because handing management back would
-  re-activate the session that was just released.
-- `restoreForRoom()` — called before a group `Room` connects, the other half of
-  that contract.
-
-Group calls need none of that: a LiveKit `Room` configures the session itself.
-
-**A call Android Telecom is hosting is routed through Telecom** (2026-09-10,
-"Speaker does nothing on a call I answered from the lock screen").
-flutter_callkit_incoming registers every ring it shows as a self-managed
-Telecom call, and Answer on its screen (lock screen, heads-up) marks it active.
-Telecom then sets `MODE_IN_COMMUNICATION` itself — `dumpsys audio` shows
-`com.android.server.telecom` setting the mode — and a privileged caller is
-always the mode owner; AudioService applies the mode owner's communication
-route and nobody else's, so LiveKit's request from this app was dropped with
-no error. The plugin's own `setAudioRoute` method is an empty stub.
-
-- `CallAudioTelecom.kt` (`com.ababilx.app/call_audio_telecom`) finds the
-  plugin's `CallkitConnection` for the call id and, only while it is ACTIVE,
-  calls `Connection.setAudioRoute`: speaker, else Bluetooth when Telecom lists
-  it, else wired-or-earpiece — where LiveKit would go. It is deprecated on 34
-  for `requestCallEndpointChange`, which needs endpoint callbacks only the
-  plugin's `Connection` subclass receives; `setAudioRoute` still reaches
-  Telecom's router.
-- `TelecomAudioRoute.route` answers false for anything Telecom is not
-  hosting — a call answered in the app (its Telecom call stays RINGING), placed
-  from it, or not Android — and then LiveKit's route is the one that counts.
-  `CallAudioRoute.setSpeaker` asks Telecom first and still sets LiveKit's
-  preference, so the two agree if Telecom lets go.
-- The DM call id is bound once in `_prepareEngine` (`CallAudioRoute.bindCall`);
-  group calls pass theirs to `CallAudioRoute.preferRoomSpeaker`, which is also
-  how a group's speaker-on default survives a lock-screen join.
-- Emulator proof, logged by `locked_call_harness.dart`: ringing → not handled,
-  accepted → handled. The emulator has no earpiece, so hearing the switch
-  still needs a real phone.
-
-iOS still routes through `Helper.setSpeakerphoneOn` — LiveKit only disables
-flutter_webrtc's manager on Android and macOS.
+- **Device choice is Signal's order**: the user's pick, else Bluetooth, wired,
+  the call's default (earpiece for audio, speaker for video / group), earpiece,
+  speaker; `" Watch"` devices never auto-picked. An `AudioDeviceCallback`
+  (12+) or the headset-plug / Bluetooth broadcasts (below) re-run it, which is
+  what moves a call onto a headset connected mid-call. A pick that disappears
+  is cleared. A communication device that drifts off the user's pick is put
+  back (`OnCommunicationDeviceChangedListener`).
+- **Telecom-hosted calls** (CallKit Answer, or in-app accept, which calls
+  `setCallConnected` → the Connection goes ACTIVE) get
+  `TelecomCallAudioManager`: nothing is set on `AudioManager` but the mic
+  mute, routes come from Telecom via the patched `CallkitConnection`, picks go
+  to `setAudioRoute` / `requestBluetoothAudio`. Telecom moves to a headset by
+  itself. Chosen once, at session start, by `CallkitConnection.find(id)` being
+  ACTIVE. `CallAudioTelecom.kt` / `TelecomAudioRoute` are gone.
+- **LiveKit is kept out on Android**: `_keepLiveKitOut` puts its AudioManager
+  in manual mode and stops its AudioSwitch before every DM and group call. Two
+  owners of one audio mode is how the speaker choice used to be lost. iOS is
+  unchanged (`Helper.setSpeakerphoneOn` for DM, the Room's own session for
+  groups). LiveKit still disables flutter_webrtc's manager process-wide, so
+  `Helper.setSpeakerphoneOn` stays a no-op on Android — never use it there.
+- **The ringback joins the same session** (`CallAudioSession.ensureStarted`),
+  as Signal's `startOutgoingRinger` runs inside its manager; it plays the
+  MediaPlayer and nothing else. `CallRingbackWatch.kt` is gone — the session's
+  listeners replaced it.
+- Dart: `audio/call_audio_route.dart` (`activate(chosen:, video:)` in
+  `VoicePeerEngine.prepare`, `activateRoom` before a group `Room` connects,
+  `cameraStarted` = `enableSpeakerPhoneIfNeeded`, `select`, `release` on engine
+  dispose / `clearRoom`), `audio/call_audio_devices.dart` (channel +
+  `callAudioDevicesProvider`), `audio/call_audio_output.dart` (model, picker
+  rule). Both call notifiers set `speaker` from the device events.
+- **UI is Signal's `CallAudioToggleButton`**: fewer than 3 outputs with an
+  earpiece among them → a press cycles; otherwise a drop-down mark and the
+  "Audio output" bottom sheet (radio, icon, name; Bluetooth by product name).
+  `widgets/call_audio_output_sheet.dart`, `call_audio_labels.dart`,
+  `call_audio_dropdown.dart`; DM seat in `call_controls_row.dart`, group in
+  `group_call_header.dart`. Before the first device event (and on iOS) it is
+  the old speaker switch. Pinned by `test/features/calls/call_audio_output_test.dart`.
+- Logs: `adb logcat -s CallAudio CallRingback flutter`.
+- Deviations from Signal, named: no connected/disconnected sound (no asset of
+  ours); Telecom is the plugin's `Connection` (API 26+), not Jetpack Core
+  Telecom (API 34). Not device-verified yet.
 
 ## Ringtone device test (emulators do not prove this)
 
@@ -1435,11 +1426,9 @@ ringing buttons by colour now (uiautomator never idles over the ripples).
   while the caller's screen says "Ringing…" (`outgoingRinging` +
   `calleeRingingAt`, user's call). "Calling…" is silent, so a privacy-mode
   callee — who never reports ringing — gives a silent wait. Signal's `OutgoingRinger` model; its sound file is
-  AGPL, hence the system tone. Sets `MODE_IN_COMMUNICATION` only if no call
-  mode is set, and **must hand it back before connect**: LiveKit saves the
-  mode it finds and restores it after the call, so leaving ours in place
-  strands the phone in communication mode. A Speaker press while ringing
-  moves the tone to the loudspeaker.
+  AGPL, hence our own file. Mode, focus and the device belong to the call's
+  audio session (see "Call audio routing"), so the tone follows the speaker
+  pick or a headset that connects while it rings.
 - **Never `ToneGenerator` for it again** (2026-10-02, "two beeps on the
   speaker, then the earpiece"). AudioService does not count a ToneGenerator
   as a player; from Android 12 it re-checks an app holding
@@ -1448,11 +1437,10 @@ ringing buttons by colour now (uiautomator never idles over the ripples).
   device, so the Speaker choice died at the second beep. A MediaPlayer is a
   tracked player and the mode holds.
 - **The ring re-asserts itself** (same day, "rings twice then goes quiet"):
-  `CallRingbackWatch.kt` is Signal's mode / communication-device listeners —
-  a mode leaving IN_COMMUNICATION or a device leaving the speaker the user
-  chose is re-applied (5 times a ring at most), and `CallRingbackPlayer.kt`
-  replaces a player that errors. All logged under `CallRingback`; Dart logs
-  `ringback.start` / `ringback.stop` (with why) under `flutter`.
+  the call-audio session's listeners put a drifted device back, and
+  `CallRingbackPlayer.kt` replaces a player that errors. Logged under
+  `CallRingback` / `CallAudio`; Dart logs `ringback.start` / `ringback.stop`
+  (with why) under `flutter`.
 - **Proximity** now also covers `outgoingRinging` and `connecting` (Signal
   enters `IN_CALL` at outgoing start). An incoming ring still never blanks.
 

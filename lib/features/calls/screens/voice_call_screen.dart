@@ -7,11 +7,14 @@ import '../../../core/router/root_back.dart';
 import '../../privacy-mode/peer_privacy_provider.dart';
 import '../../privacy-mode/privacy_secure_scope.dart';
 import '../../../shared/widgets/app_toast.dart';
+import '../audio/call_audio_devices.dart';
+import '../audio/call_audio_output.dart';
 import '../data/models/voice_call.dart';
 import '../decline-message/decline_message_send.dart';
 import '../incoming_call_ringtone.dart';
 import '../native/android_call_screen_lock.dart';
 import '../providers/voice_call_provider.dart';
+import '../widgets/call_audio_output_sheet.dart';
 import '../widgets/call_controls_row.dart';
 import '../widgets/connected_call_body.dart';
 import 'incoming_call_view.dart';
@@ -139,6 +142,9 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     final call = ref.watch(voiceCallProvider);
     final notifier = ref.read(voiceCallProvider.notifier);
     final lang = ref.watch(appLanguageProvider);
+    final audio =
+        ref.watch(callAudioDevicesProvider).valueOrNull ??
+        CallAudioDevices.empty;
     // The other side's privacy mode (server 0152): this phone must not
     // capture the call — ring, video and shared screen included. A flip
     // during the call (`chat.peer_privacy`) wins over the row's snapshot.
@@ -205,7 +211,15 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
               onToggleMute: notifier.toggleMute,
               onToggleCamera: notifier.toggleCamera,
               onToggleScreenShare: notifier.toggleScreenShare,
-              onToggleSpeaker: notifier.toggleSpeaker,
+              audio: audio,
+              onToggleSpeaker: () => unawaited(
+                pressCallAudioOutput(
+                  context,
+                  audio,
+                  lang: lang,
+                  fallback: notifier.toggleSpeaker,
+                ),
+              ),
               onHangUp: () {
                 unawaited(IncomingCallRingtone.stop());
                 notifier.hangUp();

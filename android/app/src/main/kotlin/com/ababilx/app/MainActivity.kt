@@ -8,6 +8,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.core.view.WindowCompat
 import com.ababilx.app.backup.LocalBackupChannel
+import com.ababilx.app.callaudio.CallAudioSession
 import com.ababilx.app.mediasend.MediaSendChannel
 import com.ababilx.call_ringer.CallRinger
 import com.hiennv.flutter_callkit_incoming.CallkitRingSilence
@@ -107,9 +108,6 @@ class MainActivity : FlutterActivity() {
     /** An explicit Save into Downloads or the gallery — never automatic. */
     private val mediaStore by lazy { MediaStoreChannel(this) }
 
-    /** Speaker / earpiece for a call Android Telecom hosts — a CallKit Answer. */
-    private val callAudioTelecom by lazy { CallAudioTelecom() }
-
     /** FLAG_SECURE while a Ghost Chat is on screen. */
     private val secureWindow by lazy { SecureWindowChannel(this) }
 
@@ -138,7 +136,9 @@ class MainActivity : FlutterActivity() {
         pip.attach(flutterEngine)
         callScreenLock.attach(flutterEngine)
         callRingback.attach(flutterEngine)
-        callAudioTelecom.attach(flutterEngine)
+        // The call's one audio owner: mode, focus, earpiece / speaker /
+        // Bluetooth / wired (Signal's SignalAudioManager).
+        CallAudioSession.attach(flutterEngine, this)
         mediaGallery.attach(flutterEngine)
         mediaSend.attach(flutterEngine)
         appIcon.attach(flutterEngine)
@@ -239,6 +239,10 @@ class MainActivity : FlutterActivity() {
         // keep the panel dark with no call left to justify it.
         callScreenLock.dispose()
         callRingback.dispose()
+        // The engine and its call die with this Activity; give the phone its
+        // audio mode back, as LiveKit's session did when its plugin detached.
+        CallAudioSession.stop()
+        CallAudioSession.detach()
         callLockScreen.dispose()
         mediaGallery.dispose()
         mediaSend.dispose()

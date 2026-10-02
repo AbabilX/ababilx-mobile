@@ -16,6 +16,7 @@ gradle.beforeProject { project ->
     def dir = new File(project.projectDir, 'src/main/kotlin/com/hiennv/flutter_callkit_incoming')
     new File(dir, 'CallkitCallLifecycle.kt').text = new File(lifecycleSource, 'CallkitCallLifecycle.kt').text
     new File(dir, 'CallkitRingSilence.kt').text = new File(lifecycleSource, 'CallkitRingSilence.kt').text
+    new File(dir, 'CallkitAudioRoutes.kt').text = new File(lifecycleSource, 'CallkitAudioRoutes.kt').text
 
     def connection = new File(dir, 'CallkitConnection.kt')
     replaceLifecycle(connection,
@@ -54,6 +55,20 @@ gradle.beforeProject { project ->
 
     override fun onHold() {
         super.onHold()""")
+
+    // Telecom tells only the Connection which routes exist and which is in use
+    // (a headset connected mid-call); the app's call-audio owner listens.
+    replaceLifecycle(connection,
+        '''    override fun onSilence() {
+        Log.d(TAG, "onSilence id=$callId")''',
+        '''    @Suppress("OVERRIDE_DEPRECATION")
+    override fun onCallAudioStateChanged(state: android.telecom.CallAudioState?) {
+        Log.d(TAG, "onCallAudioStateChanged id=$callId state=$state")
+        CallkitAudioRoutes.changed(callId, state)
+    }
+
+    override fun onSilence() {
+        Log.d(TAG, "onSilence id=$callId")''')
 
     def service = new File(dir, 'CallkitConnectionService.kt')
     replaceLifecycle(service, '        return connection',

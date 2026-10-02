@@ -37,6 +37,8 @@ mixin GroupCallLifecycle on GroupCallBase {
       unawaited(
         room.disconnect().whenComplete(() => unawaited(room.dispose())),
       );
+      // Android's call-audio owner gives the phone its mode back.
+      await CallAudioRoute.release();
     }
     state = state.copyWith(
       phase: error == null ? GroupCallPhase.idle : GroupCallPhase.failed,

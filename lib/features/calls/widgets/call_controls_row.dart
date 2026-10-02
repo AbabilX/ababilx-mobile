@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../audio/call_audio_output.dart';
 import '../providers/voice_call_state.dart';
+import 'call_audio_dropdown.dart';
+import 'call_audio_output_sheet.dart';
 import 'call_controls_anchor.dart';
 import 'call_glass_circle.dart';
 import 'call_overlay_metrics.dart';
 
-/// Mute · Camera · Screen Share · Speaker, plus End.
+/// Mute · Camera · Screen Share · Audio output, plus End.
+///
+/// The audio seat is Signal's `CallAudioToggleButton`: earpiece ↔ speaker
+/// while those are the only outputs, a list (with a drop-down mark) once a
+/// Bluetooth or wired headset joins them — see [pressCallAudioOutput].
 ///
 /// Landscape: five seats in one **vertical** strip on the physical bottom
 /// edge (anchor handles left/right). Portrait: four across, End drops under
@@ -21,6 +28,7 @@ class CallControlsRow extends StatelessWidget {
     required this.onToggleScreenShare,
     required this.onToggleSpeaker,
     required this.onHangUp,
+    this.audio = CallAudioDevices.empty,
     this.lang = 'en',
     this.endLabel,
   });
@@ -31,6 +39,7 @@ class CallControlsRow extends StatelessWidget {
   final VoidCallback onToggleScreenShare;
   final VoidCallback onToggleSpeaker;
   final VoidCallback onHangUp;
+  final CallAudioDevices audio;
   final String lang;
   final String? endLabel;
 
@@ -91,6 +100,7 @@ class CallControlsRow extends StatelessWidget {
       );
     }
 
+    final face = CallAudioButtonFace.of(audio, speaker: call.speaker);
     final toggles = <Widget>[
       seat(
         icon: call.muted ? Icons.mic_off_rounded : Icons.mic_rounded,
@@ -120,11 +130,17 @@ class CallControlsRow extends StatelessWidget {
         selected: call.screenSharing,
         onPressed: _connected ? onToggleScreenShare : null,
       ),
-      seat(
-        icon: call.speaker ? Icons.volume_up_rounded : Icons.hearing_rounded,
-        name: tr('call_control_speaker'),
-        selected: call.speaker,
-        onPressed: _live ? onToggleSpeaker : null,
+      CallAudioDropdown(
+        show: face.dropdown,
+        diameter: seatD,
+        child: seat(
+          icon: callAudioOutputIcon(face.output),
+          name: face.dropdown
+              ? callAudioShortLabel(face.output, lang)
+              : tr('call_control_speaker'),
+          selected: face.selected,
+          onPressed: _live ? onToggleSpeaker : null,
+        ),
       ),
     ];
 

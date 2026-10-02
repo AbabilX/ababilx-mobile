@@ -11,6 +11,8 @@ import '../decline-message/decline_message_send.dart';
 import '../../../core/network/ws_client.dart';
 import '../../messages/data/models/chat_conversation.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../audio/call_audio_devices.dart';
+import '../audio/call_audio_output.dart';
 import '../audio/call_audio_route.dart';
 import '../call_lifecycle.dart';
 import '../call_permissions.dart';
@@ -95,6 +97,14 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       if (id != null && id.isNotEmpty) {
         state = state.copyWith(currentUserId: id);
       }
+    });
+    // The native audio owner moved the call (a headset connected, a pick in
+    // the output sheet): `speaker` follows what is actually playing.
+    ref.listen(callAudioDevicesProvider, (_, next) {
+      final devices = next.valueOrNull;
+      if (devices == null || !devices.known || !state.active) return;
+      final speaker = devices.active == CallAudioOutput.speaker;
+      if (speaker != state.speaker) state = state.copyWith(speaker: speaker);
     });
     return VoiceCallState(currentUserId: userId);
   }
