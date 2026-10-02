@@ -7,6 +7,7 @@ import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../data/models/chat_connection.dart';
 import '../new-message/new_message_search.dart';
+import 'camera_send_thumb.dart';
 import '../../../shared/text/name_search.dart';
 
 class CameraRecipientScreen extends ConsumerStatefulWidget {
@@ -14,9 +15,17 @@ class CameraRecipientScreen extends ConsumerStatefulWidget {
     super.key,
     required this.photoBytes,
     required this.people,
+    this.isVideo = false,
+    this.path,
   });
 
   final Uint8List photoBytes;
+
+  /// The camera recorded a video: [photoBytes] are then not an image.
+  final bool isVideo;
+
+  /// The camera's file on disk, for a video's poster frame.
+  final String? path;
   final List<ChatUserSummary> people;
 
   @override
@@ -121,14 +130,10 @@ class _CameraRecipientScreenState extends ConsumerState<CameraRecipientScreen> {
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.memory(
-                  widget.photoBytes,
-                  width: 48,
-                  height: 48,
-                  fit: BoxFit.cover,
-                ),
+              CameraSendThumb(
+                bytes: widget.photoBytes,
+                isVideo: widget.isVideo,
+                path: widget.path,
               ),
               const SizedBox(width: 12),
               Expanded(

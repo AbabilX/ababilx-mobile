@@ -28,7 +28,8 @@ MediaSendActivity          lifecycle only: permissions, picker results, export
  ├─ review/ReviewView      pager + rail + edit + quality + caption + Send
  │   ├─ AddMoreSheetView   "+" → Camera / Gallery / Files
  │   └─ QualitySheetView   Standard / High
- └─ editor/EditorView      pen / highlighter / blur / eraser / crop / rotate / undo
+ ├─ editor/EditorView      pen / highlighter / blur / eraser / crop / rotate / undo
+ └─ camera/CameraView      in-app CameraX camera (2026-10-02), see below
 ```
 
 Review chrome icons (`ic_ms_back`, `ic_ms_send`, `ic_ms_draw`, `ic_ms_add`,
@@ -113,6 +114,61 @@ Rules for the non-gallery doors:
   share's read grant covers the package, but an Activity started with the URI
   only in an extra is not covered by it — without the ClipData a shared photo
   opens as a blank page.
+
+## In-app camera (2026-10-02)
+
+The Camera door used to hand off to the phone's own camera app
+(`ACTION_IMAGE_CAPTURE`), which looked and behaved differently on every OEM.
+It is now Signal's camera screen (`feature/camera` + `MediaCaptureModeBar`),
+written in Views over CameraX 1.6.1 — Signal's pin:
+
+```
+camera/CameraView      the screen; card 9:16, rounded 16dp, Video | Photo bar under it
+ ├─ CameraCardLayout   where the card goes for tall / medium / short windows
+ ├─ CameraHud          close, flash (off→on→auto), timer pill, zoom bar,
+ │                     gallery thumb · CaptureButton · switch
+ ├─ CameraSession      binding (+ fallback), lens, flash, zoom, focus
+ │   └─ CameraUseCases preview / photo / video, all 16:9
+ ├─ CameraShots        photo (+ selfie flash, blink, buzz) and recording
+ │   ├─ CameraPhoto    file + front-camera mirror baked in
+ │   └─ CameraRecorder HD, 4 Mbps, mic only if granted, torch for flash On
+ ├─ CameraLifecycle    RESUMED only while shown AND the Activity is in front
+ └─ DeviceRotation     screen held portrait; photos upright; icons turn
+```
+
+- **The camera device is open only while the screen is shown.** The Activity
+  is a plain Activity and the screen is a `GONE` sibling most of the time, so
+  CameraX binds to `CameraLifecycle`, not the Activity — or the sensor (and
+  the green privacy dot) would stay on behind the review screen.
+- **Everything is bound at 16:9 and the card is 9:16**, so the viewfinder is
+  the photo. Preview is `COMPATIBLE` (TextureView) so the card's outline clips
+  it to rounded corners.
+- **Binding falls back**: preview+photo+video, else preview+photo, and
+  `ensureVideo` swaps photo for video only for the length of a take. Three
+  retries 500 ms apart. Only a camera that NEVER bound falls back to the
+  system camera app (`MediaSendPickers.openSystemCamera`); a later failure
+  (lens switch) is a toast.
+- **A selfie is mirrored in the file**, as the viewfinder drew it. CameraX can
+  only record that as an EXIF flip, which `MediaBitmaps` (rotation only) would
+  drop, so `CameraPhoto` re-encodes it upright (JPEG 95, temp + rename).
+- **Capture button**: Photo mode tap = photo, hold = recording for as long as
+  the finger, sliding up/down zooms (Signal's ×3 of screen height); Video mode
+  tap = recording that runs unheld, tap again stops. No drag-to-lock and no
+  pause — a deliberate cut from Signal's HUD.
+- The camera asks CAMERA + RECORD_AUDIO together (Signal's prompt); only
+  CAMERA decides whether it opens. A take is stopped — and delivered — when the
+  screen is hidden or the app goes to the background.
+- **Back routing**: opened over review → back to review; over the grid of a
+  gallery-first flow → grid; as the front door → leaves the flow. The gallery
+  thumbnail opens the grid, and Back from there returns to the camera.
+
+## Back on Android 16
+
+`MediaSendBack` registers an `OnBackInvokedCallback`. With targetSdk 36 on an
+Android 16 phone, predictive back is the default and `onBackPressed()` is
+never called — Back just finished the Activity, so every inner step (editor →
+review, album → list, camera → gallery) threw the whole flow away. Found while
+testing the camera on 2026-10-02; it predates it.
 
 ## Sent media quality
 
@@ -257,7 +313,8 @@ under the cap.
   or crop does not resize the picture.
 - The FileProvider authority `${applicationId}.mediasend.fileprovider` exposes
   **only** `cacheDir/mediasend/`, and exists solely so the camera app can write
-  the shot it was asked for.
+  the shot it was asked for — now only on the fallback path, when CameraX can
+  open no camera.
 
 ## Deliberate gaps
 

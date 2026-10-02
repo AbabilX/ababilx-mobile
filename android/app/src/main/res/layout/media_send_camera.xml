@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Signal's camera screen. The card's size and place are set in code
+     (CameraCardLayout) from the window, because they depend on its aspect. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.FrameLayout">
+
+    <FrameLayout
+        android:id="@+id/camera_card"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="top|center_horizontal"
+        android:background="@drawable/ms_camera_card">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/camera_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <View
+            android:id="@+id/camera_focus_ring"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:alpha="0"
+            android:background="@drawable/ms_camera_focus_ring"
+            android:importantForAccessibility="no" />
+
+        <!-- The shutter blink: the card goes dark for a beat as the shot lands. -->
+        <View
+            android:id="@+id/camera_shutter"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:background="@color/media_send_bg"
+            android:importantForAccessibility="no" />
+
+        <ImageButton
+            android:id="@+id/camera_close"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="top|start"
+            android:layout_margin="16dp"
+            android:background="@drawable/ms_camera_control"
+            android:contentDescription="@string/media_send_close"
+            android:src="@drawable/ic_ms_cancel" />
+
+        <ImageButton
+            android:id="@+id/camera_flash"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="16dp"
+            android:background="@drawable/ms_camera_control"
+            android:contentDescription="@string/media_send_flash_off"
+            android:src="@drawable/ic_ms_flash_off"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/camera_timer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="27dp"
+            android:background="@drawable/ms_camera_timer_pill"
+            android:fontFeatureSettings="tnum"
+            android:includeFontPadding="false"
+            android:paddingStart="16dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="4dp"
+            android:text="00:00"
+            android:textColor="@color/media_send_on_dark"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-medium"
+            android:visibility="gone"
+            tools:ignore="HardcodedText" />
+
+        <com.ababilx.app.mediasend.camera.ZoomBar
+            android:id="@+id/camera_zoom"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="146dp" />
+
+        <FrameLayout
+            android:id="@+id/camera_controls"
+            android:layout_width="match_parent"
+            android:layout_height="76dp"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="54dp">
+
+            <FrameLayout
+                android:id="@+id/camera_gallery"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_vertical|start"
+                android:layout_marginStart="40dp"
+                android:background="@drawable/ms_camera_control"
+                android:clickable="true"
+                android:contentDescription="@string/media_send_gallery"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/camera_gallery_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_ms_gallery" />
+
+                <ImageView
+                    android:id="@+id/camera_gallery_thumb"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <com.ababilx.app.mediasend.camera.CaptureButton
+                android:id="@+id/camera_capture"
+                android:layout_width="76dp"
+                android:layout_height="76dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/media_send_take_photo" />
+
+            <ImageButton
+                android:id="@+id/camera_flip"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_vertical|end"
+                android:layout_marginEnd="40dp"
+                android:background="@drawable/ms_camera_control"
+                android:contentDescription="@string/media_send_switch_camera"
+                android:src="@drawable/ic_ms_flip"
+                android:visibility="invisible" />
+        </FrameLayout>
+    </FrameLayout>
+
+    <com.ababilx.app.mediasend.camera.CaptureModeBar
+        android:id="@+id/camera_modes"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_gravity="bottom" />
+
+    <!-- The selfie flash: the whole screen lights the face, at full brightness. -->
+    <View
+        android:id="@+id/camera_selfie_flash"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/media_send_on_dark"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+</merge>

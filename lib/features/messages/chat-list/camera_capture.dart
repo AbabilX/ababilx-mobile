@@ -8,9 +8,20 @@ import '../../../shared/media/picked_media_file.dart';
 
 /// What the camera produced, whichever camera ran.
 class ChatCameraCapture {
-  const ChatCameraCapture({required this.files, this.caption = ''});
+  const ChatCameraCapture({
+    required this.files,
+    this.caption = '',
+    this.firstPath,
+  });
 
   final List<PickedMediaFile> files;
+
+  /// Where the first file sits on disk, when the camera wrote one. A video's
+  /// poster frame is extracted from it; bytes alone cannot draw a video.
+  final String? firstPath;
+
+  bool get firstIsVideo =>
+      files.isNotEmpty && files.first.contentType.startsWith('video/');
 
   /// Typed under the album in the review screen. Empty from the plain picker,
   /// which has nowhere to type.
@@ -37,9 +48,11 @@ Future<ChatCameraCapture?> captureForChat(WidgetRef ref) async {
     if (native == null) return null;
     await ref.read(mediaQualityProvider.notifier).set(native.quality);
     final files = <PickedMediaFile>[];
+    String? firstPath;
     for (final file in native.files) {
       final source = File(file.path);
       if (!await source.exists()) continue;
+      firstPath ??= file.path;
       files.add(
         PickedMediaFile(
           bytes: await source.readAsBytes(),
@@ -49,7 +62,11 @@ Future<ChatCameraCapture?> captureForChat(WidgetRef ref) async {
       );
     }
     if (files.isEmpty) return null;
-    return ChatCameraCapture(files: files, caption: native.caption);
+    return ChatCameraCapture(
+      files: files,
+      caption: native.caption,
+      firstPath: firstPath,
+    );
   }
 
   final picked = await pickLiveCameraFile();

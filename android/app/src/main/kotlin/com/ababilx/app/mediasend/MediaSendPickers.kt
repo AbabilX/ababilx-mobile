@@ -27,23 +27,37 @@ class MediaSendPickers(
     private val onCaptured: (PickedItem) -> Unit,
     private val onDocuments: (List<PickedItem>) -> Unit,
     private val onNothing: () -> Unit = {},
+    private val onInAppCamera: () -> Unit = {},
+    private val withMicrophone: Boolean = true,
 ) {
 
     private var cameraTarget: File? = null
 
     /**
-     * Hands off to the camera app, asking for the CAMERA grant first when we
-     * do not have it.
-     *
-     * The permission check is not optional: this app declares CAMERA, and for
-     * a declaring app the system throws `SecurityException` out of
-     * `startActivityForResult` rather than opening the camera. The caller
-     * re-enters here once the grant lands — see
+     * Opens our own camera screen, asking for the CAMERA grant first when we
+     * do not have it — and for the microphone alongside it, as Signal does,
+     * so a video has sound. A refused microphone only costs the sound. The
+     * caller re-enters here once the grant lands — see
      * `MediaSendActivity.onRequestPermissionsResult`.
      */
     fun openCamera() {
         if (!MediaSendPermissions.cameraGranted(activity)) {
-            MediaSendPermissions.requestCamera(activity)
+            MediaSendPermissions.requestCamera(activity, withMicrophone)
+            return
+        }
+        onInAppCamera()
+    }
+
+    /**
+     * Hands off to the phone's camera app — only when CameraX could open no
+     * camera at all. The CAMERA grant is not optional here either: this app
+     * declares it, and for a declaring app the system throws
+     * `SecurityException` out of `startActivityForResult` rather than opening
+     * the camera.
+     */
+    fun openSystemCamera() {
+        if (!MediaSendPermissions.cameraGranted(activity)) {
+            onNothing()
             return
         }
         val file = MediaSendExport.cacheFile(activity, "camera.jpg")

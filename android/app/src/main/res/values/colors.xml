@@ -30,4 +30,11 @@
     <color name="media_send_quality_selected">#FF4A4E69</color>
     <!-- Review top-right: remove current photo/video from the send. -->
     <color name="media_send_remove">#FFE11D48</color>
+    <!-- In-app camera (mediasend/camera). The HUD floats over a live
+         viewfinder, so it keeps Signal's own camera palette whatever the app
+         theme: translucent dark controls, one record red. -->
+    <color name="media_send_camera_control">#CC333333</color>
+    <color name="media_send_camera_selected">#33FFFFFF</color>
+    <color name="media_send_camera_record">#FFD92F20</color>
+    <color name="media_send_camera_card">#FF1A1A1A</color>
 </resources>

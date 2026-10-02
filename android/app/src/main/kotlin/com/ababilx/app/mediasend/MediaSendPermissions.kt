@@ -25,6 +25,7 @@ object MediaSendPermissions {
     const val CAMERA_REQUEST_CODE = 4104
 
     private const val CAMERA = "android.permission.CAMERA"
+    private const val MICROPHONE = "android.permission.RECORD_AUDIO"
 
     fun required(): List<String> = when {
         Build.VERSION.SDK_INT >= 34 -> listOf(
@@ -50,7 +51,13 @@ object MediaSendPermissions {
     fun cameraGranted(activity: Activity): Boolean =
         activity.checkSelfPermission(CAMERA) == PackageManager.PERMISSION_GRANTED
 
-    fun requestCamera(activity: Activity) {
-        activity.requestPermissions(arrayOf(CAMERA), CAMERA_REQUEST_CODE)
+    /**
+     * Camera, plus the microphone when the camera may record video. Asked
+     * together, as Signal asks them; only CAMERA decides whether the screen
+     * opens.
+     */
+    fun requestCamera(activity: Activity, withMicrophone: Boolean = false) {
+        val wanted = if (withMicrophone) arrayOf(CAMERA, MICROPHONE) else arrayOf(CAMERA)
+        activity.requestPermissions(wanted, CAMERA_REQUEST_CODE)
     }
 }

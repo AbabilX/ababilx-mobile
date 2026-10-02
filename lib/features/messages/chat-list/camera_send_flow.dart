@@ -27,6 +27,8 @@ Future<void> captureAndSendChatPhoto(
       context,
       ref.read(messageablePeopleProvider),
       capture.files.first.bytes,
+      isVideo: capture.firstIsVideo,
+      path: capture.firstPath,
     );
     if (selected == null || !context.mounted) return;
 
@@ -102,14 +104,20 @@ Future<void> _uploadAndSend(
 Future<ChatUserSummary?> showCameraRecipientPicker(
   BuildContext context,
   List<ChatUserSummary> people,
-  Uint8List photoBytes,
-) {
+  Uint8List photoBytes, {
+  bool isVideo = false,
+  String? path,
+}) {
   // The camera starts inside HomeShell's nested navigator. Present the
   // recipient picker on the root so the shell bar cannot cover its send bar.
   return Navigator.of(context, rootNavigator: true).push<ChatUserSummary>(
     MaterialPageRoute(
-      builder: (_) =>
-          CameraRecipientScreen(photoBytes: photoBytes, people: people),
+      builder: (_) => CameraRecipientScreen(
+        photoBytes: photoBytes,
+        people: people,
+        isVideo: isVideo,
+        path: path,
+      ),
     ),
   );
 }

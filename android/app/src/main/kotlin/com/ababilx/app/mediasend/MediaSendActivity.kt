@@ -5,19 +5,20 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.widget.Toast
 import androidx.core.view.WindowCompat
 import com.ababilx.app.R
 import com.ababilx.app.mediasend.MediaSendRequest.Companion.START_CAMERA
 import com.ababilx.app.mediasend.MediaSendRequest.Companion.START_FILES
 import com.ababilx.app.mediasend.MediaSendRequest.Companion.START_REVIEW
+import com.ababilx.app.mediasend.camera.CameraView
 import com.ababilx.app.mediasend.editor.EditorView
 import com.ababilx.app.mediasend.gallery.GalleryView
 import com.ababilx.app.mediasend.review.ReviewView
 import java.util.concurrent.Executors
 
 /**
- * The whole media-send flow, in one Activity: library grid → review → editor.
+ * The whole media-send flow, in one Activity: camera / library grid → review
+ * → editor.
  *
  * One Activity rather than three because the three screens share a decoded
  * bitmap cache and a selection list; handing those between Activities is what
@@ -38,6 +39,7 @@ class MediaSendActivity : Activity() {
     private lateinit var gallery: GalleryView
     private lateinit var review: ReviewView
     private lateinit var editor: EditorView
+    private lateinit var camera: CameraView
     private lateinit var loader: ThumbnailLoader
     private lateinit var pickers: MediaSendPickers
     private lateinit var nav: MediaSendNavigator
@@ -66,6 +68,7 @@ class MediaSendActivity : Activity() {
         gallery = findViewById(R.id.gallery_view)
         review = findViewById(R.id.review_view)
         editor = findViewById(R.id.editor_view)
+        camera = findViewById(R.id.camera_view)
         // The three screens marked their own bars while inflating above; this
         // is the single listener that feeds all of them.
         MediaSendInsets.install(findViewById(R.id.media_send_root))
@@ -74,6 +77,7 @@ class MediaSendActivity : Activity() {
             gallery = gallery,
             review = review,
             editor = editor,
+            camera = camera,
             startsAtGallery = request.startsAtGallery,
             onGalleryShown = ::loadGalleryOnce,
             onEditorClosed = { wiring.closeEditor() },
@@ -94,12 +98,15 @@ class MediaSendActivity : Activity() {
             onCaptured = intake::captured,
             onDocuments = intake::documentsPicked,
             onNothing = intake::pickerClosedEmpty,
+            onInAppCamera = nav::showCamera,
+            withMicrophone = request.allowVideo,
         )
 
         wiring = MediaSendWiring(
             gallery = gallery,
             review = review,
             editor = editor,
+            camera = camera,
             nav = nav,
             pickers = pickers,
             intake = intake,
@@ -108,8 +115,10 @@ class MediaSendActivity : Activity() {
             request = request,
             previewPx = MediaSendPreview.sizeFor(resources),
             finish = ::finishWith,
+            io = io,
         )
         wiring.install()
+        MediaSendBack.install(this) { nav.back() }
 
         when (request.start) {
             START_CAMERA -> pickers.openCamera()
@@ -152,6 +161,10 @@ class MediaSendActivity : Activity() {
         }
     }
 
+    override fun onResume() = super.onResume().also { camera.setForeground(true) }
+
+    override fun onPause() = camera.setForeground(false).also { super.onPause() }
+
     private fun cancel() {
         setResult(RESULT_CANCELED)
         finish()
@@ -171,27 +184,12 @@ class MediaSendActivity : Activity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            // A library refusal is not a dead end: Files needs no permission of
-            // ours, so the document picker is offered instead of an empty grid.
-            MediaSendPermissions.REQUEST_CODE ->
-                if (MediaSendPermissions.granted(this)) startGallery() else pickers.openFiles()
-
-            // A camera refusal *is* one — there is no other way to take a
-            // photo, and this flow was opened to take one.
-            MediaSendPermissions.CAMERA_REQUEST_CODE ->
-                if (MediaSendPermissions.cameraGranted(this)) {
-                    pickers.openCamera()
-                } else {
-                    Toast.makeText(this, R.string.media_send_camera_denied, Toast.LENGTH_SHORT)
-                        .show()
-                    intake.pickerClosedEmpty()
-                }
-        }
+        MediaSendGrants.onResult(this, requestCode, ::startGallery, pickers, intake)
     }
 
     override fun onDestroy() {
         io.shutdownNow()
+        camera.dispose()
         gallery.dispose()
         loader.dispose()
         super.onDestroy()

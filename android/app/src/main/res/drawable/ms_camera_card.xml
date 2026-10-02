@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The viewfinder card. Its outline is what clips the preview to 16dp corners. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/media_send_camera_card" />
+    <corners android:radius="16dp" />
+</shape>

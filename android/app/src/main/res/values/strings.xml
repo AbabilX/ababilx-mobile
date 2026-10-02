@@ -40,6 +40,16 @@
     <string name="media_send_rotate">Rotate</string>
     <string name="media_send_empty">No photos or videos</string>
     <string name="media_send_limit">You can send %1$d items at a time</string>
+    <string name="media_send_mode_photo">Photo</string>
+    <string name="media_send_mode_video">Video</string>
+    <string name="media_send_flash_off">Flash off</string>
+    <string name="media_send_flash_on">Flash on</string>
+    <string name="media_send_flash_auto">Flash auto</string>
+    <string name="media_send_switch_camera">Switch camera</string>
+    <string name="media_send_take_photo">Take photo</string>
+    <string name="media_send_zoom_level">Zoom %1$s×</string>
+    <string name="media_send_photo_failed">Could not take the photo. Try again.</string>
+    <string name="media_send_video_failed">Could not record the video. Try again.</string>
 
     <plurals name="media_send_selected">
         <item quantity="one">%1$d selected</item>

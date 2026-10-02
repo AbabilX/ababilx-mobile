@@ -96,4 +96,15 @@ dependencies {
     // CallKit plugin already ships, so it adds nothing to the APK; Play flags
     // a hand-rolled HttpURLConnection + BitmapFactory pair as a memory risk.
     implementation("io.coil-kt:coil:1.4.0")
+    // The in-app camera (mediasend/camera), Signal's CameraX screen rather
+    // than a hand-off to whatever camera app the phone ships. 1.6.1 is
+    // Signal's own pin and what a plugin already resolves camera-core to.
+    // lifecycle-runtime gives CameraLifecycle its LifecycleRegistry: the
+    // media-send Activity is a plain Activity, not a LifecycleOwner.
+    implementation("androidx.camera:camera-core:1.6.1")
+    implementation("androidx.camera:camera-camera2:1.6.1")
+    implementation("androidx.camera:camera-lifecycle:1.6.1")
+    implementation("androidx.camera:camera-view:1.6.1")
+    implementation("androidx.camera:camera-video:1.6.1")
+    implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
 }

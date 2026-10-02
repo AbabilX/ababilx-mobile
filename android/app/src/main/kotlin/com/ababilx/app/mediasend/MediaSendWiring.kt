@@ -1,5 +1,6 @@
 package com.ababilx.app.mediasend
 
+import com.ababilx.app.mediasend.camera.CameraView
 import com.ababilx.app.mediasend.editor.EditorView
 import com.ababilx.app.mediasend.gallery.GalleryView
 import com.ababilx.app.mediasend.review.ReviewView
@@ -19,6 +20,7 @@ class MediaSendWiring(
     private val gallery: GalleryView,
     private val review: ReviewView,
     private val editor: EditorView,
+    private val camera: CameraView,
     private val nav: MediaSendNavigator,
     private val pickers: MediaSendPickers,
     private val intake: MediaSendIntake,
@@ -27,6 +29,7 @@ class MediaSendWiring(
     private val request: MediaSendRequest,
     private val previewPx: Int,
     private val finish: (List<PickedItem>, String) -> Unit,
+    private val io: java.util.concurrent.Executor,
 ) {
 
     var quality: MediaQuality = request.quality
@@ -35,6 +38,7 @@ class MediaSendWiring(
     fun install() {
         wireGallery()
         wireReview()
+        wireCamera()
         editor.onCancel = ::closeEditor
         editor.onDone = {
             nav.showReview()
@@ -69,6 +73,20 @@ class MediaSendWiring(
             quality = chosen
             finish(items + selection.passthrough, caption)
         }
+    }
+
+    /**
+     * A shot goes to the review screen like any other pick. A phone where
+     * CameraX can open no camera at all still gets a photo, from its own
+     * camera app.
+     */
+    private fun wireCamera() {
+        camera.attach(loader, io)
+        camera.allowVideo = request.allowVideo
+        camera.onClose = { nav.leaveCamera() }
+        camera.onGallery = { nav.showGallery() }
+        camera.onCaptured = intake::captured
+        camera.onUnavailable = { pickers.openSystemCamera() }
     }
 
     private fun openEditor(item: PickedItem) {
