@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,10 +8,15 @@ import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../local_share/widgets/qr_scan_sheet.dart';
 import '../../messages/chat-people/scanned_user_sheet.dart';
 import '../../messages/chat-people/user_qr_payload.dart';
+import '../../../shared/widgets/app_toast.dart';
 import '../../messages/history-transfer/history_transfer_approval.dart';
+import '../../messages/history-transfer/history_transfer_one_scan.dart';
 import '../../messages/history-transfer/history_transfer_payload.dart';
 import '../../messages/message_e2ee/device_link_approval.dart';
+import '../../messages/message_e2ee/message_vault.dart';
+import '../data/one_scan_payload.dart';
 import '../data/qr_login_repository.dart';
+import 'qr_login_confirm_dialog.dart';
 
 /// Scan a QR from another device and act on it.
 ///
@@ -20,6 +27,11 @@ import '../data/qr_login_repository.dart';
 /// **history-transfer** code asks for the messages and files this phone still
 /// holds, including the ones the server let go at 120 days; a **user** code is
 /// somebody's handle, and opens a chat with them.
+///
+/// A sign-in code from a current web or desktop build also carries that
+/// device's message key and history key (`one_scan_payload.dart`), so ONE
+/// scan and ONE dialog sign it in, hand it the messages and start the history
+/// transfer — the link and history codes remain for devices already signed in.
 ///
 /// The two device codes show what is being approved first, and declining calls
 /// the matching deny endpoint so the waiting device stops immediately rather
@@ -76,84 +88,68 @@ class QrLoginFlow {
     }
     if (!context.mounted) return;
 
-    final approved = await _confirm(context, ref, request);
+    // One scan: the code may also carry the new device's message key and
+    // history key. Both need this phone's own identity; without it the
+    // sign-in still goes through and the other device asks the usual way.
+    final keys = parseOneScanKeys(payload);
+    final vault = ref.read(messageVaultProvider);
+    final canShare =
+        keys.hasLinkKey &&
+        (vault.isUnlocked || await vault.restoreTrustedIdentity());
+    final linkJwk = canShare
+        ? vault.decodeLinkPublicKey(keys.linkKeyParam!)
+        : null;
+    final code = linkJwk == null
+        ? null
+        : await vault.linkVerificationCode(linkJwk);
+    if (!context.mounted) return;
+
+    final choice = await showQrLoginConfirmDialog(
+      context,
+      ref,
+      request: request,
+      code: code,
+      offerHistory: canShare && keys.hasHistoryKey,
+    );
     if (!context.mounted) return;
 
     try {
-      if (approved == true) {
-        await repo.approve(payload);
-        if (context.mounted) _toast(context, ref, 'qr_login_done');
-      } else {
+      if (!choice.approved) {
         await repo.deny(payload);
+        return;
       }
+      await repo.approve(
+        payload,
+        identityEnvelope: linkJwk == null
+            ? null
+            : await vault.sealIdentityForDevice(linkJwk),
+      );
+      if (context.mounted) _toast(context, ref, 'qr_login_done');
     } on QrLoginExpired {
       if (context.mounted) _toast(context, ref, 'qr_login_expired');
+      return;
     } catch (_) {
       if (context.mounted) _toast(context, ref, 'qr_login_failed');
+      return;
     }
-  }
 
-  static Future<bool?> _confirm(
-    BuildContext context,
-    WidgetRef ref,
-    QrLoginRequest request,
-  ) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final details = [
-      if (request.deviceName.isNotEmpty) request.deviceName,
-      if (request.requestIp.isNotEmpty) request.requestIp,
-    ].join(' • ');
-    return showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: colors.surfaceContainer,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-          side: BorderSide(color: colors.outline),
-        ),
-        title: Text(
-          AppTranslations.translate(dialogCtx, ref, 'qr_login_confirm'),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppTranslations.translate(
-                dialogCtx,
-                ref,
-                'qr_login_confirm_body',
-              ),
-            ),
-            if (details.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                details,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colors.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, false),
-            child: Text(
-              AppTranslations.translate(dialogCtx, ref, 'qr_login_reject'),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogCtx, true),
-            child: Text(
-              AppTranslations.translate(dialogCtx, ref, 'qr_login_approve'),
-            ),
-          ),
-        ],
-      ),
-    );
+    if (choice.sendHistory && context.mounted) {
+      // Not awaited: the new device opens its transfer only once signed in,
+      // and the scanner must not sit open (bottom bar hidden) while it does.
+      final overlay = Overlay.maybeOf(context, rootOverlay: true);
+      unawaited(
+        HistoryTransferOneScan.sendAfterSignIn(
+          ref,
+          loginToken: signInTokenOf(payload),
+          historyKeyParam: keys.historyKeyParam!,
+          version: keys.historyVersion,
+        ).then((sentTo) {
+          if (sentTo != null) {
+            showAppToastIn(overlay, 'Sending your history to $sentTo.');
+          }
+        }),
+      );
+    }
   }
 
   static void _toast(BuildContext context, WidgetRef ref, String key) {

@@ -578,6 +578,12 @@ class AppTranslations {
       'qr_login_expired': 'That code expired. Generate a new one.',
       'qr_login_invalid': 'That is not an AbabilX sign-in code.',
       'qr_login_failed': 'Could not approve the sign-in. Try again.',
+      'qr_login_one_scan_body':
+          'This device will be signed in and get your messages. Approve only if it is you.',
+      'qr_login_code_hint': 'Check this matches the code on that screen:',
+      'qr_login_send_history': 'Also send older messages',
+      'qr_login_send_history_body':
+          'History this phone keeps beyond the server, files included.',
       'app_language': 'Application Language',
       'devices_title': 'Linked devices',
       'devices_hero': 'Use this AbabilX account on another device.',
@@ -1728,6 +1734,12 @@ class AppTranslations {
       'qr_login_expired': 'কোডটির মেয়াদ শেষ। নতুন কোড নিন।',
       'qr_login_invalid': 'এটি AbabilX সাইন ইন কোড নয়।',
       'qr_login_failed': 'সাইন ইন অনুমোদন করা যায়নি। আবার চেষ্টা করুন।',
+      'qr_login_one_scan_body':
+          'এই ডিভাইসে সাইন ইন হবে এবং আপনার মেসেজ পাবে। শুধু আপনি হলে অনুমোদন করুন।',
+      'qr_login_code_hint': 'ওই স্ক্রিনের কোডের সাথে মিলিয়ে নিন:',
+      'qr_login_send_history': 'পুরোনো মেসেজও পাঠান',
+      'qr_login_send_history_body':
+          'সার্ভারে না থাকা যে হিস্টোরি এই ফোনে আছে, ফাইলসহ।',
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',
       'devices_title': 'যুক্ত ডিভাইস',
       'devices_subtitle':

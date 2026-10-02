@@ -28,6 +28,19 @@ class HistoryTransferApi {
     );
   }
 
+  /// One-scan sign-in: the transfer the new device opened right after the
+  /// sign-in this phone approved, found by that sign-in token. Throws a 404
+  /// `history_transfer_not_ready` until the device has opened it.
+  Future<HistoryTransferRequest> inspectByLogin(String loginToken) async {
+    final res = await _client.post(
+      ApiConstants.historyTransferInfo,
+      data: {'login_token': loginToken},
+    );
+    return HistoryTransferRequest.fromJson(
+      unwrapApiData<Map<String, dynamic>>(res),
+    );
+  }
+
   /// Approves and opens the 24-hour relay window. The public key is echoed so
   /// the server can refuse a token whose key it does not recognise — a
   /// substituted pairing fails here rather than being sealed to a stranger.
@@ -42,11 +55,13 @@ class HistoryTransferApi {
     required Map<String, dynamic> envelope,
     required Map<String, dynamic> destinationJwk,
     String? destinationKeyParam,
+    String? loginToken,
   }) async {
     final res = await _client.post(
       ApiConstants.historyTransferApprove,
       data: {
         'token': token,
+        'login_token': ?loginToken,
         'device_name': deviceName,
         'transfer_envelope': _encodeEnvelope(envelope),
         'destination_public_key':

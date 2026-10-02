@@ -34,14 +34,26 @@ class QrLoginRepository {
     }
   }
 
-  Future<void> approve(String payload) =>
-      _send(ApiConstants.qrLoginApprove, payload);
+  /// [identityEnvelope] is this phone's message identity sealed to the `k`
+  /// the camera read (one-scan QR), so the new device needs no link code.
+  Future<void> approve(
+    String payload, {
+    Map<String, dynamic>? identityEnvelope,
+  }) => _send(
+    ApiConstants.qrLoginApprove,
+    payload,
+    extra: {'identity_envelope': ?identityEnvelope},
+  );
 
   Future<void> deny(String payload) => _send(ApiConstants.qrLoginDeny, payload);
 
-  Future<void> _send(String path, String payload) async {
+  Future<void> _send(
+    String path,
+    String payload, {
+    Map<String, dynamic> extra = const {},
+  }) async {
     try {
-      await _api.post(path, data: {'token': payload.trim()});
+      await _api.post(path, data: {'token': payload.trim(), ...extra});
     } on DioException catch (e) {
       if (_isExpired(e)) throw QrLoginExpired();
       rethrow;
