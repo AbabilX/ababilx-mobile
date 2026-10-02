@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ system splash, Signal's: the launcher icon on the app's
+         background. No windowSplashScreenAnimatedIcon on purpose — the system
+         then draws the icon of the component that was launched, so a disguise
+         alias (Calculator, Notes…) opens on its own icon, never AbabilX's.
+         Held until Flutter's first frame (lib/core/launch/launch_hold.dart). -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/launch_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launch_bg</item>
+    </style>
+
+    <!-- In-app theme picked against the OS one (MainActivity.splashTheme). -->
+    <style name="LaunchTheme.Light" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/launch_bg_light</item>
+        <item name="android:windowSplashScreenBackground">@color/launch_bg_light</item>
+    </style>
+
+    <style name="LaunchTheme.Dark" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/launch_bg_dark</item>
+        <item name="android:windowSplashScreenBackground">@color/launch_bg_dark</item>
+    </style>
+</resources>

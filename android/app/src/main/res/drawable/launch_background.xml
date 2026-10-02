@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- Below Android 12 the launch window is the plain app background, as
+     Signal's is. No icon: under a disguise launcher icon it would show
+     AbabilX's. Android 12+ draws the system splash (values-v31). -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+    <item android:drawable="@color/launch_bg" />
 </layer-list>

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
 import 'app.dart';
+import 'core/launch/launch_hold.dart';
 import 'firebase_options.dart';
 import 'features/calls/native/android_call_background.dart';
 import 'features/calls/native/android_call_ui.dart';
@@ -178,5 +179,7 @@ void main() async {
   // synchronous, so a face on the phone is never drawn as a letter first.
   await AvatarStore.instance.init();
 
+  // Signal's launch: the splash stays until auth knows chats or login.
+  LaunchHold.hold();
   runApp(const ProviderScope(child: AbabilXApp()));
 }

@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="notification_color">#6366F1</color>
+    <!-- Launch splash = the app's own background (Flutter theme surface),
+         so the splash hands over to the first screen without a colour jump. -->
+    <color name="launch_bg">#FFF4FBF8</color>
+    <color name="launch_bg_light">#FFF4FBF8</color>
+    <color name="launch_bg_dark">#FF0E1514</color>
     <!-- Disguise launcher plates: look like other apps, not AbabilX. -->
     <color name="icon_bg_calendar">#E11D48</color>
     <color name="icon_bg_calculator">#1C1C1E</color>

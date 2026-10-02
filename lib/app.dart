@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/launch/launch_hold.dart';
 import 'core/router/app_router.dart';
 import 'core/network/ws_link_watch.dart';
 import 'core/router/root_back.dart';
@@ -28,40 +29,42 @@ class AbabilXApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
 
-    return FcmBootstrap(
-      router: router,
-      child: CallStoreSync(
+    return LaunchHoldRelease(
+      child: FcmBootstrap(
         router: router,
-        child: OngoingCallSync(
+        child: CallStoreSync(
           router: router,
-          child: GroupCallSync(
+          child: OngoingCallSync(
             router: router,
-            child: LocalShareSync(
-              child: ShareIntakeSync(
-                router: router,
-                child: DirectShareSync(
-                  child: WsLinkWatch(
-                    child: WsBackgroundRelease(
-                      child: GhostSync(
-                        router: router,
-                        child: ChatStoreSync(
-                          child: MaterialApp.router(
-                            title: 'AbabilX',
-                            debugShowCheckedModeBanner: false,
-                            theme: AppTheme.light,
-                            darkTheme: AppTheme.dark,
-                            themeMode: themeMode,
-                            routerConfig: router,
-                            // AppUpdateGate sits under the lock-screen host, so
-                            // its cover over the keyguard stays on top.
-                            builder: (context, child) => CallLockScreenHost(
-                              router: router,
-                              child: AppUpdateGate(
-                                child: RootBackScope(
-                                  child: GroupCallInviteHost(
-                                    child: ActiveCallBanner(
-                                      router: router,
-                                      child: child ?? const SizedBox.shrink(),
+            child: GroupCallSync(
+              router: router,
+              child: LocalShareSync(
+                child: ShareIntakeSync(
+                  router: router,
+                  child: DirectShareSync(
+                    child: WsLinkWatch(
+                      child: WsBackgroundRelease(
+                        child: GhostSync(
+                          router: router,
+                          child: ChatStoreSync(
+                            child: MaterialApp.router(
+                              title: 'AbabilX',
+                              debugShowCheckedModeBanner: false,
+                              theme: AppTheme.light,
+                              darkTheme: AppTheme.dark,
+                              themeMode: themeMode,
+                              routerConfig: router,
+                              // AppUpdateGate sits under the lock-screen host, so
+                              // its cover over the keyguard stays on top.
+                              builder: (context, child) => CallLockScreenHost(
+                                router: router,
+                                child: AppUpdateGate(
+                                  child: RootBackScope(
+                                    child: GroupCallInviteHost(
+                                      child: ActiveCallBanner(
+                                        router: router,
+                                        child: child ?? const SizedBox.shrink(),
+                                      ),
                                     ),
                                   ),
                                 ),

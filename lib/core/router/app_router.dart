@@ -106,7 +106,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   final router = GoRouter(
     navigatorKey: rootNavigatorKey,
-    initialLocation: '/login',
+    // Blank, behind the held splash (LaunchHold) until auth has read the
+    // saved session; never the login picture on a signed-in launch.
+    initialLocation: '/launch',
     refreshListenable: refreshListenable,
     redirect: (context, state) {
       final authState = ref.read(authProvider);
@@ -118,9 +120,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoginPage =
           location == '/login' || location.startsWith('/login/');
 
+      final isLaunch = location == '/launch';
       if (isLoading) {
-        if (isLoginPage) return null;
-        return '/login';
+        if (isLoginPage || isLaunch) return null;
+        return '/launch';
       }
 
       if (!isLoggedIn && !isLoginPage) return '/login';
@@ -130,7 +133,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             : '/message-recovery';
       }
       if (isLoggedIn &&
-          (isLoginPage || state.matchedLocation == '/message-recovery')) {
+          (isLoginPage ||
+              isLaunch ||
+              state.matchedLocation == '/message-recovery')) {
         // Always land on Messages first. FcmService.flushPendingNav seeds
         // the deep-link (push) so Android back returns here instead of exit.
         return '/messages';
@@ -138,6 +143,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(path: '/launch', pageBuilder: _instant(const Scaffold())),
       GoRoute(
         path: '/login',
         builder: (_, _) => const LoginScreen(),

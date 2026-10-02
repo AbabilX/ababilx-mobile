@@ -28,6 +28,7 @@ class MainActivity : FlutterActivity() {
         // for them. After super, which paints its own translucent status bar
         // below API 35. This is also the call Play Console looks for.
         WindowCompat.enableEdgeToEdge(window)
+        LaunchSplashTheme.apply(this)
         // After super, because its cover goes over the FlutterView. A recreated
         // Activity still carries its old intent, and that is not a new Accept.
         if (savedInstanceState == null) callLockScreen.handleIntent(intent)
