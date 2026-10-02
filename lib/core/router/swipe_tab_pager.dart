@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'home_tab_position.dart';
 import 'swipe_tab_active.dart';
 
 /// Neighbouring shell tabs as one horizontal pager: the page follows the
@@ -41,6 +42,21 @@ class _SwipeTabPagerState extends State<SwipeTabPager> {
     initialPage: widget.index,
   );
 
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_report);
+    // After the frame: the bar listens to this and is mid-build right now.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) homeTabPosition.value = widget.index.toDouble();
+    });
+  }
+
+  void _report() {
+    final page = _controller.page;
+    if (page != null) homeTabPosition.value = page;
+  }
+
   /// Nearest page to where the pager sits now.
   int get _page => (_controller.page ?? widget.index).round();
 
@@ -50,7 +66,12 @@ class _SwipeTabPagerState extends State<SwipeTabPager> {
     // A tab tap, back or a deep link moved the route. After a swipe the route
     // already names the page on screen, so nothing moves.
     if (_controller.hasClients && _page != widget.index) {
-      _controller.jumpToPage(widget.index);
+      // Slide, never jump: the bar's background slides with it.
+      _controller.animateToPage(
+        widget.index,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
     }
   }
 
@@ -70,6 +91,7 @@ class _SwipeTabPagerState extends State<SwipeTabPager> {
 
   @override
   void dispose() {
+    _controller.removeListener(_report);
     _controller.dispose();
     super.dispose();
   }

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../home_tab_position.dart';
 import 'nav_tab_item.dart';
 import 'shell_pill_metrics.dart';
 import 'shell_tabs.dart';
@@ -43,20 +44,56 @@ class NavPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(height / 2 - NavTabItem.gap);
     return SizedBox(
       height: height,
-      child: Row(
-        children: [
-          for (var i = 0; i < tabs.length; i++)
-            NavTabItem(
-              icon: tabs[i].icon,
-              selectedIcon: tabs[i].selectedIcon,
-              label: labelOf(tabs[i]),
-              selected: selectedIndex == i,
-              badgeCount: tabs[i].showsUnread ? unread : 0,
-              onTap: () => onSelect(i),
-            ),
-        ],
+      child: ValueListenableBuilder<double?>(
+        valueListenable: homeTabPosition,
+        builder: (context, position, _) {
+          // The pager's own position while it has one, so the chosen-tab
+          // background travels with a swipe and a tap's slide; the route's
+          // index before that.
+          final pos = (position ?? selectedIndex.toDouble()).clamp(
+            0.0,
+            (tabs.length - 1).toDouble(),
+          );
+          final current = pos.round();
+          return LayoutBuilder(
+            builder: (context, box) {
+              final slot = box.maxWidth / tabs.length;
+              return Stack(
+                children: [
+                  Positioned(
+                    left: pos * slot + NavTabItem.gap,
+                    top: NavTabItem.gap,
+                    width: slot - NavTabItem.gap * 2,
+                    height: height - NavTabItem.gap * 2,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: scheme.surfaceContainerHigh,
+                        borderRadius: radius,
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      for (var i = 0; i < tabs.length; i++)
+                        NavTabItem(
+                          icon: tabs[i].icon,
+                          selectedIcon: tabs[i].selectedIcon,
+                          label: labelOf(tabs[i]),
+                          selected: current == i,
+                          badgeCount: tabs[i].showsUnread ? unread : 0,
+                          onTap: () => onSelect(i),
+                        ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          );
+        },
       ),
     );
   }

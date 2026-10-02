@@ -23,30 +23,27 @@ class NavTabItem extends StatelessWidget {
   final int badgeCount;
 
   /// Space between the capsule's edge and the chosen tab's background.
-  static const double _gap = 6;
+  static const double gap = 6;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    // Ordinary text colours, and the neutral surface tone behind the chosen
-    // tab — the same quiet square the details and Talks buttons wear.
+    // Ordinary text colours; the surface tone behind the chosen tab is the
+    // bar's sliding indicator (nav_pill.dart).
     final color = selected ? scheme.onSurface : scheme.onSurfaceVariant;
     // Concentric with the capsule: its radius is half the pill height, so the
-    // chosen tab, inset by [_gap] on every side, takes that radius minus the
+    // chosen tab, inset by [gap] on every side, takes that radius minus the
     // gap — the two curves then run parallel instead of clashing at the ends.
-    final radius = BorderRadius.circular(ShellPillMetrics.height / 2 - _gap);
+    final radius = BorderRadius.circular(ShellPillMetrics.height / 2 - gap);
 
     return Expanded(
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          margin: const EdgeInsets.all(_gap),
-          decoration: BoxDecoration(
-            color: selected ? scheme.surfaceContainerHigh : Colors.transparent,
-            borderRadius: radius,
-          ),
+        child: Padding(
+          // The chosen-tab background is the bar's sliding indicator, drawn
+          // behind the row; this only keeps the same inset.
+          padding: const EdgeInsets.all(gap),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
