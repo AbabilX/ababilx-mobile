@@ -6,7 +6,7 @@ import android.media.AudioAttributes
 import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
 import android.media.AudioManager
-import android.media.ToneGenerator
+import android.media.MediaPlayer
 import android.os.Build
 import android.util.Log
 import io.flutter.embedding.engine.FlutterEngine
@@ -15,11 +15,18 @@ import io.flutter.plugin.common.MethodChannel
 /**
  * The caller's "tuut… tuut…" while the other phone rings.
  *
- * Signal's `OutgoingRinger` plays a looping file on the voice-communication
- * usage after switching to `MODE_IN_COMMUNICATION`; that mode is what puts it
- * on the earpiece. We keep the model and use the platform's own ringback
- * ([ToneGenerator.TONE_SUP_RINGTONE]) instead of an asset: it already loops
- * with the local cadence, and Signal's sound file is AGPL.
+ * Signal's `OutgoingRinger`, exactly: `MODE_IN_COMMUNICATION`, then a looping
+ * [MediaPlayer] on `USAGE_VOICE_COMMUNICATION` / `CONTENT_TYPE_SPEECH`. The
+ * file is our own (`res/raw/call_ringback.wav`, 440+480 Hz, 2 s on / 4 s off);
+ * Signal's is AGPL.
+ *
+ * It has to be a MediaPlayer. This used `ToneGenerator`, which AudioService
+ * does not count as a player: from Android 12 it re-checks an app that set
+ * `MODE_IN_COMMUNICATION` after 6 s (`CHECK_MODE_FOR_UID_PERIOD_MS`) and, with
+ * no active playback or recording from that uid, drops the mode to NORMAL —
+ * which clears the communication device. The Speaker choice lasted two beeps
+ * and the rest came out of the earpiece. A MediaPlayer is a tracked player, so
+ * the mode, and the loudspeaker with it, holds for the whole ring.
  *
  * The audio mode is only changed if nobody else had set a call mode yet, and
  * is handed back on stop. It must be back to its old value before the call
@@ -37,12 +44,24 @@ class CallRingback(private val activity: Activity) {
     }
 
     private var channel: MethodChannel? = null
-    private var tone: ToneGenerator? = null
+    private var player: MediaPlayer? = null
     private var focus: AudioFocusRequest? = null
 
     /** The mode found at start, when this class changed it; else null. */
     private var savedMode: Int? = null
     private var speakerForced = false
+    private var wantSpeaker = false
+
+    /** Re-asserts left this ring; a platform that keeps undoing us wins. */
+    private var repairs = 0
+
+    private val watch: CallRingbackWatch? by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            CallRingbackWatch(audio) { reason -> repair(reason) }
+        } else {
+            null
+        }
+    }
 
     fun attach(engine: FlutterEngine) {
         channel = MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL).also {
@@ -70,29 +89,52 @@ class CallRingback(private val activity: Activity) {
 
     /** Idempotent: a second start only re-applies the speaker choice. */
     private fun start(speaker: Boolean) {
-        if (tone == null) {
-            val mode = audio.mode
-            if (mode != AudioManager.MODE_IN_COMMUNICATION && mode != AudioManager.MODE_IN_CALL) {
-                runCatching { audio.mode = AudioManager.MODE_IN_COMMUNICATION }
-                    .onSuccess { savedMode = mode }
-            }
+        wantSpeaker = speaker
+        watch?.wantSpeaker = speaker
+        if (player == null) {
+            Log.i(TAG, "start speaker=$speaker mode=${audio.mode}")
+            repairs = MAX_REPAIRS
+            enterCommunication()
             requestFocus()
+            watch?.start()
         }
         route(speaker)
-        if (tone != null) return
-        tone = runCatching {
-            ToneGenerator(AudioManager.STREAM_VOICE_CALL, VOLUME).also {
-                it.startTone(ToneGenerator.TONE_SUP_RINGTONE)
-            }
-        }.onFailure { Log.w(TAG, "ringback start failed", it) }.getOrNull()
+        if (player == null) player = newPlayer()
+    }
+
+    private fun enterCommunication() {
+        val mode = audio.mode
+        if (mode == AudioManager.MODE_IN_COMMUNICATION || mode == AudioManager.MODE_IN_CALL) return
+        runCatching { audio.mode = AudioManager.MODE_IN_COMMUNICATION }
+            .onSuccess { if (savedMode == null) savedMode = mode }
+    }
+
+    /**
+     * The platform took the mode or the route back mid-ring. Signal re-asserts
+     * the user's device when the communication device moves off it; so do we,
+     * a bounded number of times so the two of us never fight forever.
+     */
+    private fun repair(reason: String) {
+        if (player == null) return
+        if (repairs <= 0) {
+            Log.w(TAG, "drift ($reason), no repairs left")
+            return
+        }
+        repairs--
+        Log.w(TAG, "drift ($reason), re-asserting speaker=$wantSpeaker")
+        enterCommunication()
+        route(wantSpeaker, force = true)
+    }
+
+    private fun newPlayer(): MediaPlayer? = CallRingbackPlayer.create(activity) { failed ->
+        if (player === failed) player = newPlayer()
     }
 
     private fun stop() {
-        tone?.let { held ->
-            runCatching { held.stopTone() }
-            runCatching { held.release() }
-        }
-        tone = null
+        if (player != null) Log.i(TAG, "stop")
+        watch?.stop()
+        player?.let { held -> runCatching { held.release() } }
+        player = null
         route(false)
         abandonFocus()
         savedMode?.let { mode ->
@@ -105,8 +147,8 @@ class CallRingback(private val activity: Activity) {
 
     /** Only undoes a loudspeaker this class forced, never somebody else's. */
     @Suppress("DEPRECATION")
-    private fun route(speaker: Boolean) {
-        if (speaker == speakerForced) return
+    private fun route(speaker: Boolean, force: Boolean = false) {
+        if (speaker == speakerForced && !force) return
         speakerForced = speaker
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (!speaker) {
@@ -145,8 +187,6 @@ class CallRingback(private val activity: Activity) {
     companion object {
         private const val CHANNEL = "com.ababilx.app/call_ringback"
         private const val TAG = "CallRingback"
-
-        /** Percent of the voice-call stream; the tone is a cue, not a ring. */
-        private const val VOLUME = 70
+        private const val MAX_REPAIRS = 5
     }
 }

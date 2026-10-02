@@ -10,5 +10,5 @@
   release build behave like debug.
 -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@raw/silent_ring,@raw/clear_agenda,@raw/ringtone_default"
+    tools:keep="@raw/silent_ring,@raw/clear_agenda,@raw/ringtone_default,@raw/call_ringback"
     tools:shrinkMode="safe" />

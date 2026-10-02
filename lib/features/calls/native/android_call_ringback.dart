@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 
 import '../providers/voice_call_state.dart';
+import '../voice_call_log.dart';
 
 /// The caller's ringback ("tuut… tuut…") while the other phone rings —
-/// Signal's `OutgoingRinger`, native in `CallRingback.kt`.
+/// Signal's `OutgoingRinger` (looping MediaPlayer on the voice-communication
+/// usage), native in `CallRingback.kt`.
 ///
 /// Plays only while the screen says "Ringing…" — the callee's phone has
 /// reported that it rings (`calleeRingingAt`). "Calling…" stays silent, as in
@@ -34,11 +36,22 @@ class AndroidCallRingback {
       state.phase == VoiceCallPhase.outgoingRinging &&
       state.call?.calleeRingingAt != null;
 
-  static Future<void> sync(VoiceCallState state) =>
-      wants(state) ? _start(speaker: state.speaker) : stop();
+  static Future<void> sync(VoiceCallState state) {
+    if (wants(state)) return _start(speaker: state.speaker);
+    if (_playing != null) {
+      voiceCallLog(
+        'ringback.stop',
+        callId: state.call?.id,
+        phase: state.phase.name,
+        reason: 'ringing=${state.call?.calleeRingingAt != null}',
+      );
+    }
+    return stop();
+  }
 
   static Future<void> _start({required bool speaker}) async {
     if (!_supported || _playing == speaker) return;
+    voiceCallLog('ringback.start', reason: 'speaker=$speaker');
     _playing = speaker;
     await _invoke('start', {'speaker': speaker});
   }

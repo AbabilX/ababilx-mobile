@@ -1428,8 +1428,10 @@ ringing buttons by colour now (uiautomator never idles over the ripples).
 ## Caller ringback + proximity while calling (2026-09-29)
 
 - **Ringback**: `CallRingback.kt` (channel `com.ababilx.app/call_ringback`),
-  driven by `AndroidCallRingback.sync` from `OngoingCallSync`. Plays the
-  platform's `ToneGenerator.TONE_SUP_RINGTONE` on `STREAM_VOICE_CALL` only
+  driven by `AndroidCallRingback.sync` from `OngoingCallSync`. Plays our own
+  `res/raw/call_ringback.wav` (440+480 Hz, 2 s on / 4 s off) through a
+  looping `MediaPlayer` on `USAGE_VOICE_COMMUNICATION`, Signal's
+  `OutgoingRinger` exactly, only
   while the caller's screen says "Ringing…" (`outgoingRinging` +
   `calleeRingingAt`, user's call). "Calling…" is silent, so a privacy-mode
   callee — who never reports ringing — gives a silent wait. Signal's `OutgoingRinger` model; its sound file is
@@ -1438,6 +1440,19 @@ ringing buttons by colour now (uiautomator never idles over the ripples).
   mode it finds and restores it after the call, so leaving ours in place
   strands the phone in communication mode. A Speaker press while ringing
   moves the tone to the loudspeaker.
+- **Never `ToneGenerator` for it again** (2026-10-02, "two beeps on the
+  speaker, then the earpiece"). AudioService does not count a ToneGenerator
+  as a player; from Android 12 it re-checks an app holding
+  `MODE_IN_COMMUNICATION` after 6 s and, finding no active playback or
+  recording from it, drops the mode to NORMAL — clearing the communication
+  device, so the Speaker choice died at the second beep. A MediaPlayer is a
+  tracked player and the mode holds.
+- **The ring re-asserts itself** (same day, "rings twice then goes quiet"):
+  `CallRingbackWatch.kt` is Signal's mode / communication-device listeners —
+  a mode leaving IN_COMMUNICATION or a device leaving the speaker the user
+  chose is re-applied (5 times a ring at most), and `CallRingbackPlayer.kt`
+  replaces a player that errors. All logged under `CallRingback`; Dart logs
+  `ringback.start` / `ringback.stop` (with why) under `flutter`.
 - **Proximity** now also covers `outgoingRinging` and `connecting` (Signal
   enters `IN_CALL` at outgoing start). An incoming ring still never blanks.
 
