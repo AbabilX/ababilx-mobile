@@ -46,6 +46,7 @@ class _SwipeTabPagerState extends State<SwipeTabPager> {
   void initState() {
     super.initState();
     _controller.addListener(_report);
+    homeTabController = _controller;
     // After the frame: the bar listens to this and is mid-build right now.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) homeTabPosition.value = widget.index.toDouble();
@@ -92,6 +93,7 @@ class _SwipeTabPagerState extends State<SwipeTabPager> {
   @override
   void dispose() {
     _controller.removeListener(_report);
+    if (identical(homeTabController, _controller)) homeTabController = null;
     _controller.dispose();
     super.dispose();
   }
