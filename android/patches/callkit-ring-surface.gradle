@@ -1,0 +1,73 @@
+// flutter_callkit_incoming 3.1.3: ONE incoming-call screen, Signal's way.
+//
+// Signal posts one CallStyle notification per ring and its full-screen intent
+// opens the call Activity itself (CallNotificationBuilder.TYPE_INCOMING_RINGING
+// -> WebRtcCallActivity). There is no second ringing screen anywhere.
+//
+// The plugin instead points the full-screen and tap intents at its own
+// CallkitIncomingActivity, a native ringing screen. Our app has its own
+// (Flutter `/call`, IncomingCallView), so a locked or killed phone rang on the
+// plugin's screen, Accept opened the app, and the app could draw its ringing
+// screen again on top: the "two caller screens" report. For a DM voice call
+// both intents now open the app (MainActivity + ACTION_CALL_INCOMING, which
+// CallLockScreen lifts over the keyguard), and the plugin Activity is never
+// started. Group invites keep the plugin screen: the app has no recovery path
+// that turns a native group ring into its in-app invite yet.
+//
+// Second patch: CallStyle from API 29 (Signal's API_LEVEL_CALL_STYLE) instead
+// of 34, so Android 10-13 get the system's Answer/Decline call notification
+// rather than the plugin's RemoteViews layout.
+//
+// Text-matched against the pinned source like the other callkit patches; a
+// plugin bump fails the build here instead of quietly bringing the second
+// screen back.
+// First match only: the ongoing-call builder repeats the same API check.
+def patchSource(File file, String before, String after, String what) {
+    def source = file.text
+    if (source.contains(after)) return
+    def at = source.indexOf(before)
+    if (at < 0) {
+        throw new GradleException("flutter_callkit_incoming $what patch no longer matches 3.1.3")
+    }
+    file.text = source.substring(0, at) + after + source.substring(at + before.length())
+}
+
+gradle.beforeProject { project ->
+    if (project.name != 'flutter_callkit_incoming') return
+    def dir = new File(project.projectDir,
+        'src/main/kotlin/com/hiennv/flutter_callkit_incoming')
+    def manager = new File(dir, 'CallkitNotificationManager.kt')
+
+    patchSource(manager,
+        '''    private fun getActivityPendingIntent(id: Int, data: Bundle): PendingIntent {
+        val intent = CallkitIncomingActivity.getIntent(context, data)
+        return PendingIntent.getActivity(context, id, intent, getFlagPendingIntent())
+    }''',
+        '''    private fun getActivityPendingIntent(id: Int, data: Bundle): PendingIntent {
+        // AbabilX: a DM call rings on the app's own call screen (Signal's
+        // single surface); see android/patches/callkit-ring-surface.gradle.
+        val extra = data.getSerializable(CallkitConstants.EXTRA_CALLKIT_EXTRA) as? Map<*, *>
+        val appIntent = if (extra?.get("type") == "voice_call") {
+            AppUtils.getAppIntent(context, CallkitConstants.ACTION_CALL_INCOMING, data)
+        } else {
+            null
+        }
+        val intent = appIntent ?: CallkitIncomingActivity.getIntent(context, data)
+        return PendingIntent.getActivity(context, id, intent, getFlagPendingIntent())
+    }''',
+        'single-ring-surface')
+
+    // The incoming builder's custom branch (the one our params use) comes
+    // first in the file; the ongoing builder's identical check is left alone.
+    patchSource(manager,
+        '''        if (isCustomNotification) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+
+                val caller''',
+        '''        if (isCustomNotification) {
+            // AbabilX: CallStyle from API 29, as Signal (API_LEVEL_CALL_STYLE).
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+                val caller''',
+        'call-style-api')
+}

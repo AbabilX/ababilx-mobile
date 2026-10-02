@@ -65,9 +65,7 @@ void main() {
     expect(find.text('Screen Share'), findsNothing);
   });
 
-  testWidgets('Decline and Answer are a large close pair, not edge-spread', (
-    tester,
-  ) async {
+  testWidgets('Decline and Answer sit where Signal puts them', (tester) async {
     const size = Size(390, 844);
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -76,24 +74,37 @@ void main() {
 
     final decline = tester.getCenter(find.byIcon(Icons.call_end_rounded));
     final answer = tester.getCenter(find.byIcon(Icons.call_rounded));
-    final gap = answer.dx - decline.dx;
-    // Diameter ~92–112 + gap ~48–72 → centers ~140–185; still well inside
-    // the frame (not spaceBetween to the edges).
-    expect(gap, lessThan(200));
-    expect(gap, greaterThan(130));
-    expect(decline.dx, greaterThan(size.width * 0.18));
-    expect(answer.dx, lessThan(size.width * 0.82));
-    // Lifted above the bottom edge (bottom inset + ~56–88).
-    expect(decline.dy, lessThan(size.height - 100));
+    // IncomingCallScreen.PortraitButtons: 64dp side padding, 78dp seats,
+    // Decline left and Answer right with a weighted spacer between. Each seat
+    // is centred over its label, as in Compose, so a label wider than the
+    // seat moves it inward a little.
+    expect(decline.dx, inInclusiveRange(64 + 39, 64 + 39 + 20));
+    expect(
+      answer.dx,
+      inInclusiveRange(size.width - 64 - 39 - 20, size.width - 64 - 39),
+    );
+    expect(decline.dy, answer.dy);
+    // 24dp bottom padding under a 6dp gap and the label.
+    expect(decline.dy, greaterThan(size.height - 140));
+    expect(decline.dy, lessThan(size.height - 60));
+    final declineSeat = tester.getSize(
+      find
+          .ancestor(
+            of: find.byIcon(Icons.call_end_rounded),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    expect(declineSeat, const Size(78, 78));
   });
 
-  testWidgets('landscape hides Answer/Decline captions', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(568, 320));
+  testWidgets('landscape puts the pair in one labelled row', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(844, 390));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
-          data: const MediaQueryData(size: Size(568, 320)),
+          data: const MediaQueryData(size: Size(844, 390)),
           child: Scaffold(
             body: IncomingCallView(
               peerName: 'Rahim Uddin',
@@ -106,10 +117,13 @@ void main() {
       ),
     );
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Decline'), findsNothing);
-    expect(find.text('Answer'), findsNothing);
-    expect(find.byIcon(Icons.call_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.call_end_rounded), findsOneWidget);
+    expect(find.text('Decline'), findsOneWidget);
+    expect(find.text('Answer'), findsOneWidget);
+    final decline = tester.getCenter(find.byIcon(Icons.call_end_rounded));
+    final answer = tester.getCenter(find.byIcon(Icons.call_rounded));
+    expect(decline.dy, answer.dy);
+    // Two labelled seats 45dp apart (Signal's LandscapeButtons).
+    expect(answer.dx - decline.dx, inInclusiveRange(78 + 45, 78 + 45 + 40));
   });
 
   Widget withExtras({

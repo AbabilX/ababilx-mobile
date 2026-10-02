@@ -4,6 +4,62 @@
 > editing anything under `ringtone/`, `native/`, `audio/`, or
 > `packages/call_ringer/`.
 
+## One ringing screen, and a busy phone never rings — Signal's model (2026-10-02)
+
+Reports: "still ringing after I answered and started talking", "two caller
+screens", "after answering, the app opened onto another caller screen".
+Signal-Android has ONE incoming-call screen: the ringing notification's
+full-screen intent opens the call Activity itself
+(`CallNotificationBuilder.TYPE_INCOMING_RINGING` → `WebRtcCallActivity` →
+`IncomingCallScreen`), and only `IdleActionProcessor` may accept a new
+incoming call — every other state is busy, and accepting stops the ringer
+(`SignalAudioManager.onPrepareForAccept`). We had two screens (the plugin's
+native `CallkitIncomingActivity` + Flutter `IncomingCallView`) and no busy rule.
+
+```
+ring      CallKit CallStyle notification (Telecom record, Answer/Decline actions)
+          full-screen + tap intent -> MainActivity ACTION_CALL_INCOMING -> /call
+          CallLockScreen lifts over the keyguard + wakes the screen for it
+screen    IncomingCallView = Signal's IncomingCallScreen, the ONLY ringing UI
+busy      OngoingCallSync -> CallRinger.setLiveCall(liveCallId(dm, group))
+          native LiveCall (call_ringer, process-wide): entering stops every ring,
+          hold/restart refused while live; _showOnce (DM + group) and
+          BackgroundVoiceCallGate.shouldPresent refuse to present while live
+```
+
+- **`android/patches/callkit-ring-surface.gradle`**: `getActivityPendingIntent`
+  opens the app for `extra.type == voice_call`; group invites keep the plugin
+  Activity (no in-app recovery turns a native group ring into an invite yet).
+  Also CallStyle from API 29 (Signal's `API_LEVEL_CALL_STYLE`) in the custom
+  incoming branch only — the ongoing builder repeats the same check, so the
+  patch replaces the FIRST match.
+- **The busy flag lives in the process, not an isolate**, because the late push
+  rings from the FCM isolate, which sees none of the call providers. Live =
+  DM `outgoingRinging`/`connecting`/`connected`, group `joining`/`connected`
+  (`live_call.dart`, tested). `incomingRinging` is not live — that is the
+  offered call. The engine that set it clears it on detach
+  (`CallRingerPlugin.onDetachedFromEngine`), or a dead UI engine would make
+  every later ring "busy" until the process died.
+- **Why the old gate rang over a live call**: "ring first, ask second" admits on
+  local checks, `dismissIfOver` never treats `accepted` as over, and the
+  answered mark is written only after the accept POST returns. A late or
+  repeated push in that window — or for an in-app answer with no CallKit
+  record — rang and raised the plugin screen; accepting it opened the app onto
+  the call again.
+- **UI numbers are Signal's**: photo blurred full-bleed + 40% black scrim;
+  kind label (22 top / 30 bottom), 80dp avatar, name `headlineMedium`
+  (`titleLarge` landscape), status `bodyMedium` 8dp below; Decline `#F07168`
+  left / Answer `#34C759` right, 78dp seats, 32dp icons, label 6dp under,
+  64dp side + 24dp bottom padding; landscape one row 45dp apart. Message and
+  Silence (ours) use Signal's secondary seat (56dp in 78dp, "Answer without
+  video") above the pair. No app logo by the kind label: a disguise icon must
+  not be undone by the call screen. No nav-up arrow: leaving `/call` while
+  ringing has no way back in this app (Signal's activity keeps its
+  notification; ours hands the ring to the screen).
+- Not device-verified yet. Test on a phone: locked + screen off (one screen,
+  wakes, Answer → connecting, no second ring), killed app, heads-up Answer,
+  answer then wait 60 s with the app backgrounded (no re-ring).
+
 ## Push-driven ring: ring first, ask second (2026-09-30)
 
 `native/background_voice_call_gate.dart`. A `voice_call` push rings after
@@ -211,6 +267,9 @@ Touch one, re-check all: `packages/call_ringer/**`, `ringtone/**`,
 `packages/call_ringer/lib/callkit_surface.dart`,
 `android/app/src/main/kotlin/com/ababilx/app/MainActivity.kt` (releases the
 `flutter` holder in `onDestroy`), `res/raw/keep.xml`, `gradle.properties`.
+The busy rule and the single ringing screen (2026-10-02, top of this file):
+`packages/call_ringer/.../LiveCall.kt`, `live_call.dart`, `ongoing_call_sync.dart`,
+`android/patches/callkit-ring-surface.gradle`, `CallLockScreen.kt` (RING action).
 
 The connected-call surface is its own cluster: `ongoing_call_sync.dart`,
 `ongoing_call_notice.dart` (what the tray entry says, per phase),

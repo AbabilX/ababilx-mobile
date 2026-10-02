@@ -14,6 +14,9 @@ class CallRingerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
 
+    /** This engine entered the live call, so its end takes the call with it. */
+    private var ownsLiveCall = false
+
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
         channel = MethodChannel(binding.binaryMessenger, CHANNEL)
@@ -22,6 +25,10 @@ class CallRingerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        // The call lived in this engine (the Activity's). An engine that is
+        // gone is a call that is gone; left set, every later ring would be
+        // refused as "busy" until the process died.
+        if (ownsLiveCall) LiveCall.set(null)
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -51,6 +58,13 @@ class CallRingerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(null)
             }
             "silence" -> result.success(CallRinger.silence())
+            "setLiveCall" -> {
+                val callId = call.argument<String>("callId")
+                ownsLiveCall = !callId.isNullOrEmpty()
+                LiveCall.set(callId)
+                result.success(null)
+            }
+            "liveCall" -> result.success(LiveCall.id)
             // Same reason this package exists at all: the CallKit surface has
             // to be closable from whichever engine is alive, background
             // isolate included. See [CallkitSurface] for why the plugin's own

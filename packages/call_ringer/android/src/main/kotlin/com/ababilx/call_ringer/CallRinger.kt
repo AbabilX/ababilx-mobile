@@ -65,6 +65,7 @@ object CallRinger {
      */
     @Synchronized
     fun hold(context: Context, holder: String, requireNotificationUi: Boolean) {
+        if (LiveCall.refuses(holder)) return
         if (requireNotificationUi && !notificationsEnabled(context)) {
             Log.i(TAG, "notifications disabled — not ringing for $holder")
             return
@@ -119,6 +120,7 @@ object CallRinger {
     /** Hold [holder] and play from the top even if it was already ringing. */
     @Synchronized
     fun restart(context: Context, holder: String, requireNotificationUi: Boolean) {
+        if (LiveCall.refuses(holder)) return
         if (requireNotificationUi && !notificationsEnabled(context)) return
         holders.add(holder)
         stopPlayer()

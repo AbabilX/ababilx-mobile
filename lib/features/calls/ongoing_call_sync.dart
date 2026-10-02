@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:call_ringer/call_ringer.dart';
 import 'package:go_router/go_router.dart';
 
 import 'group/providers/group_call_provider.dart';
+import 'live_call.dart';
 import 'native/android_call_ringback.dart';
 import 'native/android_call_screen_lock.dart';
 import 'native/android_ongoing_call.dart';
@@ -66,6 +68,9 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
   String _groupCallId = '';
   DateTime? _groupConnectedAt;
 
+  /// Last value sent to [CallRinger.setLiveCall]; `'?'` = nothing sent yet.
+  String? _liveCallSent = '?';
+
   @override
   void initState() {
     super.initState();
@@ -93,6 +98,7 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     unawaited(AndroidOngoingCall.stop());
     unawaited(AndroidCallScreenLock.setEarpieceCall(false));
     unawaited(AndroidCallRingback.stop());
+    unawaited(CallRinger.setLiveCall(null));
     super.dispose();
   }
 
@@ -156,6 +162,7 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     final dm = ref.read(voiceCallProvider);
     final group = ref.read(groupCallProvider);
     _syncProximity(dm, group);
+    _syncLiveCall(dm, group);
     unawaited(AndroidCallRingback.sync(dm));
     final dmCall = dm.call;
     final dmSubtitle = ongoingCallSubtitle(
@@ -218,6 +225,21 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
         (dmAtEar && !dm.speaker) ||
         (group.phase == GroupCallPhase.connected && !group.speaker);
     unawaited(AndroidCallScreenLock.setEarpieceCall(earpiece));
+  }
+
+  /// Signal's busy rule, told to the process: entering a call stops every
+  /// ring at once (the "still ringing after I answered" report), and no push
+  /// can ring or raise a ringing screen until the call is left.
+  void _syncLiveCall(VoiceCallState dm, GroupCallState group) {
+    final live = liveCallId(dm, group);
+    if (live == _liveCallSent) return;
+    _liveCallSent = live;
+    voiceCallLog(
+      'busy.live',
+      callId: live,
+      reason: live == null ? 'idle' : 'in_call',
+    );
+    unawaited(CallRinger.setLiveCall(live));
   }
 
   void _show(

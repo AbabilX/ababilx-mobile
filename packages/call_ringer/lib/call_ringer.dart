@@ -44,6 +44,35 @@ class CallRinger {
   /// ring, across the CallKit to in-app hand-off.
   static Future<void> silence() => _invoke('silence', null);
 
+  /// This phone is in [callId] (placing, answering or talking); null = idle.
+  ///
+  /// Signal's busy rule, kept in the process so the FCM isolate obeys it too:
+  /// entering a call stops any ring at once, and no ring may start until the
+  /// call is left. Call only from the engine that holds the call — the native
+  /// side clears it when that engine goes away.
+  static Future<void> setLiveCall(String? callId) async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _channel.invokeMethod<void>('setLiveCall', {'callId': callId});
+    } on PlatformException {
+      // Never take a call down over the busy flag.
+    } on MissingPluginException {
+      // Engine without this plugin — nothing rings there either.
+    }
+  }
+
+  /// The call this phone is in, from any isolate; null when idle or unknown.
+  static Future<String?> liveCall() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      return await _channel.invokeMethod<String>('liveCall');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
   static Future<void> _invoke(
     String method,
     String? holder, [

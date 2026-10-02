@@ -1,24 +1,27 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../decline-message/decline_message_panel.dart';
-import '../widgets/call_overlay_metrics.dart';
-import '../widgets/call_peer_identity.dart';
-import '../widgets/call_wallpaper.dart';
-import '../widgets/incoming_call_pair.dart';
-import '../widgets/incoming_call_secondary.dart';
+import '../widgets/call_backdrop.dart';
+import '../widgets/incoming_call_buttons.dart';
+import '../widgets/incoming_call_header.dart';
 
-/// Ringing incoming call — same wallpaper + identity language as outgoing.
+/// The ringing screen — Signal's `IncomingCallScreen`, and the ONLY one.
 ///
-/// Top to bottom: what is ringing (voice / video), the caller, then Message
-/// and Silence in a small row, then the large Decline / Answer pair. Laid out
-/// as a column with flexible space rather than fixed fractions, so the extra
-/// row can never slide under the caller's face on a short screen.
+/// Signal has one call Activity; its ringing notification opens it, and it
+/// draws this layout until the call is answered. Ours is the same: the CallKit
+/// notification's full-screen intent opens `/call`, which shows this
+/// (`android/patches/callkit-ring-surface.gradle`); the plugin's own native
+/// ringing Activity is never started for a DM call.
 ///
-/// Message opens [DeclineMessagePanel] inside this screen; picking a reply
-/// declines the call and sends the text into the DM.
+/// Layout, Signal's numbers: the caller's photo blurred edge to edge under a
+/// 40% black scrim; kind label, 80dp avatar, name, status; then at the bottom
+/// Decline left and Answer right, 78dp each, 64dp in from the sides and 24dp
+/// up. Landscape puts the buttons in one row, 45dp apart.
+///
+/// Message (decline with a text) and Silence are ours, not Signal's. They sit
+/// where Signal puts its one secondary action ("Answer without video"): a
+/// 56dp circle in a 78dp seat above the pair, so the pair stays the target.
 class IncomingCallView extends StatefulWidget {
   const IncomingCallView({
     super.key,
@@ -70,74 +73,113 @@ class _IncomingCallViewState extends State<IncomingCallView> {
     setState(() => _replyOpen = false);
   }
 
+  List<Widget> _secondary() => [
+    if (widget.onDeclineWithMessage != null)
+      IncomingCallButton(
+        icon: Icons.chat_bubble_outline_rounded,
+        label: _tr('call_control_message'),
+        secondary: true,
+        onPressed: _openReplies,
+      ),
+    if (widget.onSilence != null)
+      IncomingCallButton(
+        icon: _silenced
+            ? Icons.notifications_off_rounded
+            : Icons.notifications_off_outlined,
+        label: _tr('call_control_silence'),
+        secondary: true,
+        selected: _silenced,
+        onPressed: _silenced ? null : _silence,
+      ),
+  ];
+
+  Widget get _decline => IncomingCallButton(
+    icon: Icons.call_end_rounded,
+    label: _tr('call_control_decline'),
+    color: signalDeclineColor,
+    onPressed: widget.onDecline,
+  );
+
+  Widget get _answer => IncomingCallButton(
+    icon: widget.video ? Icons.videocam_rounded : Icons.call_rounded,
+    label: _tr('call_control_answer'),
+    color: signalAnswerColor,
+    onPressed: widget.onAccept,
+  );
+
+  Widget _portraitButtons() {
+    final secondary = _secondary();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(64, 0, 64, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (secondary.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: secondary.length == 1
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: secondary,
+            ),
+            const SizedBox(height: 16),
+          ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [_decline, const Spacer(), _answer],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _landscapeButtons() => Padding(
+    padding: const EdgeInsets.all(20),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 45,
+      children: [_decline, ..._secondary(), _answer],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final m = CallOverlayMetrics.of(context);
-    final padding = MediaQuery.paddingOf(context);
     final landscape =
         MediaQuery.orientationOf(context) == Orientation.landscape;
-    final sideInset = math.max(math.max(padding.left, padding.right), 12.0);
+    final status = _tr(
+      _silenced ? 'call_status_silenced' : 'call_status_incoming',
+    );
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        const CallWallpaper(),
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            sideInset,
-            padding.top + 16,
-            sideInset,
-            m.incomingActionsBottom(padding.bottom),
-          ),
+        CallBackdrop(avatarUrl: widget.peerAvatar, blurSigma: 25),
+        SafeArea(
           child: Column(
             children: [
-              IncomingCallKindLabel(
-                video: widget.video,
-                text: _tr(
-                  widget.video
-                      ? 'call_incoming_label_video'
-                      : 'call_incoming_label_voice',
-                ),
-              ),
+              // Signal: the header hangs from the top, a weighted spacer
+              // pushes the buttons to the bottom.
               Expanded(
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: SizedBox(
-                      width: m.size.width - sideInset * 2,
-                      child: CallPeerIdentity(
-                        name: widget.peerName,
-                        avatarUrl: widget.peerAvatar,
-                        status: _tr(
-                          _silenced
-                              ? 'call_status_silenced'
-                              : 'call_status_incoming',
-                        ),
-                        showWave: !landscape && !_silenced,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: SingleChildScrollView(
+                    child: IncomingCallHeader(
+                      kindLabel: _tr(
+                        widget.video
+                            ? 'call_incoming_label_video'
+                            : 'call_incoming_label_voice',
                       ),
+                      video: widget.video,
+                      name: widget.peerName,
+                      avatarUrl: widget.peerAvatar,
+                      status: status,
+                      landscape: landscape,
                     ),
                   ),
                 ),
               ),
-              IncomingCallSecondary(
-                messageLabel: _tr('call_control_message'),
-                silenceLabel: _tr('call_control_silence'),
-                silenced: _silenced,
-                showLabels: !landscape,
-                onMessage: widget.onDeclineWithMessage == null
-                    ? null
-                    : _openReplies,
-                onSilence: widget.onSilence == null ? null : _silence,
-              ),
-              SizedBox(height: m.design(56).clamp(20.0, 36.0)),
-              IncomingCallPair(
-                video: widget.video,
-                declineLabel: _tr('call_control_decline'),
-                answerLabel: _tr('call_control_answer'),
-                showLabels: !landscape,
-                onDecline: widget.onDecline,
-                onAccept: widget.onAccept,
-              ),
+              if (landscape) _landscapeButtons() else _portraitButtons(),
             ],
           ),
         ),

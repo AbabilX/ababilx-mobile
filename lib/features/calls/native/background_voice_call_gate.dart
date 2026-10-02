@@ -1,3 +1,4 @@
+import 'package:call_ringer/call_ringer.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../core/network/api_client.dart';
@@ -11,6 +12,7 @@ import 'voice_call_ended_guard.dart';
 typedef VoiceCallLookup = Future<VoiceCall> Function(String callId);
 typedef CallIdCheck = Future<bool> Function(String callId);
 typedef CallIdAction = Future<void> Function(String callId);
+typedef LiveCallLookup = Future<String?> Function();
 
 /// Admission for a data-only incoming-call push: ring first, ask second.
 ///
@@ -37,10 +39,14 @@ class BackgroundVoiceCallGate {
     Map<String, dynamic> data, {
     CallIdCheck? endedLookup,
     CallIdCheck? answeredLookup,
+    LiveCallLookup? liveLookup,
     DateTime? now,
   }) async {
     final callId = data['call_id']?.toString() ?? '';
     if (callId.isEmpty) return false;
+    // Busy (Signal's idle-only rule): this phone is already in a call — the
+    // pushed one, answered moments ago, or another. Never ring over it.
+    if (await (liveLookup ?? CallRinger.liveCall)() != null) return false;
     final clock = now ?? DateTime.now();
     final pushedExpiry = DateTime.tryParse(
       data['expires_at']?.toString() ?? '',

@@ -94,14 +94,18 @@ class CallLockScreen(private val activity: Activity) {
     }
 
     /**
-     * CallKit's Accept, or a tap on the ongoing-call notification — the only
-     * two things that ever lift the app over a lock screen. A return tap counts
-     * only while this engine says a call is live: the entry can outlive it.
+     * A ringing call's full-screen intent, CallKit's Accept, or a tap on the
+     * ongoing-call notification — the only things that ever lift the app over
+     * a lock screen. The ring is Signal's: its notification opens the call
+     * screen itself, over the keyguard and waking the display, and that screen
+     * is the only ringing UI there is (`patches/callkit-ring-surface.gradle`).
+     * A return tap counts only while this engine says a call is live: the
+     * entry can outlive it.
      */
     fun handleIntent(intent: Intent?) {
         if (intent == null || !keyguard.isKeyguardLocked || callVisible) return
         if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
-        val accept = intent.action == ACCEPT
+        val accept = intent.action == ACCEPT || intent.action == RING
         val callId = when {
             accept -> intent.getBundleExtra(CALL_DATA)?.let { it.getString(CALL_ID) ?: "" }
             intent.action == OngoingCallService.ACTION_RETURN_TO_CALL && callLive ->
@@ -218,6 +222,7 @@ class CallLockScreen(private val activity: Activity) {
     companion object {
         private const val CHANNEL = "com.ababilx.app/call_lock_screen"
         private const val ACCEPT = "com.hiennv.flutter_callkit_incoming.ACTION_CALL_ACCEPT"
+        private const val RING = "com.hiennv.flutter_callkit_incoming.ACTION_CALL_INCOMING"
         private const val CALL_DATA = "EXTRA_CALLKIT_CALL_DATA"
         private const val CALL_ID = "EXTRA_CALLKIT_ID"
         private const val ACCEPT_WAIT_MS = 30_000L
