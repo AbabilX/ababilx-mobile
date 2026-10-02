@@ -6,41 +6,11 @@ import 'data/backup_choices.dart';
 import 'data/local_backup_failure.dart';
 import 'data/local_backup_settings.dart';
 import 'local_backup_runner.dart';
+import 'local_backup_state.dart';
 import 'platform/backup_folder_channel.dart';
 import 'restore/backup_importer.dart';
 
-enum LocalBackupPhase { idle, backingUp, restoring }
-
-class LocalBackupState {
-  const LocalBackupState({
-    this.phase = LocalBackupPhase.idle,
-    this.progress = 0,
-    this.settings = const LocalBackupSettings(),
-    this.loaded = false,
-  });
-
-  final LocalBackupPhase phase;
-
-  /// Messages written or restored so far — a count, not a percentage, for
-  /// the archive's reason: the total is unknown until the end.
-  final int progress;
-  final LocalBackupSettings settings;
-  final bool loaded;
-
-  bool get busy => phase != LocalBackupPhase.idle;
-
-  LocalBackupState copyWith({
-    LocalBackupPhase? phase,
-    int? progress,
-    LocalBackupSettings? settings,
-    bool? loaded,
-  }) => LocalBackupState(
-    phase: phase ?? this.phase,
-    progress: progress ?? this.progress,
-    settings: settings ?? this.settings,
-    loaded: loaded ?? this.loaded,
-  );
-}
+export 'local_backup_state.dart';
 
 /// Settings → Backup → Local backup, and the scheduled run behind it.
 ///
@@ -183,13 +153,23 @@ class LocalBackupNotifier extends Notifier<LocalBackupState> {
   Future<(BackupRestoreStats?, String?)> restore(String documentUri) async {
     if (state.busy) return (null, LocalBackupFailure.busy.messageKey);
     _cancelled = false;
-    state = state.copyWith(phase: LocalBackupPhase.restoring, progress: 0);
+    state = state.copyWith(
+      phase: LocalBackupPhase.restoring,
+      progress: 0,
+      bytesRead: 0,
+      bytesTotal: 0,
+    );
     try {
       final stats = await _runner.restore(
         userId: await _user(),
         documentUri: documentUri,
         onProgress: (n) {
           if (!_cancelled) state = state.copyWith(progress: n);
+        },
+        onBytes: (read, total) {
+          if (!_cancelled) {
+            state = state.copyWith(bytesRead: read, bytesTotal: total);
+          }
         },
         shouldContinue: () => !_cancelled,
       );

@@ -13,8 +13,8 @@ import 'locked_chats_list.dart';
 import 'locked_chats_unlock.dart';
 
 /// The hidden list of locked chats, reached by a long press on the AbabilX
-/// title in the chat list and nowhere else — the main list does not show a
-/// folder row, so nothing on screen says locked chats exist.
+/// title in the chat list or from Settings → Locked chats — the main list
+/// does not show a folder row, so nothing there says locked chats exist.
 ///
 /// The person picks phone lock or a chat password first; only then does a
 /// bottom sheet (and, for phone lock, the system prompt) appear. Opens with

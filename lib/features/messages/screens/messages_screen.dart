@@ -15,6 +15,8 @@ import '../message_e2ee/message_vault_sheet.dart';
 import '../providers/chat_provider.dart';
 import '../history-transfer/history_transfer_provider.dart';
 import '../history-transfer/history_transfer_sheet.dart';
+import '../../local-backup/local_backup_provider.dart';
+import '../../local-backup/ui/local_backup_restore_banner.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -124,6 +126,12 @@ class _MessagesBody extends ConsumerWidget {
           ? const NewChatSetupBanner()
           : !vaultUnlocked
           ? _UnlockBanner(onTap: onUnlockTap)
+          : ref.watch(
+              localBackupProvider.select(
+                (s) => s.phase == LocalBackupPhase.restoring,
+              ),
+            )
+          ? const LocalBackupRestoreBanner()
           : restoring
           ? const RecoveryProgressBanner()
           : ref.watch(

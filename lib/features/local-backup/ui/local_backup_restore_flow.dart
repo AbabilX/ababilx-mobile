@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
@@ -50,78 +51,38 @@ Future<void> startLocalBackupRestore(
   }
   if (documentUri == null || !context.mounted) return;
 
-  final notifier = ref.read(localBackupProvider.notifier);
-  final run = notifier.restore(documentUri);
-  final navigator = Navigator.of(context, rootNavigator: true);
-  showModalBottomSheet<void>(
-    context: context,
-    useRootNavigator: true,
-    isDismissible: false,
-    enableDrag: false,
-    builder: (_) => PopScope(
-      canPop: false,
-      child: _RestoreProgress(onCancel: notifier.cancel),
-    ),
-  );
+  // Signal's way: the restore runs behind the chat list, shown by the
+  // banner there (LocalBackupRestoreBanner), and the app stays usable. The
+  // root navigator's context outlives the screen that started it, so the
+  // last word still has somewhere to land.
+  // The screen that started it may be gone by the end, and its ref with it.
+  final root = Navigator.of(context, rootNavigator: true).context;
+  final container = ProviderScope.containerOf(context, listen: false);
+  final lang = container.read(appLanguageProvider);
+  final run = container.read(localBackupProvider.notifier).restore(documentUri);
+  GoRouter.of(context).go('/messages');
   final (stats, error) = await run;
-  navigator.pop();
 
   // A folder picked only to restore from is given back; the backup folder
   // proper keeps its grant for the daily run.
   if (pickedFolder != null &&
-      pickedFolder != ref.read(localBackupProvider).settings.folderUri) {
+      pickedFolder != container.read(localBackupProvider).settings.folderUri) {
     await folder.releaseFolder(pickedFolder).catchError((_) {});
   }
-  if (!context.mounted) return;
+  if (!root.mounted) return;
   if (stats != null) {
     showAppToast(
-      context,
-      tr('local_backup_restored').replaceAll('{n}', '${stats.messages}'),
+      root,
+      AppTranslations.of(
+        lang,
+        'local_backup_restored',
+      ).replaceAll('{n}', '${stats.messages}'),
     );
   } else if (error != 'local_backup_error_cancelled') {
     showAppToast(
-      context,
-      tr(error ?? 'local_backup_error_generic'),
+      root,
+      AppTranslations.of(lang, error ?? 'local_backup_error_generic'),
       isError: true,
-    );
-  }
-}
-
-class _RestoreProgress extends ConsumerWidget {
-  const _RestoreProgress({required this.onCancel});
-
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    String tr(String key) => AppTranslations.translate(context, ref, key);
-    final theme = Theme.of(context);
-    final count = ref.watch(localBackupProvider.select((s) => s.progress));
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const LinearProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(
-              tr('local_backup_restoring').replaceAll('{n}', '$count'),
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              tr('local_backup_restore_keep_open'),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(onPressed: onCancel, child: Text(tr('cancel'))),
-          ],
-        ),
-      ),
     );
   }
 }

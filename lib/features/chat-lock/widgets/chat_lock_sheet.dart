@@ -9,6 +9,7 @@ import '../data/chat_lock_index.dart';
 import '../native/device_auth.dart';
 import '../providers/chat_locks_provider.dart';
 import 'chat_lock_actions.dart';
+import 'chat_lock_found_sheet.dart';
 import 'chat_lock_password_sheet.dart';
 
 enum _Choice { off, device, password }
@@ -120,11 +121,28 @@ Future<void> _apply(
       );
       if (result != DeviceAuthResult.ok) return;
       await locks.lockWithDevice(conversationId);
-      if (context.mounted) showAppToast(context, t('chatlock_on'));
+      if (context.mounted) await _locked(context, ref, current);
     case _Choice.password:
       final password = await askNewChatLockPassword(context, ref);
       if (password == null) return;
       await locks.lockWithPassword(conversationId, password);
-      if (context.mounted) showAppToast(context, t('chatlock_on'));
+      if (context.mounted) await _locked(context, ref, current);
   }
+}
+
+/// A chat locked just now has left the list, so say where it went; a lock
+/// that only changed method was already hidden, and a toast is enough.
+Future<void> _locked(
+  BuildContext context,
+  WidgetRef ref,
+  ChatLockMethod? before,
+) async {
+  if (before != null) {
+    showAppToast(
+      context,
+      AppTranslations.translate(context, ref, 'chatlock_on'),
+    );
+    return;
+  }
+  await showChatLockFoundSheet(context, ref);
 }

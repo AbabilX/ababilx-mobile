@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../data/call_log_cache.dart';
 import '../data/call_log_repository.dart';
+import '../data/restored_call_log.dart';
 import '../data/models/call_log_entry.dart';
 import 'call_log_merge.dart';
 
@@ -59,12 +60,16 @@ class CallLogNotifier extends Notifier<CallLogState> {
   bool _stale = true;
   int _session = 0;
 
+  /// Calls brought back by a local backup, laid under the server's list.
+  List<CallLogEntry> _restored = const [];
+
   @override
   CallLogState build() {
     final session = ++_session;
     _inflight = null;
     _fetchedAt = null;
     _stale = true;
+    _restored = const [];
     // A sign-out drops the list from memory; the next account never sees it.
     if (!ref.watch(isAuthenticatedProvider)) return const CallLogState();
     Future.microtask(() => _restore(session));
@@ -74,16 +79,33 @@ class CallLogNotifier extends Notifier<CallLogState> {
   CallLogRepository get _repo => ref.read(callLogRepositoryProvider);
   CallLogCache get _cache => ref.read(callLogCacheProvider);
 
-  /// The phone's saved first page, drawn before any request. A fetch that
-  /// already landed wins; the cache never overwrites it.
+  /// The phone's saved first page and restored calls, drawn before any
+  /// request. A fetch that already landed wins; the cache never overwrites
+  /// it. A fetch that FAILED does not count — offline is when this matters.
   Future<void> _restore(int session) async {
+    _restored = await ref.read(restoredCallLogProvider).read();
     final page = await _cache.read();
-    if (page == null || session != _session || state.loaded) return;
+    if (session != _session || _fetchedAt != null) return;
+    final cached = page?.calls ?? state.calls;
+    final cursor = page?.nextCursor ?? state.cursor;
+    final calls = _mix(cached, cursor);
+    if (calls.isEmpty) return;
     state = state.copyWith(
-      calls: page.calls,
-      cursor: page.nextCursor,
+      calls: calls,
+      cursor: cursor,
       loaded: true,
+      clearError: true,
     );
+  }
+
+  List<CallLogEntry> _mix(List<CallLogEntry> calls, String cursor) =>
+      withRestoredCalls(calls, _restored, hasMore: cursor.isNotEmpty);
+
+  /// A restore just wrote calls: show them without waiting for a relaunch.
+  Future<void> reloadRestored() async {
+    if (_fetchedAt == null) return _restore(_session);
+    _restored = await ref.read(restoredCallLogProvider).read();
+    state = state.copyWith(calls: _mix(state.calls, state.cursor));
   }
 
   /// Something may have changed since the last fetch (a call ended, the app
@@ -123,7 +145,7 @@ class CallLogNotifier extends Notifier<CallLogState> {
       );
       _fetchedAt = DateTime.now();
       state = state.copyWith(
-        calls: merged.calls,
+        calls: _mix(merged.calls, merged.cursor),
         cursor: merged.cursor,
         loading: false,
         loaded: true,
@@ -148,14 +170,15 @@ class CallLogNotifier extends Notifier<CallLogState> {
       final page = await _repo.page(before: state.cursor);
       if (session != _session) return;
       final seen = state.calls.map((c) => c.id).toSet();
+      // An empty page means the end even if the server still hands back a
+      // cursor, so stop asking.
+      final cursor = page.calls.isEmpty ? '' : page.nextCursor;
       state = state.copyWith(
-        calls: [
+        calls: _mix([
           ...state.calls,
           ...page.calls.where((c) => !seen.contains(c.id)),
-        ],
-        // An empty page means the end even if the server still hands back a
-        // cursor, so stop asking.
-        cursor: page.calls.isEmpty ? '' : page.nextCursor,
+        ], cursor),
+        cursor: cursor,
         loadingMore: false,
       );
     } catch (_) {

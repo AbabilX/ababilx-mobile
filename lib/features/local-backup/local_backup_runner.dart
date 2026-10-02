@@ -14,32 +14,20 @@ import '../messages/data/models/chat_conversation.dart';
 import '../messages/message_e2ee/message_vault.dart';
 import '../messages/providers/chat_provider.dart';
 import '../profile/providers/profile_provider.dart';
+import 'data/backup_file_name.dart';
 import 'data/backup_key_store.dart';
 import 'data/local_backup_failure.dart';
 import 'data/local_backup_settings.dart';
 import 'export/backup_exporter.dart';
 import 'format/backup_errors.dart';
+import 'local_backup_extras.dart';
 import 'format/backup_file_reader.dart';
 import 'format/backup_file_writer.dart';
 import 'platform/backup_folder_channel.dart';
 import 'restore/backup_importer.dart';
 import 'restore/restored_body_store.dart';
 
-/// `<username>-2026-09-27-170138.abxbackup` — the person's own handle, so the
-/// file is recognisable in a file manager. Cosmetic only: whose backup it is
-/// comes from the header's account id (Kotlin `BackupHeader`), because a
-/// handle can change or be empty. The handle is `[a-z0-9._-]` already
-/// (server NormalizeUsername); anything else is dropped anyway, and no handle
-/// falls back to "ababilx".
-String backupFileName(String username, DateTime at) {
-  String two(int v) => v.toString().padLeft(2, '0');
-  final safe = username.toLowerCase().replaceAll(RegExp(r'[^a-z0-9._-]'), '');
-  final base = safe.replaceAll(RegExp(r'^[._-]+|[._-]+$'), '');
-  final stamp =
-      '${at.year}-${two(at.month)}-${two(at.day)}-'
-      '${two(at.hour)}${two(at.minute)}${two(at.second)}';
-  return '${base.isEmpty ? 'ababilx' : base}-$stamp.abxbackup';
-}
+export 'data/backup_file_name.dart';
 
 /// Wires the pure pieces (exporter, importer, format) to this app's store,
 /// vault, attachments and the picked folder. Holds no state of its own.
@@ -84,6 +72,12 @@ class LocalBackupRunner {
       createdAtMs: now.millisecondsSinceEpoch,
     );
     try {
+      // Calls, settings and pictures first: a restore cut short has them.
+      final extras = await LocalBackupExtras(_ref).write(writer);
+      debugPrint(
+        '[LocalBackup] export extras: calls=${extras.calls} '
+        'settings=${extras.settings} pictures=${extras.pictures}',
+      );
       final stats = await BackupExporter(
         readPage: (afterMs, afterId) =>
             store.exportPage(afterMs: afterMs, afterId: afterId, limit: 500),
@@ -146,6 +140,7 @@ class LocalBackupRunner {
     required String userId,
     required String documentUri,
     void Function(int messages)? onProgress,
+    void Function(int read, int total)? onBytes,
     bool Function()? shouldContinue,
   }) async {
     final dir = await _work('in');
@@ -168,20 +163,32 @@ class LocalBackupRunner {
       await store.deletions.admitRestoredHistory();
       final bodies = _ref.read(restoredBodyStoreProvider);
       final adopter = _ref.read(attachmentAdopterProvider);
-      final stats = await BackupImporter(
-        saveMessages: (m) => store.saveRecovered(m, fromBackup: true),
-        saveBodies: (b) => bodies.putAll(userId, b),
-        adoptFile: adopter.adoptFile,
-        tempDir: Directory('${dir.path}/files'),
-      ).run(temp, key, onProgress: onProgress, shouldContinue: shouldContinue);
+      final extras = LocalBackupExtras(_ref);
+      final collected = await extras.collector();
+      final stats =
+          await BackupImporter(
+            saveMessages: (m) => store.saveRecovered(m, fromBackup: true),
+            saveBodies: (b) => bodies.putAll(userId, b),
+            adoptFile: adopter.adoptFile,
+            tempDir: Directory('${dir.path}/files'),
+            onOtherFrame: collected.onFrame,
+            onOtherFile: collected.onFile,
+          ).run(
+            temp,
+            key,
+            onProgress: onProgress,
+            onBytes: onBytes,
+            shouldContinue: shouldContinue,
+          );
+      // Chat list, calls, settings and pictures: works offline from here on.
+      await extras.apply(collected, userId);
       // Chats already opened this session read their pages again from disk.
       final chat = _ref.read(chatProvider.notifier)..resetFeedHydration();
       // The list reads its previews from the phone where the server has none.
       unawaited(chat.fetchSidebarSilent().catchError((_) {}));
-      final onDisk = await store.exportPage(limit: 2000);
       debugPrint(
         '[LocalBackup] restore done: messages=${stats.messages} '
-        'files=${stats.files} rowsOnDisk>=${onDisk.length}',
+        'files=${stats.files}',
       );
       return stats;
     } finally {

@@ -116,6 +116,21 @@ class AvatarStore {
     return file;
   }
 
+  /// Backup: the index as it stands, and where its files live.
+  Map<String, AvatarEntry> get entries => Map.unmodifiable(_entries);
+  Directory? get directory => _dir;
+
+  /// Restore: [keys] now point at [file] (already in [directory]). A key
+  /// this phone holds already keeps its own picture.
+  void adoptRestored(Map<String, AvatarEntry> keys) {
+    for (final e in keys.entries) {
+      if (_entries.containsKey(e.key)) continue;
+      _entries[e.key] = e.value;
+      _notify(e.key);
+    }
+    _save();
+  }
+
   /// A stored file that would not decode: drop it so it is fetched again.
   void forget(File file) {
     final name = file.uri.pathSegments.last;

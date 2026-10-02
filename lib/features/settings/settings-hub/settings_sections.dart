@@ -107,6 +107,15 @@ class SettingsSections extends ConsumerWidget {
           subtitle: t('settings_privacy_mode_sub'),
           onTap: () => context.push('/settings/privacy-mode'),
         ),
+        // The second door to locked chats, for whoever never learns the long
+        // press on the AbabilX title. Always shown, locks or not, so the row
+        // itself never says whether this phone has any.
+        SettingsRow(
+          icon: HugeIcons.strokeRoundedSquareLock02,
+          title: t('chatlock_folder_title'),
+          subtitle: t('settings_locked_chats_sub'),
+          onTap: () => context.push('/messages/locked'),
+        ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedUserGroup,
           title: t('chat_people'),

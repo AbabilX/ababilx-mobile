@@ -176,6 +176,12 @@ class AppTranslations {
       'local_backup_restore_keep_open':
           'Keep AbabilX open until this finishes.',
       'local_backup_restored': 'Restored {n} messages',
+      'local_backup_banner_title': 'Restoring backup',
+      'local_backup_banner_size': '{a} of {b}',
+      'local_backup_banner_body':
+          'Your chats, calls, settings and media are coming back. You can keep using AbabilX; keep it open until this finishes.',
+      'local_backup_banner_continue': 'Keep restoring',
+      'local_backup_banner_stop': 'Stop restoring',
       'local_backup_error_not_backup':
           'This is not an AbabilX backup, or a newer version of the app made it.',
       'local_backup_error_wrong_account':
@@ -755,6 +761,17 @@ class AppTranslations {
       'chatlock_removed': 'Chat lock removed',
       'chatlock_on':
           'Chat locked. Find it by long-pressing AbabilX in the chat list',
+      'chatlock_found_title': 'Chat locked',
+      'chatlock_found_body':
+          'It\'s hidden from your chat list now. Open it again either way:',
+      'chatlock_found_hold': 'Hold AbabilX',
+      'chatlock_found_hold_sub':
+          'Press and hold the AbabilX title at the top of your chat list',
+      'chatlock_found_settings': 'Settings → Locked chats',
+      'chatlock_found_settings_sub': 'Always there if you forget the gesture',
+      'chatlock_found_ok': 'Got it',
+      'settings_locked_chats_sub':
+          'Open your locked chats. Tip: hold AbabilX in the chat list',
       'chatlock_prompt_title': 'Unlock chat',
       'chatlock_pw_wrong': 'Wrong password',
       'chatlock_reset_title': 'Reset chat password',
@@ -1373,6 +1390,12 @@ class AppTranslations {
       'local_backup_restore_keep_open':
           'শেষ না হওয়া পর্যন্ত AbabilX খোলা রাখুন।',
       'local_backup_restored': '{n}টি মেসেজ ফিরিয়ে আনা হয়েছে',
+      'local_backup_banner_title': 'ব্যাকআপ ফিরিয়ে আনা হচ্ছে',
+      'local_backup_banner_size': '{b}-এর মধ্যে {a}',
+      'local_backup_banner_body':
+          'আপনার চ্যাট, কল, সেটিংস ও মিডিয়া ফিরে আসছে। AbabilX ব্যবহার করতে পারেন; শেষ না হওয়া পর্যন্ত অ্যাপটি খোলা রাখুন।',
+      'local_backup_banner_continue': 'চালিয়ে যান',
+      'local_backup_banner_stop': 'ফিরিয়ে আনা বন্ধ করুন',
       'local_backup_error_not_backup':
           'এটি AbabilX ব্যাকআপ নয়, অথবা অ্যাপের নতুন সংস্করণে তৈরি।',
       'local_backup_error_wrong_account':
@@ -1941,6 +1964,17 @@ class AppTranslations {
       'chatlock_removed': 'চ্যাট লক সরানো হয়েছে',
       'chatlock_on':
           'চ্যাট লক হয়েছে। চ্যাট লিস্টে AbabilX লম্বা চাপ দিয়ে খুঁজে পাবেন',
+      'chatlock_found_title': 'চ্যাট লক হয়েছে',
+      'chatlock_found_body':
+          'এটি এখন চ্যাট লিস্টে লুকানো। যেকোনো একভাবে আবার খুলুন:',
+      'chatlock_found_hold': 'AbabilX চেপে ধরুন',
+      'chatlock_found_hold_sub':
+          'চ্যাট লিস্টের উপরে AbabilX লেখাটি চেপে ধরে রাখুন',
+      'chatlock_found_settings': 'সেটিংস → লক করা চ্যাট',
+      'chatlock_found_settings_sub': 'ইশারাটি ভুলে গেলেও এখানে সবসময় পাবেন',
+      'chatlock_found_ok': 'বুঝেছি',
+      'settings_locked_chats_sub':
+          'লক করা চ্যাট খুলুন। টিপ: চ্যাট লিস্টে AbabilX চেপে ধরুন',
       'chatlock_prompt_title': 'চ্যাট আনলক করুন',
       'chatlock_pw_wrong': 'ভুল পাসওয়ার্ড',
       'chatlock_reset_title': 'চ্যাট পাসওয়ার্ড রিসেট',

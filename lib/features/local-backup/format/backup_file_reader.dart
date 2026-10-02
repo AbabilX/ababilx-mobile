@@ -42,8 +42,10 @@ class BackupFileReader {
     required Future<void> Function(Map<String, dynamic> frame) onFrame,
     required Future<BackupFileSink?> Function(Map<String, dynamic> file) onFile,
     bool Function()? shouldContinue,
+    void Function(int read, int total)? onBytes,
   }) async {
     final input = await file.open();
+    final total = await input.length();
     BackupFileSink? current;
     Future<void> closeCurrent() async {
       final sink = current;
@@ -64,6 +66,7 @@ class BackupFileReader {
       while (true) {
         if (shouldContinue?.call() == false) throw const BackupCancelledError();
         final plain = await _nextRecord(input, key, encoded.digest, index++);
+        onBytes?.call(await input.position(), total);
         final type = plain[0];
         final body = plain.sublist(1);
         if (type == BackupRecordType.filePart) {

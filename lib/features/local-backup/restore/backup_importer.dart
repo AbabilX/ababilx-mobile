@@ -29,12 +29,21 @@ class BackupImporter {
     required this.saveBodies,
     required this.adoptFile,
     required this.tempDir,
+    this.onOtherFrame,
+    this.onOtherFile,
   });
 
   final Future<void> Function(List<ChatMessage> messages) saveMessages;
   final Future<void> Function(Map<String, String> bodies) saveBodies;
   final AdoptRestoredFile adoptFile;
   final Directory tempDir;
+
+  /// Everything that is not a message (chat list, calls, settings) and every
+  /// file that is not an attachment (`x` set: pictures). See
+  /// `extras/backup_extras_restore.dart`.
+  final Future<void> Function(Map<String, dynamic> frame)? onOtherFrame;
+  final Future<BackupFileSink?> Function(Map<String, dynamic> frame)?
+  onOtherFile;
 
   static const _batch = 200;
 
@@ -43,6 +52,7 @@ class BackupImporter {
     List<int> accountKey, {
     void Function(int messages)? onProgress,
     bool Function()? shouldContinue,
+    void Function(int read, int total)? onBytes,
   }) async {
     final pending = <ChatMessage>[];
     final bodies = <String, String>{};
@@ -63,8 +73,10 @@ class BackupImporter {
     try {
       await BackupFileReader(backup, accountKey).run(
         shouldContinue: shouldContinue,
+        onBytes: onBytes,
         onFrame: (frame) async {
-          if (frame['t'] != 'msg' || frame['m'] is! Map) return;
+          if (frame['t'] != 'msg') return onOtherFrame?.call(frame);
+          if (frame['m'] is! Map) return;
           final ChatMessage message;
           try {
             message = ChatMessage.fromJson(
@@ -83,6 +95,7 @@ class BackupImporter {
           // A file's message is already in `pending`; flushing first keeps a
           // photo from landing in the store before the row that shows it.
           await flush();
+          if (frame['x'] != null) return onOtherFile?.call(frame);
           final url = frame['u'];
           if (url is! String || url.isEmpty) return null;
           return _RestoredFileSink(

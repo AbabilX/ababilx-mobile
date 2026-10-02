@@ -73,8 +73,8 @@ class ChatListHeader extends ConsumerWidget {
                     behavior: HitTestBehavior.opaque,
                     onTap: () => _openYouSheet(context, ref),
                     onDoubleTap: () => _togglePrivacyMode(context, ref),
-                    // The only door to locked chats: nothing on screen
-                    // says they exist.
+                    // Door to locked chats; the list shows no folder row.
+                    // Settings → Locked chats is the other one.
                     onLongPress: () => context.push('/messages/locked'),
                     child: SizedBox(
                       width: double.infinity,
