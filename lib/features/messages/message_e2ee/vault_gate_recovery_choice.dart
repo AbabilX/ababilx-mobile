@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../shared/onboarding/onboarding_option_card.dart';
+import '../../../shared/onboarding/onboarding_page.dart';
 
+/// How this phone gets the account's messages — Signal-Android's
+/// "Restore or transfer account" (`ArchiveRestoreSelectionScreen`): a title,
+/// a line under it, and one card per way in. Starting fresh is a card too,
+/// and like Signal's skip it is confirmed first: it cannot be taken back.
 class VaultGateRecoveryChoice extends ConsumerWidget {
   const VaultGateRecoveryChoice({
     super.key,
@@ -26,73 +33,68 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     String t(String key) => AppTranslations.translate(context, ref, key);
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.restore_rounded,
-              size: 48,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              t('recovery_choice_title'),
-              style: theme.textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              t(hasRecovery ? 'recovery_choice_body' : 'recovery_legacy_body'),
-              style: theme.textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            if (hasRecovery)
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: busy ? null : onRecover,
-                  child: Text(t('recovery_have_code')),
-                ),
-              ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: busy ? null : onStartFresh,
-                child: Text(t('recovery_fresh')),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              t('recovery_fresh_hint'),
-              style: theme.textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-            if (onWrongAccount != null) ...[
-              const SizedBox(height: 4),
-              // A quiet line, not a third button: the two above are the
-              // choice, and this is the way out of a choice that does not
-              // apply.
-              TextButton(
-                onPressed: busy ? null : onWrongAccount,
+    final wrongAccount = onWrongAccount;
+    return OnboardingPage(
+      title: t('restore_select_title'),
+      subtitle: t(hasRecovery ? 'restore_select_body' : 'recovery_legacy_body'),
+      gap: 28,
+      bottom: wrongAccount == null
+          ? null
+          : Center(
+              child: TextButton(
+                onPressed: busy ? null : wrongAccount,
                 child: Text(
                   t('recovery_wrong_account'),
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
                 ),
               ),
-            ],
-          ],
+            ),
+      children: [
+        if (hasRecovery) ...[
+          OnboardingOptionCard(
+            icon: HugeIcons.strokeRoundedKey01,
+            title: t('restore_select_code_title'),
+            subtitle: t('restore_select_code_body'),
+            enabled: !busy,
+            onTap: onRecover,
+          ),
+          const SizedBox(height: 12),
+        ],
+        OnboardingOptionCard(
+          icon: HugeIcons.strokeRoundedSendToMobile,
+          title: t('restore_select_fresh_title'),
+          subtitle: t('restore_select_fresh_body'),
+          enabled: !busy,
+          onTap: () => _confirmFresh(context, t),
         ),
+      ],
+    );
+  }
+
+  Future<void> _confirmFresh(
+    BuildContext context,
+    String Function(String) t,
+  ) async {
+    final colors = Theme.of(context).colorScheme;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text(t('restore_skip_title')),
+        content: Text(t('recovery_fresh_hint')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialog).pop(false),
+            child: Text(t('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialog).pop(true),
+            style: TextButton.styleFrom(foregroundColor: colors.error),
+            child: Text(t('restore_skip_confirm')),
+          ),
+        ],
       ),
     );
+    if (ok == true) onStartFresh();
   }
 }

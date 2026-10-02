@@ -1,16 +1,21 @@
 import 'package:ababilx/core/localization/app_translations.dart';
 import 'package:ababilx/features/messages/message_e2ee/vault_gate_recovery_choice.dart';
+import 'package:ababilx/shared/onboarding/onboarding_option_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  const code = 'Use your recovery code';
+  const fresh = 'Continue without restoring';
+
   Future<void> show(
     WidgetTester tester, {
     bool busy = false,
+    bool hasRecovery = true,
     String language = 'en',
     VoidCallback? recover,
-    VoidCallback? fresh,
+    VoidCallback? startFresh,
     VoidCallback? wrongAccount,
   }) => tester.pumpWidget(
     ProviderScope(
@@ -19,8 +24,9 @@ void main() {
         home: Scaffold(
           body: VaultGateRecoveryChoice(
             busy: busy,
+            hasRecovery: hasRecovery,
             onRecover: recover ?? () {},
-            onStartFresh: fresh ?? () {},
+            onStartFresh: startFresh ?? () {},
             onWrongAccount: wrongAccount,
           ),
         ),
@@ -28,45 +34,56 @@ void main() {
     ),
   );
 
-  testWidgets('offers recovery first without opening the keyboard', (
-    tester,
-  ) async {
-    var recovered = 0;
-    var fresh = 0;
-    await show(tester, recover: () => recovered++, fresh: () => fresh++);
-    expect(find.text('Restore your messages'), findsOneWidget);
+  testWidgets('Signal layout: title, then one card per way in', (tester) async {
+    await show(tester);
+    expect(find.text('Restore your account'), findsOneWidget);
+    expect(find.byType(OnboardingOptionCard), findsNWidgets(2));
     expect(find.byType(TextField), findsNothing);
-    await tester.tap(find.text('I have a recovery code'));
-    expect(recovered, 1);
-    expect(fresh, 0);
-    await tester.tap(find.text('Start new chat'));
-    expect(fresh, 1);
   });
 
-  testWidgets(
-    'always offers both user choices without claiming code ownership',
-    (tester) async {
-      await show(tester);
-      expect(find.text('We found your message backup'), findsNothing);
-      expect(
-        find.text('This account has no recovery-code backup.'),
-        findsNothing,
-      );
-      expect(find.text('I have a recovery code'), findsOneWidget);
-      expect(find.text('Start new chat'), findsOneWidget);
-    },
-  );
+  testWidgets('the code card recovers at once', (tester) async {
+    var recovered = 0;
+    await show(tester, recover: () => recovered++);
+    await tester.tap(find.text(code));
+    expect(recovered, 1);
+  });
 
-  testWidgets('prevents repeated actions while reset is open', (tester) async {
+  testWidgets('starting fresh is confirmed first, and can be cancelled', (
+    tester,
+  ) async {
+    var started = 0;
+    await show(tester, startFresh: () => started++);
+    await tester.tap(find.text(fresh));
+    await tester.pumpAndSettle();
+    expect(find.text('Continue without restoring?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(started, 0);
+    await tester.tap(find.text(fresh));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(started, 1);
+  });
+
+  testWidgets('no recovery code: only the fresh card', (tester) async {
+    await show(tester, hasRecovery: false);
+    expect(find.text(code), findsNothing);
+    expect(find.text(fresh), findsOneWidget);
+  });
+
+  testWidgets('prevents actions while busy', (tester) async {
     var calls = 0;
     await show(
       tester,
       busy: true,
       recover: () => calls++,
-      fresh: () => calls++,
+      startFresh: () => calls++,
     );
-    await tester.tap(find.text('I have a recovery code'));
-    await tester.tap(find.text('Start new chat'));
+    await tester.tap(find.text(code));
+    await tester.tap(find.text(fresh));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
     expect(calls, 0);
   });
 
@@ -80,21 +97,15 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await show(tester, language: 'bn');
-    expect(find.text('আপনার মেসেজ ফিরিয়ে আনুন'), findsOneWidget);
-    await tester.ensureVisible(find.text('নতুন চ্যাট শুরু করুন'));
+    expect(find.text('আপনার অ্যাকাউন্ট ফিরিয়ে আনুন'), findsOneWidget);
+    await tester.ensureVisible(find.text('ফিরিয়ে না এনে চালিয়ে যান'));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a wrong account has a quiet way out, not a third button', (
-    tester,
-  ) async {
+  testWidgets('a wrong account has a quiet line at the foot', (tester) async {
     var signedOut = 0;
     await show(tester, wrongAccount: () => signedOut++);
     final line = find.text('Wrong account? Sign in with another');
-    expect(line, findsOneWidget);
-    // The two choices stay the only buttons; this is a line under them.
-    expect(find.byType(FilledButton), findsOneWidget);
-    expect(find.byType(OutlinedButton), findsOneWidget);
     expect(find.byType(TextButton), findsOneWidget);
     await tester.tap(line);
     expect(signedOut, 1);
@@ -103,8 +114,6 @@ void main() {
   testWidgets('reached from Settings, the sign-out line is not offered', (
     tester,
   ) async {
-    // The recovery screen behind Settings is already past the question of
-    // which account this is, so it passes no callback and draws no line.
     await show(tester);
     expect(find.text('Wrong account? Sign in with another'), findsNothing);
     expect(find.byType(TextButton), findsNothing);

@@ -254,6 +254,30 @@ class AppTranslations {
       'recovery_fresh_hint':
           'Starting a new chat clears your old messages and backup, keeps your contacts, and saves a new recovery code in Settings → Backup → Recovery codes.',
       'recovery_wrong_account': 'Wrong account? Sign in with another',
+      'restore_select_title': 'Restore your account',
+      'restore_select_body':
+          'Your messages are end-to-end encrypted. Choose how you\'d like to bring your message history to this phone.',
+      'restore_select_code_title': 'Use your recovery code',
+      'restore_select_code_body':
+          'Unlock your encrypted messages with the code you saved.',
+      'restore_select_fresh_title': 'Continue without restoring',
+      'restore_select_fresh_body':
+          'Old messages won\'t be readable on this phone.',
+      'restore_skip_title': 'Continue without restoring?',
+      'restore_skip_confirm': 'Continue',
+      'permissions_title': 'Allow permissions',
+      'permissions_body':
+          'To help you message and call people you know, AbabilX will ask for these permissions.',
+      'permissions_notifications': 'Notifications',
+      'permissions_notifications_body':
+          'Get notified when new messages and calls arrive.',
+      'permissions_microphone': 'Microphone',
+      'permissions_microphone_body': 'Talk on calls and send voice messages.',
+      'permissions_media': 'Photos and videos',
+      'permissions_media_body':
+          'Send photos, videos and files from your device.',
+      'permissions_not_now': 'Not now',
+      'permissions_next': 'Next',
       'recovery_enter': 'Enter your recovery code',
       'recovery_help':
           'Enter the code you saved when you set up messages. Spacing and case do not matter.',
@@ -1426,6 +1450,27 @@ class AppTranslations {
       'recovery_fresh_hint':
           'নতুন চ্যাট শুরু করলে আপনার পুরোনো মেসেজ ও ব্যাকআপ মুছে যাবে, পরিচিতিরা থাকবে। নতুন রিকভারি কোড সেভ হবে সেটিংস → ব্যাকআপ → রিকভারি কোডে।',
       'recovery_wrong_account': 'ভুল অ্যাকাউন্ট? অন্য একটি দিয়ে সাইন ইন করুন',
+      'restore_select_title': 'আপনার অ্যাকাউন্ট ফিরিয়ে আনুন',
+      'restore_select_body':
+          'আপনার মেসেজ এন্ড-টু-এন্ড এনক্রিপ্টেড। কীভাবে আগের মেসেজ এই ফোনে আনতে চান, বেছে নিন।',
+      'restore_select_code_title': 'রিকভারি কোড ব্যবহার করুন',
+      'restore_select_code_body':
+          'সেভ করে রাখা কোড দিয়ে আপনার এনক্রিপ্টেড মেসেজ খুলুন।',
+      'restore_select_fresh_title': 'ফিরিয়ে না এনে চালিয়ে যান',
+      'restore_select_fresh_body': 'পুরোনো মেসেজ এই ফোনে পড়া যাবে না।',
+      'restore_skip_title': 'ফিরিয়ে না এনে চালিয়ে যাবেন?',
+      'restore_skip_confirm': 'চালিয়ে যান',
+      'permissions_title': 'অনুমতি দিন',
+      'permissions_body':
+          'পরিচিতদের সঙ্গে মেসেজ ও কল করতে AbabilX এই অনুমতিগুলো চাইবে।',
+      'permissions_notifications': 'নোটিফিকেশন',
+      'permissions_notifications_body': 'নতুন মেসেজ ও কল এলে জানতে পারবেন।',
+      'permissions_microphone': 'মাইক্রোফোন',
+      'permissions_microphone_body': 'কলে কথা বলুন ও ভয়েস মেসেজ পাঠান।',
+      'permissions_media': 'ছবি ও ভিডিও',
+      'permissions_media_body': 'ফোন থেকে ছবি, ভিডিও ও ফাইল পাঠান।',
+      'permissions_not_now': 'এখন না',
+      'permissions_next': 'পরবর্তী',
       'recovery_enter': 'আপনার রিকভারি কোড দিন',
       'recovery_help':
           'মেসেজ সেটআপের সময় সংরক্ষিত কোডটি দিন। স্পেস ও বড় বা ছোট হাতের অক্ষর যেকোনোভাবে লেখা যাবে।',

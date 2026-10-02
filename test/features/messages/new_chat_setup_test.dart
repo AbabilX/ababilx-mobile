@@ -82,7 +82,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Start new chat'));
+    await tester.tap(find.text('Continue without restoring'));
+    await tester.pumpAndSettle();
+    // Like Signal's skip, starting fresh is confirmed first.
+    await tester.tap(find.text('Continue'));
     await tester.pump();
     expect(find.text('Chat window'), findsOneWidget);
     expect(container.read(newChatSetupProvider), NewChatSetupState.running);

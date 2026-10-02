@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/storage/secure_storage.dart';
@@ -67,19 +68,29 @@ class FcmService {
   /// Permission currently granted (Android POST_NOTIFICATIONS / FCM).
   bool permissionGranted = false;
 
-  Future<bool> start() {
+  /// [askPermission] false reads the notification permission instead of
+  /// asking for it: the "Allow permissions" screen already asked.
+  Future<bool> start({bool askPermission = true}) {
     if (_stopping != null) return Future.value(false);
     if (_starting != null) return _starting!;
     _sessionActive = true;
     final session = _session;
-    return _starting = _start(session).whenComplete(() {
+    return _starting = _start(session, askPermission).whenComplete(() {
       if (session == _session) _starting = null;
     });
   }
 
   bool _isCurrent(int session) => _sessionActive && session == _session;
 
-  Future<bool> _start(int session) async {
+  static Future<bool> _notificationsAllowed() async {
+    try {
+      return await Permission.notification.isGranted;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _start(int session, bool askPermission) async {
     fcmLog(
       'start.begin',
       'api=${ApiConstants.baseUrl} alreadyStarted=$_started granted=$permissionGranted',
@@ -117,32 +128,37 @@ class FcmService {
     }
 
     if (!_isCurrent(session)) return false;
-    try {
-      final settings = await _messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      fcmLog(
-        'permission.firebase',
-        'authorizationStatus=${settings.authorizationStatus}',
-      );
+    if (!askPermission) {
+      permissionGranted = await _notificationsAllowed();
+      fcmLog('permission.read', 'granted=$permissionGranted');
+    } else {
+      try {
+        final settings = await _messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        fcmLog(
+          'permission.firebase',
+          'authorizationStatus=${settings.authorizationStatus}',
+        );
 
-      if (!_isCurrent(session)) return false;
-      final localGranted = await _local.requestPermission();
-      fcmLog('permission.android', 'granted=$localGranted');
+        if (!_isCurrent(session)) return false;
+        final localGranted = await _local.requestPermission();
+        fcmLog('permission.android', 'granted=$localGranted');
 
-      if (!_isCurrent(session)) return false;
-      permissionGranted =
-          localGranted &&
-          settings.authorizationStatus != AuthorizationStatus.denied;
-      // Android 14's full-screen-intent page is NOT opened from here: this
-      // runs on every cold start, including the one a call's Accept causes,
-      // and on a locked phone. `FcmBootstrap` asks via FullScreenIntentPrompt.
-    } catch (e) {
-      fcmLog('permission.fail', e);
-      if (!_isCurrent(session)) return false;
-      permissionGranted = false;
+        if (!_isCurrent(session)) return false;
+        permissionGranted =
+            localGranted &&
+            settings.authorizationStatus != AuthorizationStatus.denied;
+        // Android 14's full-screen-intent page is NOT opened from here: this
+        // runs on every cold start, including the one a call's Accept causes,
+        // and on a locked phone. `FcmBootstrap` asks via FullScreenIntentPrompt.
+      } catch (e) {
+        fcmLog('permission.fail', e);
+        if (!_isCurrent(session)) return false;
+        permissionGranted = false;
+      }
     }
 
     // Register before the permission gate, and whatever it decided.

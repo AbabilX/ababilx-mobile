@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import '../auth/providers/auth_provider.dart';
 import '../calls/group/providers/group_call_provider.dart';
 import '../calls/providers/voice_call_provider.dart';
+import '../messages/message_e2ee/message_entry_ready.dart';
+import '../onboarding/permissions/permission_intro.dart';
 import 'fcm_log.dart';
 import 'full_screen_intent_prompt.dart';
 import 'providers/fcm_provider.dart';
@@ -83,6 +85,12 @@ class _FcmBootstrapState extends ConsumerState<FcmBootstrap>
       }
     });
 
+    // A launch that skips the message check (this phone holds its key) never
+    // shows the permissions screen, so nothing else would settle it.
+    if (ref.watch(messageEntryReadyProvider)) {
+      PermissionIntro.settle(shown: false);
+    }
+
     if (isLoggedIn && !isLoading && !_startedForSession) {
       fcmLog('bootstrap.cold_start → start FCM');
       _startForSession();
@@ -110,7 +118,14 @@ class _FcmBootstrapState extends ConsumerState<FcmBootstrap>
       // Every signed-in device needs an explicit answer. Deferring the ask for
       // new accounts left them unable to receive visible message and ongoing
       // call notifications during their first session.
-      final granted = await fcm.start();
+      // Not over the "Allow permissions" screen: wait for it, and leave the
+      // notification ask to it when it ran (this launch or an earlier one).
+      final shownNow = await PermissionIntro.settled;
+      if (!mounted || !(ref.read(authProvider).valueOrNull ?? false)) return;
+      final ask =
+          !shownNow &&
+          await PermissionIntro.answer() != PermissionIntro.answeredNext;
+      final granted = await fcm.start(askPermission: ask);
       fcmLog('bootstrap.boot.done', 'permissionGranted=$granted');
       if (!mounted) return;
       ref.read(notificationPermissionProvider.notifier).setGranted(granted);
