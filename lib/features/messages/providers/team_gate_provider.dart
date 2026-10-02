@@ -40,6 +40,11 @@ final teamGateProvider = AsyncNotifierProvider<TeamGateNotifier, TeamDetail?>(
   TeamGateNotifier.new,
 );
 
+final hasTeamProvider = Provider<bool>((ref) {
+  final team = ref.watch(teamGateProvider);
+  return team.maybeWhen(data: (d) => d?.hasTeam ?? false, orElse: () => false);
+});
+
 final teamMembersProvider = Provider<List<TeamMember>>((ref) {
   final team = ref.watch(teamGateProvider);
   return team.maybeWhen(
