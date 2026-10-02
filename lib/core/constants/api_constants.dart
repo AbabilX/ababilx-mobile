@@ -52,69 +52,6 @@ class ApiConstants {
 
   // Team
   static const String teamsMe = '/api/teams/me';
-  static const String kanbanBoards = '/api/teams/kanban/boards';
-  static String kanbanBoard(String boardId) =>
-      '/api/teams/kanban/boards/$boardId';
-  static String kanbanBoardTasks(String boardId) =>
-      '/api/teams/kanban/boards/$boardId/tasks';
-  static String kanbanTask(String taskId) => '/api/teams/kanban/tasks/$taskId';
-  static String kanbanTaskMove(String taskId) =>
-      '/api/teams/kanban/tasks/$taskId/move';
-  static String kanbanTaskComments(String taskId) =>
-      '/api/teams/kanban/tasks/$taskId/comments';
-  static String kanbanTaskAttachmentsPresign(String taskId) =>
-      '/api/teams/kanban/tasks/$taskId/attachments/presign';
-  static String kanbanTaskAttachmentsDiscard(String taskId) =>
-      '/api/teams/kanban/tasks/$taskId/attachments/discard';
-
-  // CRM
-  static const String crmDashboard = '/api/teams/crm/dashboard';
-  static const String crmSearch = '/api/teams/crm/search';
-  static const String crmConfig = '/api/teams/crm/config';
-  static const String crmContacts = '/api/teams/crm/contacts';
-  static const String crmOrganizations = '/api/teams/crm/organizations';
-  static String crmOrganization(String id) =>
-      '/api/teams/crm/organizations/$id';
-  static String crmOrganizationRemove(String id) =>
-      '/api/teams/crm/organizations/$id/remove';
-  static String crmOrganizationDocuments(String id) =>
-      '/api/teams/crm/organizations/$id/documents';
-  static String crmOrganizationDocumentsPresign(String id) =>
-      '/api/teams/crm/organizations/$id/documents/presign';
-  static String crmOrganizationDocument(String documentId) =>
-      '/api/teams/crm/organization-documents/$documentId';
-  static String crmContact(String id) => '/api/teams/crm/contacts/$id';
-  static const String crmLeads = '/api/teams/crm/leads';
-  static String crmLead(String id) => '/api/teams/crm/leads/$id';
-  static String crmLeadPayments(String id) =>
-      '/api/teams/crm/leads/$id/payments';
-  static String crmPayment(String id) => '/api/teams/crm/payments/$id';
-  static String crmLeadStage(String id) => '/api/teams/crm/leads/$id/stage';
-  static String crmLeadTimeline(String id) =>
-      '/api/teams/crm/leads/$id/timeline';
-  static String crmLeadNotes(String id) => '/api/teams/crm/leads/$id/notes';
-  static String crmNote(String noteId) => '/api/teams/crm/notes/$noteId';
-  static String crmLeadActivities(String id) =>
-      '/api/teams/crm/leads/$id/activities';
-  static String crmLeadDocuments(String id) =>
-      '/api/teams/crm/leads/$id/documents';
-  static String crmLeadDocumentsPresign(String id) =>
-      '/api/teams/crm/leads/$id/documents/presign';
-  static const String crmDocumentsDiscard = '/api/teams/crm/documents/discard';
-  static String crmDocument(String docId) => '/api/teams/crm/documents/$docId';
-  static const String crmFollowups = '/api/teams/crm/followups';
-  static String crmFollowup(String id) => '/api/teams/crm/followups/$id';
-  static const String crmFollowupsBulk = '/api/teams/crm/followups/bulk';
-  static String crmContactLeads(String contactId) =>
-      '/api/teams/crm/contacts/$contactId/leads';
-  static const String crmContactImagesPresign =
-      '/api/teams/crm/contact-images/presign';
-  static const String crmContactImagesDiscard =
-      '/api/teams/crm/contact-images/discard';
-  static String crmLeadStageUploadsPresign(String leadId) =>
-      '/api/teams/crm/leads/$leadId/stage-uploads/presign';
-  static String crmStageUpload(String uploadId) =>
-      '/api/teams/crm/stage-uploads/$uploadId';
 
   // Chat
   static const String chatConversations = '/api/teams/chat/conversations';
@@ -319,26 +256,6 @@ class ApiConstants {
   ) => '$independentChatConnectionRequests/$requestId/$action';
   static String independentChatConnectionUser(String userId) =>
       '$independentChatConnections/$userId';
-
-  // Wall
-  static const String wallPosts = '/api/teams/wall/posts';
-  static String wallPost(String id) => '/api/teams/wall/posts/$id';
-  static String wallPostComments(String id) =>
-      '/api/teams/wall/posts/$id/comments';
-  static String wallPostComment(String postId, String commentId) =>
-      '/api/teams/wall/posts/$postId/comments/$commentId';
-  static String wallPostReactions(String id) =>
-      '/api/teams/wall/posts/$id/reactions';
-  static String wallPostSave(String id) => '/api/teams/wall/posts/$id/save';
-  static const String wallAttachmentsPresign =
-      '/api/teams/wall/posts/attachments/presign';
-  static const String wallAttachmentsDiscard =
-      '/api/teams/wall/posts/attachments/discard';
-  static const String wallCategories = '/api/teams/wall/categories';
-  static const String wallStats = '/api/teams/wall/stats';
-  static const String wallSearch = '/api/teams/wall/search';
-  static const String wallForward = '/api/teams/wall/forward';
-  static const String meWallSaves = '/api/me/wall/saves';
 
   // Devices (FCM)
   static const String devices = '/api/devices';

@@ -2,168 +2,25 @@ import 'package:ababilx/core/router/shell_bottom_bar/shell_tabs.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('visibleShellTabs', () {
-    test('team-less account gets the two-tab Signal shape', () {
-      final tabs = visibleShellTabs(hasTeam: false, showCrm: false);
-      expect(tabs.map((t) => t.route), ['/messages', '/calls']);
-    });
-
-    test('workspace features appear only once a team exists', () {
-      final tabs = visibleShellTabs(hasTeam: true, showCrm: false);
-      expect(tabs.map((t) => t.route), [
-        '/messages',
-        '/calls',
-        '/wall',
-        '/board',
-      ]);
-    });
-
-    test('CRM needs both a team and access', () {
-      expect(
-        visibleShellTabs(hasTeam: true, showCrm: true).map((t) => t.route),
-        ['/messages', '/calls', '/wall', '/crm', '/board'],
-      );
-      // CRM access without a team never renders a lone CRM tab.
-      expect(
-        visibleShellTabs(hasTeam: false, showCrm: true).map((t) => t.route),
-        ['/messages', '/calls'],
-      );
-    });
-
-    test('device prefs can hide each workspace tab independently', () {
-      expect(
-        visibleShellTabs(
-          hasTeam: true,
-          showCrm: true,
-          showWallTab: false,
-        ).map((t) => t.route),
-        ['/messages', '/calls', '/crm', '/board'],
-      );
-      expect(
-        visibleShellTabs(
-          hasTeam: true,
-          showCrm: true,
-          showCrmTab: false,
-        ).map((t) => t.route),
-        ['/messages', '/calls', '/wall', '/board'],
-      );
-      expect(
-        visibleShellTabs(
-          hasTeam: true,
-          showCrm: true,
-          showBoardTab: false,
-        ).map((t) => t.route),
-        ['/messages', '/calls', '/wall', '/crm'],
-      );
-      expect(
-        visibleShellTabs(
-          hasTeam: true,
-          showCrm: true,
-          showWallTab: false,
-          showCrmTab: false,
-          showBoardTab: false,
-        ).map((t) => t.route),
-        ['/messages', '/calls'],
-      );
-    });
-
-    test('prefs cannot resurrect workspace tabs without a team', () {
-      expect(
-        visibleShellTabs(
-          hasTeam: false,
-          showCrm: true,
-          showWallTab: true,
-          showCrmTab: true,
-          showBoardTab: true,
-        ).map((t) => t.route),
-        ['/messages', '/calls'],
-      );
-    });
-
-    test('unread badge rides on Messages alone', () {
-      final tabs = visibleShellTabs(hasTeam: true, showCrm: true);
-      expect(tabs.where((t) => t.showsUnread).map((t) => t.route), [
-        '/messages',
-      ]);
-    });
+  test('home bar is the two-tab Signal shape', () {
+    expect(homeShellTabs.map((t) => t.route), ['/messages', '/calls']);
   });
 
-  group('shellRouteAccessDenied', () {
-    test('wall and board require a team', () {
-      expect(
-        shellRouteAccessDenied('/wall', hasTeam: false, showCrm: false),
-        isTrue,
-      );
-      expect(
-        shellRouteAccessDenied('/board/abc', hasTeam: false, showCrm: true),
-        isTrue,
-      );
-      expect(
-        shellRouteAccessDenied('/wall', hasTeam: true, showCrm: false),
-        isFalse,
-      );
-    });
-
-    test('crm requires team and CRM access', () {
-      expect(
-        shellRouteAccessDenied('/crm', hasTeam: true, showCrm: false),
-        isTrue,
-      );
-      expect(
-        shellRouteAccessDenied('/crm/leads', hasTeam: false, showCrm: true),
-        isTrue,
-      );
-      expect(
-        shellRouteAccessDenied('/crm/contacts', hasTeam: true, showCrm: true),
-        isFalse,
-      );
-    });
-
-    test('messages and calls are never access-denied', () {
-      expect(
-        shellRouteAccessDenied('/messages', hasTeam: false, showCrm: false),
-        isFalse,
-      );
-      expect(
-        shellRouteAccessDenied('/calls', hasTeam: false, showCrm: false),
-        isFalse,
-      );
-    });
+  test('unread badge rides on Messages alone', () {
+    expect(homeShellTabs.where((t) => t.showsUnread).map((t) => t.route), [
+      '/messages',
+    ]);
   });
 
   group('shellTabIndex', () {
-    final full = visibleShellTabs(hasTeam: true, showCrm: true);
-    final minimal = visibleShellTabs(hasTeam: false, showCrm: false);
-
     test('sub-routes select their owning tab', () {
-      expect(shellTabIndex(full, '/crm/contacts'), 3);
-      expect(shellTabIndex(full, '/board/abc/tasks/1'), 4);
-      expect(shellTabIndex(full, '/calls'), 1);
+      expect(shellTabIndex(homeShellTabs, '/calls'), 1);
+      expect(shellTabIndex(homeShellTabs, '/messages'), 0);
     });
 
-    test('index follows the visible list, not a fixed position', () {
-      // Board is 4th with CRM present, 3rd without — the old hardcoded
-      // `showCrm ? 3 : 2` arithmetic is what this replaces.
-      final noCrm = visibleShellTabs(hasTeam: true, showCrm: false);
-      expect(shellTabIndex(full, '/board'), 4);
-      expect(shellTabIndex(noCrm, '/board'), 3);
-    });
-
-    test('a route whose tab is hidden falls back to Messages', () {
-      expect(shellTabIndex(minimal, '/board'), 0);
-      expect(shellTabIndex(minimal, '/crm/leads'), 0);
-      expect(shellTabIndex(minimal, '/profile'), 0);
-    });
-
-    test('pref-hidden tab falls back to Messages for bar selection', () {
-      final noWall = visibleShellTabs(
-        hasTeam: true,
-        showCrm: true,
-        showWallTab: false,
-      );
-      expect(shellTabIndex(noWall, '/wall'), 0);
-      // Board shifts left when Wall is gone.
-      expect(shellTabIndex(noWall, '/board'), 3);
+    test('an unknown route falls back to Messages', () {
+      expect(shellTabIndex(homeShellTabs, '/crm/leads'), 0);
+      expect(shellTabIndex(homeShellTabs, '/profile'), 0);
     });
   });
 }

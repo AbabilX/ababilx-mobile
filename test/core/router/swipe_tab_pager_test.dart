@@ -29,7 +29,7 @@ GoRouter _router(String initial, List<State> built) {
         routes: [
           GoRoute(path: '/chats', pageBuilder: (_, s) => pager(s, 0)),
           GoRoute(path: '/talks', pageBuilder: (_, s) => pager(s, 1)),
-          GoRoute(path: '/wall', builder: (_, _) => const Text('Wall page')),
+          GoRoute(path: '/other', builder: (_, _) => const Text('Other page')),
         ],
       ),
     ],
@@ -150,9 +150,9 @@ void main() {
     expect(built, hasLength(2));
     expect(built.every((s) => s.mounted), isTrue);
 
-    router.go('/wall');
+    router.go('/other');
     await tester.pumpAndSettle();
-    expect(find.text('Wall page'), findsOneWidget);
+    expect(find.text('Other page'), findsOneWidget);
     expect(built.any((s) => s.mounted), isFalse);
   });
 

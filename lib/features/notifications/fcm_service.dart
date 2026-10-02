@@ -19,6 +19,7 @@ import 'data/device_repository.dart';
 import 'data/push_token_registration.dart';
 import 'fcm_log.dart';
 import 'local_notifications.dart';
+import 'notification_channels.dart';
 import '../ghost/ghost_push.dart';
 import '../messages/chat-focus/chat_focus_reporter.dart';
 import 'notification_router.dart';
@@ -246,14 +247,14 @@ class FcmService {
     });
   }
 
-  /// Seed a shell tab under detail routes so back reaches home before exit.
+  /// Seed Messages under detail routes so back reaches home before exit.
   void _openDeepLink(GoRouter r, String path) {
     final bare = path.split('?').first;
-    if (bare == '/messages' || bare == '/login' || _isShellTab(bare)) {
+    if (bare == '/messages' || bare == '/calls' || bare == '/login') {
       r.go(path);
       return;
     }
-    r.go(_seedTabFor(bare));
+    r.go('/messages');
     Future<void>.delayed(const Duration(milliseconds: 50), () {
       try {
         r.push(path);
@@ -262,24 +263,6 @@ class FcmService {
         r.go(path);
       }
     });
-  }
-
-  /// Shell tab a detail route belongs to — pushed under it so Android back
-  /// lands on that tab instead of exiting the app.
-  String _seedTabFor(String bare) {
-    if (bare.startsWith('/board/')) return '/board';
-    if (bare.startsWith('/wall/')) return '/wall';
-    return '/messages';
-  }
-
-  bool _isShellTab(String path) {
-    return path == '/wall' ||
-        path == '/crm' ||
-        path == '/crm/contacts' ||
-        path == '/crm/leads' ||
-        path == '/crm/followups' ||
-        path == '/crm/organizations' ||
-        path == '/board';
   }
 
   /// Peek without clearing — used by GoRouter login redirect.
@@ -361,6 +344,12 @@ class FcmService {
     final channel = _channelFor(data['type']?.toString());
 
     final type = data['type'];
+    if (isWallOrBoardPush(type?.toString())) {
+      // Wall and Board are gone from the phone; the server still sends their
+      // pushes to every device, so a tray line here would open nothing.
+      fcmLog('push.foreground.skip', 'wall/board push: $type');
+      return;
+    }
     if (isGhostPush(data)) {
       await handleGhostPush(_local, data, appOnScreen: flutterOwnsRingingUi);
       return;
@@ -503,18 +492,6 @@ class FcmService {
       case 'chat_mention':
       case 'chat_message':
         return 'chat';
-      case 'kanban_assignment':
-      case 'kanban_mention':
-      case 'kanban_comment':
-      case 'kanban_watcher':
-      case 'board_notes':
-      case 'board_notes_mention':
-        return 'board';
-      case 'wall_mention':
-      case 'wall_comment':
-      case 'wall_reply':
-      case 'wall_category_request':
-        return 'wall';
       case 'voice_call':
         return 'voice_calls';
       case 'pre_send_review':

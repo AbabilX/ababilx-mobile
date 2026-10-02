@@ -109,7 +109,7 @@ class _ChatRecipientPickerScreenState
                     ? _tr('chat_recent_chats')
                     : _tr('chat_results'),
                 groupsLabel: _tr('chat_groups'),
-                contactsLabel: _tr('crm_contacts'),
+                contactsLabel: _tr('chat_contacts'),
                 emptyLabel: _tr('chat_no_recipients'),
               ),
             ),

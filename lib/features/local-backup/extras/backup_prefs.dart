@@ -18,9 +18,6 @@ abstract final class BackupPrefs {
     'decline_message',
     'ababilx_chat_wallpaper_global',
     wallpaperPhotos,
-    'ababilx_shell_nav_board',
-    'ababilx_shell_nav_wall',
-    'ababilx_shell_nav_crm',
     'chat_notif_hidden_text_v1',
     lockIndex,
   };

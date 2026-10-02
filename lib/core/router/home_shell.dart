@@ -5,34 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/calls/decline-message/decline_replies.dart';
-import '../../features/crm/providers/crm_contacts_ui_provider.dart';
-import '../../features/crm/providers/crm_followups_ui_provider.dart';
-import '../../features/crm/providers/crm_leads_ui_provider.dart';
-import '../../features/crm/providers/crm_organizations_ui_provider.dart';
 import '../../features/messages/providers/chat_provider.dart';
-import '../../features/messages/providers/team_gate_provider.dart';
 import '../../features/local-backup/ui/local_backup_watcher.dart';
 import '../../features/notifications/widgets/notification_vitals_watcher.dart';
 import '../../features/policy/widgets/policy_gate_overlay.dart';
 import '../../features/profile/providers/profile_provider.dart';
-import '../../features/wall/providers/wall_ui_provider.dart';
 import '../../core/localization/app_translations.dart';
-import 'shell_bottom_bar/crm_list_bar.dart';
 import 'shell_bottom_bar/index.dart';
 import 'shell_bottom_bar/shell_chrome_provider.dart';
-import 'shell_bottom_bar/shell_nav_prefs.dart';
 import 'shell_bottom_bar/shell_tabs.dart';
 
-/// Floating capsule nav, or CRM list [My|Add|All] + search action.
+/// Home shell: the routed page under the floating capsule nav.
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
-
-  bool _isCrmList(String location) =>
-      location == '/crm/contacts' ||
-      location == '/crm/leads' ||
-      location == '/crm/followups' ||
-      location == '/crm/organizations';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,60 +34,14 @@ class HomeShell extends ConsumerWidget {
     if (profileLang != null) {
       unawaited(DeclineReplies.rememberLanguage(profileLang.toLowerCase()));
     }
-    final hasTeam = ref.watch(hasTeamProvider);
-    final showCrm = ref.watch(canViewCrmProvider);
-    final navPrefs = ref.watch(shellNavPrefsProvider);
-    final tabs = visibleShellTabs(
-      hasTeam: hasTeam,
-      showCrm: showCrm,
-      showWallTab: navPrefs.showWall,
-      showCrmTab: navPrefs.showCrm,
-      showBoardTab: navPrefs.showBoard,
-    );
+    const tabs = homeShellTabs;
     final location = GoRouterState.of(context).matchedLocation;
     final idx = shellTabIndex(tabs, location);
     final unread = ref.watch(totalUnreadProvider);
 
-    final isContacts = location == '/crm/contacts';
-    final isLeads = location == '/crm/leads';
-    final isFollowups = location == '/crm/followups';
-    final isOrganizations = location == '/crm/organizations';
-    final shellBarHidden = ref.watch(shellBottomBarHiddenProvider);
-
-    // Bounce only when the account lost workspace/CRM access — not when the
-    // user hid a tab in Settings. Pref-hidden routes stay reachable via deep
-    // link; the bar simply omits that destination.
-    // Wait until the team is resolved: while it loads `hasTeam` is false, and
-    // bouncing then would kick a deep link off /board or /wall.
-    final teamResolved = ref.watch(teamGateProvider).hasValue;
-    final onDeniedRoute =
-        teamResolved &&
-        shellRouteAccessDenied(location, hasTeam: hasTeam, showCrm: showCrm);
-    if (onDeniedRoute) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) context.go('/messages');
-      });
-    }
-
-    final hideBar =
-        shellBarHidden ||
-        (isContacts && ref.watch(crmContactsUiProvider).formSheetOpen) ||
-        (isLeads && ref.watch(crmLeadsUiProvider).formSheetOpen) ||
-        (isFollowups && ref.watch(crmFollowupsUiProvider).formSheetOpen) ||
-        (isOrganizations &&
-            ref.watch(crmOrganizationsUiProvider).formSheetOpen) ||
-        ref.watch(wallUiProvider).hideBottomBar;
-
-    final Widget? bar = hideBar
+    final Widget? bar = ref.watch(shellBottomBarHiddenProvider)
         ? null
-        : _isCrmList(location)
-        ? CrmListBottomBar(
-            isLeads: isLeads,
-            isFollowups: isFollowups,
-            isOrganizations: isOrganizations,
-          )
         : ShellBottomBar(
-            mode: ShellBottomBarMode.home,
             tabs: tabs,
             selectedIndex: idx,
             unread: unread,

@@ -13,18 +13,6 @@ const notificationChannels = <AndroidNotificationChannel>[
     importance: Importance.high,
   ),
   AndroidNotificationChannel(
-    'board',
-    'Board',
-    description: 'Task assignments, comments and board notes',
-    importance: Importance.high,
-  ),
-  AndroidNotificationChannel(
-    'wall',
-    'Wall',
-    description: 'Team wall mentions, comments and replies',
-    importance: Importance.high,
-  ),
-  AndroidNotificationChannel(
     'general',
     'General',
     description: 'General AbabilX alerts',
@@ -69,3 +57,22 @@ const notificationChannels = <AndroidNotificationChannel>[
     importance: Importance.max,
   ),
 ];
+
+/// Channels earlier builds created for Wall and Board, deleted on init so
+/// Android's notification settings stop listing features the phone dropped.
+const retiredNotificationChannelIds = ['board', 'wall'];
+
+/// Wall and Board pushes the server still sends; the phone has no screen for
+/// them any more.
+bool isWallOrBoardPush(String? type) => const {
+  'wall_mention',
+  'wall_comment',
+  'wall_reply',
+  'wall_category_request',
+  'kanban_assignment',
+  'kanban_mention',
+  'kanban_comment',
+  'kanban_watcher',
+  'board_notes',
+  'board_notes_mention',
+}.contains(type);

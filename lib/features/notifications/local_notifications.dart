@@ -83,6 +83,9 @@ class LocalNotifications {
       for (final channel in notificationChannels) {
         await android.createNotificationChannel(channel);
       }
+      for (final id in retiredNotificationChannelIds) {
+        await android.deleteNotificationChannel(channelId: id);
+      }
     }
 
     _ready = true;

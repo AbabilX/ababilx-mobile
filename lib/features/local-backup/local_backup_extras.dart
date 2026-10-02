@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../../core/router/shell_bottom_bar/shell_nav_prefs.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../shared/avatar-store/avatar_store.dart';
 import '../../shared/media/media_quality.dart';
@@ -116,8 +115,7 @@ class LocalBackupExtras {
       ..invalidate(chatWallpaperProvider)
       ..invalidate(chatWallpaperPhotosProvider)
       ..invalidate(autoDownloadSettingsProvider)
-      ..invalidate(mediaQualityProvider)
-      ..invalidate(shellNavPrefsProvider);
+      ..invalidate(mediaQualityProvider);
     debugPrint(
       '[LocalBackup] restore extras: chats=${c.conversations.length} '
       'calls=${c.calls.length} prefs=${c.prefs.length} '

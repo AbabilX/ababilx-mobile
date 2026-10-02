@@ -9,7 +9,6 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
-import '../../messages/providers/team_gate_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import 'language_dialog.dart';
@@ -27,7 +26,6 @@ class SettingsSections extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     String t(String key) => AppTranslations.translate(context, ref, key);
-    final hasTeam = ref.watch(hasTeamProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -41,16 +39,6 @@ class SettingsSections extends ConsumerWidget {
           title: t('settings_notifications'),
           onTap: () => context.push('/settings/notifications'),
         ),
-        // Workspace tabs only exist when the account is on a team — hiding
-        // this row for team-less users keeps Settings from advertising empty
-        // Wall / Board / CRM switches.
-        if (hasTeam)
-          SettingsRow(
-            icon: HugeIcons.strokeRoundedMenu01,
-            title: t('settings_navigation'),
-            subtitle: t('settings_navigation_sub'),
-            onTap: () => context.push('/settings/navigation'),
-          ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedMobileNavigator01,
           title: t('settings_app_icon'),

@@ -8,9 +8,6 @@ import '../../features/ghost/screens/ghost_invite_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/email/email_auth_routes.dart';
 import '../../features/auth/screens/login_screen.dart';
-import '../../features/board/screens/board_screen.dart';
-import '../../features/board/screens/board_detail_screen.dart';
-import '../../features/board/screens/board_task_detail_screen.dart';
 import '../../features/profile/screens/sessions_screen.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/providers/team_gate_provider.dart';
@@ -28,17 +25,6 @@ import '../../features/messages/screens/connections_screen.dart';
 import '../../features/messages/screens/find_people_screen.dart';
 import '../../features/messages/screens/people_screen.dart';
 import '../../features/messages/screens/new_message_screen.dart';
-import '../../features/wall/screens/wall_screen.dart';
-import '../../features/wall/screens/wall_post_screen.dart';
-import '../../features/crm/screens/crm_hub_screen.dart';
-import '../../features/crm/screens/crm_contacts_screen.dart';
-import '../../features/crm/screens/crm_leads_screen.dart';
-import '../../features/crm/screens/crm_lead_detail_screen.dart';
-import '../../features/crm/screens/crm_followups_screen.dart';
-import '../../features/crm/screens/crm_followup_detail_screen.dart';
-import '../../features/crm/screens/crm_contact_detail_screen.dart';
-import '../../features/crm/screens/crm_organizations_screen.dart';
-import '../../features/crm/screens/crm_organization_detail_screen.dart';
 import '../../features/calls/group/screens/group_call_lobby_screen.dart';
 import '../../features/calls/group/screens/group_call_screen.dart';
 import '../../features/calls/call-info/call_info_path.dart';
@@ -59,7 +45,6 @@ import '../../features/privacy-mode/privacy_mode_screen.dart';
 import '../../features/settings/screens/edit_name_screen.dart';
 import '../../features/settings/screens/edit_username_screen.dart';
 import '../../features/settings/screens/my_qr_screen.dart';
-import '../../features/settings/screens/navigation_settings_screen.dart';
 import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import 'home_shell.dart';
@@ -166,26 +151,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/calls',
             pageBuilder: (_, state) => homeTabPage(state, 1),
           ),
-          GoRoute(path: '/wall', builder: (_, _) => const WallScreen()),
-          GoRoute(
-            path: '/crm/organizations',
-            builder: (_, _) => const CrmOrganizationsScreen(),
-          ),
-          GoRoute(
-            path: '/crm/contacts',
-            builder: (_, _) => const CrmContactsScreen(),
-          ),
-          GoRoute(
-            path: '/crm/leads',
-            builder: (_, state) =>
-                CrmLeadsScreen(contactId: state.uri.queryParameters['contact']),
-          ),
-          GoRoute(
-            path: '/crm/followups',
-            builder: (_, _) => const CrmFollowupsScreen(),
-          ),
-          GoRoute(path: '/crm', builder: (_, _) => const CrmHubScreen()),
-          GoRoute(path: '/board', builder: (_, _) => const BoardScreen()),
         ],
       ),
       GoRoute(path: '/call', pageBuilder: _instant(const VoiceCallScreen())),
@@ -232,10 +197,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/privacy-mode/people',
         builder: (_, _) => const PrivacyPeopleScreen(),
-      ),
-      GoRoute(
-        path: '/settings/navigation',
-        builder: (_, _) => const NavigationSettingsScreen(),
       ),
       GoRoute(
         path: '/settings/notifications',
@@ -397,46 +358,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             threadRootId: state.uri.queryParameters['thread'],
           ),
         ),
-      ),
-      GoRoute(
-        path: '/board/:boardId/tasks/:taskId',
-        builder: (_, state) => BoardTaskDetailScreen(
-          boardId: state.pathParameters['boardId']!,
-          taskId: state.pathParameters['taskId']!,
-        ),
-      ),
-      GoRoute(
-        path: '/board/:boardId',
-        builder: (_, state) => BoardDetailScreen(
-          boardId: state.pathParameters['boardId']!,
-          taskId: state.uri.queryParameters['taskId'],
-        ),
-      ),
-      GoRoute(
-        path: '/wall/post/:postId',
-        builder: (_, state) =>
-            WallPostScreen(postId: state.pathParameters['postId']!),
-      ),
-      GoRoute(
-        path: '/crm/organizations/:id',
-        builder: (_, state) => CrmOrganizationDetailScreen(
-          organizationId: state.pathParameters['id']!,
-        ),
-      ),
-      GoRoute(
-        path: '/crm/leads/:id',
-        builder: (_, state) =>
-            CrmLeadDetailScreen(leadId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: '/crm/contacts/:id',
-        builder: (_, state) =>
-            CrmContactDetailScreen(contactId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: '/crm/followups/:id',
-        builder: (_, state) =>
-            CrmFollowupDetailScreen(followupId: state.pathParameters['id']!),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(
