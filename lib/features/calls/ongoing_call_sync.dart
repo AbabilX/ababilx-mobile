@@ -204,15 +204,15 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     unawaited(AndroidOngoingCall.stop(force: true));
   }
 
-  /// The screen blanks at the ear for a call on the earpiece that the user is
-  /// holding to their face: connected, and — as in Signal, which enters
-  /// `IN_CALL` the moment an outgoing call starts — while the caller listens
-  /// to it ring and while it connects. An INCOMING ring is still excluded:
-  /// that is a call the user is looking at. A call on speaker is one the
-  /// phone is nowhere near.
+  /// The screen blanks at the ear — Signal's `LockManager` `IN_CALL`: an
+  /// outgoing call from the moment it rings (Signal enters `IN_CALL` then),
+  /// while it connects, and once connected. An INCOMING ring is excluded:
+  /// that is a call the user is looking at. Video on either side is Signal's
+  /// `IN_VIDEO` and keeps the screen on.
   ///
-  /// Headsets are not checked here: the native side watches the audio devices
-  /// itself, so a headset plugged in mid-call gives the screen back without
+  /// Whether the call is hands-free (speaker, Bluetooth, wired headset) is
+  /// decided natively from the call's audio route (`CallHandsFree.kt`), so a
+  /// picker choice or a headset plugged in mid-call flips the lock without
   /// Dart having to notice.
   void _syncProximity(VoiceCallState dm, GroupCallState group) {
     final dmAtEar = switch (dm.phase) {
@@ -221,10 +221,14 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
       VoiceCallPhase.connected => true,
       _ => false,
     };
-    final earpiece =
-        (dmAtEar && !dm.speaker) ||
-        (group.phase == GroupCallPhase.connected && !group.speaker);
-    unawaited(AndroidCallScreenLock.setEarpieceCall(earpiece));
+    final dmVideo =
+        dm.cameraOn ||
+        dm.remoteCameraStream != null ||
+        dm.remoteScreenStream != null ||
+        dm.screenSharing;
+    final atEar =
+        (dmAtEar && !dmVideo) || group.phase == GroupCallPhase.connected;
+    unawaited(AndroidCallScreenLock.setEarpieceCall(atEar));
   }
 
   /// Signal's busy rule, told to the process: entering a call stops every

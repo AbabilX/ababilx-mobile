@@ -27,6 +27,24 @@ object CallAudioSession {
 
     val running: Boolean get() = manager != null
 
+    /** The device the call's audio is on now, or null with no call running. */
+    val activeDevice: CallAudioDevice? get() = manager?.snapshot?.active
+
+    /** Told on the main thread whenever the call's device changes. */
+    private val routeWatchers = mutableSetOf<() -> Unit>()
+
+    fun watchRoute(watcher: () -> Unit) {
+        routeWatchers += watcher
+    }
+
+    fun unwatchRoute(watcher: () -> Unit) {
+        routeWatchers -= watcher
+    }
+
+    private fun routeChanged() {
+        routeWatchers.toList().forEach { it() }
+    }
+
     fun attach(engine: FlutterEngine, context: Context) {
         val app = context.applicationContext
         channel = MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL).also {
@@ -95,7 +113,10 @@ object CallAudioSession {
         current?.shutdown()
         callId = id
         val created = CallAudioManager.create(context.applicationContext, id) { snapshot ->
-            main.post { channel?.invokeMethod("devices", snapshot.toMap()) }
+            main.post {
+                channel?.invokeMethod("devices", snapshot.toMap())
+                routeChanged()
+            }
         }
         Log.i(CallAudioManager.TAG, "session ${created.javaClass.simpleName} for $id")
         manager = created
@@ -127,6 +148,9 @@ object CallAudioSession {
         manager = null
         callId = null
         current.shutdown()
-        main.post { channel?.invokeMethod("devices", null) }
+        main.post {
+            channel?.invokeMethod("devices", null)
+            routeChanged()
+        }
     }
 }

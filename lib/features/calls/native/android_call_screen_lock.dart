@@ -30,9 +30,9 @@ class AndroidCallScreenLock {
   static bool _earpiece = false;
   static bool _keepAwake = false;
 
-  /// True while a call is connected **and** its audio is on the earpiece.
-  /// Native drops the lock by itself if a headset appears, so this only has to
-  /// track speakerphone.
+  /// True while a call is in a phase held to the face (not video). Native
+  /// holds the lock only while that call is not hands-free — speaker,
+  /// Bluetooth or a wired headset — read from the call's own audio route.
   static Future<void> setEarpieceCall(bool active) async {
     if (!_supported || active == _earpiece) return;
     _earpiece = active;

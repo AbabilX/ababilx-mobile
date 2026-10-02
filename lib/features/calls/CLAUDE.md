@@ -641,11 +641,18 @@ someone reads messages is a battery bug.
 
 Traps:
 
-- **Headsets are checked natively, not in Dart.** `speaker == false` does not
-  mean earpiece — a wired or Bluetooth headset is also "not speaker", and the
-  phone is then in a pocket. `CallScreenLock` registers an `AudioDeviceCallback`
-  while the lock is wanted and drops it the moment a headset appears, so this
-  corrects itself mid-call without Dart noticing.
+- **Hands-free is decided natively from the call's route, not in Dart**
+  (2026-10-02, `CallHandsFree.kt`, Signal's `WebRtcUtil.getInCallPhoneState`).
+  Dart says only "a call is held to the face" — outgoing-ringing, connecting,
+  connected, or a connected group call, and NOT while either side's camera or
+  a screen share is on (Signal's `IN_VIDEO`). Native then holds the lock
+  unless the call is hands-free: the active device of `CallAudioSession`
+  is speaker, Bluetooth or wired, or a wired headset / USB device is plugged
+  in. It used to be `!state.speaker` in Dart plus "any headset or A2DP device
+  connected" natively, so with Bluetooth merely paired and the earpiece picked
+  in the Audio output sheet the screen stayed lit at the ear. Re-checked on
+  every route event (`CallAudioSession.watchRoute`) and device plug. Logcat
+  tag `ababilx:call-proximity` prints `proximity on/off, route=…`.
 - **Release with `RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY`.** A plain release when
   the call ends while the phone is still at the ear flashes the screen on
   inside a pocket. The flag holds it dark until the phone comes away.

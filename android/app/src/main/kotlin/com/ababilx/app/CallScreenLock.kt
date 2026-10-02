@@ -11,6 +11,7 @@ import android.os.PowerManager
 import android.util.Log
 import android.view.MotionEvent
 import android.view.WindowManager
+import com.ababilx.app.callaudio.CallAudioSession
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
@@ -28,10 +29,12 @@ import io.flutter.plugin.common.MethodChannel
  *   display times out mid-call and the user has to unlock the phone to hang
  *   up.
  *
- * The proximity lock is held only while the call is on the **earpiece**. On
- * speaker, or through a headset, the phone is not at the face and blanking the
- * screen would be wrong — so the audio route is watched
- * ([AudioDeviceCallback]) and plugging in a headset mid-call drops the lock.
+ * The proximity lock is held only while the call is **not hands-free** —
+ * Signal's `WebRtcUtil.getInCallPhoneState`: speaker, Bluetooth or a wired
+ * headset is `IN_HANDS_FREE_CALL`, anything else `IN_CALL`. The route is read
+ * from the call's own audio owner ([CallAudioSession]), so a Bluetooth headset
+ * that is connected while the user picked the earpiece still blanks the screen
+ * at the ear; and it is re-checked on every route change and device plug.
  *
  * Releasing uses [PowerManager.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY] so a call
  * that ends while the phone is still at the ear does not flash the screen on
@@ -59,8 +62,9 @@ class CallScreenLock(private val activity: Activity) {
     }
     private var deviceCallback: AudioDeviceCallback? = null
 
-    /** Dart says a call is connected and routed to the earpiece. */
+    /** Dart says a call is in a phase held to the face (not video). */
     private var wanted = false
+    private val routeWatcher: () -> Unit = { apply() }
 
     fun attach(engine: FlutterEngine) {
         channel = MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL).also {
@@ -85,6 +89,7 @@ class CallScreenLock(private val activity: Activity) {
         channel?.setMethodCallHandler(null)
         channel = null
         setWanted(false)
+        CallAudioSession.unwatchRoute(routeWatcher)
         setKeepScreenOn(false)
         touchGuard.stop()
     }
@@ -94,9 +99,13 @@ class CallScreenLock(private val activity: Activity) {
         touchGuard.dispatch(event, deliver)
 
     private fun setWanted(next: Boolean) {
-        if (wanted == next) return
+        if (wanted == next) {
+            apply()
+            return
+        }
         wanted = next
         watchAudioDevices(next)
+        if (next) CallAudioSession.watchRoute(routeWatcher) else CallAudioSession.unwatchRoute(routeWatcher)
         apply()
     }
 
@@ -106,12 +115,12 @@ class CallScreenLock(private val activity: Activity) {
     }
 
     /**
-     * The lock is held only when a call wants it *and* the sound is coming out
-     * of the earpiece. Called again on every audio-device change, so a headset
-     * plugged in mid-call gives the screen back.
+     * The lock is held only when a call wants it *and* is not hands-free.
+     * Called again on every route and audio-device change, so a headset
+     * plugged in or the speaker picked mid-call gives the screen back.
      */
     private fun apply() {
-        if (wanted && !headsetConnected()) {
+        if (wanted && !handsFree()) {
             acquire()
             touchGuard.start()
         } else {
@@ -132,6 +141,7 @@ class CallScreenLock(private val activity: Activity) {
             }
         }.getOrNull() ?: return
         if (held.isHeld) return
+        Log.i(TAG, "proximity on, route=${CallAudioSession.activeDevice}")
         runCatching { held.acquire() }
             .onFailure { Log.w(TAG, "proximity acquire failed", it) }
     }
@@ -139,6 +149,7 @@ class CallScreenLock(private val activity: Activity) {
     private fun release() {
         val held = lock ?: return
         if (!held.isHeld) return
+        Log.i(TAG, "proximity off, route=${CallAudioSession.activeDevice}")
         runCatching { held.release(PowerManager.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY) }
             .onFailure { Log.w(TAG, "proximity release failed", it) }
     }
@@ -147,13 +158,7 @@ class CallScreenLock(private val activity: Activity) {
         power.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)
     }.getOrDefault(false)
 
-    @Suppress("DEPRECATION")
-    private fun headsetConnected(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return audio.isWiredHeadsetOn
-        return runCatching {
-            audio.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any { it.type in HEADSET_TYPES }
-        }.getOrDefault(false)
-    }
+    private fun handsFree(): Boolean = CallHandsFree.isHandsFree(audio)
 
     private fun watchAudioDevices(on: Boolean) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
@@ -175,20 +180,5 @@ class CallScreenLock(private val activity: Activity) {
     companion object {
         private const val CHANNEL = "com.ababilx.app/call_screen_lock"
         private const val TAG = "ababilx:call-proximity"
-
-        /**
-         * Anything that means the sound is not leaving the earpiece. These are
-         * compile-time constants, so the newer ones inline to plain ints and
-         * never load a class the running OS does not have.
-         */
-        @SuppressLint("InlinedApi")
-        private val HEADSET_TYPES = setOf(
-            AudioDeviceInfo.TYPE_WIRED_HEADSET,
-            AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
-            AudioDeviceInfo.TYPE_USB_HEADSET,
-            AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
-            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
-            AudioDeviceInfo.TYPE_HEARING_AID,
-        )
     }
 }
