@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../../core/router/swipe_tab_active.dart';
 import '../data/call_log_seen_storage.dart';
 import '../group/providers/group_call_provider.dart';
@@ -47,6 +48,16 @@ class _CallsListState extends ConsumerState<CallsList>
     _openVisit();
   }
 
+  /// The floating nav pill is painted over this page, so while the search
+  /// field has the keyboard it would ride on top of it. Hidden for exactly as
+  /// long as a search is open; the write is deferred because this is reached
+  /// from didChangeDependencies and dispose, where a provider write throws.
+  void _setSearching(bool value) {
+    _searching = value;
+    final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
+    Future.microtask(() => hidden.state = value);
+  }
+
   /// Every visit, not once: the Chats/Talks pager keeps this tab alive.
   void _openVisit() {
     refreshCallLogOnVisit();
@@ -63,7 +74,7 @@ class _CallsListState extends ConsumerState<CallsList>
   @override
   void onTabHidden() {
     markMissedCallsSeen(DateTime.now());
-    _searching = false;
+    if (_searching) _setSearching(false);
     _query = '';
     _searchPages = 0;
   }
@@ -72,6 +83,7 @@ class _CallsListState extends ConsumerState<CallsList>
   void dispose() {
     stopCallLogRefresh();
     _scroll.dispose();
+    if (_searching) _setSearching(false);
     if (tabActive) markMissedCallsSeen(DateTime.now());
     super.dispose();
   }
@@ -94,7 +106,7 @@ class _CallsListState extends ConsumerState<CallsList>
   }
 
   void _closeSearch() => setState(() {
-    _searching = false;
+    _setSearching(false);
     _query = '';
   });
 
@@ -154,7 +166,7 @@ class _CallsListState extends ConsumerState<CallsList>
         searching: _searching,
         missedOnly: _filter == _CallFilter.missed,
         missedCount: missedCount,
-        onSearch: () => setState(() => _searching = true),
+        onSearch: () => setState(() => _setSearching(true)),
         onCloseSearch: _closeSearch,
         onQuery: (value) => setState(() {
           _query = value;

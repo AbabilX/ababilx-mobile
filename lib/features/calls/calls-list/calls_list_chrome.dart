@@ -18,14 +18,19 @@ class CallFilterAction extends StatelessWidget {
   Widget build(BuildContext context) {
     if (selected) {
       final scheme = Theme.of(context).colorScheme;
-      // Neutral square, accent glyph: on, without a coloured block.
-      return IconButton.filledTonal(
+      // Neutral pill, accent glyph + label: on, without a coloured block.
+      // The label shows only on the pressed filter, so the other stays a
+      // bare icon.
+      return FilledButton.tonalIcon(
         onPressed: onPressed,
-        tooltip: label,
-        icon: Icon(icon),
-        style: IconButton.styleFrom(
+        icon: Icon(icon, size: 20),
+        label: Text(label),
+        style: FilledButton.styleFrom(
           backgroundColor: scheme.surfaceContainerHigh,
           foregroundColor: scheme.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          minimumSize: const Size(0, 40),
+          visualDensity: VisualDensity.compact,
         ),
       );
     }
