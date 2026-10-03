@@ -5,18 +5,51 @@ mixin _ChatMutateMixin
   @override
   ChatRepository get repo;
 
+  /// Drawn locally first, sent second — the server's answer (or the private
+  /// op) then replaces the guess, and a refusal puts the old set back.
   Future<void> toggleReaction(String messageId, String emoji) async {
-    final private = _privateTarget(messageId);
-    if (private != null) {
-      return (this as _ChatPrivateOpsMixin).reactPrivately(private, emoji);
-    }
-    final reactions = await repo.toggleReaction(messageId, emoji);
     final convId = state.activeConversationId;
-    if (convId == null) return;
-    updateFeedReactions(convId, messageId, reactions);
     final thread = state.threadRootId;
-    if (thread != null) {
-      updateFeedReactions(convId, messageId, reactions, threadRootId: thread);
+    final private = _privateTarget(messageId);
+    final before = convId == null
+        ? null
+        : _findEditableMessage(convId, messageId)?.reactions;
+    void show(List<ChatReactionGroup> reactions) {
+      if (convId == null) return;
+      updateFeedReactions(convId, messageId, reactions);
+      if (thread != null) {
+        updateFeedReactions(convId, messageId, reactions, threadRootId: thread);
+      }
+    }
+
+    if (before != null) {
+      final me = state.currentUserId;
+      final mine = before.any(
+        (g) =>
+            g.emoji == emoji &&
+            (g.reactedByMe || g.users.any((u) => u.userId == me)),
+      );
+      show(
+        applyPrivateReaction(
+          before,
+          userId: me,
+          currentUserId: me,
+          emoji: emoji,
+          reacted: !mine,
+        ),
+      );
+    }
+    try {
+      if (private != null) {
+        // `private` was read before the local draw, so the op still says
+        // which way to flip; applying it over the guess is idempotent.
+        await (this as _ChatPrivateOpsMixin).reactPrivately(private, emoji);
+        return;
+      }
+      show(await repo.toggleReaction(messageId, emoji));
+    } catch (_) {
+      if (before != null) show(before);
+      rethrow;
     }
   }
 

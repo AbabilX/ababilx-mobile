@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -124,7 +125,11 @@ Future<void> showMessageActions(
     final selected = emoji.isEmpty
         ? await showReactionEmojiPicker(context)
         : emoji;
-    if (selected != null) await n.toggleReaction(msg.id, selected);
+    // Not awaited: the row stays hidden until this function returns, and
+    // the reaction is already drawn locally.
+    if (selected != null) {
+      unawaited(n.toggleReaction(msg.id, selected).catchError((_) {}));
+    }
     return;
   }
   final action = (result as SignalMessageCommand).action;
