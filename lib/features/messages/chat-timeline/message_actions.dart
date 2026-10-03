@@ -34,6 +34,7 @@ Future<void> showMessageActions(
   Rect? anchor,
   Widget? focused,
   SignalMenuPointer? pointer,
+  VoidCallback? onMenuClosed,
 }) async {
   if (msg.isDeleted) return;
   // The menu is a route, and closing a route hands focus back to whatever
@@ -119,14 +120,16 @@ Future<void> showMessageActions(
       'moreReactions': tr('chat_more_reactions'),
     },
   );
+  // The caller hid its bubble for the menu, not for whatever the pick opens
+  // next — a forward sheet, an edit, a delete dialog, a pin request.
+  onMenuClosed?.call();
   if (!context.mounted || result == null) return;
   final n = ref.read(chatProvider.notifier);
   if (result case SignalMessageReaction(:final emoji)) {
     final selected = emoji.isEmpty
         ? await showReactionEmojiPicker(context)
         : emoji;
-    // Not awaited: the row stays hidden until this function returns, and
-    // the reaction is already drawn locally.
+    // Not awaited: the reaction is already drawn locally.
     if (selected != null) {
       unawaited(n.toggleReaction(msg.id, selected).catchError((_) {}));
     }

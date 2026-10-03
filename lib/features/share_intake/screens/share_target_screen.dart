@@ -95,35 +95,29 @@ class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
       ShareResultReport.noRecipients(context);
       return;
     }
-    ShareSendResult result;
-    try {
-      result = await sendSharedPayload(
-        chat: ref.read(chatProvider.notifier),
-        channel: ref.read(shareIntakeChannelProvider),
-        payload: payload,
-        body: body,
-        conversationIds: conversationIds,
-        adopter: ref.read(attachmentAdopterProvider),
-      );
-    } catch (_) {
-      result = ShareSendResult(sent: 0, failed: conversationIds);
-    }
-    if (!mounted) return;
-    if (result.noneSent) {
-      ShareResultReport.failure(context);
-      return;
-    }
+    // Leave now, send behind: copying the files out and uploading them used
+    // to hold this screen under a spinner. The outcome is reported on the
+    // root overlay, which outlives the route.
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    final count = conversationIds.length;
+    unawaited(
+      sendSharedPayload(
+            chat: ref.read(chatProvider.notifier),
+            channel: ref.read(shareIntakeChannelProvider),
+            payload: payload,
+            body: body,
+            conversationIds: conversationIds,
+            adopter: ref.read(attachmentAdopterProvider),
+          )
+          .catchError(
+            (Object _) => ShareSendResult(sent: 0, failed: conversationIds),
+          )
+          .then((result) => ShareResultReport.settled(overlay, result, count)),
+    );
     ref.read(shareIntakeProvider.notifier).consume();
     // One recipient: drop the user into that thread, which is where they
     // expect to end up. Several: back to the list.
-    if (conversationIds.length == 1 &&
-        result.allSent &&
-        result.skippedFiles == 0) {
-      context.go('/messages/${conversationIds.first}');
-      return;
-    }
-    context.go('/messages');
-    ShareResultReport.partial(context, result, conversationIds.length);
+    context.go(count == 1 ? '/messages/${conversationIds.first}' : '/messages');
   }
 
   @override

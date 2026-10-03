@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,6 +26,13 @@ import 'forward_targets.dart';
 /// the destination reads them the way the sender wrote them. Destinations are
 /// resolved once: a DM created for the first message must not be created again
 /// for the second.
+///
+/// **The picker closes on Send; the work runs behind it.** Sealing a copy per
+/// destination and one request per message used to hold the picker open with
+/// a spinner. Everything the background half needs — the root overlay for the
+/// result, the provider container, the wording — is taken while the caller is
+/// still mounted, because neither [context] nor [ref] may be alive when the
+/// last request answers.
 Future<void> forwardMessages(
   BuildContext context,
   WidgetRef ref,
@@ -31,9 +40,6 @@ Future<void> forwardMessages(
   List<ChatRecipientTarget> targets,
 ) async {
   if (messages.isEmpty) return;
-  final notifier = ref.read(chatProvider.notifier);
-  final vault = ref.read(messageVaultProvider);
-
   // Forwarding an encrypted message re-seals its plaintext for each
   // destination, so a body this device never opened would be forwarded as the
   // vault's own placeholder string.
@@ -43,26 +49,50 @@ Future<void> forwardMessages(
     }
     return;
   }
+  String tr(String key) => AppTranslations.translate(context, ref, key);
+  final words = (
+    failed: tr('chat_forward_failed'),
+    offline: tr('chat_forward_offline'),
+    one: tr('chat_forwarded_one'),
+    many: tr('chat_forwarded_many'),
+  );
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  final container = ProviderScope.containerOf(context, listen: false);
+  Navigator.of(context, rootNavigator: true).pop();
+  unawaited(_forwardBehind(container, overlay, messages, targets, words));
+}
 
+typedef _ForwardWords = ({
+  String failed,
+  String offline,
+  String one,
+  String many,
+});
+
+Future<void> _forwardBehind(
+  ProviderContainer container,
+  OverlayState? overlay,
+  List<ChatMessage> messages,
+  List<ChatRecipientTarget> targets,
+  _ForwardWords words,
+) async {
+  void fail(String message) => showAppToastIn(overlay, message, isError: true);
+  final notifier = container.read(chatProvider.notifier);
+  final vault = container.read(messageVaultProvider);
   final ordered = [...messages]
     ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
   int sent;
   try {
     final conversations = await _resolveConversations(
-      ref,
+      container,
       ordered.first.conversationId,
       targets,
     );
     // Every pick dropped out — a conversation the list no longer holds, or all
     // of them the message's own. Returning quietly here left Send doing
     // nothing visible, which is the one outcome this flow must never have.
-    if (conversations.isEmpty) {
-      if (context.mounted) {
-        _toast(context, ref, 'chat_forward_failed', isError: true);
-      }
-      return;
-    }
+    if (conversations.isEmpty) return fail(words.failed);
     // The count reported is destinations, not messages, and it is the WORST
     // any one message managed: a batch where the second message reached one
     // fewer chat than the first must not report the first's number.
@@ -70,7 +100,7 @@ Future<void> forwardMessages(
     for (final message in ordered) {
       final prepared = await buildForwardTargets(
         vault: vault,
-        currentUserId: ref.read(chatProvider).currentUserId,
+        currentUserId: container.read(chatProvider).currentUserId,
         text: message.body,
         conversations: conversations,
       );
@@ -82,44 +112,24 @@ Future<void> forwardMessages(
     }
     sent = fewest;
   } catch (error) {
-    if (!context.mounted) return;
-    // Same surface as the success case on purpose. This used to be a bottom
-    // SnackBar, which put the two outcomes of one action at opposite ends of
-    // the screen.
-    //
     // The vault raises `StateError` with a sentence written for a person —
     // "This person must set up secure messages…" — and naming the destination
     // that cannot be sealed for is worth far more than a generic failure.
-    if (error is StateError) {
-      showAppToast(context, error.message, isError: true);
-      return;
-    }
-    _toast(
-      context,
-      ref,
-      isOfflineError(error) ? 'chat_forward_offline' : 'chat_forward_failed',
-      isError: true,
-    );
-    return;
+    if (error is StateError) return fail(error.message);
+    return fail(isOfflineError(error) ? words.offline : words.failed);
   }
-
-  if (!context.mounted) return;
-  if (sent == 0) {
-    _toast(context, ref, 'chat_forward_failed', isError: true);
-    return;
-  }
-  // Toast first, then pop: the entry lives in the root overlay, so it survives
-  // the picker closing under it — and closing the picker is the only other
-  // thing that happens, which on its own does not say the forward worked.
-  showAppToast(context, _forwardedLabel(context, ref, sent));
-  Navigator.of(context, rootNavigator: true).pop();
+  if (sent == 0) return fail(words.failed);
+  showAppToastIn(
+    overlay,
+    sent == 1 ? words.one : words.many.replaceAll('{n}', '$sent'),
+  );
 }
 
 /// Turns picked destinations into real conversations, creating a DM for any
 /// person who has none. The conversation has to exist before anything can be
 /// encrypted for it — key envelopes are stored per conversation.
 Future<List<ChatConversation>> _resolveConversations(
-  WidgetRef ref,
+  ProviderContainer ref,
   String sourceConversationId,
   List<ChatRecipientTarget> targets,
 ) async {
@@ -157,14 +167,3 @@ void _toast(
   AppTranslations.translate(context, ref, key),
   isError: isError,
 );
-
-String _forwardedLabel(BuildContext context, WidgetRef ref, int sent) {
-  if (sent == 1) {
-    return AppTranslations.translate(context, ref, 'chat_forwarded_one');
-  }
-  return AppTranslations.translate(
-    context,
-    ref,
-    'chat_forwarded_many',
-  ).replaceAll('{n}', '$sent');
-}

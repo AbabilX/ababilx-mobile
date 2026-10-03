@@ -53,19 +53,50 @@ mixin _ChatMutateMixin
     }
   }
 
+  /// The new text is drawn at once; the request (and the sealing before it)
+  /// runs behind it, and a refusal puts the old message back.
   Future<void> editMessage(String messageId, String body) async {
     final convId = state.activeConversationId;
     if (convId == null) return;
-    final private = _privateTarget(messageId);
-    if (private != null) {
-      return (this as _ChatPrivateOpsMixin).editPrivately(private, body);
+    final existing = _findEditableMessage(convId, messageId);
+    void show(ChatMessage m) {
+      updateFeedMessage(convId, m);
+      final thread = m.parentId ?? state.threadRootId;
+      if (thread != null) updateFeedMessage(convId, m, threadRootId: thread);
+      if (m.parentId != null) patchThreadReply(m.parentId!, m);
     }
+
+    if (existing != null) {
+      show(
+        existing.copyWith(
+          body: body,
+          editedAt: DateTime.now().toUtc().toIso8601String(),
+        ),
+      );
+    }
+    try {
+      if (existing != null && existing.privateChat) {
+        await (this as _ChatPrivateOpsMixin).editPrivately(existing, body);
+        return;
+      }
+      show(await _sendEdit(convId, messageId, body, existing));
+    } catch (_) {
+      if (existing != null) show(existing);
+      rethrow;
+    }
+  }
+
+  Future<ChatMessage> _sendEdit(
+    String convId,
+    String messageId,
+    String body,
+    ChatMessage? existing,
+  ) async {
     final conversation = state.conversationById(convId);
     // Encryption follows the ROW being edited, inside a conversation that may
     // hold a key at all — never `isDm`. A personal group is E2EE too, and the
     // DM test sent plaintext for one of its ciphertext rows, which the server
     // refuses ('encrypted messages require an encrypted edit').
-    final existing = _findEditableMessage(convId, messageId);
     final secure =
         (conversation?.isEncrypted ?? false) &&
         (existing?.isEncrypted ?? false);
@@ -79,7 +110,7 @@ mixin _ChatMutateMixin
             currentUserId: state.currentUserId,
           );
     }
-    var msg = await repo.patchMessage(
+    final msg = await repo.patchMessage(
       messageId,
       encrypted == null ? body : '',
       encryptedBody: encrypted?.encryptedBody,
@@ -87,17 +118,10 @@ mixin _ChatMutateMixin
       encryptionVersion: encrypted == null ? null : 1,
       encryptionKeyVersion: encrypted?.keyVersion,
     );
-    if (msg.isEncrypted) {
-      msg = await ref
-          .read(messageVaultProvider)
-          .decryptMessage(msg, state.currentUserId);
-    }
-    updateFeedMessage(convId, msg);
-    final thread = msg.parentId ?? state.threadRootId;
-    if (thread != null) {
-      updateFeedMessage(convId, msg, threadRootId: thread);
-    }
-    if (msg.parentId != null) patchThreadReply(msg.parentId!, msg);
+    if (!msg.isEncrypted) return msg;
+    return ref
+        .read(messageVaultProvider)
+        .decryptMessage(msg, state.currentUserId);
   }
 
   /// The stored copy of a message, from the main feed or the open thread —
@@ -116,14 +140,13 @@ mixin _ChatMutateMixin
     return null;
   }
 
-  Future<void> deleteMessage(String messageId) async {
+  Future<void> deleteMessage(String messageId) => _removeThen(messageId, () {
     final private = _privateTarget(messageId);
     if (private != null) {
       return (this as _ChatPrivateOpsMixin).deletePrivately(private);
     }
-    await repo.deleteMessage(messageId);
-    await _forgetMessage(messageId);
-  }
+    return repo.deleteMessage(messageId);
+  });
 
   /// "Delete for me": gone on this account's devices, untouched for the rest
   /// of the conversation. Locally it is the same forgetting as a delete.
@@ -131,13 +154,56 @@ mixin _ChatMutateMixin
   /// A private-chat message is usually already gone from the server (0160),
   /// so the server half is best effort there and the local forget is what
   /// counts.
-  Future<void> hideMessage(String messageId) async {
-    if (_privateTarget(messageId) != null) {
+  Future<void> hideMessage(String messageId) => _removeThen(
+    messageId,
+    () async {
+      if (_privateTarget(messageId) == null) return repo.hideMessage(messageId);
       try {
         await repo.hideMessage(messageId);
       } catch (_) {}
-    } else {
-      await repo.hideMessage(messageId);
+    },
+  );
+
+  /// The row leaves the screen at once; the stored copy and its files are
+  /// only wiped after [send] succeeds, so a refusal can put the row back.
+  Future<void> _removeThen(
+    String messageId,
+    Future<void> Function() send,
+  ) async {
+    final convId = state.activeConversationId;
+    final thread = state.threadRootId;
+    final inMain = convId == null
+        ? null
+        : state
+              .feedFor(convId)
+              .messages
+              .where((m) => m.id == messageId)
+              .firstOrNull;
+    final inThread = convId == null || thread == null
+        ? null
+        : state
+              .feedFor(convId, threadRootId: thread)
+              .messages
+              .where((m) => m.id == messageId)
+              .firstOrNull;
+    // Read before the row leaves: [send] looks the target up in the feed.
+    final request = send();
+    if (convId != null) {
+      removeFeedMessage(convId, messageId);
+      if (thread != null) {
+        removeFeedMessage(convId, messageId, threadRootId: thread);
+      }
+    }
+    try {
+      await request;
+    } catch (_) {
+      if (convId != null) {
+        if (inMain != null) appendFeedMessage(convId, inMain);
+        if (inThread != null) {
+          appendFeedMessage(convId, inThread, threadRootId: thread);
+        }
+      }
+      rethrow;
     }
     await _forgetMessage(messageId);
   }
@@ -298,25 +364,55 @@ mixin _ChatMutateMixin
   Future<void> discardUpload(String conversationId, String fileUrl) =>
       repo.discardUpload(conversationId, fileUrl);
 
-  /// Mute with [choice], or unmute when null. Patched from the server's
-  /// answer, not the request, so a timed mute caches the server's end time.
+  /// Mute with [choice], or unmute when null. Drawn from the choice at once,
+  /// then patched from the server's answer, so a timed mute caches the
+  /// server's end time; a refusal restores the row.
   Future<void> setMute(String id, MuteChoice? choice) async {
-    final result = await repo.setMute(id, choice);
-    List<ChatConversation> apply(List<ChatConversation> list) => [
-      for (final c in list)
-        c.id != id
-            ? c
-            : c.copyWith(
-                muted: result.muted,
-                mutedUntil: result.until,
-                clearMutedUntil: result.until == null,
-                muteMode: result.mode,
-              ),
-    ];
-    state = state.copyWith(
-      dms: apply(state.dms),
-      channels: apply(state.channels),
+    void show(MuteResult result) {
+      List<ChatConversation> apply(List<ChatConversation> list) => [
+        for (final c in list)
+          c.id != id
+              ? c
+              : c.copyWith(
+                  muted: result.muted,
+                  mutedUntil: result.until,
+                  clearMutedUntil: result.until == null,
+                  muteMode: result.mode,
+                ),
+      ];
+      state = state.copyWith(
+        dms: apply(state.dms),
+        channels: apply(state.channels),
+      );
+    }
+
+    final before = state.conversationById(id);
+    final length = choice?.duration;
+    show(
+      choice == null
+          ? MuteResult.unmuted
+          : MuteResult(
+              muted: true,
+              until:
+                  choice.until ??
+                  (length == null ? null : DateTime.now().add(length)),
+              mode: choice.mentionsOnly ? 'mentions' : 'all',
+            ),
     );
+    try {
+      show(await repo.setMute(id, choice));
+    } catch (_) {
+      if (before != null) {
+        show(
+          MuteResult(
+            muted: before.muted,
+            until: before.mutedUntil,
+            mode: before.muteMode,
+          ),
+        );
+      }
+      rethrow;
+    }
   }
 
   /// Pin or unpin for this account. The server owns the four-pin cap and

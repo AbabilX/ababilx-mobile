@@ -79,9 +79,14 @@ class _EditMessageSheetState extends ConsumerState<_EditMessageSheet> {
                   onChanged: (_) => setState(() {}),
                   style: const TextStyle(fontSize: 16, height: 1.3),
                   decoration: const InputDecoration(
+                    // The app theme fills every field with its own square
+                    // plate, which painted over the rounded box behind it.
+                    filled: false,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 14,

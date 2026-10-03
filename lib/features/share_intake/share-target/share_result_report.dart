@@ -26,27 +26,27 @@ class ShareResultReport {
   static void noRecipients(BuildContext context) =>
       _show(context, 'Pick at least one chat to share with.');
 
-  static void failure(BuildContext context) =>
-      _show(context, 'Could not send. Try again.');
-
   /// A throw on the way to sending. Opening a DM for somebody who has no chat
   /// with you yet is the common one, and it happens before a single byte is
   /// uploaded.
   static void error(BuildContext context, Object error) =>
       _show(context, shareErrorMessage(error));
 
-  /// Anything the user needs to know after a send that did reach someone.
-  static void partial(
-    BuildContext context,
+  /// A send that finished after its screen was left: reported on the root
+  /// overlay taken before leaving. Says nothing when everything arrived.
+  static void settled(
+    OverlayState? overlay,
     ShareSendResult result,
     int targetCount,
   ) {
+    void say(String message) => showAppToastIn(overlay, message, isError: true);
+    if (result.noneSent) return say('Could not send. Try again.');
     if (result.skippedFiles > 0) {
       final n = result.skippedFiles;
-      _show(context, '$n file${n == 1 ? '' : 's'} could not be attached.');
+      say('$n file${n == 1 ? '' : 's'} could not be attached.');
     }
     if (!result.allSent) {
-      _show(context, 'Sent to ${result.sent} of $targetCount conversations.');
+      say('Sent to ${result.sent} of $targetCount conversations.');
     }
   }
 

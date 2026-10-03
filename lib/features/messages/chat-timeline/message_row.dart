@@ -75,6 +75,14 @@ class _MessageRowState extends ConsumerState<MessageRow>
       _actionsOpen = true;
       _pointer = pointer;
     });
+    void restore() {
+      if (!mounted || !_actionsOpen) return;
+      setState(() {
+        _actionsOpen = false;
+        _pointer = null;
+      });
+    }
+
     await showMessageActions(
       context,
       ref,
@@ -86,14 +94,10 @@ class _MessageRowState extends ConsumerState<MessageRow>
       // [showSignalMessageMenu].
       focused: SizedBox(width: anchor.width, child: _content(focused: true)),
       pointer: pointer,
+      onMenuClosed: restore,
     );
     pointer.dispose();
-    if (mounted) {
-      setState(() {
-        _actionsOpen = false;
-        _pointer = null;
-      });
-    }
+    restore();
   }
 
   Widget _content({required bool focused}) {
