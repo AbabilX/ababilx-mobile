@@ -9,6 +9,7 @@ import '../../privacy-mode/privacy_secure_scope.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../audio/call_audio_devices.dart';
 import '../audio/call_audio_output.dart';
+import '../call_trace.dart';
 import '../data/models/voice_call.dart';
 import '../decline-message/decline_message_send.dart';
 import '../incoming_call_ringtone.dart';
@@ -101,6 +102,12 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
         return;
       }
       _closing = true;
+      callTrace(
+        'ROUTE_AWAY_FROM_CALL',
+        callId: ref.read(voiceCallProvider).call?.id,
+        previousPhase: current.name,
+        source: 'VoiceCallScreen.autoClose',
+      );
       popOrGoHome(context);
     });
   }
@@ -131,7 +138,16 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
 
   /// Leave the screen, not the call. `popOrGoHome` is what handles a call
   /// opened straight from a push, where there is no history to pop back into.
-  void _leave() => popOrGoHome(context);
+  void _leave() {
+    final call = ref.read(voiceCallProvider);
+    callTrace(
+      'ROUTE_AWAY_FROM_CALL',
+      callId: call.call?.id,
+      previousPhase: call.phase.name,
+      source: 'VoiceCallScreen.minimise',
+    );
+    popOrGoHome(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,29 +175,36 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     if (call.phase == VoiceCallPhase.incomingRinging) {
       return PrivacySecureScope(
         active: peerPrivate,
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          // The reply sheet lifts itself over the keyboard; resizing the
-          // whole ringing screen under it would squash the caller's face.
-          resizeToAvoidBottomInset: false,
-          body: IncomingCallView(
-            peerName: call.peerName,
-            peerAvatar: call.peerAvatar,
-            video: session?.isVideo ?? false,
-            lang: lang,
-            onSilence: IncomingCallRingtone.silence,
-            onDeclineWithMessage: session == null
-                ? null
-                : (text) =>
-                      _declineWithMessage(session, call.currentUserId, text),
-            onDecline: () {
-              unawaited(IncomingCallRingtone.stop());
-              notifier.declineIncoming();
-            },
-            onAccept: () {
-              unawaited(IncomingCallRingtone.stop());
-              notifier.acceptIncoming();
-            },
+        // Back does nothing while the call rings. It used to pop this screen
+        // and, with it, the tone — while the call went on ringing with no
+        // surface left to answer or decline it. Answer and Decline are the
+        // ways out.
+        child: PopScope(
+          canPop: false,
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            // The reply sheet lifts itself over the keyboard; resizing the
+            // whole ringing screen under it would squash the caller's face.
+            resizeToAvoidBottomInset: false,
+            body: IncomingCallView(
+              peerName: call.peerName,
+              peerAvatar: call.peerAvatar,
+              video: session?.isVideo ?? false,
+              lang: lang,
+              onSilence: IncomingCallRingtone.silence,
+              onDeclineWithMessage: session == null
+                  ? null
+                  : (text) =>
+                        _declineWithMessage(session, call.currentUserId, text),
+              onDecline: () {
+                unawaited(IncomingCallRingtone.stop());
+                notifier.declineIncoming();
+              },
+              onAccept: () {
+                unawaited(IncomingCallRingtone.stop());
+                notifier.acceptIncoming();
+              },
+            ),
           ),
         ),
       );

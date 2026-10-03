@@ -15,7 +15,10 @@ import '../audio/call_audio_devices.dart';
 import '../audio/call_audio_output.dart';
 import '../audio/call_audio_route.dart';
 import '../call_lifecycle.dart';
+import '../call_lookup_failure.dart';
+import '../call_lookup_retry.dart';
 import '../call_permissions.dart';
+import '../call_trace.dart';
 import '../callkit_ended_suppress.dart';
 import '../data/models/voice_call.dart';
 import '../data/models/voice_call_session.dart';
@@ -34,6 +37,7 @@ import '../voice_call_heartbeat.dart';
 import '../voice_call_log.dart';
 import '../voice_call_ringable.dart';
 import '../webrtc/voice_peer_engine.dart';
+import '../webrtc/voice_peer_engine_factory.dart';
 import '../webrtc/voice_reconnect_controller.dart';
 import 'call_identity.dart';
 import 'voice_call_state.dart';
@@ -46,6 +50,14 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   StreamSubscription<CallEvent?>? _nativeSub;
   StreamSubscription<RemoteMessage>? _foregroundPushSub;
   VoicePeerEngine? _engine;
+
+  /// The call the engine — prepared or still being prepared — was built for.
+  ///
+  /// State cannot answer this on its own. A decline, a heartbeat reply or a
+  /// teardown names the call it is about, and by the time it runs the call in
+  /// state may be the NEXT one. Everything that disposes media asks this
+  /// first, so work started for one call never takes another call's engine.
+  String? _engineCallId;
 
   /// Proof of life for the server, so an accepted call cannot outlive the two
   /// devices on it. See [VoiceCallHeartbeat].
@@ -73,6 +85,15 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   VoicePeerEngine? _preparingEngine;
   bool _offerResent = false;
 
+  /// Bounded re-asks for a call lookup that failed without saying anything
+  /// about the call (no network, a timeout, a 5xx).
+  late final CallLookupRetry _lookupRetry = CallLookupRetry(
+    delays: lookupRetryDelays,
+  );
+
+  /// Who is making the next state write, for the trace.
+  String? _writeSource;
+
   /// The call this device is answering whose accept the server has not
   /// confirmed yet. Hanging up in that window declines rather than ends.
   String? _answeringCallId;
@@ -87,6 +108,98 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   WsClient get _ws => ref.read(wsClientProvider);
 
   String get _phaseName => state.phase.name;
+
+  /// How long a finished call stays on screen before the return to idle.
+  @visibleForTesting
+  Duration get resetDelay => const Duration(seconds: 5);
+
+  /// Backoff between re-asks of a call lookup that failed in transit.
+  @visibleForTesting
+  List<Duration> get lookupRetryDelays => CallLookupRetry.defaultDelays;
+
+  @visibleForTesting
+  int get debugOperation => _operation;
+
+  @visibleForTesting
+  String? get debugEngineCallId => _engineCallId;
+
+  @visibleForTesting
+  bool get debugHasEngine => _engine != null || _preparingEngine != null;
+
+  @visibleForTesting
+  bool get debugResetPending => _resetTimer?.isActive ?? false;
+
+  /// Every change of phase or call is traced with the engine's owner beside
+  /// it, so "who took this call to idle" is one line in the log.
+  @override
+  set state(VoiceCallState next) {
+    final previous = state;
+    final source = _writeSource;
+    _writeSource = null;
+    super.state = next;
+    final previousId = previous.call?.id;
+    final nextId = next.call?.id;
+    if (previous.phase == next.phase && previousId == nextId) return;
+    callTrace(
+      'STATE_CHANGED',
+      callId: nextId ?? previousId,
+      previousPhase: previous.phase.name,
+      newPhase: next.phase.name,
+      engineCallId: _engineCallId,
+      generation: _operation,
+      source: source,
+      reason: previousId != null && nextId != null && previousId != nextId
+          ? 'replaced=$previousId'
+          : null,
+    );
+  }
+
+  /// A state write that names who made it.
+  void _write(VoiceCallState next, String source) {
+    _writeSource = source;
+    state = next;
+  }
+
+  /// True while a call other than [callId] holds this device: media exists or
+  /// is being set up for it, or it is being placed, answered or talked on.
+  /// The same phases `liveCallId` reports to the process as busy — a ring in
+  /// progress is not live, it is only on offer.
+  bool _holdsLiveCallOtherThan(String callId) {
+    if ((_engine != null || _preparingEngine != null) &&
+        _engineCallId != callId) {
+      return true;
+    }
+    final current = state.call;
+    if (current == null || current.id == callId) return false;
+    return state.phase == VoiceCallPhase.outgoingRinging ||
+        state.phase == VoiceCallPhase.connecting ||
+        state.phase == VoiceCallPhase.connected;
+  }
+
+  /// Work that began for [targetCallId] reached a point where the call in
+  /// state, or the engine, belongs to another call — and was refused there.
+  void _traceStale(String operation, String targetCallId, {String? reason}) {
+    callTrace(
+      'STALE_CALL_OPERATION',
+      operation: operation,
+      targetCallId: targetCallId,
+      activeCallId: state.call?.id,
+      engineCallId: _engineCallId,
+      previousPhase: _phaseName,
+      generation: _operation,
+      reason: reason,
+    );
+  }
+
+  /// A new call is about to take the state machine. Nothing an earlier call
+  /// left scheduled or queued may reach it: its 5 s reset would wipe the new
+  /// call mid-ring — or mid-call, leaving live media with no screen — and a
+  /// signal still queued for it would be fed to the wrong peer connection.
+  void _claimStateFor(String callId, {required String source}) {
+    _cancelReset('claimed.$source', callId: callId);
+    _lookupRetry.cancel();
+    _pendingSignals.clear();
+  }
 
   @override
   VoiceCallState build() {
@@ -173,7 +286,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     await _resetResources();
     _suppressCallKitEnded.clear();
     _finishedCallIds.clear();
-    state = VoiceCallState(currentUserId: currentUserId);
+    _write(VoiceCallState(currentUserId: currentUserId), 'shutdown');
   }
 
   /// [video] places a video call: the camera opens with the call on both
@@ -296,43 +409,89 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       }
     }
 
-    final operation = ++_operation;
     var call = state.call;
+    VoiceCallSession? adopted;
     if (call == null || (callId != null && call.id != callId)) {
       if (callId == null || callId.isEmpty) return;
-      try {
-        final session = await _repository.get(callId);
-        if (operation != _operation) return;
-        call = session.call;
-        // A CallKit surface outlives the call it announced: the plugin's
-        // full-screen Activity cannot be closed by its own teardown (see
-        // `CallkitSurface`), so a locked phone could still be showing an offer
-        // the caller cancelled minutes ago. Answering that is not an accept.
-        // Publishing `incomingRinging` first — as this did — sent CallStoreSync
-        // to `/call` and started the in-app ringtone, and the not-ringing guard
-        // further down only tore the *native* surface away, leaving a second
-        // ringing screen with Accept and Decline that nothing could dismiss.
-        if (!isVoiceCallRingable(call)) {
-          voiceCallLog(
-            'accept.stale_native',
-            callId: call.id,
-            phase: _phaseName,
-            reason: 'status_${call.status}',
-          );
-          _rememberFinished(call.id);
-          await _endNative(call.id, source: 'accept.stale_native');
-          return;
-        }
-        state = VoiceCallState(
-          phase: VoiceCallPhase.incomingRinging,
-          call: call,
-          iceServers: session.iceServers,
-          currentUserId: state.currentUserId,
-        );
-      } catch (_) {
-        await _endNative(callId, source: 'accept.get_failed');
+      // Everything from here to `++_operation` only decides whether this
+      // Accept is real, and none of it may disturb a call that is. The
+      // counter used to move first: an Accept for a stale call aborted the
+      // live call's own in-flight work before anything had been checked.
+      if (_holdsLiveCallOtherThan(callId)) {
+        _traceStale('accept', callId, reason: 'busy');
+        await _endNative(callId, source: 'accept.busy');
         return;
       }
+      final before = _operation;
+      final VoiceCallSession session;
+      try {
+        session = await _repository.get(callId);
+      } catch (error) {
+        await _onLookupFailed(
+          callId,
+          error,
+          source: 'accept',
+          retry: () => acceptIncoming(callId),
+          // Short on purpose: answering a call long after the press, with
+          // nothing on screen in between, would open the microphone on
+          // someone who has moved on. Past this, the Accept that CallKit
+          // recorded is picked up again when the app next comes forward.
+          retries: 2,
+        );
+        return;
+      }
+      _lookupRetry.settle(callId);
+      // The answer can be late: something else may have moved on meanwhile.
+      if (before != _operation || _wasFinished(callId)) return;
+      if (_holdsLiveCallOtherThan(callId)) {
+        _traceStale('accept', callId, reason: 'busy_after_lookup');
+        await _endNative(callId, source: 'accept.busy');
+        return;
+      }
+      call = session.call;
+      // A CallKit surface outlives the call it announced: the plugin's
+      // full-screen Activity cannot be closed by its own teardown (see
+      // `CallkitSurface`), so a locked phone could still be showing an offer
+      // the caller cancelled minutes ago. Answering that is not an accept.
+      // Publishing `incomingRinging` first — as this did — sent CallStoreSync
+      // to `/call` and started the in-app ringtone, and the not-ringing guard
+      // further down only tore the *native* surface away, leaving a second
+      // ringing screen with Accept and Decline that nothing could dismiss.
+      if (!isVoiceCallRingable(call)) {
+        voiceCallLog(
+          'accept.stale_native',
+          callId: call.id,
+          phase: _phaseName,
+          reason: 'status_${call.status}',
+        );
+        _rememberFinished(call.id);
+        await _endNative(call.id, source: 'accept.stale_native');
+        return;
+      }
+      adopted = session;
+    }
+
+    final operation = ++_operation;
+    callTrace(
+      'CALL_ACCEPT',
+      callId: call.id,
+      activeCallId: state.call?.id,
+      engineCallId: _engineCallId,
+      previousPhase: _phaseName,
+      generation: operation,
+      source: adopted == null ? 'state' : 'lookup',
+    );
+    if (adopted != null) {
+      _claimStateFor(call.id, source: 'accept');
+      _write(
+        VoiceCallState(
+          phase: VoiceCallPhase.incomingRinging,
+          call: call,
+          iceServers: adopted.iceServers,
+          currentUserId: state.currentUserId,
+        ),
+        'accept.adopt',
+      );
     }
 
     // Cancel ring timer before any await so a queued timeout cannot finishLocal.
@@ -512,22 +671,37 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     // alone the native record survived the decline, so the ringtone kept its
     // `native` holder and resuming the app recovered the call and rang again.
     _rememberFinished(id);
+    // The other half of that rule: a decline for a call that is NOT the one
+    // in state owns that call's native surface and its server row, and
+    // nothing else. It used to mark whatever was in state as declined and
+    // take the state machine, which ended a live call for a decline pressed
+    // on a stale notification.
+    final current = state.call;
+    final ownsState = current != null && current.id == id;
+    callTrace(
+      'CALL_DECLINE',
+      callId: id,
+      activeCallId: current?.id,
+      engineCallId: _engineCallId,
+      previousPhase: _phaseName,
+      generation: _operation,
+      source: callId == null ? 'in_app' : 'native',
+    );
     if (_transitioning) {
       // Some other transition owns the state machine; the native surface still
       // has to go, or the user is left with a ringing screen they declined.
-      if (state.call?.id == id) {
+      if (ownsState) {
         await hangUp(source: 'decline.transitioning');
       } else {
         await _endNative(id, source: 'decline.transitioning');
       }
       return;
     }
-    _transitioning = true;
     voiceCallLog('decline.begin', callId: id, phase: _phaseName);
-    // End local UI/ringtone first so Decline feels instant (no second tap).
-    final declined = state.call?.copyWith(status: 'declined');
-    if (declined != null) {
-      state = state.copyWith(call: declined);
+    if (ownsState) {
+      _transitioning = true;
+      // End local UI/ringtone first so Decline feels instant (no second tap).
+      state = state.copyWith(call: current.copyWith(status: 'declined'));
     }
     await _finishLocal(
       VoiceCallPhase.ended,
@@ -583,7 +757,11 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
 
   Future<void> toggleMute() async {
     final next = !state.muted;
+    final callId = state.call?.id;
     await _engine?.setMuted(next);
+    // The engine call awaits: a mute pressed on one call never lands on the
+    // next one's state.
+    if (state.call?.id != callId) return;
     state = state.copyWith(muted: next);
     final id = state.call?.id;
     if (id != null) {
@@ -604,6 +782,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   Future<void> toggleCamera() async {
     final engine = _engine;
     if (engine == null || state.phase != VoiceCallPhase.connected) return;
+    final callId = state.call?.id;
     try {
       state = state.copyWith(clearCameraError: true);
       if (engine.cameraOn) {
@@ -621,6 +800,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         phase: _phaseName,
         reason: _debugError(error),
       );
+      if (state.call?.id != callId) return;
       state = state.copyWith(
         cameraError: error.toString().toLowerCase().contains('permission')
             ? 'Camera permission was not granted.'
@@ -668,6 +848,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     // indistinguishable from a broken button. There is one shared screen in a
     // 1:1 call, and this is how it changes hands.
     final takingOver = state.remoteScreenStream != null && !state.screenSharing;
+    final callId = state.call?.id;
     try {
       state = state.copyWith(clearScreenShareError: true);
       if (state.screenSharing) {
@@ -682,6 +863,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         phase: _phaseName,
         reason: _debugError(error),
       );
+      if (state.call?.id != callId) return;
       state = state.copyWith(
         screenShareError: error.toString().toLowerCase().contains('permission')
             ? 'Screen sharing permission was not granted.'
@@ -690,9 +872,49 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
   }
 
-  void reset() {
+  void reset() => _resetIfOwned(state.call?.id, source: 'reset');
+
+  /// Returns to idle once a finished call has had its moment on screen — and
+  /// only for that call.
+  ///
+  /// [owner] is the call the reset was armed for. It used to write idle
+  /// unconditionally five seconds after ANY call ended, so a call that
+  /// arrived or was answered inside that window was wiped mid-ring or
+  /// mid-call: the screen, the return bar and the ongoing notification all
+  /// left while the media kept running, with nothing left to hang it up.
+  /// Cancelling the timer is not the protection; checking here is.
+  void _resetIfOwned(String? owner, {required String source}) {
     _resetTimer?.cancel();
-    state = VoiceCallState(currentUserId: state.currentUserId);
+    _resetTimer = null;
+    final activeId = state.call?.id;
+    final ignored = activeId != owner
+        ? 'stale_call'
+        : state.active
+        ? 'call_active'
+        : _engine != null || _preparingEngine != null
+        ? 'engine_live'
+        : null;
+    if (ignored != null) {
+      callTrace(
+        'RESET_IGNORED',
+        callId: owner,
+        activeCallId: activeId,
+        engineCallId: _engineCallId,
+        previousPhase: _phaseName,
+        generation: _operation,
+        source: source,
+        reason: ignored,
+      );
+      return;
+    }
+    callTrace(
+      'RESET_FIRED',
+      callId: owner,
+      previousPhase: _phaseName,
+      generation: _operation,
+      source: source,
+    );
+    _write(VoiceCallState(currentUserId: state.currentUserId), 'reset');
   }
 
   void _handleWsEvent(Map<String, dynamic> event) {
@@ -788,13 +1010,23 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
     if (call.expiresAt.isBefore(DateTime.now())) return;
     if (state.active) return;
-    state = VoiceCallState(
-      phase: VoiceCallPhase.incomingRinging,
-      call: call,
-      // `call.incoming` is only ever sent to the callee.
-      currentUserId: state.currentUserId.isEmpty
-          ? call.calleeId
-          : state.currentUserId,
+    // Media that exists is a call that exists, whatever state says: a phone
+    // holding another call's engine is busy, exactly as while `active`.
+    if (_holdsLiveCallOtherThan(call.id)) {
+      _traceStale('incoming', call.id, reason: 'engine_live');
+      return;
+    }
+    _claimStateFor(call.id, source: 'incoming');
+    _write(
+      VoiceCallState(
+        phase: VoiceCallPhase.incomingRinging,
+        call: call,
+        // `call.incoming` is only ever sent to the callee.
+        currentUserId: state.currentUserId.isEmpty
+            ? call.calleeId
+            : state.currentUserId,
+      ),
+      'incoming',
     );
     // Accept may already have been pressed on CallKit: the app was started
     // (or brought forward) BY that press, and this event is the socket or a
@@ -889,7 +1121,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       final ice = state.iceServers.isNotEmpty
           ? state.iceServers
           : (await _repository.get(call.id)).iceServers;
-      if (operation != _operation) return;
+      if (operation != _operation || state.call?.id != call.id) return;
       final session = VoiceCallSession(call: call, iceServers: ice);
       state = state.copyWith(
         phase: VoiceCallPhase.connecting,
@@ -906,7 +1138,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       );
       // Offer/answer must ride the notification WS — wait before negotiating.
       await _ws.connect();
-      if (operation != _operation) return;
+      if (operation != _operation || state.call?.id != call.id) return;
       await _prepareEngine(session);
       if (_engine == null || state.call?.id != call.id) return;
       // Anything the callee sent while prepare() was still running (mic
@@ -944,8 +1176,16 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   Future<void> _prepareEngine(VoiceCallSession session) async {
     final call = session.call;
     final callId = call.id;
+    // One engine, one call. Building over another call's engine would drop
+    // the only reference to it: its microphone and peer connection would run
+    // on with nothing left that could close them.
+    if ((_engine != null || _preparingEngine != null) &&
+        _engineCallId != callId) {
+      _traceStale('prepareEngine', callId, reason: 'engine_owned');
+      return;
+    }
     CallAudioRoute.bindCall(callId);
-    final engine = VoicePeerEngine(
+    final engine = ref.read(voicePeerEngineFactoryProvider)(
       sendSignal: (signal) => _ws.sendWhenConnected({
         'type': 'call.signal',
         'call_id': callId,
@@ -1026,6 +1266,14 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     // requests this permission, so the check could only ever fail, and the
     // initial SDP then carried no video at all.
     _preparingEngine = engine;
+    _engineCallId = callId;
+    callTrace(
+      'ENGINE_CREATED',
+      callId: callId,
+      activeCallId: state.call?.id,
+      generation: _operation,
+    );
+    var disposed = false;
     try {
       final video = call.isVideo && await _ensureCameraPermission();
       if (_wasFinished(callId) || state.call?.id != callId) return;
@@ -1034,10 +1282,18 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         video: video,
         speaker: state.speakerChoice,
       );
+    } catch (_) {
+      // Nothing holds this engine once `_preparingEngine` is cleared below,
+      // so a prepare that threw has to be closed here or never.
+      disposed = true;
+      if (identical(_preparingEngine, engine)) _preparingEngine = null;
+      await _disposeEngine(engine, callId, 'prepare.failed');
+      rethrow;
     } finally {
       if (identical(_preparingEngine, engine)) _preparingEngine = null;
-      if (_wasFinished(callId) || state.call?.id != callId) {
-        await engine.dispose();
+      if (!disposed && (_wasFinished(callId) || state.call?.id != callId)) {
+        disposed = true;
+        await _disposeEngine(engine, callId, 'prepare.call_gone');
       }
     }
     // Call may have ended, been replaced, or left connecting while prepare ran.
@@ -1050,7 +1306,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         phase: _phaseName,
         reason: 'stale_after_prepare',
       );
-      await engine.dispose();
+      if (!disposed) await _disposeEngine(engine, callId, 'prepare.stale');
       return;
     }
     _engine = engine;
@@ -1060,8 +1316,16 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       // simultaneous restart offers collide and neither is applied.
       isOfferer: () => state.outgoing,
       restart: () => _restartIce(callId),
-      requestPeerRestart: () async => _engine?.requestRestart(),
-      onGaveUp: (reason) => unawaited(_failLocal(reason)),
+      // This call's engine and this call's state, by identity: the controller
+      // is disposed during teardown, and until that lands its timers must not
+      // reach whichever call came next.
+      requestPeerRestart: () async {
+        if (identical(_engine, engine)) await engine.requestRestart();
+      },
+      onGaveUp: (reason) {
+        if (state.call?.id != callId || _wasFinished(callId)) return;
+        unawaited(_failLocal(reason));
+      },
       onReconnectingChanged: (value) {
         if (state.call?.id != callId || _wasFinished(callId)) return;
         state = state.copyWith(
@@ -1238,19 +1502,53 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     // `callId` is passed when the call being finished is not the one in state
     // — a CallKit decline for a call this isolate never loaded. Falling back
     // to state alone skipped the native dismissal entirely.
+    //
+    // The other half of that rule: such a call owns its native surface and
+    // nothing else. The state machine, the timers, the queued signals and the
+    // engine belong to the call in state, and a decline or a late heartbeat
+    // for X used to take all of them from Y.
+    if (callId != null && callId != state.call?.id) {
+      await _finishForeign(callId, reason: reason);
+      return;
+    }
     final id = callId ?? state.call?.id;
     final operation = ++_operation;
     _ending = true;
     _transitioning = false;
     _answeringCallId = null;
-    _heartbeat.stop();
-    state = state.copyWith(phase: phase, clearReconnectingSince: true);
-    final engine = _engine;
-    final preparing = _preparingEngine;
-    final reconnect = _reconnect;
-    _engine = null;
-    _preparingEngine = null;
-    _reconnect = null;
+    callTrace(
+      'CALL_END',
+      callId: id,
+      previousPhase: _phaseName,
+      newPhase: phase.name,
+      engineCallId: _engineCallId,
+      generation: operation,
+      reason: reason,
+    );
+    _write(
+      state.copyWith(phase: phase, clearReconnectingSince: true),
+      'finishLocal.$reason',
+    );
+    // Whatever is still queued was for this call. The next call's engine
+    // must never be handed it.
+    _pendingSignals.clear();
+    VoicePeerEngine? engine;
+    VoicePeerEngine? preparing;
+    VoiceReconnectController? reconnect;
+    final engineOwner = _engineCallId;
+    if (id == null || engineOwner == null || engineOwner == id) {
+      _heartbeat.stop();
+      engine = _engine;
+      preparing = _preparingEngine;
+      reconnect = _reconnect;
+      _engine = null;
+      _preparingEngine = null;
+      _reconnect = null;
+      _engineCallId = null;
+    } else {
+      // The engine was built for another call; this one's end is not its end.
+      _traceStale('finishLocal.$reason', id, reason: 'engine_not_owned');
+    }
     _rememberFinished(id);
     voiceCallLog('finishLocal', callId: id, phase: phase.name, reason: reason);
     _ringTimer?.cancel();
@@ -1261,10 +1559,16 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     try {
       for (final cleanup in <Future<void> Function()>[
         if (id != null) () => _endNative(id, source: 'finishLocal.$reason'),
-        IncomingCallRingtone.stop,
+        // Only while this call still holds the state: a ring that began for
+        // the next call during this teardown is not this call's to silence.
+        () async {
+          if (state.call?.id == id) await IncomingCallRingtone.stop();
+        },
         if (reconnect != null) reconnect.dispose,
-        if (preparing != null) preparing.dispose,
-        if (engine != null) engine.dispose,
+        if (preparing != null)
+          () => _disposeEngine(preparing!, engineOwner, 'finishLocal.$reason'),
+        if (engine != null)
+          () => _disposeEngine(engine!, engineOwner, 'finishLocal.$reason'),
       ]) {
         try {
           await cleanup();
@@ -1280,15 +1584,101 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       _ending = false;
     }
     if (operation != _operation) return;
+    // The teardown above awaits, and `_onIncoming` does not move
+    // `_operation`: a call that arrived meanwhile owns the state now. Stamping
+    // this call's terminal phase onto it — and arming its reset — is how a
+    // ring that began right after a call ended used to vanish.
+    if (state.call?.id != id) {
+      _traceStale('finishLocal.tail', id ?? '', reason: reason);
+      return;
+    }
     _pendingSignals.clear();
     _offerResent = false;
-    state = state.copyWith(
-      phase: phase,
-      clearReconnectingSince: true,
-      clearConnectedAt: false,
-      clearError: !preserveError,
+    _write(
+      state.copyWith(
+        phase: phase,
+        clearReconnectingSince: true,
+        clearConnectedAt: false,
+        clearError: !preserveError,
+      ),
+      'finishLocal.done',
     );
     _scheduleReset();
+  }
+
+  /// A terminal event for a call that is NOT the one in state: a CallKit
+  /// decline pressed on a stale notification while another call is live, a
+  /// heartbeat reply that lands after the call was replaced.
+  ///
+  /// It ends that call's native surface, and — only if the engine was built
+  /// for that very call — its media. It never touches the state machine, the
+  /// timers, the queued signals or `_operation`: those belong to the call in
+  /// state, and every async step of that call checks them.
+  Future<void> _finishForeign(String id, {required String reason}) async {
+    _traceStale(reason, id);
+    _rememberFinished(id);
+    VoicePeerEngine? engine;
+    VoicePeerEngine? preparing;
+    VoiceReconnectController? reconnect;
+    // Media outlives its state only through a bug. If it is this call's, it
+    // ends with it; anyone else's stays exactly as it is.
+    if (_engineCallId == id) {
+      _heartbeat.stop();
+      engine = _engine;
+      preparing = _preparingEngine;
+      reconnect = _reconnect;
+      _engine = null;
+      _preparingEngine = null;
+      _reconnect = null;
+      _engineCallId = null;
+    }
+    for (final cleanup in <Future<void> Function()>[
+      () => _endNative(id, source: 'finishLocal.$reason'),
+      // The in-app tone belongs to the call in state; with none, stop it.
+      () async {
+        if (state.call == null) await IncomingCallRingtone.stop();
+      },
+      if (reconnect != null) reconnect.dispose,
+      if (preparing != null)
+        () => _disposeEngine(preparing!, id, 'finishForeign.$reason'),
+      if (engine != null)
+        () => _disposeEngine(engine!, id, 'finishForeign.$reason'),
+    ]) {
+      try {
+        await cleanup();
+      } catch (error) {
+        voiceCallLog(
+          'finishLocal.cleanup_failed',
+          callId: id,
+          reason: '$error',
+        );
+      }
+    }
+  }
+
+  /// Disposes [engine], built for [callId], and gives up the ownership mark
+  /// once no engine is left to own.
+  Future<void> _disposeEngine(
+    VoicePeerEngine engine,
+    String? callId,
+    String reason,
+  ) async {
+    callTrace(
+      'ENGINE_DISPOSED',
+      callId: callId,
+      activeCallId: state.call?.id,
+      generation: _operation,
+      reason: reason,
+    );
+    try {
+      await engine.dispose();
+    } finally {
+      if (_engine == null &&
+          _preparingEngine == null &&
+          _engineCallId == callId) {
+        _engineCallId = null;
+      }
+    }
   }
 
   Future<void> _endNative(String callId, {required String source}) async {
@@ -1296,6 +1686,12 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       'callkit.dismiss.begin',
       callId: callId,
       phase: _phaseName,
+      source: source,
+    );
+    callTrace(
+      'NATIVE_SURFACE_END',
+      callId: callId,
+      activeCallId: state.call?.id,
       source: source,
     );
     _suppressCallKitEnded.arm(callId, source: 'endNative.$source');
@@ -1447,8 +1843,23 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   }
 
   Future<void> _recoverForegroundIncoming(String callId) async {
+    // Re-entered by its own retry, by which time the call may have been
+    // adopted from the socket, or have ended.
+    if (state.active || _wasFinished(callId)) return;
+    final VoiceCallSession session;
     try {
-      final session = await _repository.get(callId);
+      session = await _repository.get(callId);
+    } catch (error) {
+      await _onLookupFailed(
+        callId,
+        error,
+        source: 'incoming.push',
+        retry: () => _recoverForegroundIncoming(callId),
+      );
+      return;
+    }
+    _lookupRetry.settle(callId);
+    try {
       final call = session.call;
       if (_wasFinished(callId) ||
           call.status != 'ringing' ||
@@ -1485,6 +1896,15 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
           .toList(growable: false);
       if (dmCalls.isEmpty) return;
       final native = dmCalls.first;
+      // Media that exists is a call that exists, whatever state says. Adopting
+      // its CallKit record as a ring put a ringing screen over live audio and
+      // then ended that audio as "not ringing" — with no word to the server,
+      // so the other side sat on "Reconnecting…". Neither engine nor state is
+      // touched from here.
+      if (_engine != null || _preparingEngine != null) {
+        _traceStale('recover', native.id, reason: 'engine_live');
+        return;
+      }
       if (_wasFinished(native.id)) {
         await _endNative(native.id, source: 'recover.finished');
         return;
@@ -1492,10 +1912,27 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       VoiceCallSession session;
       try {
         session = await _repository.get(native.id);
-      } catch (_) {
+      } catch (error) {
         // A persisted native record from an old login/offline call is not
-        // enough to reopen UI. Recovery requires a live server call.
-        await _endNative(native.id, source: 'recover.lookup_failed');
+        // enough to reopen UI: recovery requires a live server call. But a
+        // request that failed says nothing about the call, and on a phone that
+        // has just woken up it is the common case — the surface stays until
+        // the server actually answers.
+        await _onLookupFailed(
+          native.id,
+          error,
+          source: 'recover',
+          retry: _recoverNativeCall,
+        );
+        return;
+      }
+      _lookupRetry.settle(native.id);
+      // The answer can be late: another call may hold the phone by now.
+      if (state.active ||
+          _engine != null ||
+          _preparingEngine != null ||
+          _wasFinished(native.id)) {
+        _traceStale('recover', native.id, reason: 'late_lookup');
         return;
       }
       if (session.call.isTerminal) {
@@ -1503,11 +1940,15 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         await _endNative(native.id, source: 'recover.terminal');
         return;
       }
-      state = VoiceCallState(
-        phase: VoiceCallPhase.incomingRinging,
-        call: session.call,
-        iceServers: session.iceServers,
-        currentUserId: state.currentUserId,
+      _claimStateFor(session.call.id, source: 'recover');
+      _write(
+        VoiceCallState(
+          phase: VoiceCallPhase.incomingRinging,
+          call: session.call,
+          iceServers: session.iceServers,
+          currentUserId: state.currentUserId,
+        ),
+        'recover',
       );
       if (native.isAccepted) {
         _suppressCallKitEnded.arm(native.id, source: 'recover.accepted');
@@ -1667,9 +2108,74 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     await _finishLocal(VoiceCallPhase.ended, reason: 'ring.timeout.incoming');
   }
 
+  /// Arms the return to idle for the call that just finished. The timer
+  /// carries that call's id and [_resetIfOwned] checks it when it fires.
   void _scheduleReset() {
     _resetTimer?.cancel();
-    _resetTimer = Timer(const Duration(seconds: 5), reset);
+    final owner = state.call?.id;
+    callTrace(
+      'RESET_SCHEDULED',
+      callId: owner,
+      previousPhase: _phaseName,
+      generation: _operation,
+    );
+    _resetTimer = Timer(
+      resetDelay,
+      () => _resetIfOwned(owner, source: 'timer'),
+    );
+  }
+
+  void _cancelReset(String reason, {String? callId}) {
+    final timer = _resetTimer;
+    if (timer == null || !timer.isActive) return;
+    timer.cancel();
+    _resetTimer = null;
+    callTrace(
+      'RESET_CANCELLED',
+      callId: callId,
+      activeCallId: state.call?.id,
+      generation: _operation,
+      reason: reason,
+    );
+  }
+
+  /// A call lookup failed. Only an answer about the CALL may take its
+  /// surface down; a request that never got one keeps it and asks again.
+  Future<void> _onLookupFailed(
+    String callId,
+    Object error, {
+    required String source,
+    required Future<void> Function() retry,
+    int? retries,
+  }) async {
+    final failure = classifyCallLookupFailure(error);
+    voiceCallLog(
+      '$source.lookup_failed',
+      callId: callId,
+      phase: _phaseName,
+      reason: '${failure.name} | ${_debugError(error)}',
+    );
+    switch (failure) {
+      case CallLookupFailure.gone:
+        _rememberFinished(callId);
+        await _endNative(callId, source: '$source.gone');
+      case CallLookupFailure.rejected:
+        await _endNative(callId, source: '$source.rejected');
+      case CallLookupFailure.transient:
+      case CallLookupFailure.conflict:
+        // Bounded: past the budget the surface simply stays. Its own timeout,
+        // the next resume and the socket's replay still own it from there.
+        _lookupRetry.schedule(callId, () => unawaited(retry()), limit: retries);
+      case CallLookupFailure.malformed:
+        // One more read. A body that will not parse twice is not going to,
+        // and a surface nothing can describe is worse than none.
+        final again = _lookupRetry.schedule(
+          callId,
+          () => unawaited(retry()),
+          limit: 1,
+        );
+        if (!again) await _endNative(callId, source: '$source.malformed');
+    }
   }
 
   /// A terminal lifecycle event can race a replayed WS event or a persisted
@@ -1754,12 +2260,19 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _resetTimer?.cancel();
     _connectWatchdog?.cancel();
     _renegotiateTimer?.cancel();
+    _lookupRetry.cancel();
+    final owner = _engineCallId;
     await _reconnect?.dispose();
     _reconnect = null;
-    await _preparingEngine?.dispose();
+    final preparing = _preparingEngine;
     _preparingEngine = null;
-    await _engine?.dispose();
+    if (preparing != null) {
+      await _disposeEngine(preparing, owner, 'resetResources');
+    }
+    final engine = _engine;
     _engine = null;
+    if (engine != null) await _disposeEngine(engine, owner, 'resetResources');
+    _engineCallId = null;
     _pendingSignals.clear();
     _offerResent = false;
   }

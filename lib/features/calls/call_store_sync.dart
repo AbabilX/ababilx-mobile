@@ -9,6 +9,7 @@ import '../auth/providers/auth_provider.dart';
 import '../chat-lock/data/chat_lock_index.dart';
 import '../profile/providers/user_status_provider.dart';
 import 'call_exit_route.dart';
+import 'call_trace.dart';
 import 'providers/in_call_presence_provider.dart';
 import 'providers/voice_call_provider.dart';
 import 'voice_call_log.dart';
@@ -213,6 +214,13 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
             phase != VoiceCallPhase.failed) {
           return;
         }
+        callTrace(
+          'ROUTE_AWAY_FROM_CALL',
+          callId: next.call?.id ?? previous?.call?.id,
+          previousPhase: previous?.phase.name,
+          newPhase: phase.name,
+          source: 'CallStoreSync',
+        );
         widget.router.go(callExitRoute(conversationId, ChatLockIndex.cached));
       });
     });
