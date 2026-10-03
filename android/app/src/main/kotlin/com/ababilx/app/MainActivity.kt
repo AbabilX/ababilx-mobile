@@ -221,6 +221,17 @@ class MainActivity : FlutterActivity() {
         pip.onPipModeChanged(isInPictureInPictureMode)
     }
 
+    /**
+     * Back on the app's home screen sends the app to the background instead of
+     * finishing this Activity. Finishing destroys the FlutterEngine, and a
+     * live call's WebRTC session lives in it — two presses of Back used to
+     * hang up on the other person.
+     */
+    override fun popSystemNavigator(): Boolean {
+        moveTaskToBack(true)
+        return true
+    }
+
     override fun onDestroy() {
         // The in-app call screen died with the Activity; CallKit's own hold is
         // untouched, so a call ringing natively keeps ringing.

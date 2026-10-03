@@ -135,9 +135,7 @@ class CallControlsRow extends StatelessWidget {
         diameter: seatD,
         child: seat(
           icon: callAudioOutputIcon(face.output),
-          name: face.dropdown
-              ? callAudioShortLabel(face.output, lang)
-              : tr('call_control_speaker'),
+          name: callAudioShortLabel(face.output, lang),
           selected: face.selected,
           onPressed: _live ? onToggleSpeaker : null,
         ),

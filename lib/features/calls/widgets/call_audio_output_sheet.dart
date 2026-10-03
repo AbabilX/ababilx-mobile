@@ -32,9 +32,8 @@ Future<void> pressCallAudioOutput(
   if (picked != null) await CallAudioRoute.select(picked);
 }
 
-/// What the button shows, as Signal decides it: the current output (a
-/// two-way switch on the earpiece shows the speaker it moves to), and a
-/// drop-down mark when a press opens the list.
+/// What the button shows: the current output, and a drop-down mark when a
+/// press opens the list.
 class CallAudioButtonFace {
   const CallAudioButtonFace({
     required this.output,
@@ -54,8 +53,11 @@ class CallAudioButtonFace {
       );
     }
     final picker = devices.willDisplayPicker;
-    final output = !picker && devices.active == CallAudioOutput.handset
-        ? CallAudioOutput.speaker
+    // The icon is where the sound is now. Signal keeps the speaker glyph on
+    // a two-way switch and only tints it; on our deck that read as a button
+    // that did nothing.
+    final output = devices.active == CallAudioOutput.none
+        ? (speaker ? CallAudioOutput.speaker : CallAudioOutput.handset)
         : devices.active;
     return CallAudioButtonFace(
       output: output,

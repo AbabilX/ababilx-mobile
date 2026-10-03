@@ -58,12 +58,12 @@ void main() {
   });
 
   group('button face', () {
-    test('two-way switch on the earpiece shows the speaker, unselected', () {
+    test('two-way switch on the earpiece shows the earpiece, unselected', () {
       final face = CallAudioButtonFace.of(
         _devices('handset', 1, [('handset', 1), ('speaker', 2)]),
         speaker: false,
       );
-      expect(face.output, CallAudioOutput.speaker);
+      expect(face.output, CallAudioOutput.handset);
       expect(face.selected, isFalse);
       expect(face.dropdown, isFalse);
     });
@@ -73,6 +73,7 @@ void main() {
         _devices('speaker', 2, [('handset', 1), ('speaker', 2)]),
         speaker: true,
       );
+      expect(face.output, CallAudioOutput.speaker);
       expect(face.selected, isTrue);
     });
 
