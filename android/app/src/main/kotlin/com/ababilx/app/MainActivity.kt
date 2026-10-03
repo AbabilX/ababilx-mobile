@@ -1,6 +1,7 @@
 package com.ababilx.app
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
@@ -74,7 +75,7 @@ class MainActivity : FlutterActivity() {
     private val shareIntake by lazy { ShareIntakeChannel(this) }
 
     /** Ongoing-call notification: return to the call, or hang up from the shade. */
-    private val ongoingCall by lazy { OngoingCallChannel(this) }
+    private val ongoingCall by lazy { OngoingCallChannel(applicationContext) }
 
     /** Shrinks a live call into a floating window, the way Signal does. */
     private val pip by lazy { PipController(this) }
@@ -121,6 +122,24 @@ class MainActivity : FlutterActivity() {
     /** Local backup folder and file pickers (features/local-backup). */
     private val localBackup by lazy { LocalBackupChannel(this) }
 
+    /** This Activity runs on an engine a live call carried past the last one. */
+    private var engineReused = false
+
+    /** Set in [onDestroy]: a call is live, so the engine outlives this Activity. */
+    private var keepEngine = false
+
+    /**
+     * The engine of a call still running from a previous Activity — swiped out
+     * of Recents, or reclaimed by the OS — or null for a fresh one.
+     */
+    override fun provideFlutterEngine(context: Context): FlutterEngine? {
+        val kept = CallEngineKeeper.take() ?: return null
+        engineReused = true
+        return kept
+    }
+
+    override fun shouldDestroyEngineWithHost(): Boolean = !keepEngine
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         configureDeviceChannel(flutterEngine)
@@ -129,7 +148,9 @@ class MainActivity : FlutterActivity() {
         // The share that launched us is already on the Activity's intent by
         // the time the engine is configured, and never arrives as onNewIntent.
         shareIntake.handleIntent(intent, initial = true)
-        ongoingCall.attach(flutterEngine)
+        // Engine-scoped: a reused engine still has its handlers, and Dart's
+        // event subscription with them.
+        if (!engineReused) ongoingCall.attach(flutterEngine)
         // Launched by a tap on the ongoing-call notification while the process
         // was dead: that intent is already on the Activity and never arrives
         // as onNewIntent, same as a cold-start share.
@@ -236,25 +257,31 @@ class MainActivity : FlutterActivity() {
         // The in-app call screen died with the Activity; CallKit's own hold is
         // untouched, so a call ringing natively keeps ringing.
         CallRinger.release(FLUTTER_HOLDER)
-        // The connected call died with it too, and less obviously: the WebRTC
-        // session lives in the FlutterEngine, which this Activity owns. The
-        // foreground service does not — it survives in the process and kept
-        // showing "Ongoing call" for a call that no longer existed, with no
-        // return bar in the app and nothing behind the notification's tap.
-        // `stopWithTask` only covers the task being swiped away; the OS
-        // reclaiming the Activity (or "Don't keep activities") is this case.
-        OngoingCallService.stop(this)
+        // A live call outlives this Activity: its WebRTC session is in the
+        // FlutterEngine, and the engine is parked until the next MainActivity
+        // (or until the call ends). Swiping the app out of Recents, or the OS
+        // reclaiming the Activity, used to hang up on the other person.
+        val engine = flutterEngine
+        keepEngine = engine != null && OngoingCallService.running
+        if (engine != null && keepEngine) CallEngineKeeper.keep(engine)
+        if (!keepEngine) {
+            // No call to carry, so the engine dies here. A service left
+            // behind would show "Ongoing call" with nothing behind it.
+            OngoingCallService.stop(this)
+            ongoingCall.dispose()
+        }
         shareIntake.dispose()
-        ongoingCall.dispose()
         pip.dispose()
         // Releases the proximity lock: a wake lock outliving the Activity would
         // keep the panel dark with no call left to justify it.
         callScreenLock.dispose()
         callRingback.dispose()
-        // The engine and its call die with this Activity; give the phone its
-        // audio mode back, as LiveKit's session did when its plugin detached.
-        CallAudioSession.stop()
-        CallAudioSession.detach()
+        if (!keepEngine) {
+            // The engine dies with this Activity; give the phone its audio
+            // mode back, as LiveKit's session did when its plugin detached.
+            CallAudioSession.stop()
+            CallAudioSession.detach()
+        }
         callLockScreen.dispose()
         mediaGallery.dispose()
         mediaSend.dispose()

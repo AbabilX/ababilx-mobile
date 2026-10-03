@@ -1,6 +1,6 @@
 package com.ababilx.app
 
-import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
@@ -17,13 +17,14 @@ import java.util.concurrent.atomic.AtomicLong
  * two things the user can do from outside the app: press Hang up in the shade,
  * or tap the notification to come back to the call.
  *
- * Unlike `call_ringer`, this is an Activity-scoped channel and that is
- * deliberate. A ringtone has to work in a process with no Activity — a killed
- * app woken by an FCM push. A *connected* call cannot: the WebRTC session
- * lives in the Flutter isolate, so if the engine is gone the call is already
- * over and there is nothing for this channel to report.
+ * Engine-scoped, on the application context: a call outlives its Activity
+ * (see [CallEngineKeeper]), and Dart must still be able to stop the service —
+ * and hear Hang up from the shade — with no Activity at all. MainActivity
+ * attaches it once per engine and disposes it only when the engine dies.
  */
-class OngoingCallChannel(private val activity: Activity) {
+class OngoingCallChannel(context: Context) {
+
+    private val context: Context = context.applicationContext
 
     private var methods: MethodChannel? = null
     private var events: EventChannel? = null
@@ -81,12 +82,12 @@ class OngoingCallChannel(private val activity: Activity) {
                 OngoingCallBridge.awaitForeground(requestId, result)
                 val queued = if (call.method == "start") {
                     OngoingCallService.start(
-                        activity, requestId, callId, title, subtitle, sharing, connected,
+                        context, requestId, callId, title, subtitle, sharing, connected,
                         connectedAt,
                     )
                 } else {
                     OngoingCallService.update(
-                        activity, requestId, callId, title, subtitle, sharing, connected,
+                        context, requestId, callId, title, subtitle, sharing, connected,
                         connectedAt,
                     )
                 }
@@ -96,7 +97,7 @@ class OngoingCallChannel(private val activity: Activity) {
             }
 
             "stop" -> {
-                OngoingCallService.stop(activity)
+                OngoingCallService.stop(context)
                 result.success(true)
             }
 

@@ -515,6 +515,20 @@ while the app is in the background belongs on a listener, never on a frame.
 Fixed 2026-09-09, from "I home the app, the shade says the call is running, but
 back in the app there is no call bar and I cannot reach the call screen".
 
+**Superseded in part, 2026-10-04 — a live call now outlives its Activity.**
+While `OngoingCallService` is in the foreground, `MainActivity.onDestroy`
+parks the FlutterEngine in `CallEngineKeeper` instead of destroying it
+(`shouldDestroyEngineWithHost` = false), the service no longer stops with the
+task (`stopWithTask="false"`), and the next MainActivity gets the same engine
+from `provideFlutterEngine`. So swiping the app out of Recents, or the OS
+reclaiming the Activity, keeps the call; the notification's Hang up still
+reaches Dart because `OngoingCallChannel` is engine-scoped (application
+context, attached once per engine, not disposed while the engine is parked).
+A parked engine is destroyed 15 s after the service stops. Back on the home
+screen is `moveTaskToBack` (`popSystemNavigator`), never `finish()`. With NO
+live call everything below still holds: the engine dies with the Activity and
+`onDestroy` stops the service. Not device-verified yet.
+
 The call lives in the FlutterEngine, which the **Activity** owns.
 `OngoingCallService` does not — it is a foreground service in a process that
 survives its Activity. So when Android reclaims the Activity while a call is up

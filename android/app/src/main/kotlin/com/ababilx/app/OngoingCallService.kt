@@ -34,8 +34,9 @@ import androidx.core.content.ContextCompat
  * one lifetime, torn down in one place.
  *
  * The service tracks the call only while this process is alive: the WebRTC
- * session lives in the Dart isolate, so a dead process is a dead call and
- * `stopWithTask` is correct.
+ * session lives in the Dart isolate, so a dead process is a dead call. It
+ * does NOT stop with the task: swiping the app out of Recents destroys the
+ * Activity, and [CallEngineKeeper] carries the call's engine past that.
  */
 class OngoingCallService : Service() {
 
@@ -63,6 +64,8 @@ class OngoingCallService : Service() {
                     stopSelf()
                     return START_NOT_STICKY
                 }
+                running = true
+                CallEngineKeeper.onCallStarted()
                 OngoingCallBridge.completeForeground(requestId, true)
             }
 
@@ -76,6 +79,7 @@ class OngoingCallService : Service() {
             }
 
             ACTION_STOP -> {
+                markStopped()
                 stopForegroundCompat()
                 stopSelf()
                 return START_NOT_STICKY
@@ -130,13 +134,28 @@ class OngoingCallService : Service() {
         }
     }
 
+    private fun markStopped() {
+        if (!running) return
+        running = false
+        CallEngineKeeper.onCallEnded()
+    }
+
     override fun onDestroy() {
+        markStopped()
         stopForegroundCompat()
         super.onDestroy()
     }
 
     companion object {
         private const val TAG = "OngoingCallService"
+
+        /**
+         * True while a call holds the foreground. MainActivity reads it to
+         * decide whether its engine outlives it — see [CallEngineKeeper].
+         */
+        @Volatile
+        var running = false
+            private set
 
         const val ACTION_START = "com.ababilx.app.ONGOING_CALL_START"
         const val ACTION_UPDATE = "com.ababilx.app.ONGOING_CALL_UPDATE"
