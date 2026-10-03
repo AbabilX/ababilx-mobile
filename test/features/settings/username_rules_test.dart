@@ -57,6 +57,33 @@ void main() {
       expect(usernameFromQrPayload(''), isNull);
     });
 
+    test('a shared link carries the same handle', () {
+      final link = buildUserLink('@Murad');
+      expect(link, 'https://www.ababilx.com/u/murad');
+      expect(usernameFromQrPayload(link), 'murad');
+      expect(
+        usernameFromQrPayload('https://ababilx.com/u/murad.khan'),
+        'murad.khan',
+      );
+    });
+
+    test('only our own /u/ link is a handle', () {
+      expect(usernameFromQrPayload('http://www.ababilx.com/u/murad'), isNull);
+      expect(usernameFromQrPayload('https://evil.com/u/murad'), isNull);
+      expect(
+        usernameFromQrPayload('https://www.ababilx.com/u/murad/x'),
+        isNull,
+      );
+      expect(
+        usernameFromQrPayload('https://www.ababilx.com/privacy-policy'),
+        isNull,
+      );
+      expect(
+        usernameFromQrPayload('https://www.ababilx.com/u/support'),
+        isNull,
+      );
+    });
+
     test('a malformed handle inside a code is not a handle', () {
       expect(usernameFromQrPayload('ababilx://user?u=@@'), isNull);
       expect(usernameFromQrPayload('ababilx://user?u=support'), isNull);

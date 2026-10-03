@@ -1,0 +1,39 @@
+package com.ababilx.app
+
+import android.net.Uri
+
+/**
+ * Reads the handle out of a personal message link.
+ *
+ * Two shapes reach us: `https://www.ababilx.com/u/<handle>` (an App Link) and
+ * `ababilx://user?u=<handle>` (what a personal QR code carries, and what the
+ * site's "Open in AbabilX" button fires). The receiving activity is exported
+ * and any app can send either, so only something shaped like a handle goes on
+ * to Dart — which checks it again against the full rules before any request.
+ */
+object UserLinkIntent {
+
+    private val HOSTS = setOf("www.ababilx.com", "ababilx.com")
+    private val SHAPE = Regex("^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
+
+    fun handleOf(data: Uri?): String? {
+        if (data == null || !data.isHierarchical) return null
+        val raw = when (data.scheme?.lowercase()) {
+            "https" -> {
+                val segments = data.pathSegments
+                if (data.host?.lowercase() !in HOSTS) return null
+                if (segments.size != 2 || segments[0] != "u") return null
+                segments[1]
+            }
+            "ababilx" -> {
+                if (data.host != "user") return null
+                data.getQueryParameter("u")
+            }
+            else -> return null
+        } ?: return null
+
+        val handle = raw.trim().lowercase().removePrefix("@")
+        if (handle.length !in 3..32 || !SHAPE.matches(handle)) return null
+        return handle
+    }
+}

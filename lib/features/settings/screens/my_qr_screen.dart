@@ -89,7 +89,7 @@ class _Code extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () => _copy(context),
                 icon: const ChatIcon(HugeIcons.strokeRoundedCopy01, size: 18),
-                label: const Text('Copy'),
+                label: const Text('Copy link'),
               ),
             ),
             const SizedBox(width: 12),
@@ -97,7 +97,7 @@ class _Code extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: () => _share(),
                 icon: const ChatIcon(HugeIcons.strokeRoundedShare01, size: 18),
-                label: const Text('Share'),
+                label: const Text('Share link'),
               ),
             ),
           ],
@@ -114,15 +114,15 @@ class _Code extends StatelessWidget {
     );
   }
 
-  /// Copy and share both carry the handle, not the `ababilx://` payload: a
-  /// scheme URL pasted into a chat is dead text on any device without the app,
-  /// while `@handle` is typed into people search and works everywhere.
+  /// Copy and share both carry the https link, not the `ababilx://` payload:
+  /// a scheme URL pasted into a chat is dead text on any device without the
+  /// app, while the link opens the app or a page that offers it.
   Future<void> _copy(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: '@$username'));
-    if (context.mounted) showAppToast(context, 'Username copied');
+    await Clipboard.setData(ClipboardData(text: buildUserLink(username)));
+    if (context.mounted) showAppToast(context, 'Link copied');
   }
 
   Future<void> _share() => SharePlus.instance.share(
-    ShareParams(text: 'Message me on AbabilX: @$username'),
+    ShareParams(text: 'Message me on AbabilX: ${buildUserLink(username)}'),
   );
 }

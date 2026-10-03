@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/providers/auth_provider.dart';
+import '../messages/chat-people/scanned_user_sheet.dart';
 import '../messages/message_e2ee/message_entry_ready.dart';
 import 'data/shared_payload.dart';
 import 'providers/share_intake_provider.dart';
@@ -95,6 +96,23 @@ class _ShareIntakeSyncState extends ConsumerState<ShareIntakeSync> {
     });
   }
 
+  /// A personal message link (`/u/<handle>`): show that person, with the one
+  /// button that starts the chat — the same sheet a scanned QR code opens.
+  void _openUserLinkIfPending() {
+    final handle = ref.read(userLinkOpenProvider);
+    if (handle == null) return;
+    if (!(ref.read(authProvider).valueOrNull ?? false)) return;
+    if (!ref.read(messageEntryReadyProvider)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || ref.read(userLinkOpenProvider) != handle) return;
+      final navigator =
+          widget.router.routerDelegate.navigatorKey.currentContext;
+      if (navigator == null) return;
+      ref.read(userLinkOpenProvider.notifier).state = null;
+      unawaited(ScannedUserSheet.open(navigator, ref, handle));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // All three are watched: a share can land before sign-in, a sign-in can
@@ -104,8 +122,10 @@ class _ShareIntakeSyncState extends ConsumerState<ShareIntakeSync> {
     ref.watch(authProvider);
     ref.watch(messageEntryReadyProvider);
     ref.watch(shortcutOpenProvider);
+    ref.watch(userLinkOpenProvider);
     _openPickerIfPending();
     _openShortcutIfPending();
+    _openUserLinkIfPending();
     return widget.child;
   }
 }

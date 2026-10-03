@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:equatable/equatable.dart';
 
 import '../../../shared/media/picked_media_file.dart';
+import '../../settings/username/username_rules.dart';
 
 /// One item another app handed us through the share sheet.
 ///
@@ -115,6 +116,22 @@ class SharedPayload extends Equatable {
       if (json is! Map<String, dynamic>) return null;
       final id = json['open_conversation'];
       return id is String && _uuid.hasMatch(id) ? id : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// The handle a personal message link carries (`UserLinkIntent.kt`), or
+  /// null for anything else. Same exported door as above, so the handle is
+  /// checked again here before it becomes a request.
+  static String? openUserHandle(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final json = jsonDecode(raw);
+      if (json is! Map<String, dynamic>) return null;
+      final handle = json['open_user'];
+      if (handle is! String || !isValidUsername(handle)) return null;
+      return normalizeUsername(handle);
     } catch (_) {
       return null;
     }

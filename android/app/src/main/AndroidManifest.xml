@@ -123,6 +123,25 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="*/*"/>
             </intent-filter>
+            <!-- Personal message links (UserLinkIntent.kt). The https form is
+                 an App Link, verified against /.well-known/assetlinks.json on
+                 the site; the ababilx:// form is what the site's "Open in
+                 AbabilX" button fires when verification has not happened. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"/>
+                <data android:host="www.ababilx.com"/>
+                <data android:host="ababilx.com"/>
+                <data android:pathPrefix="/u/"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="ababilx" android:host="user"/>
+            </intent-filter>
         </activity>
 
         <!-- Alternate launcher icons.

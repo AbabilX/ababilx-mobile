@@ -16,6 +16,15 @@ const String userQrHost = 'user';
 String buildUserQrPayload(String username) =>
     'ababilx://$userQrHost?u=${Uri.encodeComponent(normalizeUsername(username))}';
 
+/// The link a person shares instead of holding up the code. An https address
+/// rather than the `ababilx://` payload: pasted into any chat it is tappable,
+/// opens the app where it is installed (App Link) and a page offering it where
+/// it is not.
+const String userLinkHost = 'www.ababilx.com';
+
+String buildUserLink(String username) =>
+    'https://$userLinkHost/u/${Uri.encodeComponent(normalizeUsername(username))}';
+
 /// The handle inside a scanned code, or null when this is not one of ours.
 ///
 /// A bare `@handle` is accepted as well — printed on a poster or a business
@@ -29,12 +38,20 @@ String? usernameFromQrPayload(String raw) {
   if (text.startsWith('@')) return _valid(text);
 
   final uri = Uri.tryParse(text);
-  if (uri == null || uri.scheme != 'ababilx' || uri.host != userQrHost) {
-    return null;
-  }
+  if (uri == null) return null;
+  if (_isUserLink(uri)) return _valid(uri.pathSegments[1]);
+  if (uri.scheme != 'ababilx' || uri.host != userQrHost) return null;
   final handle = uri.queryParameters['u'] ?? '';
   return _valid(handle);
 }
+
+/// `https://www.ababilx.com/u/<handle>` — a shared link turned into a QR
+/// code, or pasted where a code was expected.
+bool _isUserLink(Uri uri) =>
+    uri.scheme == 'https' &&
+    (uri.host == userLinkHost || uri.host == 'ababilx.com') &&
+    uri.pathSegments.length == 2 &&
+    uri.pathSegments.first == 'u';
 
 bool isUserQrPayload(String raw) => usernameFromQrPayload(raw) != null;
 

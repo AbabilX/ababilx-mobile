@@ -152,4 +152,29 @@ void main() {
       expect(payload.oversizedCount, 0);
     });
   });
+
+  group('SharedPayload.openUserHandle', () {
+    test('reads the handle of a personal message link', () {
+      expect(
+        SharedPayload.openUserHandle('{"open_user":"murad.khan"}'),
+        'murad.khan',
+      );
+    });
+
+    test('the door is exported: only a real handle goes through', () {
+      expect(
+        SharedPayload.openUserHandle('{"open_user":"../details"}'),
+        isNull,
+      );
+      expect(SharedPayload.openUserHandle('{"open_user":"support"}'), isNull);
+      expect(SharedPayload.openUserHandle('{"open_user":7}'), isNull);
+      expect(SharedPayload.openUserHandle('{"text":"hi"}'), isNull);
+      expect(SharedPayload.openUserHandle('not json'), isNull);
+      expect(SharedPayload.openUserHandle(null), isNull);
+    });
+
+    test('a link is not a share', () {
+      expect(SharedPayload.tryParse('{"open_user":"murad"}'), isNull);
+    });
+  });
 }
