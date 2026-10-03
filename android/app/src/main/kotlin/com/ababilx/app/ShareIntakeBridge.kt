@@ -86,9 +86,11 @@ object ShareIntakeBridge {
             if (!DirectShareShortcuts.isConversationId(id)) return null
             return JSONObject().put("open_conversation", id).toString()
         }
-        if (intent.action == Intent.ACTION_VIEW) {
+        if (intent.action == UserLinkIntent.ACTION_OPEN) {
             // A personal message link, tapped in a browser or another chat.
-            val handle = UserLinkIntent.handleOf(intent.data) ?: return null
+            val handle = UserLinkIntent.forwardedHandle(
+                intent.getStringExtra(UserLinkIntent.EXTRA_HANDLE),
+            ) ?: return null
             return JSONObject().put("open_user", handle).toString()
         }
         val uris = when (intent.action) {

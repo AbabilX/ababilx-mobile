@@ -16,6 +16,18 @@ object UserLinkIntent {
     private val HOSTS = setOf("www.ababilx.com", "ababilx.com")
     private val SHAPE = Regex("^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
 
+    /**
+     * What the trampoline forwards instead of the link itself. An ACTION_VIEW
+     * intent with data reaching the FlutterActivity is taken by Flutter's own
+     * deep linking and pushed at the router as a path — "no routes for
+     * location: ababilx://user/?u=…".
+     */
+    const val ACTION_OPEN = "com.ababilx.app.action.OPEN_USER_LINK"
+    const val EXTRA_HANDLE = "com.ababilx.app.extra.USER_HANDLE"
+
+    /** The forwarded handle, shape-checked again: the launcher is exported. */
+    fun forwardedHandle(raw: String?): String? = clean(raw)
+
     fun handleOf(data: Uri?): String? {
         if (data == null || !data.isHierarchical) return null
         val raw = when (data.scheme?.lowercase()) {
@@ -30,9 +42,12 @@ object UserLinkIntent {
                 data.getQueryParameter("u")
             }
             else -> return null
-        } ?: return null
+        }
+        return clean(raw)
+    }
 
-        val handle = raw.trim().lowercase().removePrefix("@")
+    private fun clean(raw: String?): String? {
+        val handle = raw?.trim()?.lowercase()?.removePrefix("@") ?: return null
         if (handle.length !in 3..32 || !SHAPE.matches(handle)) return null
         return handle
     }

@@ -45,7 +45,7 @@ class ShareIntakeActivity : Activity() {
             finish()
             return
         }
-        val target = Intent(source).apply {
+        val target = forwardable(source).apply {
             component = launchComponent
             flags = grantFlags
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -54,5 +54,16 @@ class ShareIntakeActivity : Activity() {
         }
         startActivity(target)
         finish()
+    }
+
+    /**
+     * A share is forwarded as it came. A link is not: its data must never
+     * reach the FlutterActivity, or Flutter routes the URL itself. The handle
+     * travels as an extra, and a link we cannot read just opens the app.
+     */
+    private fun forwardable(source: Intent): Intent {
+        if (source.action != Intent.ACTION_VIEW) return Intent(source)
+        val handle = UserLinkIntent.handleOf(source.data) ?: return Intent(Intent.ACTION_MAIN)
+        return Intent(UserLinkIntent.ACTION_OPEN).putExtra(UserLinkIntent.EXTRA_HANDLE, handle)
     }
 }
