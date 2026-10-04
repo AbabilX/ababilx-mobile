@@ -3,6 +3,7 @@ import 'package:ababilx/features/messages/chat-select/selection_action_bar.dart'
 import 'package:ababilx/features/messages/chat-select/selection_bar.dart';
 import 'package:ababilx/features/messages/chat-select/selection_top_bar.dart';
 import 'package:ababilx/features/messages/chat-timeline/message_list.dart';
+import 'package:ababilx/features/messages/chat-timeline/message_quick_react.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/features/messages/providers/chat_provider.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +47,13 @@ class _SelectChatNotifier extends ChatNotifier {
     ],
     feeds: {_conversationId: ChatFeed(messages: _messages)},
   );
+
+  @override
+  Future<void> toggleReaction(String messageId, String emoji) async =>
+      _reacted.add((messageId, emoji));
 }
+
+final _reacted = <(String, String)>[];
 
 Widget _app(Widget child) => ProviderScope(
   overrides: [
@@ -68,9 +75,7 @@ Widget _list(ScrollController controller) => MessageList(
 );
 
 void main() {
-  testWidgets('long press offers Select, and it opens multi-select', (
-    tester,
-  ) async {
+  Future<WidgetRef> mount(WidgetTester tester) async {
     final controller = ScrollController();
     addTearDown(controller.dispose);
     late WidgetRef ref;
@@ -84,10 +89,19 @@ void main() {
         ),
       ),
     );
+    return ref;
+  }
 
-    await tester.longPress(find.text('one'));
-    // A message row runs a repeating pulse animation, so the tree never
-    // settles; pump the frames the route needs instead.
+  testWidgets('a tap opens the menu, and its Select opens multi-select', (
+    tester,
+  ) async {
+    final ref = await mount(tester);
+
+    await tester.tap(find.text('one'));
+    // The tap waits out the double-tap window before it counts, and a row
+    // runs a repeating pulse animation, so the tree never settles; pump the
+    // frames the route needs instead.
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Select'), findsOneWidget);
 
@@ -97,6 +111,36 @@ void main() {
     final selection = ref.read(messageSelectionProvider);
     expect(selection.isActiveIn(_conversationId), isTrue);
     expect(selection.ids, {'one'});
+  });
+
+  testWidgets('a hold selects the row with no menu in between', (tester) async {
+    final ref = await mount(tester);
+
+    await tester.longPress(find.text('one'));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Select'), findsNothing);
+    expect(ref.read(messageSelectionProvider).ids, {'one'});
+
+    // A second hold adds to the selection, as a tap does.
+    await tester.longPress(find.text('two'));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(ref.read(messageSelectionProvider).ids, {'one', 'two'});
+  });
+
+  testWidgets('a double tap reacts with the default emoji, no menu', (
+    tester,
+  ) async {
+    await mount(tester);
+    _reacted.clear();
+
+    await tester.tap(find.text('one'));
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(find.text('one'));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Select'), findsNothing);
+    expect(_reacted, [('one', quickReactionEmoji)]);
   });
 
   testWidgets('a selected row is checked, and the rest shift over for it', (

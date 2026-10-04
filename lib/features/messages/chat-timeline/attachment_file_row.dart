@@ -78,6 +78,7 @@ class AttachmentFileRow extends StatelessWidget {
                 attachment: attachment,
                 handle: handle,
                 showSize: false,
+                compact: true,
               )
             else
               const SizedBox.square(dimension: 44),

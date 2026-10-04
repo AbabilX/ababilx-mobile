@@ -46,7 +46,6 @@ Future<void> showMessageActions(
   }
   final isMine = msg.userId == ref.read(chatProvider).currentUserId;
   final conversation = ref.read(chatProvider).conversationById(conversationId);
-  final isDm = conversation?.isDm ?? true;
   // A private group (server 0154) keeps everything inside it: no Save, no
   // Forward — for the sender too. The server refuses the forward as well.
   // A private-chat message (server 0160) lives on the two phones only: the
@@ -85,7 +84,14 @@ Future<void> showMessageActions(
     focused: focused ?? const SizedBox.shrink(),
     pointer: pointer,
     isMine: isMine,
-    showThread: !isDm && threadRootId == null,
+    // A tap opens this menu now, so the thread is reached from here in a DM
+    // too. A private chat has none (server 409 `private_chat_no_threads`),
+    // and a bubble still sending has no id to hang replies on.
+    showThread:
+        threadRootId == null &&
+        !msg.isPending &&
+        !msg.privateChat &&
+        !(conversation?.privateChat ?? false),
     showSave: !isKhaam && !locked && canSaveMessageAttachments(msg),
     // Selection has a top bar and an action bar of its own, and a thread
     // panel has room for neither — so the door only opens on the main
@@ -111,7 +117,9 @@ Future<void> showMessageActions(
       'forward': tr('chat_forward'),
       'save': tr('chat_save_to_phone'),
       'copy': tr('chat_copy'),
-      'thread': tr('chat_reply_thread'),
+      'thread': tr(
+        msg.threadCount > 0 ? 'chat_open_thread' : 'chat_new_thread',
+      ),
       'select': tr('chat_select'),
       'edit': tr('chat_edit'),
       'delete': tr('chat_delete'),
@@ -152,11 +160,7 @@ Future<void> showMessageActions(
     case SignalMessageAction.copy:
       await copyMessageText(context, ref, msg);
     case SignalMessageAction.thread:
-      if (isDm) {
-        n.setReplyToMessage(msg);
-      } else {
-        openThreadSheet(context, conversationId, msg);
-      }
+      openThreadSheet(context, conversationId, msg);
     case SignalMessageAction.select:
       ref
           .read(messageSelectionProvider.notifier)

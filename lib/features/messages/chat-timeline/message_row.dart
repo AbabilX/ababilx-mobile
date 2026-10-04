@@ -9,11 +9,12 @@ import '../chat_utils.dart';
 import '../providers/chat_provider.dart';
 import '../wallpaper/chat_wallpaper_provider.dart';
 import 'message_actions.dart';
+import 'message_quick_react.dart';
 import 'message_row_content.dart';
+import 'message_row_gestures.dart';
 import 'message_row_pulse.dart';
 import 'message_swipe_reply.dart';
 import 'signal_menu_pointer.dart';
-import 'thread_sheet.dart';
 
 class MessageRow extends ConsumerStatefulWidget {
   const MessageRow({
@@ -50,37 +51,24 @@ class _MessageRowState extends ConsumerState<MessageRow>
     super.dispose();
   }
 
-  void _onRetry(BuildContext ctx) {
-    final n = ref.read(chatProvider.notifier);
-    n.retrySend(widget.message);
-    ScaffoldMessenger.of(ctx).showSnackBar(
-      const SnackBar(
-        content: Text('Resending message…'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
+  void _open(SignalMenuPointer? p, {required bool open}) =>
+      setState(() => (_actionsOpen = open, _pointer = p));
 
-  /// Opens the overlay on the press itself, not on release — the finger keeps
-  /// the gesture, so it can carry straight on into the reaction bar.
-  Future<void> _showActions(Offset touchDown) async {
+  /// Opens the overlay. From a tap there is no finger left to follow
+  /// ([touchDown] null); from a hold in a thread it opens on the press itself
+  /// and the finger carries straight on into the reaction bar.
+  Future<void> _showActions(Offset? touchDown) async {
     if (widget.message.isDeleted || _actionsOpen) return;
     final box = _messageKey.currentContext?.findRenderObject();
     if (box is! RenderBox || !box.hasSize) return;
-    HapticFeedback.mediumImpact();
+    if (touchDown != null) HapticFeedback.mediumImpact();
     final anchor = box.localToGlobal(Offset.zero) & box.size;
 
-    final pointer = SignalMenuPointer(touchDown);
-    setState(() {
-      _actionsOpen = true;
-      _pointer = pointer;
-    });
+    final pointer = touchDown == null ? null : SignalMenuPointer(touchDown);
+    _open(pointer, open: true);
     void restore() {
       if (!mounted || !_actionsOpen) return;
-      setState(() {
-        _actionsOpen = false;
-        _pointer = null;
-      });
+      _open(null, open: false);
     }
 
     await showMessageActions(
@@ -90,13 +78,11 @@ class _MessageRowState extends ConsumerState<MessageRow>
       conversationId: widget.conversationId,
       threadRootId: widget.threadRootId,
       anchor: anchor,
-      // The message drawn again rather than photographed. See
-      // [showSignalMessageMenu].
       focused: SizedBox(width: anchor.width, child: _content(focused: true)),
       pointer: pointer,
       onMenuClosed: restore,
     );
-    pointer.dispose();
+    pointer?.dispose();
     restore();
   }
 
@@ -109,24 +95,23 @@ class _MessageRowState extends ConsumerState<MessageRow>
             false,
       ),
     );
-    final hasWallpaper = ref
-        .watch(chatWallpaperProvider)
-        .forChat(widget.conversationId)
-        .isSet;
     final isOwnMessage = widget.message.userId == userId;
+    final status = widget.message.sendStatus;
     return MessageRowContent(
       message: widget.message,
       pulse: pulse,
       isSending:
           isOwnMessage &&
-          (widget.message.sendStatus == MessageSendStatus.sending ||
-              widget.message.sendStatus == MessageSendStatus.uploading),
-      isFailed:
-          isOwnMessage && widget.message.sendStatus == MessageSendStatus.failed,
+          (status == MessageSendStatus.sending ||
+              status == MessageSendStatus.uploading),
+      isFailed: isOwnMessage && status == MessageSendStatus.failed,
       isOwnMessage: isOwnMessage,
       clusterPosition: widget.clusterPosition,
       isGroup: isGroup,
-      hasWallpaper: hasWallpaper,
+      hasWallpaper: ref
+          .watch(chatWallpaperProvider)
+          .forChat(widget.conversationId)
+          .isSet,
       onOpenThread: focused ? null : widget.onOpenThread,
     );
   }
@@ -135,12 +120,12 @@ class _MessageRowState extends ConsumerState<MessageRow>
   Widget build(BuildContext context) {
     final userId = ref.watch(chatProvider.select((c) => c.currentUserId));
     final isOwnMessage = widget.message.userId == userId;
+    final status = widget.message.sendStatus;
     final isSending =
         isOwnMessage &&
-        (widget.message.sendStatus == MessageSendStatus.sending ||
-            widget.message.sendStatus == MessageSendStatus.uploading);
-    final isFailed =
-        isOwnMessage && widget.message.sendStatus == MessageSendStatus.failed;
+        (status == MessageSendStatus.sending ||
+            status == MessageSendStatus.uploading);
+    final isFailed = isOwnMessage && status == MessageSendStatus.failed;
     final selection = ref.watch(messageSelectionProvider);
     // Selection is a main-timeline mode; a thread panel has nowhere to put
     // its bars, so rows there never enter it.
@@ -160,6 +145,10 @@ class _MessageRowState extends ConsumerState<MessageRow>
           messageId: widget.message.id,
         );
 
+    // A deleted row cannot start a selection, only join an open one.
+    final canSelect =
+        widget.threadRootId == null && (selecting || !widget.message.isDeleted);
+
     return MessageSwipeReply(
       // A deleted message has nothing to quote, and a bubble that has not
       // reached the server yet has no id to reply to. Swiping is also off
@@ -170,35 +159,22 @@ class _MessageRowState extends ConsumerState<MessageRow>
           !selecting && !widget.message.isDeleted && !isSending && !isFailed,
       onReply: () =>
           ref.read(chatProvider.notifier).setReplyToMessage(widget.message),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        // While selecting, a press picks rows and nothing else: the overlay
-        // menu would offer Select on top of an open selection.
-        onLongPressStart: selecting
-            ? null
-            : (d) => _showActions(d.globalPosition),
-        onLongPressMoveUpdate: selecting
-            ? null
-            : (d) => _pointer?.moveTo(d.globalPosition),
-        onLongPressEnd: selecting ? null : (_) => _pointer?.release(),
-        onLongPressCancel: selecting ? null : () => _pointer?.release(),
+      child: MessageRowGestures(
+        // A thread panel has no selection bars, so a hold there still opens
+        // the menu, finger carried into the reaction bar as before.
+        onHoldSelect: canSelect ? toggleSelection : null,
+        onHoldStart: (at) => _showActions(at),
+        onHoldMove: (at) => _pointer?.moveTo(at),
+        onHoldEnd: () => _pointer?.release(),
         onTap: selecting
             ? toggleSelection
             : isFailed
-            ? () => _onRetry(context)
-            : widget.threadRootId == null && !widget.message.isDeleted
-            ? () => openThreadSheet(
-                context,
-                widget.conversationId,
-                widget.message,
-              )
-            : null,
-        onDoubleTap:
-            !selecting &&
-                widget.threadRootId == null &&
-                !isFailed &&
-                !widget.message.isDeleted
-            ? () => copyMessageText(context, ref, widget.message)
+            ? () => retryFailedMessage(context, ref, widget.message)
+            : widget.message.isDeleted
+            ? null
+            : () => _showActions(null),
+        onDoubleTap: !selecting && canQuickReact(ref, widget.message)
+            ? () => quickReact(ref, widget.message)
             : null,
         child: SelectableMessageRow(
           selecting: selecting,

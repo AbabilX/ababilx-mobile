@@ -146,8 +146,6 @@ void main() {
     final top = tester.getRect(anchor).top;
 
     await tester.longPress(anchor);
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.text('Select'));
     await _settle(tester);
 
     expect(container.read(messageSelectionProvider).ids, {

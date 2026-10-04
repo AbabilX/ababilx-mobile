@@ -17,11 +17,17 @@ class AttachmentDownloadBadge extends ConsumerWidget {
     required this.attachment,
     required this.handle,
     this.showSize = true,
+    this.compact = false,
   });
 
   final ChatMessageAttachment attachment;
   final AttachmentHandle handle;
   final bool showSize;
+
+  /// The circle alone, never a caption under it. For a one-line row whose
+  /// height is the circle's: "Cancel" under it overflowed every file row
+  /// while it downloaded. The X inside the ring already says cancel.
+  final bool compact;
 
   static const double _diameter = 44;
 
@@ -33,7 +39,9 @@ class AttachmentDownloadBadge extends ConsumerWidget {
     final size = handle.totalBytes > 0
         ? handle.totalBytes
         : attachment.sizeBytes;
-    final label = handle.isBusy
+    final label = compact
+        ? ''
+        : handle.isBusy
         ? AppTranslations.translate(context, ref, 'cancel')
         : showSize
         ? attachmentSizeLabel(size)
