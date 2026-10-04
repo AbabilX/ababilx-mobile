@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
@@ -16,7 +17,7 @@ import 'message_selection.dart';
 import 'selection_action_bar.dart';
 import 'selection_menu_state.dart';
 
-/// Builds the bar's buttons in Signal's order — Reply, Forward, Save, Copy,
+/// Builds the bars' buttons in Signal's order — Reply, Forward, Save, Copy,
 /// Edit, Delete — from the rules in [selectionMenuState].
 ///
 /// Every action closes the mode when it is done, which is Signal's
@@ -46,7 +47,8 @@ List<SelectionAction> selectionActions({
   return [
     if (menu.reply && single != null)
       SelectionAction(
-        icon: Icons.reply_rounded,
+        kind: SelectionActionKind.reply,
+        icon: HugeIcons.strokeRoundedReply,
         label: tr('chat_reply'),
         onPressed: () {
           ref.read(chatProvider.notifier).setReplyToMessage(single);
@@ -55,7 +57,8 @@ List<SelectionAction> selectionActions({
       ),
     if (menu.forward)
       SelectionAction(
-        icon: Icons.shortcut_rounded,
+        kind: SelectionActionKind.forward,
+        icon: HugeIcons.strokeRoundedArrowTurnForward,
         label: tr('chat_forward'),
         onPressed: () async {
           await showForwardMessages(context, ref, selected);
@@ -64,7 +67,8 @@ List<SelectionAction> selectionActions({
       ),
     if (menu.save && single != null)
       SelectionAction(
-        icon: Icons.save_alt_rounded,
+        kind: SelectionActionKind.save,
+        icon: HugeIcons.strokeRoundedDownload04,
         label: tr('chat_save_to_phone'),
         onPressed: () async {
           await saveMessageAttachments(context, ref, single);
@@ -73,7 +77,8 @@ List<SelectionAction> selectionActions({
       ),
     if (menu.copy)
       SelectionAction(
-        icon: Icons.content_copy_outlined,
+        kind: SelectionActionKind.copy,
+        icon: HugeIcons.strokeRoundedCopy01,
         label: tr('chat_copy'),
         onPressed: () async {
           await copySelectedMessages(context, ref, selected);
@@ -82,7 +87,8 @@ List<SelectionAction> selectionActions({
       ),
     if (menu.edit && single != null)
       SelectionAction(
-        icon: Icons.edit_outlined,
+        kind: SelectionActionKind.edit,
+        icon: HugeIcons.strokeRoundedPencilEdit02,
         label: tr('chat_edit'),
         onPressed: () async {
           await editMessageFlow(context, ref, single);
@@ -91,7 +97,8 @@ List<SelectionAction> selectionActions({
       ),
     if (menu.delete)
       SelectionAction(
-        icon: Icons.delete_outline_rounded,
+        kind: SelectionActionKind.delete,
+        icon: HugeIcons.strokeRoundedDelete02,
         label: tr('chat_delete'),
         onPressed: () async {
           final deleted = await deleteSelectedMessages(

@@ -1,6 +1,5 @@
 import 'package:ababilx/features/messages/chat-select/message_selection.dart';
-import 'package:ababilx/features/messages/chat-select/selection_action_bar.dart';
-import 'package:ababilx/features/messages/chat-select/selection_bar.dart';
+import 'package:ababilx/features/messages/chat-select/selection_bottom_bar.dart';
 import 'package:ababilx/features/messages/chat-select/selection_top_bar.dart';
 import 'package:ababilx/features/messages/chat-timeline/message_list.dart';
 import 'package:ababilx/features/messages/chat-timeline/message_quick_react.dart';
@@ -211,18 +210,9 @@ void main() {
         child: MaterialApp(
           home: Scaffold(
             body: Column(
-              children: [
-                Consumer(
-                  builder: (context, ref, _) {
-                    final selection = ref.watch(messageSelectionProvider);
-                    return SelectionTopBar(
-                      count: selection.ids.length,
-                      onClose: () =>
-                          ref.read(messageSelectionProvider.notifier).clear(),
-                    );
-                  },
-                ),
-                const SelectionBar(conversationId: _conversationId),
+              children: const [
+                SelectionTopBar(conversationId: _conversationId),
+                SelectionBottomBar(conversationId: _conversationId),
               ],
             ),
           ),
@@ -231,13 +221,14 @@ void main() {
     );
 
     expect(find.text('1 selected'), findsOneWidget);
-    expect(find.byType(SelectionActionBar), findsOneWidget);
-    // One of your own messages: every action the menu offers on a single row.
+    // One of your own messages: Reply and Forward as labelled capsules at
+    // the bottom, the rest as icons in the top capsule.
     expect(find.text('Reply'), findsOneWidget);
     expect(find.text('Forward'), findsOneWidget);
-    expect(find.text('Copy'), findsOneWidget);
-    expect(find.text('Edit'), findsOneWidget);
-    expect(find.text('Delete'), findsOneWidget);
+    expect(find.byTooltip('Forward'), findsOneWidget);
+    expect(find.byTooltip('Copy'), findsOneWidget);
+    expect(find.byTooltip('Edit'), findsOneWidget);
+    expect(find.byTooltip('Delete'), findsOneWidget);
 
     container
         .read(messageSelectionProvider.notifier)
@@ -249,12 +240,12 @@ void main() {
     // for me, the dialog just withholds "for everyone".
     expect(find.text('2 selected'), findsOneWidget);
     expect(find.text('Reply'), findsNothing);
-    expect(find.text('Edit'), findsNothing);
+    expect(find.byTooltip('Edit'), findsNothing);
     expect(find.text('Forward'), findsOneWidget);
-    expect(find.text('Copy'), findsOneWidget);
-    expect(find.text('Delete'), findsOneWidget);
+    expect(find.byTooltip('Copy'), findsOneWidget);
+    expect(find.byTooltip('Delete'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.close));
+    await tester.tap(find.byTooltip('Close'));
     await tester.pump();
     expect(container.read(messageSelectionProvider).isActive, isFalse);
   });

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/localization/app_translations.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'message_selection.dart';
@@ -26,31 +25,21 @@ List<ChatMessage> selectedMessagesIn(WidgetRef ref, String conversationId) {
   return messages;
 }
 
-/// Signal's bottom action bar, in the composer's place while selecting.
-class SelectionBar extends ConsumerWidget {
-  const SelectionBar({super.key, required this.conversationId});
-
-  final String conversationId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selected = selectedMessagesIn(ref, conversationId);
-    if (selected.isEmpty) return const SizedBox.shrink();
-    final conversation = ref
-        .watch(chatProvider)
-        .conversationById(conversationId);
-    final items = selectionActions(
-      context: context,
-      ref: ref,
-      selected: selected,
-      // Reply is the only action the composer lock reaches: a read-only feed
-      // or a blocked DM can still have its messages forwarded and copied.
-      canMessage: conversation?.canMessage ?? false,
-    );
-    if (items.isEmpty) return const SizedBox.shrink();
-    return SelectionActionBar(
-      items: items,
-      moreLabel: AppTranslations.translate(context, ref, 'chat_more'),
-    );
-  }
+/// The actions the current selection allows, for both bars to pick from.
+List<SelectionAction> selectionItems(
+  BuildContext context,
+  WidgetRef ref,
+  String conversationId,
+) {
+  final selected = selectedMessagesIn(ref, conversationId);
+  if (selected.isEmpty) return const [];
+  final conversation = ref.watch(chatProvider).conversationById(conversationId);
+  return selectionActions(
+    context: context,
+    ref: ref,
+    selected: selected,
+    // Reply is the only action the composer lock reaches: a read-only feed
+    // or a blocked DM can still have its messages forwarded and copied.
+    canMessage: conversation?.canMessage ?? false,
+  );
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../chat-select/message_selection.dart';
-import '../chat-select/selection_bar.dart';
+import '../chat-select/selection_bottom_bar.dart';
 import '../chat-select/selection_top_bar.dart';
 import '../data/models/chat_models.dart';
 import '../group-pins/group_pins_provider.dart';
@@ -65,7 +65,6 @@ class ChatTimelineView extends ConsumerWidget {
     // is a main-timeline mode only — see the menu's `showSelect`.
     final selecting =
         threadRootId == null && selection.isActiveIn(conversationId);
-    final selectedCount = selection.ids.length;
     // The header auto-hides on scroll; the selection bar must not, or the only
     // way out of the mode scrolls off the top.
     final showHeader = headerVisible || selecting;
@@ -86,12 +85,9 @@ class ChatTimelineView extends ConsumerWidget {
 
     return Column(
       children: [
-        if (selecting)
-          SelectionTopBar(
-            count: selectedCount,
-            onClose: () => ref.read(messageSelectionProvider.notifier).clear(),
-          )
-        else if (header != null)
+        // While selecting, the header and the composer both give way: the
+        // selection capsules float over the list instead (Telegram's layout).
+        if (!selecting && header != null)
           ClipRect(
             child: AnimatedAlign(
               duration: const Duration(milliseconds: 220),
@@ -133,9 +129,27 @@ class ChatTimelineView extends ConsumerWidget {
                   unreadCount: unreadCount,
                   leading: leading,
                 ),
+                if (selecting) ...[
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: SelectionTopBar(conversationId: conversationId),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: SelectionBottomBar(conversationId: conversationId),
+                  ),
+                ],
                 Positioned(
                   right: 0,
-                  bottom: 0,
+                  // Lifted clear of the Forward capsule while selecting.
+                  bottom: selecting
+                      ? SelectionBottomBar.reservedHeight +
+                            MediaQuery.paddingOf(context).bottom
+                      : 0,
                   child: ScrollToBottomPill(
                     visible: showJumpPill,
                     unreadCount: unreadPillCount,
@@ -153,9 +167,7 @@ class ChatTimelineView extends ConsumerWidget {
           key: const ValueKey('timeline-safety-banner'),
           conversationId: conversationId,
         ),
-        if (selecting)
-          SelectionBar(conversationId: conversationId)
-        else
+        if (!selecting)
           TimelineComposer(
             conversationId: conversationId,
             parentId: threadRootId,
