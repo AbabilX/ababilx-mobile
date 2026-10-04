@@ -10,14 +10,15 @@ import '../../attachments/widgets/attachment_size_label.dart';
 import '../data/models/chat_models.dart';
 
 /// A voice note that is not on the phone yet, drawn in the loaded player's own
-/// shape: the download ring where play will be, an empty bar, the size where
+/// shape: the download ring where play will be, unplayed bars, the size where
 /// the clock will be. The generic gate badge (44dp ring over a label) did not
-/// fit the 40dp row and overflowed until the file landed.
+/// fit the row and overflowed until the file landed.
 class VoiceAttachmentWaiting extends ConsumerWidget {
   const VoiceAttachmentWaiting({
     super.key,
     required this.attachment,
     required this.handle,
+    this.trailing,
   });
 
   final ChatMessageAttachment attachment;
@@ -26,6 +27,9 @@ class VoiceAttachmentWaiting extends ConsumerWidget {
   /// then, or a file already on disk would flash a download arrow.
   final AttachmentHandle? handle;
 
+  /// The bubble's time and ticks, at the end of the size line.
+  final Widget? trailing;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
@@ -33,20 +37,14 @@ class VoiceAttachmentWaiting extends ConsumerWidget {
     final bytes = (handle?.totalBytes ?? 0) > 0
         ? handle!.totalBytes
         : attachment.sizeBytes;
-    return Row(
-      children: [
-        SizedBox.square(
-          dimension: 36,
-          child: handle == null ? null : _control(context, ref, colors, handle),
-        ),
-        const SizedBox(width: 10),
-        Expanded(child: voiceProgressBar(0, colors.primary)),
-        const SizedBox(width: 10),
-        Text(
-          bytes > 0 ? attachmentSizeLabel(bytes) : '',
-          style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant),
-        ),
-      ],
+    return VoiceRowFrame(
+      leading: handle == null ? null : _control(context, ref, colors, handle),
+      // Same seed as the loaded player, so the bars do not change shape when
+      // the file lands.
+      seed: attachment.fileUrl,
+      progress: 0,
+      label: bytes > 0 ? attachmentSizeLabel(bytes) : '',
+      trailing: trailing,
     );
   }
 

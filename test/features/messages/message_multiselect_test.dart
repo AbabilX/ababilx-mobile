@@ -225,7 +225,7 @@ void main() {
     // the bottom, the rest as icons in the top capsule.
     expect(find.text('Reply'), findsOneWidget);
     expect(find.text('Forward'), findsOneWidget);
-    expect(find.byTooltip('Forward'), findsOneWidget);
+    expect(find.byTooltip('Forward'), findsNothing);
     expect(find.byTooltip('Copy'), findsOneWidget);
     expect(find.byTooltip('Edit'), findsOneWidget);
     expect(find.byTooltip('Delete'), findsOneWidget);
@@ -234,6 +234,8 @@ void main() {
         .read(messageSelectionProvider.notifier)
         .toggle(conversationId: _conversationId, messageId: 'one');
     await tester.pump();
+    // Reply drains away as Forward takes the full width.
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Two messages: Signal drops everything that only means anything against
     // one of them. Delete stays: an incoming message can still be deleted

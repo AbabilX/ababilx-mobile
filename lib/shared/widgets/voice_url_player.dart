@@ -1,14 +1,12 @@
-import 'dart:async';
-
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
 import 'audio_source_ref.dart';
 import 'voice_flat_layout.dart';
+import 'voice_playback_controller.dart';
 
 export 'audio_source_ref.dart';
 
-final _voicePlayback = _VoicePlaybackController();
+final _voicePlayback = VoicePlaybackController();
 
 class VoiceUrlPlayer extends StatelessWidget {
   const VoiceUrlPlayer({
@@ -17,6 +15,8 @@ class VoiceUrlPlayer extends StatelessWidget {
     required this.fileName,
     this.compact = false,
     this.flat = false,
+    this.trailing,
+    this.waveSeed,
   });
 
   final AudioSourceRef source;
@@ -26,6 +26,14 @@ class VoiceUrlPlayer extends StatelessWidget {
   /// Inside a chat bubble: no pill of its own (the bubble already is one),
   /// a round play button and a bar that takes the remaining width.
   final bool flat;
+
+  /// Flat only: sits at the end of the clock's line (the bubble's time and
+  /// ticks).
+  final Widget? trailing;
+
+  /// What the bars are drawn from. Recordings share file names
+  /// (`voice-message-34s`), so the caller passes something unique to the note.
+  final String? waveSeed;
 
   Duration get _namedDuration {
     final match = RegExp(r'voice-message-(\d+)s').firstMatch(fileName);
@@ -76,7 +84,14 @@ class VoiceUrlPlayer extends StatelessWidget {
             playing: playing,
             progress: progress,
             clock: clock,
+            seed: waveSeed ?? source.id,
+            trailing: trailing,
             onToggle: () => _toggle(context),
+            // Only the note that is loaded can be moved through; on any
+            // other, a tap on the bars stays the bubble's own tap.
+            onSeek: selected && _voicePlayback.duration > Duration.zero
+                ? _voicePlayback.seek
+                : null,
           );
         }
         return Material(
@@ -120,61 +135,5 @@ class VoiceUrlPlayer extends StatelessWidget {
         );
       },
     );
-  }
-}
-
-class _VoicePlaybackController extends ChangeNotifier {
-  _VoicePlaybackController() {
-    unawaited(_player.setReleaseMode(ReleaseMode.stop));
-    _subscriptions.addAll([
-      _player.onPlayerStateChanged.listen((state) {
-        playing = state == PlayerState.playing;
-        notifyListeners();
-      }),
-      _player.onDurationChanged.listen((value) {
-        duration = value;
-        notifyListeners();
-      }),
-      _player.onPositionChanged.listen((value) {
-        position = value;
-        notifyListeners();
-      }),
-      _player.onPlayerComplete.listen((_) {
-        playing = false;
-        completed = true;
-        position = Duration.zero;
-        notifyListeners();
-      }),
-    ]);
-  }
-
-  final AudioPlayer _player = AudioPlayer();
-  final List<StreamSubscription<dynamic>> _subscriptions = [];
-  String? sourceId;
-  bool playing = false;
-  bool completed = false;
-  Duration duration = Duration.zero;
-  Duration position = Duration.zero;
-
-  Future<void> toggle(AudioSourceRef next) async {
-    if (sourceId == next.id) {
-      if (playing) {
-        await _player.pause();
-      } else if (completed) {
-        completed = false;
-        await _player.play(next.source);
-      } else {
-        await _player.resume();
-      }
-      return;
-    }
-
-    await _player.stop();
-    sourceId = next.id;
-    completed = false;
-    duration = Duration.zero;
-    position = Duration.zero;
-    notifyListeners();
-    await _player.play(next.source);
   }
 }

@@ -35,6 +35,8 @@ class MessageList extends ConsumerWidget {
     this.unreadAnchorId,
     this.unreadCount = 0,
     this.leading,
+    this.insetTop = 0,
+    this.insetBottom = 0,
   });
 
   final List<ChatMessage> messages;
@@ -59,6 +61,11 @@ class MessageList extends ConsumerWidget {
   /// root. It stays up while the replies load or fail, so those two states
   /// become rows under it instead of replacing the whole list.
   final Widget? leading;
+
+  /// Room kept clear at each end for bars floating over the list (the
+  /// selection capsules), so the first and last rows are never under them.
+  final double insetTop;
+  final double insetBottom;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -110,7 +117,7 @@ class MessageList extends ConsumerWidget {
       // screen edges, and the check-circle gutter has to start at the edge
       // too. Every item carries the side inset itself — for a message row it
       // is [SelectableMessageRow], which grows it while selecting.
-      padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
+      padding: EdgeInsets.fromLTRB(0, 8 + insetTop, 0, 12 + insetBottom),
       itemCount: items.length + tail.length + typingSlot,
       itemBuilder: (context, i) {
         if (typingSlot == 1 && i == 0) {

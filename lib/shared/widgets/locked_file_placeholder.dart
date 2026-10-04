@@ -19,11 +19,7 @@ class LockedFilePlaceholder extends StatelessWidget {
 
   void _explain(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'This file is no longer available.',
-        ),
-      ),
+      const SnackBar(content: Text('This file is no longer available.')),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:ababilx/features/attachments/data/models/attachment_handle.dart';
 import 'package:ababilx/features/messages/chat-timeline/voice_attachment_waiting.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
+import 'package:ababilx/shared/widgets/voice_flat_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,8 +26,9 @@ AttachmentHandle _handle(AttachmentTransferState state) => AttachmentHandle(
 );
 
 void main() {
-  // The timeline reserves 220x40 for a voice note; the old gate badge (44dp
-  // ring over a "Cancel" label) overflowed it for as long as the download ran.
+  // The timeline reserves one fixed box for a voice note; the old gate badge
+  // (ring over a "Cancel" label) overflowed it for as long as the download
+  // ran.
   for (final state in [
     null,
     AttachmentTransferState.absent,
@@ -35,7 +37,7 @@ void main() {
     AttachmentTransferState.failed,
     AttachmentTransferState.permanentlyFailed,
   ]) {
-    testWidgets('waiting voice note fits its 40dp row: ${state?.name}', (
+    testWidgets('waiting voice note fits its row: ${state?.name}', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -44,8 +46,8 @@ void main() {
             home: Scaffold(
               body: Center(
                 child: SizedBox(
-                  width: 220,
-                  height: 40,
+                  width: VoiceRowFrame.width,
+                  height: VoiceRowFrame.height,
                   child: VoiceAttachmentWaiting(
                     attachment: _voice,
                     handle: state == null ? null : _handle(state),

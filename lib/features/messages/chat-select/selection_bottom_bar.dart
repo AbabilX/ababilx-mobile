@@ -1,16 +1,19 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../chat_icon.dart';
 import 'selection_action_bar.dart';
 import 'selection_bar.dart';
+import 'selection_label_capsule.dart';
 
 /// The bottom of Telegram's selection mode, floating where the composer was:
 /// Reply on the left while one message is picked, Forward on the right.
 ///
-/// Each half keeps its side when the other is missing, so Forward does not
-/// jump across the screen as a second message is ticked.
-class SelectionBottomBar extends ConsumerWidget {
+/// When a second message is ticked Reply drains away and Forward floods the
+/// whole width, with a ripple running through it; back at one message the two
+/// halves return.
+class SelectionBottomBar extends ConsumerStatefulWidget {
   const SelectionBottomBar({super.key, required this.conversationId});
 
   final String conversationId;
@@ -19,71 +22,111 @@ class SelectionBottomBar extends ConsumerWidget {
   static const reservedHeight = SelectionCapsule.height + 16;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final items = selectionItems(context, ref, conversationId);
+  ConsumerState<SelectionBottomBar> createState() => _SelectionBottomBarState();
+}
+
+class _SelectionBottomBarState extends ConsumerState<SelectionBottomBar>
+    with SingleTickerProviderStateMixin {
+  static const _gap = 8.0;
+
+  /// Narrower than this a capsule cannot hold its label, so it is drawn bare.
+  static const _minLabelWidth = 72.0;
+
+  /// 0 = Reply and Forward side by side, 1 = Forward alone at full width.
+  late final AnimationController _flood = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 420),
+  );
+
+  /// Kept after Reply stops being offered, so it can still be drawn leaving.
+  SelectionAction? _reply;
+  bool _first = true;
+
+  @override
+  void dispose() {
+    _flood.dispose();
+    super.dispose();
+  }
+
+  void _sync(bool hasReply) {
+    final target = hasReply ? 0.0 : 1.0;
+    if (_first) {
+      _first = false;
+      _flood.value = target;
+    } else if (hasReply && _flood.status != AnimationStatus.reverse) {
+      if (_flood.value != 0) _flood.reverse();
+    } else if (!hasReply && _flood.status != AnimationStatus.forward) {
+      if (_flood.value != 1) _flood.forward();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = selectionItems(context, ref, widget.conversationId);
     SelectionAction? of(SelectionActionKind kind) =>
         items.where((item) => item.kind == kind).firstOrNull;
     final reply = of(SelectionActionKind.reply);
     final forward = of(SelectionActionKind.forward);
-    if (reply == null && forward == null) return const SizedBox.shrink();
+    if (reply != null) _reply = reply;
+    if (_reply == null && forward == null) return const SizedBox.shrink();
+    _sync(reply != null);
 
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: reply == null
-                  ? const SizedBox.shrink()
-                  : _LabelCapsule(item: reply, iconFirst: false),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: forward == null
-                  ? const SizedBox.shrink()
-                  : _LabelCapsule(item: forward, iconFirst: true),
-            ),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) => AnimatedBuilder(
+            animation: _flood,
+            builder: (context, _) =>
+                _row(constraints.maxWidth, reply != null, forward),
+          ),
         ),
       ),
     );
   }
-}
 
-class _LabelCapsule extends StatelessWidget {
-  const _LabelCapsule({required this.item, required this.iconFirst});
+  Widget _row(double width, bool replyLive, SelectionAction? forward) {
+    final raw = _flood.value;
+    final flooding = _flood.status == AnimationStatus.forward;
+    final t = Curves.easeInOutCubic.transform(raw);
+    final half = (width - _gap) / 2;
+    final replyWidth = half * (1 - t);
+    final reply = _reply;
 
-  final SelectionAction item;
-  final bool iconFirst;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurface;
-    final icon = ChatIcon(item.icon, size: 20, color: color, strokeWidth: 1.5);
-    final label = Flexible(
-      child: Text(
-        item.label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w600,
+    return Row(
+      children: [
+        if (reply != null && replyWidth > 1)
+          Opacity(
+            opacity: (1 - t).clamp(0.0, 1.0),
+            child: SizedBox(
+              width: replyWidth,
+              child: IgnorePointer(
+                ignoring: !replyLive,
+                child: SelectionLabelCapsule(
+                  item: reply,
+                  iconFirst: false,
+                  bare: replyWidth < _minLabelWidth,
+                ),
+              ),
+            ),
+          ),
+        SizedBox(width: _gap * (1 - t)),
+        // With no Forward on offer the right half simply stays empty.
+        Expanded(
+          child: forward == null
+              ? const SizedBox(height: SelectionCapsule.height)
+              : Transform.scale(
+                  // A swell as the capsule takes the width, settling flat.
+                  scaleY: flooding ? 1 + 0.08 * math.sin(math.pi * raw) : 1,
+                  child: SelectionLabelCapsule(
+                    item: forward,
+                    iconFirst: true,
+                    ripple: flooding ? raw : null,
+                  ),
+                ),
         ),
-      ),
-    );
-    return SelectionCapsule(
-      onTap: item.onPressed,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: iconFirst
-              ? [icon, const SizedBox(width: 8), label]
-              : [label, const SizedBox(width: 8), icon],
-        ),
-      ),
+      ],
     );
   }
 }

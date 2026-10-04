@@ -128,6 +128,14 @@ class ChatTimelineView extends ConsumerWidget {
                   unreadAnchorId: unreadAnchorId,
                   unreadCount: unreadCount,
                   leading: leading,
+                  insetTop: selecting
+                      ? SelectionTopBar.reservedHeight +
+                            MediaQuery.paddingOf(context).top
+                      : 0,
+                  insetBottom: selecting
+                      ? SelectionBottomBar.reservedHeight +
+                            MediaQuery.paddingOf(context).bottom
+                      : 0,
                 ),
                 if (selecting) ...[
                   Positioned(

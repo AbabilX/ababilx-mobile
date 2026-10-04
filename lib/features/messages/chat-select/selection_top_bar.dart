@@ -18,12 +18,15 @@ class SelectionTopBar extends ConsumerWidget {
 
   final String conversationId;
 
-  /// The icon capsule's buttons, in this order. Reply lives in the bottom bar.
+  /// What the list must clear below the status bar while the bar is up.
+  static const reservedHeight = SelectionCapsule.height + 6;
+
+  /// The icon capsule's buttons, in this order. Reply and Forward
+  /// live in the bottom bar, and are not repeated here.
   static const _kinds = [
     SelectionActionKind.edit,
     SelectionActionKind.save,
     SelectionActionKind.copy,
-    SelectionActionKind.forward,
     SelectionActionKind.delete,
   ];
 

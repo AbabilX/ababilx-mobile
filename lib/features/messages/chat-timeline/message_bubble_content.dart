@@ -14,6 +14,7 @@ import 'message_quote_block.dart';
 import 'quoted_bubble_layout.dart';
 import 'signal_bubble_metrics.dart';
 import 'sticker_media.dart';
+import 'voice_bubble_footer.dart';
 import '../../chat-lock/data/chat_lock_index.dart';
 
 /// Image/video attachments only, no caption or quote — the media is the
@@ -142,6 +143,12 @@ class MessageBubbleContent extends StatelessWidget {
     }
 
     final body = MessageBody(message: message, colors: colors);
+    if (isVoiceBubble(message)) {
+      return Padding(
+        padding: _inset,
+        child: VoiceBubbleFooter(footer: _footer(), child: body),
+      );
+    }
 
     final footer = _footer();
     final quote = message.quote;
