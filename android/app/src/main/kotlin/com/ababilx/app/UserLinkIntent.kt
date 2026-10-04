@@ -1,20 +1,19 @@
 package com.ababilx.app
 
+import android.content.Intent
 import android.net.Uri
 
 /**
- * Reads the handle out of a personal message link.
+ * Reads a shared link: a person's handle or a group's public slug.
  *
- * Two shapes reach us: `https://www.ababilx.com/u/<handle>` (an App Link) and
- * `ababilx://user?u=<handle>` (what a personal QR code carries, and what the
- * site's "Open in AbabilX" button fires). The receiving activity is exported
- * and any app can send either, so only something shaped like a handle goes on
- * to Dart — which checks it again against the full rules before any request.
+ * Two shapes of each reach us: `https://www.ababilx.com/u/<handle>` and
+ * `/g/<slug>` (App Links), and `ababilx://user?u=<handle>` /
+ * `ababilx://group?g=<slug>` (what a QR code carries, and what the site's
+ * button fires). The receiving activity is exported and any app can send any
+ * of them, so only something shaped like a handle goes on to Dart — which
+ * checks it again against the full rules before any request.
  */
 object UserLinkIntent {
-
-    private val HOSTS = setOf("www.ababilx.com", "ababilx.com")
-    private val SHAPE = Regex("^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
 
     /**
      * What the trampoline forwards instead of the link itself. An ACTION_VIEW
@@ -24,31 +23,41 @@ object UserLinkIntent {
      */
     const val ACTION_OPEN = "com.ababilx.app.action.OPEN_USER_LINK"
     const val EXTRA_HANDLE = "com.ababilx.app.extra.USER_HANDLE"
+    const val EXTRA_GROUP = "com.ababilx.app.extra.GROUP_SLUG"
 
-    /** The forwarded handle, shape-checked again: the launcher is exported. */
-    fun forwardedHandle(raw: String?): String? = clean(raw)
+    private val HOSTS = setOf("www.ababilx.com", "ababilx.com")
+    private val SHAPE = Regex("^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
 
-    fun handleOf(data: Uri?): String? {
+    /** The intent to forward for a link, or null when it is not one of ours. */
+    fun forwardFor(data: Uri?): Intent? {
         if (data == null || !data.isHierarchical) return null
-        val raw = when (data.scheme?.lowercase()) {
+        val (extra, raw) = when (data.scheme?.lowercase()) {
             "https" -> {
                 val segments = data.pathSegments
-                if (data.host?.lowercase() !in HOSTS) return null
-                if (segments.size != 2 || segments[0] != "u") return null
-                segments[1]
+                if (data.host?.lowercase() !in HOSTS || segments.size != 2) return null
+                when (segments[0]) {
+                    "u" -> EXTRA_HANDLE to segments[1]
+                    "g" -> EXTRA_GROUP to segments[1]
+                    else -> return null
+                }
             }
-            "ababilx" -> {
-                if (data.host != "user") return null
-                data.getQueryParameter("u")
+            "ababilx" -> when (data.host) {
+                "user" -> EXTRA_HANDLE to data.getQueryParameter("u")
+                "group" -> EXTRA_GROUP to data.getQueryParameter("g")
+                else -> return null
             }
             else -> return null
         }
-        return clean(raw)
+        val value = clean(raw) ?: return null
+        return Intent(ACTION_OPEN).putExtra(extra, value)
     }
 
+    /** A forwarded extra, shape-checked again: the launcher is exported. */
+    fun forwarded(intent: Intent, extra: String): String? = clean(intent.getStringExtra(extra))
+
     private fun clean(raw: String?): String? {
-        val handle = raw?.trim()?.lowercase()?.removePrefix("@") ?: return null
-        if (handle.length !in 3..32 || !SHAPE.matches(handle)) return null
-        return handle
+        val value = raw?.trim()?.lowercase()?.removePrefix("@") ?: return null
+        if (value.length !in 3..32 || !SHAPE.matches(value)) return null
+        return value
     }
 }

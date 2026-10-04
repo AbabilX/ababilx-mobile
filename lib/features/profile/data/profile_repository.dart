@@ -136,10 +136,7 @@ class ProfileRepository {
 
       final parts = await Future.wait([sessionFuture, profileFuture]);
 
-      final user = AppUser.fromMeParts(
-        session: parts[0],
-        profile: parts[1],
-      );
+      final user = AppUser.fromMeParts(session: parts[0], profile: parts[1]);
 
       // Persist to local cache for instant offline restore
       await _cacheUser(user);

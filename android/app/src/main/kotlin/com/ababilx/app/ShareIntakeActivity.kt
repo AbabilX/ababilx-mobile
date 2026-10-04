@@ -59,11 +59,10 @@ class ShareIntakeActivity : Activity() {
     /**
      * A share is forwarded as it came. A link is not: its data must never
      * reach the FlutterActivity, or Flutter routes the URL itself. The handle
-     * travels as an extra, and a link we cannot read just opens the app.
+     * or group slug travels as an extra, and a link we cannot read just opens the app.
      */
     private fun forwardable(source: Intent): Intent {
         if (source.action != Intent.ACTION_VIEW) return Intent(source)
-        val handle = UserLinkIntent.handleOf(source.data) ?: return Intent(Intent.ACTION_MAIN)
-        return Intent(UserLinkIntent.ACTION_OPEN).putExtra(UserLinkIntent.EXTRA_HANDLE, handle)
+        return UserLinkIntent.forwardFor(source.data) ?: Intent(Intent.ACTION_MAIN)
     }
 }

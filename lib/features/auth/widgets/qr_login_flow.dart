@@ -8,6 +8,8 @@ import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../local_share/widgets/qr_scan_sheet.dart';
 import '../../messages/chat-people/scanned_user_sheet.dart';
 import '../../messages/chat-people/user_qr_payload.dart';
+import '../../messages/group-link/group_link_join_sheet.dart';
+import '../../messages/group-link/group_link_payload.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../../messages/history-transfer/history_transfer_approval.dart';
 import '../../messages/history-transfer/history_transfer_one_scan.dart';
@@ -69,6 +71,11 @@ class QrLoginFlow {
     final handle = usernameFromQrPayload(payload);
     if (handle != null) {
       await ScannedUserSheet.open(context, ref, handle);
+      return;
+    }
+    final group = slugFromGroupLink(payload);
+    if (group != null) {
+      await GroupLinkJoinSheet.open(context, ref, group);
       return;
     }
     if (!repo.isLoginPayload(payload)) {

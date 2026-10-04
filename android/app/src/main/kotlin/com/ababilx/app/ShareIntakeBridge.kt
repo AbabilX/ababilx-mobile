@@ -87,10 +87,12 @@ object ShareIntakeBridge {
             return JSONObject().put("open_conversation", id).toString()
         }
         if (intent.action == UserLinkIntent.ACTION_OPEN) {
-            // A personal message link, tapped in a browser or another chat.
-            val handle = UserLinkIntent.forwardedHandle(
-                intent.getStringExtra(UserLinkIntent.EXTRA_HANDLE),
-            ) ?: return null
+            // A person's or a group's link, tapped in a browser or a chat.
+            UserLinkIntent.forwarded(intent, UserLinkIntent.EXTRA_GROUP)?.let {
+                return JSONObject().put("open_group", it).toString()
+            }
+            val handle = UserLinkIntent.forwarded(intent, UserLinkIntent.EXTRA_HANDLE)
+                ?: return null
             return JSONObject().put("open_user", handle).toString()
         }
         val uris = when (intent.action) {

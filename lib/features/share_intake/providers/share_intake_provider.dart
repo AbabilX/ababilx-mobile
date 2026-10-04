@@ -63,6 +63,11 @@ class ShareIntakeNotifier extends Notifier<SharedPayload?> {
       ref.read(userLinkOpenProvider.notifier).state = handle;
       return;
     }
+    final slug = SharedPayload.openGroupSlug(raw);
+    if (slug != null) {
+      ref.read(groupLinkOpenProvider.notifier).state = slug;
+      return;
+    }
     final payload = SharedPayload.tryParse(raw);
     if (payload == null) return;
     state = payload;
@@ -92,3 +97,7 @@ final shortcutOpenProvider = StateProvider<String?>((ref) => null);
 /// The handle of a personal message link the app was opened with.
 /// [ShareIntakeSync] shows that person once signed in, then clears it.
 final userLinkOpenProvider = StateProvider<String?>((ref) => null);
+
+/// The slug of a group's public link the app was opened with.
+/// [ShareIntakeSync] shows the join sheet once signed in, then clears it.
+final groupLinkOpenProvider = StateProvider<String?>((ref) => null);

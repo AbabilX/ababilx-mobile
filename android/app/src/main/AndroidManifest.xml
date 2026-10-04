@@ -135,12 +135,14 @@
                 <data android:host="www.ababilx.com"/>
                 <data android:host="ababilx.com"/>
                 <data android:pathPrefix="/u/"/>
+                <data android:pathPrefix="/g/"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="ababilx" android:host="user"/>
+                <data android:scheme="ababilx" android:host="group"/>
             </intent-filter>
         </activity>
 

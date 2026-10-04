@@ -124,12 +124,17 @@ class SharedPayload extends Equatable {
   /// The handle a personal message link carries (`UserLinkIntent.kt`), or
   /// null for anything else. Same exported door as above, so the handle is
   /// checked again here before it becomes a request.
-  static String? openUserHandle(String? raw) {
+  static String? openUserHandle(String? raw) => _handleUnder(raw, 'open_user');
+
+  /// The slug a group's public link carries. A slug follows the handle rules.
+  static String? openGroupSlug(String? raw) => _handleUnder(raw, 'open_group');
+
+  static String? _handleUnder(String? raw, String key) {
     if (raw == null || raw.isEmpty) return null;
     try {
       final json = jsonDecode(raw);
       if (json is! Map<String, dynamic>) return null;
-      final handle = json['open_user'];
+      final handle = json[key];
       if (handle is! String || !isValidUsername(handle)) return null;
       return normalizeUsername(handle);
     } catch (_) {

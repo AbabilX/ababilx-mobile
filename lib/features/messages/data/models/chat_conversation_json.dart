@@ -59,6 +59,8 @@ extension ChatConversationJson on ChatConversation {
     // Kept on disk so an offline cold start never opens a private group
     // unlocked.
     'group_privacy': groupPrivacy,
+    'public_link': publicLink,
+    'public_link_paused': publicLinkPaused,
     // Same reason: a member an admin made read-only must not find the
     // composer open on an offline cold start.
     'my_permissions': myPermissions?.toJson(),

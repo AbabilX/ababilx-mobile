@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/providers/auth_provider.dart';
 import '../messages/chat-people/scanned_user_sheet.dart';
+import '../messages/group-link/group_link_join_sheet.dart';
 import '../messages/message_e2ee/message_entry_ready.dart';
 import 'data/shared_payload.dart';
 import 'providers/share_intake_provider.dart';
@@ -96,20 +97,24 @@ class _ShareIntakeSyncState extends ConsumerState<ShareIntakeSync> {
     });
   }
 
-  /// A personal message link (`/u/<handle>`): show that person, with the one
-  /// button that starts the chat — the same sheet a scanned QR code opens.
-  void _openUserLinkIfPending() {
-    final handle = ref.read(userLinkOpenProvider);
-    if (handle == null) return;
+  /// A shared link: `/u/<handle>` shows that person with the one button that
+  /// starts the chat (the sheet a scanned QR code opens); `/g/<slug>` shows
+  /// the group with the one button that joins it.
+  void _openLinkIfPending(
+    StateProvider<String?> pending,
+    Future<void> Function(BuildContext, WidgetRef, String) open,
+  ) {
+    final value = ref.read(pending);
+    if (value == null) return;
     if (!(ref.read(authProvider).valueOrNull ?? false)) return;
     if (!ref.read(messageEntryReadyProvider)) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || ref.read(userLinkOpenProvider) != handle) return;
+      if (!mounted || ref.read(pending) != value) return;
       final navigator =
           widget.router.routerDelegate.navigatorKey.currentContext;
       if (navigator == null) return;
-      ref.read(userLinkOpenProvider.notifier).state = null;
-      unawaited(ScannedUserSheet.open(navigator, ref, handle));
+      ref.read(pending.notifier).state = null;
+      unawaited(open(navigator, ref, value));
     });
   }
 
@@ -123,9 +128,11 @@ class _ShareIntakeSyncState extends ConsumerState<ShareIntakeSync> {
     ref.watch(messageEntryReadyProvider);
     ref.watch(shortcutOpenProvider);
     ref.watch(userLinkOpenProvider);
+    ref.watch(groupLinkOpenProvider);
     _openPickerIfPending();
     _openShortcutIfPending();
-    _openUserLinkIfPending();
+    _openLinkIfPending(userLinkOpenProvider, ScannedUserSheet.open);
+    _openLinkIfPending(groupLinkOpenProvider, GroupLinkJoinSheet.open);
     return widget.child;
   }
 }

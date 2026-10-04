@@ -88,6 +88,8 @@ class ChatConversation extends Equatable {
     this.addMembersRole = 'admin',
     this.myRole = '',
     this.groupPrivacy = false,
+    this.publicLink = '',
+    this.publicLinkPaused = false,
     this.myPermissions,
     this.defaultPermissions,
   });
@@ -216,6 +218,13 @@ class ChatConversation extends Equatable {
   /// forwarding, no Save or Share of its media or pictures, and a member list
   /// only admins see in full. Independent of anyone's privacy mode.
   final bool groupPrivacy;
+
+  /// Slug of the group's public link (server 0167), '' when it has none.
+  /// Independent of [groupPrivacy].
+  final String publicLink;
+
+  /// The link exists but opens nothing until an admin resumes it.
+  final bool publicLinkPaused;
 
   /// What the viewer may do in this group (server 0157), everything for an
   /// admin; and what every member may do. Null on a DM, and on a server that
@@ -378,6 +387,8 @@ class ChatConversation extends Equatable {
       addMembersRole: _jsonString(json['add_members_role']) ?? 'admin',
       myRole: _jsonString(json['my_role']) ?? '',
       groupPrivacy: json['group_privacy'] as bool? ?? false,
+      publicLink: _jsonString(json['public_link']) ?? '',
+      publicLinkPaused: json['public_link_paused'] as bool? ?? false,
       myPermissions: GroupMemberPerms.maybeFromJson(json['my_permissions']),
       defaultPermissions: GroupMemberPerms.maybeFromJson(
         json['default_permissions'],
@@ -426,6 +437,8 @@ class ChatConversation extends Equatable {
     String? addMembersRole,
     String? myRole,
     bool? groupPrivacy,
+    String? publicLink,
+    bool? publicLinkPaused,
     bool? privateChat,
     String? privateChatBy,
     bool? lastMessagePrivate,
@@ -497,6 +510,8 @@ class ChatConversation extends Equatable {
     addMembersRole: addMembersRole ?? this.addMembersRole,
     myRole: myRole ?? this.myRole,
     groupPrivacy: groupPrivacy ?? this.groupPrivacy,
+    publicLink: publicLink ?? this.publicLink,
+    publicLinkPaused: publicLinkPaused ?? this.publicLinkPaused,
     myPermissions: myPermissions ?? this.myPermissions,
     defaultPermissions: defaultPermissions ?? this.defaultPermissions,
   );
@@ -535,6 +550,8 @@ class ChatConversation extends Equatable {
     peerUserCover,
     myRole,
     groupPrivacy,
+    publicLink,
+    publicLinkPaused,
     myPermissions,
     defaultPermissions,
   ];

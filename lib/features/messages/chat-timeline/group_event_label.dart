@@ -43,6 +43,8 @@ String groupEventLabel(ChatMessage message, String currentUserId) {
       return '$actor removed $target';
     case 'member_left':
       return '$actor left the group';
+    case 'member_joined_link':
+      return '$actor joined using the group link';
     case 'role_changed':
       // Never "You made you an admin": the server refuses a self role change.
       return value == 'admin'

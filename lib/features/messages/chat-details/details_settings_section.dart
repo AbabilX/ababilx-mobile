@@ -8,6 +8,7 @@ import '../../chat-lock/widgets/chat_lock_tile.dart';
 import '../../private-chat/private_chat_tile.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
+import '../group-link/group_link_tile.dart';
 import '../group-privacy/group_privacy_tile.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_sheet.dart';
@@ -68,6 +69,9 @@ class DetailsSettingsSection extends ConsumerWidget {
       // Groups only: the group's own switch (server 0154), set by admins.
       if (conversation.isGroupConversation && !conversation.isWebhook)
         GroupPrivacyTile(conversation: conversation),
+      // Groups only: the public link people join through (server 0167).
+      if (conversation.type == 'group')
+        GroupLinkTile(conversation: conversation),
       // Groups only, admins only: what members may do (server 0157).
       if (conversation.type == 'group' && conversation.iAmAdmin)
         DetailsTile(

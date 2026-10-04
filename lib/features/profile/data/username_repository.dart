@@ -3,19 +3,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
+import '../../messages/group-link/group_link_api.dart' show retryHint;
 
 /// Why a handle could not be saved, in the two cases the screen has to say
 /// something specific about. Anything else is a network failure and reads as
 /// one.
-enum UsernameFailure { taken, invalid }
+enum UsernameFailure { taken, invalid, tooSoon }
 
 class UsernameException implements Exception {
-  const UsernameException(this.reason);
+  const UsernameException(this.reason, {this.retry = ''});
   final UsernameFailure reason;
+
+  /// " Try again on 7 Oct." for [UsernameFailure.tooSoon], when the server
+  /// said when.
+  final String retry;
 
   String get message => switch (reason) {
     UsernameFailure.taken => 'That username is already taken.',
     UsernameFailure.invalid => 'Use 3 to 32 letters, numbers, . _ or -',
+    UsernameFailure.tooSoon =>
+      'You can change your username once every 3 days.$retry',
   };
 
   @override
@@ -49,6 +56,13 @@ class UsernameRepository {
       final status = error.response?.statusCode;
       if (status == 409) throw const UsernameException(UsernameFailure.taken);
       if (status == 400) throw const UsernameException(UsernameFailure.invalid);
+      // Server 0167: a new handle once every three days.
+      if (status == 429) {
+        throw UsernameException(
+          UsernameFailure.tooSoon,
+          retry: retryHint(error.response?.data),
+        );
+      }
       rethrow;
     }
   }
