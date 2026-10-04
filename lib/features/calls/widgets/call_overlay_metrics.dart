@@ -33,17 +33,18 @@ class CallOverlayMetrics {
 
   double get statusFont => design(30).clamp(14.0, 18.0);
 
-  /// Four mid-call toggles — intentionally larger than End.
+  /// Four mid-call toggles.
   double get controlDiameter => design(168).clamp(72.0, 96.0);
 
   double get controlIcon => design(64).clamp(30.0, 40.0);
 
   double get controlLabelFont => design(26).clamp(12.0, 15.0);
 
-  /// Live hang-up circle under the four options.
-  double get hangupDiameter => design(128).clamp(58.0, 72.0);
+  /// Live hang-up circle under the four options. The largest seat on the
+  /// screen: it is the one control nobody should have to aim for.
+  double get hangupDiameter => design(232).clamp(84.0, 104.0);
 
-  double get hangupIcon => design(52).clamp(26.0, 32.0);
+  double get hangupIcon => design(96).clamp(36.0, 46.0);
 
   double get hangupLabelFont => design(24).clamp(12.0, 14.0);
 

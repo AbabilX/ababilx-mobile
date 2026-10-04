@@ -112,12 +112,12 @@ dev_dependencies:
   # can be tested without a device.
   shared_preferences_platform_interface: ^2.4.1
 
+# Android's launcher icon is maintained by hand (theme-following plate colour
+# + monochrome layer in res/); running this generator would overwrite it.
 flutter_launcher_icons:
-  android: "ic_launcher"
+  android: false
   ios: true
   image_path: "assets/icon/icon.png"
-  adaptive_icon_background: "assets/icon/icon_background.png"
-  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
   remove_alpha_ios: false
   min_sdk_android: 21
   web:

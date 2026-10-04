@@ -37,4 +37,7 @@
     <color name="media_send_camera_selected">#33FFFFFF</color>
     <color name="media_send_camera_record">#FFD92F20</color>
     <color name="media_send_camera_card">#FF1A1A1A</color>
+    <!-- Default launcher plate. Never white: the mark's wing and its small
+         bubble are white and would vanish on it. -->
+    <color name="ic_launcher_plate">#FFD6E6FF</color>
 </resources>
