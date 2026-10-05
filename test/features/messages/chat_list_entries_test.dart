@@ -51,6 +51,30 @@ void main() {
     ]);
   });
 
+  test('a thread never replaces a conversation, even with the same person', () {
+    final dm = ChatConversation(
+      id: 'dm',
+      teamId: '',
+      type: 'dm',
+      createdAt: '2026-10-05T10:00:00Z',
+      lastMessageAt: '2026-10-05T10:00:00Z',
+      peerUserId: 'u1',
+    );
+    final t = ShareThread(
+      device: ShareDeviceRecord(
+        deviceId: 'd1',
+        name: 'd1',
+        deviceType: 'mobile',
+        userId: 'u1',
+      ),
+      unread: 0,
+      last: null,
+      lastOrderMs: ms('2026-10-05T11:00:00Z'),
+    );
+    final merged = mergeChatListEntries(conversations: [dm], threads: [t]);
+    expect(keys(merged), ['local-share:d1', 'dm']);
+  });
+
   test('a thread takes its place by time, under the pinned block', () {
     final merged = mergeChatListEntries(
       conversations: chats,
@@ -101,5 +125,22 @@ void main() {
         isEmpty,
       );
     }
+  });
+
+  test('local share filter shows device threads and no conversations', () {
+    final merged = mergeChatListEntries(
+      conversations: const [],
+      threads: [thread('a', '2026-10-04T10:00:00Z')],
+      filter: ChatListFilter.localShare,
+    );
+    expect(keys(merged), ['local-share:a']);
+    expect(
+      availableChatListFilters(chats, hasShareThreads: true),
+      contains(ChatListFilter.localShare),
+    );
+    expect(
+      availableChatListFilters(chats),
+      isNot(contains(ChatListFilter.localShare)),
+    );
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../chat-date-divider/date_jump.dart';
 import '../chat-date-divider/index.dart';
 import '../chat-typing/typing_bubble.dart';
 import '../chat_utils.dart';
@@ -148,6 +149,12 @@ class MessageList extends ConsumerWidget {
                 ChatDateDivider(
                   label: formatDateDivider(item.anchor.createdAt),
                   hasWallpaper: hasWallpaper,
+                  onTap: () => showDateJumpSheet(
+                    context,
+                    ref,
+                    conversationId: conversationId,
+                    threadRootId: threadRootId,
+                  ),
                 ),
               ),
             if (showUnread) _inset(UnreadDivider(count: unreadCount)),

@@ -79,11 +79,14 @@ class MessageBubbleContent extends StatelessWidget {
     if (message.isDeleted) return false;
     if (message.quote != null) return false;
     if (message.attachments.isEmpty) return false;
-    if (!message.attachments.every((a) => a.isImage || a.isVideo)) {
+    if (!message.attachments.every((a) => a.isImage || a.isVideo || a.isPdf)) {
       return false;
     }
     return _hasDrawableMedia(message.attachments);
   }
+
+  /// A PDF page is white: the time over it takes the pill, never white ink.
+  bool get _hasPdf => message.attachments.any((a) => a.isPdf);
 
   // Time + ticks always sit on the trailing edge of the bubble (WhatsApp /
   // common chat UI). An `Align` here instead would stretch the column to the
@@ -137,7 +140,9 @@ class MessageBubbleContent extends StatelessWidget {
         bleedMedia: true,
         mediaFooter: _footer(
           onMedia: true,
-          onClear: isBareMediaBubble(message) && isStickerMessage(message),
+          onClear:
+              _hasPdf ||
+              (isBareMediaBubble(message) && isStickerMessage(message)),
         ),
       );
     }

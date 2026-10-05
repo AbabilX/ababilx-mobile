@@ -18,6 +18,7 @@ class MessageAttachments extends StatelessWidget {
     required this.attachments,
     this.withCaption = false,
     this.captioned = false,
+    this.bleed = false,
     this.preview,
   });
 
@@ -30,6 +31,10 @@ class MessageAttachments extends StatelessWidget {
   /// edge-to-edge shape but takes Signal's wider floor, since the caption
   /// wraps to the picture's width.
   final bool captioned;
+
+  /// The bubble is the media's surface: a PDF card drops its own margin and
+  /// rounded corners and fills the bubble edge to edge.
+  final bool bleed;
 
   final ChatMediaPreviewMeta? preview;
 
@@ -74,7 +79,11 @@ class MessageAttachments extends StatelessWidget {
           VoiceAttachmentPlayer(attachment: attachment),
         for (final attachment in files)
           attachment.isPdf
-              ? AttachmentPdfTile(attachment: attachment, preview: preview)
+              ? AttachmentPdfTile(
+                  attachment: attachment,
+                  preview: preview,
+                  bleed: bleed,
+                )
               : AttachmentFileRow(attachment: attachment, preview: preview),
         if (locked.isNotEmpty)
           Padding(

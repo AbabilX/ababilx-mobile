@@ -34,6 +34,7 @@ class PdfPreviewCard extends StatelessWidget {
     required this.fileName,
     this.hideFileName = false,
     this.height = 260,
+    this.flat = false,
     this.detail,
     this.caption,
   });
@@ -42,6 +43,9 @@ class PdfPreviewCard extends StatelessWidget {
   final String fileName;
   final bool hideFileName;
   final double height;
+
+  /// Square corners, for a card that fills a clipped bubble.
+  final bool flat;
   final String? detail;
   final String? caption;
 
@@ -50,7 +54,7 @@ class PdfPreviewCard extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     return Material(
       color: colors.surface,
-      borderRadius: hideFileName ? null : BorderRadius.circular(12),
+      borderRadius: hideFileName || flat ? null : BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => showPdfPreview(

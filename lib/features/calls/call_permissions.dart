@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../onboarding/permissions/permission_intro.dart';
 import 'voice_call_log.dart';
 
 /// Runtime permissions a 1:1 call asks for, asked so they can never hang it.
@@ -107,6 +108,15 @@ class CallPermissions {
   /// instantly, including from the lock screen where a dialog cannot be shown.
   static Future<void> prewarm() async {
     try {
+      if (await Permission.microphone.isGranted) return;
+      // Not over the "Allow permissions" screen: it asks the microphone itself
+      // on Next. Wait for it, and skip when it already asked (or was answered
+      // on an earlier launch).
+      final shownNow = await PermissionIntro.settled;
+      if (shownNow ||
+          await PermissionIntro.answer() == PermissionIntro.answeredNext) {
+        return;
+      }
       if (await Permission.microphone.isGranted) return;
       final granted = await request(Permission.microphone, label: 'mic');
       voiceCallLog('permission.mic.prewarm', reason: '$granted');

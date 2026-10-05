@@ -5,7 +5,7 @@ import 'data/models/chat_models.dart';
 import 'markdown/message_markdown_preview.dart';
 import 'tiptap_plain_text.dart';
 
-enum ChatListFilter { all, unread, groups, webhooks }
+enum ChatListFilter { all, unread, groups, webhooks, localShare }
 
 /// Groups means every conversation with a roster people post into — a
 /// channel converted by 0145 is a group in all but name. Feeds are their own
@@ -16,16 +16,23 @@ bool matchesChatListFilter(ChatConversation c, ChatListFilter filter) =>
       ChatListFilter.unread => c.unreadCount > 0,
       ChatListFilter.groups => c.isGroup || c.isChannel,
       ChatListFilter.webhooks => c.isWebhook,
+      // Device threads only; no server conversation is one.
+      ChatListFilter.localShare => false,
     };
 
 /// The pills worth drawing: a filter with nothing behind it is not offered,
 /// and All only appears once there is something else to choose. Empty means
 /// the row is hidden.
-List<ChatListFilter> availableChatListFilters(List<ChatConversation> all) {
+List<ChatListFilter> availableChatListFilters(
+  List<ChatConversation> all, {
+  bool hasShareThreads = false,
+}) {
   final options = [
     for (final f in ChatListFilter.values)
       if (f != ChatListFilter.all &&
-          all.any((c) => matchesChatListFilter(c, f)))
+          (f == ChatListFilter.localShare
+              ? hasShareThreads
+              : all.any((c) => matchesChatListFilter(c, f))))
         f,
   ];
   return options.isEmpty ? const [] : [ChatListFilter.all, ...options];

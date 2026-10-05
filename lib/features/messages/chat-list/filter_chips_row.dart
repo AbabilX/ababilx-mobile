@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../core/localization/app_translations.dart';
 import '../chat_icon.dart';
 import '../chat_list_filters.dart';
+import 'filter_order.dart';
 
 /// One horizontally scrollable row of pills above the conversation list:
 /// All | Unread messages | Groups | Flock (webhook feeds; Ababil = a flock
@@ -32,34 +33,61 @@ class FilterChipsRow extends ConsumerWidget {
     ChatListFilter.unread: 'chat_unread',
     ChatListFilter.groups: 'chat_groups',
     ChatListFilter.webhooks: 'chat_filter_webhooks',
+    ChatListFilter.localShare: 'chat_filter_local_share',
   };
 
   static final _icons = {
     ChatListFilter.unread: HugeIcons.strokeRoundedMailOpen01,
     ChatListFilter.groups: HugeIcons.strokeRoundedUserGroup,
     ChatListFilter.webhooks: HugeIcons.strokeRoundedWebhook,
+    ChatListFilter.localShare: HugeIcons.strokeRoundedWifi01,
   };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (filters.isEmpty) return const SizedBox.shrink();
+    final ordered = applyFilterOrder(filters, ref.watch(filterOrderProvider));
+    Widget chip(ChatListFilter option) => _Chip(
+      label: AppTranslations.translate(context, ref, _labels[option]!),
+      icon: _icons[option],
+      selected: option == filter,
+      onTap: () {
+        if (option != filter) onChanged(option);
+      },
+    );
+    // Hold a pill and drag to arrange them. All stays first, so it is not
+    // wrapped in a drag listener and nothing may be dropped before it.
     return SizedBox(
       height: 36,
-      child: ListView.separated(
+      child: ReorderableListView.builder(
         scrollDirection: Axis.horizontal,
+        buildDefaultDragHandles: false,
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-        itemCount: filters.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemCount: ordered.length,
+        proxyDecorator: (child, _, _) =>
+            Material(color: Colors.transparent, child: child),
+        onReorderItem: (from, to) {
+          final first = ordered.first == ChatListFilter.all;
+          if (from == 0 && first) return;
+          if (to == 0 && first) to = 1;
+          if (from == to) return;
+          final next = [...ordered];
+          next.insert(to, next.removeAt(from));
+          ref.read(filterOrderProvider.notifier).save(next);
+        },
         itemBuilder: (context, i) {
-          final option = filters[i];
-          return _Chip(
-            label: AppTranslations.translate(context, ref, _labels[option]!),
-            icon: _icons[option],
-            selected: option == filter,
-            onTap: () {
-              if (option != filter) onChanged(option);
-            },
+          final option = ordered[i];
+          final item = Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: chip(option),
           );
+          return option == ChatListFilter.all
+              ? KeyedSubtree(key: ValueKey(option), child: item)
+              : ReorderableDelayedDragStartListener(
+                  key: ValueKey(option),
+                  index: i,
+                  child: item,
+                );
         },
       ),
     );

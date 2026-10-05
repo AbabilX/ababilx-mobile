@@ -112,6 +112,7 @@ class MessageBody extends ConsumerWidget {
               attachments: message.attachments,
               withCaption: !bleedMedia && plain.isNotEmpty,
               captioned: text.isNotEmpty,
+              bleed: bleedMedia,
               preview: preview,
             );
       final overlay = mediaFooter;

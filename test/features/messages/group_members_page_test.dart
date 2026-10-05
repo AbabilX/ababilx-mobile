@@ -51,7 +51,8 @@ Future<void> _pump(WidgetTester tester, List<ChatMember> members) async {
     routes: [
       GoRoute(
         path: '/',
-        builder: (_, _) => const ConversationDetailsScreen(conversationId: 'g1'),
+        builder: (_, _) =>
+            const ConversationDetailsScreen(conversationId: 'g1'),
       ),
       GoRoute(
         path: '/messages/:id/members',

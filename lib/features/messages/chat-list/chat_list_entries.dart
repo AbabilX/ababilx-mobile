@@ -31,14 +31,14 @@ class ShareThreadEntry extends ChatListEntry {
 /// [conversations] already in list order (pinned block first, newest first in
 /// each). Device threads go under the pinned block and take their place by
 /// time among the rest. A thread has no server row, so the only filters it
-/// can answer are All and Unread.
+/// can answer are All, Unread and Local Share.
 List<ChatListEntry> mergeChatListEntries({
   required List<ChatConversation> conversations,
   required List<ShareThread> threads,
   ChatListFilter filter = ChatListFilter.all,
 }) {
   final shown = switch (filter) {
-    ChatListFilter.all => threads,
+    ChatListFilter.all || ChatListFilter.localShare => threads,
     ChatListFilter.unread => [
       for (final t in threads)
         if (t.unread > 0) t,

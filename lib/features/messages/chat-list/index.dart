@@ -93,7 +93,11 @@ class _ChatListState extends ConsumerState<ChatList> {
     final locks = ref.watch(chatLocksProvider);
     final dms = withoutLockedChats(chat.dms, locks);
     final channels = withoutLockedChats(chat.channels, locks);
-    final filters = availableChatListFilters([...dms, ...channels]);
+    final shareThreads = ref.watch(shareChatThreadsProvider);
+    final filters = availableChatListFilters([
+      ...dms,
+      ...channels,
+    ], hasShareThreads: shareThreads.isNotEmpty);
     // A pill whose last chat went away (read the last unread, left the last
     // group) takes the selection back to All rather than an empty list.
     if (!filters.contains(_filter)) _filter = ChatListFilter.all;
@@ -104,7 +108,7 @@ class _ChatListState extends ConsumerState<ChatList> {
         channels: channels,
         filter: _filter,
       ),
-      threads: ref.watch(shareChatThreadsProvider),
+      threads: shareThreads,
       filter: _filter,
     );
     final recentDms = recentDmsForStrip(dms);

@@ -13,7 +13,7 @@ import 'share_device_avatar.dart';
 import 'share_thread_preview.dart';
 
 /// A device thread drawn as a chat-list row. Same metrics as a conversation
-/// row; the transfer glyph beside the time is what says it is Local Share,
+/// row; the Wi-Fi glyph beside the time (folder-transfer already means "nearby" on a conversation row) is what says it is Local Share,
 /// and it is tinted only while the device is in range.
 class ShareChatRow extends ConsumerWidget {
   const ShareChatRow({
@@ -87,7 +87,7 @@ class ShareChatRow extends ConsumerWidget {
                       Tooltip(
                         message: lsText(ref, 'ls_chat_tag'),
                         child: ChatIcon(
-                          HugeIcons.strokeRoundedFolderTransfer,
+                          HugeIcons.strokeRoundedWifi01,
                           size: 15,
                           color: nearby
                               ? colors.primary
