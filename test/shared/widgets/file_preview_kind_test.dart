@@ -39,9 +39,9 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Save'), findsOneWidget);
+    expect(find.byTooltip('Save'), findsOneWidget);
     expect(find.text('Open'), findsOneWidget);
-    expect(find.text('Share'), findsOneWidget);
+    expect(find.byTooltip('Share'), findsOneWidget);
     expect(find.text('Rotate'), findsNothing);
     expect(find.byIcon(Icons.more_vert_rounded), findsNothing);
   });

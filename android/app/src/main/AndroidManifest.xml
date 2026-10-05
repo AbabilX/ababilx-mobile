@@ -25,6 +25,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"/>
+    <!-- Local Share: a file being sent or received keeps going after the user
+         leaves the app (LocalShareTransferService). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS"/>
     <!-- In-app camera capture and the 1:1 video call camera. The camera is
          paused whenever the app leaves the foreground (no camera FGS type). -->
@@ -443,6 +446,13 @@
             android:exported="false"
             android:stopWithTask="false"
             android:foregroundServiceType="phoneCall|microphone|mediaProjection" />
+
+        <!-- Alive only while a Local Share transfer is moving bytes. The
+             transfer runs in Dart; this keeps the process, CPU and Wi-Fi up. -->
+        <service
+            android:name=".localshare.LocalShareTransferService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <!-- FCM defaults: channel + white status-bar icon + brand tint -->
         <meta-data

@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Launcher plate from the wallpaper palette (Material You). -->
-    <color name="ic_launcher_plate">@android:color/system_accent1_100</color>
-</resources>

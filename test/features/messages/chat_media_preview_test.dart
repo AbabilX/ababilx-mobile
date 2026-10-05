@@ -106,9 +106,9 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Save'), findsOneWidget);
+    expect(find.byTooltip('Save'), findsOneWidget);
     expect(find.text('Rotate'), findsOneWidget);
-    expect(find.text('Share'), findsOneWidget);
+    expect(find.byTooltip('Share'), findsOneWidget);
     expect(find.byIcon(Icons.more_vert_rounded), findsNothing);
     expect(
       tester
@@ -184,10 +184,10 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Save'), findsOneWidget);
+    expect(find.byTooltip('Save'), findsOneWidget);
     expect(find.text('Rotate'), findsOneWidget);
     expect(find.text('Mute'), findsOneWidget);
-    expect(find.text('Share'), findsOneWidget);
+    expect(find.byTooltip('Share'), findsOneWidget);
     expect(find.byIcon(Icons.more_vert_rounded), findsNothing);
     expect(
       tester

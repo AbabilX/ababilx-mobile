@@ -7,7 +7,9 @@ import 'preview_icon.dart';
 
 export 'image_preview_dock_bar.dart';
 
-/// Floating capsule that hugs its actions — no fixed slot width.
+/// Floating capsule that hugs its actions — no fixed slot width. Only the
+/// centre action (Rotate / Mute / Open) is spelled out; Save and Share on the
+/// ends are glyphs everyone reads, so they carry a tooltip instead of a label.
 class ImagePreviewDock extends StatelessWidget {
   const ImagePreviewDock({
     super.key,
@@ -86,18 +88,21 @@ class ImagePreviewDock extends StatelessWidget {
               _DockAction(
                 icon: PreviewIcons.rotate,
                 label: 'Rotate',
+                showLabel: true,
                 onTap: onRotate!,
               ),
             if (onMute != null)
               _DockAction(
                 icon: muted ? PreviewIcons.mute : PreviewIcons.unmute,
                 label: muted ? 'Unmute' : 'Mute',
+                showLabel: true,
                 onTap: onMute!,
               ),
             if (onOpen != null)
               _DockAction(
                 icon: PreviewIcons.open,
                 label: 'Open',
+                showLabel: true,
                 onTap: onOpen!,
               ),
             if (canExport)
@@ -125,34 +130,44 @@ class _DockAction extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.showLabel = false,
   });
 
   final PreviewGlyph icon;
   final String label;
   final VoidCallback onTap;
 
+  /// False draws the glyph alone; the label is still what a screen reader
+  /// and a long press say.
+  final bool showLabel;
+
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      customBorder: const StadiumBorder(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            PreviewIcon(icon, color: Colors.white, size: 22),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                height: 1,
-              ),
-            ),
-          ],
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PreviewIcon(icon, color: Colors.white, size: 22),
+              if (showLabel) ...[
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

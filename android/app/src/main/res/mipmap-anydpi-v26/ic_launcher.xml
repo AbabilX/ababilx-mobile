@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The plate is a colour, not a picture, so it follows the system: light or
-     dark theme, and the wallpaper palette on Android 12+. Android 13's themed
-     icons draw only the monochrome layer. -->
+<!-- The plate is one fixed colour in light and dark theme alike. Only
+     Android 13's themed icons change it: they draw the monochrome layer. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
   <background android:drawable="@color/ic_launcher_plate"/>
   <foreground android:drawable="@drawable/ic_launcher_foreground"/>

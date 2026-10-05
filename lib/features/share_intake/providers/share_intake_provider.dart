@@ -73,6 +73,10 @@ class ShareIntakeNotifier extends Notifier<SharedPayload?> {
     state = payload;
   }
 
+  /// A share that starts inside the app (forwarding a Local Share file into a
+  /// chat). It takes the same road as one from another app's share sheet.
+  void offer(SharedPayload payload) => state = payload;
+
   /// Drops the pending share and tells native to forget it, so a hot restart
   /// does not replay one the user already dealt with.
   void consume() {

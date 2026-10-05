@@ -30,6 +30,7 @@ import '../../features/calls/call-info/call_info_path.dart';
 import '../../features/calls/call-info/call_info_screen.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
+import '../../features/local_share/screens/local_share_thread_screen.dart';
 import '../../features/settings/chat-backup/chat_backup_screen.dart';
 import '../../features/local-backup/ui/local_backup_screen.dart';
 import '../../features/settings/data-storage/chat_lock_settings_screen.dart';
@@ -169,6 +170,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/local-share',
         builder: (_, _) => const LocalShareScreen(),
+      ),
+      GoRoute(
+        path: '/local-share/:deviceId',
+        builder: (_, state) => LocalShareThreadScreen(
+          deviceId: state.pathParameters['deviceId'] ?? '',
+        ),
       ),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       // Where an incoming ACTION_SEND from another app lands.

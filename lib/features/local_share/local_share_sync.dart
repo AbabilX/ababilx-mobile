@@ -1,24 +1,25 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/localization/app_translations.dart';
 import '../../core/router/app_router.dart';
-import '../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
-import '../auth/providers/auth_provider.dart';
-import 'data/device_identity_store.dart';
-import 'models/device_model.dart';
-import 'models/file_dto.dart';
+import '../../shared/widgets/app_toast.dart';
+import 'engine/protocol/share_peer.dart';
+import 'providers/local_share_net.dart';
 import 'providers/local_share_providers.dart';
-import 'widgets/incoming_request_sheet.dart';
+import 'sheets/pair_request_sheet.dart';
 
-/// App-wide Local Share bootstrap.
+/// Keeps Local Share alive for the whole signed-in session.
 ///
-/// Starts the receive server + LAN discovery as soon as the user is signed
-/// in (not tied to any particular screen), and shows the accept/decline
-/// sheet — on top of whatever screen is current, via [rootNavigatorKey] —
-/// whenever a peer requests to send files. This is what lets a device be
-/// discoverable/receivable without the Local Share screen being open.
+/// Nothing runs for an account that never chose a device name. Once one has,
+/// this starts the engine, shows the Accept sheet over whatever screen is up,
+/// stops discovery while the app is off screen (the announce every few
+/// seconds is exactly the background drain battery managers punish) and
+/// rebinds when the Wi-Fi changes.
 class LocalShareSync extends ConsumerStatefulWidget {
   const LocalShareSync({super.key, required this.child});
 
@@ -30,108 +31,87 @@ class LocalShareSync extends ConsumerStatefulWidget {
 
 class _LocalShareSyncState extends ConsumerState<LocalShareSync>
     with WidgetsBindingObserver {
-  bool _booted = false;
-
-  /// Discovery has been started once; before that there is nothing to pause.
-  bool _discovering = false;
-
-  /// Discovery is stopped because the app left the screen (see
-  /// [NearbyDevicesNotifier.pauseDiscovery]).
-  bool _discoveryPaused = false;
+  StreamSubscription<List<ConnectivityResult>>? _network;
+  bool _paused = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(localSharePairPromptProvider.notifier).state = _askPair;
+      ref.read(localShareIncomingProvider.notifier).state = _onIncoming;
+    });
+    _network = Connectivity().onConnectivityChanged.skip(1).listen((_) {
+      if (_paused) return;
+      final engine = ref.read(localShareEngineProvider).valueOrNull;
+      unawaited(engine?.networkChanged());
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_network?.cancel());
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!_booted || !_discovering) return;
-    final nearby = ref.read(nearbyDevicesProvider.notifier);
+    final engine = ref.read(localShareEngineProvider).valueOrNull;
+    if (engine == null) return;
     switch (state) {
       case AppLifecycleState.resumed:
-        if (_discoveryPaused) {
-          _discoveryPaused = false;
-          // Restarting announces and scans at once, which is also what a
-          // Wi-Fi change while backgrounded needs.
-          unawaited(nearby.startDiscovery());
-        } else {
-          nearby.refresh();
-        }
+        if (!_paused) return;
+        _paused = false;
+        unawaited(LocalShareNet.acquire());
+        unawaited(engine.resumeDiscovery());
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
-        if (_discoveryPaused) return;
-        _discoveryPaused = true;
-        unawaited(nearby.pauseDiscovery());
+        if (_paused) return;
+        _paused = true;
+        unawaited(engine.pauseDiscovery());
+        unawaited(LocalShareNet.release());
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
         break;
     }
   }
 
-  Future<void> _bootstrap() async {
-    final fingerprint = await loadOrCreateDeviceFingerprint();
-    if (!mounted) return;
-    ref.read(deviceFingerprintProvider.notifier).state = fingerprint;
-
-    ref.read(localServerServiceProvider).onReceiveRequested = _handleIncoming;
-    await ref.read(localShareSessionsProvider.notifier).startServer();
-    if (!mounted) return;
-    await ref.read(nearbyDevicesProvider.notifier).startDiscovery();
-    if (!mounted) return;
-    _discovering = true;
-    // The app may have left the screen while the server was starting.
-    final lifecycle = WidgetsBinding.instance.lifecycleState;
-    if (lifecycle != null && lifecycle != AppLifecycleState.resumed) {
-      didChangeAppLifecycleState(lifecycle);
-    }
+  /// No screen to ask on means no: a request is never accepted for the user.
+  Future<bool> _askPair(SharePeer peer) async {
+    final context = rootNavigatorKey.currentContext;
+    if (context == null || _paused) return false;
+    return showPairRequestSheet(context, peer);
   }
 
-  Future<void> _handleIncoming(
-    LocalDevice peer,
-    List<LocalFileDto> files,
-    Completer<bool> decisionCompleter,
-  ) async {
-    final ctx = rootNavigatorKey.currentContext;
-    if (ctx == null) {
-      // No UI to prompt with (e.g. very early app startup) — accept by default.
-      decisionCompleter.complete(true);
-      return;
-    }
-
-    final hiddenNotifier = ref.read(shellBottomBarHiddenProvider.notifier);
-    hiddenNotifier.state = true;
-    bool accepted = false;
-    try {
-      accepted = await IncomingRequestSheet.show(ctx, peer: peer, files: files);
-    } finally {
-      hiddenNotifier.state = false;
-    }
-
-    if (!decisionCompleter.isCompleted) decisionCompleter.complete(accepted);
+  /// Something arrived while the user is somewhere else in the app: say so
+  /// at the top of the screen. Inside Local Share the thread itself shows it.
+  void _onIncoming(String deviceId, String messageId) {
+    final context = rootNavigatorKey.currentContext;
+    if (context == null || _paused) return;
+    final path = GoRouter.of(
+      context,
+    ).routerDelegate.currentConfiguration.uri.path;
+    if (path.startsWith('/local-share')) return;
+    final peers = ref.read(localSharePeersProvider).valueOrNull ?? const {};
+    final name = peers[deviceId]?.name ?? '';
+    // The navigator's own overlay: its context sits above that overlay, so
+    // looking one up from the context finds nothing.
+    showAppToastIn(
+      rootNavigatorKey.currentState?.overlay,
+      AppTranslations.of(
+        ref.read(appLanguageProvider),
+        'ls_incoming',
+      ).replaceAll('{name}', name).trim(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final loggedIn = ref.watch(authProvider).valueOrNull ?? false;
-
-    if (loggedIn && !_booted) {
-      _booted = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        unawaited(_bootstrap());
-      });
-    } else if (!loggedIn && _booted) {
-      _booted = false;
-    }
-
+    // Watching is what keeps the engine running while no screen needs it.
+    ref.watch(localShareEngineProvider);
     return widget.child;
   }
 }

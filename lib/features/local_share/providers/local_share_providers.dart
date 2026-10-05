@@ -1,59 +1,126 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/providers/auth_provider.dart';
+import '../../privacy-mode/privacy_mode_provider.dart';
 import '../../profile/providers/profile_provider.dart';
-import '../models/device_model.dart';
-import '../services/discovery_service.dart';
-import '../services/local_ip_service.dart';
-import '../services/local_server_service.dart';
-import '../services/transfer_client_service.dart';
+import '../data/device_identity_store.dart';
+import '../data/share_thread_queries.dart';
+import '../engine/protocol/share_peer.dart';
+import '../engine/share_progress.dart';
+import '../engine/store/share_records.dart';
+import '../local_share_actions.dart';
+import '../local_share_engine.dart';
+import 'local_share_name.dart';
+import 'local_share_net.dart';
+import 'share_transfer_watch.dart';
 
-export 'local_share_sessions_provider.dart';
-export 'nearby_devices_provider.dart';
+export 'local_share_name.dart';
 
-/// Persisted per-device identifier — loaded once at bootstrap (see
-/// [LocalShareSync]) and stable across app restarts, so a relaunched peer
-/// isn't rediscovered as a brand-new device. Seeded with a throwaway value
-/// until the real one loads.
-final deviceFingerprintProvider = StateProvider<String>((ref) {
-  return 'ababilx_pending';
-});
+/// Shows the Accept sheet. Null while there is no screen to show it on — and
+/// then a pair request is refused, never answered for the user.
+final localSharePairPromptProvider =
+    StateProvider<Future<bool> Function(SharePeer peer)?>((ref) => null);
 
-/// Provider for current device identity information (Mobile).
-/// Alias mirrors the signed-in user's profile name (falls back to a generic
-/// platform label while the profile is still loading).
-final currentLocalDeviceProvider = Provider<LocalDevice>((ref) {
-  final platformName = Platform.isAndroid ? 'Android' : 'iOS';
-  final profileName = ref.watch(profileProvider).valueOrNull?.name;
-  final alias = (profileName != null && profileName.isNotEmpty)
-      ? profileName
-      : 'AbabilX ($platformName)';
+/// Called for every message that arrives (device id, message id).
+final localShareIncomingProvider =
+    StateProvider<void Function(String deviceId, String messageId)?>(
+      (ref) => null,
+    );
 
-  return LocalDevice(
-    alias: alias,
-    version: '2.1',
-    deviceModel: platformName,
-    deviceType: 'mobile',
-    fingerprint: ref.watch(deviceFingerprintProvider),
-    ip: '127.0.0.1',
-    port: ref.watch(serverPortProvider),
-    protocol: 'http',
-    download: true,
+/// The running engine, or null while signed out or before a device name has
+/// been chosen. The name and the privacy switch are read each time this
+/// device describes itself, so changing either does not restart anything.
+final localShareEngineProvider = FutureProvider<LocalShareEngine?>((ref) async {
+  final loggedIn = ref.watch(authProvider).valueOrNull ?? false;
+  final userId = ref.watch(profileProvider.select((p) => p.valueOrNull?.id));
+  final named = ref.watch(
+    localShareNameProvider.select((n) => (n.valueOrNull ?? '').isNotEmpty),
   );
+  if (!loggedIn || userId == null || userId.isEmpty || !named) return null;
+
+  final engine = await LocalShareEngine.open(
+    userId: userId,
+    deviceId: await loadOrCreateDeviceFingerprint(),
+    name: () => ref.read(localShareNameProvider).valueOrNull ?? 'AbabilX',
+    // Privacy mode: nobody is to find this account, so it is not announced.
+    accountId: () => ref.read(privacyModeProvider) ? null : userId,
+    askPair: (peer) async {
+      final prompt = ref.read(localSharePairPromptProvider);
+      return prompt == null ? false : prompt(peer);
+    },
+    onIncoming: (deviceId, messageId) =>
+        ref.read(localShareIncomingProvider)?.call(deviceId, messageId),
+  );
+  engine.onDeviceNearby = (id) => unawaited(engine.flushDeletes(id));
+  final watch = ShareTransferWatch(engine.progress);
+  ref.onDispose(() {
+    unawaited(watch.dispose());
+    unawaited(LocalShareNet.release());
+    unawaited(engine.dispose());
+  });
+  await LocalShareNet.acquire();
+  await engine.start();
+  return engine;
 });
 
-/// The port the receive server actually bound to — may differ from the
-/// default 12045 if that port was already taken. Discovery must advertise
-/// this, not the default, or peers dial a dead port.
-final serverPortProvider = StateProvider<int>((ref) => 12045);
+/// AbabilX devices on the network right now, by device id.
+final localSharePeersProvider = StreamProvider<Map<String, SharePeer>>((
+  ref,
+) async* {
+  final engine = await ref.watch(localShareEngineProvider.future);
+  if (engine == null) {
+    yield const {};
+    return;
+  }
+  yield engine.presence.peers;
+  yield* engine.presence.changes;
+});
 
-/// Service providers
-final localIpServiceProvider = Provider((ref) => LocalIpService());
-final localDiscoveryServiceProvider = Provider(
-  (ref) => LocalDiscoveryService(),
-);
-final localServerServiceProvider = Provider((ref) => LocalServerService());
-final localTransferClientServiceProvider = Provider(
-  (ref) => LocalTransferClientService(),
-);
+final localShareThreadsProvider = StreamProvider<List<ShareThread>>((
+  ref,
+) async* {
+  final engine = await ref.watch(localShareEngineProvider.future);
+  if (engine == null) {
+    yield const [];
+    return;
+  }
+  yield* engine.queries.watchThreads();
+});
+
+final localShareDeviceProvider =
+    StreamProvider.family<ShareDeviceRecord?, String>((ref, deviceId) async* {
+      final engine = await ref.watch(localShareEngineProvider.future);
+      if (engine == null) {
+        yield null;
+        return;
+      }
+      yield* engine.queries.watchDevice(deviceId);
+    });
+
+/// The newest bubbles of one thread; `limit` grows as the user scrolls up.
+final localShareThreadProvider =
+    StreamProvider.family<
+      List<ShareBubbleData>,
+      ({String deviceId, int limit})
+    >((ref, key) async* {
+      final engine = await ref.watch(localShareEngineProvider.future);
+      if (engine == null) {
+        yield const [];
+        return;
+      }
+      yield* engine.queries.watchThread(key.deviceId, key.limit);
+    });
+
+/// Bytes moved so far for one message; null when nothing is moving.
+final localShareProgressProvider =
+    StreamProvider.family<ShareProgress?, String>((ref, messageId) async* {
+      final engine = await ref.watch(localShareEngineProvider.future);
+      if (engine == null) {
+        yield null;
+        return;
+      }
+      yield engine.progress.current(messageId);
+      yield* engine.progress.stream.where((p) => p.messageId == messageId);
+    });

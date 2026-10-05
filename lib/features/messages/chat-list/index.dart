@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
+import '../../local_share/data/share_thread_queries.dart';
+import '../../local_share/providers/share_in_chats.dart';
+import '../../local_share/sheets/share_chat_row_sheet.dart';
 import '../chat_list_filters.dart';
 import '../message_e2ee/new_chat_setup.dart';
 import '../data/models/chat_models.dart';
@@ -11,6 +14,7 @@ import '../providers/chat_provider.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_title.dart';
 import 'camera_send_flow.dart';
+import 'chat_list_entries.dart';
 import 'conversation_actions_run.dart';
 import 'conversation_actions_sheet.dart';
 import 'filter_chips_row.dart';
@@ -63,6 +67,17 @@ class _ChatListState extends ConsumerState<ChatList> {
     }
   }
 
+  /// Same nav-pill rule as [_openActions]: the sheet must not come up under it.
+  Future<void> _openShareActions(ShareThread thread) async {
+    final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
+    hidden.state = true;
+    try {
+      await showShareChatRowSheet(context, ref, thread);
+    } finally {
+      hidden.state = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final original = ref.watch(chatProvider);
@@ -82,9 +97,14 @@ class _ChatListState extends ConsumerState<ChatList> {
     // A pill whose last chat went away (read the last unread, left the last
     // group) takes the selection back to All rather than an empty list.
     if (!filters.contains(_filter)) _filter = ChatListFilter.all;
-    final rows = unifiedConversations(
-      dms: dms,
-      channels: channels,
+    // Local Share device threads the user moved here sit among the chats.
+    final rows = mergeChatListEntries(
+      conversations: unifiedConversations(
+        dms: dms,
+        channels: channels,
+        filter: _filter,
+      ),
+      threads: ref.watch(shareChatThreadsProvider),
       filter: _filter,
     );
     final recentDms = recentDmsForStrip(dms);
@@ -122,12 +142,15 @@ class _ChatListState extends ConsumerState<ChatList> {
                           setState(() => _filter = ChatListFilter.all),
                     )
                   : ConversationRows(
-                      conversations: rows,
+                      entries: rows,
                       currentUserId: chat.currentUserId,
                       onRefresh: () =>
                           ref.read(chatProvider.notifier).fetchSidebar(),
                       onTap: (c) => context.push('/messages/${c.id}'),
                       onLongPress: _openActions,
+                      onShareTap: (t) =>
+                          context.push('/local-share/${t.device.deviceId}'),
+                      onShareLongPress: _openShareActions,
                     ),
             ),
           ],

@@ -10,6 +10,8 @@ import android.view.MotionEvent
 import androidx.core.view.WindowCompat
 import com.ababilx.app.backup.LocalBackupChannel
 import com.ababilx.app.callaudio.CallAudioSession
+import com.ababilx.app.localshare.LocalShareFolderChannel
+import com.ababilx.app.localshare.LocalShareNetChannel
 import com.ababilx.app.mediasend.MediaSendChannel
 import com.ababilx.call_ringer.CallRinger
 import com.hiennv.flutter_callkit_incoming.CallkitRingSilence
@@ -122,6 +124,12 @@ class MainActivity : FlutterActivity() {
     /** Local backup folder and file pickers (features/local-backup). */
     private val localBackup by lazy { LocalBackupChannel(this) }
 
+    /** Local Share: Wi-Fi locks + the transfer service (features/local_share). */
+    private val localShareNet by lazy { LocalShareNetChannel(applicationContext) }
+
+    /** Local Share: sending a whole folder. */
+    private val localShareFolder by lazy { LocalShareFolderChannel(this) }
+
     /** This Activity runs on an engine a live call carried past the last one. */
     private var engineReused = false
 
@@ -173,6 +181,8 @@ class MainActivity : FlutterActivity() {
         ghostBlobs.attach(flutterEngine)
         deviceAuth.attach(flutterEngine)
         localBackup.attach(flutterEngine)
+        localShareNet.attach(flutterEngine)
+        localShareFolder.attach(flutterEngine)
     }
 
     /**
@@ -204,6 +214,7 @@ class MainActivity : FlutterActivity() {
         if (mediaSend.onActivityResult(requestCode, resultCode, data)) return
         if (deviceAuth.onActivityResult(requestCode, resultCode)) return
         if (localBackup.onActivityResult(requestCode, resultCode, data)) return
+        if (localShareFolder.onActivityResult(requestCode, resultCode, data)) return
         super.onActivityResult(requestCode, resultCode, data)
     }
 

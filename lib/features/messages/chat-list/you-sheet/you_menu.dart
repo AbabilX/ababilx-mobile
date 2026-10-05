@@ -149,7 +149,15 @@ class YouMenu extends ConsumerWidget {
             Navigator.pop(context, YouSheetAction.scanQrLogin);
           },
         ),
-        // Local Share intentionally hidden from the You sheet for now.
+        YouMenuItem(
+          icon: HugeIcons.strokeRoundedFolderTransfer,
+          label: AppTranslations.translate(
+            context,
+            ref,
+            'settings_local_share',
+          ),
+          onTap: () => Navigator.pop(context, YouSheetAction.localShare),
+        ),
         YouMenuItem(
           icon: HugeIcons.strokeRoundedLogout01,
           // "Sign out" — this ends the account session on the device, not a

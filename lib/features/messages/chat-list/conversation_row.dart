@@ -71,16 +71,13 @@ class ConversationRow extends ConsumerWidget {
         ? ref.watch(userStatusForProvider(conversation.peerUserId))
         : null;
 
-    // Show local share icon when peer device is detected on same Wi-Fi network.
-    // Matching is done by comparing the peer's display name against each
-    // discovered device's alias broadcast via UDP Multicast (LocalSend v2.1).
+    // The peer has a device on this Wi-Fi with Local Share on. Matched by the
+    // account id the device announces — a claim, so it only decorates a chat
+    // that already exists.
     final isLocalPeerNearby =
         conversation.hasDmPeer &&
-        conversation.peerUserName != null &&
-        ref
-            .watch(nearbyDevicesProvider)
-            .values
-            .any((d) => d.alias.contains(conversation.peerUserName!));
+        (ref.watch(localSharePeersProvider).valueOrNull?.values ?? const [])
+            .any((d) => d.userId == conversation.peerUserId);
 
     final previewStyle = TextStyle(
       fontSize: 15,

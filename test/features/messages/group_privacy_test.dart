@@ -95,15 +95,15 @@ void main() {
 
     testWidgets('open: the dock offers Save and Share', (tester) async {
       await tester.pumpWidget(host(outer: false, inner: false));
-      expect(find.text('Save'), findsOneWidget);
-      expect(find.text('Share'), findsOneWidget);
+      expect(find.byTooltip('Save'), findsOneWidget);
+      expect(find.byTooltip('Share'), findsOneWidget);
     });
 
     testWidgets('held: Save and Share go, Rotate stays', (tester) async {
       await tester.pumpWidget(host(outer: true, inner: false));
       expect(MediaSaveLock.held, isTrue);
-      expect(find.text('Save'), findsNothing);
-      expect(find.text('Share'), findsNothing);
+      expect(find.byTooltip('Save'), findsNothing);
+      expect(find.byTooltip('Share'), findsNothing);
       expect(find.text('Rotate'), findsOneWidget);
     });
 
@@ -136,7 +136,7 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.text('Save'), findsNothing);
+      expect(find.byTooltip('Save'), findsNothing);
     });
   });
 }

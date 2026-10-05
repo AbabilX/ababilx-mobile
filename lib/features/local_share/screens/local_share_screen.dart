@@ -1,72 +1,149 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 
-import '../widgets/share_tab_bar.dart';
-import 'history_tab.dart';
-import 'receive_tab.dart';
-import 'send_tab.dart';
+import '../../messages/chat_icon.dart';
+import '../engine/protocol/share_peer.dart';
+import '../providers/local_share_providers.dart';
+import '../providers/share_account.dart';
+import '../share_text.dart';
+import '../sheets/device_name_sheet.dart';
+import '../widgets/share_device_avatar.dart';
+import '../widgets/share_setup_view.dart';
+import '../widgets/share_thread_tile.dart';
 
-/// Fullscreen Local Share hub — carries its own Send/Receive pill tab bar,
-/// entirely separate from the app's shell bottom navigation.
-class LocalShareScreen extends StatefulWidget {
+/// Local Share: the devices around you and the threads you have with them.
+class LocalShareScreen extends ConsumerWidget {
   const LocalShareScreen({super.key});
 
   @override
-  State<LocalShareScreen> createState() => _LocalShareScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final name = ref.watch(localShareNameProvider);
+    final title = Text(lsText(ref, 'settings_local_share'));
+    if (name.isLoading) {
+      return Scaffold(appBar: AppBar(title: title));
+    }
+    final mine = name.valueOrNull;
+    if (mine == null) {
+      return Scaffold(
+        appBar: AppBar(title: title),
+        body: const ShareSetupView(),
+      );
+    }
 
-class _LocalShareScreenState extends State<LocalShareScreen> {
-  int _index = 0;
+    final colors = Theme.of(context).colorScheme;
+    final peers = ref.watch(localSharePeersProvider).valueOrNull ?? const {};
+    final threads =
+        ref.watch(localShareThreadsProvider).valueOrNull ?? const [];
+    final known = {for (final t in threads) t.device.deviceId};
+    final strangers = [
+      for (final p in peers.values)
+        if (!known.contains(p.deviceId)) p,
+    ];
 
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        icon: AppBarBackIcon(),
-                      ),
-                      Text(
-                        'Local Share',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: IndexedStack(
-                    index: _index,
-                    children: const [SendTab(), HistoryTab(), ReceiveTab()],
-                  ),
-                ),
-              ],
-            ),
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 12,
-              child: ShareTabBar(
-                selectedIndex: _index,
-                onSelect: (i) => setState(() => _index = i),
-              ),
-            ),
-          ],
+    Widget header(String key) => Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
+      child: Text(
+        lsText(ref, key),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: colors.onSurfaceVariant,
         ),
       ),
+    );
+
+    return Scaffold(
+      appBar: AppBar(
+        title: title,
+        actions: [
+          IconButton(
+            tooltip: lsText(ref, 'ls_refresh'),
+            icon: const ChatIcon(HugeIcons.strokeRoundedRefresh),
+            onPressed: () => unawaited(
+              ref
+                  .read(localShareEngineProvider)
+                  .valueOrNull
+                  ?.presence
+                  .refresh(),
+            ),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 32),
+        children: [
+          ListTile(
+            leading: const ChatIcon(HugeIcons.strokeRoundedSmartPhone01),
+            title: Text(mine),
+            subtitle: Text(lsText(ref, 'ls_this_device')),
+            trailing: const ChatIcon(
+              HugeIcons.strokeRoundedPencilEdit02,
+              size: 20,
+            ),
+            onTap: () => showDeviceNameSheet(context),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+            child: Text(
+              lsText(ref, 'ls_same_wifi_note'),
+              style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+            ),
+          ),
+          header('ls_section_nearby'),
+          if (strangers.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
+              child: Text(
+                lsText(
+                  ref,
+                  peers.isEmpty ? 'ls_searching' : 'ls_no_new_devices',
+                ),
+                style: TextStyle(color: colors.onSurfaceVariant),
+              ),
+            )
+          else
+            for (final peer in strangers) _NearbyTile(peer: peer),
+          if (threads.isNotEmpty) header('ls_section_threads'),
+          for (final thread in threads)
+            ShareThreadTile(
+              thread: thread,
+              nearby: peers.containsKey(thread.device.deviceId),
+              onTap: () =>
+                  context.push('/local-share/${thread.device.deviceId}'),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NearbyTile extends ConsumerWidget {
+  const _NearbyTile({required this.peer});
+
+  final SharePeer peer;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final account = ref.watch(shareAccountProvider(peer.userId));
+    return ListTile(
+      leading: ShareDeviceAvatar(
+        deviceType: peer.deviceType,
+        userId: peer.userId,
+        nearby: true,
+      ),
+      title: Text(peer.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        account == null
+            ? lsText(ref, 'ls_pair_unknown')
+            : account.mine
+            ? lsText(ref, 'ls_your_account')
+            : account.name,
+      ),
+      onTap: () => context.push('/local-share/${peer.deviceId}'),
     );
   }
 }
