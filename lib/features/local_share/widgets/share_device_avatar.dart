@@ -15,12 +15,17 @@ class ShareDeviceAvatar extends ConsumerWidget {
     required this.userId,
     this.size = 48,
     this.nearby = false,
+    this.shareBadge = false,
   });
 
   final String deviceType;
   final String? userId;
   final double size;
   final bool nearby;
+
+  /// Chat list: a share glyph replaces the green dot, always drawn so the row
+  /// reads as Local Share, and accent-filled only while the device is in range.
+  final bool shareBadge;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,6 +52,7 @@ class ShareDeviceAvatar extends ConsumerWidget {
             alignment: Alignment.center,
             child: ChatIcon(glyph, size: size * 0.46, color: colors.primary),
           );
+    if (shareBadge) return _withShareBadge(face, colors);
     if (!nearby) return face;
     return Stack(
       clipBehavior: Clip.none,
@@ -62,6 +68,35 @@ class ShareDeviceAvatar extends ConsumerWidget {
               color: const Color(0xFF22C55E),
               shape: BoxShape.circle,
               border: Border.all(color: colors.surface, width: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _withShareBadge(Widget face, ColorScheme colors) {
+    final badge = size * 0.36;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        face,
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: Container(
+            width: badge,
+            height: badge,
+            decoration: BoxDecoration(
+              color: nearby ? colors.primary : colors.surfaceContainerHighest,
+              shape: BoxShape.circle,
+              border: Border.all(color: colors.surface, width: 2),
+            ),
+            alignment: Alignment.center,
+            child: ChatIcon(
+              HugeIcons.strokeRoundedShare01,
+              size: badge * 0.55,
+              color: nearby ? colors.onPrimary : colors.onSurfaceVariant,
             ),
           ),
         ),

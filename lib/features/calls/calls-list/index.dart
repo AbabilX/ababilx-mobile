@@ -16,6 +16,7 @@ import 'calls_list_refresh.dart';
 import 'calls_search.dart';
 import '../favorites/call_favorite.dart';
 import '../favorites/call_favorite_sheet.dart';
+import '../../messages/chat-list/filter_reorder_blur.dart';
 import '../favorites/call_favorites_strip.dart';
 
 enum _CallFilter { all, missed }
@@ -182,19 +183,21 @@ class _CallsListState extends ConsumerState<CallsList>
         children: [
           if (!_searching) const CallFavoritesStrip(),
           Expanded(
-            child: CallsBody(
-              log: log,
-              rows: rows,
-              lang: lang,
-              searchQuery: _query.trim(),
-              controller: _scroll,
-              callBusy: callBusy,
-              onRefresh: refresh,
-              onCall: _call,
-              onLongPress: (entry) => showCallFavoriteSheet(
-                context,
-                ref,
-                CallFavorite.fromEntry(entry),
+            child: FilterReorderBlur(
+              child: CallsBody(
+                log: log,
+                rows: rows,
+                lang: lang,
+                searchQuery: _query.trim(),
+                controller: _scroll,
+                callBusy: callBusy,
+                onRefresh: refresh,
+                onCall: _call,
+                onLongPress: (entry) => showCallFavoriteSheet(
+                  context,
+                  ref,
+                  CallFavorite.fromEntry(entry),
+                ),
               ),
             ),
           ),

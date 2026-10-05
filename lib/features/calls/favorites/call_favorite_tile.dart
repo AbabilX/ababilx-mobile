@@ -17,14 +17,16 @@ class CallFavoriteTile extends ConsumerWidget {
     super.key,
     required this.favorite,
     required this.onTap,
-    required this.onLongPress,
+    this.onLongPress,
   });
 
   final CallFavorite favorite;
 
   /// Null while a call is already up: the tile dims, like the redial buttons.
   final VoidCallback? onTap;
-  final VoidCallback onLongPress;
+  /// Left null where the tile is dragged: a long-press handler here would win
+  /// the gesture race against the drag.
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -57,6 +57,17 @@ class CallFavoritesNotifier extends Notifier<List<CallFavorite>> {
     return true;
   }
 
+  /// Moves a favourite to a new place in the strip.
+  Future<void> move(int from, int to) async {
+    await _loading;
+    if (from == to || from < 0 || to < 0) return;
+    if (from >= state.length || to >= state.length) return;
+    final next = [...state];
+    next.insert(to, next.removeAt(from));
+    state = next;
+    await _save();
+  }
+
   Future<void> remove(String conversationId) async {
     await _loading;
     state = state.where((f) => f.conversationId != conversationId).toList();

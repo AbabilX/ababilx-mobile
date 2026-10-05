@@ -14,6 +14,7 @@ class ShellBottomBar extends StatelessWidget {
     this.onSelect,
     this.labelOf,
     this.unread = 0,
+    this.onReorder,
   });
 
   /// The destinations in the bar.
@@ -24,6 +25,7 @@ class ShellBottomBar extends StatelessWidget {
   /// Resolves a tab's translated label.
   final String Function(ShellTab tab)? labelOf;
   final int unread;
+  final void Function(int from, int to)? onReorder;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,7 @@ class ShellBottomBar extends StatelessWidget {
                 onSelect: onSelect ?? (_) {},
                 labelOf: labelOf ?? (tab) => tab.labelKey,
                 unread: unread,
+                onReorder: onReorder,
               ),
             ),
           ),

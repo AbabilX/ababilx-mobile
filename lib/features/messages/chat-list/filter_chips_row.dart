@@ -6,6 +6,7 @@ import '../../../core/localization/app_translations.dart';
 import '../chat_icon.dart';
 import '../chat_list_filters.dart';
 import 'filter_order.dart';
+import 'filter_reorder_blur.dart';
 
 /// One horizontally scrollable row of pills above the conversation list:
 /// All | Unread messages | Groups | Flock (webhook feeds; Ababil = a flock
@@ -66,6 +67,8 @@ class FilterChipsRow extends ConsumerWidget {
         itemCount: ordered.length,
         proxyDecorator: (child, _, _) =>
             Material(color: Colors.transparent, child: child),
+        onReorderStart: (_) => filterReordering.value = true,
+        onReorderEnd: (_) => filterReordering.value = false,
         onReorderItem: (from, to) {
           final first = ordered.first == ChatListFilter.all;
           if (from == 0 && first) return;

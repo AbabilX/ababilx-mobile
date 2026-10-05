@@ -18,6 +18,7 @@ import 'chat_list_entries.dart';
 import 'conversation_actions_run.dart';
 import 'conversation_actions_sheet.dart';
 import 'filter_chips_row.dart';
+import 'filter_reorder_blur.dart';
 import 'conversation_rows.dart';
 import 'list_fab.dart';
 import 'list_header.dart';
@@ -117,16 +118,18 @@ class _ChatListState extends ConsumerState<ChatList> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const ChatListHeader(),
-            if (widget.banner != null) widget.banner!,
+            const FilterReorderBlur(child: ChatListHeader()),
+            if (widget.banner != null) FilterReorderBlur(child: widget.banner!),
             // Avatar rail first, pills under it — Slack's order. The pills
             // filter the list below them, so they sit against it.
             if (recentDms.isNotEmpty)
-              RecentContactsStrip(
-                conversations: recentDms,
-                currentUserId: chat.currentUserId,
-                onTap: (conversation) =>
-                    context.push('/messages/${conversation.id}'),
+              FilterReorderBlur(
+                child: RecentContactsStrip(
+                  conversations: recentDms,
+                  currentUserId: chat.currentUserId,
+                  onTap: (conversation) =>
+                      context.push('/messages/${conversation.id}'),
+                ),
               ),
             FilterChipsRow(
               filters: filters,
@@ -134,28 +137,30 @@ class _ChatListState extends ConsumerState<ChatList> {
               onChanged: (next) => setState(() => _filter = next),
             ),
             Expanded(
-              child: chat.sidebarLoading && rows.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2.5),
-                    )
-                  : rows.isEmpty
-                  ? ConversationListEmpty(
-                      filter: _filter,
-                      onStart: () => context.push('/messages/new'),
-                      onShowAll: () =>
-                          setState(() => _filter = ChatListFilter.all),
-                    )
-                  : ConversationRows(
-                      entries: rows,
-                      currentUserId: chat.currentUserId,
-                      onRefresh: () =>
-                          ref.read(chatProvider.notifier).fetchSidebar(),
-                      onTap: (c) => context.push('/messages/${c.id}'),
-                      onLongPress: _openActions,
-                      onShareTap: (t) =>
-                          context.push('/local-share/${t.device.deviceId}'),
-                      onShareLongPress: _openShareActions,
-                    ),
+              child: FilterReorderBlur(
+                child: chat.sidebarLoading && rows.isEmpty
+                    ? const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                      )
+                    : rows.isEmpty
+                    ? ConversationListEmpty(
+                        filter: _filter,
+                        onStart: () => context.push('/messages/new'),
+                        onShowAll: () =>
+                            setState(() => _filter = ChatListFilter.all),
+                      )
+                    : ConversationRows(
+                        entries: rows,
+                        currentUserId: chat.currentUserId,
+                        onRefresh: () =>
+                            ref.read(chatProvider.notifier).fetchSidebar(),
+                        onTap: (c) => context.push('/messages/${c.id}'),
+                        onLongPress: _openActions,
+                        onShareTap: (t) =>
+                            context.push('/local-share/${t.device.deviceId}'),
+                        onShareLongPress: _openShareActions,
+                      ),
+              ),
             ),
           ],
         ),
@@ -164,9 +169,11 @@ class _ChatListState extends ConsumerState<ChatList> {
         padding: EdgeInsets.only(
           bottom: ShellPillMetrics.contentBottom(context) - 24,
         ),
-        child: ChatListFab(
-          onCamera: () => captureAndSendChatPhoto(context, ref),
-          onNewMessage: () => context.push('/messages/new'),
+        child: FilterReorderBlur(
+          child: ChatListFab(
+            onCamera: () => captureAndSendChatPhoto(context, ref),
+            onNewMessage: () => context.push('/messages/new'),
+          ),
         ),
       ),
     );

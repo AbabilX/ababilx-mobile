@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -66,6 +67,19 @@ class _SwipeTabPagerState extends State<SwipeTabPager> {
     super.didUpdateWidget(old);
     // A tab tap, back or a deep link moved the route. After a swipe the route
     // already names the page on screen, so nothing moves.
+    if (_controller.hasClients && !listEquals(old.routes, widget.routes)) {
+      // The bar was rearranged: the same screen now sits at another position,
+      // so land on it at once instead of sliding across the others.
+      // Silently: this runs in the build phase, where the bar must not be
+      // told. It hears the new position right after the frame.
+      _controller.removeListener(_report);
+      _controller.jumpToPage(widget.index);
+      _controller.addListener(_report);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) homeTabPosition.value = widget.index.toDouble();
+      });
+      return;
+    }
     if (_controller.hasClients && _page != widget.index) {
       // Slide, never jump: the bar's background slides with it.
       _controller.animateToPage(
@@ -110,6 +124,7 @@ class _SwipeTabPagerState extends State<SwipeTabPager> {
           children: [
             for (var i = 0; i < widget.pages.length; i++)
               _KeptPage(
+                key: ValueKey(widget.routes[i]),
                 child: SwipeTabActive(
                   active: i == widget.index,
                   child: widget.pages[i],
@@ -121,7 +136,7 @@ class _SwipeTabPagerState extends State<SwipeTabPager> {
 }
 
 class _KeptPage extends StatefulWidget {
-  const _KeptPage({required this.child});
+  const _KeptPage({super.key, required this.child});
   final Widget child;
 
   @override

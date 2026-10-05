@@ -291,7 +291,8 @@ class VoicePeerEngine {
     // iOS: re-assert the route once media is attached; opening the
     // microphone can move the phone off it. Android's native owner watches
     // the route itself and puts the user's choice back when it moves.
-    if (!_disposed && Platform.isIOS) await CallAudioRoute.setSpeaker(speakerOn);
+    if (!_disposed && Platform.isIOS)
+      await CallAudioRoute.setSpeaker(speakerOn);
   }
 
   // ---- camera -------------------------------------------------------------

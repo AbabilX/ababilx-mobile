@@ -60,6 +60,7 @@ class ShareChatRow extends ConsumerWidget {
               userId: device.userId,
               size: 52,
               nearby: nearby,
+              shareBadge: true,
             ),
             const SizedBox(width: 14),
             Expanded(

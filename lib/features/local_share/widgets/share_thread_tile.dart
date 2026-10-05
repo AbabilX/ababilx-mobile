@@ -47,7 +47,9 @@ class ShareThreadTile extends ConsumerWidget {
         ),
       ),
       subtitle: Text(
-        device.blocked ? lsText(ref, 'ls_blocked') : shareThreadPreview(ref, thread),
+        device.blocked
+            ? lsText(ref, 'ls_blocked')
+            : shareThreadPreview(ref, thread),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(

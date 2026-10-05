@@ -144,11 +144,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           // One page for both, so a swipe moves between them.
           GoRoute(
             path: '/messages',
-            pageBuilder: (_, state) => homeTabPage(state, 0),
+            pageBuilder: (_, state) => homeTabPage(state),
           ),
           GoRoute(
             path: '/calls',
-            pageBuilder: (_, state) => homeTabPage(state, 1),
+            pageBuilder: (_, state) => homeTabPage(state),
           ),
         ],
       ),

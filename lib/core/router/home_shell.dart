@@ -12,7 +12,9 @@ import '../../features/policy/widgets/policy_gate_overlay.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/index.dart';
+import 'shell_bottom_bar/nav_reorder_blur.dart';
 import 'shell_bottom_bar/shell_chrome_provider.dart';
+import 'shell_bottom_bar/shell_tab_order.dart';
 import 'shell_bottom_bar/shell_tabs.dart';
 
 /// Home shell: the routed page under the floating capsule nav.
@@ -34,7 +36,7 @@ class HomeShell extends ConsumerWidget {
     if (profileLang != null) {
       unawaited(DeclineReplies.rememberLanguage(profileLang.toLowerCase()));
     }
-    const tabs = homeShellTabs;
+    final tabs = applyTabOrder(homeShellTabs, ref.watch(shellTabOrderProvider));
     final location = GoRouterState.of(context).matchedLocation;
     final idx = shellTabIndex(tabs, location);
     final unread = ref.watch(totalUnreadProvider);
@@ -48,6 +50,8 @@ class HomeShell extends ConsumerWidget {
             labelOf: (tab) =>
                 AppTranslations.translate(context, ref, tab.labelKey),
             onSelect: (i) => context.go(tabs[i].route),
+            onReorder: (from, to) =>
+                ref.read(shellTabOrderProvider.notifier).move(tabs, from, to),
           );
 
     return Scaffold(
@@ -58,6 +62,7 @@ class HomeShell extends ConsumerWidget {
           const NotificationVitalsWatcher(),
           const LocalBackupWatcher(),
           const PolicyGateOverlay(),
+          const NavReorderBlur(),
           if (bar != null)
             Positioned(
               left: 0,
