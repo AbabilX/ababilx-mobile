@@ -29,10 +29,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: "6c5bcd986e06b94e3c40244af471750840a3d2341d1f9763a1100a14add517b4"
+      sha256: a96e8b390886ee8abb49b7bd3ac8df6f451c621619f52a26e815fdcf568959ff
       url: "https://pub.dev"
     source: hosted
-    version: "4.3.0"
+    version: "4.0.9"
   args:
     dependency: transitive
     description:
@@ -113,6 +113,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.4.1"
+  barcode:
+    dependency: transitive
+    description:
+      name: barcode
+      sha256: "7b6729c37e3b7f34233e2318d866e8c48ddb46c1f7ad01ff7bb2a8de1da2b9f4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.9"
+  bidi:
+    dependency: transitive
+    description:
+      name: bidi
+      sha256: "77f475165e94b261745cf1032c751e2032b8ed92ccb2bf5716036db79320637d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.13"
   boolean_selector:
     dependency: transitive
     description:
@@ -424,14 +440,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  extension:
-    dependency: transitive
-    description:
-      name: extension
-      sha256: "1d6cc5a2d173407284780b68fd94f2b547184d4190ca7dbf6d0bf43eb43c29d8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
   fake_async:
     dependency: transitive
     description:
@@ -1279,14 +1287,54 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
-  pdfx:
-    dependency: "direct main"
+  pdf:
+    dependency: transitive
     description:
-      name: pdfx
-      sha256: "83bcd2b971fc2f6ee4299659c96d7d66b2ba4807748571a8a4889f1cde14b754"
+      name: pdf
+      sha256: e47a275b267873d5944ad5f5ff0dcc7ac2e36c02b3046a0ffac9b72fd362c44b
       url: "https://pub.dev"
     source: hosted
-    version: "2.11.0"
+    version: "3.12.0"
+  pdf_widget_wrapper:
+    dependency: transitive
+    description:
+      name: pdf_widget_wrapper
+      sha256: c930860d987213a3d58c7ec3b7ecf8085c3897f773e8dc23da9cae60a5d6d0f5
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4"
+  pdfium_dart:
+    dependency: transitive
+    description:
+      name: pdfium_dart
+      sha256: "86e95c66b09f3245b95c4924f2edce8d4f7c9786876e5c5ee8e36b104a94bbb0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.5"
+  pdfium_flutter:
+    dependency: transitive
+    description:
+      name: pdfium_flutter
+      sha256: "0b115c0917aef9cf6bb9c4d47d0efc61d97f44844cd76287c921f997c26cf15d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.3"
+  pdfrx:
+    dependency: "direct main"
+    description:
+      name: pdfrx
+      sha256: "85a87117ae6358e0ef2cc90d4db9f5e689eabbd7f19ab98c97164584d0be4a4a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.8"
+  pdfrx_engine:
+    dependency: transitive
+    description:
+      name: pdfrx_engine
+      sha256: "4399846809a75aed03881d8b8a19e5e70addd4b46b22fd94a0effd8859258f07"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.7"
   permission_handler:
     dependency: "direct main"
     description:
@@ -1343,14 +1391,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.2"
-  photo_view:
-    dependency: transitive
-    description:
-      name: photo_view
-      sha256: "1fc3d970a91295fbd1364296575f854c9863f225505c28c46e0a03e48960c75e"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.15.0"
   platform:
     dependency: transitive
     description:
@@ -1391,6 +1431,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.2"
+  printing:
+    dependency: "direct main"
+    description:
+      name: printing
+      sha256: "689170c9ddb1bda85826466ba80378aa8993486d3c959a71cd7d2d80cb606692"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.14.3"
   protobuf:
     dependency: transitive
     description:
@@ -1804,14 +1852,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
-  universal_platform:
-    dependency: transitive
-    description:
-      name: universal_platform
-      sha256: "64e16458a0ea9b99260ceb5467a214c1f298d647c659af1bff6d3bf82536b1ec"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
   url_launcher:
     dependency: "direct main"
     description:

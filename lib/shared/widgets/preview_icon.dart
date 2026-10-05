@@ -40,6 +40,7 @@ abstract final class PreviewIcons {
   static const PreviewGlyph mute = HugeIcons.strokeRoundedVolumeOff;
   static const PreviewGlyph unmute = HugeIcons.strokeRoundedVolumeHigh;
   static const PreviewGlyph open = HugeIcons.strokeRoundedLinkSquare01;
+  static const PreviewGlyph print = HugeIcons.strokeRoundedPrinter;
   static const PreviewGlyph share = HugeIcons.strokeRoundedShare01;
   static const PreviewGlyph play = HugeIcons.strokeRoundedPlay;
   static const PreviewGlyph pause = HugeIcons.strokeRoundedPause;

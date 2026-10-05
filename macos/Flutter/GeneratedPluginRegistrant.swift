@@ -22,7 +22,8 @@ import google_sign_in_ios
 import livekit_client
 import mobile_scanner
 import network_info_plus
-import pdfx
+import pdfium_flutter
+import printing
 import record_macos
 import share_plus
 import shared_preferences_foundation
@@ -49,7 +50,8 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   LiveKitPlugin.register(with: registry.registrar(forPlugin: "LiveKitPlugin"))
   MobileScannerPlugin.register(with: registry.registrar(forPlugin: "MobileScannerPlugin"))
   NetworkInfoPlusPlugin.register(with: registry.registrar(forPlugin: "NetworkInfoPlusPlugin"))
-  PdfxPlugin.register(with: registry.registrar(forPlugin: "PdfxPlugin"))
+  PDFiumFlutterPlugin.register(with: registry.registrar(forPlugin: "PDFiumFlutterPlugin"))
+  PrintingPlugin.register(with: registry.registrar(forPlugin: "PrintingPlugin"))
   RecordMacOsPlugin.register(with: registry.registrar(forPlugin: "RecordMacOsPlugin"))
   SharePlusMacosPlugin.register(with: registry.registrar(forPlugin: "SharePlusMacosPlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))

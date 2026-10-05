@@ -13,6 +13,7 @@ class FilePreviewFooter extends StatelessWidget {
     this.contentType = '',
     this.caption,
     required this.onOpen,
+    this.onPrint,
   });
 
   final String fileName;
@@ -21,6 +22,7 @@ class FilePreviewFooter extends StatelessWidget {
   final String contentType;
   final String? caption;
   final VoidCallback onOpen;
+  final VoidCallback? onPrint;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +48,7 @@ class FilePreviewFooter extends StatelessWidget {
               remoteUrl: remoteUrl,
               contentType: contentType,
               onOpen: onOpen,
+              onPrint: onPrint,
             ),
           ),
       ],

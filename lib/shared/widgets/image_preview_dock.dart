@@ -21,6 +21,7 @@ class ImagePreviewDock extends StatelessWidget {
     this.onMute,
     this.muted = false,
     this.onOpen,
+    this.onPrint,
   });
 
   final String fileName;
@@ -37,6 +38,9 @@ class ImagePreviewDock extends StatelessWidget {
 
   /// Documents / PDF — open in another app. Null hides the control.
   final VoidCallback? onOpen;
+
+  /// PDF — hands the file to the system print dialog. Null hides the control.
+  final VoidCallback? onPrint;
 
   static bool hasSource({String? localPath, String? remoteUrl}) {
     return (localPath != null && localPath.isNotEmpty) ||
@@ -104,6 +108,12 @@ class ImagePreviewDock extends StatelessWidget {
                 label: 'Open',
                 showLabel: true,
                 onTap: onOpen!,
+              ),
+            if (canExport && onPrint != null)
+              _DockAction(
+                icon: PreviewIcons.print,
+                label: 'Print',
+                onTap: onPrint!,
               ),
             if (canExport)
               _DockAction(
