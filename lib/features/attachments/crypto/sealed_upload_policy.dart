@@ -6,9 +6,9 @@ import 'attachment_secret.dart';
 
 /// Whether an upload into [conversation] is encrypted on this phone first.
 ///
-/// - [enabled] is the server's rollout switch (`encrypted_attachments` on
-///   `/api/me`). Reading an encrypted file needs no switch; sending one waits
-///   until every phone that might receive it can open it.
+/// - [enabled] is `encrypted_attachments` on `/api/me`: always true on a
+///   current server, absent (false) on one that predates 0168 and would
+///   store the ciphertext without its key. Reading needs no flag.
 /// - The conversation has to be one whose messages are sealed, because the
 ///   file's key travels sealed under the conversation key. A webhook feed
 ///   has none.
