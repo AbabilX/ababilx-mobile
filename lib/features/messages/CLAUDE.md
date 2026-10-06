@@ -1807,9 +1807,13 @@ receive  vault.decryptMessage -> _openAttachments -> real name/type/size + secre
 - **A files-only message has a sealed EMPTY body.** Use `isUnopenedMessage`
   (retry, forward, select) and `isVaultFailureBody` (sidebar preview after a
   decrypt) — `isVaultPlaceholderBody('')` is true and would block all three.
-- **Sealing waits for the switch**: `sealedUploadSecret` reads
-  `profile.encryptedAttachments` (`/api/me`), and skips a
-  `plaintextUntilKeyed` group, whose send may still fall back to plaintext.
+- **Sealing is on by default**: `sealedUploadSecret` reads
+  `profile.encryptedAttachments` (`/api/me`), which the server now always
+  reports true — there is no env switch any more. It stays a read, not a
+  constant, so a phone pointed at a server older than 0168 (field absent)
+  does not upload ciphertext that server would store without its key. A
+  `plaintextUntilKeyed` group is still skipped, since its send may fall
+  back to plaintext. Builds before 5.3.9+39 cannot open encrypted files.
 - **The cipher is `AesGcm.with256bits()` per 64 KiB chunk**, the same
   primitive the local backup and history transfer use on files. On Android
   that is `cryptography_flutter`: chunks of 2000 bytes and up go over the

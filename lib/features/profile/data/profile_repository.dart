@@ -49,9 +49,11 @@ class AppUser extends Equatable {
   /// from local state, it has to be the server's own clock.
   final bool isNewAccount;
 
-  /// The server's rollout switch for encrypting chat files on the phone
-  /// before upload (server migration 0168). Decides sending only — an
-  /// encrypted file that arrives is opened whatever this says.
+  /// Whether the server takes chat files encrypted on the phone before
+  /// upload (server migration 0168). Always true on a current server; false
+  /// only from one that predates 0168 and would store the ciphertext without
+  /// its key. Decides sending only — an encrypted file that arrives is
+  /// opened whatever this says.
   final bool encryptedAttachments;
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
