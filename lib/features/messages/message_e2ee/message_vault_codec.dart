@@ -5,10 +5,25 @@ class EncryptedDmPayload {
     required this.encryptedBody,
     required this.nonce,
     required this.keyVersion,
+    this.attachmentSeals = const {},
   });
   final String encryptedBody;
   final String nonce;
   final int keyVersion;
+
+  /// The keys of this message's encrypted files, sealed under the same
+  /// [keyVersion] as the body, by file URL (server 0168). Empty for a message
+  /// with no encrypted upload.
+  final Map<String, SealedAttachmentMeta> attachmentSeals;
+
+  EncryptedDmPayload withAttachmentSeals(
+    Map<String, SealedAttachmentMeta> seals,
+  ) => EncryptedDmPayload(
+    encryptedBody: encryptedBody,
+    nonce: nonce,
+    keyVersion: keyVersion,
+    attachmentSeals: seals,
+  );
 }
 
 /// Wire-format helpers. Every value crossing the API is base64url without

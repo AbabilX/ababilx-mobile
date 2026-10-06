@@ -1772,3 +1772,69 @@ doesn't support image insertion here". The chat field now declares one
 - Main composer only. The thread composer shares it; the edit sheet and Ghost
   Chat do not take keyboard images.
 - Pinned by `test/features/messages/composer_keyboard_content_test.dart`.
+
+# Encrypted chat files (2026-10-06, server 0168)
+
+Full contract and wire format: root `CLAUDE.md`, "Encrypted chat attachments".
+What bites on this side:
+
+```
+upload   notifier.presignAttachment -> SealedUploads.register(publicUrl, key)
+         notifier.uploadAttachmentBytes|File -> encrypt, PUT ciphertext
+         notifier.sendMessage -> SealedUploads.attach -> vault seals each key
+                                 under the body's key version -> toWire()
+receive  vault.decryptMessage -> _openAttachments -> real name/type/size + secret
+         queue -> sealed_download.dart: ciphertext to .enc, decrypt to .dec, rename
+```
+
+- **The five senders (composer, voice, camera, share intake, khaam) changed
+  nothing**, because the key rides a registry keyed by the upload's public URL.
+  A new upload path must go through the three notifier methods, or it uploads
+  in the clear with no error. An object that is not a message attachment
+  passes `plain: true` (group photo and banner).
+- **`ChatAttachmentInput.toJson()` is local-only and carries the file key**
+  (the outbox needs it to finish a send after a kill). The API takes
+  `toWire()`, which throws for an encrypted upload with no seal rather than
+  send a file nobody can open. Never hand `toJson()` to the server.
+- **`ChatMessageAttachment.toJson()` writes the SEALED form** when the
+  attachment was opened: generic name, coarse type, ciphertext size, no key.
+  The message store therefore never holds a file key or a real file name.
+  `secret` is memory-only.
+- **`needsKey`** = encrypted and its key did not open here (vault locked, or a
+  key version this account does not hold). Intake skips it, the queue fails it
+  at once without a request, the locked-chat widgets draw a dead row. Never
+  hand such a URL to an image or video widget — it is ciphertext.
+- **A files-only message has a sealed EMPTY body.** Use `isUnopenedMessage`
+  (retry, forward, select) and `isVaultFailureBody` (sidebar preview after a
+  decrypt) — `isVaultPlaceholderBody('')` is true and would block all three.
+- **Sealing waits for the switch**: `sealedUploadSecret` reads
+  `profile.encryptedAttachments` (`/api/me`), and skips a
+  `plaintextUntilKeyed` group, whose send may still fall back to plaintext.
+- **The cipher is `AesGcm.with256bits()` per 64 KiB chunk**, the same
+  primitive the local backup and history transfer use on files. On Android
+  that is `cryptography_flutter`: chunks of 2000 bytes and up go over the
+  method channel to `javax.crypto` (AES/GCM/NoPadding, AAD honoured), smaller
+  ones run in Dart — the same standard output either way, and the same as the
+  pinned vector. Throughput on a real phone is not measured yet; if a large
+  video is slow, the chunk loop is the one thing worth moving to Kotlin, with
+  the identical format.
+- **The key stays in `SealedUploads` until the send is confirmed**
+  (`sendMessage` forgets it after the server's answer; `discardUpload`
+  forgets it too). Removing it at `attach` looked tidier and was a silent
+  corruption: a send that returned before reaching the outbox is repeated
+  from the caller's own list, which has no key, and the ciphertext went out
+  as an ordinary `.bin` file.
+- **The sealed size comes from the bytes uploaded** (`SealedUploads.sizedFor`
+  in the two upload helpers), not from the presign's `sizeBytes` — a picker's
+  figure can be off, and the reader stops at the sealed size.
+- **`uploadAttachmentBytes` streams the ciphertext** (`sealStream`), so a
+  200 MB share is not held in memory three times. `uploadAttachmentFile`
+  encrypts into `<cache>/att-enc/` and a cancel during that throws Dio's own
+  cancel error — callers read a normal return as "uploaded".
+- A stated plaintext size larger than the object is refused before anything
+  is allocated (`AttachmentChunkCipher.checkStatedSize`): the size is the
+  sender's, and the RAM paths allocate it.
+- Locked chats, the view-once viewer and the notification picture decrypt in
+  memory (`RamMediaCache.know`, `privacy_timed_sealed.dart`,
+  `chat_push_image.dart`). A locked chat's encrypted video is played from the
+  memory blob provider (Android), capped at `RamMediaCache.maxFileBytes`.

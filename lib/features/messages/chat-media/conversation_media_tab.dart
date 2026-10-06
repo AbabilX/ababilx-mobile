@@ -54,14 +54,12 @@ class _ConversationMediaTabState extends ConsumerState<ConversationMediaTab>
       _error = '';
     });
     try {
-      final page = await ref
-          .read(chatDetailsApiProvider)
-          .listMedia(
-            widget.conversationId,
-            kind: widget.kind,
-            cursor: _cursor,
-            limit: 60,
-          );
+      final page = await ref.read(sharedMediaLoadProvider)(
+        widget.conversationId,
+        kind: widget.kind,
+        cursor: _cursor,
+        limit: 60,
+      );
       if (!mounted) return;
       setState(() {
         _items.addAll(page.items);

@@ -6,7 +6,10 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../../attachments/crypto/attachment_file_cipher.dart';
 import '../../messages/data/chat_repository.dart';
+import '../../messages/data/models/chat_attachment.dart';
+import '../../messages/message_e2ee/message_vault.dart';
 
 /// Must match `android:authorities` of `NotificationImageProvider` in
 /// AndroidManifest.xml and the `<cache-path>` in notification_image_paths.xml.
@@ -27,24 +30,43 @@ const _keepFor = Duration(days: 2);
 /// push travels through Google — so the URL is read from our own API. The
 /// bytes are fetched with a bare client: the CDN must never see the JWT.
 ///
+/// A photo its sender encrypted (server 0168) is ciphertext at that URL. Its
+/// key is opened with this account's message identity — the signed-in
+/// account is the `recipient_id` an encrypted [push] names — and the photo is
+/// decrypted before it is written for the tray. No identity on this device,
+/// no picture: the entry keeps its text line.
+///
 /// Android only. Android 9+ grants SystemUI read access to URIs inside a
 /// posted MessagingStyle notification by itself, so no explicit grant is made.
-Future<String?> fetchChatPushImage({
-  required String conversationId,
-  required String messageId,
+Future<String?> fetchChatPushImage(
+  String conversationId,
+  String messageId,
+  Map<String, dynamic> push, {
   Duration timeout = const Duration(seconds: 10),
 }) async {
   if (!Platform.isAndroid) return null;
+  final recipientId = push['recipient_id']?.toString() ?? '';
   try {
-    return await _fetch(conversationId, messageId).timeout(timeout);
+    return await _fetch(
+      conversationId,
+      messageId,
+      recipientId,
+    ).timeout(timeout);
   } catch (_) {
     return null;
   }
 }
 
-Future<String?> _fetch(String conversationId, String messageId) async {
-  final url = await _imageUrl(conversationId, messageId);
-  if (url == null) return null;
+Future<String?> _fetch(
+  String conversationId,
+  String messageId,
+  String recipientId,
+) async {
+  const storage = SecureStorage(FlutterSecureStorage());
+  final repo = ChatRepository(ApiClient(storage));
+  final photo = await _photo(repo, conversationId, messageId);
+  if (photo == null) return null;
+  final url = photo.fileUrl;
 
   final dir = Directory('${(await getTemporaryDirectory()).path}/$_dirName');
   await dir.create(recursive: true);
@@ -59,20 +81,56 @@ Future<String?> _fetch(String conversationId, String messageId) async {
         receiveTimeout: const Duration(seconds: 10),
       ),
     );
-    final bytes = res.data;
+    var bytes = res.data;
     if (bytes == null || bytes.isEmpty || bytes.length > _maxBytes) {
       return null;
+    }
+    if (photo.isSealed) {
+      bytes = await _openSealed(
+        repo,
+        storage,
+        conversationId,
+        recipientId,
+        photo,
+        bytes,
+      );
+      if (bytes == null) return null;
     }
     await file.writeAsBytes(bytes, flush: true);
   }
   return 'content://$_authority/images/${file.uri.pathSegments.last}';
 }
 
-/// The first photo's URL on [messageId], from the newest page of the
-/// conversation — a just-pushed message is at its head.
-Future<String?> _imageUrl(String conversationId, String messageId) async {
-  const storage = SecureStorage(FlutterSecureStorage());
-  final repo = ChatRepository(ApiClient(storage));
+/// Decrypts an encrypted photo in memory, or null when this device cannot
+/// open its key (no message identity here, or a key it does not hold).
+Future<List<int>?> _openSealed(
+  ChatRepository repo,
+  SecureStorage storage,
+  String conversationId,
+  String recipientId,
+  ChatMessageAttachment photo,
+  List<int> cipher,
+) async {
+  if (recipientId.isEmpty) return null;
+  final vault = MessageVault(repo, storage);
+  if (!await vault.restoreTrustedIdentityOffline()) return null;
+  final opened = await vault.openAttachment(
+    conversationId: conversationId,
+    currentUserId: recipientId,
+    attachment: photo,
+  );
+  final secret = opened.secret;
+  if (secret == null) return null;
+  return AttachmentFileCipher.openBytes(cipher, secret.key, secret.plainSize);
+}
+
+/// The first photo on [messageId], from the newest page of the conversation —
+/// a just-pushed message is at its head.
+Future<ChatMessageAttachment?> _photo(
+  ChatRepository repo,
+  String conversationId,
+  String messageId,
+) async {
   final page = await repo.listMessages(conversationId, limit: 20);
   for (final message in page.messages) {
     if (message.id != messageId) continue;
@@ -84,7 +142,7 @@ Future<String?> _imageUrl(String conversationId, String messageId) async {
           !attachment.locked &&
           !attachment.isProtected &&
           url.startsWith('https://')) {
-        return url;
+        return attachment;
       }
     }
     return null;

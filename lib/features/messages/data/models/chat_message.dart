@@ -258,6 +258,7 @@ class ChatMessage extends Equatable {
     int? encryptionKeyVersion,
     ChatMessageQuote? quote,
     bool? privateChat,
+    List<ChatMessageAttachment>? attachments,
   }) => ChatMessage(
     id: id ?? this.id,
     conversationId: conversationId,
@@ -273,7 +274,7 @@ class ChatMessage extends Equatable {
     userName: userName,
     userAvatarUrl: userAvatarUrl,
     senderTag: senderTag,
-    attachments: attachments,
+    attachments: attachments ?? this.attachments,
     reactions: reactions ?? this.reactions,
     threadCount: threadCount ?? this.threadCount,
     viaAbabilx: viaAbabilx,

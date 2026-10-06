@@ -95,7 +95,7 @@ class ChatMessagesApi {
         'parent_id': ?parentId,
         'quoted_message_id': ?quotedMessageId,
         if (attachments.isNotEmpty)
-          'attachments': attachments.map((a) => a.toJson()).toList(),
+          'attachments': attachments.map((a) => a.toWire()).toList(),
         if (mentionedUserIds.isNotEmpty) 'mentioned_user_ids': mentionedUserIds,
         'media_policy': ?_mediaPolicy(attachments),
       },
@@ -139,18 +139,18 @@ class ChatMessagesApi {
   }
 
   /// The receiver opens a timed photo (privacy mode): starts its clock and
-  /// returns the real URLs, attachment id -> URL. Every other read withholds
-  /// them, so this is the only way to the bytes. Empty for the sender and once
-  /// the photo expired.
-  Future<Map<String, String>> markMediaViewed(String messageId) async {
+  /// returns the real URLs — and, for an encrypted photo, its sealed key — by
+  /// attachment id. Every other read withholds them, so this is the only way
+  /// to the bytes. Empty for the sender and once the photo expired.
+  Future<Map<String, TimedMediaGrant>> markMediaViewed(String messageId) async {
     final res = await _client.post('${_endpoints.message(messageId)}/viewed');
     final data = unwrapApiData<Map<String, dynamic>>(res);
-    final out = <String, String>{};
+    final out = <String, TimedMediaGrant>{};
     for (final item in data['attachments'] as List<dynamic>? ?? const []) {
       if (item is! Map) continue;
       final id = item['id'] as String? ?? '';
-      final url = item['file_url'] as String? ?? '';
-      if (id.isNotEmpty && url.isNotEmpty) out[id] = url;
+      final grant = TimedMediaGrant.fromJson(Map<String, dynamic>.from(item));
+      if (id.isNotEmpty && grant.url.isNotEmpty) out[id] = grant;
     }
     return out;
   }

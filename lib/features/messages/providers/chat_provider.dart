@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/first_load_timeout.dart';
 import '../../../core/network/ws_client.dart';
+import '../../attachments/crypto/sealed_upload.dart';
+import '../../attachments/crypto/sealed_upload_policy.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../../notifications/chat/chat_notification_presenter.dart';
 import '../../dm-settings/receipts/receipts_hidden_provider.dart';

@@ -1,4 +1,5 @@
 import '../../../core/network/friendly_error.dart';
+import '../data/models/chat_attachment.dart';
 import 'message_vault.dart';
 
 /// The refusals that mean the conversation key a message was sealed with is
@@ -26,6 +27,11 @@ bool isStaleChatKeyError(Object error) {
 /// It has been plaintext all its life, so sending as it is downgrades nothing,
 /// and the first send after they set up secure messages mints the key. Every
 /// other conversation passes none and fails instead.
+///
+/// [attachments] are the message's uploads. The key of each one this device
+/// encrypted (server 0168) is sealed under the same key version as the text,
+/// and sealed again after a re-key — the first seals would name a version
+/// somebody in the conversation cannot read.
 Future<T> sendEncryptedChat<T>({
   required MessageVault vault,
   required String conversationId,
@@ -33,13 +39,28 @@ Future<T> sendEncryptedChat<T>({
   required String currentUserId,
   required Future<T> Function(EncryptedDmPayload) send,
   Future<T> Function()? sendUnencrypted,
+  List<ChatAttachmentInput> attachments = const [],
 }) async {
+  Future<EncryptedDmPayload> withFileKeys(EncryptedDmPayload body) async {
+    if (!attachments.any((a) => a.secret != null)) return body;
+    return body.withAttachmentSeals(
+      await vault.sealAttachments(
+        conversationId: conversationId,
+        currentUserId: currentUserId,
+        keyVersion: body.keyVersion,
+        attachments: attachments,
+      ),
+    );
+  }
+
   try {
     return await send(
-      await vault.encryptNew(
-        conversationId: conversationId,
-        text: text,
-        currentUserId: currentUserId,
+      await withFileKeys(
+        await vault.encryptNew(
+          conversationId: conversationId,
+          text: text,
+          currentUserId: currentUserId,
+        ),
       ),
     );
   } on ChatKeyNotReady {
@@ -48,10 +69,12 @@ Future<T> sendEncryptedChat<T>({
   } catch (error) {
     if (!isStaleChatKeyError(error)) rethrow;
     return send(
-      await vault.rekeyAndEncrypt(
-        conversationId: conversationId,
-        text: text,
-        currentUserId: currentUserId,
+      await withFileKeys(
+        await vault.rekeyAndEncrypt(
+          conversationId: conversationId,
+          text: text,
+          currentUserId: currentUserId,
+        ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../../messages/data/models/chat_attachment.dart';
 import '../attachment_config.dart';
+import '../crypto/sealed_download.dart';
 import '../data/local/attachment_blob_store.dart';
 import '../data/local/attachment_dedupe_store.dart';
 import '../data/models/attachment_handle.dart';
@@ -101,11 +102,11 @@ class AttachmentJobRunner {
     await _blobs.setState(urlKey, AttachmentTransferState.downloading);
 
     var lastPersist = DateTime.now();
-    final outcome = await _downloader.fetch(
-      remoteUrl: attachment.fileUrl,
+    final outcome = await fetchAttachment(
+      _downloader,
+      _paths,
+      attachment,
       target: target,
-      partFile: _paths.partFor(target),
-      expectedBytes: attachment.sizeBytes,
       maxBytes: downloadByteCeiling(userInitiated: userInitiated),
       cancelToken: token,
       onProgress: (received, total) {

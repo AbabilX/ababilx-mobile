@@ -196,7 +196,7 @@ class ChatRepository {
   Future<void> hideMessage(String messageId) =>
       _messages.hideMessage(messageId);
 
-  Future<Map<String, String>> markMediaViewed(String messageId) =>
+  Future<Map<String, TimedMediaGrant>> markMediaViewed(String messageId) =>
       _messages.markMediaViewed(messageId);
 
   Future<List<ChatReactionGroup>> toggleReaction(
@@ -295,11 +295,13 @@ class ChatRepository {
     required String contentType,
     required String fileName,
     required int sizeBytes,
+    bool encrypted = false,
   }) => _attachments.presignAttachment(
     conversationId,
     contentType: contentType,
     fileName: fileName,
     sizeBytes: sizeBytes,
+    encrypted: encrypted,
   );
 
   Future<void> discardUpload(String conversationId, String fileUrl) =>

@@ -309,17 +309,48 @@ mixin _ChatMutateMixin
     }
   }
 
+  /// Reserves an upload slot for a message attachment.
+  ///
+  /// In an encrypted conversation the file is encrypted on this phone before
+  /// it leaves (server 0168): the slot is asked for as ciphertext, and the
+  /// upload helpers below and [sendMessage] pick the key up by the returned
+  /// public URL — callers change nothing. Pass [plain] for an object that is
+  /// not a message attachment and has to stay readable by URL: a group's
+  /// photo or banner, a feed's picture.
   Future<ChatPresignResult> presignAttachment(
     String conversationId, {
     required String contentType,
     required String fileName,
     required int sizeBytes,
-  }) => repo.presignAttachment(
-    conversationId,
-    contentType: contentType,
-    fileName: fileName,
-    sizeBytes: sizeBytes,
-  );
+    bool plain = false,
+  }) async {
+    final secret = plain
+        ? null
+        : sealedUploadSecret(
+            ref,
+            state.conversationById(conversationId),
+            contentType: contentType,
+            fileName: fileName,
+            sizeBytes: sizeBytes,
+          );
+    if (secret == null) {
+      return repo.presignAttachment(
+        conversationId,
+        contentType: contentType,
+        fileName: fileName,
+        sizeBytes: sizeBytes,
+      );
+    }
+    final presign = await repo.presignAttachment(
+      conversationId,
+      contentType: secret.wireType,
+      fileName: secret.wireName,
+      sizeBytes: secret.cipherSize,
+      encrypted: true,
+    );
+    SealedUploads.register(presign.publicUrl, secret);
+    return presign;
+  }
 
   Future<void> uploadAttachmentBytes(
     ChatPresignResult presign,
@@ -328,6 +359,16 @@ mixin _ChatMutateMixin
     ProgressCallback? onProgress,
     CancelToken? cancelToken,
   }) async {
+    final secret = SealedUploads.sizedFor(presign.publicUrl, bytes.length);
+    if (secret != null) {
+      return SealedUploads.putBytes(
+        presign.uploadUrl,
+        bytes,
+        secret,
+        onProgress: onProgress,
+        cancelToken: cancelToken,
+      );
+    }
     final dio = Dio();
     await dio.put(
       presign.uploadUrl,
@@ -346,6 +387,19 @@ mixin _ChatMutateMixin
     ProgressCallback? onProgress,
     CancelToken? cancelToken,
   }) async {
+    final secret = SealedUploads.sizedFor(
+      presign.publicUrl,
+      await file.length(),
+    );
+    if (secret != null) {
+      return SealedUploads.putFile(
+        presign.uploadUrl,
+        file,
+        secret,
+        onProgress: onProgress,
+        cancelToken: cancelToken,
+      );
+    }
     final dio = Dio();
     await dio.put(
       presign.uploadUrl,
@@ -361,8 +415,10 @@ mixin _ChatMutateMixin
     );
   }
 
-  Future<void> discardUpload(String conversationId, String fileUrl) =>
-      repo.discardUpload(conversationId, fileUrl);
+  Future<void> discardUpload(String conversationId, String fileUrl) {
+    SealedUploads.forget(fileUrl);
+    return repo.discardUpload(conversationId, fileUrl);
+  }
 
   /// Mute with [choice], or unmute when null. Drawn from the choice at once,
   /// then patched from the server's answer, so a timed mute caches the

@@ -13,13 +13,17 @@ class ChatAttachmentsApi {
     required String contentType,
     required String fileName,
     required int sizeBytes,
+    bool encrypted = false,
   }) async {
+    // [encrypted]: the file is already ciphertext (server 0168). The type is
+    // then only its kind, the name generic, the size the ciphertext's.
     final res = await _client.post(
       _endpoints.action(conversationId, 'attachments/presign'),
       data: {
         'content_type': contentType,
         'file_name': fileName,
         'size_bytes': sizeBytes,
+        if (encrypted) 'encrypted': true,
       },
     );
     return ChatPresignResult.fromJson(unwrapApiData<Map<String, dynamic>>(res));

@@ -33,6 +33,18 @@ class ChatMediaPage extends Equatable {
     hasMore: json['has_more'] as bool? ?? false,
   );
 
+  /// This page with [opened] in place of its items — an encrypted file's
+  /// real name is only known once its key is opened, so the Khaam filter
+  /// runs again here.
+  ChatMediaPage withItems(List<ChatMessageAttachment> opened) => ChatMediaPage(
+    items: [
+      for (final a in opened)
+        if (!isKhaamPhotoFile(a.fileName)) a,
+    ],
+    nextCursor: nextCursor,
+    hasMore: hasMore,
+  );
+
   @override
   List<Object?> get props => [items, nextCursor, hasMore];
 }

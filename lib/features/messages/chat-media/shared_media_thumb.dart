@@ -6,8 +6,10 @@ import '../../attachments/widgets/attachment_gate.dart';
 import '../chat-timeline/attachment_image_tile.dart';
 import '../data/models/chat_models.dart';
 import 'shared_media_video_cell.dart';
+import '../../chat-lock/media/ram_media_cache.dart';
 import '../../chat-lock/media/ram_photo_tile.dart';
 import '../../chat-lock/media/ram_photo_viewer.dart';
+import '../../chat-lock/media/ram_sealed_media.dart';
 
 /// One square cell in the shared-media strip and grid.
 ///
@@ -79,8 +81,14 @@ class SharedMediaThumb extends StatelessWidget {
   }
 
   Widget _ram(BuildContext context) {
-    if (attachment.isImage) {
-      final urls = [for (final a in gallery) a.fileUrl];
+    // Encrypted files (server 0168) are opened in memory by the cache.
+    RamMediaCache.know([attachment, ...gallery]);
+    final unreadable = attachment.needsKey;
+    if (attachment.isImage && !unreadable) {
+      final urls = [
+        for (final a in gallery)
+          if (!a.needsKey) a.fileUrl,
+      ];
       final index = urls.indexOf(attachment.fileUrl);
       return RamPhotoTile(
         url: attachment.fileUrl,
@@ -90,21 +98,33 @@ class SharedMediaThumb extends StatelessWidget {
             showRamPhotos(context, urls: urls, initial: index < 0 ? 0 : index),
       );
     }
-    // Streamed; the empty name keeps Save and Share off.
+    // A plaintext video streams (the empty name keeps Save and Share off); an
+    // encrypted one is opened in memory and played from there; one whose key
+    // did not open on this phone is a dead tile, never a tile of ciphertext.
     final colors = Theme.of(context).colorScheme;
     return Material(
       color: colors.surfaceContainerHighest,
       borderRadius: _radius,
       child: InkWell(
         borderRadius: _radius,
-        onTap: () => showVideoPreview(
-          context,
-          source: VideoSource.url(attachment.fileUrl),
-          fileName: '',
-        ),
+        onTap: unreadable
+            ? null
+            : attachment.secret != null
+            ? () => playRamSealedVideo(
+                context,
+                attachment,
+              ).catchError((_) => false)
+            : () => showVideoPreview(
+                context,
+                source: VideoSource.url(attachment.fileUrl),
+                fileName: '',
+              ),
         child: SizedBox.square(
           dimension: size,
-          child: Icon(Icons.play_arrow_rounded, color: colors.onSurface),
+          child: Icon(
+            unreadable ? Icons.lock_outline_rounded : Icons.play_arrow_rounded,
+            color: unreadable ? colors.onSurfaceVariant : colors.onSurface,
+          ),
         ),
       ),
     );

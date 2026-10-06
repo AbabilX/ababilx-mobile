@@ -13,6 +13,7 @@ import '../messages/data/chat_repository.dart';
 import '../messages/data/models/chat_models.dart';
 import '../../shared/widgets/app_toast.dart';
 import 'privacy_secure_scope.dart';
+import 'privacy_timed_sealed.dart';
 
 /// What this phone did with each timed photo this session.
 ///
@@ -65,11 +66,12 @@ Future<void> openTimedPhoto(
   final failed = ghostText(ref, 'ghost_err_generic');
   Uint8List? bytes;
   try {
-    final urls = await ref
+    final grants = await ref
         .read(chatRepositoryProvider)
         .markMediaViewed(attachment.messageId);
-    final url = urls[attachment.id];
-    if (url != null && url.startsWith('https://')) {
+    final grant = grants[attachment.id];
+    final url = grant?.url;
+    if (grant != null && url != null && url.startsWith('https://')) {
       final res = await Dio().get<List<int>>(
         url,
         options: Options(
@@ -79,7 +81,12 @@ Future<void> openTimedPhoto(
       );
       final data = res.data;
       if (data != null && data.isNotEmpty && data.length <= _maxTimedBytes) {
-        bytes = Uint8List.fromList(data);
+        final raw = Uint8List.fromList(data);
+        // An encrypted photo (server 0168) arrives as ciphertext, and its
+        // key came with the URL: opened here, in memory.
+        bytes = grant.isSealed
+            ? await openSealedTimedPhoto(ref, attachment, grant, raw)
+            : raw;
       }
     }
   } catch (_) {}

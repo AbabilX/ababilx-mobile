@@ -30,8 +30,11 @@ mixin _ChatPreviewMixin on Notifier<ChatState> {
           sealedPreviewMessage(row),
           userId,
         );
+        // An empty body here is an opened one: a message of encrypted files
+        // only (server 0168) has no text, and the row's attachment chips are
+        // its preview. Only a locked or failed open keeps the placeholder.
         return visiblePreview(
-          isVaultPlaceholderBody(opened.body)
+          isVaultFailureBody(opened.body)
               ? row
               : row.copyWith(lastMessageBody: opened.body),
         );

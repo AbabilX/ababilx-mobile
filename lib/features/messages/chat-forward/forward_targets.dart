@@ -1,3 +1,5 @@
+import '../../attachments/crypto/attachment_secret.dart';
+import '../data/models/chat_attachment.dart';
 import '../data/models/chat_conversation.dart';
 import '../message_e2ee/message_vault.dart';
 
@@ -12,13 +14,36 @@ import '../message_e2ee/message_vault.dart';
 /// Mirrors web's `buildForwardTargets`; both feed the same handler, and the
 /// encrypted/plaintext split has to agree with the server's `e2eeEligible` or
 /// a destination answers 400 on one side and 409 on the other.
+///
+/// [attachments] are the forwarded message's files. The server copies their
+/// rows and points them at the same objects, but an encrypted file's key
+/// (server 0168) is sealed under its own conversation's key, so each
+/// destination gets that key sealed again under ITS key. A destination that
+/// takes no ciphertext cannot receive one, and neither can a file whose key
+/// never opened on this phone — both refuse here, in words, rather than
+/// arrive as a file nobody can open.
 Future<List<Map<String, dynamic>>> buildForwardTargets({
   required MessageVault vault,
   required String currentUserId,
   required String text,
   required List<ChatConversation> conversations,
+  List<ChatMessageAttachment> attachments = const [],
   String caption = '',
 }) async {
+  if (attachments.any((a) => a.needsKey)) {
+    throw StateError('This file cannot be forwarded from this phone yet');
+  }
+  final files = [
+    for (final a in attachments)
+      if (a.secret != null)
+        ChatAttachmentInput(
+          fileUrl: a.fileUrl,
+          fileName: a.fileName,
+          contentType: a.contentType,
+          sizeBytes: a.sizeBytes,
+          secret: a.secret,
+        ),
+  ];
   final targets = <Map<String, dynamic>>[];
   for (final conversation in conversations) {
     Map<String, dynamic>? sealed;
@@ -30,6 +55,7 @@ Future<List<Map<String, dynamic>>> buildForwardTargets({
           currentUserId: currentUserId,
           text: text,
           caption: caption,
+          files: files,
         );
       } on ChatKeyNotReady {
         // The same rule as an ordinary send: only a group the server marks
@@ -37,6 +63,9 @@ Future<List<Map<String, dynamic>>> buildForwardTargets({
         // a DM, a group created as a group — refuses.
         if (!conversation.plaintextUntilKeyed) rethrow;
       }
+    }
+    if (sealed == null && files.isNotEmpty) {
+      throw StateError('Encrypted files can only be forwarded to secure chats');
     }
     targets.add(
       sealed ??
@@ -56,13 +85,16 @@ Future<Map<String, dynamic>> _encryptedTarget({
   required String currentUserId,
   required String text,
   required String caption,
+  required List<ChatAttachmentInput> files,
 }) async {
+  var keyVersion = 0;
   Future<Map<String, dynamic>> seal(String value) async {
     final payload = await vault.encryptNew(
       conversationId: conversationId,
       text: value,
       currentUserId: currentUserId,
     );
+    keyVersion = payload.keyVersion;
     return {
       'encrypted_body': payload.encryptedBody,
       'encryption_nonce': payload.nonce,
@@ -70,11 +102,33 @@ Future<Map<String, dynamic>> _encryptedTarget({
     };
   }
 
+  // An attachment-only forward has nothing to encrypt, and the server accepts
+  // an empty payload when plaintext attachments travel with it. Encrypted
+  // files are different: their keys are sealed under the body's key version,
+  // so the message is sealed even when its text is empty.
+  final message = text.trim().isEmpty && files.isEmpty
+      ? <String, dynamic>{}
+      : await seal(text);
+  final seals = files.isEmpty
+      ? const <String, SealedAttachmentMeta>{}
+      : await vault.sealAttachments(
+          conversationId: conversationId,
+          currentUserId: currentUserId,
+          keyVersion: keyVersion,
+          attachments: files,
+        );
   return {
     'conversation_id': conversationId,
-    // An attachment-only forward has nothing to encrypt, and the server
-    // accepts an empty payload when attachments travel with it.
-    'message': text.trim().isEmpty ? <String, dynamic>{} : await seal(text),
+    'message': message,
+    if (seals.isNotEmpty)
+      'attachments': [
+        for (final entry in seals.entries)
+          {
+            'file_url': entry.key,
+            'enc_meta': entry.value.encMeta,
+            'enc_nonce': entry.value.encNonce,
+          },
+      ],
     if (caption.isNotEmpty) 'caption': await seal(caption),
   };
 }

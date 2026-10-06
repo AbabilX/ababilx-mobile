@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../attachments/crypto/attachment_secret.dart';
 import '../data/models/chat_models.dart';
 
 /// Glyph for an attachment in a chat-list preview.
@@ -19,7 +20,9 @@ String previewFileLabel(ChatLastAttachment file) {
   if (file.isVideo) return 'Video';
   if (file.isAudio) return 'Audio';
   final name = file.fileName.trim();
-  if (name.isNotEmpty) return name;
+  // An encrypted document's row carries only the server's generic "file"
+  // until its key is opened (server 0168); that is a kind, not a name.
+  if (name.isNotEmpty && name != SealedAttachmentWire.fileName) return name;
   return file.isPdf ? 'PDF' : 'File';
 }
 

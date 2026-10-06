@@ -72,6 +72,9 @@ Future<void> uploadGroupImage(
     contentType: 'image/jpeg',
     fileName: kind.fileName,
     sizeBytes: bytes.length,
+    // The group's picture is stored on the conversation row and drawn by URL
+    // on every client, so it is never encrypted like a message attachment.
+    plain: true,
   );
   try {
     await chat.uploadAttachmentBytes(presign, bytes, 'image/jpeg');

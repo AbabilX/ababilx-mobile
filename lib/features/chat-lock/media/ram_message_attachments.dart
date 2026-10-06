@@ -6,8 +6,10 @@ import '../../messages/chat-timeline/signal_bubble_metrics.dart';
 import '../../messages/data/models/chat_models.dart';
 import '../../privacy-mode/privacy_timed_card.dart';
 import 'ram_file_row.dart';
+import 'ram_media_cache.dart';
 import 'ram_photo_tile.dart';
 import 'ram_photo_viewer.dart';
+import 'ram_sealed_media.dart';
 
 /// A locked chat's attachments, drawn without the attachment store: photos
 /// from memory, voice notes and videos streamed from their URL, files opened
@@ -26,6 +28,8 @@ class RamMessageAttachments extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Encrypted files (server 0168) are opened in memory by the cache.
+    RamMediaCache.know(attachments);
     final retained = attachments.where((a) => a.locked).toList();
     final timed = attachments
         .where((a) => !a.locked && (a.timed || a.expired))
@@ -35,9 +39,15 @@ class RamMessageAttachments extends StatelessWidget {
           (a) => !a.locked && !a.timed && !a.expired && a.fileUrl.isNotEmpty,
         )
         .toList();
-    final photos = open.where((a) => a.isImage).toList();
-    final audio = open.where((a) => a.isAudio && !a.isVideo).toList();
-    final files = open.where((a) => !a.isImage && !audio.contains(a)).toList();
+    // An encrypted file whose key did not open here is a plain row that
+    // says so on tap — never a tile trying to draw ciphertext.
+    final photos = open.where((a) => a.isImage && !a.needsKey).toList();
+    final audio = open
+        .where((a) => a.isAudio && !a.isVideo && !a.needsKey)
+        .toList();
+    final files = open
+        .where((a) => !photos.contains(a) && !audio.contains(a))
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,10 +58,12 @@ class RamMessageAttachments extends StatelessWidget {
         for (final a in audio)
           Padding(
             padding: const EdgeInsets.only(top: 7),
-            child: VoiceUrlPlayer(
-              source: AudioSourceRef.url(a.fileUrl),
-              fileName: a.fileName,
-            ),
+            child: a.secret != null
+                ? RamSealedVoice(attachment: a)
+                : VoiceUrlPlayer(
+                    source: AudioSourceRef.url(a.fileUrl),
+                    fileName: a.fileName,
+                  ),
           ),
         for (final a in files) RamFileRow(attachment: a),
         if (retained.isNotEmpty)

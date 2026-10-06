@@ -43,7 +43,9 @@ mixin _ChatLocalPreviewMixin on Notifier<ChatState> {
       row.copyWith(
         lastMessageAt: message.createdAt,
         // Never "Unable to decrypt" down the list; see decryptPreviews.
-        lastMessageBody: isVaultPlaceholderBody(message.body)
+        // A message of files only has no text; its chips are the preview.
+        lastMessageBody:
+            isVaultPlaceholderBody(message.body) && !_filesOnly(message)
             ? 'Encrypted message'
             : message.body,
         lastMessageUserId: message.userId,
@@ -56,3 +58,7 @@ mixin _ChatLocalPreviewMixin on Notifier<ChatState> {
     );
   }
 }
+
+/// Opened, and it has no text: nothing but attachments.
+bool _filesOnly(ChatMessage message) =>
+    message.body.isEmpty && message.attachments.isNotEmpty;

@@ -3,7 +3,10 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/painting.dart';
 
+import '../../attachments/crypto/attachment_file_cipher.dart';
+import '../../attachments/crypto/attachment_secret.dart';
 import '../../ghost/native/ghost_blobs.dart';
+import '../../messages/data/models/chat_attachment.dart';
 
 /// A locked chat's pictures and files, held in this process's memory and
 /// nowhere else. Nothing here writes a file: not the attachment store, not an
@@ -22,6 +25,10 @@ abstract final class RamMediaCache {
   static final _bytes = <String, Uint8List>{};
   static final _inFlight = <String, Future<Uint8List>>{};
   static final _blobKeys = <String>{};
+  // Keys of encrypted files (server 0168), by URL. What is fetched for one of
+  // these is ciphertext, and it is opened here, in memory, before anything
+  // is handed out or kept.
+  static final _secrets = <String, AttachmentSecret>{};
   static int _total = 0;
   static int _generation = 0;
 
@@ -30,6 +37,15 @@ abstract final class RamMediaCache {
   );
 
   static Uint8List? peek(String url) => _bytes[url];
+
+  /// Tells the cache how to open whichever of [attachments] are encrypted.
+  /// Called by whatever draws them, before the first [fetch] of their URLs.
+  static void know(Iterable<ChatMessageAttachment> attachments) {
+    for (final a in attachments) {
+      final secret = a.secret;
+      if (secret != null && a.fileUrl.isNotEmpty) _secrets[a.fileUrl] = secret;
+    }
+  }
 
   static Future<Uint8List> fetch(String url) {
     final hit = _bytes.remove(url);
@@ -50,7 +66,15 @@ abstract final class RamMediaCache {
     );
     final data = res.data;
     if (data == null || data.isEmpty) throw StateError('empty attachment');
-    final bytes = data is Uint8List ? data : Uint8List.fromList(data);
+    final raw = data is Uint8List ? data : Uint8List.fromList(data);
+    final secret = _secrets[url];
+    final bytes = secret == null
+        ? raw
+        : await AttachmentFileCipher.openBytes(
+            raw,
+            secret.key,
+            secret.plainSize,
+          );
     // A release while this was downloading means the chat closed: hand the
     // bytes to whoever waited, but keep nothing.
     if (generation != _generation) return bytes;
@@ -77,6 +101,7 @@ abstract final class RamMediaCache {
       bytes.fillRange(0, bytes.length, 0);
     }
     _bytes.clear();
+    _secrets.clear();
     _total = 0;
     PaintingBinding.instance.imageCache
       ..clear()

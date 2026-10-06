@@ -189,6 +189,4 @@ mixin _ChatOutboxMixin on Notifier<ChatState>, _ChatFeedMixin {
 /// real decrypt (in [hydrateOutboxMessages] or [redecryptFailedMessages])
 /// replaces the placeholder with real text.
 bool isLockedFailedMessage(ChatMessage m) =>
-    m.sendStatus == MessageSendStatus.failed &&
-    m.isEncrypted &&
-    isVaultPlaceholderBody(m.body);
+    m.sendStatus == MessageSendStatus.failed && isUnopenedMessage(m);

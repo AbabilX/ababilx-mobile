@@ -64,6 +64,23 @@ class AttachmentQueue {
         AttachmentHandle.locked(fileName: attachment.fileName),
       );
     }
+    // Encrypted (server 0168), and its key did not open on this phone: the
+    // vault is locked, or the key version is one this account does not hold.
+    // There is nothing readable to fetch, so it fails at once — no request,
+    // no retries, and nothing written, so the same tap works once the key
+    // is there.
+    if (attachment.needsKey) {
+      final unreadable = AttachmentHandle(
+        urlKey: urlKey,
+        remoteUrl: attachment.fileUrl,
+        state: AttachmentTransferState.failed,
+        fileName: attachment.fileName,
+        contentType: attachment.contentType,
+        errorMessage: 'This file cannot be opened on this phone yet',
+      );
+      _emit(unreadable);
+      return Future.value(unreadable);
+    }
     final running = _inFlight[urlKey];
     if (running != null) return running;
     final job = _start(urlKey, attachment, userInitiated);

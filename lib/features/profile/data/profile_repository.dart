@@ -20,6 +20,7 @@ class AppUser extends Equatable {
     this.policyVersion = '',
     this.independentChat = false,
     this.isNewAccount = false,
+    this.encryptedAttachments = false,
   });
 
   final String id;
@@ -48,6 +49,11 @@ class AppUser extends Equatable {
   /// from local state, it has to be the server's own clock.
   final bool isNewAccount;
 
+  /// The server's rollout switch for encrypting chat files on the phone
+  /// before upload (server migration 0168). Decides sending only — an
+  /// encrypted file that arrives is opened whatever this says.
+  final bool encryptedAttachments;
+
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
     id: json['id'] as String? ?? '',
     name: json['name'] as String? ?? '',
@@ -62,6 +68,7 @@ class AppUser extends Equatable {
     policyVersion: json['policy_version'] as String? ?? '',
     independentChat: json['independent_chat'] as bool? ?? false,
     isNewAccount: json['is_new_account'] as bool? ?? false,
+    encryptedAttachments: json['encrypted_attachments'] as bool? ?? false,
   );
 
   Map<String, dynamic> toJson() => {
@@ -78,6 +85,7 @@ class AppUser extends Equatable {
     'policy_version': policyVersion,
     'independent_chat': independentChat,
     'is_new_account': isNewAccount,
+    'encrypted_attachments': encryptedAttachments,
   };
 
   AppUser copyWith({
@@ -101,6 +109,7 @@ class AppUser extends Equatable {
     policyVersion: policyVersion ?? this.policyVersion,
     independentChat: independentChat,
     isNewAccount: isNewAccount,
+    encryptedAttachments: encryptedAttachments,
   );
 
   /// Merges split GET /api/me/* payloads (same order as web `mergeMeUser`).
@@ -120,6 +129,7 @@ class AppUser extends Equatable {
     policyVersion,
     independentChat,
     isNewAccount,
+    encryptedAttachments,
   ];
 }
 

@@ -45,7 +45,19 @@ extension MessageVaultDecrypt on MessageVault {
     return quote.copyWith(body: decrypted.body);
   }
 
+  /// Opens a message: its text, the preview of what it quotes, and the keys
+  /// of its encrypted files (server 0168) — those open on their own, so a
+  /// file whose key this account holds is readable even beside a body that
+  /// is not, and the other way round.
   Future<ChatMessage> decryptMessage(
+    ChatMessage message,
+    String currentUserId,
+  ) async => _openAttachments(
+    await _decryptBody(message, currentUserId),
+    currentUserId,
+  );
+
+  Future<ChatMessage> _decryptBody(
     ChatMessage message,
     String currentUserId,
   ) async {

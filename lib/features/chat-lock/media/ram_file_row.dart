@@ -12,6 +12,7 @@ import '../../messages/chat_icon.dart';
 import '../../messages/data/models/chat_models.dart';
 import 'ram_media_cache.dart';
 import 'ram_pdf_viewer.dart';
+import 'ram_sealed_media.dart';
 
 /// A video, PDF or other file in a locked chat. Nothing is drawn from it
 /// inline — a poster frame or a PDF thumbnail would need the file on disk.
@@ -94,6 +95,13 @@ class _RamFileRowState extends ConsumerState<RamFileRow> {
 
   Future<void> _open() async {
     final a = widget.attachment;
+    // Encrypted (server 0168) and its key did not open on this phone.
+    if (a.needsKey) {
+      showAppToast(context, _t('chatlock_file_cannot_open'), isError: true);
+      return;
+    }
+    RamMediaCache.know([a]);
+    if (a.isVideo && a.secret != null) return _openSealedVideo(a);
     if (a.isVideo) {
       // Streamed by the player; the empty name keeps Save/Share off.
       await Navigator.of(context, rootNavigator: true).push(
@@ -134,6 +142,27 @@ class _RamFileRowState extends ConsumerState<RamFileRow> {
       final opened = await GhostBlobs.open(a.fileName, mime, bytes, key: key);
       if (!opened && mounted) {
         showAppToast(context, _t('chatlock_file_cannot_open'), isError: true);
+      }
+    } catch (_) {
+      if (mounted) {
+        showAppToast(context, _t('chatlock_file_failed'), isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// An encrypted video cannot be streamed from its URL; it is opened in
+  /// memory and played from there.
+  Future<void> _openSealedVideo(ChatMessageAttachment a) async {
+    setState(() => _busy = true);
+    try {
+      final played = await playRamSealedVideo(context, a);
+      if (!played && mounted) {
+        final key = a.sizeBytes > RamMediaCache.maxFileBytes
+            ? 'chatlock_file_too_big'
+            : 'chatlock_file_cannot_open';
+        showAppToast(context, _t(key), isError: true);
       }
     } catch (_) {
       if (mounted) {

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/widgets/network_video_player.dart';
+import '../../attachments/crypto/sealed_upload.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import 'pending_preview_cache.dart';
@@ -115,7 +116,16 @@ class PendingThumb extends StatelessWidget {
     );
   }
 
-  Widget _remoteImage(ColorScheme colors) => CachedNetworkImage(
+  // An upload this phone encrypted (server 0168) is ciphertext at its URL,
+  // so there is nothing there to draw; the tile keeps its plate.
+  Widget _remoteImage(ColorScheme colors) =>
+      _sealed ? ColoredBox(color: placeholderColor) : _networkImage(colors);
+
+  bool get _sealed =>
+      attachment.secret != null ||
+      SealedUploads.secretFor(attachment.fileUrl) != null;
+
+  Widget _networkImage(ColorScheme colors) => CachedNetworkImage(
     imageUrl: attachment.fileUrl,
     fit: BoxFit.cover,
     placeholder: (_, _) => ColoredBox(color: placeholderColor),

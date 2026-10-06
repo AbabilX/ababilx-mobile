@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../core/storage/secure_storage.dart';
+import '../../attachments/crypto/attachment_secret.dart';
 import '../data/chat_repository.dart';
 import '../data/local/chat_key_cache.dart';
 import '../data/local/chat_message_store.dart';
 import '../../private-chat/private_quote.dart';
 import '../../local-backup/restore/restored_body_store.dart';
+import '../data/models/chat_attachment.dart';
 import '../data/models/chat_message.dart';
 import '../data/models/chat_message_quote.dart';
 import 'p256_ecdh.dart';
@@ -18,6 +20,7 @@ import 'new_chat_history_cleanup.dart';
 import 'recovery_key.dart';
 import '../data/chat_recovery_api.dart';
 
+part 'message_vault_attachments.dart';
 part 'message_vault_backfill.dart';
 part 'message_vault_backup.dart';
 part 'message_vault_decrypt.dart';
@@ -35,6 +38,7 @@ part 'message_vault_restore.dart';
 part 'message_vault_reset.dart';
 part 'message_vault_session.dart';
 part 'message_vault_local_code.dart';
+part 'message_vault_provider.dart';
 
 /// The device's message identity state. New accounts save a recovery code in
 /// OS secure storage and proceed directly to chat. `setup` remains only for
@@ -180,21 +184,3 @@ class MessageVault {
     _gapFill = null;
   }
 }
-
-final messageVaultProvider = Provider<MessageVault>(
-  (ref) =>
-      MessageVault(
-          ref.watch(chatRepositoryProvider),
-          const SecureStorage(FlutterSecureStorage()),
-          ref.watch(chatKeyCacheProvider),
-        )
-        ..onHistoryReset = ((userId) => cleanNewChatHistory(ref, userId))
-        ..privateQuoteLookup = ((conversationId, messageId) =>
-            resolvePrivateQuote(
-              ref.read(chatMessageStoreProvider),
-              conversationId,
-              messageId,
-            ))
-        ..restoredBodyLookup = ((messageId, userId) =>
-            ref.read(restoredBodyStoreProvider).lookup(messageId, userId)),
-);

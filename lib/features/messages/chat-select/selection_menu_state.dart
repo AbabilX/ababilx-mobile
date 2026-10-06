@@ -53,9 +53,7 @@ SelectionMenuState selectionMenuState({
   final anyDeleted = selected.any((m) => m.isDeleted);
   // A body this device never opened would be forwarded as the vault's own
   // placeholder string, and copied as it too.
-  final anySealed = selected.any(
-    (m) => m.isEncrypted && isVaultPlaceholderBody(m.body),
-  );
+  final anySealed = selected.any(isUnopenedMessage);
   final anyText = selected.any(
     (m) => !m.isDeleted && tiptapToPlainText(m.body).trim().isNotEmpty,
   );

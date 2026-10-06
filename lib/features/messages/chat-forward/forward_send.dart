@@ -43,7 +43,7 @@ Future<void> forwardMessages(
   // Forwarding an encrypted message re-seals its plaintext for each
   // destination, so a body this device never opened would be forwarded as the
   // vault's own placeholder string.
-  if (messages.any((m) => m.isEncrypted && isVaultPlaceholderBody(m.body))) {
+  if (messages.any(isUnopenedMessage)) {
     if (context.mounted) {
       _toast(context, ref, 'chat_forward_undecryptable', isError: true);
     }
@@ -103,6 +103,7 @@ Future<void> _forwardBehind(
         currentUserId: container.read(chatProvider).currentUserId,
         text: message.body,
         conversations: conversations,
+        attachments: message.attachments,
       );
       final delivered = await notifier.forwardMessage(
         messageId: message.id,

@@ -81,10 +81,7 @@ class ChatNotificationPresenter {
     }
 
     if (attachments?.isSinglePhoto ?? false) {
-      final image = await fetchChatPushImage(
-        conversationId: conversationId,
-        messageId: messageId,
-      );
+      final image = await fetchChatPushImage(conversationId, messageId, data);
       if (image != null) await post(text, image: image);
     }
   }

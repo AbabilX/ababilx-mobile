@@ -1,5 +1,10 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../attachments/crypto/attachment_secret.dart';
+
+export 'chat_attachment_input.dart';
+export 'chat_presign_result.dart';
+
 /// The attachment rules on bare strings, for code that holds a stored blob
 /// (content type + file name) rather than a message attachment.
 bool looksLikeImage(String contentType, String fileName) {
@@ -37,6 +42,10 @@ class ChatMessageAttachment extends Equatable {
     this.viewedAt,
     this.expiresAt,
     this.expired = false,
+    this.encMeta = '',
+    this.encNonce = '',
+    this.encKeyVersion = 0,
+    this.secret,
   });
 
   final String id;
@@ -59,6 +68,59 @@ class ChatMessageAttachment extends Equatable {
   final String? viewedAt;
   final String? expiresAt;
   final bool expired;
+
+  /// A file its sender encrypted before uploading (server migration 0168):
+  /// the object at [fileUrl] is ciphertext, and [encMeta] is its key, real
+  /// name and real type sealed under the conversation key at
+  /// [encKeyVersion]. Until it is opened, [fileName] and [contentType] are
+  /// only the server's `file` / coarse kind.
+  final String encMeta;
+  final String encNonce;
+  final int encKeyVersion;
+
+  /// Set once [encMeta] has been opened on this device — see
+  /// `MessageVault.decryptMessage`. Then [fileName], [contentType] and
+  /// [sizeBytes] are the real ones. Never written to disk: [toJson] puts the
+  /// sealed form back.
+  final AttachmentSecret? secret;
+
+  bool get isSealed => encMeta.isNotEmpty;
+
+  /// Encrypted, and this device has not been able to open its key (vault
+  /// locked, or a key version this account does not hold). It cannot be
+  /// downloaded into anything readable yet.
+  bool get needsKey => isSealed && secret == null;
+
+  /// This attachment with its sealed meta opened.
+  ChatMessageAttachment opened(AttachmentSealPayload payload) =>
+      ChatMessageAttachment(
+        id: id,
+        messageId: messageId,
+        fileName: payload.fileName.isEmpty ? fileName : payload.fileName,
+        fileUrl: fileUrl,
+        contentType: payload.contentType.isEmpty
+            ? contentType
+            : payload.contentType,
+        sizeBytes: payload.plainSize,
+        uploadedBy: uploadedBy,
+        createdAt: createdAt,
+        locked: locked,
+        viewSeconds: viewSeconds,
+        noSave: noSave,
+        viewedAt: viewedAt,
+        expiresAt: expiresAt,
+        expired: expired,
+        encMeta: encMeta,
+        encNonce: encNonce,
+        encKeyVersion: encKeyVersion,
+        secret: AttachmentSecret(
+          key: payload.key,
+          plainSize: payload.plainSize,
+          cipherSize: sizeBytes,
+          wireName: fileName,
+          wireType: contentType,
+        ),
+      );
 
   bool get timed => viewSeconds != null;
 
@@ -101,15 +163,21 @@ class ChatMessageAttachment extends Equatable {
         viewedAt: json['viewed_at'] as String?,
         expiresAt: json['expires_at'] as String?,
         expired: json['expired'] as bool? ?? false,
+        encMeta: json['enc_meta'] as String? ?? '',
+        encNonce: json['enc_nonce'] as String? ?? '',
+        encKeyVersion: (json['enc_key_version'] as num?)?.toInt() ?? 0,
       );
 
+  /// The row as the server serves it. An opened encrypted attachment goes
+  /// back to its sealed form here, so the local message store never holds a
+  /// file key or a real file name beside the ciphertext's URL.
   Map<String, dynamic> toJson() => {
     'id': id,
     'message_id': messageId,
-    'file_name': fileName,
+    'file_name': secret?.wireName ?? fileName,
     'file_url': fileUrl,
-    'content_type': contentType,
-    'size_bytes': sizeBytes,
+    'content_type': secret?.wireType ?? contentType,
+    'size_bytes': secret?.cipherSize ?? sizeBytes,
     'uploaded_by': uploadedBy,
     'created_at': createdAt,
     'locked': locked,
@@ -118,86 +186,11 @@ class ChatMessageAttachment extends Equatable {
     'viewed_at': ?viewedAt,
     'expires_at': ?expiresAt,
     if (expired) 'expired': true,
+    if (isSealed) 'enc_meta': encMeta,
+    if (isSealed) 'enc_nonce': encNonce,
+    if (isSealed) 'enc_key_version': encKeyVersion,
   };
 
   @override
-  List<Object?> get props => [id, fileUrl, viewedAt, expired];
-}
-
-class ChatAttachmentInput extends Equatable {
-  const ChatAttachmentInput({
-    required this.fileUrl,
-    required this.fileName,
-    required this.contentType,
-    required this.sizeBytes,
-    this.viewSeconds,
-    this.noSave = false,
-  });
-
-  final String fileUrl;
-  final String fileName;
-  final String contentType;
-  final int sizeBytes;
-
-  /// The privacy-mode send sheet's choice (see [ChatMessageAttachment]).
-  /// Travels with the attachment so the outbox keeps it across a retry; the
-  /// API lifts it to the message's `media_policy`.
-  final int? viewSeconds;
-  final bool noSave;
-
-  bool get restricted => viewSeconds != null || noSave;
-
-  ChatAttachmentInput withPolicy({int? viewSeconds, required bool noSave}) =>
-      ChatAttachmentInput(
-        fileUrl: fileUrl,
-        fileName: fileName,
-        contentType: contentType,
-        sizeBytes: sizeBytes,
-        viewSeconds: viewSeconds,
-        noSave: noSave || viewSeconds != null,
-      );
-
-  factory ChatAttachmentInput.fromJson(Map<String, dynamic> json) =>
-      ChatAttachmentInput(
-        fileUrl: json['file_url'] as String? ?? '',
-        fileName: json['file_name'] as String? ?? '',
-        contentType: json['content_type'] as String? ?? '',
-        sizeBytes: json['size_bytes'] as int? ?? 0,
-        viewSeconds: (json['view_seconds'] as num?)?.toInt(),
-        noSave: json['no_save'] as bool? ?? false,
-      );
-
-  Map<String, dynamic> toJson() => {
-    'file_url': fileUrl,
-    'file_name': fileName,
-    'content_type': contentType,
-    'size_bytes': sizeBytes,
-    'view_seconds': ?viewSeconds,
-    if (noSave) 'no_save': true,
-  };
-
-  @override
-  List<Object?> get props => [fileUrl];
-}
-
-class ChatPresignResult extends Equatable {
-  const ChatPresignResult({
-    required this.uploadUrl,
-    required this.publicUrl,
-    required this.objectKey,
-  });
-
-  final String uploadUrl;
-  final String publicUrl;
-  final String objectKey;
-
-  factory ChatPresignResult.fromJson(Map<String, dynamic> json) =>
-      ChatPresignResult(
-        uploadUrl: json['upload_url'] as String? ?? '',
-        publicUrl: json['public_url'] as String? ?? '',
-        objectKey: json['object_key'] as String? ?? '',
-      );
-
-  @override
-  List<Object?> get props => [uploadUrl, publicUrl];
+  List<Object?> get props => [id, fileUrl, viewedAt, expired, needsKey];
 }

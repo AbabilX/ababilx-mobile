@@ -72,6 +72,9 @@ class AttachmentIntake {
     final started = <String>{};
     for (final message in messages) {
       for (final attachment in message.attachments) {
+        // Encrypted, and its key did not open here (vault locked, or a key
+        // version this account does not hold): nothing readable to fetch.
+        if (attachment.needsKey) continue;
         if (!decision.allows(attachment)) continue;
         final urlKey = attachmentUrlKey(attachment.fileUrl);
         if (urlKey.isEmpty || !started.add(urlKey)) continue;

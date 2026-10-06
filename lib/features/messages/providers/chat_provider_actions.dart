@@ -166,6 +166,10 @@ mixin _ChatActionsMixin
   }) async {
     final convId = conversationId ?? state.activeConversationId;
     if (convId == null) return null;
+    // An upload this phone encrypted (server 0168) gets its key here, so it
+    // rides in the pending message — and from there in the outbox — through
+    // every retry. The key stays filed until the send is confirmed below.
+    attachments = SealedUploads.attach(attachments);
 
     // ── Step 1: Build a pending message and show it instantly in the UI ──────
     final clientRef = clientMessageId ?? newChatClientMessageId();
@@ -237,7 +241,13 @@ mixin _ChatActionsMixin
         encryptionKeyVersion: encrypted?.keyVersion,
         parentId: parentId,
         quotedMessageId: quotedMessageId,
-        attachments: attachments,
+        // Each encrypted file's key goes out sealed under the same key
+        // version as the body. With no seal an encrypted file refuses to be
+        // sent (ChatAttachmentInput.toWire) rather than arrive unopenable.
+        attachments: [
+          for (final a in attachments)
+            a.withSeal(encrypted?.attachmentSeals[a.fileUrl]),
+        ],
         mentionedUserIds: mentionedUserIds,
       );
     }
@@ -246,12 +256,17 @@ mixin _ChatActionsMixin
       await (this as _ChatOutboxMixin).stageOutbox(pendingMsg);
       // ── Step 2: Fire the actual network call ─────────────────────────────
       ChatMessage msg;
-      if (conv?.isEncrypted == true && body.isNotEmpty) {
+      // A message carrying an encrypted file is sealed even with no text:
+      // the file's key is sealed under the body's key version, and a message
+      // with no ciphertext names none.
+      final hasSealedFile = attachments.any((a) => a.secret != null);
+      if (conv?.isEncrypted == true && (body.isNotEmpty || hasSealedFile)) {
         msg = await sendEncryptedChat(
           vault: ref.read(messageVaultProvider),
           conversationId: convId,
           text: body,
           currentUserId: currentUser,
+          attachments: attachments,
           send: deliver,
           // Only a group the SERVER marks may stay plaintext until everyone
           // in it can be sealed to — a converted workspace channel that has
@@ -271,6 +286,9 @@ mixin _ChatActionsMixin
       }
       // ── Step 3: Replace the pending bubble with the confirmed message ─────
       _replacePendingMessage(convId, clientRef, msg, parentId: parentId);
+      for (final a in attachments) {
+        SealedUploads.forget(a.fileUrl);
+      }
       // Same local row as persistOutbox — clientRef is the history key, the
       // server id rides in the payload. Never delete-and-reinsert.
       (this as _ChatCacheMixin).persistMessageAsync(msg);
