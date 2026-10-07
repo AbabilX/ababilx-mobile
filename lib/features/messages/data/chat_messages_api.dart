@@ -120,14 +120,28 @@ class ChatMessagesApi {
     return ChatMessage.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
 
-  /// Every task card in the conversation, newest first.
-  Future<List<ChatMessage>> listTasks(String conversationId) async {
-    final res = await _client.get(_endpoints.tasks(conversationId));
+  /// One page of the conversation's task cards, newest first. [state] is
+  /// `open` or `closed`; [cursor] is the page before's `nextCursor`, which is
+  /// null on the last page.
+  Future<({List<ChatMessage> tasks, String? nextCursor})> listTasks(
+    String conversationId, {
+    String? state,
+    String? cursor,
+    int limit = 50,
+  }) async {
+    final res = await _client.get(
+      _endpoints.tasks(conversationId),
+      queryParameters: {'limit': limit, 'state': ?state, 'cursor': ?cursor},
+    );
     final data = unwrapApiData<Map<String, dynamic>>(res);
-    return [
-      for (final item in data['tasks'] as List? ?? const [])
-        ChatMessage.fromJson(item as Map<String, dynamic>),
-    ];
+    final next = data['next_cursor'];
+    return (
+      tasks: [
+        for (final item in data['tasks'] as List? ?? const [])
+          ChatMessage.fromJson(item as Map<String, dynamic>),
+      ],
+      nextCursor: next is String && next.isNotEmpty ? next : null,
+    );
   }
 
   /// The privacy-mode sheet sets one choice for every attachment of a send;

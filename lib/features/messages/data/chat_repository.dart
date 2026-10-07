@@ -182,8 +182,11 @@ class ChatRepository {
     String? status,
   }) => _messages.updateTask(messageId, priority: priority, status: status);
 
-  Future<List<ChatMessage>> listTasks(String conversationId) =>
-      _messages.listTasks(conversationId);
+  Future<({List<ChatMessage> tasks, String? nextCursor})> listTasks(
+    String conversationId, {
+    String? state,
+    String? cursor,
+  }) => _messages.listTasks(conversationId, state: state, cursor: cursor);
 
   Future<ChatMessage> patchMessage(
     String messageId,

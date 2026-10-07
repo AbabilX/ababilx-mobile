@@ -10,9 +10,12 @@ class SnippetFile {
     required this.sizeBytes,
   });
 
-  final String text;
+  /// The whole text, kept only for a file small enough to draw formatted
+  /// (see [readSnippetFile]). Null for a larger one: [lines] already holds
+  /// every character, and a second copy of ten megabytes buys nothing.
+  final String? text;
 
-  /// [text] cut into rows for a lazy list. A line longer than
+  /// The text cut into rows for a lazy list. A line longer than
   /// [maxSnippetRowChars] is split, see [splitSnippetRows].
   final List<String> lines;
   final int sizeBytes;
@@ -24,16 +27,24 @@ class SnippetFile {
 const int maxSnippetRowChars = 2000;
 
 /// Reads and decodes off the UI isolate: ten megabytes of UTF-8 is long
-/// enough to drop frames on the page transition.
-Future<SnippetFile> readSnippetFile(String path) => Isolate.run(() async {
-  final bytes = await File(path).readAsBytes();
-  final text = utf8.decode(bytes, allowMalformed: true);
-  return SnippetFile(
-    text: text,
-    lines: splitSnippetRows(text),
-    sizeBytes: bytes.length,
-  );
-});
+/// enough to drop frames on the page transition. The whole text comes back
+/// beside the rows only when the file is at most [keepTextUpToBytes].
+Future<SnippetFile> readSnippetFile(String path, {int keepTextUpToBytes = 0}) =>
+    Isolate.run(() async {
+      final bytes = await File(path).readAsBytes();
+      final text = utf8.decode(bytes, allowMalformed: true);
+      return SnippetFile(
+        text: bytes.length <= keepTextUpToBytes ? text : null,
+        lines: splitSnippetRows(text),
+        sizeBytes: bytes.length,
+      );
+    });
+
+/// The file's text exactly as written, for Copy. Read again from the disk
+/// rather than held for as long as the page is open.
+Future<String> readSnippetText(String path) => Isolate.run(
+  () async => utf8.decode(await File(path).readAsBytes(), allowMalformed: true),
+);
 
 /// Lines of [text], with any line over [maxChars] cut into pieces. A cut never
 /// lands inside a surrogate pair, so an emoji is not torn in two.

@@ -30,8 +30,8 @@ Future<void> openSnippetViewer(
   ),
 );
 
-/// The whole snippet on its own page. Markdown is drawn formatted, with a
-/// switch to its source; plain text is drawn as written.
+/// The whole snippet on its own page: markdown formatted, with a switch to
+/// its source; plain text as written.
 class SnippetViewerScreen extends ConsumerStatefulWidget {
   const SnippetViewerScreen({
     super.key,
@@ -45,9 +45,7 @@ class SnippetViewerScreen extends ConsumerStatefulWidget {
   final String localPath;
   final String? detail;
 
-  /// The sender, or the group, does not let this file leave the app: it is
-  /// read here, with no Copy and no text selection — copying the whole text
-  /// out is saving it.
+  /// The file may not leave the app: no Copy and no text selection here.
   final bool noSave;
 
   @override
@@ -55,10 +53,11 @@ class SnippetViewerScreen extends ConsumerStatefulWidget {
 }
 
 class _SnippetViewerState extends ConsumerState<SnippetViewerScreen> {
+  // Held only for a file small enough to draw formatted.
   String? _text;
-  List<String> _lines = const [];
+  List<String>? _lines;
   bool _failed = false;
-  bool _canFormat = false;
+  bool get _canFormat => _text != null;
   bool _formatted = false;
 
   @override
@@ -69,14 +68,16 @@ class _SnippetViewerState extends ConsumerState<SnippetViewerScreen> {
 
   Future<void> _load() async {
     try {
-      final file = await readSnippetFile(widget.localPath);
-      if (!mounted) return;
       final markdown = snippetKindOf(widget.fileName) == SnippetKind.markdown;
+      final file = await readSnippetFile(
+        widget.localPath,
+        keepTextUpToBytes: markdown ? maxRenderedMarkdownBytes : 0,
+      );
+      if (!mounted) return;
       setState(() {
         _text = file.text;
         _lines = file.lines;
-        _canFormat = markdown && file.sizeBytes <= maxRenderedMarkdownBytes;
-        _formatted = _canFormat;
+        _formatted = file.text != null;
       });
     } catch (_) {
       if (mounted) setState(() => _failed = true);
@@ -84,10 +85,13 @@ class _SnippetViewerState extends ConsumerState<SnippetViewerScreen> {
   }
 
   Future<void> _copy(SnippetStrings s) async {
-    final text = _text;
-    if (text == null) return;
-    await Clipboard.setData(ClipboardData(text: text));
-    if (mounted) showAppToast(context, s.copied);
+    try {
+      final text = _text ?? await readSnippetText(widget.localPath);
+      await Clipboard.setData(ClipboardData(text: text));
+      if (mounted) showAppToast(context, s.copied);
+    } catch (_) {
+      if (mounted) showAppToast(context, s.unreadable, isError: true);
+    }
   }
 
   @override
@@ -133,7 +137,7 @@ class _SnippetViewerState extends ConsumerState<SnippetViewerScreen> {
           if (!locked)
             IconButton(
               tooltip: s.copy,
-              onPressed: _text == null ? null : () => _copy(s),
+              onPressed: _lines == null ? null : () => _copy(s),
               icon: ChatIcon(
                 HugeIcons.strokeRoundedCopy01,
                 color: colors.onSurface,
@@ -154,28 +158,27 @@ class _SnippetViewerState extends ConsumerState<SnippetViewerScreen> {
     Widget select(Widget child) =>
         selectable ? SelectionArea(child: child) : child;
     if (_failed) return Center(child: Text(s.unreadable));
-    final text = _text;
-    if (text == null) return const Center(child: CircularProgressIndicator());
+    final lines = _lines;
+    if (lines == null) return const Center(child: CircularProgressIndicator());
     final base = Theme.of(
       context,
     ).textTheme.bodyLarge!.copyWith(color: colors.onSurface, height: 1.45);
-    if (_formatted) {
+    if (_formatted && _text != null) {
       return select(
         SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          child: MessageMarkdown(source: text, style: base),
+          child: MessageMarkdown(source: _text!, style: base),
         ),
       );
     }
     final mono = base.copyWith(fontFamily: 'monospace', fontSize: 13.5);
     final tooLargeNote =
         snippetKindOf(widget.fileName) == SnippetKind.markdown && !_canFormat;
-    // Line by line and built lazily: one Text holding ten megabytes is laid
-    // out whole before the first frame.
+    // Built lazily, row by row: one Text of ten megabytes is laid out whole.
     return select(
       ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        itemCount: _lines.length + (tooLargeNote ? 1 : 0),
+        itemCount: lines.length + (tooLargeNote ? 1 : 0),
         itemBuilder: (context, index) {
           if (tooLargeNote && index == 0) {
             return Padding(
@@ -188,7 +191,7 @@ class _SnippetViewerState extends ConsumerState<SnippetViewerScreen> {
               ),
             );
           }
-          final line = _lines[index - (tooLargeNote ? 1 : 0)];
+          final line = lines[index - (tooLargeNote ? 1 : 0)];
           return Text(line.isEmpty ? ' ' : line, style: mono);
         },
       ),
