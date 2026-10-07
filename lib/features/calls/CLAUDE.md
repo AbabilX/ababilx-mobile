@@ -768,7 +768,8 @@ Owned by `CallControlsAnchor` + `CallControlsRow`
   Camera · Screen Share · Speaker over Minimize · End · Mute, all one seat
   size. Minimize is a seat here, so the top-left chevron is not drawn.
   A lock + "End-to-end encrypted" line (`CallEncryptedLabel`) sits over the
-  deck; not drawn in landscape. Seat = 1/5 of the width, gap 6.5%, shrunk so
+  deck and turns over every 4 s to "This call is never recorded" (slide up +
+  fade); not drawn in landscape. Seat = 1/5 of the width, gap 6.5%, shrunk so
   the deck stays in the lower 44% (`CallOverlayMetrics.portraitSeat`).
 
 **Landscape**

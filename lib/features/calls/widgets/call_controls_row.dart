@@ -188,7 +188,7 @@ class CallControlsRow extends StatelessWidget {
         seatGap: m.seatGap,
         seatWidth: seatD,
         header: CallEncryptedLabel(
-          text: tr('call_end_to_end_encrypted'),
+          lines: [tr('call_end_to_end_encrypted'), tr('call_never_recorded')],
           fontSize: m.controlLabelFont,
         ),
         strip: [mute, camera, share, speaker, end],

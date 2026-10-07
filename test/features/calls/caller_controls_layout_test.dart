@@ -253,6 +253,28 @@ void main() {
     }
   }
 
+  testWidgets('the lock line turns over to the next line and back', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(host(ThemeData()));
+    expect(find.text('End-to-end encrypted'), findsOneWidget);
+    expect(find.text('This call is never recorded'), findsNothing);
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(milliseconds: 200));
+    // Mid-turn both are on screen, one leaving and one arriving.
+    expect(find.text('End-to-end encrypted'), findsOneWidget);
+    expect(find.text('This call is never recorded'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('End-to-end encrypted'), findsNothing);
+    expect(find.text('This call is never recorded'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(find.text('End-to-end encrypted'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('starting call can be ended before media is ready', (
     tester,
   ) async {
