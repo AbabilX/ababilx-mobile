@@ -12,6 +12,7 @@ import '../../features/policy/widgets/policy_gate_overlay.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../core/localization/app_translations.dart';
 import 'shell_bottom_bar/index.dart';
+import 'shell_bottom_bar/nav_double_tap.dart';
 import 'shell_bottom_bar/nav_reorder_blur.dart';
 import 'shell_bottom_bar/shell_chrome_provider.dart';
 import 'shell_bottom_bar/shell_tab_order.dart';
@@ -49,7 +50,14 @@ class HomeShell extends ConsumerWidget {
             unread: unread,
             labelOf: (tab) =>
                 AppTranslations.translate(context, ref, tab.labelKey),
-            onSelect: (i) => context.go(tabs[i].route),
+            onSelect: (i) {
+              // A double tap on the bar is the shortcut into Local Share.
+              if (navDoubleTap.hit()) {
+                context.push('/local-share');
+              } else {
+                context.go(tabs[i].route);
+              }
+            },
             onReorder: (from, to) =>
                 ref.read(shellTabOrderProvider.notifier).move(tabs, from, to),
           );

@@ -29,11 +29,13 @@ class SignalFocusedMessage extends StatelessWidget {
     return AnimatedBuilder(
       animation: move,
       builder: (context, child) {
-        final scale = lerpDouble(
-          SignalMenuMetrics.pressScale,
-          targetScale,
-          move.value,
-        )!;
+        // On the way back the copy returns to the row at full size, where
+        // the real bubble is about to reappear — Signal's hide animates the
+        // scale to 1, not back to the pinch.
+        final from = move.status == AnimationStatus.reverse
+            ? 1.0
+            : SignalMenuMetrics.pressScale;
+        final scale = lerpDouble(from, targetScale, move.value)!;
         // The message slides from where it sits in the list to where the
         // overlay needs it, unpinching from Signal's 0.95 press scale on
         // the way — exactly how it animates x/y/scale. It pinches in from
@@ -41,7 +43,7 @@ class SignalFocusedMessage extends StatelessWidget {
         // top-left corner and `Alignment.topLeft` makes the transform
         // land on it exactly.
         final pressLeft = isMine
-            ? anchor.right - anchor.width * SignalMenuMetrics.pressScale
+            ? anchor.right - anchor.width * from
             : anchor.left;
         final corner = Offset.lerp(
           Offset(pressLeft, anchor.top),
@@ -77,7 +79,9 @@ class SignalFocusedMessage extends StatelessWidget {
           ),
         );
       },
-      child: child,
+      // Signal moves a bitmap. A boundary is the same bargain: the message
+      // paints once and the slide and scale only move its layer.
+      child: RepaintBoundary(child: child),
     );
   }
 }

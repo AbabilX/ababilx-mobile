@@ -3,11 +3,12 @@ import 'package:flutter/services.dart';
 
 import 'signal_menu_pointer.dart';
 import 'signal_message_menu.dart';
-import 'signal_message_menu_backdrop.dart';
 import 'signal_message_menu_focus.dart';
 import 'signal_message_menu_geometry.dart';
 import 'signal_message_menu_items.dart';
 import 'signal_action_panel.dart';
+import 'signal_menu_shade.dart';
+import 'signal_menu_timeline.dart';
 import 'signal_message_menu_panels.dart';
 import 'signal_reaction_scrub.dart';
 
@@ -52,6 +53,22 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
   int? _selected;
   Rect _bar = Rect.zero;
 
+  // Built once: a CurvedAnimation listens to its parent until disposed.
+  late final CurvedAnimation _move = signalReveal(
+    widget.animation,
+    // ViewPropertyAnimator's default, which carries Signal's snapshot.
+    curve: Curves.easeInOutSine,
+  );
+  late final CurvedAnimation _menu = signalReveal(widget.animation);
+  late final CurvedAnimation _strip = signalReveal(
+    widget.animation,
+    delay: SignalMenuMetrics.revealOffset,
+  );
+  late final List<CurvedAnimation> _slots = [
+    for (var i = 0; i <= SignalReactionBar.emojis.length; i++)
+      signalEmojiReveal(widget.animation, i),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +80,9 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
   void dispose() {
     widget.pointer?.position.removeListener(_onPointerMoved);
     widget.pointer?.released.removeListener(_onPointerReleased);
+    for (final a in [_move, _menu, _strip, ..._slots]) {
+      a.dispose();
+    }
     super.dispose();
   }
 
@@ -120,11 +140,6 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
     final ordered = layout.reversed
         ? widget.items.reversed.toList()
         : widget.items;
-    final move = CurvedAnimation(
-      parent: widget.animation,
-      curve: Curves.decelerate,
-    );
-
     return Material(
       type: MaterialType.transparency,
       child: Stack(
@@ -133,11 +148,11 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
-              child: SignalMenuBackdrop(animation: move),
+              child: SignalMenuShade(route: widget.animation, fadeOut: _menu),
             ),
           ),
           SignalFocusedMessage(
-            move: move,
+            move: _move,
             anchor: widget.anchor,
             target: layout.bubble,
             targetScale: layout.scale,
@@ -149,16 +164,17 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
               rect: layout.bar,
               child: SignalReactionBar(
                 moreLabel: widget.moreLabel,
-                animation: widget.animation,
+                strip: _strip,
+                slots: _slots,
                 selectedIndex: _selected,
               ),
             ),
           Positioned.fromRect(
             rect: layout.menu,
             child: FadeTransition(
-              opacity: widget.animation,
+              opacity: _menu,
               child: ScaleTransition(
-                scale: Tween(begin: 0.9, end: 1.0).animate(move),
+                scale: Tween(begin: 0.9, end: 1.0).animate(_menu),
                 alignment: layout.reversed
                     ? (widget.isMine
                           ? Alignment.bottomRight

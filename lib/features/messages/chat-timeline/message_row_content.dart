@@ -8,13 +8,14 @@ import '../chat_icon.dart';
 import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
+import 'bubble_side_indicators.dart';
 import 'message_bubble.dart';
 import 'message_bubble_content.dart';
+import 'message_sender_label.dart';
 import 'reaction_details_sheet.dart';
 import 'reaction_row.dart';
 import 'sender_name_color.dart';
 import 'signal_bubble_metrics.dart';
-import 'thread_summary.dart';
 import 'user_profile_sheet.dart';
 import '../nickname/contact_nickname_provider.dart';
 
@@ -64,9 +65,6 @@ class MessageRowContent extends ConsumerWidget {
         : ref
               .watch(contactNicknamesProvider)
               .resolve(userId: message.userId, name: message.userName);
-    final replies = ref.watch(
-      chatProvider.select((c) => c.threadRepliesByRoot[message.id]),
-    );
     // A feed's picture belongs to the feed, not to one of its messages. The
     // URL joined onto a message is whatever the hook wore when that message
     // was fetched, so a photo set today would never reach the ones already in
@@ -113,54 +111,31 @@ class MessageRowContent extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (showName)
-          Padding(
-            padding: const EdgeInsets.only(left: 12, bottom: 2),
-            child: GestureDetector(
-              onTap: showProfile,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        color: webhook
-                            ? scheme.primary
-                            : senderNameColor(message.userId),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (tag.isNotEmpty) ...[
-                    const SizedBox(width: 6),
-                    Text(
-                      tag,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+          MessageSenderLabel(
+            name: name,
+            tag: tag,
+            color: webhook ? scheme.primary : senderNameColor(message.userId),
+            onTap: showProfile,
           ),
-        MessageBubble(
+        BubbleSideIndicators(
+          message: message,
           isOwn: isOwnMessage,
-          clusterPosition: clusterPosition,
-          colors: colors,
-          dimmed: isSending,
-          transparent: isBareMediaBubble(message),
-          child: MessageBubbleContent(
-            message: message,
-            colors: colors,
+          onOpenThread: onOpenThread,
+          child: MessageBubble(
             isOwn: isOwnMessage,
-            isSending: isSending,
-            isFailed: isFailed,
-            pulse: pulse,
-            showFooter: _endsCluster || isSending || isFailed,
+            clusterPosition: clusterPosition,
+            colors: colors,
+            dimmed: isSending,
+            transparent: isBareMediaBubble(message),
+            child: MessageBubbleContent(
+              message: message,
+              colors: colors,
+              isOwn: isOwnMessage,
+              isSending: isSending,
+              isFailed: isFailed,
+              pulse: pulse,
+              showFooter: _endsCluster || isSending || isFailed,
+            ),
           ),
         ),
         if (!message.isDeleted && message.reactions.isNotEmpty)
@@ -172,14 +147,6 @@ class MessageRowContent extends ConsumerWidget {
               messageId: message.id,
               initialEmoji: emoji,
             ),
-          ),
-        if (onOpenThread != null)
-          ThreadSummary(
-            root: message,
-            replies: replies ?? const [],
-            count: message.threadCount,
-            isOwn: isOwnMessage,
-            onTap: onOpenThread!,
           ),
       ],
     );

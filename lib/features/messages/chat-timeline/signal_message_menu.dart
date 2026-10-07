@@ -58,6 +58,9 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
   // and reacting are both sending.
   bool showReply = true,
   bool showReactions = true,
+  // Runs once the hide animation has finished — the moment the lifted copy
+  // is gone and the row underneath may show itself again.
+  VoidCallback? onHidden,
 }) {
   // [anchor] is in screen coordinates, but the dialog is laid out inside the
   // root navigator — which the in-call return bar pushes down by its own
@@ -68,12 +71,8 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
   final origin = box is RenderBox && box.hasSize
       ? box.localToGlobal(Offset.zero)
       : Offset.zero;
-  return showGeneralDialog<SignalMessageMenuResult>(
-    context: context,
-    barrierDismissible: true,
+  final route = _SignalMenuRoute(
     barrierLabel: labels['dismiss'],
-    barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.56),
-    transitionDuration: SignalMenuMetrics.revealDuration,
     pageBuilder: (ctx, animation, _) => SignalMessageMenuSurface(
       animation: animation,
       anchor: anchor.shift(-origin),
@@ -98,4 +97,24 @@ Future<SignalMessageMenuResult?> showSignalMessageMenu({
       moreLabel: labels['moreReactions']!,
     ),
   );
+  // `completed` is the end of the hide, `push` only the start of it.
+  if (onHidden != null) route.completed.whenComplete(onHidden);
+  return navigator.push(route);
+}
+
+/// A dialog route with Signal's two clocks: the staggered reveal on the way
+/// in, a flat 150ms on the way out. It draws no barrier colour and no fade of
+/// its own — the surface paints the shade, which Signal shows at full strength
+/// from the first frame and only fades when hiding.
+class _SignalMenuRoute extends RawDialogRoute<SignalMessageMenuResult> {
+  _SignalMenuRoute({required super.pageBuilder, super.barrierLabel})
+    : super(
+        barrierDismissible: true,
+        barrierColor: const Color(0x00000000),
+        transitionDuration: SignalMenuMetrics.revealTotal,
+        transitionBuilder: (_, _, _, child) => child,
+      );
+
+  @override
+  Duration get reverseTransitionDuration => SignalMenuMetrics.hideDuration;
 }

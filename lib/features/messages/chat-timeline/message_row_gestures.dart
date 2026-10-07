@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Telegram's three gestures on a message row: a tap opens the menu, a double
-/// tap reacts, a hold picks rows.
+/// Signal's gestures on a message row: a hold opens the menu, a double tap
+/// copies, and a plain tap does nothing on its own.
 ///
-/// Where a hold cannot select ([onHoldSelect] null — a thread panel, which has
-/// no selection bars), it opens the menu instead and keeps reporting the
-/// finger, so one touch can still press, drag onto an emoji and release.
+/// The hold keeps reporting the finger, so one touch can press, drag onto an
+/// emoji and release. While multi-select is up ([onHoldSelect] set) a hold
+/// picks the row instead, as a tap does — Signal's action mode.
 class MessageRowGestures extends StatelessWidget {
   const MessageRowGestures({
     super.key,
@@ -16,6 +16,7 @@ class MessageRowGestures extends StatelessWidget {
     required this.onHoldStart,
     required this.onHoldMove,
     required this.onHoldEnd,
+    this.onPressChanged,
     required this.child,
   });
 
@@ -25,13 +26,21 @@ class MessageRowGestures extends StatelessWidget {
   final ValueChanged<Offset> onHoldStart;
   final ValueChanged<Offset> onHoldMove;
   final VoidCallback onHoldEnd;
+
+  /// A finger settled on the row (true, 100ms after touch-down — Signal's
+  /// `SHRINK_BUBBLE_DELAY_MILLIS`) or left it / turned into something else.
+  final ValueChanged<bool>? onPressChanged;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final select = onHoldSelect;
+    final press = onPressChanged;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
+      onTapDown: press == null ? null : (_) => press(true),
+      onTapUp: press == null ? null : (_) => press(false),
+      onTapCancel: press == null ? null : () => press(false),
       onTap: onTap,
       onDoubleTap: onDoubleTap,
       onLongPress: select == null

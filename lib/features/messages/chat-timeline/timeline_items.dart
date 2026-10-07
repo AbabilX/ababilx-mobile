@@ -142,3 +142,11 @@ int _appendCollapsedRun({
   }
   return (keys: keys, positions: positions);
 }
+
+bool timelineItemContains(ChatTimelineItem item, String id) {
+  return switch (item) {
+    ChatTimelineMessage(:final message) => message.id == id,
+    ChatTimelineCallEvents(:final messages) => messages.any((m) => m.id == id),
+    ChatTimelineGroupEvents(:final messages) => messages.any((m) => m.id == id),
+  };
+}

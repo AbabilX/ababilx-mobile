@@ -9,6 +9,7 @@ import '../chat_utils.dart';
 import '../providers/chat_provider.dart';
 import '../wallpaper/chat_wallpaper_provider.dart';
 import 'message_actions.dart';
+import 'message_press_pinch.dart';
 import 'message_quick_react.dart';
 import 'message_row_content.dart';
 import 'message_row_gestures.dart';
@@ -39,6 +40,7 @@ class MessageRow extends ConsumerStatefulWidget {
 class _MessageRowState extends ConsumerState<MessageRow>
     with SingleTickerProviderStateMixin, MessageRowPulse {
   final _messageKey = GlobalKey();
+  final _pressed = ValueNotifier<bool>(false);
   bool _actionsOpen = false;
   SignalMenuPointer? _pointer;
 
@@ -48,15 +50,15 @@ class _MessageRowState extends ConsumerState<MessageRow>
   @override
   void dispose() {
     _pointer?.dispose();
+    _pressed.dispose();
     super.dispose();
   }
 
   void _open(SignalMenuPointer? p, {required bool open}) =>
       setState(() => (_actionsOpen = open, _pointer = p));
 
-  /// Opens the overlay. From a tap there is no finger left to follow
-  /// ([touchDown] null); from a hold in a thread it opens on the press itself
-  /// and the finger carries straight on into the reaction bar.
+  /// Opens the overlay on the hold itself, so the finger carries straight on
+  /// into the reaction bar.
   Future<void> _showActions(Offset? touchDown) async {
     if (widget.message.isDeleted || _actionsOpen) return;
     final box = _messageKey.currentContext?.findRenderObject();
@@ -83,7 +85,6 @@ class _MessageRowState extends ConsumerState<MessageRow>
       onMenuClosed: restore,
     );
     pointer?.dispose();
-    restore();
   }
 
   Widget _content({required bool focused}) {
@@ -145,10 +146,6 @@ class _MessageRowState extends ConsumerState<MessageRow>
           messageId: widget.message.id,
         );
 
-    // A deleted row cannot start a selection, only join an open one.
-    final canSelect =
-        widget.threadRootId == null && (selecting || !widget.message.isDeleted);
-
     return MessageSwipeReply(
       // A deleted message has nothing to quote, and a bubble that has not
       // reached the server yet has no id to reply to. Swiping is also off
@@ -160,21 +157,22 @@ class _MessageRowState extends ConsumerState<MessageRow>
       onReply: () =>
           ref.read(chatProvider.notifier).setReplyToMessage(widget.message),
       child: MessageRowGestures(
-        // A thread panel has no selection bars, so a hold there still opens
-        // the menu, finger carried into the reaction bar as before.
-        onHoldSelect: canSelect ? toggleSelection : null,
+        // A hold opens the menu, whose Select row is the door into
+        // multi-select; once that mode is up, a hold picks rows like a tap.
+        onHoldSelect: selecting ? toggleSelection : null,
         onHoldStart: (at) => _showActions(at),
         onHoldMove: (at) => _pointer?.moveTo(at),
         onHoldEnd: () => _pointer?.release(),
+        onPressChanged: selecting || widget.message.isDeleted
+            ? null
+            : (down) => _pressed.value = down,
         onTap: selecting
             ? toggleSelection
             : isFailed
             ? () => retryFailedMessage(context, ref, widget.message)
-            : widget.message.isDeleted
-            ? null
-            : () => _showActions(null),
-        onDoubleTap: !selecting && canQuickReact(ref, widget.message)
-            ? () => quickReact(ref, widget.message)
+            : null,
+        onDoubleTap: !selecting && canQuickCopy(widget.message)
+            ? () => quickCopy(context, ref, widget.message)
             : null,
         child: SelectableMessageRow(
           selecting: selecting,
@@ -182,15 +180,17 @@ class _MessageRowState extends ConsumerState<MessageRow>
           hasWallpaper: hasWallpaper,
           child: KeyedSubtree(
             key: _messageKey,
-            // The lifted copy is the only one on screen: Signal hides the
-            // original so it does not sit under the scrim behind its own
-            // double.
+            // Signal hides the original under its lifted copy.
             child: Visibility(
               visible: !_actionsOpen,
               maintainSize: true,
               maintainAnimation: true,
               maintainState: true,
-              child: _content(focused: false),
+              child: MessagePressPinch(
+                pressed: _pressed,
+                isMine: isOwnMessage,
+                child: _content(focused: false),
+              ),
             ),
           ),
         ),

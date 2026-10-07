@@ -3,16 +3,18 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../chat_icon.dart';
 import 'selection_action_bar.dart';
 import 'selection_bar.dart';
 import 'selection_label_capsule.dart';
 
 /// The bottom of Telegram's selection mode, floating where the composer was:
-/// Reply on the left while one message is picked, Forward on the right.
+/// Reply on the left while one message is picked, Delete in a circle between,
+/// Forward on the right.
 ///
-/// When a second message is ticked Reply drains away and Forward floods the
-/// whole width, with a ripple running through it; back at one message the two
-/// halves return.
+/// When a second message is ticked Reply drains away, Delete slides to the
+/// left edge and Forward floods the rest of the width, with a ripple running
+/// through it; back at one message the three return.
 class SelectionBottomBar extends ConsumerStatefulWidget {
   const SelectionBottomBar({super.key, required this.conversationId});
 
@@ -67,8 +69,11 @@ class _SelectionBottomBarState extends ConsumerState<SelectionBottomBar>
         items.where((item) => item.kind == kind).firstOrNull;
     final reply = of(SelectionActionKind.reply);
     final forward = of(SelectionActionKind.forward);
+    final delete = of(SelectionActionKind.delete);
     if (reply != null) _reply = reply;
-    if (_reply == null && forward == null) return const SizedBox.shrink();
+    if (_reply == null && forward == null && delete == null) {
+      return const SizedBox.shrink();
+    }
     _sync(reply != null);
 
     return SafeArea(
@@ -79,18 +84,25 @@ class _SelectionBottomBarState extends ConsumerState<SelectionBottomBar>
           builder: (context, constraints) => AnimatedBuilder(
             animation: _flood,
             builder: (context, _) =>
-                _row(constraints.maxWidth, reply != null, forward),
+                _row(constraints.maxWidth, reply != null, forward, delete),
           ),
         ),
       ),
     );
   }
 
-  Widget _row(double width, bool replyLive, SelectionAction? forward) {
+  Widget _row(
+    double width,
+    bool replyLive,
+    SelectionAction? forward,
+    SelectionAction? delete,
+  ) {
     final raw = _flood.value;
     final flooding = _flood.status == AnimationStatus.forward;
     final t = Curves.easeInOutCubic.transform(raw);
-    final half = (width - _gap) / 2;
+    // The circle and its gap come out of the width the two halves share.
+    final taken = delete == null ? 0.0 : SelectionCapsule.height + _gap;
+    final half = (width - taken - _gap) / 2;
     final replyWidth = half * (1 - t);
     final reply = _reply;
 
@@ -112,6 +124,25 @@ class _SelectionBottomBarState extends ConsumerState<SelectionBottomBar>
             ),
           ),
         SizedBox(width: _gap * (1 - t)),
+        if (delete != null) ...[
+          SizedBox(
+            width: SelectionCapsule.height,
+            child: Tooltip(
+              message: delete.label,
+              child: SelectionCapsule(
+                onTap: delete.onPressed,
+                child: Center(
+                  child: ChatIcon(
+                    delete.icon,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    strokeWidth: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: _gap),
+        ],
         // With no Forward on offer the right half simply stays empty.
         Expanded(
           child: forward == null

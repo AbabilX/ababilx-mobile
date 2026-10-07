@@ -145,12 +145,15 @@ void main() {
     final anchor = find.textContaining(label).first;
     final top = tester.getRect(anchor).top;
 
-    await tester.longPress(anchor);
+    // The mode is entered from the long-press menu's Select row; what is
+    // under test here is the scroll position, so start it directly.
+    final id = 'm${label.split(' ').last}';
+    container
+        .read(messageSelectionProvider.notifier)
+        .start(conversationId: _conv, messageId: id);
     await _settle(tester);
 
-    expect(container.read(messageSelectionProvider).ids, {
-      'm${label.split(' ').last}',
-    });
+    expect(container.read(messageSelectionProvider).ids, {id});
     expect(controller.offset, closeTo(2500, 1));
     // The bars differ in height from the header and composer they replace,
     // so the row may move by that much — never off the screen.

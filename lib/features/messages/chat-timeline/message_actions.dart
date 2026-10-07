@@ -83,8 +83,9 @@ Future<void> showMessageActions(
         ),
     focused: focused ?? const SizedBox.shrink(),
     pointer: pointer,
+    onHidden: onMenuClosed,
     isMine: isMine,
-    // A tap opens this menu now, so the thread is reached from here in a DM
+    // The thread is reached from this menu in a DM
     // too. A private chat has none (server 409 `private_chat_no_threads`),
     // and a bubble still sending has no id to hang replies on.
     showThread:
@@ -129,8 +130,8 @@ Future<void> showMessageActions(
     },
   );
   // The caller hid its bubble for the menu, not for whatever the pick opens
-  // next — a forward sheet, an edit, a delete dialog, a pin request.
-  onMenuClosed?.call();
+  // next — a forward sheet, an edit, a delete dialog, a pin request. It comes
+  // back through `onHidden`, once the lifted copy has finished leaving.
   if (!context.mounted || result == null) return;
   final n = ref.read(chatProvider.notifier);
   if (result case SignalMessageReaction(:final emoji)) {

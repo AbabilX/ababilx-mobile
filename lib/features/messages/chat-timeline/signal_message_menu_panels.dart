@@ -6,18 +6,23 @@ import 'signal_message_menu.dart';
 import 'signal_message_menu_geometry.dart';
 
 /// The scrubber: 320 wide, one action-bar tall, 30dp corner, seven equal slots
-/// — six emoji and the "more" circle. Each emoji rises 25dp into place, one
-/// after the next, which is the whole character of Signal's reveal.
+/// — six emoji and the "more" circle. The strip fades in, then each emoji
+/// rises 25dp into place, one after the next, which is the whole character of
+/// Signal's reveal.
 class SignalReactionBar extends StatelessWidget {
   const SignalReactionBar({
     super.key,
     required this.moreLabel,
-    required this.animation,
+    required this.strip,
+    required this.slots,
     this.selectedIndex,
   });
 
   final String moreLabel;
-  final Animation<double> animation;
+
+  /// The strip's own fade, and one reveal per slot (`signalEmojiReveal`).
+  final Animation<double> strip;
+  final List<Animation<double>> slots;
 
   /// Slot the finger is scrubbing over, if any — it grows and lifts.
   final int? selectedIndex;
@@ -28,10 +33,26 @@ class SignalReactionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    // The emoji sit over the strip, not inside its fade: each has its own.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        FadeTransition(
+          opacity: strip,
+          child: Material(
+            color: colors.surfaceContainerHigh,
+            elevation: 4,
+            borderRadius: BorderRadius.circular(SignalMenuMetrics.barRadius),
+          ),
+        ),
+        _slots(context, colors),
+      ],
+    );
+  }
+
+  Widget _slots(BuildContext context, ColorScheme colors) {
     return Material(
-      color: colors.surfaceContainerHigh,
-      elevation: 4,
-      borderRadius: BorderRadius.circular(SignalMenuMetrics.barRadius),
+      type: MaterialType.transparency,
       child: SizedBox(
         height: SignalMenuMetrics.barHeight,
         child: Row(
@@ -39,8 +60,7 @@ class SignalReactionBar extends StatelessWidget {
             for (var i = 0; i < emojis.length; i++)
               Expanded(
                 child: _Slot(
-                  animation: animation,
-                  index: i,
+                  animation: slots[i],
                   selected: selectedIndex == i,
                   onTap: () =>
                       Navigator.pop(context, SignalMessageReaction(emojis[i])),
@@ -53,8 +73,7 @@ class SignalReactionBar extends StatelessWidget {
               ),
             Expanded(
               child: _Slot(
-                animation: animation,
-                index: emojis.length,
+                animation: slots[emojis.length],
                 selected: selectedIndex == emojis.length,
                 onTap: () =>
                     Navigator.pop(context, const SignalMessageReaction('')),
@@ -82,27 +101,19 @@ class SignalReactionBar extends StatelessWidget {
 class _Slot extends StatelessWidget {
   const _Slot({
     required this.animation,
-    required this.index,
     required this.selected,
     required this.onTap,
     required this.child,
   });
 
   final Animation<double> animation;
-  final int index;
   final bool selected;
   final VoidCallback onTap;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    // Signal staggers by duration / 10 per slot; as a fraction of one reveal
-    // that is the same tenth per emoji.
-    final start = (index * 0.1).clamp(0.0, 0.6);
-    final curve = CurvedAnimation(
-      parent: animation,
-      curve: Interval(start, (start + 0.4).clamp(0.0, 1.0)),
-    );
+    final curve = animation;
     return AnimatedBuilder(
       animation: curve,
       builder: (context, inner) => Opacity(

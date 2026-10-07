@@ -4,36 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../chat-details/group_permissions.dart';
+import '../../khaam/data/khaam_payload.dart';
 import '../data/models/chat_models.dart';
+import '../message_e2ee/vault_placeholder.dart';
 import '../providers/chat_provider.dart';
-import 'signal_message_menu_panels.dart';
+import '../tiptap_plain_text.dart';
+import 'message_actions.dart';
 
-/// The emoji a double tap leaves: the first of the reaction bar's own six, so
-/// the shortcut and the bar never disagree about what "the default" is.
-String get quickReactionEmoji => SignalReactionBar.emojis.first;
-
-/// Whether a double tap may react to [msg]. A pending send has no server id
-/// to react to, and a member an admin made read-only cannot react at all
-/// (server 0157) — the same gate the menu's reaction bar answers to.
-bool canQuickReact(WidgetRef ref, ChatMessage msg) {
-  if (msg.isDeleted || msg.isPending) return false;
-  final conversation = ref
-      .read(chatProvider)
-      .conversationById(msg.conversationId);
-  return conversation == null || GroupPermissions(conversation).canSend;
+/// Whether a double tap may copy [msg]: the menu's own Copy rule. A Khaam is
+/// a card, not text; a body this device never opened would copy the vault's
+/// placeholder string; and a files-only message has nothing to copy.
+bool canQuickCopy(ChatMessage msg) {
+  if (msg.isDeleted || isUnopenedMessage(msg)) return false;
+  if (KhaamPayload.tryParse(msg.body) != null) return false;
+  return tiptapToPlainText(msg.body).trim().isNotEmpty;
 }
 
-/// Double tap: toggles the default reaction, so a second double tap takes it
-/// back. Drawn locally first by the notifier; a refusal restores the old set.
-void quickReact(WidgetRef ref, ChatMessage msg) {
+/// Double tap: the message text straight to the clipboard, no menu.
+void quickCopy(BuildContext context, WidgetRef ref, ChatMessage msg) {
   HapticFeedback.lightImpact();
-  unawaited(
-    ref
-        .read(chatProvider.notifier)
-        .toggleReaction(msg.id, quickReactionEmoji)
-        .catchError((_) {}),
-  );
+  unawaited(copyMessageText(context, ref, msg));
 }
 
 /// Tap on a failed bubble: send it again.

@@ -21,10 +21,6 @@ class SignalMenuMetrics {
   static const menuPadding = 12.0;
   static const horizontalMargin = 16.0;
 
-  /// Gaussian sigma of the blur behind the overlay. Light on purpose: the
-  /// conversation should stay recognisable, only pushed back.
-  static const backdropBlur = 6.0;
-
   static const menuMinWidth = 200.0;
   static const menuRadius = 18.0;
   static const menuRowHeight = 50.0;
@@ -46,8 +42,18 @@ class SignalMenuMetrics {
   /// The pinch a message takes under the finger — `LONG_PRESS_SCALE_FACTOR`.
   static const pressScale = 0.95;
 
+  /// `reaction_scrubber_reveal_duration` / `_offset`, and
+  /// `reaction_scrubber_emoji_reveal_duration_start_delay_factor`: each piece
+  /// takes 200, the strip starts 100 in, each emoji 10 after the last.
   static const revealDuration = Duration(milliseconds: 200);
   static const revealOffset = Duration(milliseconds: 100);
+  static const emojiStagger = Duration(milliseconds: 10);
+
+  /// The whole reveal: the last of the seven slots finishing.
+  static const revealTotal = Duration(milliseconds: 100 + 6 * 10 + 200);
+
+  /// ViewPropertyAnimator's default, which is what `shrinkBubble` runs on.
+  static const pressDuration = Duration(milliseconds: 300);
   static const hideDuration = Duration(milliseconds: 150);
   static const emojiRiseFrom = 25.0;
 }

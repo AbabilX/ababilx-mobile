@@ -25,6 +25,24 @@ class MessageSwipeReply extends StatefulWidget {
   State<MessageSwipeReply> createState() => _MessageSwipeReplyState();
 }
 
+/// How far the swipe has come, 0 to 1 at the trigger, for anything in the row
+/// that has to get out of the arrow's way.
+class SwipeReplyProgress extends InheritedWidget {
+  const SwipeReplyProgress({
+    super.key,
+    required this.progress,
+    required super.child,
+  });
+
+  final ValueNotifier<double> progress;
+
+  static ValueNotifier<double>? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<SwipeReplyProgress>()?.progress;
+
+  @override
+  bool updateShouldNotify(SwipeReplyProgress old) => old.progress != progress;
+}
+
 class _MessageSwipeReplyState extends State<MessageSwipeReply>
     with TickerProviderStateMixin {
   static const _trigger = SignalBubbleMetrics.swipeTriggerDx;
@@ -39,6 +57,7 @@ class _MessageSwipeReplyState extends State<MessageSwipeReply>
   double _dx = 0;
   double _releaseFrom = 0;
   bool _passed = false;
+  final _progress = ValueNotifier<double>(0);
 
   @override
   void initState() {
@@ -62,6 +81,7 @@ class _MessageSwipeReplyState extends State<MessageSwipeReply>
   void dispose() {
     _release.dispose();
     _overshoot.dispose();
+    _progress.dispose();
     super.dispose();
   }
 
@@ -102,6 +122,7 @@ class _MessageSwipeReplyState extends State<MessageSwipeReply>
     if (!widget.enabled) return widget.child;
     final colors = Theme.of(context).colorScheme;
     final progress = (_dx / _trigger).clamp(0.0, 1.0);
+    _progress.value = progress;
 
     return GestureDetector(
       behavior: HitTestBehavior.deferToChild,
@@ -141,7 +162,10 @@ class _MessageSwipeReplyState extends State<MessageSwipeReply>
                 ),
               ),
             ),
-          Transform.translate(offset: Offset(_dx, 0), child: widget.child),
+          Transform.translate(
+            offset: Offset(_dx, 0),
+            child: SwipeReplyProgress(progress: _progress, child: widget.child),
+          ),
         ],
       ),
     );

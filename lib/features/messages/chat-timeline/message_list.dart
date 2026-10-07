@@ -9,17 +9,13 @@ import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import '../wallpaper/chat_wallpaper_provider.dart';
 import 'call_events_collapse.dart';
+import 'bubble_side_indicators.dart';
 import 'message_list_error.dart';
-import 'signal_bubble_metrics.dart';
+import 'quote_chain.dart';
 import 'unread_divider.dart';
-import 'message_row.dart';
-import 'thread_sheet.dart';
-import 'group_call_event_row.dart';
-import 'group_event_row.dart';
 import 'group_events_collapse.dart';
 import 'timeline_items.dart';
-import 'timeline_jump_target.dart';
-import 'voice_call_event_row.dart';
+import 'timeline_message_item.dart';
 
 class MessageList extends ConsumerWidget {
   const MessageList({
@@ -38,6 +34,7 @@ class MessageList extends ConsumerWidget {
     this.leading,
     this.insetTop = 0,
     this.insetBottom = 0,
+    this.indicators = true,
   });
 
   final List<ChatMessage> messages;
@@ -67,6 +64,10 @@ class MessageList extends ConsumerWidget {
   /// selection capsules), so the first and last rows are never under them.
   final double insetTop;
   final double insetBottom;
+
+  /// Side marks for a quoted message and a thread root. Off in the replies
+  /// sheet, which is where the quoted mark leads.
+  final bool indicators;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,7 +103,7 @@ class MessageList extends ConsumerWidget {
         .watch(chatWallpaperProvider)
         .forChat(conversationId)
         .isSet;
-    return ListView.builder(
+    final list = ListView.builder(
       controller: scrollController,
       reverse: true,
       // Rows are built a screen ahead of the scroll, so a photo has decoded
@@ -139,13 +140,13 @@ class MessageList extends ConsumerWidget {
             !isSameDay(prevAnchor.createdAt, item.anchor.createdAt);
         final showUnread =
             unreadAnchorId != null &&
-            _itemContainsMessageId(item, unreadAnchorId!);
+            timelineItemContains(item, unreadAnchorId!);
 
         return Column(
           key: ValueKey(rows.keys[listIndex]),
           children: [
             if (showDate)
-              _inset(
+              timelineInset(
                 ChatDateDivider(
                   label: formatDateDivider(item.anchor.createdAt),
                   hasWallpaper: hasWallpaper,
@@ -157,84 +158,38 @@ class MessageList extends ConsumerWidget {
                   ),
                 ),
               ),
-            if (showUnread) _inset(UnreadDivider(count: unreadCount)),
+            if (showUnread) timelineInset(UnreadDivider(count: unreadCount)),
             switch (item) {
-              ChatTimelineCallEvents(:final messages) => _inset(
+              ChatTimelineCallEvents(:final messages) => timelineInset(
                 CallEventsCollapse(
                   messages: messages,
                   currentUserId: currentUserId,
                 ),
               ),
-              ChatTimelineGroupEvents(:final messages) => _inset(
+              ChatTimelineGroupEvents(:final messages) => timelineInset(
                 GroupEventsCollapse(
                   messages: messages,
                   currentUserId: currentUserId,
                 ),
               ),
-              ChatTimelineMessage(:final message) => _buildMessage(
-                context: context,
+              ChatTimelineMessage(:final message) => TimelineMessageItem(
                 message: message,
-                idIndex: idIndex,
+                messages: messages,
+                index: idIndex[message.id] ?? 0,
+                currentUserId: currentUserId,
+                conversationId: conversationId,
+                threadRootId: threadRootId,
               ),
             },
           ],
         );
       },
     );
-  }
-
-  Widget _buildMessage({
-    required BuildContext context,
-    required ChatMessage message,
-    required Map<String, int> idIndex,
-  }) {
-    if (message.isSystem) {
-      return _inset(
-        GroupEventRow(message: message, currentUserId: currentUserId),
-      );
-    }
-    if (message.isVoiceCall) {
-      return _inset(
-        VoiceCallEventRow(message: message, currentUserId: currentUserId),
-      );
-    }
-    if (message.isGroupCall) {
-      return _inset(GroupCallEventRow(message: message));
-    }
-    final idx = idIndex[message.id] ?? 0;
-    final prev = idx > 0 ? messages[idx - 1] : null;
-    final next = idx + 1 < messages.length ? messages[idx + 1] : null;
-    final clusterPosition = chatMessageClusterPosition(prev, message, next);
-    // Wrapped, not keyed from here: a row is what a tapped quote jumps to, and
-    // the wash that lands on it has to reach both screen edges.
-    return TimelineJumpTarget(
-      messageId: message.id,
-      child: MessageRow(
-        message: message,
-        conversationId: conversationId,
-        threadRootId: threadRootId,
-        clusterPosition: clusterPosition,
-        onOpenThread: threadRootId == null && message.threadCount > 0
-            ? () => openThreadSheet(context, conversationId, message)
-            : null,
-      ),
+    if (!indicators) return list;
+    return BubbleIndicatorScope(
+      quotedIds: quotedMessageIds(messages),
+      threadRootId: threadRootId,
+      child: list,
     );
   }
-}
-
-/// The side inset the ListView used to carry. Call events and dividers are
-/// never selectable, so they keep it as plain padding.
-Widget _inset(Widget child) => Padding(
-  padding: const EdgeInsets.symmetric(
-    horizontal: SignalBubbleMetrics.listSideGutter,
-  ),
-  child: child,
-);
-
-bool _itemContainsMessageId(ChatTimelineItem item, String id) {
-  return switch (item) {
-    ChatTimelineMessage(:final message) => message.id == id,
-    ChatTimelineCallEvents(:final messages) => messages.any((m) => m.id == id),
-    ChatTimelineGroupEvents(:final messages) => messages.any((m) => m.id == id),
-  };
 }
