@@ -7,7 +7,9 @@ import '../../../shared/widgets/app_avatar.dart';
 import '../../calls/providers/voice_call_provider.dart';
 import '../chat-header/start_audio_call.dart';
 import '../chat-pins/pinned_messages_chrome.dart';
+import '../chat-list/conversation_avatar.dart';
 import '../data/models/chat_models.dart';
+import '../providers/chat_provider.dart';
 
 /// Thread screen top bar, cut from the pinned-messages header: a round back
 /// button, a capsule naming the thread and the conversation it belongs to
@@ -26,20 +28,15 @@ class ThreadHeader extends ConsumerWidget {
         : convo.isDm
         ? 'Direct message'
         : (convo.name != null ? '#${convo.name}' : 'Channel');
-    final avatarUrl = convo?.isAccountDeleted == true
-        ? null
-        : convo?.isDm == true
-        ? convo?.peerUserAvatar
-        : convo?.avatarUrl;
-    final avatarName = convo?.isDm == true
-        ? (convo?.peerUserName ?? '?')
-        : (convo?.name ?? '?');
+    final currentUserId = ref.watch(
+      chatProvider.select((state) => state.currentUserId),
+    );
     final callActive = ref.watch(
       voiceCallProvider.select((state) => state.active),
     );
     final canCall =
         convo != null &&
-        convo.isDm &&
+        convo.hasDmPeer &&
         convo.canMessage &&
         !convo.isAccountDeleted;
     final label = AppTranslations.translate(context, ref, 'chat_call');
@@ -56,7 +53,14 @@ class ThreadHeader extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(8, 6, 18, 6),
           child: Row(
             children: [
-              AppAvatar(size: 32, url: avatarUrl, name: avatarName),
+              if (convo == null)
+                AppAvatar(size: 36, url: null, name: '?')
+              else
+                ConversationAvatar(
+                  conversation: convo,
+                  title: convo.displayTitle(currentUserId),
+                  size: 36,
+                ),
               const SizedBox(width: 10),
               Expanded(child: _names(context, colors, subtitle)),
             ],

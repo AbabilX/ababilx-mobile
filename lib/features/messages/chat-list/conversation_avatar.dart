@@ -19,10 +19,12 @@ class ConversationAvatar extends ConsumerWidget {
     super.key,
     required this.conversation,
     required this.title,
+    this.size = 52,
   });
 
   final ChatConversation conversation;
   final String title;
+  final double size;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,14 +36,14 @@ class ConversationAvatar extends ConsumerWidget {
         name: title,
         webhook: conversation.isWebhook,
         owner: conversationAvatarOwner(conversation),
-        size: 52,
+        size: size,
       );
     }
     // The "peer" of a note to self is the viewer, so their own picture with
     // their own presence dot on it would be the avatar. Signal draws a
     // bookmark instead, and so do we.
     if (conversation.isSelf) {
-      return NoteToSelfAvatar(size: 52, iconSize: 24);
+      return NoteToSelfAvatar(size: size, iconSize: size * 0.46);
     }
     final deleted = conversation.isAccountDeleted;
     // A private peer (server 0152) is never reported online to us; the check
@@ -52,7 +54,7 @@ class ConversationAvatar extends ConsumerWidget {
         !ref.watch(conversationPeerPrivacyProvider(conversation.id)) &&
         ref.watch(isUserOnlineProvider(conversation.peerUserId));
     final avatar = AppAvatar(
-      size: 52,
+      size: size,
       url: deleted ? null : conversation.peerUserAvatar,
       owner: conversationAvatarOwner(conversation),
       name: deleted ? null : title,
