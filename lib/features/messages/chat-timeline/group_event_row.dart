@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/models/chat_message.dart';
 import 'group_event_label.dart';
+import '../task/task_event_label.dart';
 
 /// Quiet centered system line for group updates — name/photo/member/role
 /// changes and the like. Not a chat bubble; mirrors WhatsApp/Signal and web
@@ -20,7 +21,9 @@ class GroupEventRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final label = groupEventLabel(message, currentUserId);
+    final label =
+        taskEventLabel(context, message, currentUserId) ??
+        groupEventLabel(message, currentUserId);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),

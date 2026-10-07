@@ -52,4 +52,15 @@ class SnippetStrings {
         'এটি একটি ফাইল হয়ে যাবে, যা অন্যজন খুলে পড়তে পারবেন।',
   );
   String get tapToOpen => _t('Tap to open', 'খুলতে ট্যাপ করুন');
+  String get snippets => _t('Snippets', 'স্নিপেট');
+  String get listEmptyTitle => _t('No snippets yet', 'এখনো কোনো স্নিপেট নেই');
+  String get listEmptyBody => _t(
+    'Send long text as a snippet from the + menu. Every snippet in this chat '
+        'shows up here.',
+    'এই চ্যাটের + মেনু থেকে বড় লেখা স্নিপেট হিসেবে পাঠান। এই চ্যাটের সব স্নিপেট এখানে দেখা যাবে।',
+  );
+  String get listFailed =>
+      _t('Could not load snippets.', 'স্নিপেট লোড করা যায়নি।');
+  String get loadMore => _t('Load more', 'আরও দেখুন');
+  String get retry => _t('Try again', 'আবার চেষ্টা করুন');
 }

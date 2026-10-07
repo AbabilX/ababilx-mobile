@@ -259,6 +259,7 @@ class ChatMessage extends Equatable {
     ChatMessageQuote? quote,
     bool? privateChat,
     List<ChatMessageAttachment>? attachments,
+    Map<String, dynamic>? meta,
   }) => ChatMessage(
     id: id ?? this.id,
     conversationId: conversationId,
@@ -279,7 +280,7 @@ class ChatMessage extends Equatable {
     threadCount: threadCount ?? this.threadCount,
     viaAbabilx: viaAbabilx,
     messageType: messageType,
-    meta: meta,
+    meta: meta ?? this.meta,
     forwardedFromName: forwardedFromName,
     forwardedFromSource: forwardedFromSource,
     encryptedBody: encryptedBody ?? this.encryptedBody,
@@ -312,6 +313,7 @@ class ChatMessage extends Equatable {
     delivery,
     quote,
     privateChat,
+    meta,
   ];
 }
 

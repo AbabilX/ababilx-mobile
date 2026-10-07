@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../data/models/chat_message.dart';
 import 'group_event_label.dart';
+import '../task/task_event_label.dart';
 
 /// Same-day consecutive group system rows fold into one disclosure — same
 /// shape as [CallEventsCollapse], until a real chat message breaks the run.
@@ -106,7 +107,9 @@ class _GroupEventLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final label = groupEventLabel(message, currentUserId);
+    final label =
+        taskEventLabel(context, message, currentUserId) ??
+        groupEventLabel(message, currentUserId);
     final time = _formatClock(message.createdAt);
     final text = time.isEmpty ? label : '$label · $time';
 

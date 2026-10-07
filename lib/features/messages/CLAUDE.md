@@ -1842,3 +1842,38 @@ receive  vault.decryptMessage -> _openAttachments -> real name/type/size + secre
   memory (`RamMediaCache.know`, `privacy_timed_sealed.dart`,
   `chat_push_image.dart`). A locked chat's encrypted video is played from the
   memory blob provider (Android), capped at `RamMediaCache.maxFileBytes`.
+
+## Task cards (2026-10-07, server 0169)
+
+`task/` — a DM message that is also a task. Full contract in the root
+`CLAUDE.md` ("Task cards"). Mobile rules:
+
+- The card is an ordinary message: body = title line + description
+  (`taskBodyText` / `taskText`), files are its attachments, `meta.task` holds
+  priority + status. `ChatMessage.copyWith(meta:)` and `meta` in `props` exist
+  for this — without them a moved task does not redraw.
+- `TaskCard` is drawn inside the bubble (`MessageBubbleContent._task`) and on
+  the Tasks page. Files go through `MessageBody` with the body blanked, so
+  locked chats, pending uploads and downloads behave as in any bubble.
+- Look: the app's own — capsules (`AppCapsule`, stadium) and Hugeicons
+  (`TaskIcons`) everywhere, floating capsule headers (`HeaderPill`), choosers
+  are bottom sheets. No popup menu, no Material chips, no AppBar (user's rule).
+- `changeTask` is optimistic and does NOT persist: the server's
+  `chat.message.updated` echo carries the revision and is what gets stored.
+- The change line is a group-event row; `taskEventLabel` adds the title from
+  the open timeline (the server cannot — it is sealed).
+- Chip sits right after Snippet in the `+` panel, DM main timeline only, hidden
+  while private chat is on.
+
+## Snippets page + capsule form pages (2026-10-07)
+
+- Chat details → **Snippets** → `/messages/:id/snippets`
+  (`snippet/snippet_list_screen.dart`). No server list exists: it pages the
+  chat's shared FILES (`sharedMediaLoadProvider`, kind `files`) and keeps
+  `.md` / `.txt` (`isSnippetFile`), loading on until a screenful is found.
+  Hidden for a locked chat (the card reads from disk).
+- Create snippet and new task share the look: `shared/widgets/
+  capsule_form_header.dart` (round back, title pill, accent Send capsule) and
+  `shared/widgets/app_capsule.dart` (`AppCapsule` — use it instead of Material
+  chips, SegmentedButton, OutlinedButton/TextButton on these pages and their
+  sheets).

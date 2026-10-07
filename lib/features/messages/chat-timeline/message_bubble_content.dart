@@ -5,6 +5,8 @@ import '../../khaam/widgets/khaam_bubble.dart';
 import '../../../shared/link-preview/link_preview_builder.dart';
 import '../../../shared/link-preview/link_preview_data.dart';
 import '../data/models/chat_models.dart';
+import '../task/task_card.dart';
+import '../task/task_card_data.dart';
 import '../tiptap_plain_text.dart';
 import 'message_body.dart';
 import 'message_bubble.dart';
@@ -108,6 +110,8 @@ class MessageBubbleContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final task = TaskCardData.of(message);
+    if (task != null) return _task(task);
     // A Khaam rides inside an ordinary body (see `KhaamPayload`); it draws as
     // its card, edge to edge like media, with the footer under it.
     final khaam = message.isDeleted
@@ -168,6 +172,21 @@ class MessageBubbleContent extends StatelessWidget {
       content: Padding(padding: _inset.copyWith(top: 0), child: column),
     );
   }
+
+  /// A task card (server 0169): the bubble holds the card, which draws the
+  /// text and files itself and puts the two dropdowns under them.
+  Widget _task(TaskCardData task) => Padding(
+    padding: _inset,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 320),
+      child: TaskCard(
+        message: message,
+        task: task,
+        colors: colors,
+        footer: _footer(),
+      ),
+    ),
+  );
 
   Widget _khaam(KhaamPayload payload) {
     final footer = _footer();

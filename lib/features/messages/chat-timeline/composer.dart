@@ -23,6 +23,8 @@ import '../message_length_limit.dart';
 import '../snippet/snippet_create_screen.dart';
 import '../snippet/snippet_strings.dart';
 import '../snippet/snippet_too_long_sheet.dart';
+import '../task/task_create_screen.dart';
+import '../task/task_strings.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/messageable_people_provider.dart';
 import 'composer_attach.dart';
@@ -875,6 +877,25 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     };
   }
 
+  /// Task card: a DM's main timeline only (server 0169) — never a thread,
+  /// and never while private chat is on, where the server keeps no message
+  /// to update.
+  VoidCallback? get _taskAction {
+    final conversation = ref
+        .read(chatProvider)
+        .conversationById(widget.conversationId);
+    if (conversation == null ||
+        !conversation.isDm ||
+        conversation.privateChat ||
+        widget.parentId != null) {
+      return null;
+    }
+    return () {
+      _closeAttachmentPanel();
+      unawaited(openTaskCreate(context, conversationId: widget.conversationId));
+    };
+  }
+
   /// A draft over the message limit: offer to send it as a snippet, with the
   /// text already in the page. Where files are not allowed, only the limit.
   Future<void> _offerSnippet(String plain) async {
@@ -1226,6 +1247,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                       ref.watch(appLanguageProvider),
                     ).chip,
                     onSnippet: _snippetAction,
+                    taskLabel: TaskStrings.of(
+                      ref.watch(appLanguageProvider),
+                    ).chip,
+                    onTask: _taskAction,
                     onPickMedia: _pickFromRail,
                     selectedMediaUris: [
                       for (final item in _selectedRecent) item.uri,

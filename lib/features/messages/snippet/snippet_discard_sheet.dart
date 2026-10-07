@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
+import '../../../shared/widgets/app_capsule.dart';
 import 'snippet_strings.dart';
 
 /// Asks before typed content is thrown away. True means discard.
@@ -23,18 +25,19 @@ Future<bool> confirmSnippetDiscard(
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: colors.error,
-                foregroundColor: colors.onError,
-              ),
-              onPressed: () => Navigator.of(sheet).pop(true),
-              child: Text(strings.discard),
+            AppCapsule(
+              label: strings.discard,
+              icon: HugeIcons.strokeRoundedDelete02,
+              tint: colors.error,
+              selected: true,
+              expand: true,
+              onTap: () => Navigator.of(sheet).pop(true),
             ),
             const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => Navigator.of(sheet).pop(false),
-              child: Text(strings.keepEditing),
+            AppCapsule(
+              label: strings.keepEditing,
+              expand: true,
+              onTap: () => Navigator.of(sheet).pop(false),
             ),
           ],
         ),

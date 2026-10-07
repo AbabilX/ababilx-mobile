@@ -18,6 +18,8 @@ import '../../features/messages/data/models/chat_models.dart';
 import '../../features/messages/group-member-permissions/group_permissions_screen.dart';
 import '../../features/messages/group-member-permissions/member_permissions_route.dart';
 import '../../features/messages/chat-pins/pinned_messages_screen.dart';
+import '../../features/messages/task/task_list_screen.dart';
+import '../../features/messages/snippet/snippet_list_screen.dart';
 import '../../features/messages/chat-media/conversation_media_screen.dart';
 import '../../features/messages/screens/conversation_screen.dart';
 import '../../features/messages/screens/connections_screen.dart';
@@ -316,6 +318,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: PinnedMessagesScreen(
             conversationId: state.pathParameters['id']!,
           ),
+        ),
+      ),
+      GoRoute(
+        path: '/messages/:id/snippets',
+        builder: (_, state) => ChatLockGate(
+          conversationId: state.pathParameters['id']!,
+          child: SnippetListScreen(conversationId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/messages/:id/tasks',
+        builder: (_, state) => ChatLockGate(
+          conversationId: state.pathParameters['id']!,
+          child: TaskListScreen(conversationId: state.pathParameters['id']!),
         ),
       ),
       GoRoute(

@@ -82,6 +82,7 @@ class ChatMessagesApi {
     String? quotedMessageId,
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
+    String? taskPriority,
   }) async {
     final res = await _client.post(
       _endpoints.messages(conversationId),
@@ -98,9 +99,35 @@ class ChatMessagesApi {
           'attachments': attachments.map((a) => a.toWire()).toList(),
         if (mentionedUserIds.isNotEmpty) 'mentioned_user_ids': mentionedUserIds,
         'media_policy': ?_mediaPolicy(attachments),
+        // Makes the message a task card (server 0169).
+        if (taskPriority != null) 'task': {'priority': taskPriority},
       },
     );
     return ChatMessage.fromJson(unwrapApiData<Map<String, dynamic>>(res));
+  }
+
+  /// Moves a task card's priority and/or status; answers the message as the
+  /// server now holds it (still sealed when encrypted).
+  Future<ChatMessage> updateTask(
+    String messageId, {
+    String? priority,
+    String? status,
+  }) async {
+    final res = await _client.put(
+      _endpoints.messageTask(messageId),
+      data: {'priority': ?priority, 'status': ?status},
+    );
+    return ChatMessage.fromJson(unwrapApiData<Map<String, dynamic>>(res));
+  }
+
+  /// Every task card in the conversation, newest first.
+  Future<List<ChatMessage>> listTasks(String conversationId) async {
+    final res = await _client.get(_endpoints.tasks(conversationId));
+    final data = unwrapApiData<Map<String, dynamic>>(res);
+    return [
+      for (final item in data['tasks'] as List? ?? const [])
+        ChatMessage.fromJson(item as Map<String, dynamic>),
+    ];
   }
 
   /// The privacy-mode sheet sets one choice for every attachment of a send;

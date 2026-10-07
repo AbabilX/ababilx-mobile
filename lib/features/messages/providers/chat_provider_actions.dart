@@ -163,6 +163,7 @@ mixin _ChatActionsMixin
     ChatMessageQuote? quotePreview,
     String? clientMessageId,
     bool reusePending = false,
+    String? taskPriority,
   }) async {
     final convId = conversationId ?? state.activeConversationId;
     if (convId == null) return null;
@@ -199,6 +200,9 @@ mixin _ChatActionsMixin
       // The quote is shown on the pending bubble straight away; the server
       // resolves the real one and the confirmed message replaces this.
       quote: quotePreview,
+      // A task card draws as one while it is still sending, and a retry
+      // reads the priority back from here.
+      meta: taskPriority == null ? null : pendingTaskMeta(taskPriority),
       // Show the sender's own name if we can resolve it from the DM peer info.
       userName: conv?.peerUserName,
     );
@@ -249,6 +253,7 @@ mixin _ChatActionsMixin
             a.withSeal(encrypted?.attachmentSeals[a.fileUrl]),
         ],
         mentionedUserIds: mentionedUserIds,
+        taskPriority: taskPriority,
       );
     }
 
@@ -331,6 +336,7 @@ mixin _ChatActionsMixin
       parentId: failedMsg.pendingParentId,
       quotedMessageId: failedMsg.pendingQuotedMessageId,
       quotePreview: failedMsg.quote,
+      taskPriority: TaskCardData.of(failedMsg)?.priority.wire,
     );
   }
 

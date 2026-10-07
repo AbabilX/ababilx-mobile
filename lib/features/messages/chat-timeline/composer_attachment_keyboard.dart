@@ -28,6 +28,8 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
     this.onGhost,
     this.snippetLabel = 'Snippet',
     this.onSnippet,
+    this.taskLabel = 'Task',
+    this.onTask,
   });
 
   final String galleryLabel;
@@ -52,6 +54,11 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
   /// whose admins switched files off.
   final String snippetLabel;
   final VoidCallback? onSnippet;
+
+  /// A task card for the other person. Null hides the chip — anywhere but a
+  /// DM's main timeline.
+  final String taskLabel;
+  final VoidCallback? onTask;
 
   /// A tap straight on the rail, which skips the picker entirely.
   final ValueChanged<DeviceMediaItem> onPickMedia;
@@ -116,6 +123,12 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
                       label: snippetLabel,
                       icon: HugeIcons.strokeRoundedDocumentCode,
                       onTap: onSnippet!,
+                    ),
+                  if (onTask != null)
+                    AttachChip(
+                      label: taskLabel,
+                      icon: HugeIcons.strokeRoundedTaskAdd01,
+                      onTap: onTask!,
                     ),
                 ],
               ),

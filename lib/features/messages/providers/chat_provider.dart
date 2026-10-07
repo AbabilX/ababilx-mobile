@@ -53,6 +53,7 @@ import 'chat_open_trace.dart';
 import 'chat_read_marks.dart';
 import 'chat_state.dart';
 import 'received_message_buffer.dart';
+import '../task/task_card_data.dart';
 import '../../chat-lock/chat_lock_filter.dart';
 import '../../chat-lock/providers/chat_locks_provider.dart';
 

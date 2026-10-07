@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
+import '../../../shared/widgets/app_capsule.dart';
 import 'snippet_strings.dart';
 
 /// Shown when a draft is over the message limit. True means "make it a
@@ -28,14 +30,18 @@ Future<bool> offerSnippetForLongMessage(
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => Navigator.of(sheet).pop(true),
-              child: Text(strings.createTitle),
+            AppCapsule(
+              label: strings.createTitle,
+              icon: HugeIcons.strokeRoundedDocumentCode,
+              selected: true,
+              expand: true,
+              onTap: () => Navigator.of(sheet).pop(true),
             ),
             const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => Navigator.of(sheet).pop(false),
-              child: Text(strings.keepEditing),
+            AppCapsule(
+              label: strings.keepEditing,
+              expand: true,
+              onTap: () => Navigator.of(sheet).pop(false),
             ),
           ],
         ),

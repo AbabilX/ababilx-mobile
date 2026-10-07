@@ -13,19 +13,25 @@ import '../data/models/chat_models.dart';
 import 'snippet_format.dart';
 import 'snippet_viewer_screen.dart';
 
-/// A `.md` / `.txt` attachment in a bubble: the file name, its size and the
-/// first lines of the text. Tapping opens the whole file.
-///
+/// A `.md` / `.txt` attachment: file name, size and the first lines of the
+/// text. Tapping opens the whole file.
 /// The height is fixed. A card that grew once its text was read would shove
 /// every row above it, the scroll jitter the media tiles were cured of.
 class SnippetCard extends StatelessWidget {
-  const SnippetCard({super.key, required this.attachment, this.detail});
+  const SnippetCard({
+    super.key,
+    required this.attachment,
+    this.detail,
+    this.fill = false,
+  });
 
   final ChatMessageAttachment attachment;
 
   /// "You · 10:00 AM", shown under the file name in the viewer.
   final String? detail;
 
+  /// The Snippets page: take the width offered, not a bubble's cap.
+  final bool fill;
   static const double height = 136;
   static const double maxWidth = 280;
 
@@ -33,7 +39,7 @@ class SnippetCard extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: 6),
     child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: maxWidth),
+      constraints: BoxConstraints(maxWidth: fill ? double.infinity : maxWidth),
       child: AttachmentGate(
         attachment: attachment,
         reserveSpace: true,
@@ -56,7 +62,7 @@ class SnippetCard extends StatelessWidget {
     final ready = localPath != null && localPath.isNotEmpty;
     return Material(
       color: colors.onSurface.withValues(alpha: 0.06),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(fill ? 20 : 12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: !ready

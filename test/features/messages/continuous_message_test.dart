@@ -41,6 +41,7 @@ class _ComposerNotifier extends ChatNotifier {
     ChatMessageQuote? quotePreview,
     String? clientMessageId,
     bool reusePending = false,
+    String? taskPriority,
   }) async => _message('sent', 'me', body: body);
 }
 
@@ -89,6 +90,7 @@ class _TimelineNotifier extends _ComposerNotifier {
     ChatMessageQuote? quotePreview,
     String? clientMessageId,
     bool reusePending = false,
+    String? taskPriority,
   }) async {
     final id = conversationId ?? state.activeConversationId!;
     final key = feedKey(id, threadRootId: parentId);
@@ -116,6 +118,7 @@ class _FailingComposerNotifier extends _ComposerNotifier {
     ChatMessageQuote? quotePreview,
     String? clientMessageId,
     bool reusePending = false,
+    String? taskPriority,
   }) async => null;
 }
 
@@ -135,6 +138,7 @@ class _CompletingComposerNotifier extends _ComposerNotifier {
     ChatMessageQuote? quotePreview,
     String? clientMessageId,
     bool reusePending = false,
+    String? taskPriority,
   }) => ref.read(_sendResultProvider).future;
 }
 

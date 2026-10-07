@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
-import '../../../shared/widgets/app_bar_back_button.dart';
+import '../../../shared/widgets/capsule_form_header.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../group-member-permissions/group_media_guard.dart';
 import '../message_length_limit.dart';
@@ -132,56 +132,63 @@ class _SnippetCreateState extends ConsumerState<SnippetCreateScreen> {
         if (!didPop) _back();
       },
       child: Scaffold(
-        appBar: AppBar(
-          leading: AppBarBackButton(onPressed: _back),
-          title: Text(s.createTitle),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilledButton(
-                onPressed: _sending ? null : _send,
-                child: Text(_sending ? s.sending : s.send),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  MediaQuery.viewPaddingOf(context).top + 76,
+                  16,
+                  MediaQuery.viewPaddingOf(context).bottom + 12,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SnippetTitleField(
+                      controller: _title,
+                      label: s.titleLabel,
+                      hint: snippetFileName('', _kind),
+                      enabled: !_sending,
+                    ),
+                    const SizedBox(height: 12),
+                    SnippetKindPicker(
+                      kind: _kind,
+                      strings: s,
+                      onChanged: _sending
+                          ? null
+                          : (kind) => setState(() => _kind = kind),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: SnippetContentField(
+                        controller: _content,
+                        hint: s.contentHint,
+                        enabled: !_sending,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SnippetMessageField(
+                      controller: _message,
+                      hint: s.messageHint,
+                      enabled: !_sending,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: CapsuleFormHeader(
+                title: s.createTitle,
+                sendLabel: _sending ? s.sending : s.send,
+                onBack: _back,
+                onSend: _sending ? null : _send,
               ),
             ),
           ],
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SnippetTitleField(
-                  controller: _title,
-                  label: s.titleLabel,
-                  hint: snippetFileName('', _kind),
-                  enabled: !_sending,
-                ),
-                const SizedBox(height: 12),
-                SnippetKindPicker(
-                  kind: _kind,
-                  strings: s,
-                  onChanged: _sending
-                      ? null
-                      : (kind) => setState(() => _kind = kind),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: SnippetContentField(
-                    controller: _content,
-                    hint: s.contentHint,
-                    enabled: !_sending,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SnippetMessageField(
-                  controller: _message,
-                  hint: s.messageHint,
-                  enabled: !_sending,
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

@@ -24,6 +24,9 @@ class ChatEndpoints {
         'pinned-messages/$messageId',
       );
   String message(String id) => ApiConstants.independentChatMessage(id);
+  String messageTask(String id) => '${message(id)}/task';
+  String tasks(String id) =>
+      ApiConstants.independentChatConversationAction(id, 'tasks');
   String reactions(String id) =>
       ApiConstants.independentChatMessageReactions(id);
 

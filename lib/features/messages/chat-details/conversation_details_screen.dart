@@ -16,6 +16,8 @@ import 'group_edit_sheet.dart';
 import 'group_permissions.dart';
 import 'groups_in_common_section.dart';
 import 'shared_media_section.dart';
+import '../snippet/snippets_tile.dart';
+import '../task/tasks_tile.dart';
 import 'webhook_settings_section.dart';
 
 /// Signal's conversation settings: a full screen, reached by tapping the name
@@ -112,6 +114,10 @@ class _ConversationDetailsScreenState
                 onChanged: _loadMembers,
               ),
             ],
+            const DetailsSectionGap(),
+            // A DM only: a task card has one assigner and one assignee.
+            if (conversation.isDm) TasksTile(conversationId: conversation.id),
+            SnippetsTile(conversationId: conversation.id),
             const DetailsSectionGap(),
             SharedMediaSection(conversationId: conversation.id),
             // A DM only. "Groups in common" is a fact about two people, and in a

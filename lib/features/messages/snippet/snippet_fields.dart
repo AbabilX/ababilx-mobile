@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
+import '../../../shared/widgets/app_capsule.dart';
 import 'snippet_format.dart';
 import 'snippet_strings.dart';
 
@@ -10,14 +12,14 @@ InputDecoration _decoration(
 }) {
   final colors = Theme.of(context).colorScheme;
   OutlineInputBorder border(Color color) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(12),
+    borderRadius: BorderRadius.circular(20),
     borderSide: BorderSide(color: color),
   );
   return InputDecoration(
     labelText: label,
     hintText: hint,
     alignLabelWithHint: true,
-    contentPadding: const EdgeInsets.all(12),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
     border: border(colors.outlineVariant),
     enabledBorder: border(colors.outlineVariant),
     focusedBorder: border(colors.primary),
@@ -53,7 +55,7 @@ class SnippetTitleField extends StatelessWidget {
   );
 }
 
-/// Markdown or plain text, as two chips side by side.
+/// Markdown or plain text, as two capsules side by side.
 class SnippetKindPicker extends StatelessWidget {
   const SnippetKindPicker({
     super.key,
@@ -67,22 +69,25 @@ class SnippetKindPicker extends StatelessWidget {
   final ValueChanged<SnippetKind>? onChanged;
 
   @override
-  Widget build(BuildContext context) => SegmentedButton<SnippetKind>(
-    showSelectedIcon: false,
-    segments: [
-      ButtonSegment(
-        value: SnippetKind.markdown,
-        label: Text(strings.markdown, maxLines: 1),
-      ),
-      ButtonSegment(
-        value: SnippetKind.text,
-        label: Text(strings.plainText, maxLines: 1),
-      ),
+  Widget build(BuildContext context) => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      for (final (value, label, icon) in [
+        (
+          SnippetKind.markdown,
+          strings.markdown,
+          HugeIcons.strokeRoundedDocumentCode,
+        ),
+        (SnippetKind.text, strings.plainText, HugeIcons.strokeRoundedNote01),
+      ])
+        AppCapsule(
+          label: label,
+          icon: icon,
+          selected: kind == value,
+          onTap: onChanged == null ? null : () => onChanged!(value),
+        ),
     ],
-    selected: {kind},
-    onSelectionChanged: onChanged == null
-        ? null
-        : (picked) => onChanged!(picked.first),
   );
 }
 

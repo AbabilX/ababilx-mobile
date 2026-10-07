@@ -160,6 +160,7 @@ class ChatRepository {
     String? quotedMessageId,
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
+    String? taskPriority,
   }) => _messages.sendMessage(
     conversationId,
     clientMessageId: clientMessageId,
@@ -172,7 +173,17 @@ class ChatRepository {
     quotedMessageId: quotedMessageId,
     attachments: attachments,
     mentionedUserIds: mentionedUserIds,
+    taskPriority: taskPriority,
   );
+
+  Future<ChatMessage> updateTask(
+    String messageId, {
+    String? priority,
+    String? status,
+  }) => _messages.updateTask(messageId, priority: priority, status: status);
+
+  Future<List<ChatMessage>> listTasks(String conversationId) =>
+      _messages.listTasks(conversationId);
 
   Future<ChatMessage> patchMessage(
     String messageId,

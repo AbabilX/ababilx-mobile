@@ -48,6 +48,7 @@ class _FakeRepo extends ChatRepository {
     String? quotedMessageId,
     List<ChatAttachmentInput> attachments = const [],
     List<String> mentionedUserIds = const [],
+    String? taskPriority,
   }) => sendCall.future;
 
   @override
