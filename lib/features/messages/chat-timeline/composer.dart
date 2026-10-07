@@ -19,6 +19,7 @@ import '../data/local/composer_draft_store.dart';
 import '../data/chat_client_message_id.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_encode.dart';
+import '../message_length_limit.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/messageable_people_provider.dart';
 import 'composer_attach.dart';
@@ -392,6 +393,19 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     final plain = draftSend ? _ctrl.text.trim() : '';
     var outgoing = List<ChatAttachmentInput>.of(only ?? _pending);
     if (plain.isEmpty && outgoing.isEmpty) return;
+    final body = plain.isEmpty
+        ? ''
+        : encodeTiptapBody(plain: plain, mentionByLabel: _mentionByLabel);
+    // Refused before anything is spent — reply target, draft and attachments
+    // all stay. The server's answer to an oversized body is a bare 400.
+    if (isMessageTooLong(plain, encoded: body)) {
+      showAppToast(
+        context,
+        messageTooLongText(ref.read(appLanguageProvider)),
+        isError: true,
+      );
+      return;
+    }
     // Privacy mode: after the preview, the timer / saving sheet (server 0152).
     // Only a send carrying attachments waits for it; text goes straight out.
     if (outgoing.isNotEmpty) {
@@ -415,9 +429,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       threadRootId: widget.parentId,
     );
     ref.read(chatProvider.notifier).setReplyToMessage(null);
-    final body = plain.isEmpty
-        ? ''
-        : encodeTiptapBody(plain: plain, mentionByLabel: _mentionByLabel);
     final attachments = outgoing;
     final mentionedIds = draftSend ? _mentionedUserIds.toList() : <String>[];
 

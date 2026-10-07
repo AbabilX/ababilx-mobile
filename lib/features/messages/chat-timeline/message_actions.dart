@@ -16,6 +16,7 @@ import '../group-pins/group_pin_actions.dart';
 import '../group-pins/group_pins_provider.dart';
 import '../providers/pinned_message_provider.dart';
 import '../tiptap_plain_text.dart';
+import '../message_length_limit.dart';
 import 'delete_message_dialog.dart';
 import 'edit_message_sheet.dart';
 import 'pinned_message_actions.dart';
@@ -223,10 +224,18 @@ Future<void> editMessageFlow(
     tiptapToPlainText(msg.body),
   );
   if (edited == null) return;
+  final body = textToTiptapJson(edited);
+  if (isMessageTooLong(edited, encoded: body)) {
+    if (!context.mounted) return;
+    showAppToast(
+      context,
+      messageTooLongText(ref.read(appLanguageProvider)),
+      isError: true,
+    );
+    return;
+  }
   try {
-    await ref
-        .read(chatProvider.notifier)
-        .editMessage(msg.id, textToTiptapJson(edited));
+    await ref.read(chatProvider.notifier).editMessage(msg.id, body);
   } catch (error) {
     // A refused edit used to reach nobody: the exception died in the gesture
     // handler and the message simply stayed as it was, which reads as a
