@@ -14,11 +14,26 @@ class PinnedMessagesTopBar extends StatelessWidget {
     required this.title,
     this.trailing,
     this.middle,
+    this.bottomPadding = 24,
+    this.reserveTrailing = true,
+    this.backLabel,
   });
 
   final String title;
   final Widget? trailing;
   final Widget? middle;
+
+  /// Room under the capsules: 24 leaves the fade to melt into a list that
+  /// scrolls beneath; a header that sits above its list asks for less.
+  final double bottomPadding;
+
+  /// With no [trailing], keep a 44dp gap so the title stays centred (true), or
+  /// let the middle run to the right edge (false).
+  final bool reserveTrailing;
+
+  /// Words beside the back arrow, turning the round button into a capsule —
+  /// for a header with nothing on its right to spend the room on.
+  final String? backLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -36,17 +51,41 @@ class PinnedMessagesTopBar extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(12, top + 8, 12, 24),
+        padding: EdgeInsets.fromLTRB(12, top + 8, 12, bottomPadding),
         child: Row(
           children: [
-            _Pill(
-              shape: const CircleBorder(),
+            HeaderPill(
+              shape: backLabel == null
+                  ? const CircleBorder()
+                  : const StadiumBorder(),
               child: InkWell(
-                customBorder: const CircleBorder(),
+                customBorder: backLabel == null
+                    ? const CircleBorder()
+                    : const StadiumBorder(),
                 onTap: () => Navigator.of(context).maybePop(),
-                child: const SizedBox.square(
-                  dimension: 44,
-                  child: Center(child: AppBarBackIcon()),
+                child: SizedBox(
+                  height: 44,
+                  width: backLabel == null ? 44 : null,
+                  child: backLabel == null
+                      ? const Center(child: AppBarBackIcon())
+                      : Padding(
+                          padding: const EdgeInsets.only(left: 10, right: 18),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const AppBarBackIcon(),
+                              const SizedBox(width: 4),
+                              Text(
+                                backLabel!,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: colors.onSurface,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -55,7 +94,7 @@ class PinnedMessagesTopBar extends StatelessWidget {
               child:
                   middle ??
                   Center(
-                    child: _Pill(
+                    child: HeaderPill(
                       shape: const StadiumBorder(),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -76,9 +115,11 @@ class PinnedMessagesTopBar extends StatelessWidget {
                     ),
                   ),
             ),
-            const SizedBox(width: 8),
-            // Keeps the title centred on the screen when there is no action.
-            trailing ?? const SizedBox(width: 44),
+            if (trailing != null || reserveTrailing) ...[
+              const SizedBox(width: 8),
+              // Keeps the title centred on the screen when there is no action.
+              trailing ?? const SizedBox(width: 44),
+            ],
           ],
         ),
       ),
@@ -96,23 +137,28 @@ class PinnedMessagesCircleButton extends StatelessWidget {
   });
 
   final List<List<dynamic>> icon;
-  final VoidCallback onPressed;
+
+  /// Null draws the button dimmed and inert (a call that cannot start now).
+  final VoidCallback? onPressed;
   final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    final button = _Pill(
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onPressed,
-        child: SizedBox.square(
-          dimension: 44,
-          child: Center(
-            child: ChatIcon(
-              icon,
-              size: 22,
-              color: Theme.of(context).colorScheme.onSurface,
+    final button = Opacity(
+      opacity: onPressed == null ? 0.45 : 1,
+      child: HeaderPill(
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: SizedBox.square(
+            dimension: 44,
+            child: Center(
+              child: ChatIcon(
+                icon,
+                size: 22,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
         ),
@@ -122,8 +168,9 @@ class PinnedMessagesCircleButton extends StatelessWidget {
   }
 }
 
-class _Pill extends StatelessWidget {
-  const _Pill({required this.shape, required this.child});
+/// The frosted capsule every floating header piece is cut from.
+class HeaderPill extends StatelessWidget {
+  const HeaderPill({super.key, required this.shape, required this.child});
 
   final ShapeBorder shape;
   final Widget child;
