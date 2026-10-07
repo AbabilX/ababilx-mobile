@@ -764,7 +764,9 @@ Owned by `CallControlsAnchor` + `CallControlsRow`
 **Portrait**
 
 - Deck sits on the **bottom** safe inset (home / gesture edge).
-- Four toggles in one row; **End** drops under them (`AnimatedSize`).
+- Two rows of three (`CallControlsDeck`, 2026-10-07, user's layout):
+  Camera · Screen Share · Speaker over Minimize · End · Mute, all one seat
+  size. Minimize is a seat here, so the top-left chevron is not drawn.
 
 **Landscape**
 
@@ -773,6 +775,7 @@ Owned by `CallControlsAnchor` + `CallControlsRow`
   camera / notch / Dynamic Island edge.
 - All five seats (Mute · Camera · Screen Share · Speaker · End) share that
   one strip (End inline). Seat diameter shrinks to fit the short edge.
+  Minimize stays the top-left chevron — no sixth seat.
 - Circle chrome stays put; only glyphs may turn via `CallIconOrientation`
   (do **not** `RotatedBox` the whole deck — that moved seats and confused
   “icon-only rotate”).

@@ -11,6 +11,7 @@ void main() {
   Widget host(
     ThemeData theme, {
     VoidCallback? end,
+    VoidCallback? minimize,
     VoiceCallPhase phase = VoiceCallPhase.connected,
     String lang = 'en',
     double scale = 1,
@@ -42,6 +43,7 @@ void main() {
               controls: CallControlsRow(
                 call: call,
                 lang: lang,
+                onMinimize: minimize ?? () {},
                 onToggleMute: () {},
                 onToggleCamera: () {},
                 onToggleScreenShare: () {},
@@ -56,60 +58,77 @@ void main() {
   }
 
   for (final brightness in Brightness.values) {
-    testWidgets(
-      'caller controls are one row + centered End in ${brightness.name}',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(390, 844));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
-        final theme = ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.teal,
-            brightness: brightness,
-          ),
+    testWidgets('caller controls are two rows of three in ${brightness.name}', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final theme = ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.teal,
+          brightness: brightness,
+        ),
+      );
+      var ended = 0;
+      var minimized = 0;
+      await tester.pumpWidget(
+        host(theme, end: () => ended++, minimize: () => minimized++),
+      );
+      await tester.pump();
+      final mute = tester.getCenter(find.byIcon(Icons.mic_rounded));
+      final camera = tester.getCenter(find.byIcon(Icons.videocam_off_rounded));
+      final share = tester.getCenter(find.byIcon(Icons.screen_share_rounded));
+      final speaker = tester.getCenter(find.byIcon(Icons.hearing_rounded));
+      final end = tester.getCenter(find.byIcon(Icons.call_end_rounded));
+      final minimize = tester.getCenter(
+        find.byIcon(Icons.keyboard_arrow_down_rounded),
+      );
+      // Row one: Camera · Screen Share · Speaker.
+      expect(camera.dy, closeTo(share.dy, 0.5));
+      expect(share.dy, closeTo(speaker.dy, 0.5));
+      expect(camera.dx, lessThan(share.dx));
+      expect(share.dx, lessThan(speaker.dx));
+      // Row two, under it: Minimize · End · Mute, column for column.
+      expect(minimize.dy, closeTo(end.dy, 0.5));
+      expect(end.dy, closeTo(mute.dy, 0.5));
+      expect(end.dy, greaterThan(share.dy));
+      expect(minimize.dx, closeTo(camera.dx, 0.5));
+      expect(end.dx, closeTo(share.dx, 0.5));
+      expect(mute.dx, closeTo(speaker.dx, 0.5));
+      // Grouped with one fixed gap, not spread across the screen.
+      expect(share.dx - camera.dx, closeTo(speaker.dx - share.dx, 0.5));
+      expect(share.dx - camera.dx, lessThan(390 / 3 - 4));
+      expect(share.dx, closeTo(390 / 2, 0.5));
+      expect(find.text('Minimize'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded));
+      expect(minimized, 1);
+      expect(
+        tester.widget<Icon>(find.byIcon(Icons.call_end_rounded)).color,
+        Colors.white,
+      );
+      expect(
+        tester.widget<Icon>(find.byIcon(Icons.mic_rounded)).color,
+        Colors.white,
+      );
+      expect(find.text('End'), findsOneWidget);
+      expect(find.text('Screen Share'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.call_end_rounded));
+      expect(ended, 1);
+      expect(tester.takeException(), isNull);
+      if (const bool.fromEnvironment('CALL_UI_SCREENSHOTS')) {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(const ValueKey('caller-screen')),
         );
-        var ended = 0;
-        await tester.pumpWidget(host(theme, end: () => ended++));
-        await tester.pump();
-        final mute = tester.getCenter(find.byIcon(Icons.mic_rounded));
-        final camera = tester.getCenter(
-          find.byIcon(Icons.videocam_off_rounded),
-        );
-        final share = tester.getCenter(find.byIcon(Icons.screen_share_rounded));
-        final speaker = tester.getCenter(find.byIcon(Icons.hearing_rounded));
-        final end = tester.getCenter(find.byIcon(Icons.call_end_rounded));
-        expect(mute.dy, closeTo(camera.dy, 0.5));
-        expect(camera.dy, closeTo(share.dy, 0.5));
-        expect(share.dy, closeTo(speaker.dy, 0.5));
-        expect(end.dy, greaterThan(share.dy));
-        expect(end.dx, closeTo((mute.dx + speaker.dx) / 2, 1.0));
-        expect(
-          tester.widget<Icon>(find.byIcon(Icons.call_end_rounded)).color,
-          Colors.white,
-        );
-        expect(
-          tester.widget<Icon>(find.byIcon(Icons.mic_rounded)).color,
-          Colors.white,
-        );
-        expect(find.text('End'), findsOneWidget);
-        expect(find.text('Screen Share'), findsOneWidget);
-        await tester.tap(find.byIcon(Icons.call_end_rounded));
-        expect(ended, 1);
-        expect(tester.takeException(), isNull);
-        if (const bool.fromEnvironment('CALL_UI_SCREENSHOTS')) {
-          final boundary = tester.renderObject<RenderRepaintBoundary>(
-            find.byKey(const ValueKey('caller-screen')),
-          );
-          await tester.runAsync(() async {
-            final image = await boundary.toImage(pixelRatio: 2);
-            final data = await image.toByteData(format: ui.ImageByteFormat.png);
-            await File(
-              '/tmp/ababilx-caller-${brightness.name}.png',
-            ).writeAsBytes(data!.buffer.asUint8List());
-            image.dispose();
-          });
-        }
-      },
-    );
+        await tester.runAsync(() async {
+          final image = await boundary.toImage(pixelRatio: 2);
+          final data = await image.toByteData(format: ui.ImageByteFormat.png);
+          await File(
+            '/tmp/ababilx-caller-${brightness.name}.png',
+          ).writeAsBytes(data!.buffer.asUint8List());
+          image.dispose();
+        });
+      }
+    });
   }
   testWidgets(
     'landscape keeps seats on the side strip; End inline; no labels',
@@ -137,6 +156,11 @@ void main() {
 
       final mute = tester.getCenter(find.byIcon(Icons.mic_rounded));
       final end = tester.getCenter(find.byIcon(Icons.call_end_rounded));
+      // Minimize is the top chevron here, not a seat in the strip.
+      final chevron = tester.getCenter(
+        find.byIcon(Icons.keyboard_arrow_down_rounded),
+      );
+      expect(chevron.dx, lessThan(size.width * 0.5));
       expect(end.dx, closeTo(mute.dx, 2.0));
       expect(end.dy, isNot(closeTo(mute.dy, 8.0)));
       expect(mute.dx, greaterThan(size.width * 0.5));
@@ -166,6 +190,53 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  for (final size in const [
+    Size(320, 480),
+    Size(360, 640),
+    Size(412, 915),
+    Size(800, 1280),
+  ]) {
+    for (final scale in const [1.0, 1.6]) {
+      testWidgets('portrait deck fits $size at text scale $scale', (
+        tester,
+      ) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          host(ThemeData(), size: size, scale: scale, lang: 'bn'),
+        );
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        final camera = tester.getRect(find.byIcon(Icons.videocam_off_rounded));
+        final speaker = tester.getRect(find.byIcon(Icons.hearing_rounded));
+        final end = tester.getRect(find.byIcon(Icons.call_end_rounded));
+        // Inside the screen, and clear of the caller's name above.
+        expect(camera.left, greaterThan(8));
+        expect(speaker.right, lessThan(size.width - 8));
+        expect(end.bottom, lessThan(size.height));
+        expect(camera.top, greaterThan(size.height * 0.55));
+        // Never below a comfortable touch target.
+        final seat = tester.getSize(
+          find
+              .ancestor(
+                of: find.byIcon(Icons.call_end_rounded),
+                matching: find.byType(ClipOval),
+              )
+              .first,
+        );
+        expect(seat.width, greaterThanOrEqualTo(48));
+        expect(seat.width, lessThanOrEqualTo(104));
+        // Scales with the screen: a fifth of the width where there is room.
+        if (size.height >= 640 && scale == 1.0) {
+          expect(
+            seat.width,
+            closeTo((size.width * 0.2).clamp(56.0, 104.0), 0.5),
+          );
+        }
+      });
+    }
+  }
+
   testWidgets('starting call can be ended before media is ready', (
     tester,
   ) async {
@@ -183,7 +254,7 @@ void main() {
     expect(ended, isTrue);
   });
 
-  testWidgets('minimize chevron is present on the connected overlay', (
+  testWidgets('portrait has one minimize control, the deck seat', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));

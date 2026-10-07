@@ -71,6 +71,29 @@ class CallOverlayMetrics {
 
   double get controlGap => design(20).clamp(8.0, 14.0);
 
+  /// Space between two seats of the portrait deck, across and down.
+  /// A share of the width, like the seats, so the deck keeps its proportions.
+  double get seatGap => (layoutWidth * 0.065).clamp(16.0, 36.0);
+
+  /// A portrait seat on a screen with room to spare: a fifth of the width.
+  double get portraitSeatWanted => (layoutWidth * 0.2).clamp(56.0, 104.0);
+
+  /// Seat diameter for the portrait deck (two rows of three).
+  ///
+  /// [portraitSeatWanted] grows with the screen; a narrow or short one — a
+  /// small phone, split screen, a large font — gets less, so three seats fit
+  /// across [width] and both rows with their labels fit in [height].
+  double portraitSeat({
+    required double width,
+    required double height,
+    required double labelHeight,
+  }) {
+    final across = (width - seatGap * 2) / 3;
+    // One row = circle + gap to its label (16 at most) + the label.
+    final down = (height - seatGap) / 2 - 16 - labelHeight;
+    return math.min(across, down).clamp(48.0, portraitSeatWanted);
+  }
+
   /// Top of the avatar circle — a touch below 1/3 so it clears the chevron.
   double get avatarTop => size.height * 0.34 - avatarDiameter / 2;
 

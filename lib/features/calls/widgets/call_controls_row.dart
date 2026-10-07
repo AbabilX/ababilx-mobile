@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/app_translations.dart';
@@ -5,20 +7,22 @@ import '../audio/call_audio_output.dart';
 import '../providers/voice_call_state.dart';
 import 'call_audio_dropdown.dart';
 import 'call_audio_output_sheet.dart';
-import 'call_controls_anchor.dart';
+import 'call_controls_deck.dart';
 import 'call_glass_circle.dart';
 import 'call_overlay_metrics.dart';
 
-/// Mute · Camera · Screen Share · Audio output, plus End.
+/// The 1:1 call's controls.
+///
+/// Portrait: two rows of three — Camera · Screen Share · Audio output over
+/// Minimize · End · Mute. Landscape: Mute · Camera · Screen Share · Audio
+/// output · End in one strip, and minimize stays the chevron at the top.
 ///
 /// The audio seat is Signal's `CallAudioToggleButton`: earpiece ↔ speaker
 /// while those are the only outputs, a list (with a drop-down mark) once a
 /// Bluetooth or wired headset joins them — see [pressCallAudioOutput].
 ///
-/// Landscape: five seats in one **vertical** strip on the physical bottom
-/// edge (anchor handles left/right). Portrait: four across, End drops under
-/// with [AnimatedSize]. Circle seats never use [RotatedBox] — only glyphs
-/// turn via [CallIconOrientation].
+/// Circle seats never use [RotatedBox] — only glyphs turn via
+/// [CallIconOrientation]. The arrangement itself is [CallControlsDeck].
 class CallControlsRow extends StatelessWidget {
   const CallControlsRow({
     super.key,
@@ -28,6 +32,7 @@ class CallControlsRow extends StatelessWidget {
     required this.onToggleScreenShare,
     required this.onToggleSpeaker,
     required this.onHangUp,
+    this.onMinimize,
     this.audio = CallAudioDevices.empty,
     this.lang = 'en',
     this.endLabel,
@@ -39,9 +44,15 @@ class CallControlsRow extends StatelessWidget {
   final VoidCallback onToggleScreenShare;
   final VoidCallback onToggleSpeaker;
   final VoidCallback onHangUp;
+
+  /// Leaves the call screen without hanging up. Portrait only: its seat is
+  /// not in the landscape strip.
+  final VoidCallback? onMinimize;
   final CallAudioDevices audio;
   final String lang;
   final String? endLabel;
+
+  static const _maxLabelScale = 1.3;
 
   bool get _live => call.active && call.phase != VoiceCallPhase.starting;
   bool get _connected => call.phase == VoiceCallPhase.connected;
@@ -67,10 +78,19 @@ class CallControlsRow extends StatelessWidget {
             m.controlDiameter,
           )
         : m.controlDiameter;
-    final seatD = landscape ? landscapeSeat : m.controlDiameter;
-    final seatIcon = landscape ? seatD * 0.42 : m.controlIcon;
-    final endDiameter = landscape ? seatD : m.hangupDiameter;
-    final endIcon = landscape ? seatIcon : m.hangupIcon;
+    // Portrait: the deck may take the screen's width between the anchor's
+    // edges and its lower 38%, so it never climbs into the caller's name.
+    final scaler = MediaQuery.textScalerOf(
+      context,
+    ).clamp(maxScaleFactor: _maxLabelScale);
+    final labelHeight = scaler.scale(m.controlLabelFont) * 1.35;
+    final portraitSeat = m.portraitSeat(
+      width: size.width - 2 * math.max(8.0, padding.horizontal / 2),
+      height: size.height * 0.38,
+      labelHeight: labelHeight,
+    );
+    final seatD = landscape ? landscapeSeat : portraitSeat;
+    final seatIcon = seatD * 0.42;
 
     Widget seat({
       required IconData icon,
@@ -80,8 +100,6 @@ class CallControlsRow extends StatelessWidget {
       Color? background,
       Color? foreground,
       bool glow = false,
-      double? diameter,
-      double? iconSize,
       Key? key,
     }) {
       return CallGlassCircle(
@@ -90,8 +108,8 @@ class CallControlsRow extends StatelessWidget {
         label: caption(name),
         semanticLabel: name,
         selected: selected,
-        diameter: diameter ?? seatD,
-        iconSize: iconSize ?? seatIcon,
+        diameter: seatD,
+        iconSize: seatIcon,
         labelFontSize: m.controlLabelFont,
         background: background,
         foreground: foreground,
@@ -101,96 +119,76 @@ class CallControlsRow extends StatelessWidget {
     }
 
     final face = CallAudioButtonFace.of(audio, speaker: call.speaker);
-    final toggles = <Widget>[
-      seat(
-        icon: call.muted ? Icons.mic_off_rounded : Icons.mic_rounded,
-        name: tr(call.muted ? 'group_unmute' : 'group_mute'),
-        selected: call.muted,
-        onPressed: _live ? onToggleMute : null,
+    final mute = seat(
+      icon: call.muted ? Icons.mic_off_rounded : Icons.mic_rounded,
+      name: tr(call.muted ? 'group_unmute' : 'group_mute'),
+      selected: call.muted,
+      onPressed: _live ? onToggleMute : null,
+    );
+    final camera = seat(
+      icon: call.cameraOn ? Icons.videocam_rounded : Icons.videocam_off_rounded,
+      name: tr('chat_camera'),
+      selected: call.cameraOn,
+      onPressed: _connected ? onToggleCamera : null,
+    );
+    final share = seat(
+      icon: call.screenSharing
+          ? Icons.stop_screen_share_rounded
+          : Icons.screen_share_rounded,
+      name: tr(
+        call.screenSharing
+            ? 'call_control_stop'
+            : _takingOver
+            ? 'call_control_take_over'
+            : 'call_control_screen_share',
       ),
-      seat(
-        icon: call.cameraOn
-            ? Icons.videocam_rounded
-            : Icons.videocam_off_rounded,
-        name: tr('chat_camera'),
-        selected: call.cameraOn,
-        onPressed: _connected ? onToggleCamera : null,
+      selected: call.screenSharing,
+      onPressed: _connected ? onToggleScreenShare : null,
+    );
+    final speaker = CallAudioDropdown(
+      show: face.dropdown,
+      diameter: seatD,
+      child: seat(
+        icon: callAudioOutputIcon(face.output),
+        name: callAudioShortLabel(face.output, lang),
+        selected: face.selected,
+        onPressed: _live ? onToggleSpeaker : null,
       ),
-      seat(
-        icon: call.screenSharing
-            ? Icons.stop_screen_share_rounded
-            : Icons.screen_share_rounded,
-        name: tr(
-          call.screenSharing
-              ? 'call_control_stop'
-              : _takingOver
-              ? 'call_control_take_over'
-              : 'call_control_screen_share',
-        ),
-        selected: call.screenSharing,
-        onPressed: _connected ? onToggleScreenShare : null,
-      ),
-      CallAudioDropdown(
-        show: face.dropdown,
-        diameter: seatD,
-        child: seat(
-          icon: callAudioOutputIcon(face.output),
-          name: callAudioShortLabel(face.output, lang),
-          selected: face.selected,
-          onPressed: _live ? onToggleSpeaker : null,
-        ),
-      ),
-    ];
+    );
 
     final end = seat(
       key: const ValueKey('call-end'),
       icon: Icons.call_end_rounded,
       name: hangLabel,
       selected: false,
-      diameter: endDiameter,
-      iconSize: endIcon,
       background: const Color(0xFFE2554A),
       foreground: Colors.white,
       glow: !landscape,
       onPressed: call.active ? onHangUp : null,
     );
 
-    return AnimatedSize(
-      duration: callControlsOrientDuration,
-      curve: Curves.easeOutCubic,
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      child: landscape
-          ? Column(
-              key: const ValueKey('deck-landscape'),
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 0; i < toggles.length; i++) ...[
-                  if (i > 0) SizedBox(height: gap),
-                  toggles[i],
-                ],
-                SizedBox(height: gap),
-                end,
-              ],
-            )
-          : Column(
-              key: const ValueKey('deck-portrait'),
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (var i = 0; i < toggles.length; i++) ...[
-                      if (i > 0) SizedBox(width: gap),
-                      Expanded(child: Center(child: toggles[i])),
-                    ],
-                  ],
-                ),
-                SizedBox(height: m.design(28).clamp(12.0, 20.0)),
-                end,
-              ],
-            ),
+    final minimize = seat(
+      key: const ValueKey('call-minimize'),
+      icon: Icons.keyboard_arrow_down_rounded,
+      name: tr('call_control_minimize'),
+      selected: false,
+      onPressed: onMinimize,
+    );
+
+    // Captions stop growing at [_maxLabelScale]: past it a two-word label
+    // wraps under a seat that is already as small as a thumb allows.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: _maxLabelScale,
+      child: CallControlsDeck(
+        landscape: landscape,
+        gap: gap,
+        rowGap: m.seatGap,
+        seatGap: m.seatGap,
+        seatWidth: seatD,
+        strip: [mute, camera, share, speaker, end],
+        top: [camera, share, speaker],
+        bottom: [minimize, end, mute],
+      ),
     );
   }
 }

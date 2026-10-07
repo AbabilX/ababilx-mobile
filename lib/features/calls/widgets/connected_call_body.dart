@@ -60,6 +60,10 @@ class ConnectedCallBody extends StatelessWidget {
     );
     // Watch mode: fade chrome so remote video / screen is unobstructed.
     final autoHideChrome = _stage && !ended;
+    // Portrait carries minimize as a seat in the control deck; the chevron is
+    // for landscape, whose strip has no room for it, and for the ended screen.
+    final chevron =
+        ended || MediaQuery.orientationOf(context) == Orientation.landscape;
 
     return Stack(
       fit: StackFit.expand,
@@ -75,11 +79,12 @@ class ConnectedCallBody extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Positioned(
-                top: padding.top + 8,
-                left: math.max(padding.left, 12),
-                child: CallMinimizeButton(onPressed: onMinimize),
-              ),
+              if (chevron)
+                Positioned(
+                  top: padding.top + 8,
+                  left: math.max(padding.left, 12),
+                  child: CallMinimizeButton(onPressed: onMinimize),
+                ),
               if (!_stage)
                 Positioned(
                   top: identityTop,

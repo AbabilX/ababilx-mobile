@@ -231,6 +231,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
             controls: CallControlsRow(
               lang: lang,
               call: call,
+              onMinimize: _leave,
               onToggleMute: notifier.toggleMute,
               onToggleCamera: notifier.toggleCamera,
               onToggleScreenShare: notifier.toggleScreenShare,
