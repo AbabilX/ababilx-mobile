@@ -36,6 +36,11 @@ class _AppToastCardState extends State<AppToastCard>
     vsync: this,
     duration: _slide,
   );
+  late final CurvedAnimation _curve = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeOutCubic,
+    reverseCurve: Curves.easeInCubic,
+  );
   Timer? _hold;
   bool _leaving = false;
 
@@ -49,6 +54,7 @@ class _AppToastCardState extends State<AppToastCard>
   @override
   void dispose() {
     _hold?.cancel();
+    _curve.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -64,11 +70,7 @@ class _AppToastCardState extends State<AppToastCard>
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final curve = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
+    final curve = _curve;
     final background = widget.isError
         ? colors.errorContainer
         : colors.inverseSurface;

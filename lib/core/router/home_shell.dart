@@ -52,7 +52,7 @@ class HomeShell extends ConsumerWidget {
                 AppTranslations.translate(context, ref, tab.labelKey),
             onSelect: (i) {
               // A double tap on the bar is the shortcut into Local Share.
-              if (navDoubleTap.hit()) {
+              if (navDoubleTap.hit(null, i)) {
                 context.push('/local-share');
               } else {
                 context.go(tabs[i].route);

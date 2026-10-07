@@ -13,6 +13,14 @@ void main() {
     expect(taps.hit(t0.add(const Duration(seconds: 3))), isFalse);
   });
 
+  test('two different tabs tapped quickly are two taps', () {
+    final taps = NavDoubleTap();
+    expect(taps.hit(t0, 0), isFalse);
+    expect(taps.hit(t0.add(const Duration(milliseconds: 150)), 1), isFalse);
+    // And the second tab tapped again right after is a double tap on it.
+    expect(taps.hit(t0.add(const Duration(milliseconds: 300)), 1), isTrue);
+  });
+
   test('a third quick tap starts over instead of firing again', () {
     final taps = NavDoubleTap();
     taps.hit(t0);

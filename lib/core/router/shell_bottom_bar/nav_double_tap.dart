@@ -7,16 +7,22 @@ class NavDoubleTap {
   static const window = Duration(milliseconds: 300);
 
   DateTime? _last;
+  Object? _lastTarget;
 
-  /// True when this tap follows another within [window].
-  bool hit([DateTime? now]) {
+  /// True when this tap follows another within [window] on the same
+  /// [target]. Two different tabs tapped in quick succession are two taps:
+  /// the second one is the tab the person wants.
+  bool hit([DateTime? now, Object? target]) {
     final at = now ?? DateTime.now();
     final last = _last;
-    if (last != null && at.difference(last) <= window) {
+    if (last != null &&
+        target == _lastTarget &&
+        at.difference(last) <= window) {
       _last = null;
       return true;
     }
     _last = at;
+    _lastTarget = target;
     return false;
   }
 }

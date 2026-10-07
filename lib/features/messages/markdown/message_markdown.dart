@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../shared/widgets/app_toast.dart';
 import '../tiptap_autolink.dart';
 import '../tiptap_inline.dart';
+import 'link_disguise.dart';
 import 'tiptap_markdown.dart';
 
 /// A chat body drawn inside a bubble by gpt_markdown (see [markdownOfBody]):
@@ -71,7 +73,7 @@ class MessageMarkdown extends StatelessWidget {
         style: style,
         isStreaming: false,
         followLinkColor: false,
-        onLinkTap: _onLink,
+        onLinkTap: (url, label) => _onLink(context, url, label),
         inlineLinkBuilder: (link) => link.url.startsWith(mentionLinkScheme)
             ? link.defaultSpan(
                 children: [
@@ -120,9 +122,22 @@ class MessageMarkdown extends StatelessWidget {
     );
   }
 
-  void _onLink(String url, String label) {
+  void _onLink(BuildContext context, String url, String label) {
     if (!url.startsWith(mentionLinkScheme)) {
-      _open(url);
+      // Text that reads as one site over a link to another: say where it
+      // really goes, and open it only on a second, informed tap.
+      final real = disguisedLinkHost(label, url);
+      if (real == null) {
+        _open(url);
+      } else {
+        showAppToast(
+          context,
+          'This link opens $real',
+          isError: true,
+          actionLabel: 'Open',
+          onAction: () => _open(url),
+        );
+      }
       return;
     }
     final id = Uri.decodeComponent(url.substring(mentionLinkScheme.length));
