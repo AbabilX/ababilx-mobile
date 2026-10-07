@@ -9,6 +9,7 @@ import '../providers/chat_provider.dart';
 import '../providers/messageable_people_provider.dart';
 import 'add_members_empty.dart';
 import '../../../shared/text/name_search.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// Who can still be added to this group, with a reason when that is nobody.
 ///
@@ -79,14 +80,12 @@ class _AddMembersSheetState extends ConsumerState<AddMembersSheet> {
           e is DioException &&
           e.response?.data is Map &&
           (e.response!.data as Map)['error'] == 'peer_privacy_mode';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            private
-                ? '${user.name} has privacy mode on and cannot be added to groups'
-                : 'Could not add ${user.name}: $e',
-          ),
-        ),
+      showAppToast(
+        context,
+        private
+            ? '${user.name} has privacy mode on and cannot be added to groups'
+            : 'Could not add ${user.name}: $e',
+        isError: true,
       );
     }
   }

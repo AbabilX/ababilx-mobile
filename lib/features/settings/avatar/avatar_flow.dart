@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/media/image_crop_editor.dart';
 import '../../../shared/media/pick_image_bytes.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// Signal's avatar flow: pick a photo, then move and scale it in a circular
 /// window, then it is your avatar. Two screens, no form.
@@ -18,15 +19,11 @@ Future<void> startAvatarFlow(BuildContext context, WidgetRef ref) async {
   );
   if (cropped == null || !context.mounted) return;
 
-  final messenger = ScaffoldMessenger.of(context);
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
   try {
     await ref.read(profileProvider.notifier).updateAvatar(cropped);
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Profile photo updated')),
-    );
+    showAppToastIn(overlay, 'Profile photo updated');
   } catch (error) {
-    messenger.showSnackBar(
-      SnackBar(content: Text('Could not update photo: $error')),
-    );
+    showAppToastIn(overlay, 'Could not update photo: $error', isError: true);
   }
 }

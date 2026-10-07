@@ -192,7 +192,10 @@ class _FolderPasswordSheetState extends ConsumerState<_FolderPasswordSheet> {
         children: [
           Text(_t('chatlock_pw_title'), style: text.titleLarge),
           const SizedBox(height: 6),
-          Text(_t('chatlock_folder_password_sheet_body'), style: text.bodyMedium),
+          Text(
+            _t('chatlock_folder_password_sheet_body'),
+            style: text.bodyMedium,
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _password,
@@ -209,10 +212,7 @@ class _FolderPasswordSheetState extends ConsumerState<_FolderPasswordSheet> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: text.bodySmall?.copyWith(color: colors.error),
-            ),
+            Text(_error!, style: text.bodySmall?.copyWith(color: colors.error)),
           ],
           const SizedBox(height: 16),
           FilledButton(

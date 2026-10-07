@@ -39,6 +39,16 @@ final _softTrailRe = RegExp(r'[.,;:!?]+$');
 /// Validated after the match so invoice IDs and years do not light up.
 final _phoneRe = RegExp(r'(?<![\w])(?:\+|00)?\(?\d[\d\s().\-]{6,20}\d(?![\w])');
 
+/// Phone-shaped runs for a renderer that finds its own URLs (the markdown
+/// bubble). Stricter on the left than [_phoneRe]: digits inside a URL's path
+/// or query must not be claimed ahead of the link they belong to. A match is
+/// only a candidate — confirm it with [isDialablePhone].
+final phoneCandidatePattern = RegExp(
+  r'(?<![\w/.=#?&:@%+\-])(?:\+|00)?\(?\d[\d\s().\-]{6,20}\d(?![\w])',
+);
+
+bool isDialablePhone(String raw) => _isPhone(raw);
+
 List<AutolinkHit> detectAutolinks(String text) {
   if (text.isEmpty) return const [];
   final candidates =

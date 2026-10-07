@@ -42,9 +42,7 @@ Future<bool> showShareThreadMenu(
                 subtitle: Text(
                   lsText(
                     ref,
-                    inChats
-                        ? 'ls_hide_from_chats_sub'
-                        : 'ls_show_in_chats_sub',
+                    inChats ? 'ls_hide_from_chats_sub' : 'ls_show_in_chats_sub',
                   ),
                 ),
                 onTap: () => Navigator.pop(sheet, 'chats'),

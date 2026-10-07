@@ -45,6 +45,7 @@ import '../../../core/network/ws_client.dart';
 import '../../settings/typing-indicators/typing_indicators_provider.dart';
 import '../chat-typing/typing_sender.dart';
 import '../group-member-permissions/group_media_guard.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 class MessageComposer extends ConsumerStatefulWidget {
   const MessageComposer({
@@ -1028,27 +1029,21 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   void _showMessage(String english, String bangla) {
     if (!mounted) return;
     final language = ref.read(appLanguageProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(language == 'bn' ? bangla : english)),
-    );
+    showAppToast(context, language == 'bn' ? bangla : english);
   }
 
   void _showMicPermissionSettings() {
     if (!mounted) return;
     final language = ref.read(appLanguageProvider);
     final isBn = language == 'bn';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isBn
-              ? 'মাইক্রোফোন বন্ধ আছে। সেটিংস থেকে অনুমতি চালু করুন।'
-              : 'Microphone access is blocked. Enable it in Settings.',
-        ),
-        action: SnackBarAction(
-          label: isBn ? 'সেটিংস' : 'Settings',
-          onPressed: openAppSettings,
-        ),
-      ),
+    showAppToast(
+      context,
+      isBn
+          ? 'মাইক্রোফোন বন্ধ আছে। সেটিংস থেকে অনুমতি চালু করুন।'
+          : 'Microphone access is blocked. Enable it in Settings.',
+      isError: true,
+      actionLabel: isBn ? 'সেটিংস' : 'Settings',
+      onAction: openAppSettings,
     );
   }
 
@@ -1241,9 +1236,7 @@ Future<void> _showNotInChannelDialog(
               Navigator.pop(dialogCtx);
               await ref.read(chatProvider.notifier).deleteMessage(sentMsg.id);
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Message removed')),
-                );
+                showAppToast(context, 'Message removed');
               }
             },
             child: Text(
@@ -1271,9 +1264,7 @@ Future<void> _showNotInChannelDialog(
               await ref.read(chatProvider.notifier).fetchSidebar(silent: true);
               onAdded?.call();
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Added $names to the channel')),
-                );
+                showAppToast(context, 'Added $names to the channel');
               }
             },
             child: const Text('Add to group'),

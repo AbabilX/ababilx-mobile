@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../tiptap_plain_text.dart';
 import '../tiptap_viewer.dart';
 import 'user_profile_sheet.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// The whole of a message that was too long for its bubble — Signal's
 /// `LongMessageFragment`. Plain scaffold on purpose: this is a reading surface,
@@ -31,9 +32,7 @@ class LongMessageScreen extends ConsumerWidget {
                 ClipboardData(text: tiptapToPlainText(body)),
               );
               if (!context.mounted) return;
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Message copied')));
+              showAppToast(context, 'Message copied');
             },
           ),
         ],

@@ -73,8 +73,9 @@ String? messagingDeviceIdFrom(String? storedIdentity) {
 }
 
 /// `POST /api/messaging/receipts`, the same body the socket path sends.
-Map<String, dynamic> deliveredReceiptBody(String deviceId, String messageId) => {
-  'device_id': deviceId,
-  'status': 'delivered',
-  'message_ids': [messageId],
-};
+Map<String, dynamic> deliveredReceiptBody(String deviceId, String messageId) =>
+    {
+      'device_id': deviceId,
+      'status': 'delivered',
+      'message_ids': [messageId],
+    };

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../profile/data/user_status_repository.dart';
 import '../../../profile/providers/user_status_provider.dart';
+import '../../../../shared/widgets/app_toast.dart';
 
 class _StatusPreset {
   const _StatusPreset(this.emoji, this.label);
@@ -98,8 +99,10 @@ class _SetStatusSheetState extends ConsumerState<_SetStatusSheet> {
       if (mounted) Navigator.pop(context);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not update status. Try again.')),
+        showAppToast(
+          context,
+          'Could not update status. Try again.',
+          isError: true,
         );
       }
     } finally {
@@ -118,8 +121,10 @@ class _SetStatusSheetState extends ConsumerState<_SetStatusSheet> {
       if (mounted) Navigator.pop(context);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not clear status. Try again.')),
+        showAppToast(
+          context,
+          'Could not clear status. Try again.',
+          isError: true,
         );
       }
     } finally {

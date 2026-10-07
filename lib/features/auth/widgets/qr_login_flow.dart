@@ -160,8 +160,6 @@ class QrLoginFlow {
   }
 
   static void _toast(BuildContext context, WidgetRef ref, String key) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppTranslations.translate(context, ref, key))),
-    );
+    showAppToast(context, AppTranslations.translate(context, ref, key));
   }
 }

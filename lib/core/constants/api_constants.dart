@@ -48,7 +48,6 @@ class ApiConstants {
   static const String meUsername = '/api/me/username';
   static const String meUploadPresign = '/api/me/upload/presign';
 
-
   // Chat
   static const String chatConversations = '/api/teams/chat/conversations';
 

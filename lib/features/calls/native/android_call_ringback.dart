@@ -18,6 +18,10 @@ import '../voice_call_log.dart';
 /// media opens — the native side hands the audio mode back, and LiveKit must
 /// find the mode it was in before the call.
 ///
+/// The same player carries the connecting tone: a short "pip-pip" on both
+/// phones while the screen says "Exchanging security keys…" (`connecting`),
+/// as Telegram does. It ends the moment the call is connected, failed or over.
+///
 /// No-op off Android. iOS is not a target yet.
 class AndroidCallRingback {
   const AndroidCallRingback._();
@@ -28,16 +32,24 @@ class AndroidCallRingback {
 
   static bool get _supported => !kIsWeb && Platform.isAndroid;
 
-  /// What was last sent: null = silent, else the speaker choice it plays on.
-  static bool? _playing;
+  /// What was last sent: null = silent, else `tone|speaker`.
+  static String? _playing;
 
   /// Whether [state] is a call whose caller should hear ringback.
   static bool wants(VoiceCallState state) =>
       state.phase == VoiceCallPhase.outgoingRinging &&
       state.call?.calleeRingingAt != null;
 
+  /// The tone [state] should be playing, or null for silence.
+  static String? toneFor(VoiceCallState state) {
+    if (wants(state)) return 'ringback';
+    if (state.phase == VoiceCallPhase.connecting) return 'connecting';
+    return null;
+  }
+
   static Future<void> sync(VoiceCallState state) {
-    if (wants(state)) return _start(speaker: state.speaker);
+    final tone = toneFor(state);
+    if (tone != null) return _start(tone: tone, speaker: state.speaker);
     if (_playing != null) {
       voiceCallLog(
         'ringback.stop',
@@ -49,11 +61,15 @@ class AndroidCallRingback {
     return stop();
   }
 
-  static Future<void> _start({required bool speaker}) async {
-    if (!_supported || _playing == speaker) return;
-    voiceCallLog('ringback.start', reason: 'speaker=$speaker');
-    _playing = speaker;
-    await _invoke('start', {'speaker': speaker});
+  static Future<void> _start({
+    required String tone,
+    required bool speaker,
+  }) async {
+    final key = '$tone|$speaker';
+    if (!_supported || _playing == key) return;
+    voiceCallLog('ringback.start', reason: 'tone=$tone speaker=$speaker');
+    _playing = key;
+    await _invoke('start', {'tone': tone, 'speaker': speaker});
   }
 
   static Future<void> stop() async {

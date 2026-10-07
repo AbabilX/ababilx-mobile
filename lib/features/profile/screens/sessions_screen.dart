@@ -10,6 +10,7 @@ import '../widgets/devices_hero.dart';
 import '../widgets/devices_notes.dart';
 import '../widgets/session_rename_dialog.dart';
 import '../widgets/session_tile.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// Linked devices — Signal's screen of the same name.
 ///
@@ -168,8 +169,6 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
   }
 
   void _toast(String key) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppTranslations.translate(context, ref, key))),
-    );
+    showAppToast(context, AppTranslations.translate(context, ref, key));
   }
 }

@@ -12,6 +12,7 @@ import '../providers/chat_provider.dart';
 import '../providers/messageable_people_provider.dart';
 import 'camera_capture.dart';
 import 'camera_recipient_screen.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 Future<void> captureAndSendChatPhoto(
   BuildContext context,
@@ -39,8 +40,10 @@ Future<void> captureAndSendChatPhoto(
     if (context.mounted) context.push('/messages/${conversation.id}');
   } catch (_) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_tr(context, ref, 'chat_camera_send_failed'))),
+    showAppToast(
+      context,
+      _tr(context, ref, 'chat_camera_send_failed'),
+      isError: true,
     );
   }
 }
@@ -123,9 +126,7 @@ Future<ChatUserSummary?> showCameraRecipientPicker(
 }
 
 void _showSending(BuildContext context, WidgetRef ref) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(_tr(context, ref, 'chat_photo_sending'))),
-  );
+  showAppToast(context, _tr(context, ref, 'chat_photo_sending'));
 }
 
 String _tr(BuildContext context, WidgetRef ref, String key) =>

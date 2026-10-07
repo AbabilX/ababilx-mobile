@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'audio_source_ref.dart';
 import 'voice_flat_layout.dart';
 import 'voice_playback_controller.dart';
+import 'app_toast.dart';
 
 export 'audio_source_ref.dart';
 
@@ -51,8 +52,10 @@ class VoiceUrlPlayer extends StatelessWidget {
       await _voicePlayback.toggle(source);
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not play this voice recording.')),
+      showAppToast(
+        context,
+        'Could not play this voice recording.',
+        isError: true,
       );
     }
   }

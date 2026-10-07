@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'app_toast.dart';
 
 /// Hand the bytes to another app. Chat always has a local path; wall / CRM
 /// still stream a URL.
@@ -26,8 +27,6 @@ Future<void> openPreviewExternally(
         await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
   if (!ok && context.mounted) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Could not open this file')));
+    showAppToast(context, 'Could not open this file', isError: true);
   }
 }

@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../providers/fcm_provider.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// Profile tile: shown when notification permission is denied / unknown-denied.
 class NotificationPermissionTile extends ConsumerWidget {
@@ -37,18 +38,14 @@ class NotificationPermissionTile extends ConsumerWidget {
               await openAppSettings();
               return;
             }
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  ok
-                      ? AppTranslations.translate(context, ref, 'notif_enabled')
-                      : AppTranslations.translate(
-                          context,
-                          ref,
-                          'notif_still_denied',
-                        ),
-                ),
+            showAppToast(
+              context,
+              AppTranslations.translate(
+                context,
+                ref,
+                ok ? 'notif_enabled' : 'notif_still_denied',
               ),
+              isError: !ok,
             );
           },
           child: Padding(

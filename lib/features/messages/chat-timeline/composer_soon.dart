@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 void showComposerSoon(BuildContext context, String label) {
-  ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: Text('$label coming soon')));
+  showAppToast(context, '$label coming soon');
 }

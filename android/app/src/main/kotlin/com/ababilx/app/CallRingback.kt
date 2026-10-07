@@ -8,7 +8,9 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 /**
- * The caller's "tuut… tuut…" while the other phone rings.
+ * The caller's "tuut… tuut…" while the other phone rings, and the short
+ * "pip-pip" both sides hear while an answered call exchanges keys and opens
+ * its media (Telegram's connecting sound; `res/raw/call_connecting.wav`, ours).
  *
  * Signal's `OutgoingRinger`, exactly: a looping [MediaPlayer] on
  * `USAGE_VOICE_COMMUNICATION` / `CONTENT_TYPE_SPEECH` ([CallRingbackPlayer]),
@@ -35,13 +37,17 @@ class CallRingback(private val activity: Activity) {
 
     private var channel: MethodChannel? = null
     private var player: MediaPlayer? = null
+    private var tone: String? = null
 
     fun attach(engine: FlutterEngine) {
         channel = MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL).also {
             it.setMethodCallHandler { call, result ->
                 when (call.method) {
                     "start" -> {
-                        start(call.argument<Boolean>("speaker") ?: false)
+                        start(
+                            call.argument<String>("tone") ?: CallRingbackPlayer.TONE_RINGBACK,
+                            call.argument<Boolean>("speaker") ?: false,
+                        )
                         result.success(null)
                     }
                     "stop" -> {
@@ -60,20 +66,35 @@ class CallRingback(private val activity: Activity) {
         stop()
     }
 
-    /** Idempotent. [speaker] only matters when this is what starts the session. */
-    private fun start(speaker: Boolean) {
-        CallAudioSession.ensureStarted(activity, speaker)
-        if (player != null) return
-        Log.i(TAG, "start")
-        player = newPlayer()
+    /**
+     * Idempotent per tone; a different tone replaces the one playing.
+     * [speaker] only matters when this is what starts the session.
+     *
+     * The connecting tone never starts the session. On the answering phone
+     * that would create it before the call's id is known to it, and the id is
+     * what decides whether Telecom owns the route (`CallAudioManager.create`)
+     * — a session started blind there loses the Speaker button for the call.
+     * Dart's engine starts it a moment later and the tone follows its route.
+     */
+    private fun start(wanted: String, speaker: Boolean) {
+        if (wanted == CallRingbackPlayer.TONE_RINGBACK) {
+            CallAudioSession.ensureStarted(activity, speaker)
+        }
+        if (player != null && tone == wanted) return
+        player?.let { old -> runCatching { old.release() } }
+        Log.i(TAG, "start $wanted")
+        tone = wanted
+        player = newPlayer(wanted)
     }
 
-    private fun newPlayer(): MediaPlayer? = CallRingbackPlayer.create(activity) { failed ->
-        if (player === failed) player = newPlayer()
-    }
+    private fun newPlayer(wanted: String): MediaPlayer? =
+        CallRingbackPlayer.create(activity, CallRingbackPlayer.resource(wanted)) { failed ->
+            if (player === failed) player = newPlayer(wanted)
+        }
 
     /** The ring only; the session stays for the call it belongs to. */
     private fun stop() {
+        tone = null
         val held = player ?: return
         Log.i(TAG, "stop")
         player = null

@@ -24,6 +24,7 @@ class CallFavoriteTile extends ConsumerWidget {
 
   /// Null while a call is already up: the tile dims, like the redial buttons.
   final VoidCallback? onTap;
+
   /// Left null where the tile is dragged: a long-press handler here would win
   /// the gesture race against the drag.
   final VoidCallback? onLongPress;

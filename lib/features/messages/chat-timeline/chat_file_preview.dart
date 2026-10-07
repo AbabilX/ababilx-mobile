@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../shared/widgets/file_preview.dart';
 import '../data/models/chat_models.dart';
 import 'media-preview/chat_media_preview_meta.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// Chat files open the same viewer as photos — PDF renders, office/sheets
 /// show the chrome + Open. We never jump straight to another app.
@@ -13,9 +14,7 @@ Future<void> openChatAttachment(
   ChatMediaPreviewMeta? preview,
 }) async {
   if (file.locked || localPath.isEmpty) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('This file is not available')));
+    showAppToast(context, 'This file is not available', isError: true);
     return;
   }
   await showFilePreview(

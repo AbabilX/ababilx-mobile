@@ -5,6 +5,7 @@ import '../../../core/localization/app_translations.dart';
 import '../battery_optimization.dart';
 import '../providers/battery_optimization_provider.dart';
 import 'restriction_tile.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// The manual way to grant the battery-optimization exemption.
 ///
@@ -67,26 +68,22 @@ class BatteryOptimizationTile extends ConsumerWidget {
     final ok = await BatteryOptimization.requestIgnore();
     ref.invalidate(batteryRestrictionsProvider);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          AppTranslations.translate(
-            context,
-            ref,
-            ok ? 'battery_opt_enabled' : 'battery_opt_still_denied',
-          ),
-        ),
-        action: ok
-            ? null
-            : SnackBarAction(
-                label: AppTranslations.translate(
-                  context,
-                  ref,
-                  'battery_opt_open_settings',
-                ),
-                onPressed: BatteryOptimization.openBatterySettings,
-              ),
+    showAppToast(
+      context,
+      AppTranslations.translate(
+        context,
+        ref,
+        ok ? 'battery_opt_enabled' : 'battery_opt_still_denied',
       ),
+      isError: !ok,
+      actionLabel: ok
+          ? null
+          : AppTranslations.translate(
+              context,
+              ref,
+              'battery_opt_open_settings',
+            ),
+      onAction: ok ? null : BatteryOptimization.openBatterySettings,
     );
   }
 }

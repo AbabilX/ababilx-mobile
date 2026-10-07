@@ -8,6 +8,7 @@ import '../../calls/widgets/in_call_label.dart';
 import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
 import '../providers/chat_provider.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 Future<void> showUserProfileSheet({
   required BuildContext context,
@@ -80,8 +81,10 @@ class _UserProfileSheetContentState extends State<_UserProfileSheetContent> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to start direct message: $e')),
+      showAppToast(
+        context,
+        'Failed to start direct message: $e',
+        isError: true,
       );
     }
   }

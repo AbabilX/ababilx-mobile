@@ -7,6 +7,7 @@ import '../native/android_battery.dart';
 import '../providers/battery_optimization_provider.dart';
 import '../vitals/notification_vitals.dart';
 import '../vitals/vitals_prefs.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// The one time this app asks about battery optimization on its own.
 ///
@@ -42,16 +43,14 @@ class BatteryOptimizationPrompt {
     ref.invalidate(batteryRestrictionsProvider);
     NotificationVitalsCheck.reset();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          AppTranslations.translate(
-            context,
-            ref,
-            ok ? 'battery_opt_enabled' : 'battery_opt_still_denied',
-          ),
-        ),
+    showAppToast(
+      context,
+      AppTranslations.translate(
+        context,
+        ref,
+        ok ? 'battery_opt_enabled' : 'battery_opt_still_denied',
       ),
+      isError: !ok,
     );
   }
 }

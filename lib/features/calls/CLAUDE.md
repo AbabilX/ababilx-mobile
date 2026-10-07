@@ -1462,6 +1462,14 @@ ringing buttons by colour now (uiautomator never idles over the ripples).
   `CallRingbackPlayer.kt` replaces a player that errors. Logged under
   `CallRingback` / `CallAudio`; Dart logs `ringback.start` / `ringback.stop`
   (with why) under `flutter`.
+- **Connecting tone** (2026-10-07): the same player loops
+  `res/raw/call_connecting.wav` (our own 1.2 s "pip-pip") on BOTH phones while
+  the phase is `connecting` ("Exchanging security keys…"), Telegram's
+  connecting sound. `AndroidCallRingback.toneFor` picks ringback / connecting
+  / silence; the channel's `start` carries `tone`. The connecting tone never
+  starts the audio session: on the answering phone that would create it with
+  no call id, and the id decides whether Telecom owns the route. Not played
+  during a mid-call "Reconnecting…".
 - **Proximity** now also covers `outgoingRinging` and `connecting` (Signal
   enters `IN_CALL` at outgoing start). An incoming ring still never blanks.
 

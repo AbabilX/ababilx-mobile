@@ -9,7 +9,8 @@ import android.util.Log
 /**
  * The ringback's player — Signal's `OutgoingRinger.start`: a looping
  * [MediaPlayer] on `USAGE_VOICE_COMMUNICATION` / `CONTENT_TYPE_SPEECH`,
- * playing our own `res/raw/call_ringback.wav`.
+ * playing our own `res/raw/call_ringback.wav` — or `call_connecting.wav`, the
+ * short "pip-pip" that repeats while an answered call sets its media up.
  *
  * Two additions Signal does not need to make, both so a ring never goes
  * quiet while the screen still says "Ringing…": a player error hands the
@@ -20,7 +21,14 @@ object CallRingbackPlayer {
 
     private const val TAG = "CallRingback"
 
-    fun create(context: Context, onDead: (MediaPlayer) -> Unit): MediaPlayer? {
+    /** Dart's name for a tone -> our own file in `res/raw`. */
+    fun resource(tone: String?): Int =
+        if (tone == TONE_CONNECTING) R.raw.call_connecting else R.raw.call_ringback
+
+    const val TONE_RINGBACK = "ringback"
+    const val TONE_CONNECTING = "connecting"
+
+    fun create(context: Context, resource: Int, onDead: (MediaPlayer) -> Unit): MediaPlayer? {
         val player = MediaPlayer()
         player.setOnErrorListener { failed, what, extra ->
             Log.w(TAG, "player error what=$what extra=$extra; restarting")
@@ -45,7 +53,7 @@ object CallRingbackPlayer {
             player.isLooping = true
             player.setDataSource(
                 context,
-                Uri.parse("android.resource://${context.packageName}/${R.raw.call_ringback}"),
+                Uri.parse("android.resource://${context.packageName}/$resource"),
             )
             player.prepare()
             player.start()

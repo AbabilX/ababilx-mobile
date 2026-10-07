@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 
 import 'app_icon.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// Settings → App icon.
 ///
@@ -36,9 +37,7 @@ class _AppIconScreenState extends State<AppIconScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not change the app icon')),
-      );
+      showAppToast(context, 'Could not change the app icon', isError: true);
       final current = await AppIcon.current();
       if (mounted) setState(() => _selected = current);
     }

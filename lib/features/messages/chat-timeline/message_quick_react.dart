@@ -10,6 +10,7 @@ import '../message_e2ee/vault_placeholder.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 import 'message_actions.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// Whether a double tap may copy [msg]: the menu's own Copy rule. A Khaam is
 /// a card, not text; a body this device never opened would copy the vault's
@@ -29,10 +30,9 @@ void quickCopy(BuildContext context, WidgetRef ref, ChatMessage msg) {
 /// Tap on a failed bubble: send it again.
 void retryFailedMessage(BuildContext context, WidgetRef ref, ChatMessage msg) {
   ref.read(chatProvider.notifier).retrySend(msg);
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Resending message…'),
-      duration: Duration(seconds: 2),
-    ),
+  showAppToast(
+    context,
+    'Resending message…',
+    duration: const Duration(seconds: 2),
   );
 }

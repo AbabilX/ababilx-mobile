@@ -111,9 +111,13 @@ void main() {
       expect(find.textContaining('Deploy', findRichText: true), findsWidgets);
     });
 
-    testWidgets('leaves plain chat alone', (tester) async {
+    testWidgets('plain chat goes through markdown too', (tester) async {
       await pump(tester, encodeTiptapBody(plain: 'just saying hi'));
-      expect(find.byType(MessageMarkdown), findsNothing);
+      expect(find.byType(MessageMarkdown), findsOneWidget);
+      expect(
+        find.textContaining('just saying hi', findRichText: true),
+        findsWidgets,
+      );
     });
 
     testWidgets('is off unless asked for', (tester) async {

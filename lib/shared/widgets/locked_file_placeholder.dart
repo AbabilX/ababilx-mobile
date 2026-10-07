@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_toast.dart';
 
 /// Non-interactive stand-in for a team file whose workspace has passed the
 /// free-plan retention lock. Never resolves a network request for the file —
@@ -18,9 +19,7 @@ class LockedFilePlaceholder extends StatelessWidget {
   final bool compact;
 
   void _explain(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('This file is no longer available.')),
-    );
+    showAppToast(context, 'This file is no longer available.', isError: true);
   }
 
   @override

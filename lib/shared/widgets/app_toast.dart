@@ -1,9 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
+import 'app_toast_card.dart';
+
 const Duration _visibleFor = Duration(milliseconds: 2600);
-const Duration _slide = Duration(milliseconds: 220);
+
+// A toast that offers something to press stays long enough to be pressed.
+const Duration _visibleWithAction = Duration(seconds: 6);
 
 // One toast at a time. A second replaces the first rather than stacking on it,
 // because two overlapping cards at the same coordinates read as one flickering
@@ -26,11 +28,21 @@ void showAppToast(
   BuildContext context,
   String message, {
   bool isError = false,
+  Duration? duration,
+  String? actionLabel,
+  VoidCallback? onAction,
 }) => showAppToastIn(
   Overlay.maybeOf(context, rootOverlay: true),
   message,
   isError: isError,
+  duration: duration,
+  actionLabel: actionLabel,
+  onAction: onAction,
 );
+
+/// Takes the toast on screen down now — for a "Saving…" notice whose work
+/// finished before its time ran out.
+void hideAppToast() => _remove(_current);
 
 /// [showAppToast] for a caller that outlives its own context: look the root
 /// overlay up while the widget is still mounted, keep it, and report an
@@ -40,14 +52,21 @@ void showAppToastIn(
   OverlayState? overlay,
   String message, {
   bool isError = false,
+  Duration? duration,
+  String? actionLabel,
+  VoidCallback? onAction,
 }) {
   if (overlay == null || !overlay.mounted || message.trim().isEmpty) return;
   _remove(_current);
   late final OverlayEntry entry;
   entry = OverlayEntry(
-    builder: (_) => _ToastCard(
+    builder: (_) => AppToastCard(
       message: message,
       isError: isError,
+      visibleFor:
+          duration ?? (actionLabel == null ? _visibleFor : _visibleWithAction),
+      actionLabel: actionLabel,
+      onAction: onAction,
       onGone: () {
         if (identical(_current, entry)) _current = null;
         _remove(entry);
@@ -66,126 +85,4 @@ void _remove(OverlayEntry? entry) {
   try {
     entry.remove();
   } catch (_) {}
-}
-
-class _ToastCard extends StatefulWidget {
-  const _ToastCard({
-    required this.message,
-    required this.isError,
-    required this.onGone,
-  });
-
-  final String message;
-  final bool isError;
-  final VoidCallback onGone;
-
-  @override
-  State<_ToastCard> createState() => _ToastCardState();
-}
-
-class _ToastCardState extends State<_ToastCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: _slide,
-  );
-  Timer? _hold;
-  bool _leaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.forward();
-    _hold = Timer(_visibleFor, _dismiss);
-  }
-
-  @override
-  void dispose() {
-    _hold?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _dismiss() async {
-    if (_leaving) return;
-    _leaving = true;
-    _hold?.cancel();
-    if (mounted) await _controller.reverse();
-    widget.onGone();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final curve = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
-    final background = widget.isError
-        ? colors.errorContainer
-        : colors.inverseSurface;
-    final foreground = widget.isError
-        ? colors.onErrorContainer
-        : colors.onInverseSurface;
-
-    return Positioned(
-      top: MediaQuery.paddingOf(context).top + 12,
-      left: 16,
-      right: 16,
-      child: FadeTransition(
-        opacity: curve,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, -0.5),
-            end: Offset.zero,
-          ).animate(curve),
-          child: Material(
-            color: Colors.transparent,
-            child: GestureDetector(
-              onTap: _dismiss,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: background,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 16,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      widget.isError
-                          ? Icons.error_outline_rounded
-                          : Icons.check_circle_rounded,
-                      size: 20,
-                      color: foreground,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        widget.message,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: foreground,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

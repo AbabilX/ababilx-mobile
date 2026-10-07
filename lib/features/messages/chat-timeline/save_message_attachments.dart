@@ -7,6 +7,7 @@ import '../../../shared/media/save_to_phone_dialog.dart';
 import '../../attachments/providers/attachment_providers.dart';
 import '../data/models/chat_models.dart';
 import '../../chat-lock/data/chat_lock_index.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// Which attachments a "Save" on this message would actually write.
 ///
@@ -39,7 +40,7 @@ Future<void> saveMessageAttachments(
   if (!await confirmSaveToPhone(context, fileCount: wanted.length)) return;
   if (!context.mounted) return;
 
-  final messenger = ScaffoldMessenger.of(context);
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
   final authority = ref.read(attachmentAuthorityProvider);
 
   // Resolve without fetching first: photos and voice notes are already on disk,
@@ -48,12 +49,10 @@ Future<void> saveMessageAttachments(
   final onDisk = await authority.resolveAll(wanted);
   final needsFetch = onDisk.any((h) => !h.isReady);
   if (needsFetch) {
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Saving…'), duration: Duration(minutes: 1)),
-    );
+    showAppToastIn(overlay, 'Saving…', duration: const Duration(minutes: 1));
   }
   final handles = await Future.wait(wanted.map(authority.require));
-  if (needsFetch) messenger.hideCurrentSnackBar();
+  if (needsFetch) hideAppToast();
   if (!context.mounted) return;
 
   final requests = <SaveToPhoneRequest>[];

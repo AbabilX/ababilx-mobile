@@ -259,12 +259,9 @@ Future<void> copyMessageText(
   if (msg.isDeleted) return;
   await Clipboard.setData(ClipboardData(text: tiptapToPlainText(msg.body)));
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        AppTranslations.translate(context, ref, 'chat_copied_clipboard'),
-      ),
-      duration: const Duration(seconds: 2),
-    ),
+  showAppToast(
+    context,
+    AppTranslations.translate(context, ref, 'chat_copied_clipboard'),
+    duration: const Duration(seconds: 2),
   );
 }

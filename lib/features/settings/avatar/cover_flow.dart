@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/media/image_crop_editor.dart';
 import '../../../shared/media/pick_image_bytes.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// Same two screens as [startAvatarFlow], framed for a header strip.
 ///
@@ -26,15 +27,11 @@ Future<void> startCoverFlow(BuildContext context, WidgetRef ref) async {
   );
   if (cropped == null || !context.mounted) return;
 
-  final messenger = ScaffoldMessenger.of(context);
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
   try {
     await ref.read(profileProvider.notifier).updateCover(cropped);
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Cover photo updated')),
-    );
+    showAppToastIn(overlay, 'Cover photo updated');
   } catch (error) {
-    messenger.showSnackBar(
-      SnackBar(content: Text('Could not update cover: $error')),
-    );
+    showAppToastIn(overlay, 'Could not update cover: $error', isError: true);
   }
 }

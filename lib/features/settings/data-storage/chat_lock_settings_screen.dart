@@ -50,13 +50,8 @@ class ChatLockSettingsScreen extends ConsumerWidget {
               title: t('chatlock_reset_all'),
               subtitle: count == 0
                   ? t('chatlock_reset_all_none')
-                  : t('chatlock_reset_all_sub').replaceAll(
-                      '{count}',
-                      '$count',
-                    ),
-              onTap: count == 0
-                  ? null
-                  : () => resetAllChatLocks(context, ref),
+                  : t('chatlock_reset_all_sub').replaceAll('{count}', '$count'),
+              onTap: count == 0 ? null : () => resetAllChatLocks(context, ref),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),

@@ -1,10 +1,21 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../tiptap_autolink.dart';
 import '../tiptap_inline.dart';
+import 'tiptap_markdown.dart';
 
-/// A markdown chat body drawn inside a bubble (see [markdownSourceOf]).
+/// A chat body drawn inside a bubble by gpt_markdown (see [markdownOfBody]):
+/// emphasis, headings, lists, task lists, quotes and alerts, tables, fenced
+/// code, `\(maths\)`, bare links and emails.
+///
+/// Three things are ours rather than the package's. A mention arrives as a
+/// link on [mentionLinkScheme] and opens the person. A phone number dials. And
+/// `![](url)` is never fetched: the address was written by whoever sent the
+/// message, so loading it would tell their server this phone's IP and the
+/// moment the chat was opened — it is drawn as a link to tap instead.
 ///
 /// Headings are scaled off the bubble's own text size rather than the app's
 /// display styles: a `# Title` from a bot is a heading within one message, and
@@ -15,7 +26,10 @@ class MessageMarkdown extends StatelessWidget {
     required this.source,
     required this.style,
     this.trailing,
+    this.onMentionTap,
   });
+
+  final void Function(String userId, String label)? onMentionTap;
 
   final String source;
   final TextStyle style;
@@ -57,7 +71,38 @@ class MessageMarkdown extends StatelessWidget {
         style: style,
         isStreaming: false,
         followLinkColor: false,
-        onLinkTap: (url, _) => _open(url),
+        onLinkTap: _onLink,
+        inlineLinkBuilder: (link) => link.url.startsWith(mentionLinkScheme)
+            ? link.defaultSpan(
+                children: [
+                  TextSpan(
+                    text: link.label,
+                    style: link.style.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ],
+              )
+            : link.defaultSpan(),
+        inlinePatterns: [
+          InlinePattern(
+            pattern: phoneCandidatePattern,
+            builder: (_, match, style) => _phone(match.group(0)!, style, link),
+          ),
+        ],
+        imageBuilder: (_, url, _, _) => GestureDetector(
+          onTap: () => _open(url),
+          child: Text(
+            url,
+            style: style.copyWith(
+              color: link,
+              decoration: TextDecoration.underline,
+              decorationColor: link,
+            ),
+          ),
+        ),
       ),
     );
     final tail = trailing;
@@ -72,6 +117,31 @@ class MessageMarkdown extends StatelessWidget {
           child: Text.rich(tail),
         ),
       ],
+    );
+  }
+
+  void _onLink(String url, String label) {
+    if (!url.startsWith(mentionLinkScheme)) {
+      _open(url);
+      return;
+    }
+    final id = Uri.decodeComponent(url.substring(mentionLinkScheme.length));
+    final name = label.startsWith('@') ? label.substring(1) : label;
+    onMentionTap?.call(id, name);
+  }
+
+  /// A digit run that passes the dialable check opens the dialer; anything
+  /// else the pattern caught (an order number, a date) stays plain text.
+  InlineSpan _phone(String raw, TextStyle style, Color link) {
+    if (!isDialablePhone(raw)) return TextSpan(text: raw, style: style);
+    return TextSpan(
+      text: raw,
+      style: style.copyWith(
+        color: link,
+        decoration: TextDecoration.underline,
+        decorationColor: link.withValues(alpha: 0.45),
+      ),
+      recognizer: TapGestureRecognizer()..onTap = () => _open(phoneHref(raw)),
     );
   }
 

@@ -10,6 +10,7 @@ import 'details_block_tile.dart';
 import 'details_tile.dart';
 import 'group_permissions.dart';
 import 'report_spam_action.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 /// The red block at the bottom. Every one of these ends the screen, so they
 /// all confirm first and then leave for the chat list — there is nothing left
@@ -130,9 +131,7 @@ class DetailsDangerActions extends ConsumerWidget {
       await run();
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      showAppToast(context, 'Failed: $e', isError: true);
       return;
     }
     if (!context.mounted) return;

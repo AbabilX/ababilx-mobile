@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'save_to_phone.dart';
 import 'save_to_phone_dialog.dart';
+import '../widgets/app_toast.dart';
 
 /// The whole user-facing save: warn once, copy, then say what happened.
 ///
@@ -73,7 +74,5 @@ String _message({required int saved, required int total}) {
 }
 
 void _say(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
-  );
+  showAppToast(context, message, duration: const Duration(seconds: 3));
 }

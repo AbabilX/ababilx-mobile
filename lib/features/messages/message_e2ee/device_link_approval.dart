@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/chat_repository.dart';
 import 'message_vault.dart';
+import '../../../shared/widgets/app_toast.dart';
 
 const _linkScheme = 'ababilx://link-messages';
 
@@ -166,7 +167,5 @@ class DeviceLinkApproval {
   }
 
   static void _toast(BuildContext context, String message) =>
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      showAppToast(context, message);
 }

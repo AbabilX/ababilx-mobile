@@ -5,6 +5,7 @@ import '../media/media_save_lock.dart';
 import '../media/save_to_phone.dart';
 import '../media/save_to_phone_action.dart';
 import 'preview_icon.dart';
+import 'app_toast.dart';
 
 /// Signal's media-viewer actions, in Signal's two places.
 ///
@@ -95,9 +96,7 @@ Future<void> runMediaPreviewAction(
   );
   if (!context.mounted) return;
   if (path == null) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('File is not available')));
+    showAppToast(context, 'File is not available', isError: true);
     return;
   }
   switch (action) {
