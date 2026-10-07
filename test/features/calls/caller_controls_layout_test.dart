@@ -219,12 +219,17 @@ void main() {
         expect(camera.left, greaterThan(8));
         expect(speaker.right, lessThan(size.width - 8));
         expect(end.bottom, lessThan(size.height));
+        // Lifted off the bottom edge, label and all.
+        expect(
+          tester.getRect(find.text('শেষ করুন')).bottom,
+          lessThan(size.height - 24),
+        );
         expect(camera.top, greaterThan(size.height * 0.5));
         debugPrint(
           'ICONS ${tester.widgetList<Icon>(find.byType(Icon)).map((i) => i.icon?.codePoint.toRadixString(16)).toList()} lock=${Icons.lock_rounded.codePoint.toRadixString(16)}',
         );
         final lock = tester.getRect(find.byIcon(Icons.lock_rounded));
-        expect(lock.top, greaterThan(size.height * 0.45));
+        expect(lock.top, greaterThan(size.height * 0.4));
         expect(lock.bottom, lessThan(camera.top));
         // Never below a comfortable touch target.
         final seat = tester.getSize(
@@ -238,7 +243,7 @@ void main() {
         expect(seat.width, greaterThanOrEqualTo(48));
         expect(seat.width, lessThanOrEqualTo(104));
         // Scales with the screen: a fifth of the width where there is room.
-        if (size.height >= 640 && scale == 1.0) {
+        if (size.height >= 800 && scale == 1.0) {
           expect(
             seat.width,
             closeTo((size.width * 0.2).clamp(56.0, 104.0), 0.5),

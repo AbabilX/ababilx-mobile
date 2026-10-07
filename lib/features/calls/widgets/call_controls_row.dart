@@ -89,7 +89,7 @@ class CallControlsRow extends StatelessWidget {
     );
     final portraitSeat = m.portraitSeat(
       width: size.width - 2 * math.max(8.0, padding.horizontal / 2),
-      height: size.height * 0.44 - labelHeight - m.seatGap,
+      height: size.height * 0.44 - labelHeight - m.seatGap - m.deckLift,
       labelHeight: labelHeight,
     );
     final seatD = landscape ? landscapeSeat : portraitSeat;

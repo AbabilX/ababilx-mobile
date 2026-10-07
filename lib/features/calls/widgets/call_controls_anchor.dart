@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'call_overlay_metrics.dart';
+
 /// Morph duration for End seat + icon glyph turns.
 const callControlsOrientDuration = Duration(milliseconds: 280);
 
@@ -37,7 +39,7 @@ class CallControlsAnchor extends StatelessWidget {
       return Positioned(
         left: edge,
         right: edge,
-        bottom: bottom,
+        bottom: bottom + CallOverlayMetrics.of(context).deckLift,
         child: oriented,
       );
     }

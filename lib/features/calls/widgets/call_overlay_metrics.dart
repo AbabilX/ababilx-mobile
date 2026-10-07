@@ -75,6 +75,10 @@ class CallOverlayMetrics {
   /// A share of the width, like the seats, so the deck keeps its proportions.
   double get seatGap => (layoutWidth * 0.065).clamp(16.0, 36.0);
 
+  /// How far the portrait deck is lifted off the bottom inset, so the lower
+  /// row is not sitting on the gesture bar.
+  double get deckLift => (size.height * 0.035).clamp(14.0, 36.0);
+
   /// A portrait seat on a screen with room to spare: a fifth of the width.
   double get portraitSeatWanted => (layoutWidth * 0.2).clamp(56.0, 104.0);
 
