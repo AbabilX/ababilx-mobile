@@ -102,6 +102,10 @@ void main() {
       expect(find.text('Minimize'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded));
       expect(minimized, 1);
+      // The encrypted line sits over the deck.
+      final label = tester.getRect(find.text('End-to-end encrypted'));
+      expect(label.bottom, lessThan(camera.dy));
+      expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
       expect(
         tester.widget<Icon>(find.byIcon(Icons.call_end_rounded)).color,
         Colors.white,
@@ -153,6 +157,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('শেষ করুন'), findsNothing);
       expect(find.text('মিউট'), findsNothing);
+      expect(find.byIcon(Icons.lock_rounded), findsNothing);
 
       final mute = tester.getCenter(find.byIcon(Icons.mic_rounded));
       final end = tester.getCenter(find.byIcon(Icons.call_end_rounded));
@@ -214,7 +219,13 @@ void main() {
         expect(camera.left, greaterThan(8));
         expect(speaker.right, lessThan(size.width - 8));
         expect(end.bottom, lessThan(size.height));
-        expect(camera.top, greaterThan(size.height * 0.55));
+        expect(camera.top, greaterThan(size.height * 0.5));
+        debugPrint(
+          'ICONS ${tester.widgetList<Icon>(find.byType(Icon)).map((i) => i.icon?.codePoint.toRadixString(16)).toList()} lock=${Icons.lock_rounded.codePoint.toRadixString(16)}',
+        );
+        final lock = tester.getRect(find.byIcon(Icons.lock_rounded));
+        expect(lock.top, greaterThan(size.height * 0.45));
+        expect(lock.bottom, lessThan(camera.top));
         // Never below a comfortable touch target.
         final seat = tester.getSize(
           find

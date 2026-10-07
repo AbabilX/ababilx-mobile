@@ -767,6 +767,9 @@ Owned by `CallControlsAnchor` + `CallControlsRow`
 - Two rows of three (`CallControlsDeck`, 2026-10-07, user's layout):
   Camera · Screen Share · Speaker over Minimize · End · Mute, all one seat
   size. Minimize is a seat here, so the top-left chevron is not drawn.
+  A lock + "End-to-end encrypted" line (`CallEncryptedLabel`) sits over the
+  deck; not drawn in landscape. Seat = 1/5 of the width, gap 6.5%, shrunk so
+  the deck stays in the lower 44% (`CallOverlayMetrics.portraitSeat`).
 
 **Landscape**
 

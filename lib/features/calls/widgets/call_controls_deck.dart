@@ -19,6 +19,7 @@ class CallControlsDeck extends StatelessWidget {
     required this.strip,
     required this.top,
     required this.bottom,
+    this.header,
   });
 
   final bool landscape;
@@ -29,6 +30,10 @@ class CallControlsDeck extends StatelessWidget {
   final List<Widget> strip;
   final List<Widget> top;
   final List<Widget> bottom;
+
+  /// Drawn over the two rows, [rowGap] above them. Portrait only: the
+  /// landscape strip is one seat wide.
+  final Widget? header;
 
   Widget _row(List<Widget> seats) => Row(
     mainAxisAlignment: MainAxisAlignment.center,
@@ -67,6 +72,7 @@ class CallControlsDeck extends StatelessWidget {
               key: const ValueKey('deck-portrait'),
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (header != null) ...[header!, SizedBox(height: rowGap)],
                 _row(top),
                 SizedBox(height: rowGap),
                 _row(bottom),

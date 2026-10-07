@@ -8,6 +8,7 @@ import '../providers/voice_call_state.dart';
 import 'call_audio_dropdown.dart';
 import 'call_audio_output_sheet.dart';
 import 'call_controls_deck.dart';
+import 'call_encrypted_label.dart';
 import 'call_glass_circle.dart';
 import 'call_overlay_metrics.dart';
 
@@ -78,15 +79,17 @@ class CallControlsRow extends StatelessWidget {
             m.controlDiameter,
           )
         : m.controlDiameter;
-    // Portrait: the deck may take the screen's width between the anchor's
-    // edges and its lower 38%, so it never climbs into the caller's name.
+    // Portrait: the deck, encrypted line included, stays inside the anchor's
+    // edges and the lower 44% of the screen, clear of the caller's name.
     final scaler = MediaQuery.textScalerOf(
       context,
     ).clamp(maxScaleFactor: _maxLabelScale);
-    final labelHeight = scaler.scale(m.controlLabelFont) * 1.35;
+    final labelHeight = CallEncryptedLabel.heightFor(
+      scaler.scale(m.controlLabelFont),
+    );
     final portraitSeat = m.portraitSeat(
       width: size.width - 2 * math.max(8.0, padding.horizontal / 2),
-      height: size.height * 0.38,
+      height: size.height * 0.44 - labelHeight - m.seatGap,
       labelHeight: labelHeight,
     );
     final seatD = landscape ? landscapeSeat : portraitSeat;
@@ -166,7 +169,6 @@ class CallControlsRow extends StatelessWidget {
       glow: !landscape,
       onPressed: call.active ? onHangUp : null,
     );
-
     final minimize = seat(
       key: const ValueKey('call-minimize'),
       icon: Icons.keyboard_arrow_down_rounded,
@@ -185,6 +187,10 @@ class CallControlsRow extends StatelessWidget {
         rowGap: m.seatGap,
         seatGap: m.seatGap,
         seatWidth: seatD,
+        header: CallEncryptedLabel(
+          text: tr('call_end_to_end_encrypted'),
+          fontSize: m.controlLabelFont,
+        ),
         strip: [mute, camera, share, speaker, end],
         top: [camera, share, speaker],
         bottom: [minimize, end, mute],
