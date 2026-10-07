@@ -730,6 +730,10 @@ A fresh install could sit on "Exchanging security keys…" until restarted.
   (`CallChromeAutoHide`) so the stage is clear. Tap the empty stage to show
   or hide chrome again. Local camera PiP stays visible while chrome is hidden.
   Audio-only never auto-hides — Mute / End must stay reachable without a tap.
+- **"You are sharing your screen"** sits at the top of the screen
+  (`CallTopNotice`, 2026-10-07): alone under the status bar on an audio call,
+  under the peer's name + status when their video fills the stage. Error
+  notes (`CallNote`) stay mid-screen.
 - **Minimize:** a small chevron in the top-left safe area leaves the screen
   without hanging up (`ActiveCallBanner` / return bar takes over).
 - **Incoming** (rebuilt 2026-09-27): "AbabilX voice/video call" label on top,

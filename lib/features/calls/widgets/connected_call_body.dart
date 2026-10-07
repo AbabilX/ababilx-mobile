@@ -8,8 +8,10 @@ import '../providers/voice_call_state.dart';
 import 'call_chrome_auto_hide.dart';
 import 'call_controls_anchor.dart';
 import 'call_minimize_button.dart';
+import 'call_note.dart';
 import 'call_overlay_metrics.dart';
 import 'call_peer_identity.dart';
+import 'call_top_notice.dart';
 import 'call_video_view.dart';
 import 'call_wallpaper.dart';
 import 'local_camera_preview.dart';
@@ -97,40 +99,18 @@ class ConnectedCallBody extends StatelessWidget {
                     showWave: showWave,
                   ),
                 ),
-              if (_stage)
+              if (_stage || call.screenSharing)
                 Positioned(
                   top: padding.top + 8,
                   left: 56,
                   right: 56,
-                  child: Column(
-                    children: [
-                      Text(
-                        call.peerName,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: m.nameFont * 0.78,
-                          fontWeight: FontWeight.w600,
-                          shadows: const [
-                            Shadow(color: Color(0x66000000), blurRadius: 6),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        voiceCallStatusText(call, lang: lang),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.75),
-                          fontSize: m.statusFont,
-                          shadows: const [
-                            Shadow(color: Color(0x66000000), blurRadius: 6),
-                          ],
-                        ),
-                      ),
-                    ],
+                  child: CallTopNotice(
+                    name: call.peerName,
+                    status: voiceCallStatusText(call, lang: lang),
+                    showPeer: _stage,
+                    sharingText: call.screenSharing
+                        ? AppTranslations.of(lang, 'call_sharing_own_screen')
+                        : null,
                   ),
                 ),
               if (call.error != null)
@@ -138,30 +118,21 @@ class ConnectedCallBody extends StatelessWidget {
                   top: m.size.height * 0.55,
                   left: 24,
                   right: 24,
-                  child: _Note(text: call.error!, error: true),
-                ),
-              if (call.screenSharing)
-                Positioned(
-                  top: m.size.height * 0.55,
-                  left: 24,
-                  right: 24,
-                  child: _Note(
-                    text: AppTranslations.of(lang, 'call_sharing_own_screen'),
-                  ),
+                  child: CallNote(text: call.error!, error: true),
                 ),
               if (call.screenShareError != null)
                 Positioned(
                   top: m.size.height * 0.58,
                   left: 24,
                   right: 24,
-                  child: _Note(text: call.screenShareError!, error: true),
+                  child: CallNote(text: call.screenShareError!, error: true),
                 ),
               if (call.cameraError != null)
                 Positioned(
                   top: m.size.height * 0.61,
                   left: 24,
                   right: 24,
-                  child: _Note(text: call.cameraError!, error: true),
+                  child: CallNote(text: call.cameraError!, error: true),
                 ),
               if (!ended) CallControlsAnchor(child: controls),
             ],
@@ -205,34 +176,6 @@ class ConnectedCallBody extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _Note extends StatelessWidget {
-  const _Note({required this.text, this.error = false});
-
-  final String text;
-  final bool error;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: error ? const Color(0xFFFF8A80) : Colors.white,
-          ),
-        ),
-      ),
     );
   }
 }
