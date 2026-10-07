@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import 'markdown/markdown_head.dart';
 import 'markdown/message_markdown.dart';
 import 'markdown/tiptap_markdown.dart';
 import 'tiptap_blocks.dart';
@@ -53,6 +54,9 @@ class TiptapViewer extends StatefulWidget {
 
 class _TiptapViewerState extends State<TiptapViewer> {
   final _recognizers = <TapGestureRecognizer>[];
+  String? _sourceBody;
+  bool _sourceCollapsed = false;
+  String? _source;
 
   @override
   void dispose() {
@@ -84,7 +88,7 @@ class _TiptapViewerState extends State<TiptapViewer> {
     final trimmed = widget.content?.trim() ?? '';
     if (trimmed.isEmpty || isTiptapEmpty(trimmed)) return _empty(base);
 
-    final source = widget.markdown ? markdownOfBody(trimmed) : null;
+    final source = widget.markdown ? _markdownSource(trimmed) : null;
     if (source != null) {
       return _clip(
         MessageMarkdown(
@@ -114,6 +118,22 @@ class _TiptapViewerState extends State<TiptapViewer> {
     final built = blocks.buildDoc(doc, trailing: widget.trailing);
     if (built.isEmpty) return _empty(base);
     return _clip(blocks.column(built));
+  }
+
+  /// The body as markdown, worked out once per body rather than once per
+  /// build: a row rebuilds for a scroll, a tick or a selection, and decoding
+  /// and rewriting a long document each time is what made long messages drag.
+  /// A collapsed body ([TiptapViewer.maxHeight]) gets only its head — the
+  /// rest is clipped away, so it is not parsed or laid out either.
+  String? _markdownSource(String trimmed) {
+    final collapsed = widget.maxHeight != null;
+    if (_sourceBody != trimmed || _sourceCollapsed != collapsed) {
+      final whole = markdownOfBody(trimmed);
+      _source = whole == null || !collapsed ? whole : markdownHead(whole);
+      _sourceBody = trimmed;
+      _sourceCollapsed = collapsed;
+    }
+    return _source;
   }
 
   /// A body that is not TipTap JSON is legacy plain text — still linkified so

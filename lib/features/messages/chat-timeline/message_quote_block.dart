@@ -40,6 +40,8 @@ class MessageQuoteBlock extends StatelessWidget {
     // rendered body — without this the block showed the raw `{"type":"doc"…`.
     final preview = tiptapToPreviewText(quote.body);
     if (preview.isNotEmpty) return preview;
+    // Too large to ride on the reply, and not on this phone either.
+    if (quote.long) return 'Long message';
     if (quote.isImage) return 'Photo';
     if (quote.isVideo) return 'Video';
     if (quote.isAudio) return 'Voice message';

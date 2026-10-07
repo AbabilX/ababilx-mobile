@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../attachments/providers/attachment_providers.dart';
+import '../../privacy-mode/privacy_media.dart';
 import '../chat-timeline/composer_reply_target.dart';
 import '../data/models/chat_models.dart';
 import '../group-member-permissions/group_media_guard.dart';
@@ -20,7 +21,11 @@ import 'snippet_format.dart';
 /// the reserved object. Once the upload is in, a send that fails is the chat's
 /// own failed bubble with its retry, like any other message: the object is
 /// kept for that retry and nothing is thrown.
-Future<void> sendSnippet(
+///
+/// False when the sender backed out of the privacy-mode media sheet — a
+/// snippet is a file, and waits for that sheet like any other.
+Future<bool> sendSnippet(
+  BuildContext context,
   WidgetRef ref, {
   required String conversationId,
   required String? parentId,
@@ -31,7 +36,7 @@ Future<void> sendSnippet(
 }) async {
   final notifier = ref.read(chatProvider.notifier);
   final fileName = snippetFileName(title, kind);
-  final bytes = Uint8List.fromList(utf8.encode(content));
+  final bytes = utf8.encode(content);
   validateGroupMedia(ref, conversationId, kind.contentType, fileName);
 
   final presign = await notifier.presignAttachment(
@@ -60,6 +65,27 @@ Future<void> sendSnippet(
           bytes: bytes,
         );
   } catch (_) {}
+  if (!context.mounted) {
+    await notifier.discardUpload(conversationId, presign.publicUrl);
+    return false;
+  }
+  final files = await askPrivacyMediaRules(
+    context,
+    ref,
+    ref.read(chatProvider).conversationById(conversationId),
+    [
+      ChatAttachmentInput(
+        fileUrl: presign.publicUrl,
+        fileName: fileName,
+        contentType: kind.contentType,
+        sizeBytes: bytes.length,
+      ),
+    ],
+  );
+  if (files == null) {
+    await notifier.discardUpload(conversationId, presign.publicUrl);
+    return false;
+  }
   final reply = ComposerReplyTarget.resolve(
     replyTo: ref.read(chatProvider).replyToMessage,
     threadRootId: parentId,
@@ -77,14 +103,8 @@ Future<void> sendSnippet(
       parentId: reply.parentId,
       quotedMessageId: reply.quotedMessageId,
       quotePreview: reply.preview,
-      attachments: [
-        ChatAttachmentInput(
-          fileUrl: presign.publicUrl,
-          fileName: fileName,
-          contentType: kind.contentType,
-          sizeBytes: bytes.length,
-        ),
-      ],
+      attachments: files,
     ),
   );
+  return true;
 }

@@ -88,7 +88,8 @@ class _SnippetCreateState extends ConsumerState<SnippetCreateScreen> {
     }
     setState(() => _sending = true);
     try {
-      await sendSnippet(
+      final sent = await sendSnippet(
+        context,
         ref,
         conversationId: widget.conversationId,
         parentId: widget.parentId,
@@ -97,7 +98,10 @@ class _SnippetCreateState extends ConsumerState<SnippetCreateScreen> {
         content: content,
         message: _message.text,
       );
-      if (mounted) Navigator.of(context).pop(true);
+      if (!mounted) return;
+      if (sent) return Navigator.of(context).pop(true);
+      // Backed out of the privacy sheet: the draft stays to be sent or left.
+      setState(() => _sending = false);
     } on GroupMediaRestrictedException catch (error) {
       if (!mounted) return;
       final copy = groupMediaRestrictedCopy(error.kind);

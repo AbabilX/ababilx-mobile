@@ -15,9 +15,11 @@ import '../../local-backup/restore/restored_body_store.dart';
 import '../data/models/chat_attachment.dart';
 import '../data/models/chat_message.dart';
 import '../data/models/chat_message_quote.dart';
+import '../tiptap_plain_text.dart';
 import 'p256_ecdh.dart';
 import 'new_chat_history_cleanup.dart';
 import 'recovery_key.dart';
+import 'vault_placeholder.dart';
 import '../data/chat_recovery_api.dart';
 
 part 'message_vault_attachments.dart';

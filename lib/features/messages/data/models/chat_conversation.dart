@@ -58,6 +58,7 @@ class ChatConversation extends Equatable {
     this.lastMessageEncryptionNonce,
     this.lastMessageEncryptionVersion,
     this.lastMessageEncryptionKeyVersion,
+    this.lastMessageLong = false,
     this.peerUserId,
     this.peerUserName,
     this.peerUserAvatar,
@@ -115,6 +116,11 @@ class ChatConversation extends Equatable {
   final String? lastMessageEncryptionNonce;
   final int? lastMessageEncryptionVersion;
   final int? lastMessageEncryptionKeyVersion;
+
+  /// The newest message is too large to ride on a sidebar row: the server
+  /// left its ciphertext out, so there is nothing here to open. The list says
+  /// "Long message" unless this phone's own copy stands in.
+  final bool lastMessageLong;
   final String? peerUserId;
   final String? peerUserName;
   final String? peerUserAvatar;
@@ -351,6 +357,7 @@ class ChatConversation extends Equatable {
           (json['last_message_encryption_version'] as num?)?.toInt(),
       lastMessageEncryptionKeyVersion:
           (json['last_message_encryption_key_version'] as num?)?.toInt(),
+      lastMessageLong: json['last_message_long'] == true,
       peerUserId: _jsonString(json['peer_user_id']),
       peerUserName: _jsonString(json['peer_user_name']),
       peerUserAvatar: _jsonString(json['peer_user_avatar']),
@@ -418,6 +425,7 @@ class ChatConversation extends Equatable {
     String? lastMessageEncryptionNonce,
     int? lastMessageEncryptionVersion,
     int? lastMessageEncryptionKeyVersion,
+    bool? lastMessageLong,
     // A plaintext last message has no ciphertext, and `null` above means
     // "keep": without this a sealed row could never say its newest message
     // is not sealed.
@@ -481,6 +489,9 @@ class ChatConversation extends Equatable {
         ? null
         : (lastMessageEncryptionKeyVersion ??
               this.lastMessageEncryptionKeyVersion),
+    lastMessageLong:
+        !clearLastMessageEncryption &&
+        (lastMessageLong ?? this.lastMessageLong),
     peerUserId: peerUserId,
     peerUserName: peerUserName,
     peerUserAvatar: peerUserAvatar,
@@ -526,6 +537,7 @@ class ChatConversation extends Equatable {
     lastMessageAttachmentType,
     lastMessageAttachmentName,
     lastMessageAttachments,
+    lastMessageLong,
     muted,
     mutedUntil,
     muteMode,

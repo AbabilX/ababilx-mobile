@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../khaam/data/khaam_preview.dart';
 import 'data/models/chat_models.dart';
 import 'markdown/message_markdown_preview.dart';
+import 'message_e2ee/vault_placeholder.dart';
 import 'tiptap_plain_text.dart';
 
 enum ChatListFilter { all, unread, groups, webhooks, localShare }
@@ -150,6 +151,13 @@ ChatListPreview chatListPreview(
     }
     if (_looksLikeJson(text)) text = '';
   }
+  // Too large to ride on the sidebar row, so there is no ciphertext here to
+  // open: until this phone's own copy stands in, the row says what it is.
+  if (khaam == null &&
+      conv.lastMessageLong &&
+      isVaultPlaceholderBody(rawBody)) {
+    text = longMessageLabel(lang);
+  }
 
   // A Khaam's photo is part of the card: no "Photo" chip beside its label.
   final files = khaam != null
@@ -186,6 +194,11 @@ ChatListPreview chatListPreview(
     mentionLabels: mentionLabels,
   );
 }
+
+/// What stands in for a body the server left out for its size — on a chat
+/// list row and in a quote.
+String longMessageLabel(String lang) =>
+    lang == 'bn' ? 'বড় বার্তা' : 'Long message';
 
 bool _looksLikeVoiceCallPreview(String text) {
   final t = text.toLowerCase();

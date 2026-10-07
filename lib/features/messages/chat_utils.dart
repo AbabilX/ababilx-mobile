@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 import 'data/models/chat_models.dart';
+import 'message_e2ee/vault_placeholder.dart';
 import 'tiptap_plain_text.dart';
 
 enum MessageClusterPosition { single, start, middle, end }
@@ -94,6 +95,10 @@ String conversationPreview(ChatConversation conv) {
       return name != null ? 'Photo: $name' : 'Photo';
     }
     return name != null ? 'File: $name' : 'Attachment';
+  }
+  if (conv.lastMessageLong &&
+      isVaultPlaceholderBody(conv.lastMessageBody ?? '')) {
+    return 'Long message';
   }
   final body = tiptapToPreviewText(conv.lastMessageBody).trim();
   if (body.isNotEmpty) return body;

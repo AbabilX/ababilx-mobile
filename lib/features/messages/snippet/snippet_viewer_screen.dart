@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../shared/media/media_save_lock.dart';
 import '../../../shared/widgets/app_bar_back_button.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../chat_icon.dart';
@@ -17,12 +18,14 @@ Future<void> openSnippetViewer(
   required String fileName,
   required String localPath,
   String? detail,
+  bool noSave = false,
 }) => Navigator.of(context).push(
   MaterialPageRoute<void>(
     builder: (_) => SnippetViewerScreen(
       fileName: fileName,
       localPath: localPath,
       detail: detail,
+      noSave: noSave,
     ),
   ),
 );
@@ -35,11 +38,17 @@ class SnippetViewerScreen extends ConsumerStatefulWidget {
     required this.fileName,
     required this.localPath,
     this.detail,
+    this.noSave = false,
   });
 
   final String fileName;
   final String localPath;
   final String? detail;
+
+  /// The sender, or the group, does not let this file leave the app: it is
+  /// read here, with no Copy and no text selection — copying the whole text
+  /// out is saving it.
+  final bool noSave;
 
   @override
   ConsumerState<SnippetViewerScreen> createState() => _SnippetViewerState();
@@ -86,6 +95,8 @@ class _SnippetViewerState extends ConsumerState<SnippetViewerScreen> {
     final s = SnippetStrings.of(ref.watch(appLanguageProvider));
     final colors = Theme.of(context).colorScheme;
     final detail = widget.detail;
+    // A private group holds the lock for as long as its chat is open.
+    final locked = widget.noSave || MediaSaveLock.held;
     return Scaffold(
       appBar: AppBar(
         leading: AppBarBackButton(
@@ -119,21 +130,29 @@ class _SnippetViewerState extends ConsumerState<SnippetViewerScreen> {
                 color: colors.onSurface,
               ),
             ),
-          IconButton(
-            tooltip: s.copy,
-            onPressed: _text == null ? null : () => _copy(s),
-            icon: ChatIcon(
-              HugeIcons.strokeRoundedCopy01,
-              color: colors.onSurface,
+          if (!locked)
+            IconButton(
+              tooltip: s.copy,
+              onPressed: _text == null ? null : () => _copy(s),
+              icon: ChatIcon(
+                HugeIcons.strokeRoundedCopy01,
+                color: colors.onSurface,
+              ),
             ),
-          ),
         ],
       ),
-      body: SafeArea(child: _body(context, s, colors)),
+      body: SafeArea(child: _body(context, s, colors, selectable: !locked)),
     );
   }
 
-  Widget _body(BuildContext context, SnippetStrings s, ColorScheme colors) {
+  Widget _body(
+    BuildContext context,
+    SnippetStrings s,
+    ColorScheme colors, {
+    required bool selectable,
+  }) {
+    Widget select(Widget child) =>
+        selectable ? SelectionArea(child: child) : child;
     if (_failed) return Center(child: Text(s.unreadable));
     final text = _text;
     if (text == null) return const Center(child: CircularProgressIndicator());
@@ -141,8 +160,8 @@ class _SnippetViewerState extends ConsumerState<SnippetViewerScreen> {
       context,
     ).textTheme.bodyLarge!.copyWith(color: colors.onSurface, height: 1.45);
     if (_formatted) {
-      return SelectionArea(
-        child: SingleChildScrollView(
+      return select(
+        SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           child: MessageMarkdown(source: text, style: base),
         ),
@@ -153,8 +172,8 @@ class _SnippetViewerState extends ConsumerState<SnippetViewerScreen> {
         snippetKindOf(widget.fileName) == SnippetKind.markdown && !_canFormat;
     // Line by line and built lazily: one Text holding ten megabytes is laid
     // out whole before the first frame.
-    return SelectionArea(
-      child: ListView.builder(
+    return select(
+      ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         itemCount: _lines.length + (tooLargeNote ? 1 : 0),
         itemBuilder: (context, index) {

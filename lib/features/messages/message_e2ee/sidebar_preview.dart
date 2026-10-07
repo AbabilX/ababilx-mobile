@@ -61,5 +61,7 @@ ChatConversation withLastMessageCipher(
         lastMessageEncryptionNonce: message.encryptionNonce,
         lastMessageEncryptionVersion: message.encryptionVersion,
         lastMessageEncryptionKeyVersion: message.encryptionKeyVersion,
+        // This message is here whole, whatever the last one was.
+        lastMessageLong: false,
       )
     : row.copyWith(clearLastMessageEncryption: true);

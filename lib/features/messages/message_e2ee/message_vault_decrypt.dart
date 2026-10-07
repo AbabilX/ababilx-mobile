@@ -1,5 +1,8 @@
 part of 'message_vault.dart';
 
+/// A quote card shows a line or two; this is room to spare.
+const _longQuotePreview = 240;
+
 /// Reading sealed messages: the conversation key is resolved (and refetched
 /// once when the other side rotated), then the ciphertext and any quoted
 /// preview are opened under it.
@@ -25,6 +28,8 @@ extension MessageVaultDecrypt on MessageVault {
       if (id == null || lookup == null) return null;
       quote = await lookup(message.conversationId, id);
       if (quote == null || !quote.isEncrypted) return quote;
+    } else if (quote.long) {
+      return _longQuote(message, quote, currentUserId);
     } else if (!quote.isEncrypted) {
       return null;
     }
@@ -43,6 +48,47 @@ extension MessageVaultDecrypt on MessageVault {
       currentUserId,
     );
     return quote.copyWith(body: decrypted.body);
+  }
+
+  /// A quote whose original the server left out for its size: read from this
+  /// phone's own history, and kept as the short preview a quote card draws —
+  /// never the whole text on every reply to it. Null (the card then says
+  /// "Long message") when the original is not on this phone.
+  Future<ChatMessageQuote?> _longQuote(
+    ChatMessage message,
+    ChatMessageQuote quote,
+    String currentUserId,
+  ) async {
+    final lookup = privateQuoteLookup;
+    if (lookup == null || quote.messageId.isEmpty) return null;
+    final local = await lookup(message.conversationId, quote.messageId);
+    if (local == null || local.deleted) return null;
+    var body = local.body;
+    if (local.isEncrypted) {
+      final opened = await decryptMessage(
+        ChatMessage(
+          id: local.messageId,
+          conversationId: message.conversationId,
+          userId: local.userId,
+          body: '',
+          createdAt: '',
+          encryptedBody: local.encryptedBody,
+          encryptionNonce: local.encryptionNonce,
+          encryptionVersion: 1,
+          encryptionKeyVersion: local.encryptionKeyVersion,
+        ),
+        currentUserId,
+      );
+      if (isVaultFailureBody(opened.body)) return null;
+      body = opened.body;
+    }
+    final preview = tiptapToPreviewText(body);
+    // By rune: a cut inside a surrogate pair would tear an emoji in two.
+    return quote.copyWith(
+      body: preview.length > _longQuotePreview
+          ? String.fromCharCodes(preview.runes.take(_longQuotePreview))
+          : preview,
+    );
   }
 
   /// Opens a message: its text, the preview of what it quotes, and the keys

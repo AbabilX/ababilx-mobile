@@ -11,6 +11,10 @@ import 'package:equatable/equatable.dart';
 ///
 /// [userId] is the *quoted* sender, not the quoting one. The DM cipher binds
 /// the sender into its AAD, so decrypting with the wrong id fails.
+///
+/// [long] marks an original too large to ride on every reply to it: the
+/// server sends neither body. `MessageVault` reads the original from this
+/// phone's own history when it is there; otherwise the card says so.
 class ChatMessageQuote extends Equatable {
   const ChatMessageQuote({
     required this.messageId,
@@ -22,6 +26,7 @@ class ChatMessageQuote extends Equatable {
     this.encryptionKeyVersion,
     this.attachmentType,
     this.deleted = false,
+    this.long = false,
   });
 
   final String messageId;
@@ -33,6 +38,7 @@ class ChatMessageQuote extends Equatable {
   final int? encryptionKeyVersion;
   final String? attachmentType;
   final bool deleted;
+  final bool long;
 
   bool get isEncrypted =>
       (encryptedBody?.isNotEmpty ?? false) &&
@@ -53,6 +59,7 @@ class ChatMessageQuote extends Equatable {
         encryptionKeyVersion: (json['encryption_key_version'] as num?)?.toInt(),
         attachmentType: json['attachment_type'] as String?,
         deleted: json['deleted'] as bool? ?? false,
+        long: json['long'] == true,
       );
 
   Map<String, dynamic> toJson() => {
@@ -65,6 +72,7 @@ class ChatMessageQuote extends Equatable {
     'encryption_key_version': ?encryptionKeyVersion,
     'attachment_type': ?attachmentType,
     'deleted': deleted,
+    if (long) 'long': true,
   };
 
   ChatMessageQuote copyWith({String? body}) => ChatMessageQuote(
@@ -77,6 +85,7 @@ class ChatMessageQuote extends Equatable {
     encryptionKeyVersion: encryptionKeyVersion,
     attachmentType: attachmentType,
     deleted: deleted,
+    long: long,
   );
 
   @override
@@ -90,5 +99,6 @@ class ChatMessageQuote extends Equatable {
     encryptionKeyVersion,
     attachmentType,
     deleted,
+    long,
   ];
 }

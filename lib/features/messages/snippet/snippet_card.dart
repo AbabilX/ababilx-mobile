@@ -13,8 +13,7 @@ import '../data/models/chat_models.dart';
 import 'snippet_format.dart';
 import 'snippet_viewer_screen.dart';
 
-/// A `.md` / `.txt` attachment: file name, size and the first lines of the
-/// text. Tapping opens the whole file.
+/// A `.md` / `.txt` attachment: name, size, first lines. Tap opens the file.
 /// The height is fixed. A card that grew once its text was read would shove
 /// every row above it, the scroll jitter the media tiles were cured of.
 class SnippetCard extends StatelessWidget {
@@ -72,6 +71,7 @@ class SnippetCard extends StatelessWidget {
                 fileName: attachment.fileName,
                 localPath: localPath,
                 detail: detail,
+                noSave: attachment.noSave,
               ),
         child: SizedBox(
           height: height,
