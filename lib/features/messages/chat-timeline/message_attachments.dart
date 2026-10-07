@@ -9,6 +9,8 @@ import 'attachment_video_tile.dart';
 import 'media-preview/chat_media_preview_meta.dart';
 import 'voice_attachment_player.dart';
 import '../../privacy-mode/privacy_timed_card.dart';
+import '../snippet/snippet_card.dart';
+import '../snippet/snippet_format.dart';
 
 /// Local-first attachment assembly. Transfer progress is watched only by the
 /// leaf tiles, so the message row does not rebuild for every downloaded chunk.
@@ -78,13 +80,16 @@ class MessageAttachments extends StatelessWidget {
         for (final attachment in audio)
           VoiceAttachmentPlayer(attachment: attachment),
         for (final attachment in files)
-          attachment.isPdf
-              ? AttachmentPdfTile(
-                  attachment: attachment,
-                  preview: preview,
-                  bleed: bleed,
-                )
-              : AttachmentFileRow(attachment: attachment, preview: preview),
+          if (isSnippetFile(attachment.fileName, attachment.sizeBytes))
+            SnippetCard(attachment: attachment, detail: preview?.detail)
+          else
+            attachment.isPdf
+                ? AttachmentPdfTile(
+                    attachment: attachment,
+                    preview: preview,
+                    bleed: bleed,
+                  )
+                : AttachmentFileRow(attachment: attachment, preview: preview),
         if (locked.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 6),

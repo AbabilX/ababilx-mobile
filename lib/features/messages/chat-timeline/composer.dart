@@ -20,6 +20,9 @@ import '../data/chat_client_message_id.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_encode.dart';
 import '../message_length_limit.dart';
+import '../snippet/snippet_create_screen.dart';
+import '../snippet/snippet_strings.dart';
+import '../snippet/snippet_too_long_sheet.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/messageable_people_provider.dart';
 import 'composer_attach.dart';
@@ -399,11 +402,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     // Refused before anything is spent — reply target, draft and attachments
     // all stay. The server's answer to an oversized body is a bare 400.
     if (isMessageTooLong(plain, encoded: body)) {
-      showAppToast(
-        context,
-        messageTooLongText(ref.read(appLanguageProvider)),
-        isError: true,
-      );
+      await _offerSnippet(plain);
       return;
     }
     // Privacy mode: after the preview, the timer / saving sheet (server 0152).
@@ -853,6 +852,49 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     };
   }
 
+  /// Snippet: long text sent as a file, so wherever a file may be sent.
+  VoidCallback? get _snippetAction {
+    final conversation = ref
+        .read(chatProvider)
+        .conversationById(widget.conversationId);
+    // A snippet is a file. `_mediaAllowed` also passes a group that allows
+    // music alone, where this could only be refused.
+    if (conversation != null &&
+        !GroupPermissions(conversation).canSendMedia(GroupMediaKind.files)) {
+      return null;
+    }
+    return () {
+      _closeAttachmentPanel();
+      unawaited(
+        openSnippetCreate(
+          context,
+          conversationId: widget.conversationId,
+          parentId: widget.parentId,
+        ),
+      );
+    };
+  }
+
+  /// A draft over the message limit: offer to send it as a snippet, with the
+  /// text already in the page. Where files are not allowed, only the limit.
+  Future<void> _offerSnippet(String plain) async {
+    final language = ref.read(appLanguageProvider);
+    if (_snippetAction == null) {
+      showAppToast(context, messageTooLongText(language), isError: true);
+      return;
+    }
+    final strings = SnippetStrings.of(language);
+    if (!await offerSnippetForLongMessage(context, strings) || !mounted) return;
+    _closeAttachmentPanel();
+    final sent = await openSnippetCreate(
+      context,
+      conversationId: widget.conversationId,
+      parentId: widget.parentId,
+      initialContent: plain,
+    );
+    if (sent && mounted) _ctrl.clear();
+  }
+
   Future<void> _startVoiceRecording() async {
     if (_voiceSheetOpen || _recordFinishing || ref.read(chatProvider).sending) {
       return;
@@ -1180,6 +1222,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                     onKhaam: _khaamAction,
                     ghostLabel: tr('ghost_chip'),
                     onGhost: _ghostAction,
+                    snippetLabel: SnippetStrings.of(
+                      ref.watch(appLanguageProvider),
+                    ).chip,
+                    onSnippet: _snippetAction,
                     onPickMedia: _pickFromRail,
                     selectedMediaUris: [
                       for (final item in _selectedRecent) item.uri,

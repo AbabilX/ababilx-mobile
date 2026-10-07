@@ -26,6 +26,8 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
     this.onKhaam,
     this.ghostLabel = 'Ghost Chat',
     this.onGhost,
+    this.snippetLabel = 'Snippet',
+    this.onSnippet,
   });
 
   final String galleryLabel;
@@ -45,6 +47,11 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
   /// Ghost Chat. Null hides the chip — a DM with an accepted connection only.
   final String ghostLabel;
   final VoidCallback? onGhost;
+
+  /// Long text sent as a .md or .txt file. Null hides the chip — a group
+  /// whose admins switched files off.
+  final String snippetLabel;
+  final VoidCallback? onSnippet;
 
   /// A tap straight on the rail, which skips the picker entirely.
   final ValueChanged<DeviceMediaItem> onPickMedia;
@@ -103,6 +110,12 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
                       label: ghostLabel,
                       icon: HugeIcons.strokeRoundedIncognito,
                       onTap: onGhost!,
+                    ),
+                  if (onSnippet != null)
+                    AttachChip(
+                      label: snippetLabel,
+                      icon: HugeIcons.strokeRoundedDocumentCode,
+                      onTap: onSnippet!,
                     ),
                 ],
               ),

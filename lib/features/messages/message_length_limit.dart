@@ -23,5 +23,7 @@ bool isMessageTooLong(String plain, {String? encoded}) =>
     utf8.encode(encoded ?? plain).length > maxMessageBodyBytes;
 
 String messageTooLongText(String language) => language == 'bn'
-    ? 'বার্তাটি অনেক বড়। সর্বোচ্চ ৬০০০ শব্দ পাঠানো যায়।'
-    : 'This message is too long. The limit is 6000 words.';
+    ? 'বার্তাটি অনেক বড়। সর্বোচ্চ ৬০০০ শব্দ পাঠানো যায়। '
+          'বড় লেখার জন্য স্নিপেট ব্যবহার করুন।'
+    : 'This message is too long. The limit is 6000 words. '
+          'Use a snippet for long text.';
