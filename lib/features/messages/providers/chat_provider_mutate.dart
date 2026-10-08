@@ -527,6 +527,7 @@ mixin _ChatMutateMixin
   /// are filtered by prefix rather than by an exact key.
   void _forgetConversationInMemory(String conversationId) {
     if (conversationId.isEmpty) return;
+    (this as _ChatOlderTopMixin).forgetOlderPaging(conversationId);
     bool belongs(String key) =>
         key == conversationId || key.startsWith('$conversationId:');
     state = state.copyWith(

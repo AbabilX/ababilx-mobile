@@ -6,6 +6,7 @@ import 'chat_key_cache.dart';
 import 'chat_message_store.dart';
 import 'chat_outbox_cache.dart';
 import 'composer_draft_store.dart';
+import 'feed_span_store.dart';
 
 /// Erases every local trace of a conversation the user deleted.
 ///
@@ -25,6 +26,10 @@ Future<void> wipeConversationLocally(
   if (conversationId.isEmpty) return;
   try {
     await ref.read(chatMessageStoreProvider).clearConversation(conversationId);
+  } catch (_) {}
+  // What was proven about the store goes with the rows it was proven about.
+  try {
+    await ref.read(feedSpanStoreProvider).forget(conversationId);
   } catch (_) {}
   try {
     await ChatOutboxCache(

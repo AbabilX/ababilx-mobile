@@ -11,11 +11,11 @@ import '../wallpaper/chat_wallpaper_provider.dart';
 import 'call_events_collapse.dart';
 import 'bubble_side_indicators.dart';
 import 'message_list_error.dart';
-import 'quote_chain.dart';
 import 'unread_divider.dart';
 import 'group_events_collapse.dart';
 import 'timeline_items.dart';
 import 'timeline_message_item.dart';
+import 'timeline_model.dart';
 
 class MessageList extends ConsumerWidget {
   const MessageList({
@@ -91,11 +91,10 @@ class MessageList extends ConsumerWidget {
         MessageListError(message: error, onRetry: onRetry),
       ?leading,
     ];
-    final items = buildChatTimelineItems(messages);
-    final idIndex = <String, int>{
-      for (var i = 0; i < messages.length; i++) messages[i].id: i,
-    };
-    final rows = timelineRowKeys(items);
+    final model = TimelineModel.of(messages);
+    final items = model.items;
+    final idIndex = model.idIndex;
+    final rows = model.rows;
     // DMs and groups: index 0 (newest end of a reverse list) is the typing
     // bubble. The header's "typing…" stays beside it.
     final typingSlot = typingBubbleSlot(ref, conversationId) ? 1 : 0;
@@ -187,7 +186,7 @@ class MessageList extends ConsumerWidget {
     );
     if (!indicators) return list;
     return BubbleIndicatorScope(
-      quotedIds: quotedMessageIds(messages),
+      quotedIds: model.quotedIds,
       threadRootId: threadRootId,
       child: list,
     );

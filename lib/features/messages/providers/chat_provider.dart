@@ -38,6 +38,8 @@ import '../archive/archive_provider.dart';
 import '../data/local/chat_message_row.dart';
 import '../data/local/chat_message_store.dart';
 import '../data/local/conversation_wipe.dart';
+import '../data/local/feed_span_store.dart';
+import '../data/local/feed_spans.dart';
 import '../data/local/chat_outbox_cache.dart';
 import '../data/local/local_outbox_cipher.dart';
 import '../data/local/composer_draft_store.dart';
@@ -49,9 +51,11 @@ import '../message_e2ee/sidebar_preview.dart';
 import '../group-member-permissions/group_member_tags_provider.dart';
 import '../group-pins/group_pins_provider.dart';
 import '../message_e2ee/vault_placeholder.dart';
+import 'chat_older_trace.dart';
 import 'chat_open_trace.dart';
 import 'chat_read_marks.dart';
 import 'chat_state.dart';
+import 'older_paging_rules.dart';
 import 'received_message_buffer.dart';
 import '../task/task_card_data.dart';
 import '../../chat-lock/chat_lock_filter.dart';
@@ -69,6 +73,13 @@ part 'chat_provider_webhooks.dart';
 part 'chat_provider_requests.dart';
 part 'chat_provider_ws.dart';
 part 'chat_provider_cache.dart';
+part 'chat_provider_older_disk.dart';
+part 'chat_provider_older_top.dart';
+part 'chat_provider_older_server.dart';
+part 'chat_provider_older_refresh.dart';
+part 'chat_provider_older_edge.dart';
+part 'chat_provider_older_end.dart';
+part 'chat_provider_older.dart';
 part 'chat_provider_outbox.dart';
 part 'chat_provider_thread_prefetch.dart';
 part 'chat_provider_history_restore.dart';
@@ -89,6 +100,13 @@ class ChatNotifier extends Notifier<ChatState>
         _ChatRequestsMixin,
         _ChatWsMixin,
         _ChatCacheMixin,
+        _ChatOlderDiskMixin,
+        _ChatOlderTopMixin,
+        _ChatOlderServerMixin,
+        _ChatOlderRefreshMixin,
+        _ChatOlderEdgeMixin,
+        _ChatOlderEndMixin,
+        _ChatOlderMixin,
         _ChatOutboxMixin,
         _ChatThreadPrefetchMixin,
         _ChatHistoryRestoreMixin,
@@ -293,6 +311,8 @@ class ChatNotifier extends Notifier<ChatState>
     _bootstrapped = false;
     _readMarks.clear();
     resetFeedHydration();
+    resetOlderPaging();
+    resetOlderRefresh();
     state = ChatState(
       currentUserId: clearCurrentUser ? '' : state.currentUserId,
     );

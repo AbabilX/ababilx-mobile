@@ -143,7 +143,7 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
       }
       final hasOlder =
           messages.isNotEmpty &&
-          await hasOlderOnDisk(
+          await (this as _ChatOlderDiskMixin).hasOlderOnDisk(
             conversationId,
             messages.first,
             threadRootId: threadRootId,
@@ -213,83 +213,6 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     state = state.copyWith(
       threadRepliesByRoot: {...state.threadRepliesByRoot, rootId: merged},
     );
-  }
-
-  /// Pages backwards through the local history when the server cannot be
-  /// reached (or was never asked). Returns false when disk has nothing more
-  /// to give, so the caller can fall back to its own error handling.
-  Future<bool> loadOlderFromDisk(
-    String conversationId,
-    String key, {
-    String? threadRootId,
-  }) async {
-    final feed = state.feeds[key];
-    if (feed == null || feed.messages.isEmpty) return false;
-    final oldest = feed.messages.first;
-    final older = await messageStore.page(
-      conversationId,
-      limit: threadRootId == null ? diskPageSize : _threadDiskPage,
-      beforeMs: messageTimeMs(oldest),
-      beforeId: oldest.id,
-      threadRootId: threadRootId,
-    );
-    final known = feed.messages.map((m) => m.id).toSet();
-    final fresh = older
-        .where((m) => !known.contains(m.id) && m.id != threadRootId)
-        .toList();
-    if (isDisposed) return true;
-    if (fresh.isEmpty) {
-      final latest = state.feeds[key] ?? feed;
-      setFeed(key, latest.copyWith(loadingMore: false, hasMore: false));
-      return true;
-    }
-    final decrypted = await decryptIfNeeded(fresh);
-    await warmMediaFrames(decrypted);
-    if (isDisposed) return true;
-    final latest = state.feeds[key] ?? feed;
-    setFeed(
-      key,
-      latest.copyWith(
-        messages: canonicalChatMessages([...decrypted, ...latest.messages]),
-        loadingMore: false,
-        // A short page means the disk ran out; a full one may have more.
-        hasMore:
-            older.length >=
-            (threadRootId == null ? diskPageSize : _threadDiskPage),
-      ),
-    );
-    if (threadRootId != null) syncThreadSummary(threadRootId, decrypted);
-    return true;
-  }
-
-  /// Whether the local store holds anything older than [oldest].
-  ///
-  /// The server is not the whole history any more. A webhook feed keeps only
-  /// its newest few messages server-side and the device is the archive, and a
-  /// free workspace's files age out the same way — so `has_more: false` means
-  /// "the server has no more", never "there is no more".
-  Future<bool> hasOlderOnDisk(
-    String conversationId,
-    ChatMessage oldest, {
-    String? threadRootId,
-  }) async {
-    if (threadRootId == null) {
-      return messageStore.hasOlderThan(
-        conversationId,
-        messageTimeMs(oldest),
-        beforeId: oldest.id,
-      );
-    }
-    // The store's EXISTS check covers top-level rows only; a one-row page
-    // under the root answers the same question for a thread.
-    final older = await messageStore.page(
-      conversationId,
-      limit: 1,
-      beforeMs: messageTimeMs(oldest),
-      beforeId: oldest.id,
-      threadRootId: threadRootId,
-    );
-    return older.isNotEmpty;
   }
 
   /// A page restored from the server's history, while its conversation may

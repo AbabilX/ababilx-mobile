@@ -1877,3 +1877,102 @@ receive  vault.decryptMessage -> _openAttachments -> real name/type/size + secre
   `shared/widgets/app_capsule.dart` (`AppCapsule` — use it instead of Material
   chips, SegmentedButton, OutlinedButton/TextButton on these pages and their
   sheets).
+
+# Scrollback reads the phone, not the server (2026-10-08)
+
+Reported as "everything finished loading after login, but scrolling up in a
+DM still loads from the web". It did: `loadMoreFeed` asked the server for
+every older page whenever the open had a cursor, and the store was only the
+fallback for a failed request. Each page of history the phone already held
+was downloaded, decrypted, written back (50 `DELETE`s per `saveAll`) and
+acknowledged again, behind a spinner, starting 120 px from the top.
+
+```
+inside a proven stretch  -> the store, at once, no request
+at its old end           -> the server, one page: stored, then read from the store
+no network               -> the store, whatever it holds
+```
+
+Signal's conversation reads its database and nothing else. Ours can do the
+same only where it has PROOF the store has no hole in it, which Signal's
+protocol gives for free and ours does not: the socket is suspended two
+minutes after backgrounding, the hub drops a frame when a client's buffer is
+full, and an open fetches only the newest 50. So two neighbours on disk can
+have a hundred messages missing between them, and nothing on disk says so.
+
+- **A `FeedSpan` is that proof** (`data/local/feed_spans.dart`,
+  `feed_span_store.dart`): a stretch `[lowMs, highMs]` whose every server
+  message was stored when it was fetched, with the server cursor at its old
+  end and `done` once the server had nothing older. Recorded by the newest
+  page at every open, by each older page, and by a finished restore walk
+  (`done` for the whole conversation — after a login restore every chat pages
+  from disk at once). Stretches that touch are joined. Stored in
+  SharedPreferences per conversation (`chat_feed_spans_v1:`).
+- **A span must leave with its rows.** One that outlives them calls an empty
+  store complete. `wipeConversationLocally`, `ChatArchiveWiper` and
+  `completeHistoryReset` clear it; a new place that deletes message rows must
+  too. Two guards catch a miss anyway: the store running out short of a
+  stretch's old end (`distrustBelow`), and the end of history being confirmed
+  with the server once per session (`confirmEnd`).
+- **The server lists by LAST ACTIVITY, not creation** (`ORDER BY
+  last_activity_at DESC`). A thread root sits where its newest reply is, so a
+  page's oldest row can be months old. `spanOfPage` therefore vouches only
+  down to the oldest message WITHOUT replies, and `fromCut` keeps such a root
+  off the screen until the reader reaches its own place. Drawn early it
+  becomes `messages.first`, the row the next disk page is read from before,
+  and everything between is skipped. A server page is shown by reading the
+  store back (`showOlderFromDisk`), never from the page's own rows, for the
+  same reason: the store also holds roots that arrived earlier.
+- **The newest page decides whether the screen still connects**
+  (`joinTopPage`). Reaches a proven stretch: nothing changes. Does not (more
+  than a page arrived while away): the timeline restarts from the page and
+  scrolling back walks through the hole in order. It used to draw the old
+  rows straight under the new ones as if nothing were missing. The one
+  exception is a reader already deep in local history nothing vouches for
+  (opened offline): they are left where they are.
+- **An empty page is not the end.** The cursor is a message id, and the
+  server answers an id it no longer holds (deleted, or a private-chat message
+  it let go) with the same empty page as "nothing older". `pullOlderChecked`
+  asks again from `olderAnchors` — settled, non-private messages on screen —
+  before believing it; with none to ask from, the conversation reads the
+  store for the rest of the session (`serverSilent`).
+- **Two pages are kept stored ahead** (`syncAhead`, `olderAheadRows`) while
+  the chat is active and its history is still being proven, so the reader
+  rarely reaches the old end. The timeline asks three viewports before the
+  top (`chat_timeline_older.dart`), and only once the reader has scrolled.
+- **`loadMoreFeed` is single-flight and returns the running load.** Awaiting
+  it means "that page landed". `loadingMore` is set only while waiting on the
+  server, so a disk page never flashes the spinner row.
+- **The store can be stale, so a page read from it is checked afterwards**
+  (`chat_provider_older_refresh.dart`). Receipts are never written to disk
+  and a reaction only when its feed is loaded, so without this old ticks and
+  reactions would be wrong forever. One request per page per socket
+  connection, compared by the server's `revision` (`compareServerCopy`):
+  unchanged rows are not decrypted or written; a receipt-only change is
+  patched without decryption. Limited to pages newer than
+  `olderRefreshWindow` (30 days) — older history is taken as stored, which is
+  what makes a deep scroll request-free. In unproven history the same check
+  runs for every page and is what inserts a message the phone never received.
+- **A server-blanked copy never replaces stored content**
+  (`keepingStoredContent`). After retention the server keeps the row and
+  empties it; the newest-page path wrote that over the phone's copy. Now
+  dropped from every page when the phone holds the content.
+- **Per-page work no longer grows with the feed.** `canonicalChatMessages`
+  compared every pair and re-parsed dates inside its sort; it is one lookup
+  per identity and one parse per message now, and also joins three copies of
+  a send in any arrival order. `TimelineModel` caches the list's derived
+  items per list instance.
+- `[ChatOlder] <feed> store|server|refresh rows=N Nms` in debug/profile
+  builds. A healthy scroll through stored history is all `store` lines.
+- **Limits.** Threads page as before (server first). A chat on an existing
+  install is fetched once more on its first scroll after this build, then
+  proven; only a restore proves everything up front. The in-memory window
+  still grows without bound. A thread root's reply count on disk can be
+  stale until its thread is opened. An edit or reaction older than 30 days
+  missed while offline is not picked up by scrolling. **Not device-tested.**
+- Tests: `feed_spans_test.dart`, `older_paging_rules_test.dart`,
+  `older_paging_test.dart`, `older_paging_edge_test.dart`,
+  `older_paging_offline_test.dart`, `older_paging_refresh_test.dart`
+  (shared `older_paging_harness.dart`: a fake server that pages by activity
+  and answers an unknown cursor with an empty page, as the real one does),
+  `chat_message_merge_order_test.dart`.

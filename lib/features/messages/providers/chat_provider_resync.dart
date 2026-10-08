@@ -25,6 +25,9 @@ mixin _ChatResyncMixin
     // Before bootstrap there is nothing loaded to be stale, and the sidebar
     // fetch would race the one bootstrap is already making.
     if (!realtimeStarted || isDisposed) return;
+    // Older pages read from disk were checked against the server once; a
+    // gap means they may have changed since.
+    (this as _ChatOlderRefreshMixin).forgetRefreshedOlder();
     unawaited(fetchSidebarSilent());
     final active = state.activeConversationId;
     if (active != null) {

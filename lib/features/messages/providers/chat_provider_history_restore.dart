@@ -19,6 +19,10 @@ mixin _ChatHistoryRestoreMixin
   Future<void> completeHistoryReset(String userId) async {
     await HistoryRestoreFlag.complete(userId);
     resetFeedHydration();
+    // Nothing proven about the old history describes the new one.
+    (this as _ChatOlderTopMixin).resetOlderPaging();
+    await ref.read(feedSpanStoreProvider).clearAll();
+    if (isDisposed) return;
     state = state.copyWith(
       feeds: const {},
       threadRepliesByRoot: const {},
@@ -96,8 +100,15 @@ mixin _ChatHistoryRestoreMixin
     }
   }
 
+  /// One conversation's restore walk on its own.
+  @visibleForTesting
+  Future<void> restoreConversation(String id) =>
+      _restoreConversation(id, () => isDisposed);
+
   Future<void> _restoreConversation(String id, bool Function() stopped) async {
     final threads = <String>{};
+    int? newestMs;
+    var reachedEnd = false;
     Future<void> pages({String? thread}) async {
       String? cursor;
       final seen = <String>{};
@@ -135,6 +146,11 @@ mixin _ChatHistoryRestoreMixin
           threads.addAll(
             page.messages.where((m) => m.threadCount > 0).map((m) => m.id),
           );
+          newestMs ??= page.messages.fold<int>(
+            0,
+            (top, m) => messageTimeMs(m) > top ? messageTimeMs(m) : top,
+          );
+          reachedEnd = !page.hasMore;
         }
         if (!page.hasMore) break;
         if (page.nextCursor.isEmpty || !seen.add(page.nextCursor)) {
@@ -145,6 +161,17 @@ mixin _ChatHistoryRestoreMixin
     }
 
     await pages();
+    // The whole timeline was just walked and stored, newest to oldest, so
+    // the store is known complete: scrollback reads it without asking again.
+    final top = newestMs;
+    if (reachedEnd && top != null && top > 0 && !stopped()) {
+      await ref
+          .read(feedSpanStoreProvider)
+          .update(
+            id,
+            (spans) => spans.add(FeedSpan(lowMs: 0, highMs: top, done: true)),
+          );
+    }
     for (final root in threads) {
       if (stopped()) return;
       await pages(thread: root);

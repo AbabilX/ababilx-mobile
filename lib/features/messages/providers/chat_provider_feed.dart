@@ -92,7 +92,9 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
           )
           .timeout(firstLoadNetworkTimeout);
       final messages = await decryptIfNeeded(page.messages);
-      final sorted = canonicalChatMessages(messages);
+      final sorted = await (this as _ChatOlderDiskMixin).keepingStoredContent(
+        canonicalChatMessages(messages),
+      );
       _acknowledge(conversationId, page.messages);
       await cache.stageFeedPage(sorted);
       unawaited((this as _ChatPrivateMixin).takePrivateCustody(sorted));
@@ -100,24 +102,44 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       // or equal to it, and merging after it keeps both.
       await hydration;
       if (isDisposed) return;
-      final latest = state.feeds[key] ?? const ChatFeed();
-      final merged = canonicalChatMessages([...latest.messages, ...sorted]);
+      // Main timeline only: what this page proves about the local store, and
+      // whether the rows on screen still connect to it — see [joinTopPage].
+      final join = threadRootId != null
+          ? null
+          : await (this as _ChatOlderTopMixin).joinTopPage(
+              conversationId,
+              key,
+              page,
+            );
+      if (isDisposed) return;
+      List<ChatMessage> shown(ChatFeed feed) {
+        final merged = canonicalChatMessages([...feed.messages, ...sorted]);
+        return join == null ? merged : join.shown(merged);
+      }
+
+      final merged = shown(state.feeds[key] ?? const ChatFeed());
       // A server page running out does NOT mean the conversation has no more
       // history. A webhook feed is trimmed to its newest few messages and the
       // device holds the archive; ask the local store before closing the
       // scrollback, or a feed would dead-end at whatever the server kept.
-      // With no cursor left, loadMoreFeed pages from disk on its own.
+      final onDisk =
+          threadRootId == null &&
+          merged.isNotEmpty &&
+          await (this as _ChatOlderDiskMixin).hasOlderOnDisk(
+            conversationId,
+            merged.first,
+          );
+      // A proven stretch short of the server's end always has more below.
       final hasMore =
           page.hasMore ||
-          (threadRootId == null &&
-              merged.isNotEmpty &&
-              await cache.hasOlderOnDisk(conversationId, merged.first));
+          onDisk ||
+          (join != null && !join.keepAll && !join.stretch.done);
       if (isDisposed) return;
-      final after = state.feeds[key] ?? latest;
+      final after = state.feeds[key] ?? const ChatFeed();
       setFeed(
         key,
         after.copyWith(
-          messages: canonicalChatMessages([...after.messages, ...sorted]),
+          messages: shown(after),
           nextCursor: page.nextCursor,
           hasMore: hasMore,
           fetchedAt: DateTime.now().millisecondsSinceEpoch,
@@ -167,70 +189,6 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
     unawaited(repo.acknowledgeMessages('delivered', ids).catchError((_) {}));
     if (state.activeConversationId == conversationId) {
       unawaited(repo.acknowledgeMessages('read', ids).catchError((_) {}));
-    }
-  }
-
-  Future<void> loadMoreFeed(
-    String conversationId, {
-    String? threadRootId,
-  }) async {
-    final key = feedKey(conversationId, threadRootId: threadRootId);
-    final feed = state.feeds[key] ?? const ChatFeed();
-    if (!feed.hasMore || feed.loadingMore) return;
-    final cache = this as _ChatCacheMixin;
-    setFeed(key, feed.copyWith(loadingMore: true));
-
-    // No server cursor yet — this feed was painted from disk (offline open),
-    // so page backwards through the local history instead of asking a server
-    // we have not successfully talked to. Threads included: their replies
-    // are on disk under the root, same as the main feed's messages.
-    if (feed.nextCursor.isEmpty) {
-      final served = await cache.loadOlderFromDisk(
-        conversationId,
-        key,
-        threadRootId: threadRootId,
-      );
-      if (!served) _stopLoadingMore(key, hasMore: false);
-      return;
-    }
-
-    try {
-      final page = await repo.listMessages(
-        conversationId,
-        cursor: feed.nextCursor,
-        limit: threadRootId != null ? 100 : 50,
-        thread: threadRootId,
-      );
-      final messages = await decryptIfNeeded(page.messages);
-      final sorted = canonicalChatMessages(messages);
-      _acknowledge(conversationId, page.messages);
-      await cache.stageFeedPage(sorted);
-      unawaited((this as _ChatPrivateMixin).takePrivateCustody(sorted));
-      if (isDisposed) return;
-      final latest = state.feeds[key] ?? feed;
-      final merged = canonicalChatMessages([...latest.messages, ...sorted]);
-      setFeed(
-        key,
-        latest.copyWith(
-          messages: merged,
-          loadingMore: false,
-          nextCursor: page.nextCursor,
-          hasMore: page.hasMore,
-          fetchedAt: DateTime.now().millisecondsSinceEpoch,
-        ),
-      );
-      if (threadRootId != null) cache.syncThreadSummary(threadRootId, sorted);
-    } catch (_) {
-      // Network gone mid-scroll: serve the older page from disk so the user
-      // keeps reading instead of hitting a dead end.
-      if (await cache.loadOlderFromDisk(
-        conversationId,
-        key,
-        threadRootId: threadRootId,
-      )) {
-        return;
-      }
-      _stopLoadingMore(key);
     }
   }
 

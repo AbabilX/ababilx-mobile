@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_provider.dart';
 import 'chat_timeline_jump.dart';
 import 'chat_timeline_load.dart';
+import 'chat_timeline_older.dart';
 import 'chat_timeline_selection.dart';
 import 'chat_timeline_unread.dart';
 import 'chat_timeline_view.dart';
@@ -34,6 +35,7 @@ class ChatTimeline extends ConsumerStatefulWidget {
 class _ChatTimelineState extends ConsumerState<ChatTimeline>
     with
         ChatTimelineLoad,
+        ChatTimelineOlder,
         ChatTimelineUnread,
         ChatTimelineJump,
         ChatTimelineSelection {
@@ -71,6 +73,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
         oldWidget.threadRootId != widget.threadRootId) {
       _previousNewestMessageId = null;
       resetUnreadAnchor();
+      resetOlderLoading();
       loadFeed();
       if (!_headerVisible) setState(() => _headerVisible = true);
       _lastPixels = 0;
@@ -111,14 +114,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
     final wantPill = pixels > _jumpPillThreshold;
     if (wantPill != _showJumpPill) setState(() => _showJumpPill = wantPill);
 
-    if (pixels >= pos.maxScrollExtent - 120) {
-      ref
-          .read(chatProvider.notifier)
-          .loadMoreFeed(
-            widget.conversationId,
-            threadRootId: widget.threadRootId,
-          );
-    }
+    loadOlderIfNear();
 
     if (widget.header == null) {
       _lastPixels = pixels;
@@ -166,6 +162,7 @@ class _ChatTimelineState extends ConsumerState<ChatTimeline>
     }
     _previousNewestMessageId = newestMessageId;
     pruneSelection(feed.messages);
+    keepOlderLead(feed);
 
     return jumpScope(
       child: ChatTimelineView(

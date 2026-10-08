@@ -6,24 +6,66 @@ import 'models/chat_message.dart';
 /// A send can appear as a local bubble (`id == clientRef`), a websocket copy
 /// that echoes `client_message_id`, and a history-page copy that only has the
 /// server id. Those are one message. Live + local must never both stay.
+///
+/// Linear in the size of the feed: this runs on every page and every socket
+/// message, over the whole open timeline. Finding "the same send" is a lookup
+/// by each identity a kept message answers to, and each timestamp is parsed
+/// once — comparing every pair, and re-parsing dates inside the sort, made
+/// each page of scrollback slower than the one before it.
 List<ChatMessage> canonicalChatMessages(Iterable<ChatMessage> messages) {
-  final merged = <ChatMessage>[];
+  final merged = <ChatMessage?>[];
+  final places = <String, int>{};
+  // A slot emptied because its row turned out to be another slot's send.
+  final movedTo = <int, int>{};
+  int? placeOf(String? identity) {
+    if (identity == null || identity.isEmpty) return null;
+    var index = places[identity];
+    while (index != null && movedTo.containsKey(index)) {
+      index = movedTo[index];
+    }
+    return index;
+  }
+
   for (final message in messages) {
     if (message.id.isEmpty) continue;
-    final index = merged.indexWhere(
-      (existing) => sameChatMessage(existing, message),
-    );
-    if (index < 0) {
+    final byId = placeOf(message.id);
+    final byRef = placeOf(message.clientRef);
+    final index = byId ?? byRef;
+    if (index == null) {
       merged.add(message);
+      _claim(places, message, merged.length - 1);
       continue;
     }
-    merged[index] = preferCanonicalChatMessage(merged[index], message);
+    var kept = merged[index]!;
+    if (byRef != null && byRef != index) {
+      // This copy carries both the server id and the client ref, and so
+      // shows two rows kept apart until now — the local bubble and a
+      // history copy without a ref — to be one send.
+      kept = preferCanonicalChatMessage(merged[byRef]!, kept);
+      merged[byRef] = null;
+      movedTo[byRef] = index;
+    }
+    merged[index] = preferCanonicalChatMessage(kept, message);
+    // Both copies' identities keep pointing here, whichever one was kept.
+    _claim(places, message, index);
   }
-  merged.sort((left, right) {
-    final byTime = _messageTime(left).compareTo(_messageTime(right));
-    return byTime != 0 ? byTime : left.id.compareTo(right.id);
-  });
-  return merged;
+  final timed =
+      [
+        for (final m in merged)
+          if (m != null) (message: m, at: _messageTime(m)),
+      ]..sort((left, right) {
+        final byTime = left.at.compareTo(right.at);
+        return byTime != 0
+            ? byTime
+            : left.message.id.compareTo(right.message.id);
+      });
+  return [for (final entry in timed) entry.message];
+}
+
+void _claim(Map<String, int> places, ChatMessage message, int index) {
+  places[message.id] = index;
+  final ref = message.clientRef;
+  if (ref != null && ref.isNotEmpty) places[ref] = index;
 }
 
 /// True when [a] and [b] are the same send: same server id, same client ref,
