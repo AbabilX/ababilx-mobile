@@ -36,24 +36,27 @@ class _DiscoveryPhoneFieldState extends State<DiscoveryPhoneField> {
   @override
   void initState() {
     super.initState();
-    _country = phoneCountryOfNumber(widget.stored) ?? _deviceCountry();
+    _country = phoneCountryOfNumber(widget.stored) ?? phoneCountryByIso('BD')!;
     _ctrl = TextEditingController(
       text: nationalPartOf(widget.stored, _country),
     );
-  }
-
-  /// The phone's own region, so most people never open the picker.
-  PhoneCountry _deviceCountry() {
-    final region =
-        WidgetsBinding.instance.platformDispatcher.locale.countryCode;
-    return phoneCountryByIso(region) ?? phoneCountryByIso('BD')!;
   }
 
   /// A full number pasted with its own "+code" picks the country itself.
   void _onChanged(String value) {
     final pasted = value.trim();
     final country = phoneCountryOfNumber(pasted.replaceAll(' ', ''));
-    if (country == null) return setState(() {});
+    if (country == null) {
+      // The 0 dialled inside one's own country is not part of the number.
+      if (_country.iso != 'IT' && pasted.startsWith('0')) {
+        final cut = pasted.replaceFirst(RegExp(r'^0+'), '');
+        _ctrl.value = TextEditingValue(
+          text: cut,
+          selection: TextSelection.collapsed(offset: cut.length),
+        );
+      }
+      return setState(() {});
+    }
     final rest = nationalPartOf(
       '+${pasted.replaceAll(RegExp(r'[^0-9]'), '')}',
       country,
