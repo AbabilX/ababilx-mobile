@@ -6,6 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/text/byte_size.dart';
+import '../../../shared/widgets/file_preview_open.dart';
+import '../../../shared/widgets/image_preview.dart';
+import '../../../shared/widgets/video_preview.dart';
+import '../../../shared/widgets/video_source.dart';
 import '../../attachments/storage/storage_usage.dart';
 import '../../messages/chat_icon.dart';
 import 'storage_bucket_filter.dart';
@@ -61,11 +65,44 @@ class StorageReviewTile extends StatelessWidget {
                   : theme.colorScheme.onSurfaceVariant,
             )
           : null,
-      onTap: onToggle,
-      // Long-press starts a selection the same way the timeline does, so the
-      // first tap on this screen can still just be a mis-tap.
-      onLongPress: onToggle,
+      // Long-press starts a selection; while one is running a tap adds or
+      // removes a row, and otherwise a tap previews the file.
+      onTap: selecting ? onToggle : () => _preview(context),
+      onLongPress: selecting ? null : onToggle,
     );
+  }
+
+  void _preview(BuildContext context) {
+    final path = item.localPath;
+    if (path.isEmpty) return;
+    switch (item.bucket) {
+      case StorageBucket.photos:
+        showImagePreview(
+          context,
+          images: [
+            PreviewImage(
+              fileUrl: item.urlKey,
+              fileName: item.fileName,
+              localPath: path,
+            ),
+          ],
+          initialIndex: 0,
+          allowRemoteFallback: false,
+        );
+      case StorageBucket.videos:
+        showVideoPreview(
+          context,
+          source: VideoSource.file(path),
+          fileName: item.fileName,
+        );
+      case StorageBucket.audio:
+      case StorageBucket.documents:
+        openPreviewExternally(
+          context,
+          localPath: path,
+          contentType: item.contentType,
+        );
+    }
   }
 
   static String _when(int ms) {
