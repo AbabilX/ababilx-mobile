@@ -71,23 +71,28 @@ class ReadMoreRow extends StatelessWidget {
   final String? editedAt;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 2),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(4),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => LongMessageScreen(body: body, editedAt: editedAt),
+  Widget build(BuildContext context) => Align(
+    // Right edge of the bubble. Only a long body gets this row, and those
+    // already run to the bubble's width cap, so the Align stretches nothing.
+    alignment: Alignment.centerRight,
+    child: Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(4),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => LongMessageScreen(body: body, editedAt: editedAt),
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Text(
-          'Read more',
-          style: TextStyle(
-            color: colors.foreground,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Text(
+            'Read more',
+            style: TextStyle(
+              color: colors.foreground,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),
