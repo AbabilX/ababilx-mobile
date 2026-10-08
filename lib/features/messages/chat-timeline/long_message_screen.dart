@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../chat-pins/pinned_messages_chrome.dart';
+import '../chat_icon.dart';
 import '../tiptap_plain_text.dart';
 import '../tiptap_viewer.dart';
 import 'user_profile_sheet.dart';
@@ -71,17 +73,48 @@ class LongMessageScreen extends ConsumerWidget {
             right: 0,
             child: PinnedMessagesTopBar(
               title: 'Message',
+              backLabel: AppTranslations.translate(
+                context,
+                ref,
+                'recovery_back',
+              ),
               bottomPadding: 8,
-              trailing: PinnedMessagesCircleButton(
-                icon: HugeIcons.strokeRoundedCopy01,
-                tooltip: 'Copy',
-                onPressed: () async {
-                  await Clipboard.setData(
-                    ClipboardData(text: tiptapToPlainText(body)),
-                  );
-                  if (!context.mounted) return;
-                  showAppToast(context, 'Message copied');
-                },
+              trailing: HeaderPill(
+                shape: const StadiumBorder(),
+                child: InkWell(
+                  customBorder: const StadiumBorder(),
+                  onTap: () async {
+                    await Clipboard.setData(
+                      ClipboardData(text: tiptapToPlainText(body)),
+                    );
+                    if (!context.mounted) return;
+                    showAppToast(context, 'Message copied');
+                  },
+                  child: SizedBox(
+                    height: 44,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ChatIcon(
+                            HugeIcons.strokeRoundedCopy01,
+                            size: 20,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Copy',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
