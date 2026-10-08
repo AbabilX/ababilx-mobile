@@ -1,11 +1,16 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:ababilx/features/calls/group/call_icons.dart';
 import 'package:ababilx/features/calls/providers/voice_call_state.dart';
 import 'package:ababilx/features/calls/widgets/call_controls_row.dart';
 import 'package:ababilx/features/calls/widgets/connected_call_body.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Finder glyph(CallGlyph icon) => find.byWidgetPredicate(
+  (widget) => widget is CallIcon && identical(widget.icon, icon),
+);
 
 void main() {
   Widget host(
@@ -75,14 +80,12 @@ void main() {
         host(theme, end: () => ended++, minimize: () => minimized++),
       );
       await tester.pump();
-      final mute = tester.getCenter(find.byIcon(Icons.mic_rounded));
-      final camera = tester.getCenter(find.byIcon(Icons.videocam_off_rounded));
-      final share = tester.getCenter(find.byIcon(Icons.screen_share_rounded));
-      final speaker = tester.getCenter(find.byIcon(Icons.hearing_rounded));
-      final end = tester.getCenter(find.byIcon(Icons.call_end_rounded));
-      final minimize = tester.getCenter(
-        find.byIcon(Icons.keyboard_arrow_down_rounded),
-      );
+      final mute = tester.getCenter(glyph(CallIcons.micOn));
+      final camera = tester.getCenter(glyph(CallIcons.cameraOff));
+      final share = tester.getCenter(glyph(CallIcons.screenShare));
+      final speaker = tester.getCenter(glyph(CallIcons.speakerOff));
+      final end = tester.getCenter(glyph(CallIcons.leave));
+      final minimize = tester.getCenter(glyph(CallIcons.minimize));
       // Row one: Camera · Screen Share · Speaker.
       expect(camera.dy, closeTo(share.dy, 0.5));
       expect(share.dy, closeTo(speaker.dy, 0.5));
@@ -100,23 +103,23 @@ void main() {
       expect(share.dx - camera.dx, lessThan(390 / 3 - 4));
       expect(share.dx, closeTo(390 / 2, 0.5));
       expect(find.text('Minimize'), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded));
+      await tester.tap(glyph(CallIcons.minimize));
       expect(minimized, 1);
       // The encrypted line sits over the deck.
       final label = tester.getRect(find.text('End-to-end encrypted'));
       expect(label.bottom, lessThan(camera.dy));
       expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
       expect(
-        tester.widget<Icon>(find.byIcon(Icons.call_end_rounded)).color,
+        tester.widget<CallIcon>(glyph(CallIcons.leave)).color,
         Colors.white,
       );
       expect(
-        tester.widget<Icon>(find.byIcon(Icons.mic_rounded)).color,
+        tester.widget<CallIcon>(glyph(CallIcons.micOn)).color,
         Colors.white,
       );
       expect(find.text('End'), findsOneWidget);
       expect(find.text('Screen Share'), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.call_end_rounded));
+      await tester.tap(glyph(CallIcons.leave));
       expect(ended, 1);
       expect(tester.takeException(), isNull);
       if (const bool.fromEnvironment('CALL_UI_SCREENSHOTS')) {
@@ -159,18 +162,16 @@ void main() {
       expect(find.text('মিউট'), findsNothing);
       expect(find.byIcon(Icons.lock_rounded), findsNothing);
 
-      final mute = tester.getCenter(find.byIcon(Icons.mic_rounded));
-      final end = tester.getCenter(find.byIcon(Icons.call_end_rounded));
+      final mute = tester.getCenter(glyph(CallIcons.micOn));
+      final end = tester.getCenter(glyph(CallIcons.leave));
       // Minimize is the top chevron here, not a seat in the strip.
-      final chevron = tester.getCenter(
-        find.byIcon(Icons.keyboard_arrow_down_rounded),
-      );
+      final chevron = tester.getCenter(glyph(CallIcons.minimize));
       expect(chevron.dx, lessThan(size.width * 0.5));
       expect(end.dx, closeTo(mute.dx, 2.0));
       expect(end.dy, isNot(closeTo(mute.dy, 8.0)));
       expect(mute.dx, greaterThan(size.width * 0.5));
 
-      await tester.tap(find.byIcon(Icons.call_end_rounded));
+      await tester.tap(glyph(CallIcons.leave));
       expect(ended, isTrue);
       expect(tester.takeException(), isNull);
     },
@@ -190,7 +191,7 @@ void main() {
         ),
       );
       await tester.pump();
-      final mute = tester.getCenter(find.byIcon(Icons.mic_rounded));
+      final mute = tester.getCenter(glyph(CallIcons.micOn));
       expect(mute.dx, lessThan(size.width * 0.5));
       expect(tester.takeException(), isNull);
     },
@@ -212,9 +213,9 @@ void main() {
         );
         await tester.pump();
         expect(tester.takeException(), isNull);
-        final camera = tester.getRect(find.byIcon(Icons.videocam_off_rounded));
-        final speaker = tester.getRect(find.byIcon(Icons.hearing_rounded));
-        final end = tester.getRect(find.byIcon(Icons.call_end_rounded));
+        final camera = tester.getRect(glyph(CallIcons.cameraOff));
+        final speaker = tester.getRect(glyph(CallIcons.speakerOff));
+        final end = tester.getRect(glyph(CallIcons.leave));
         // Inside the screen, and clear of the caller's name above.
         expect(camera.left, greaterThan(8));
         expect(speaker.right, lessThan(size.width - 8));
@@ -235,7 +236,7 @@ void main() {
         final seat = tester.getSize(
           find
               .ancestor(
-                of: find.byIcon(Icons.call_end_rounded),
+                of: glyph(CallIcons.leave),
                 matching: find.byType(ClipOval),
               )
               .first,
@@ -288,7 +289,7 @@ void main() {
         end: () => ended = true,
       ),
     );
-    await tester.tap(find.byIcon(Icons.call_end_rounded));
+    await tester.tap(glyph(CallIcons.leave));
     expect(ended, isTrue);
   });
 
@@ -298,6 +299,6 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(host(ThemeData()));
-    expect(find.byIcon(Icons.keyboard_arrow_down_rounded), findsOneWidget);
+    expect(glyph(CallIcons.minimize), findsOneWidget);
   });
 }

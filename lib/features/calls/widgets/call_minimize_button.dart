@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../group/call_icons.dart';
+
 /// Chevron that leaves the call screen without hanging up.
 ///
 /// Circular glass disc so it stays readable on both light and dark wallpapers.
@@ -43,10 +45,10 @@ class CallMinimizeButton extends StatelessWidget {
                     ),
                   ),
                   const Center(
-                    child: Icon(
-                      Icons.keyboard_arrow_down_rounded,
+                    child: CallIcon(
+                      CallIcons.minimize,
                       color: Colors.white,
-                      size: 26,
+                      size: 24,
                     ),
                   ),
                 ],

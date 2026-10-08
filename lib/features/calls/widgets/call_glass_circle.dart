@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../group/call_icons.dart';
 import 'call_controls_anchor.dart';
 import 'call_top_bar.dart' show callTextShadow;
 
@@ -24,7 +25,7 @@ class CallGlassCircle extends StatefulWidget {
     this.glow = false,
   });
 
-  final IconData icon;
+  final CallGlyph icon;
   final VoidCallback? onPressed;
   final String? label;
   final String? semanticLabel;
@@ -61,7 +62,7 @@ class _CallGlassCircleState extends State<CallGlassCircle> {
       turns: turns / 4,
       duration: callControlsOrientDuration,
       curve: Curves.easeOutCubic,
-      child: Icon(widget.icon, size: iconSize, color: fg),
+      child: CallIcon(widget.icon, size: iconSize, color: fg),
     );
 
     final circle = AnimatedOpacity(

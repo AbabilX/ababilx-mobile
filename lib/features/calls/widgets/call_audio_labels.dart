@@ -1,15 +1,14 @@
-import 'package:flutter/material.dart';
-
 import '../../../core/localization/app_translations.dart';
 import '../audio/call_audio_output.dart';
+import '../group/call_icons.dart';
 
 /// Icons and names for call audio outputs — Signal's `WebRtcAudioOutput`
 /// labels and `toFriendlyName`.
-IconData callAudioOutputIcon(CallAudioOutput output) => switch (output) {
-  CallAudioOutput.handset => Icons.hearing_rounded,
-  CallAudioOutput.bluetooth => Icons.bluetooth_audio_rounded,
-  CallAudioOutput.wiredHeadset => Icons.headphones_rounded,
-  _ => Icons.volume_up_rounded,
+CallGlyph callAudioOutputIcon(CallAudioOutput output) => switch (output) {
+  CallAudioOutput.handset => CallIcons.speakerOff,
+  CallAudioOutput.bluetooth => CallIcons.bluetoothAudio,
+  CallAudioOutput.wiredHeadset => CallIcons.wiredHeadset,
+  _ => CallIcons.speakerOn,
 };
 
 /// The caption under the button.

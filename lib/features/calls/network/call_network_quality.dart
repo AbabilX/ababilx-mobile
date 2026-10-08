@@ -18,6 +18,11 @@ final ValueNotifier<CallNetworkLevel> callOwnLinkQuality = ValueNotifier(
   CallNetworkLevel.unknown,
 );
 
+/// True while the live 1:1 call is holding this phone's camera back because
+/// the link cannot carry voice and picture together — see `VoiceVideoHold`.
+/// The camera is still on; nothing of it is being sent.
+final ValueNotifier<bool> callVideoHeld = ValueNotifier(false);
+
 /// The level one round trip to the server deserves; null is one that failed
 /// or timed out. A request is slower than a media packet (TLS, HTTP, the
 /// server's own work), so the bar sits higher than [rateNetworkSample]'s.

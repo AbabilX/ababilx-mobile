@@ -19,8 +19,6 @@ class CallNetworkStatsReader {
     double? jitterMs;
     double? remoteLoss;
     double? rttMs;
-    String? selectedPair;
-    final pairs = <String, Map<dynamic, dynamic>>{};
 
     for (final report in stats) {
       final v = report.values;
@@ -41,16 +39,10 @@ class CallNetworkStatsReader {
           if (fraction != null && fraction * 100 > (remoteLoss ?? 0)) {
             remoteLoss = fraction * 100;
           }
-        case 'transport':
-          final id = v['selectedCandidatePairId'];
-          if (id is String && id.isNotEmpty) selectedPair = id;
-        case 'candidate-pair':
-          pairs[report.id] = v;
       }
     }
 
-    final pair = pairs[selectedPair] ?? _activePair(pairs.values);
-    final rtt = _num(pair?['currentRoundTripTime']);
+    final rtt = _num(selectedCandidatePair(stats)?['currentRoundTripTime']);
     if (rtt != null && rtt > 0) rttMs = rtt * 1000;
 
     double? inboundLoss;
@@ -82,24 +74,37 @@ class CallNetworkStatsReader {
     );
   }
 
-  static Map<dynamic, dynamic>? _activePair(
-    Iterable<Map<dynamic, dynamic>> pairs,
-  ) {
-    for (final pair in pairs) {
-      if (pair['selected'] == true) return pair;
-    }
-    for (final pair in pairs) {
-      if (pair['nominated'] == true && pair['state'] == 'succeeded') {
-        return pair;
-      }
-    }
-    return null;
-  }
+  static num? _num(Object? value) => statNum(value);
+}
 
-  /// Android hands numbers over as numbers, some platforms as strings.
-  static num? _num(Object? value) {
-    if (value is num) return value;
-    if (value is String) return num.tryParse(value);
-    return null;
+/// The candidate pair carrying the call, out of one stats report: the one
+/// the transport names, else the one marked selected, else a nominated pair
+/// that succeeded.
+Map<dynamic, dynamic>? selectedCandidatePair(List<StatsReport> stats) {
+  String? named;
+  final pairs = <String, Map<dynamic, dynamic>>{};
+  for (final report in stats) {
+    if (report.type == 'transport') {
+      final id = report.values['selectedCandidatePairId'];
+      if (id is String && id.isNotEmpty) named = id;
+    } else if (report.type == 'candidate-pair') {
+      pairs[report.id] = report.values;
+    }
   }
+  final byName = pairs[named];
+  if (byName != null) return byName;
+  for (final pair in pairs.values) {
+    if (pair['selected'] == true) return pair;
+  }
+  for (final pair in pairs.values) {
+    if (pair['nominated'] == true && pair['state'] == 'succeeded') return pair;
+  }
+  return null;
+}
+
+/// Android hands numbers over as numbers, some platforms as strings.
+num? statNum(Object? value) {
+  if (value is num) return value;
+  if (value is String) return num.tryParse(value);
+  return null;
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/app_translations.dart';
 import '../audio/call_audio_output.dart';
 import '../audio/call_audio_route.dart';
+import '../group/call_icons.dart';
 import 'call_audio_labels.dart';
 
 export 'call_audio_labels.dart';
@@ -149,8 +150,9 @@ class _OutputRow extends StatelessWidget {
                   color: selected ? scheme.primary : scheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 16),
-                Icon(
+                CallIcon(
                   callAudioOutputIcon(option.output),
+                  size: 24,
                   color: scheme.onSurface,
                 ),
                 const SizedBox(width: 16),

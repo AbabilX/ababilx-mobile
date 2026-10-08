@@ -1349,6 +1349,44 @@ orphan was invisible and outlived everything except a force-stop.
 - Not reproduced on a real device — the emulator's orphan matches the reported
   symptom exactly, but the device case was only ever seen once, by hand.
 
+## Voice before picture on a weak link (2026-10-08)
+
+1:1 calls only. WebRTC still estimates the bandwidth; nothing here does.
+
+```
+priority   mic sender `high` (4.0), camera/screen `veryLow` (0.5)
+           -> what is left after each lane's minimum fills the voice first
+hold       send estimate < 100 kbps for 8 s while the camera really sends
+           (>= 20 kbps) -> sender.replaceTrack(null), media map camera ''
+resume     voice path rated good for 10 s -> replaceTrack(track), map again
+           held again soon after -> wait doubles (20, 40, 80, 120 s cap);
+           a picture that lasts 60 s resets it
+```
+
+- `webrtc/voice_audio_priority.dart`, `voice_video_hold.dart` (the rule,
+  pure, tested), `voice_send_stats.dart`, `voice_send_watch.dart`; applied
+  in `VoicePeerEngine._watchSend`, fed by the existing 2 s stats poll.
+- **The estimate cannot say when the link is back.** With only the voice
+  going out WebRTC has nothing to measure a bigger path with (the estimate
+  stays near 1.5x what is sent). So resume is "the voice path is good, try
+  the picture", and a camera that just started is not judged for 12 s.
+- **The capture stays open while held** and the transceiver stays: no
+  renegotiation, no camera reopen. `state.cameraOn` stays true — the user's
+  switch is their intent. The far side is told through the ordinary media
+  map, so it draws "camera off", not a frozen frame.
+- **Never await a signal inside the stats poll.** `sendWhenConnected` waits
+  up to 8 s for a dead socket; the poll is what reports the call healthy.
+- A low estimate with almost no video going out (covered lens, app in the
+  background) is not a hold: stopping it would free nothing.
+- UI: `callVideoHeld` (global notifier, like `callNetworkQuality`) dims the
+  own-camera thumbnail and turns the network badge into "Weak network ·
+  video paused". Screen share is never held.
+- Device check: `adb logcat -s flutter | grep -E "audio.opus|audio.priority|stats.send|camera.hold"`.
+  `audio.opus` (once, 5 s in): negotiated Opus fmtp both ways +
+  `transportCc`. `stats.send` (every 10 s, and on each hold/resume):
+  `audio=sent/target video=sent/target est=` in kbps.
+- Not ported to web or desktop. Not device-tested.
+
 ## A share stopped from the system ends the share (2026-09-22)
 
 Ending a screen share from outside the app (status-bar "sharing" chip, Cast

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
+import '../network/call_network_quality.dart';
 import 'call_video_view.dart';
 
 /// Our own camera as a thumbnail in the corner, with the flip button on it —
@@ -29,6 +30,22 @@ class LocalCameraPreview extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             CallVideoView(stream: stream, mirror: mirror),
+            // Held back on a weak link: the camera is on, nobody sees it.
+            ValueListenableBuilder<bool>(
+              valueListenable: callVideoHeld,
+              builder: (context, held, _) => held
+                  ? ColoredBox(
+                      color: Colors.black.withValues(alpha: 0.62),
+                      child: const Center(
+                        child: Icon(
+                          Icons.videocam_off_rounded,
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
             Positioned(
               right: 6,
               bottom: 6,

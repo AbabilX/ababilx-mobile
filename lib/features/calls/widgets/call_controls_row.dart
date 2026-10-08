@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../audio/call_audio_output.dart';
+import '../group/call_icons.dart';
 import '../providers/voice_call_state.dart';
 import 'call_audio_dropdown.dart';
 import 'call_audio_output_sheet.dart';
@@ -96,7 +97,7 @@ class CallControlsRow extends StatelessWidget {
     final seatIcon = seatD * 0.42;
 
     Widget seat({
-      required IconData icon,
+      required CallGlyph icon,
       required String name,
       required bool selected,
       required VoidCallback? onPressed,
@@ -123,21 +124,21 @@ class CallControlsRow extends StatelessWidget {
 
     final face = CallAudioButtonFace.of(audio, speaker: call.speaker);
     final mute = seat(
-      icon: call.muted ? Icons.mic_off_rounded : Icons.mic_rounded,
+      icon: call.muted ? CallIcons.micMuted : CallIcons.micOn,
       name: tr(call.muted ? 'group_unmute' : 'group_mute'),
       selected: call.muted,
       onPressed: _live ? onToggleMute : null,
     );
     final camera = seat(
-      icon: call.cameraOn ? Icons.videocam_rounded : Icons.videocam_off_rounded,
+      icon: call.cameraOn ? CallIcons.cameraOn : CallIcons.cameraOff,
       name: tr('chat_camera'),
       selected: call.cameraOn,
       onPressed: _connected ? onToggleCamera : null,
     );
     final share = seat(
       icon: call.screenSharing
-          ? Icons.stop_screen_share_rounded
-          : Icons.screen_share_rounded,
+          ? CallIcons.screenShareStop
+          : CallIcons.screenShare,
       name: tr(
         call.screenSharing
             ? 'call_control_stop'
@@ -161,7 +162,7 @@ class CallControlsRow extends StatelessWidget {
 
     final end = seat(
       key: const ValueKey('call-end'),
-      icon: Icons.call_end_rounded,
+      icon: CallIcons.leave,
       name: hangLabel,
       selected: false,
       background: const Color(0xFFE2554A),
@@ -171,14 +172,13 @@ class CallControlsRow extends StatelessWidget {
     );
     final minimize = seat(
       key: const ValueKey('call-minimize'),
-      icon: Icons.keyboard_arrow_down_rounded,
+      icon: CallIcons.minimize,
       name: tr('call_control_minimize'),
       selected: false,
       onPressed: onMinimize,
     );
 
-    // Captions stop growing at [_maxLabelScale]: past it a two-word label
-    // wraps under a seat that is already as small as a thumb allows.
+    // Past [_maxLabelScale] a two-word caption wraps under its seat.
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: _maxLabelScale,
       child: CallControlsDeck(

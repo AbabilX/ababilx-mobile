@@ -10,10 +10,13 @@ import '../voice_call_log.dart';
 import 'ice_candidate_stats.dart';
 import '../network/call_network_quality.dart';
 import '../network/call_network_stats.dart';
+import 'voice_audio_codec_log.dart';
 import 'voice_audio_priority.dart';
 import 'voice_audio_progress.dart';
 import 'voice_camera_capture.dart';
 import 'voice_media_map.dart';
+import 'voice_send_watch.dart';
+import 'voice_video_hold.dart';
 import 'voice_video_quality.dart';
 
 typedef VoiceSignalSender = Future<bool> Function(Map<String, dynamic> signal);
@@ -113,6 +116,11 @@ class VoicePeerEngine {
   final _audioProgress = VoiceAudioProgress();
   final _networkStats = CallNetworkStatsReader();
   final _networkTrend = CallNetworkTrend();
+  final _sendWatch = VoiceSendWatch();
+
+  /// The camera is on but held off the wire: the link cannot carry voice and
+  /// picture together — see [VoiceVideoHold].
+  bool _cameraHeld = false;
   Timer? _audioHealthTimer;
   bool _audioHealthPending = false;
   bool _answerReceived = false;
@@ -315,6 +323,7 @@ class VoicePeerEngine {
       return;
     }
     _camera = camera;
+    _clearCameraHold();
     var needsOffer = false;
     try {
       final sender = _cameraSender;
@@ -358,6 +367,7 @@ class VoicePeerEngine {
     final camera = _camera;
     if (camera == null) return;
     _camera = null;
+    _clearCameraHold();
     try {
       await _cameraSender?.replaceTrack(null);
     } catch (e) {
@@ -390,7 +400,10 @@ class VoicePeerEngine {
     if (_disposed) return;
     await sendSignal({
       'kind': 'media',
-      'camera_stream': _camera == null ? '' : (_cameraWireStreamId ?? ''),
+      // A held camera is off as far as the other side can see.
+      'camera_stream': _camera == null || _cameraHeld
+          ? ''
+          : (_cameraWireStreamId ?? ''),
       'screen_stream': _screenStream?.id ?? '',
     });
   }
@@ -580,13 +593,66 @@ class VoicePeerEngine {
       }
       if (_audioProgress.update(packets)) onHealthy();
       // The same report says how well the path is carrying the call.
-      callNetworkQuality.value = _networkTrend.add(_networkStats.read(stats));
+      final path = _networkStats.read(stats);
+      callNetworkQuality.value = _networkTrend.add(path);
+      await _watchSend(peer, stats, path);
     } catch (_) {
       // An unavailable stats sample is not evidence of call failure.
       _audioProgress.update({});
     } finally {
       _audioHealthPending = false;
     }
+  }
+
+  /// Logs what is going out and, on a link too thin for voice and picture
+  /// together, takes the camera off the wire until it recovers. Never throws:
+  /// a failure here must not read as a failed stats sample.
+  Future<void> _watchSend(
+    RTCPeerConnection peer,
+    List<StatsReport> stats,
+    CallNetworkSample path,
+  ) async {
+    try {
+      final action = _sendWatch.onStats(
+        stats,
+        path,
+        cameraOn: _camera != null,
+        live:
+            peer.connectionState ==
+            RTCPeerConnectionState.RTCPeerConnectionStateConnected,
+      );
+      if (action == VideoHoldAction.none || _disposed) return;
+      final camera = _camera;
+      final sender = _cameraSender;
+      final hold = action == VideoHoldAction.hold;
+      try {
+        if (camera == null || sender == null) throw StateError('no sender');
+        // The capture stays open, so the picture comes back without the
+        // camera reopening, and the transceiver stays, so nothing is
+        // renegotiated.
+        await sender.replaceTrack(hold ? null : camera.track);
+      } catch (error) {
+        voiceCallLog('camera.hold.failed', reason: error.toString());
+        _sendWatch.undo(action);
+        return;
+      }
+      // Turned off or swapped while that was in flight: theirs is the last
+      // word, and it has already cleared the hold.
+      if (_disposed || !identical(camera, _camera)) return;
+      _cameraHeld = hold;
+      callVideoHeld.value = hold;
+      // Not awaited: with the socket down a signal waits seconds for it, and
+      // this runs inside the poll that watches the call's health.
+      unawaited(_sendMediaMap().catchError((_) {}));
+    } catch (error) {
+      voiceCallLog('stats.send.failed', reason: error.toString());
+    }
+  }
+
+  void _clearCameraHold() {
+    _cameraHeld = false;
+    callVideoHeld.value = false;
+    _sendWatch.cameraChanged();
   }
 
   Future<void> _flushCandidates() async {
@@ -646,6 +712,7 @@ class VoicePeerEngine {
     if (peer == null || _disposed) return;
     try {
       final stats = await peer.getStats();
+      await logAudioCodec(peer, stats);
       for (final report in stats) {
         final v = report.values;
         if (report.type == 'inbound-rtp' && v['kind'] == 'audio') {
@@ -910,6 +977,7 @@ class VoicePeerEngine {
     _audioHealthTimer?.cancel();
     _audioHealthTimer = null;
     callNetworkQuality.value = CallNetworkLevel.unknown;
+    _clearCameraHold();
     await stopScreenShare(renegotiate: false);
     _renegotiateFallback?.cancel();
     _renegotiateFallback = null;

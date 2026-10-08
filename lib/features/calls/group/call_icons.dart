@@ -13,8 +13,12 @@ class CallIcons {
   static const CallGlyph micOn = HugeIcons.strokeRoundedMic01;
   static const CallGlyph micMuted = HugeIcons.strokeRoundedMicOff01;
   static const CallGlyph leave = HugeIcons.strokeRoundedCallEnd01;
+  static const CallGlyph cameraOn = HugeIcons.strokeRoundedVideo01;
+  static const CallGlyph cameraOff = HugeIcons.strokeRoundedVideoOff;
   static const CallGlyph screenShare =
       HugeIcons.strokeRoundedComputerScreenShare;
+  static const CallGlyph screenShareStop =
+      HugeIcons.strokeRoundedComputerRemove;
   static const CallGlyph raiseHand = HugeIcons.strokeRoundedWavingHand01;
   static const CallGlyph reaction = HugeIcons.strokeRoundedSmile;
   static const CallGlyph participants = HugeIcons.strokeRoundedUserMultiple;

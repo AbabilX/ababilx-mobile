@@ -47,11 +47,26 @@ class _CallNetworkBadgeState extends State<CallNetworkBadge> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<CallNetworkLevel>(
-      valueListenable: widget.ownLink ? callOwnLinkQuality : callNetworkQuality,
-      builder: (context, level, _) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        callOwnLinkQuality,
+        callNetworkQuality,
+        callVideoHeld,
+      ]),
+      builder: (context, _) {
+        final level = widget.ownLink
+            ? callOwnLinkQuality.value
+            : callNetworkQuality.value;
         if (level == CallNetworkLevel.unknown) return const SizedBox.shrink();
+        // With the camera held back the voice path may well read good; the
+        // line has to say why the picture stopped instead.
+        final held = !widget.ownLink && callVideoHeld.value;
         final (color, filled, key) = switch (level) {
+          _ when held => (
+            level == CallNetworkLevel.poor ? _poor : _weak,
+            1,
+            'call_network_video_paused',
+          ),
           CallNetworkLevel.poor => (_poor, 1, 'call_network_poor'),
           CallNetworkLevel.weak => (_weak, 2, 'call_network_weak'),
           _ => (_good, 4, 'call_network_good'),
