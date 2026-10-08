@@ -2220,6 +2220,14 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     try {
       final stale = await _repository.activeCall();
       if (stale == null) return false;
+      // Someone else's call still ringing this account is not dead: it has
+      // not reached this screen yet. Clearing it killed their call and left
+      // a "missed call" from a person whose ring was never shown.
+      if (stale.call.status == 'ringing' &&
+          stale.call.callerId != state.currentUserId) {
+        voiceCallLog('busy.stale.keep', callId: stale.call.id);
+        return false;
+      }
       voiceCallLog(
         'busy.stale.clear',
         callId: stale.call.id,
