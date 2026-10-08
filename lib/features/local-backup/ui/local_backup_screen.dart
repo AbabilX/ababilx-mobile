@@ -4,11 +4,10 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_bar_back_button.dart';
-import '../../../shared/widgets/app_toast.dart';
 import '../../settings/settings-hub/settings_row.dart';
 import '../local_backup_provider.dart';
+import 'local_backup_actions.dart';
 import 'local_backup_choice_rows.dart';
-import 'local_backup_enable_sheet.dart';
 import 'local_backup_labels.dart';
 import 'local_backup_restore_flow.dart';
 
@@ -23,36 +22,9 @@ class LocalBackupScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
     final state = ref.watch(localBackupProvider);
-    final notifier = ref.read(localBackupProvider.notifier);
     final s = state.settings;
 
-    Future<void> toggle(bool on) async {
-      if (!on) {
-        await notifier.disable();
-        if (context.mounted) {
-          showAppToast(context, t('local_backup_turned_off'));
-        }
-        return;
-      }
-      if (!await confirmEnableLocalBackup(context, ref)) return;
-      final error = await notifier.enable();
-      if (!context.mounted || error == 'local_backup_error_cancelled') return;
-      showAppToast(
-        context,
-        t(error ?? 'local_backup_done'),
-        isError: error != null,
-      );
-    }
-
-    Future<void> backUpNow() async {
-      final error = await notifier.backUpNow();
-      if (!context.mounted) return;
-      showAppToast(
-        context,
-        t(error ?? 'local_backup_done'),
-        isError: error != null,
-      );
-    }
+    final actions = LocalBackupActions(context, ref);
 
     final last = s.lastBackupMs == null
         ? t('local_backup_never')
@@ -78,7 +50,7 @@ class LocalBackupScreen extends ConsumerWidget {
               children: [
                 SwitchListTile(
                   value: s.enabled,
-                  onChanged: state.busy ? null : toggle,
+                  onChanged: state.busy ? null : actions.toggle,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                   title: Text(
                     t('local_backup_title'),
@@ -93,15 +65,10 @@ class LocalBackupScreen extends ConsumerWidget {
                   SettingsRow(
                     icon: HugeIcons.strokeRoundedFolder01,
                     title: t('local_backup_folder'),
-                    value: s.folderLabel ?? '—',
-                    onTap: state.busy
-                        ? null
-                        : () async {
-                            final error = await notifier.changeFolder();
-                            if (error != null && context.mounted) {
-                              showAppToast(context, t(error), isError: true);
-                            }
-                          },
+                    value: s.hasFolder
+                        ? (s.folderLabel ?? '—')
+                        : t('local_backup_folder_phone'),
+                    onTap: state.busy ? null : actions.changeFolder,
                   ),
                   SettingsRow(
                     icon: HugeIcons.strokeRoundedDatabaseSync,
@@ -133,7 +100,7 @@ class LocalBackupScreen extends ConsumerWidget {
                             style: FilledButton.styleFrom(
                               minimumSize: const Size.fromHeight(44),
                             ),
-                            onPressed: state.busy ? null : backUpNow,
+                            onPressed: state.busy ? null : actions.backUpNow,
                             child: Text(t('local_backup_now')),
                           ),
                   ),

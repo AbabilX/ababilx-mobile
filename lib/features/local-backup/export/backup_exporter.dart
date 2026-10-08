@@ -4,6 +4,7 @@ import '../../messages/data/local/chat_message_row.dart';
 import '../../messages/data/models/chat_conversation.dart';
 import '../../messages/data/models/chat_conversation_json.dart';
 import '../../messages/data/models/chat_message.dart';
+import '../auto/backup_media_store.dart';
 import '../data/backup_choices.dart';
 import '../format/backup_errors.dart';
 import '../format/backup_file_writer.dart';
@@ -42,6 +43,7 @@ class BackupExporter {
     required this.localFile,
     required this.choices,
     required this.conversations,
+    this.media,
   });
 
   /// One ascending page of the local archive (`ChatMessageStore.exportPage`).
@@ -59,6 +61,11 @@ class BackupExporter {
 
   final BackupChoices choices;
   final Map<String, ChatConversation> conversations;
+
+  /// Set by the automatic backup: attachment bytes go here, one file each,
+  /// instead of into [BackupFileWriter]. Asked about every included
+  /// attachment, on the phone or not, so it knows what is still wanted.
+  final BackupMediaSink? media;
 
   Future<BackupExportStats> run(
     BackupFileWriter writer, {
@@ -96,13 +103,17 @@ class BackupExporter {
           if (!attachmentBytesIncluded(a, choices) || !written.add(a.fileUrl)) {
             continue;
           }
+          final sink = media;
+          if (sink != null && await sink.holds(a.fileUrl)) {
+            files++;
+            continue;
+          }
           final file = await localFile(a.fileUrl);
           if (file == null) continue;
-          final added = await writer.addFile({
-            'u': a.fileUrl,
-            'n': a.fileName,
-            'ct': a.contentType,
-          }, file);
+          final frame = {'u': a.fileUrl, 'n': a.fileName, 'ct': a.contentType};
+          final added = sink != null
+              ? await sink.put(frame, file)
+              : await writer.addFile(frame, file);
           if (added) files++;
         }
       }

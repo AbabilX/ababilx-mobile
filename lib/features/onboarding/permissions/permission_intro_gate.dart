@@ -17,8 +17,9 @@ class PermissionIntroGate extends StatefulWidget {
 }
 
 class _PermissionIntroGateState extends State<PermissionIntroGate> {
-  /// Null while deciding; empty once the gate has stepped aside.
+  /// Null while deciding.
   List<IntroPermission>? _rows;
+  bool _show = true;
 
   @override
   void initState() {
@@ -29,19 +30,24 @@ class _PermissionIntroGateState extends State<PermissionIntroGate> {
   Future<void> _decide() async {
     final show = await PermissionIntro.shouldShow();
     final rows = show ? await PermissionIntro.missing() : <IntroPermission>[];
-    if (rows.isEmpty) PermissionIntro.settle(shown: false);
-    if (mounted) setState(() => _rows = rows);
+    if (!show) PermissionIntro.settle(shown: false);
+    if (mounted) {
+      setState(() {
+        _rows = rows;
+        _show = show;
+      });
+    }
   }
 
   void _done() {
     PermissionIntro.settle(shown: true);
-    setState(() => _rows = const []);
+    setState(() => _show = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final rows = _rows;
-    if (rows != null && rows.isEmpty) return widget.child;
+    if (!_show) return widget.child;
     return PopScope(
       canPop: false,
       child: Scaffold(

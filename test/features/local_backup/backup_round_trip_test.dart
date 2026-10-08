@@ -93,7 +93,7 @@ void main() {
         'https://cdn/clip.mp4' => video,
         _ => null,
       },
-      choices: const BackupChoices(),
+      choices: const BackupChoices(videos: false),
       conversations: {
         'dm': conv('dm', 'dm'),
         'group': conv('group', 'group'),
@@ -127,7 +127,7 @@ void main() {
     expect(d1.isEncrypted, isTrue);
     expect(d1.body, isEmpty);
     expect(bodies, {'d1': 'hello from d1'});
-    // Photos by default; videos off; no-save never.
+    // Photos in; videos switched off here; no-save never.
     expect(adopted.keys, ['https://cdn/photo.jpg']);
     expect(adopted['https://cdn/photo.jpg'], [1, 2, 3]);
     // The row keeps its attachments, so a skipped video can still be fetched.

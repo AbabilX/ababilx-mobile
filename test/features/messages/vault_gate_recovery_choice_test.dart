@@ -17,6 +17,7 @@ void main() {
     VoidCallback? recover,
     VoidCallback? startFresh,
     VoidCallback? wrongAccount,
+    Widget? backupOption,
   }) => tester.pumpWidget(
     ProviderScope(
       overrides: [appLanguageProvider.overrideWithValue(language)],
@@ -28,6 +29,7 @@ void main() {
             onRecover: recover ?? () {},
             onStartFresh: startFresh ?? () {},
             onWrongAccount: wrongAccount,
+            backupOption: backupOption,
           ),
         ),
       ),
@@ -39,6 +41,16 @@ void main() {
     expect(find.text('Restore your account'), findsOneWidget);
     expect(find.byType(OnboardingOptionCard), findsNWidgets(2));
     expect(find.byType(TextField), findsNothing);
+  });
+
+  testWidgets('a local backup is a third card, above starting fresh', (
+    tester,
+  ) async {
+    await show(tester, backupOption: const Text('backup card'));
+    expect(find.byType(OnboardingOptionCard), findsNWidgets(2));
+    final backup = tester.getTopLeft(find.text('backup card')).dy;
+    expect(backup, greaterThan(tester.getTopLeft(find.text(code)).dy));
+    expect(backup, lessThan(tester.getTopLeft(find.text(fresh)).dy));
   });
 
   testWidgets('the code card recovers at once', (tester) async {

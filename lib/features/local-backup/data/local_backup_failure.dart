@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 
@@ -39,5 +41,7 @@ String localBackupFailureKey(Object error) => switch (error) {
   // folder", which sent the hunt after folder names for a bug in HKDF.
   PlatformException(code: 'local_backup_failed') =>
     'local_backup_error_folder_io',
+  // The automatic folder is written with plain file paths.
+  FileSystemException() => 'local_backup_error_folder_io',
   _ => 'local_backup_error_generic',
 };

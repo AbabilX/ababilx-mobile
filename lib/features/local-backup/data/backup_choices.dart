@@ -1,15 +1,15 @@
 /// What the person chose to back up (Settings → Backup → Local backup).
 ///
 /// Text is not a choice — a backup without messages is not a backup — so it
-/// has no field. Media kinds default to the small, precious ones: photos and
-/// voice notes on, videos and documents off, because those two are what fills
-/// a folder and most people never miss them.
+/// has no field. Every media kind is on by default (2026-10-08): the automatic
+/// backup stores each file once, so videos and documents no longer mean
+/// rewriting gigabytes on every run.
 class BackupChoices {
   const BackupChoices({
     this.photos = true,
     this.voiceNotes = true,
-    this.videos = false,
-    this.documents = false,
+    this.videos = true,
+    this.documents = true,
     this.directMessages = true,
     this.groups = true,
   });

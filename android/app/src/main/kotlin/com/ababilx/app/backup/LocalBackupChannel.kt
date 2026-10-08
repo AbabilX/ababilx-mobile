@@ -32,11 +32,14 @@ class LocalBackupChannel(private val activity: Activity) {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "pickFolder" -> pick(result, REQUEST_FOLDER) {
+                        // "backups" opens on the automatic backup's own folder:
+                        // after a reinstall that is the one to grant again.
+                        val start = if (call.argument<String>("start") == "backups") BACKUPS else DOCUMENTS
                         Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(PERSIST_FLAGS).also {
-                            // Open in Documents: any file type may live there,
-                            // unlike Recordings, Music or Pictures.
+                            // Documents: any file type may live there, unlike
+                            // Recordings, Music or Pictures.
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                it.putExtra(DocumentsContract.EXTRA_INITIAL_URI, DOCUMENTS)
+                                it.putExtra(DocumentsContract.EXTRA_INITIAL_URI, start)
                             }
                         }
                     }
@@ -60,6 +63,8 @@ class LocalBackupChannel(private val activity: Activity) {
                 )
             }
             "listBackups" -> BackupFolder.list(context, tree(call)).map { it.toMap() }
+            "listChildren" -> BackupTree.children(context, tree(call), call.argument<String>("parent"))
+            "defaultFolder" -> BackupDefaultFolder.describe(context)
             "writeBackup" -> BackupFolder.write(
                 context,
                 tree(call),
@@ -153,6 +158,10 @@ class LocalBackupChannel(private val activity: Activity) {
         val DOCUMENTS: Uri = DocumentsContract.buildDocumentUri(
             "com.android.externalstorage.documents",
             "primary:Documents",
+        )
+        val BACKUPS: Uri = DocumentsContract.buildDocumentUri(
+            "com.android.externalstorage.documents",
+            "primary:Documents/${BackupDefaultFolder.FOLDER}",
         )
         const val REQUEST_FOLDER = 0xB0A1
         const val REQUEST_FILE = 0xB0A2

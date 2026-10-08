@@ -52,8 +52,12 @@ class PermissionIntro {
     return rows;
   }
 
+  /// Android shows the screen even with nothing left to grant: it also
+  /// carries the local-backup switch, which is on by default and has to be
+  /// seen once.
   static Future<bool> shouldShow() async {
     if (await answer() != null) return false;
+    if (defaultTargetPlatform == TargetPlatform.android) return true;
     return (await missing()).isNotEmpty;
   }
 

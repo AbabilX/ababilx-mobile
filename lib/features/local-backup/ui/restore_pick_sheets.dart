@@ -7,12 +7,19 @@ import '../../messages/chat_icon.dart';
 import '../platform/backup_folder_channel.dart';
 import 'local_backup_labels.dart';
 
-enum RestoreSource { folder, file }
+enum RestoreSource { phone, folder, file }
 
 /// Folder first: it is where the daily backups are, and picking it also shows
 /// both of them. A single file is for a backup carried over from another
 /// phone, which can sit anywhere.
-Future<RestoreSource?> pickRestoreSource(BuildContext context, WidgetRef ref) {
+///
+/// [onPhone]: the automatic backup is readable right here, so it is offered
+/// first and needs no picking at all.
+Future<RestoreSource?> pickRestoreSource(
+  BuildContext context,
+  WidgetRef ref, {
+  bool onPhone = false,
+}) {
   String tr(String key) => AppTranslations.translate(context, ref, key);
   return showModalBottomSheet<RestoreSource>(
     context: context,
@@ -32,6 +39,12 @@ Future<RestoreSource?> pickRestoreSource(BuildContext context, WidgetRef ref) {
                 style: text.titleLarge,
               ),
             ),
+            if (onPhone)
+              ListTile(
+                leading: const ChatIcon(HugeIcons.strokeRoundedSmartPhone01),
+                title: Text(tr('local_backup_restore_from_phone')),
+                onTap: () => Navigator.of(sheet).pop(RestoreSource.phone),
+              ),
             ListTile(
               leading: const ChatIcon(HugeIcons.strokeRoundedFolderOpen),
               title: Text(tr('local_backup_restore_from_folder')),

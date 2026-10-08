@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/onboarding/onboarding_page.dart';
+import '../../local-backup/ui/local_backup_onboarding_tile.dart';
 import '../../messages/chat_icon.dart';
 import 'permission_intro.dart';
 
@@ -62,7 +63,11 @@ class _State extends ConsumerState<PermissionIntroPage> {
           ),
         ],
       ),
-      children: [for (final row in widget.rows) _row(context, t, row)],
+      children: [
+        for (final row in widget.rows) _row(context, t, row),
+        // On by default; the switch and the folder are the person's to change.
+        const LocalBackupOnboardingTile(),
+      ],
     );
   }
 

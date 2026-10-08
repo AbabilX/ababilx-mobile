@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -14,23 +13,24 @@ import '../messages/data/models/chat_conversation.dart';
 import '../messages/message_e2ee/message_vault.dart';
 import '../messages/providers/chat_provider.dart';
 import '../profile/providers/profile_provider.dart';
+import 'auto/account_backup_dir.dart';
+import 'auto/backup_media_store.dart';
 import 'data/backup_file_name.dart';
 import 'data/backup_key_store.dart';
 import 'data/local_backup_failure.dart';
 import 'data/local_backup_settings.dart';
 import 'export/backup_exporter.dart';
-import 'format/backup_errors.dart';
 import 'local_backup_extras.dart';
-import 'format/backup_file_reader.dart';
 import 'format/backup_file_writer.dart';
 import 'platform/backup_folder_channel.dart';
-import 'restore/backup_importer.dart';
-import 'restore/restored_body_store.dart';
 
 export 'data/backup_file_name.dart';
 
-/// Wires the pure pieces (exporter, importer, format) to this app's store,
-/// vault, attachments and the picked folder. Holds no state of its own.
+/// Wires the exporter to this app's store, vault and attachments, and to
+/// where the backup goes: the folder the person picked (one whole file, as
+/// before) or, with none picked, the automatic folder (messages rewritten,
+/// each media file stored once). Holds no state of its own. Restoring is
+/// `LocalBackupRestoreRunner`.
 class LocalBackupRunner {
   LocalBackupRunner(this._ref);
 
@@ -40,20 +40,27 @@ class LocalBackupRunner {
   Future<Directory> _work(String name) async =>
       Directory('${(await getTemporaryDirectory()).path}/local-backup/$name');
 
+  /// This account's corner of the automatic folder, and the free space there.
+  Future<(AccountBackupDir, int)> accountDir(String userId) async {
+    final home = await folder.defaultFolder();
+    if (home.path.isEmpty) throw LocalBackupFailure.noFolder;
+    return (AccountBackupDir(Directory(home.path), userId), home.freeBytes);
+  }
+
   Future<(BackupFolderEntry, BackupExportStats)> backUp({
     required String userId,
     required LocalBackupSettings settings,
     void Function(int messages)? onProgress,
     bool Function()? shouldContinue,
   }) async {
-    final folderUri = settings.folderUri;
-    if (folderUri == null || folderUri.isEmpty) {
-      throw LocalBackupFailure.noFolder;
-    }
+    final folderUri = settings.folderUri ?? '';
+    final picked = folderUri.isNotEmpty;
     if (!settings.choices.anyChats) throw LocalBackupFailure.nothingSelected;
     final vault = _ref.read(messageVaultProvider);
     if (!vault.isUnlocked) throw LocalBackupFailure.locked;
-    if (!await folder.hasAccess(folderUri)) throw LocalBackupFailure.folderLost;
+    if (picked && !await folder.hasAccess(folderUri)) {
+      throw LocalBackupFailure.folderLost;
+    }
     final key = await _ref.read(backupKeyStoreProvider).keyFor(userId);
     await syncChatDeletions(_ref, userId);
 
@@ -62,9 +69,24 @@ class LocalBackupRunner {
     final now = DateTime.now();
     final username = _ref.read(profileProvider).valueOrNull?.username ?? '';
     final name = backupFileName(username, now);
-    final dir = await _work('out');
-    await dir.create(recursive: true);
-    final temp = File('${dir.path}/$name');
+    AccountBackupDir? account;
+    BackupMediaStore? media;
+    final File temp;
+    if (picked) {
+      final dir = await _work('out');
+      await dir.create(recursive: true);
+      temp = File('${dir.path}/$name');
+    } else {
+      final (dir, free) = await accountDir(userId);
+      account = dir;
+      media = BackupMediaStore(
+        dir: dir.media,
+        accountKey: key,
+        userId: userId,
+        freeBytes: free,
+      );
+      temp = await dir.partial(name);
+    }
     final writer = await BackupFileWriter.create(
       temp,
       accountKey: key,
@@ -92,17 +114,30 @@ class LocalBackupRunner {
         },
         choices: settings.choices,
         conversations: await _conversations(userId),
+        media: media,
       ).run(writer, onProgress: onProgress, shouldContinue: shouldContinue);
       await writer.close();
       debugPrint(
         '[LocalBackup] export: messages=${stats.messages} '
         'files=${stats.files} unreadable=${stats.unreadable} '
-        'bytes=${await temp.length()}',
+        'bytes=${await temp.length()} newMedia=${media?.written} '
+        'noSpace=${media?.skippedForSpace}',
       );
-      final entry = await folder.write(
-        folderUri: folderUri,
-        sourcePath: temp.path,
+      if (account == null || media == null) {
+        final entry = await folder.write(
+          folderUri: folderUri,
+          sourcePath: temp.path,
+          name: name,
+          owner: userId,
+        );
+        return (entry, stats);
+      }
+      final done = await account.commit(temp, name, media.wanted);
+      final entry = BackupFolderEntry(
+        uri: done.path,
         name: name,
+        bytes: await account.size(),
+        modifiedMs: now.millisecondsSinceEpoch,
         owner: userId,
       );
       return (entry, stats);
@@ -131,70 +166,5 @@ class LocalBackupRunner {
       } catch (_) {}
     }
     return {for (final c in all) c.id: c};
-  }
-
-  /// Restores [documentUri] (a file in the folder, or one picked from
-  /// anywhere) into this account. Refuses another account's file before it
-  /// asks the server for anything.
-  Future<BackupRestoreStats> restore({
-    required String userId,
-    required String documentUri,
-    void Function(int messages)? onProgress,
-    void Function(int read, int total)? onBytes,
-    bool Function()? shouldContinue,
-  }) async {
-    final dir = await _work('in');
-    await dir.create(recursive: true);
-    final temp = File('${dir.path}/restore.abxbackup');
-    try {
-      await folder.copyToCache(documentUri, temp.path);
-      final header = await BackupFileReader.readHeader(temp);
-      debugPrint(
-        '[LocalBackup] restore: file=${await temp.length()}B '
-        'owner=${header.userId} me=$userId',
-      );
-      if (header.userId != userId) throw const BackupWrongAccountError();
-      final key = await _ref.read(backupKeyStoreProvider).keyFor(userId);
-      await syncChatDeletions(_ref, userId);
-      final store = _ref.read(chatMessageStoreProvider);
-      // A fresh start marks every chat "history before now is gone", and the
-      // whole backup is older than that — the case it exists for. Deletes
-      // still hold; only the watermark is looked past, on this device.
-      await store.deletions.admitRestoredHistory();
-      final bodies = _ref.read(restoredBodyStoreProvider);
-      final adopter = _ref.read(attachmentAdopterProvider);
-      final extras = LocalBackupExtras(_ref);
-      final collected = await extras.collector();
-      final stats =
-          await BackupImporter(
-            saveMessages: (m) => store.saveRecovered(m, fromBackup: true),
-            saveBodies: (b) => bodies.putAll(userId, b),
-            adoptFile: adopter.adoptFile,
-            tempDir: Directory('${dir.path}/files'),
-            onOtherFrame: collected.onFrame,
-            onOtherFile: collected.onFile,
-          ).run(
-            temp,
-            key,
-            onProgress: onProgress,
-            onBytes: onBytes,
-            shouldContinue: shouldContinue,
-          );
-      // Chat list, calls, settings and pictures: works offline from here on.
-      await extras.apply(collected, userId);
-      // Chats already opened this session read their pages again from disk.
-      final chat = _ref.read(chatProvider.notifier)..resetFeedHydration();
-      // The list reads its previews from the phone where the server has none.
-      unawaited(chat.fetchSidebarSilent().catchError((_) {}));
-      debugPrint(
-        '[LocalBackup] restore done: messages=${stats.messages} '
-        'files=${stats.files}',
-      );
-      return stats;
-    } finally {
-      try {
-        if (await temp.exists()) await temp.delete();
-      } catch (_) {}
-    }
   }
 }

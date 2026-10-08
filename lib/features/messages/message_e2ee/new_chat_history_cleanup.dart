@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../local-backup/data/local_backup_settings.dart';
+import '../../local-backup/data/restore_choice_store.dart';
 import '../archive/archive_provider.dart';
 import '../data/local/chat_deletion_sync.dart';
 import '../providers/chat_provider.dart';
@@ -19,6 +20,12 @@ Future<void> cleanNewChatHistory(Ref ref, String userId) async {
   await chat.completeHistoryReset(userId);
   await chat.clearSidebarCache();
   ref.invalidate(archiveProvider);
-  // A fresh start is when a local backup matters most: offer it once.
-  await const LocalBackupSettingsStore().armRestoreOffer(userId);
+  // A fresh start is when a local backup matters most: offer it once. Chosen
+  // on the restore-account screen ("Continue with local backup"), it was
+  // already agreed to and comes back without a second question.
+  const offers = LocalBackupSettingsStore();
+  final agreed = await const RestoreChoiceStore().chosen(userId);
+  // An unanswered question from an earlier fresh start would outrank it.
+  if (agreed) await offers.clearRestoreOffer(userId);
+  await offers.armRestoreOffer(userId, ask: !agreed);
 }

@@ -8,6 +8,8 @@ class BackupFolderEntry {
     required this.bytes,
     required this.modifiedMs,
     this.owner,
+    this.isDir = false,
+    this.documentId,
   });
 
   final String uri;
@@ -18,6 +20,11 @@ class BackupFolderEntry {
   /// Account id from the file's header; null when it is not a backup.
   final String? owner;
 
+  /// Set by [BackupFolderChannel.children], which also lists folders.
+  final bool isDir;
+  final String? documentId;
+
+  bool get isBackup => !isDir && name.endsWith('.abxbackup');
   bool get isPartial => name.endsWith('.partial');
 
   factory BackupFolderEntry.fromMap(Map<dynamic, dynamic> map) =>
@@ -27,6 +34,8 @@ class BackupFolderEntry {
         bytes: (map['bytes'] as num?)?.toInt() ?? 0,
         modifiedMs: (map['modifiedMs'] as num?)?.toInt() ?? 0,
         owner: map['owner'] as String?,
+        isDir: map['dir'] == true,
+        documentId: map['id'] as String?,
       );
 }
 
@@ -40,6 +49,22 @@ class PickedFolder {
   final bool writable;
 }
 
+/// The automatic backup's own folder (Kotlin `BackupDefaultFolder`).
+class DefaultBackupFolder {
+  const DefaultBackupFolder({
+    required this.path,
+    required this.freeBytes,
+    required this.isPublic,
+  });
+
+  final String path;
+  final int freeBytes;
+
+  /// True for `Documents/AbabilX`, which outlives an uninstall; false for the
+  /// app's own folder (Android 10 and below), which does not.
+  final bool isPublic;
+}
+
 /// Dart half of `com.ababilx.app/local_backup` (Kotlin `LocalBackupChannel`).
 /// Moves sealed files in and out of the picked folder; holds no key.
 class BackupFolderChannel {
@@ -48,8 +73,11 @@ class BackupFolderChannel {
   static const _channel = MethodChannel('com.ababilx.app/local_backup');
 
   /// The system folder picker. Null when the person backed out.
-  Future<PickedFolder?> pickFolder() async {
-    final map = await _channel.invokeMapMethod<String, dynamic>('pickFolder');
+  /// [atBackups] opens it on the automatic backup's own folder.
+  Future<PickedFolder?> pickFolder({bool atBackups = false}) async {
+    final map = await _channel.invokeMapMethod<String, dynamic>('pickFolder', {
+      'start': atBackups ? 'backups' : 'documents',
+    });
     if (map == null) return null;
     return PickedFolder(
       map['uri'] as String,
@@ -83,6 +111,33 @@ class BackupFolderChannel {
       for (final row in rows ?? const <Map<dynamic, dynamic>>[])
         BackupFolderEntry.fromMap(row),
     ].where((e) => !e.isPartial).toList();
+  }
+
+  /// One level of a granted folder: files and folders, partials included.
+  Future<List<BackupFolderEntry>> children(
+    String folderUri, {
+    String? parent,
+  }) async {
+    final rows = await _channel.invokeListMethod<Map<dynamic, dynamic>>(
+      'listChildren',
+      {'uri': folderUri, 'parent': parent},
+    );
+    return [
+      for (final row in rows ?? const <Map<dynamic, dynamic>>[])
+        BackupFolderEntry.fromMap(row),
+    ];
+  }
+
+  /// Where the automatic backup goes when no folder was picked.
+  Future<DefaultBackupFolder> defaultFolder() async {
+    final map = await _channel.invokeMapMethod<String, dynamic>(
+      'defaultFolder',
+    );
+    return DefaultBackupFolder(
+      path: map?['path'] as String? ?? '',
+      freeBytes: (map?['free'] as num?)?.toInt() ?? 0,
+      isPublic: map?['public'] == true,
+    );
   }
 
   /// Copies a finished file in, then keeps this [owner]'s newest [keep].

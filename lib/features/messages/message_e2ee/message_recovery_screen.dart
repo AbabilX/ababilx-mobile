@@ -1,3 +1,4 @@
+import '../../local-backup/ui/restore_account_backup_card.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -186,6 +187,10 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
                   hasRecovery: _hasRecovery,
                   onRecover: () => setState(() => _enterCode = true),
                   onStartFresh: _newSession,
+                  backupOption: localBackupAccountOption(
+                    busy: _busy,
+                    onStartFresh: _newSession,
+                  ),
                 ),
         ),
       ),

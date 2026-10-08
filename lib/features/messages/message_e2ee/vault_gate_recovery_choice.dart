@@ -18,12 +18,17 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
     required this.onStartFresh,
     this.onWrongAccount,
     this.hasRecovery = true,
+    this.backupOption,
   });
 
   final bool busy;
   final bool hasRecovery;
   final VoidCallback onRecover;
   final VoidCallback onStartFresh;
+
+  /// "Continue with local backup", built by the caller: a new message key
+  /// like [onStartFresh], then the chats from the backup on this phone.
+  final Widget? backupOption;
 
   /// Signed in as somebody else — the gate is the first screen that names the
   /// account's messages, so it is where that is noticed, and without a way out
@@ -59,6 +64,10 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
             enabled: !busy,
             onTap: onRecover,
           ),
+          const SizedBox(height: 12),
+        ],
+        if (backupOption != null) ...[
+          backupOption!,
           const SizedBox(height: 12),
         ],
         OnboardingOptionCard(

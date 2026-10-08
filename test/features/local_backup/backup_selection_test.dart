@@ -50,9 +50,9 @@ ChatMessage msg({bool privateChat = false, String? deletedAt}) => ChatMessage(
 void main() {
   const defaults = BackupChoices();
 
-  test('defaults: text + photos + voice notes, both chat kinds', () {
+  test('defaults: every media kind, both chat kinds', () {
     expect(defaults.photos && defaults.voiceNotes, isTrue);
-    expect(defaults.videos || defaults.documents, isFalse);
+    expect(defaults.videos && defaults.documents, isTrue);
     expect(defaults.directMessages && defaults.groups, isTrue);
   });
 
@@ -84,14 +84,17 @@ void main() {
       attachmentBytesIncluded(att('a.jpg', 'image/jpeg'), defaults),
       isTrue,
     );
+    final noVideo = defaults.copyWith(videos: false);
     expect(
-      attachmentBytesIncluded(att('a.mp4', 'video/mp4'), defaults),
+      attachmentBytesIncluded(att('a.mp4', 'video/mp4'), noVideo),
       isFalse,
     );
-    final all = defaults.copyWith(videos: true, documents: true);
-    expect(attachmentBytesIncluded(att('a.mp4', 'video/mp4'), all), isTrue);
     expect(
-      attachmentBytesIncluded(att('a.pdf', 'application/pdf'), all),
+      attachmentBytesIncluded(att('a.mp4', 'video/mp4'), defaults),
+      isTrue,
+    );
+    expect(
+      attachmentBytesIncluded(att('a.pdf', 'application/pdf'), defaults),
       isTrue,
     );
     final none = defaults.copyWith(photos: false);

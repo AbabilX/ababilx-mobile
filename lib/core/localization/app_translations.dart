@@ -205,10 +205,9 @@ class AppTranslations {
       'settings_backup_sub': '120-day cloud history and recovery code',
       'local_backup_section': 'On this phone',
       'local_backup_title': 'Local backup',
-      'local_backup_row_hint':
-          'A daily copy of your chats in a folder you pick',
+      'local_backup_row_hint': 'A copy of your chats, kept on this phone',
       'local_backup_switch_hint':
-          'Every day, a copy of your chats is saved to a folder you pick. Bring them back after a reinstall, on a new phone, or if you lose your recovery code.',
+          'Twice a day, when you open the app, your chats are saved on this phone. They come back by themselves when you sign in again, and survive a reinstall or a lost recovery code.',
       'local_backup_folder': 'Folder',
       'local_backup_last': 'Last backup',
       'local_backup_never': 'Not yet',
@@ -248,10 +247,27 @@ class AppTranslations {
           'Pick a folder only you use. An app that syncs that folder to the cloud copies the file too.',
       'local_backup_choose_folder': 'Choose folder',
       'local_backup_turned_off':
-          'Local backup is off. Backups already saved stay in the folder.',
+          'Local backup is off. Backups already saved stay where they are.',
+      'local_backup_turned_off_deleted':
+          'Local backup is off and the copy on this phone was deleted.',
+      'local_backup_folder_phone': 'On this phone',
+      'local_backup_folder_sheet_body':
+          'On this phone, AbabilX keeps the backup in Documents/AbabilX and each photo or video is saved once. In a folder you choose, the backup is one file that is written again every time.',
+      'local_backup_off_title': 'Turn off local backup?',
+      'local_backup_off_body':
+          'Without it, a lost recovery code or a reinstall can cost you your older chats.',
+      'local_backup_off_keep': 'Turn off, keep the backup',
+      'local_backup_off_delete': 'Turn off and delete the backup',
+      'local_backup_restore_from_phone': 'Backup on this phone',
+      'local_backup_restore_found_body':
+          'A backup of this account from {when} is on this phone. Bring your chats back from it?',
+      'local_backup_onboarding_title': 'Back up chats on this phone',
+      'local_backup_onboarding_body':
+          'A copy stays on this phone and comes back when you sign in again. Only your account opens it. It is not end-to-end encrypted: AbabilX holds the key, your phone holds the file.',
+      'local_backup_onboarding_folder': 'Folder: {name}',
       'local_backup_restore_offer_title': 'Restore from a backup?',
       'local_backup_restore_offer_body':
-          'If you kept a local backup of your chats, you can bring it back now.',
+          'If this phone has a backup of your chats, you can bring it back now. Android will ask you to allow the AbabilX folder once.',
       'local_backup_restore_now': 'Restore',
       'local_backup_not_now': 'Not now',
       'local_backup_restore_source_title': 'Where is your backup?',
@@ -357,6 +373,16 @@ class AppTranslations {
       'restore_select_fresh_title': 'Continue without restoring',
       'restore_select_fresh_body':
           'Old messages won\'t be readable on this phone.',
+      'restore_select_backup_title': 'Continue with local backup',
+      'restore_select_backup_find':
+          'No recovery code? Find the backup this phone made in Documents → AbabilX.',
+      'restore_backup_label': 'Backup from {when} · {size}',
+      'restore_backup_confirm_title': 'Continue with this backup?',
+      'restore_backup_confirm_body':
+          'Your chats come back from this backup, and your account gets a new message key. This cannot be undone.\n\n• Your old recovery code stops working. You get a new one.\n• Messages that are not in the backup cannot be read again.\n• Your contacts see that your safety number changed.\n• Other devices signed in to your account must be linked again.',
+      'restore_backup_confirm_go': 'Continue',
+      'restore_backup_none':
+          'No backup of this account was found in that folder.',
       'restore_skip_title': 'Continue without restoring?',
       'restore_skip_confirm': 'Continue',
       'permissions_title': 'Allow permissions',
@@ -1468,10 +1494,9 @@ class AppTranslations {
       'settings_backup_sub': '১২০ দিন ক্লাউড ইতিহাস ও রিকভারি কোড',
       'local_backup_section': 'এই ফোনে',
       'local_backup_title': 'লোকাল ব্যাকআপ',
-      'local_backup_row_hint':
-          'আপনার বাছাই করা ফোল্ডারে প্রতিদিন চ্যাটের একটি কপি',
+      'local_backup_row_hint': 'আপনার চ্যাটের একটি কপি, এই ফোনেই রাখা',
       'local_backup_switch_hint':
-          'প্রতিদিন আপনার চ্যাটের একটি কপি আপনার বাছাই করা ফোল্ডারে সেভ হয়। অ্যাপ আবার ইনস্টল করলে, নতুন ফোনে, বা রিকভারি কোড হারালেও সেগুলো ফিরিয়ে আনতে পারবেন।',
+          'দিনে দুবার, অ্যাপ খুললে, আপনার চ্যাট এই ফোনে সেভ হয়। আবার সাইন ইন করলে সেগুলো নিজে থেকেই ফিরে আসে, আর অ্যাপ আবার ইনস্টল করলে বা রিকভারি কোড হারালেও থাকে।',
       'local_backup_folder': 'ফোল্ডার',
       'local_backup_last': 'শেষ ব্যাকআপ',
       'local_backup_never': 'এখনো হয়নি',
@@ -1511,10 +1536,27 @@ class AppTranslations {
           'এমন ফোল্ডার বাছুন যা শুধু আপনি ব্যবহার করেন। কোনো অ্যাপ ফোল্ডারটি ক্লাউডে সিঙ্ক করলে ফাইলটিও কপি হয়ে যায়।',
       'local_backup_choose_folder': 'ফোল্ডার বাছুন',
       'local_backup_turned_off':
-          'লোকাল ব্যাকআপ বন্ধ। আগের ব্যাকআপগুলো ফোল্ডারেই থাকবে।',
+          'লোকাল ব্যাকআপ বন্ধ। আগের ব্যাকআপগুলো যেখানে আছে সেখানেই থাকবে।',
+      'local_backup_turned_off_deleted':
+          'লোকাল ব্যাকআপ বন্ধ, আর এই ফোনের কপিটি মুছে ফেলা হয়েছে।',
+      'local_backup_folder_phone': 'এই ফোনে',
+      'local_backup_folder_sheet_body':
+          'এই ফোনে রাখলে AbabilX ব্যাকআপটি Documents/AbabilX-এ রাখে, আর প্রতিটি ছবি বা ভিডিও একবারই সেভ হয়। আপনার বাছাই করা ফোল্ডারে ব্যাকআপ একটি ফাইল, যা প্রতিবার নতুন করে লেখা হয়।',
+      'local_backup_off_title': 'লোকাল ব্যাকআপ বন্ধ করবেন?',
+      'local_backup_off_body':
+          'এটি ছাড়া রিকভারি কোড হারালে বা অ্যাপ আবার ইনস্টল করলে পুরোনো চ্যাট হারাতে পারেন।',
+      'local_backup_off_keep': 'বন্ধ করুন, ব্যাকআপ রেখে দিন',
+      'local_backup_off_delete': 'বন্ধ করুন এবং ব্যাকআপ মুছে ফেলুন',
+      'local_backup_restore_from_phone': 'এই ফোনের ব্যাকআপ',
+      'local_backup_restore_found_body':
+          'এই অ্যাকাউন্টের {when}-এর একটি ব্যাকআপ এই ফোনে আছে। সেখান থেকে চ্যাট ফিরিয়ে আনবেন?',
+      'local_backup_onboarding_title': 'এই ফোনে চ্যাটের ব্যাকআপ রাখুন',
+      'local_backup_onboarding_body':
+          'একটি কপি এই ফোনে থাকে এবং আবার সাইন ইন করলে ফিরে আসে। শুধু আপনার অ্যাকাউন্টই এটি খুলতে পারে। এটি এন্ড-টু-এন্ড এনক্রিপ্টেড নয়: চাবি থাকে AbabilX-এর কাছে, ফাইল থাকে আপনার ফোনে।',
+      'local_backup_onboarding_folder': 'ফোল্ডার: {name}',
       'local_backup_restore_offer_title': 'ব্যাকআপ থেকে ফিরিয়ে আনবেন?',
       'local_backup_restore_offer_body':
-          'চ্যাটের লোকাল ব্যাকআপ রেখে থাকলে এখনই ফিরিয়ে আনতে পারেন।',
+          'এই ফোনে আপনার চ্যাটের ব্যাকআপ থাকলে এখনই ফিরিয়ে আনতে পারেন। Android একবার AbabilX ফোল্ডারে অনুমতি চাইবে।',
       'local_backup_restore_now': 'ফিরিয়ে আনুন',
       'local_backup_not_now': 'এখন নয়',
       'local_backup_restore_source_title': 'আপনার ব্যাকআপ কোথায়?',
@@ -1618,6 +1660,15 @@ class AppTranslations {
           'সেভ করে রাখা কোড দিয়ে আপনার এনক্রিপ্টেড মেসেজ খুলুন।',
       'restore_select_fresh_title': 'ফিরিয়ে না এনে চালিয়ে যান',
       'restore_select_fresh_body': 'পুরোনো মেসেজ এই ফোনে পড়া যাবে না।',
+      'restore_select_backup_title': 'লোকাল ব্যাকআপ দিয়ে চালিয়ে যান',
+      'restore_select_backup_find':
+          'রিকভারি কোড নেই? Documents → AbabilX থেকে এই ফোনের ব্যাকআপ খুঁজে নিন।',
+      'restore_backup_label': '{when}-এর ব্যাকআপ · {size}',
+      'restore_backup_confirm_title': 'এই ব্যাকআপ দিয়ে চালিয়ে যাবেন?',
+      'restore_backup_confirm_body':
+          'এই ব্যাকআপ থেকে আপনার চ্যাট ফিরে আসবে, আর অ্যাকাউন্ট নতুন মেসেজ কী পাবে। এটি আর ফেরানো যাবে না।\n\n• পুরোনো রিকভারি কোড আর কাজ করবে না। নতুন একটি পাবেন।\n• যে মেসেজ ব্যাকআপে নেই, তা আর পড়া যাবে না।\n• আপনার কন্টাক্টরা দেখবে আপনার সেফটি নম্বর বদলেছে।\n• আপনার অ্যাকাউন্টের অন্য ডিভাইসগুলো আবার লিংক করতে হবে।',
+      'restore_backup_confirm_go': 'চালিয়ে যান',
+      'restore_backup_none': 'ওই ফোল্ডারে এই অ্যাকাউন্টের কোনো ব্যাকআপ পাওয়া যায়নি।',
       'restore_skip_title': 'ফিরিয়ে না এনে চালিয়ে যাবেন?',
       'restore_skip_confirm': 'চালিয়ে যান',
       'permissions_title': 'অনুমতি দিন',

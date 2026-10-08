@@ -3,15 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/localization/app_translations.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../data/local_backup_settings.dart';
+import '../data/restore_choice_store.dart';
+import '../platform/backup_folder_channel.dart';
+import '../restore/backup_restore_source.dart';
 import '../local_backup_provider.dart';
 import 'local_backup_restore_flow.dart';
+import 'restore_offer_sheet.dart';
 
 /// Invisible host in the home shell for the two things local backup does on
-/// its own: the scheduled run, and the one-time "Restore from a backup?".
+/// its own: the scheduled run, and bringing a backup back after this phone
+/// got a new session for the account.
 ///
 /// Scheduled means "when the app opens, at most once in 12 hours" — there is
 /// no background job yet, on purpose: a backup reads the unlocked message key,
@@ -69,10 +73,8 @@ class _LocalBackupWatcherState extends ConsumerState<LocalBackupWatcher>
         }
         return;
       }
-      if (await const LocalBackupSettingsStore().takeRestoreOffer(userId) &&
-          mounted) {
-        await _offerRestore();
-      }
+      await _restoreIfWaiting(userId);
+      if (!mounted) return;
       _timer?.cancel();
       _timer = Timer(_settle, () {
         if (mounted) ref.read(localBackupProvider.notifier).runIfDue();
@@ -82,56 +84,77 @@ class _LocalBackupWatcherState extends ConsumerState<LocalBackupWatcher>
     }
   }
 
-  Future<void> _offerRestore() async {
-    String tr(String key) => AppTranslations.translate(context, ref, key);
-    final go = await showModalBottomSheet<bool>(
-      context: context,
-      useRootNavigator: true,
-      showDragHandle: true,
-      builder: (sheet) {
-        final theme = Theme.of(sheet);
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  tr('local_backup_restore_offer_title'),
-                  style: theme.textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  tr('local_backup_restore_offer_body'),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  onPressed: () => Navigator.of(sheet).pop(true),
-                  child: Text(tr('local_backup_restore_now')),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  onPressed: () => Navigator.of(sheet).pop(false),
-                  child: Text(tr('local_backup_not_now')),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    if (go == true && mounted) await startLocalBackupRestore(context, ref);
+  /// A restore armed by a recovery-code unlock or "start fresh".
+  ///
+  /// The automatic folder is looked in first. A backup of this account there
+  /// comes back without a question after a recovery-code unlock, and after
+  /// one question following "start fresh" — the person chose, a moment ago,
+  /// to leave history behind. Nothing readable there (no backup, or a
+  /// reinstall hid it) is the old offer: Restore opens the folder grant.
+  Future<void> _restoreIfWaiting(String userId) async {
+    const store = LocalBackupSettingsStore();
+    final offer = await store.pendingRestoreOffer(userId);
+    if (offer == null || !mounted) return;
+    if (!LocalBackupSettingsStore.automatic) {
+      return store.clearRestoreOffer(userId);
+    }
+    final notifier = ref.read(localBackupProvider.notifier);
+    if (ref.read(localBackupProvider).busy) return;
+    var found = await notifier.findAutomatic();
+    // "Continue with local backup" after a reinstall: the backup was found
+    // in a folder the person granted, before the new key was made.
+    // Read either way: a grant taken while the automatic folder was still
+    // being looked at is given back too.
+    final granted = await _choice.folder(userId);
+    if (found.isEmpty && granted != null) {
+      found = await grantedBackupSources(
+        const BackupFolderChannel(),
+        granted,
+        userId,
+      ).catchError((_) => const <BackupRestoreSource>[]);
+    }
+    if (!mounted) return;
+    if (found.isEmpty) {
+      await store.clearRestoreOffer(userId);
+      await _forgetChoice(userId, granted);
+      if (!mounted || !await askRestoreFromBackup(context, ref)) return;
+      if (mounted) {
+        await startLocalBackupRestore(context, ref, grantBackups: true);
+      }
+      return;
+    }
+    if (offer == RestoreOffer.ask) {
+      await store.clearRestoreOffer(userId);
+      if (!mounted) return;
+      final go = await askRestoreFromBackup(
+        context,
+        ref,
+        foundAtMs: found.first.createdAtMs,
+      );
+      if (!go || !mounted) return;
+    }
+    final error = await runLocalBackupRestore(context, found, openChats: false);
+    // Offline or still locked: the offer stays and the next resume tries
+    // again. Anything else was a real answer.
+    if (_tryAgain.contains(error)) return;
+    await store.clearRestoreOffer(userId);
+    await _forgetChoice(userId, granted);
   }
+
+  static const _choice = RestoreChoiceStore();
+
+  /// The folder was granted for this one restore; it is given back.
+  Future<void> _forgetChoice(String userId, String? granted) async {
+    await _choice.clear(userId);
+    if (granted == null) return;
+    await const BackupFolderChannel().releaseFolder(granted).catchError((_) {});
+  }
+
+  static const _tryAgain = {
+    'local_backup_error_key',
+    'local_backup_error_locked',
+    'local_backup_error_busy',
+  };
 
   @override
   Widget build(BuildContext context) => const SizedBox.shrink();
