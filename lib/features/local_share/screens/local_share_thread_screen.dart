@@ -2,9 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
-import '../../messages/chat_icon.dart';
 import '../bubbles/share_bubble.dart';
 import '../bubbles/share_cluster.dart';
 import '../data/share_thread_queries.dart';
@@ -14,9 +12,10 @@ import '../providers/share_account.dart';
 import '../share_text.dart';
 import '../sheets/message_actions_sheet.dart';
 import '../sheets/thread_menu_sheet.dart';
-import '../widgets/share_device_avatar.dart';
+import '../widgets/share_page_frame.dart';
 import '../widgets/share_thread_bottom.dart';
 import '../widgets/share_thread_empty.dart';
+import '../widgets/share_thread_header.dart';
 
 const _page = 60;
 
@@ -87,39 +86,17 @@ class _ThreadState extends ConsumerState<LocalShareThreadScreen> {
         ? lsText(ref, 'ls_your_account')
         : account.name;
 
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            ShareDeviceAvatar(
-              deviceType: peer?.deviceType ?? device?.deviceType ?? 'mobile',
-              userId: userId,
-              size: 38,
-              nearby: peer != null,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  Text(
-                    owner == null ? status : '$owner · $status',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          if (engine != null && device != null)
-            IconButton(
-              icon: const ChatIcon(HugeIcons.strokeRoundedMoreVertical),
-              onPressed: () async {
+    return SharePageFrame(
+      header: ShareThreadHeader(
+        name: name,
+        status: owner == null ? status : '$owner · $status',
+        deviceType: peer?.deviceType ?? device?.deviceType ?? 'mobile',
+        userId: userId,
+        nearby: peer != null,
+        menuLabel: lsText(ref, 'chat_more'),
+        onMenu: engine == null || device == null
+            ? null
+            : () async {
                 final gone = await showShareThreadMenu(
                   context,
                   ref,
@@ -128,8 +105,6 @@ class _ThreadState extends ConsumerState<LocalShareThreadScreen> {
                 );
                 if (gone && context.mounted) Navigator.of(context).maybePop();
               },
-            ),
-        ],
       ),
       body: Column(
         children: [

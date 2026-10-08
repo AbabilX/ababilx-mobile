@@ -31,8 +31,9 @@ class ShareSetupView extends ConsumerWidget {
     );
 
     return SafeArea(
+      top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

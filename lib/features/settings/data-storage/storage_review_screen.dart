@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
-import '../../../core/router/root_back.dart';
 import '../../../shared/text/byte_size.dart';
 import '../../../shared/widgets/app_toast.dart';
+import '../../../shared/widgets/flat_capsule_header.dart';
 import '../../attachments/storage/storage_providers.dart';
 import '../../attachments/storage/storage_usage.dart';
+import 'storage_bucket_filter.dart';
 import 'storage_confirm.dart';
 import 'storage_review_tile.dart';
 
@@ -28,73 +29,86 @@ class _StorageReviewScreenState extends ConsumerState<StorageReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final items = ref.watch(storageItemsProvider(_bucket));
     final selecting = _selected.isNotEmpty;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: selecting
-              ? const Icon(Icons.close_rounded)
-              : const AppBarBackIcon(),
-          onPressed: selecting
-              ? () => setState(_selected.clear)
-              : () => popOrGoHome(context),
-        ),
-        title: Text(
-          selecting ? '${_selected.length} selected' : 'Review storage',
-        ),
-        actions: [
-          if (selecting)
-            IconButton(
-              icon: const Icon(Icons.delete_outline_rounded),
-              tooltip: 'Delete',
-              onPressed: () => _delete(items.valueOrNull ?? const []),
-            ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
+    // Back leaves a selection before it leaves the page.
+    return PopScope(
+      canPop: !selecting,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(_selected.clear);
+      },
+      child: Scaffold(
+        body: Column(
           children: [
-            _BucketFilter(
+            FlatCapsuleHeader(
+              title: FlatHeaderLabel(
+                selecting ? '${_selected.length} selected' : 'Review storage',
+              ),
+              action: selecting
+                  ? FlatHeaderAction(
+                      icon: HugeIcons.strokeRoundedDelete02,
+                      label: 'Delete',
+                      tint: colors.error,
+                      onPressed: () => _delete(items.valueOrNull ?? const []),
+                    )
+                  : null,
+            ),
+            StorageBucketFilter(
               value: _bucket,
               onChanged: (bucket) => setState(() {
                 _bucket = bucket;
                 // A row hidden by the filter must not stay silently selected —
-                // the app bar count would then not match anything on screen.
+                // the header count would then not match anything on screen.
                 _selected.clear();
               }),
             ),
             Expanded(
-              child: items.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, _) =>
-                    const Center(child: Text('Could not read local storage')),
-                data: (data) => data.isEmpty
-                    ? const Center(child: Text('Nothing downloaded here'))
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        itemCount: data.length,
-                        itemBuilder: (_, index) {
-                          final item = data[index];
-                          return StorageReviewTile(
-                            item: item,
-                            selected: _selected.contains(item.urlKey),
-                            selecting: selecting,
-                            onToggle: () => setState(() {
-                              if (!_selected.remove(item.urlKey)) {
-                                _selected.add(item.urlKey);
-                              }
-                            }),
-                          );
-                        },
-                      ),
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: true,
+                child: _list(items, selecting, colors),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _list(
+    AsyncValue<List<StorageItem>> items,
+    bool selecting,
+    ColorScheme colors,
+  ) {
+    Widget note(String text) => Center(
+      child: Text(text, style: TextStyle(color: colors.onSurfaceVariant)),
+    );
+    return items.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => note('Could not read local storage'),
+      data: (data) => data.isEmpty
+          ? note('Nothing downloaded here')
+          : ListView.builder(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.viewPaddingOf(context).bottom + 24,
+              ),
+              itemCount: data.length,
+              itemBuilder: (_, index) {
+                final item = data[index];
+                return StorageReviewTile(
+                  item: item,
+                  selected: _selected.contains(item.urlKey),
+                  selecting: selecting,
+                  onToggle: () => setState(() {
+                    if (!_selected.remove(item.urlKey)) {
+                      _selected.add(item.urlKey);
+                    }
+                  }),
+                );
+              },
+            ),
     );
   }
 
@@ -115,33 +129,5 @@ class _StorageReviewScreenState extends ConsumerState<StorageReviewScreen> {
     invalidateStorage(ref);
     if (!mounted) return;
     showAppToast(context, 'Freed ${formatBytes(freed)}');
-  }
-}
-
-class _BucketFilter extends StatelessWidget {
-  const _BucketFilter({required this.value, required this.onChanged});
-
-  final StorageBucket? value;
-  final ValueChanged<StorageBucket?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          for (final bucket in <StorageBucket?>[null, ...StorageBucket.values])
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                label: Text(bucket?.label ?? 'All'),
-                selected: value == bucket,
-                onSelected: (_) => onChanged(bucket),
-              ),
-            ),
-        ],
-      ),
-    );
   }
 }

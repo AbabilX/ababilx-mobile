@@ -31,6 +31,7 @@ class ShareThreadTile extends ConsumerWidget {
     final unread = thread.unread > 0;
     return ListTile(
       onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
       leading: ShareDeviceAvatar(
         deviceType: device.deviceType,
         userId: device.userId,

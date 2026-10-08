@@ -12,6 +12,8 @@ import '../providers/share_account.dart';
 import '../share_text.dart';
 import '../sheets/device_name_sheet.dart';
 import '../widgets/share_device_avatar.dart';
+import '../../../shared/widgets/flat_capsule_header.dart';
+import '../widgets/share_page_frame.dart';
 import '../widgets/share_setup_view.dart';
 import '../widgets/share_thread_tile.dart';
 
@@ -22,19 +24,17 @@ class LocalShareScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final name = ref.watch(localShareNameProvider);
-    final title = Text(lsText(ref, 'settings_local_share'));
-    if (name.isLoading) {
-      return Scaffold(appBar: AppBar(title: title));
-    }
+    final title = lsText(ref, 'settings_local_share');
     final mine = name.valueOrNull;
     if (mine == null) {
-      return Scaffold(
-        appBar: AppBar(title: title),
-        body: const ShareSetupView(),
+      return SharePageFrame(
+        header: FlatCapsuleHeader(title: FlatHeaderLabel(title)),
+        body: name.isLoading ? const SizedBox.shrink() : const ShareSetupView(),
       );
     }
 
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
     final peers = ref.watch(localSharePeersProvider).valueOrNull ?? const {};
     final threads =
         ref.watch(localShareThreadsProvider).valueOrNull ?? const [];
@@ -44,70 +44,69 @@ class LocalShareScreen extends ConsumerWidget {
         if (!known.contains(p.deviceId)) p,
     ];
 
-    Widget header(String key) => Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
-      child: Text(
-        lsText(ref, key),
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: colors.onSurfaceVariant,
+    // The app's settings sections: a hairline, then a quiet heading.
+    List<Widget> header(String key) => [
+      const Divider(height: 24),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+        child: Text(lsText(ref, key), style: theme.textTheme.labelLarge),
+      ),
+    ];
+
+    return SharePageFrame(
+      header: FlatCapsuleHeader(
+        title: FlatHeaderLabel(title),
+        action: FlatHeaderAction(
+          icon: HugeIcons.strokeRoundedRefresh,
+          label: lsText(ref, 'ls_refresh'),
+          onPressed: () => unawaited(
+            ref.read(localShareEngineProvider).valueOrNull?.presence.refresh(),
+          ),
         ),
       ),
-    );
-
-    return Scaffold(
-      appBar: AppBar(
-        title: title,
-        actions: [
-          IconButton(
-            tooltip: lsText(ref, 'ls_refresh'),
-            icon: const ChatIcon(HugeIcons.strokeRoundedRefresh),
-            onPressed: () => unawaited(
-              ref
-                  .read(localShareEngineProvider)
-                  .valueOrNull
-                  ?.presence
-                  .refresh(),
-            ),
-          ),
-        ],
-      ),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 32),
+        padding: EdgeInsets.only(
+          top: 4,
+          bottom: MediaQuery.viewPaddingOf(context).bottom + 24,
+        ),
         children: [
           ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20),
             leading: const ChatIcon(HugeIcons.strokeRoundedSmartPhone01),
-            title: Text(mine),
-            subtitle: Text(lsText(ref, 'ls_this_device')),
-            trailing: const ChatIcon(
+            title: Text(mine, style: theme.textTheme.titleSmall),
+            subtitle: Text(
+              lsText(ref, 'ls_this_device'),
+              style: theme.textTheme.bodySmall?.copyWith(color: muted),
+            ),
+            trailing: ChatIcon(
               HugeIcons.strokeRoundedPencilEdit02,
               size: 20,
+              color: muted,
             ),
             onTap: () => showDeviceNameSheet(context),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
             child: Text(
               lsText(ref, 'ls_same_wifi_note'),
-              style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.copyWith(color: muted),
             ),
           ),
-          header('ls_section_nearby'),
+          ...header('ls_section_nearby'),
           if (strangers.isEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
               child: Text(
                 lsText(
                   ref,
                   peers.isEmpty ? 'ls_searching' : 'ls_no_new_devices',
                 ),
-                style: TextStyle(color: colors.onSurfaceVariant),
+                style: theme.textTheme.bodyMedium?.copyWith(color: muted),
               ),
             )
           else
             for (final peer in strangers) _NearbyTile(peer: peer),
-          if (threads.isNotEmpty) header('ls_section_threads'),
+          if (threads.isNotEmpty) ...header('ls_section_threads'),
           for (final thread in threads)
             ShareThreadTile(
               thread: thread,
@@ -130,6 +129,7 @@ class _NearbyTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final account = ref.watch(shareAccountProvider(peer.userId));
     return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
       leading: ShareDeviceAvatar(
         deviceType: peer.deviceType,
         userId: peer.userId,

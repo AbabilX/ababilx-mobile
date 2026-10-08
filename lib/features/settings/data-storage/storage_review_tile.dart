@@ -3,8 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:hugeicons/hugeicons.dart';
+
 import '../../../shared/text/byte_size.dart';
 import '../../attachments/storage/storage_usage.dart';
+import '../../messages/chat_icon.dart';
+import 'storage_bucket_filter.dart';
 
 /// One file in Review storage: what it is, how big, and when it landed.
 ///
@@ -30,7 +34,7 @@ class StorageReviewTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       leading: _Thumb(item: item, selected: selected),
       title: Text(
         item.fileName.isEmpty ? item.bucket.label : item.fileName,
@@ -46,10 +50,17 @@ class StorageReviewTile extends StatelessWidget {
           color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
+      // Signal's selection circle, in the app's glyphs: no Material checkbox.
       trailing: selecting
-          ? Checkbox(value: selected, onChanged: (_) => onToggle())
+          ? ChatIcon(
+              selected
+                  ? HugeIcons.strokeRoundedCheckmarkCircle02
+                  : HugeIcons.strokeRoundedCircle,
+              color: selected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+            )
           : null,
-      selected: selected,
       onTap: onToggle,
       // Long-press starts a selection the same way the timeline does, so the
       // first tap on this screen can still just be a mis-tap.
@@ -75,7 +86,7 @@ class _Thumb extends StatelessWidget {
     if (selected) {
       return CircleAvatar(
         backgroundColor: colors.primary,
-        child: Icon(Icons.check_rounded, color: colors.onPrimary),
+        child: ChatIcon(HugeIcons.strokeRoundedTick02, color: colors.onPrimary),
       );
     }
     if (item.bucket == StorageBucket.photos && item.localPath.isNotEmpty) {
@@ -103,17 +114,11 @@ class _Thumb extends StatelessWidget {
       color: colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(8),
     ),
-    child: Icon(
-      _iconFor(item.bucket),
+    alignment: Alignment.center,
+    child: ChatIcon(
+      storageBucketIcon(item.bucket),
       size: 20,
       color: colors.onSurfaceVariant,
     ),
   );
-
-  static IconData _iconFor(StorageBucket bucket) => switch (bucket) {
-    StorageBucket.photos => Icons.image_outlined,
-    StorageBucket.videos => Icons.videocam_outlined,
-    StorageBucket.audio => Icons.mic_none_rounded,
-    StorageBucket.documents => Icons.insert_drive_file_outlined,
-  };
 }
