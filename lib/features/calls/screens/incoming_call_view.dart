@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../decline-message/decline_message_panel.dart';
+import '../widgets/call_network_badge.dart';
 import '../widgets/call_backdrop.dart';
 import '../widgets/incoming_call_buttons.dart';
 import '../widgets/incoming_call_header.dart';
@@ -182,6 +183,11 @@ class _IncomingCallViewState extends State<IncomingCallView> {
               if (landscape) _landscapeButtons() else _portraitButtons(),
             ],
           ),
+        ),
+        Positioned(
+          top: MediaQuery.paddingOf(context).top + 14,
+          right: 16,
+          child: CallNetworkBadge(lang: widget.lang, ownLink: true),
         ),
         if (_replyOpen) ...[
           Positioned.fill(

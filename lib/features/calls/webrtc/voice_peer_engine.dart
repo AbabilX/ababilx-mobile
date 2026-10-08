@@ -8,6 +8,8 @@ import '../audio/call_audio_route.dart';
 import '../native/android_screen_share.dart';
 import '../voice_call_log.dart';
 import 'ice_candidate_stats.dart';
+import '../network/call_network_quality.dart';
+import '../network/call_network_stats.dart';
 import 'voice_audio_progress.dart';
 import 'voice_camera_capture.dart';
 import 'voice_media_map.dart';
@@ -108,6 +110,8 @@ class VoicePeerEngine {
   bool _disposed = false;
   bool _connected = false;
   final _audioProgress = VoiceAudioProgress();
+  final _networkStats = CallNetworkStatsReader();
+  final _networkTrend = CallNetworkTrend();
   Timer? _audioHealthTimer;
   bool _audioHealthPending = false;
   bool _answerReceived = false;
@@ -574,6 +578,8 @@ class VoicePeerEngine {
         }
       }
       if (_audioProgress.update(packets)) onHealthy();
+      // The same report says how well the path is carrying the call.
+      callNetworkQuality.value = _networkTrend.add(_networkStats.read(stats));
     } catch (_) {
       // An unavailable stats sample is not evidence of call failure.
       _audioProgress.update({});
@@ -902,6 +908,7 @@ class VoicePeerEngine {
     _disposed = true;
     _audioHealthTimer?.cancel();
     _audioHealthTimer = null;
+    callNetworkQuality.value = CallNetworkLevel.unknown;
     await stopScreenShare(renegotiate: false);
     _renegotiateFallback?.cancel();
     _renegotiateFallback = null;

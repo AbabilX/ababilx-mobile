@@ -8,6 +8,7 @@ import '../providers/voice_call_state.dart';
 import 'call_chrome_auto_hide.dart';
 import 'call_controls_anchor.dart';
 import 'call_minimize_button.dart';
+import 'call_network_badge.dart';
 import 'call_note.dart';
 import 'call_overlay_metrics.dart';
 import 'call_peer_identity.dart';
@@ -43,6 +44,16 @@ class ConnectedCallBody extends StatelessWidget {
   bool get _remoteVideo => call.remoteCameraStream != null;
 
   bool get _stage => _sharing || _remoteVideo;
+
+  bool get _topBusy => _stage || call.screenSharing;
+
+  bool get _live => call.phase == VoiceCallPhase.connected;
+
+  /// Not answered yet: only this phone's own link can be measured.
+  bool get _ringing =>
+      call.phase == VoiceCallPhase.starting ||
+      call.phase == VoiceCallPhase.outgoingRinging ||
+      call.phase == VoiceCallPhase.connecting;
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +110,7 @@ class ConnectedCallBody extends StatelessWidget {
                     showWave: showWave,
                   ),
                 ),
-              if (_stage || call.screenSharing)
+              if (_topBusy)
                 Positioned(
                   top: padding.top + 8,
                   left: 56,
@@ -112,6 +123,14 @@ class ConnectedCallBody extends StatelessWidget {
                         ? AppTranslations.of(lang, 'call_sharing_own_screen')
                         : null,
                   ),
+                ),
+              if (_ringing || (_live && !call.reconnecting))
+                Positioned(
+                  // Under the name line while video or a screen fills the top.
+                  top: padding.top + (_topBusy ? 60 : 14),
+                  left: _topBusy ? math.max(padding.left, 12) + 4 : null,
+                  right: _topBusy ? null : math.max(padding.right, 12) + 4,
+                  child: CallNetworkBadge(lang: lang, ownLink: _ringing),
                 ),
               if (call.error != null)
                 Positioned(
