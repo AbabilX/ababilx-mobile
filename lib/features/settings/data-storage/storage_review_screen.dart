@@ -9,7 +9,7 @@ import '../../attachments/storage/storage_providers.dart';
 import '../../attachments/storage/storage_usage.dart';
 import 'storage_bucket_filter.dart';
 import 'storage_confirm.dart';
-import 'storage_review_tile.dart';
+import 'storage_review_list.dart';
 
 /// Signal's Review storage: everything on disk, biggest first, pick and delete.
 ///
@@ -24,13 +24,27 @@ class StorageReviewScreen extends ConsumerStatefulWidget {
 }
 
 class _StorageReviewScreenState extends ConsumerState<StorageReviewScreen> {
+  static const _tabs = <StorageBucket?>[null, ...StorageBucket.values];
+
   final _selected = <String>{};
-  StorageBucket? _bucket;
+  final _pages = PageController();
+  int _tab = 0;
+
+  StorageBucket? get _bucket => _tabs[_tab];
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  void _toggle(String key) => setState(() {
+    if (!_selected.remove(key)) _selected.add(key);
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final items = ref.watch(storageItemsProvider(_bucket));
     final selecting = _selected.isNotEmpty;
 
     // Back leaves a selection before it leaves the page.
@@ -51,24 +65,45 @@ class _StorageReviewScreenState extends ConsumerState<StorageReviewScreen> {
                       icon: HugeIcons.strokeRoundedDelete02,
                       label: 'Delete',
                       tint: colors.error,
-                      onPressed: () => _delete(items.valueOrNull ?? const []),
+                      onPressed: _delete,
                     )
                   : null,
             ),
             StorageBucketFilter(
               value: _bucket,
-              onChanged: (bucket) => setState(() {
-                _bucket = bucket;
-                // A row hidden by the filter must not stay silently selected —
-                // the header count would then not match anything on screen.
-                _selected.clear();
-              }),
+              // A tap slides to that tab, same as a swipe.
+              onChanged: (bucket) => _pages.animateToPage(
+                _tabs.indexOf(bucket),
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+              ),
             ),
             Expanded(
               child: MediaQuery.removePadding(
                 context: context,
                 removeTop: true,
-                child: _list(items, selecting, colors),
+                child: PageView(
+                  controller: _pages,
+                  // A swipe mid-selection would drop the picks silently.
+                  physics: selecting
+                      ? const NeverScrollableScrollPhysics()
+                      : const PageScrollPhysics(),
+                  // A row hidden by another tab must not stay silently
+                  // selected — the header count would match nothing on screen.
+                  onPageChanged: (index) => setState(() {
+                    _tab = index;
+                    _selected.clear();
+                  }),
+                  children: [
+                    for (final bucket in _tabs)
+                      StorageReviewList(
+                        key: ValueKey(bucket),
+                        bucket: bucket,
+                        selected: _selected,
+                        onToggle: _toggle,
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -77,42 +112,9 @@ class _StorageReviewScreenState extends ConsumerState<StorageReviewScreen> {
     );
   }
 
-  Widget _list(
-    AsyncValue<List<StorageItem>> items,
-    bool selecting,
-    ColorScheme colors,
-  ) {
-    Widget note(String text) => Center(
-      child: Text(text, style: TextStyle(color: colors.onSurfaceVariant)),
-    );
-    return items.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, _) => note('Could not read local storage'),
-      data: (data) => data.isEmpty
-          ? note('Nothing downloaded here')
-          : ListView.builder(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewPaddingOf(context).bottom + 24,
-              ),
-              itemCount: data.length,
-              itemBuilder: (_, index) {
-                final item = data[index];
-                return StorageReviewTile(
-                  item: item,
-                  selected: _selected.contains(item.urlKey),
-                  selecting: selecting,
-                  onToggle: () => setState(() {
-                    if (!_selected.remove(item.urlKey)) {
-                      _selected.add(item.urlKey);
-                    }
-                  }),
-                );
-              },
-            ),
-    );
-  }
-
-  Future<void> _delete(List<StorageItem> shown) async {
+  Future<void> _delete() async {
+    final shown =
+        ref.read(storageItemsProvider(_bucket)).valueOrNull ?? const [];
     final bytes = shown
         .where((item) => _selected.contains(item.urlKey))
         .fold<int>(0, (sum, item) => sum + item.bytes);

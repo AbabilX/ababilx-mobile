@@ -14,8 +14,10 @@ List<List<dynamic>> storageBucketIcon(StorageBucket? bucket) =>
       StorageBucket.documents => HugeIcons.strokeRoundedFile01,
     };
 
-/// All · Photos · Videos · Audio · Documents, as the app's capsules.
-class StorageBucketFilter extends StatelessWidget {
+/// All · Photos · Videos · Audio · Documents, as the app's capsules. The
+/// strip scrolls the chosen one into view, so a swipe between tabs never
+/// leaves the highlight off-screen.
+class StorageBucketFilter extends StatefulWidget {
   const StorageBucketFilter({
     super.key,
     required this.value,
@@ -26,20 +28,44 @@ class StorageBucketFilter extends StatelessWidget {
   final ValueChanged<StorageBucket?> onChanged;
 
   @override
+  State<StorageBucketFilter> createState() => _StorageBucketFilterState();
+}
+
+class _StorageBucketFilterState extends State<StorageBucketFilter> {
+  static const _all = <StorageBucket?>[null, ...StorageBucket.values];
+
+  final _keys = {for (final bucket in _all) bucket: GlobalKey()};
+
+  @override
+  void didUpdateWidget(StorageBucketFilter old) {
+    super.didUpdateWidget(old);
+    if (old.value == widget.value) return;
+    final target = _keys[widget.value]?.currentContext;
+    if (target == null) return;
+    Scrollable.ensureVisible(
+      target,
+      alignment: 0.5,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.fromLTRB(16, 4, 8, 10),
       child: Row(
         children: [
-          for (final bucket in <StorageBucket?>[null, ...StorageBucket.values])
+          for (final bucket in _all)
             Padding(
+              key: _keys[bucket],
               padding: const EdgeInsets.only(right: 8),
               child: AppCapsule(
                 label: bucket?.label ?? 'All',
                 icon: storageBucketIcon(bucket),
-                selected: value == bucket,
-                onTap: () => onChanged(bucket),
+                selected: widget.value == bucket,
+                onTap: () => widget.onChanged(bucket),
               ),
             ),
         ],
