@@ -9,6 +9,8 @@ import '../chat_utils.dart';
 import '../providers/chat_provider.dart';
 import '../wallpaper/chat_wallpaper_provider.dart';
 import 'message_actions.dart';
+import '../tiptap_plain_text.dart';
+import 'message_long_body.dart';
 import 'message_press_pinch.dart';
 import 'message_quick_react.dart';
 import 'message_row_content.dart';
@@ -46,6 +48,11 @@ class _MessageRowState extends ConsumerState<MessageRow>
 
   @override
   ChatMessage get pulsedMessage => widget.message;
+
+  /// The bubble is drawn collapsed with a "Read more" row (see `MessageBody`).
+  bool get _collapsedLong =>
+      !widget.message.isDeleted &&
+      MessageLongBody.isLong(tiptapToPlainText(widget.message.body));
 
   @override
   void dispose() {
@@ -170,6 +177,15 @@ class _MessageRowState extends ConsumerState<MessageRow>
             ? toggleSelection
             : isFailed
             ? () => retryFailedMessage(context, ref, widget.message)
+            : _collapsedLong
+            // A collapsed bubble opens in full on a tap anywhere, like its
+            // "Read more" row. Links, mentions, media and quotes inside the
+            // bubble keep their own taps.
+            ? () => MessageLongBody.openFull(
+                context,
+                widget.message.body,
+                widget.message.editedAt,
+              )
             : null,
         onDoubleTap: !selecting && canQuickCopy(widget.message)
             ? () => quickCopy(context, ref, widget.message)

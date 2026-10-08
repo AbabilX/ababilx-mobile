@@ -31,6 +31,15 @@ class MessageLongBody {
   /// clean cut reads as the end of the message.
   static const collapsedHeight = 264.0;
 
+  /// Opens the whole message full screen. The "Read more" row and a tap on the
+  /// collapsed bubble both land here.
+  static void openFull(BuildContext context, String? body, String? editedAt) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => LongMessageScreen(body: body, editedAt: editedAt),
+        ),
+      );
+
   static bool isLong(String plain) =>
       plain.length > maxCharacters ||
       // Lines, not line breaks: a body of `maxLines` rows holds one fewer
@@ -79,11 +88,7 @@ class ReadMoreRow extends StatelessWidget {
       padding: const EdgeInsets.only(top: 2),
       child: InkWell(
         borderRadius: BorderRadius.circular(4),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => LongMessageScreen(body: body, editedAt: editedAt),
-          ),
-        ),
+        onTap: () => MessageLongBody.openFull(context, body, editedAt),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Text(
