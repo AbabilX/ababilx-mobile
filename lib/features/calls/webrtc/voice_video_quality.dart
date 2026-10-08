@@ -1,6 +1,7 @@
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../voice_call_log.dart';
+import 'voice_audio_priority.dart';
 
 /// Send-side limits for the two video lanes of a 1:1 call.
 ///
@@ -30,10 +31,14 @@ Future<void> capVideoSendBitrate(
     final params = sender.parameters;
     final encodings = params.encodings;
     if (encodings == null || encodings.isEmpty) {
-      params.encodings = [RTCRtpEncoding(maxBitrate: maxBitrate)];
+      params.encodings = [
+        RTCRtpEncoding(maxBitrate: maxBitrate, priority: kVideoSendPriority),
+      ];
     } else {
       for (final encoding in encodings) {
         encoding.maxBitrate = maxBitrate;
+        // Behind the voice when the link cannot carry both in full.
+        encoding.priority = kVideoSendPriority;
       }
     }
     params.degradationPreference = maintainResolution

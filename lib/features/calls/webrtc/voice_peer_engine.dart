@@ -10,6 +10,7 @@ import '../voice_call_log.dart';
 import 'ice_candidate_stats.dart';
 import '../network/call_network_quality.dart';
 import '../network/call_network_stats.dart';
+import 'voice_audio_priority.dart';
 import 'voice_audio_progress.dart';
 import 'voice_camera_capture.dart';
 import 'voice_media_map.dart';
@@ -283,7 +284,7 @@ class VoicePeerEngine {
 
     for (final track in stream.getAudioTracks()) {
       if (_disposed) return;
-      await peer.addTrack(track, stream);
+      await prioritizeAudioSend(await peer.addTrack(track, stream));
     }
     if (video) {
       try {
