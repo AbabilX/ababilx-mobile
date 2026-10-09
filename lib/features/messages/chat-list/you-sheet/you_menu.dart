@@ -13,19 +13,22 @@ class YouMenu extends ConsumerWidget {
   const YouMenu({super.key});
 
   static const _themeModeLabels = {
-    ThemeMode.system: 'System',
-    ThemeMode.light: 'Light',
-    ThemeMode.dark: 'Dark',
+    AppThemeMode.system: 'System',
+    AppThemeMode.light: 'Light',
+    AppThemeMode.dark: 'Dark',
+    AppThemeMode.lightsOut: 'Lights Out',
   };
 
-  List<List<dynamic>> _themeIcon(ThemeMode mode) {
+  List<List<dynamic>> _themeIcon(AppThemeMode mode) {
     switch (mode) {
-      case ThemeMode.light:
+      case AppThemeMode.light:
         return HugeIcons.strokeRoundedSun01;
-      case ThemeMode.dark:
+      case AppThemeMode.dark:
         return HugeIcons.strokeRoundedMoon02;
-      case ThemeMode.system:
+      case AppThemeMode.system:
         return HugeIcons.strokeRoundedDarkMode;
+      case AppThemeMode.lightsOut:
+        return HugeIcons.strokeRoundedMoonEclipse;
     }
   }
 

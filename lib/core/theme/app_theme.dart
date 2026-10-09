@@ -9,11 +9,22 @@ import 'theme_text.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get light => _build(Brightness.light);
-  static ThemeData get dark => _build(Brightness.dark);
+  static ThemeData get light => _build(Brightness.light, lightsOut: false);
+  static ThemeData get dark => _build(Brightness.dark, lightsOut: false);
+  static ThemeData get lightsOut => _build(Brightness.dark, lightsOut: true);
 
-  static ThemeData _build(Brightness brightness) {
-    final scheme = ThemeSeed.scheme(brightness);
+  static ThemeData _build(Brightness brightness, {required bool lightsOut}) {
+    var scheme = ThemeSeed.scheme(brightness);
+    if (lightsOut) {
+      scheme = scheme.copyWith(
+        surface: Colors.black,
+        surfaceContainerLowest: Colors.black,
+        surfaceContainerLow: const Color(0xFF0A0A0A),
+        surfaceContainer: const Color(0xFF121212),
+        surfaceContainerHigh: const Color(0xFF1A1A1A),
+        surfaceContainerHighest: const Color(0xFF222222),
+      );
+    }
     final base = ThemeData(
       useMaterial3: true,
       brightness: brightness,

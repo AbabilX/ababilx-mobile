@@ -43,17 +43,25 @@ void main() {
       ),
     );
 
-    expect(container.read(themeModeProvider), ThemeMode.system);
+    expect(container.read(themeModeProvider), AppThemeMode.system);
 
     // Tap Theme item
     await tester.tap(find.text('Theme'));
     await tester.pumpAndSettle();
 
     // Verify theme mode cycled
-    expect(container.read(themeModeProvider), ThemeMode.light);
+    expect(container.read(themeModeProvider), AppThemeMode.light);
 
     await tester.tap(find.text('Theme'));
     await tester.pumpAndSettle();
-    expect(container.read(themeModeProvider), ThemeMode.dark);
+    expect(container.read(themeModeProvider), AppThemeMode.dark);
+
+    await tester.tap(find.text('Theme'));
+    await tester.pumpAndSettle();
+    expect(container.read(themeModeProvider), AppThemeMode.lightsOut);
+
+    await tester.tap(find.text('Theme'));
+    await tester.pumpAndSettle();
+    expect(container.read(themeModeProvider), AppThemeMode.system);
   });
 }

@@ -27,7 +27,18 @@ class AbabilXApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    final themeMode = ref.watch(themeModeProvider);
+    final appThemeMode = ref.watch(themeModeProvider);
+
+    final themeMode = switch (appThemeMode) {
+      AppThemeMode.system => ThemeMode.system,
+      AppThemeMode.light => ThemeMode.light,
+      AppThemeMode.dark => ThemeMode.dark,
+      AppThemeMode.lightsOut => ThemeMode.dark,
+    };
+
+    final darkTheme = appThemeMode == AppThemeMode.lightsOut
+        ? AppTheme.lightsOut
+        : AppTheme.dark;
 
     return LaunchHoldRelease(
       child: FcmBootstrap(
@@ -51,7 +62,7 @@ class AbabilXApp extends ConsumerWidget {
                               title: 'AbabilX',
                               debugShowCheckedModeBanner: false,
                               theme: AppTheme.light,
-                              darkTheme: AppTheme.dark,
+                              darkTheme: darkTheme,
                               themeMode: themeMode,
                               routerConfig: router,
                               // AppUpdateGate sits under the lock-screen host, so

@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'theme_mode_provider.dart';
+
 /// Persists the user's theme choice. Device-local, same pattern as chat
 /// wallpaper — no reason a theme choice needs a server round trip.
 ///
@@ -12,26 +14,38 @@ class ThemeModeStore {
   static const _system = 'system';
   static const _light = 'light';
   static const _dark = 'dark';
+  static const _lightsOut = 'lightsOut';
 
-  Future<bool?> read() async {
+  Future<AppThemeMode?> read() async {
     final prefs = await SharedPreferences.getInstance();
-    switch (prefs.getString(_key)) {
+    final value = prefs.getString(_key);
+    switch (value) {
       case _dark:
-        return true;
+        return AppThemeMode.dark;
       case _light:
-        return false;
+        return AppThemeMode.light;
+      case _lightsOut:
+        return AppThemeMode.lightsOut;
+      case _system:
+        return AppThemeMode.system;
       default:
         return null;
     }
   }
 
-  /// `null` clears back to system.
-  Future<void> write(bool? isDark) async {
+  /// `AppThemeMode.system` clears back to system.
+  Future<void> write(AppThemeMode mode) async {
     final prefs = await SharedPreferences.getInstance();
-    if (isDark == null) {
+    if (mode == AppThemeMode.system) {
       await prefs.setString(_key, _system);
     } else {
-      await prefs.setString(_key, isDark ? _dark : _light);
+      final value = switch (mode) {
+        AppThemeMode.light => _light,
+        AppThemeMode.dark => _dark,
+        AppThemeMode.lightsOut => _lightsOut,
+        AppThemeMode.system => _system,
+      };
+      await prefs.setString(_key, value);
     }
   }
 }
