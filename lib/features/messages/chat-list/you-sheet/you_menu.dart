@@ -45,7 +45,7 @@ class YouMenu extends ConsumerWidget {
           Expanded(
             child: YouMenuItem(
               icon: _themeIcon(themeMode),
-              label: 'Theme',
+              label: themeLabel,
               tooltip: 'Theme: $themeLabel',
               onTap: () => ref.read(themeModeProvider.notifier).cycle(),
             ),

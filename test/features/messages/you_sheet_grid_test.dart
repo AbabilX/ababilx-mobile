@@ -20,7 +20,7 @@ void main() {
 
     // Verify 4 grid items exist
     expect(find.byType(YouMenuItem), findsNWidgets(4));
-    expect(find.text('Theme'), findsOneWidget);
+    expect(find.text('System'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Scan QR'), findsOneWidget);
 
@@ -28,7 +28,7 @@ void main() {
     expect(find.text('Sign out'), findsNothing);
   });
 
-  testWidgets('Tapping Theme cycles themeMode in YouMenu', (tester) async {
+  testWidgets('Tapping Theme cycles themeMode and updates label in YouMenu', (tester) async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
@@ -44,24 +44,30 @@ void main() {
     );
 
     expect(container.read(themeModeProvider), AppThemeMode.system);
+    expect(find.text('System'), findsOneWidget);
 
-    // Tap Theme item
-    await tester.tap(find.text('Theme'));
+    // Tap System -> Light
+    await tester.tap(find.text('System'));
     await tester.pumpAndSettle();
-
-    // Verify theme mode cycled
     expect(container.read(themeModeProvider), AppThemeMode.light);
+    expect(find.text('Light'), findsOneWidget);
 
-    await tester.tap(find.text('Theme'));
+    // Tap Light -> Dark
+    await tester.tap(find.text('Light'));
     await tester.pumpAndSettle();
     expect(container.read(themeModeProvider), AppThemeMode.dark);
+    expect(find.text('Dark'), findsOneWidget);
 
-    await tester.tap(find.text('Theme'));
+    // Tap Dark -> Lights Out
+    await tester.tap(find.text('Dark'));
     await tester.pumpAndSettle();
     expect(container.read(themeModeProvider), AppThemeMode.lightsOut);
+    expect(find.text('Lights Out'), findsOneWidget);
 
-    await tester.tap(find.text('Theme'));
+    // Tap Lights Out -> System
+    await tester.tap(find.text('Lights Out'));
     await tester.pumpAndSettle();
     expect(container.read(themeModeProvider), AppThemeMode.system);
+    expect(find.text('System'), findsOneWidget);
   });
 }
