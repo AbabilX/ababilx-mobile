@@ -28,7 +28,7 @@ class YouSheet extends ConsumerWidget {
 
     return Material(
       color: colors.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -41,11 +41,15 @@ class YouSheet extends ConsumerWidget {
                 currentUserId: user?.id ?? '',
                 avatarUrl: avatar,
               ),
-              const SizedBox(height: 8),
-              const Divider(height: 1),
+              const SizedBox(height: 4),
+              Divider(
+                height: 1,
+                thickness: 0.5,
+                color: colors.outlineVariant.withValues(alpha: 0.35),
+              ),
               const SizedBox(height: 8),
               const YouMenu(),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
             ],
           ),
         ),
