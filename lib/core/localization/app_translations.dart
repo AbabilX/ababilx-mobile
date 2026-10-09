@@ -710,6 +710,7 @@ class AppTranslations {
           'History this phone keeps beyond the server, files included.',
       'app_language': 'Application Language',
       'devices_title': 'Linked devices',
+      'devices_refresh': 'Refresh',
       'devices_hero': 'Use this AbabilX account on another device.',
       'devices_link_new': 'Link a new device',
       'devices_my': 'My linked devices',
@@ -1992,6 +1993,7 @@ class AppTranslations {
           'সার্ভারে না থাকা যে হিস্টোরি এই ফোনে আছে, ফাইলসহ।',
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',
       'devices_title': 'যুক্ত ডিভাইস',
+      'devices_refresh': 'রিফ্রেশ',
       'devices_subtitle':
           'এই অ্যাকাউন্টে সাইন ইন করা প্রতিটি ব্রাউজার, ডেস্কটপ অ্যাপ ও ফোন। একই রকম দুটি ডিভাইস আলাদা করতে নাম দিন, অচেনা কোনোটি থাকলে সাইন আউট করুন।',
       'devices_empty': 'কোনো ডিভাইস সাইন ইন করা নেই।',

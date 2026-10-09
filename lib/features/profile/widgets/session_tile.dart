@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../messages/chat_icon.dart';
 import '../data/session_repository.dart';
 
 /// One linked device: what it is, when it was linked, when it was last seen,
@@ -39,7 +41,11 @@ class SessionTile extends ConsumerWidget {
       leading: CircleAvatar(
         radius: 24,
         backgroundColor: colors.surfaceContainerHigh,
-        child: Icon(_clientIcon(session.client), color: colors.onSurface),
+        child: ChatIcon(
+          _clientHugeIcon(session.client),
+          size: 20,
+          color: colors.onSurface,
+        ),
       ),
       title: Row(
         children: [
@@ -123,10 +129,10 @@ class SessionTile extends ConsumerWidget {
 
 enum _TileAction { rename, revoke }
 
-IconData _clientIcon(String client) {
-  if (client == 'mobile') return Icons.smartphone_rounded;
-  if (client == 'desktop') return Icons.laptop_mac_rounded;
-  return Icons.language_rounded;
+List<List<dynamic>> _clientHugeIcon(String client) {
+  if (client == 'mobile') return HugeIcons.strokeRoundedSmartPhone01;
+  if (client == 'desktop') return HugeIcons.strokeRoundedComputer;
+  return HugeIcons.strokeRoundedInternet;
 }
 
 /// A date, not "3 days ago". This list is read to answer "is that laptop still
