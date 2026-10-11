@@ -2008,3 +2008,65 @@ contract in the monorepo root `CLAUDE.md` ("Send later"). Phone rules:
   row now absorbs pointers while failed: the whole bubble is the retry button.
 - A second failure went back to "Tap to retry" with no word. `retrySend`
   returns the error and the toast says why (offline, locked, server's reason).
+
+## The server cannot switch encryption off, and key changes are seen — 2026-10-11
+
+Two holes found while preparing the code for open source. Mobile only, no
+server change, no migration.
+
+**1. Whether to seal was the server's answer on every send.** The
+conversation type (`isEncrypted`), `plaintext_until_keyed` and
+`encrypted_attachments` all arrive from it; changing any one got the next
+message or file in the clear with no error on the phone.
+
+```
+EncryptionPins (message_e2ee/encryption_pins.dart, SharedPreferences per account)
+pinned when   a fetched list shows the chat encrypted with no plaintext mark
+              · this phone holds a key for it (vault onKeyHeld)
+              · a sealed send was confirmed
+then          mustSealChat = pinned OR list says encrypted
+              mayStayPlaintext = marked AND never pinned
+              uploads: sealed in a pinned chat; `encrypted_attachments`
+              seen true once stays true (sealsUploads)
+```
+
+- Read by every path that can send: `sendMessage`, edit (`_sendEdit`: a
+  ciphertext row is edited as ciphertext whatever the list says), forward
+  (`buildForwardTargets(pinned:)`), send later, upload presign, and the
+  notification-shade reply (reads the pins with `reload: true`, since the
+  app isolate writes them).
+- A pin is never removed. No conversation legitimately stops being encrypted.
+- **Trust on first use.** A chat first met under a lying server is not
+  protected, and a fresh install has pinned nothing. A converted group the
+  phone has never seen keyed still trusts the mark.
+- Unreadable storage counts as "not pinned" (the list's answer is used): the
+  server cannot cause that, and a send must not fail on it.
+- A NEW send path must ask `mustSealChat`, never `conv.isEncrypted` alone.
+
+**2. The key-change watch never fired.** `SafetyNumberStore.remember` was
+called only by the acknowledgement button, which is shown only after a
+change, so nothing was ever stored and every check answered "first seen".
+Groups had no watch at all.
+
+```
+MemberKeyWatch (safety_number/member_key_watch.dart)
+first key seen for a person  -> remembered
+different key later          -> PeerTrust.changed until the user has looked
+sealed to a different key    -> also FLAGGED (vault onSealingTo, from
+                                _createKey and the backfill), so it stays
+                                reported even if the server hands the old
+                                key out again when asked
+```
+
+- `safetyNumberProvider` (DM) remembers on first sight and honours the flag.
+  `memberKeyChangesProvider` reads a group's `e2ee-members` roster when the
+  group opens; `GroupKeyChangeBanner` names the member (from the open feed,
+  else "A member") or opens a sheet when several changed. One store per
+  (account, person), so a change shows in the DM and in every shared group.
+- **Warns, never blocks** (Signal's rule): a person who started fresh looks
+  the same as a substituted key. That includes the backfill, which hands OLD
+  conversation keys to whatever key the server names for a member.
+- Fingerprints are memoised per key material; a large group costs one hash
+  per member per app run.
+- Tests: `encryption_pins_test.dart`, `member_key_watch_test.dart`,
+  `group_key_not_ready_test.dart`. **Not device-tested.**

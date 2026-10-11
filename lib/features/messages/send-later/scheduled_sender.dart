@@ -6,6 +6,7 @@ import '../data/chat_client_message_id.dart';
 import '../data/chat_send_body.dart';
 import '../data/models/chat_models.dart';
 import '../message_e2ee/dm_key_rotation.dart';
+import '../message_e2ee/encryption_pins.dart';
 import '../message_e2ee/message_vault.dart';
 import '../providers/chat_provider.dart';
 import 'scheduled_api.dart';
@@ -66,7 +67,11 @@ class ScheduledSender {
 
     final hasSealedFile = files.any((a) => a.secret != null);
     final ScheduledMessage row;
-    if (conv?.isEncrypted == true && (body.isNotEmpty || hasSealedFile)) {
+    final pinned = await _ref
+        .read(encryptionPinsProvider)
+        .isPinned(userId, conversationId);
+    if (mustSealChat(pinned: pinned, conversation: conv) &&
+        (body.isNotEmpty || hasSealedFile)) {
       // Same rule as a send: a refusal that means the key is stale re-keys
       // once and stores the message sealed under the new one.
       row = await sendEncryptedChat(
@@ -76,7 +81,9 @@ class ScheduledSender {
         currentUserId: userId,
         attachments: files,
         send: store,
-        sendUnencrypted: conv!.plaintextUntilKeyed ? () => store(null) : null,
+        sendUnencrypted: mayStayPlaintext(pinned: pinned, conversation: conv)
+            ? () => store(null)
+            : null,
       );
     } else {
       row = await store(null);

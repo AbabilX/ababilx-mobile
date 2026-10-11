@@ -36,6 +36,7 @@ import '../data/chat_message_merge.dart';
 import '../data/chat_repository.dart';
 import '../data/send_tracker.dart';
 import '../archive/archive_provider.dart';
+import '../message_e2ee/encryption_pins.dart';
 import '../data/local/chat_message_row.dart';
 import '../data/local/chat_message_store.dart';
 import '../data/local/conversation_wipe.dart';
@@ -395,6 +396,13 @@ class ChatNotifier extends Notifier<ChatState>
         'channels=${channels.length} currentUserId=${state.currentUserId}',
       );
       prefetchChatListAvatars([...dms, ...channels]);
+      // What the list shows as encrypted now stays encrypted on this phone.
+      unawaited(
+        ref.read(encryptionPinsProvider).observe(state.currentUserId, [
+          ...dms,
+          ...channels,
+        ]),
+      );
       await persistSidebar(ChatSidebar(channels: channels, dms: dms));
     } catch (e) {
       // Keep cached rows on network failure — never clear local state

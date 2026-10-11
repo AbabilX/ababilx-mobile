@@ -50,6 +50,7 @@ extension MessageVaultBackfill on MessageVault {
           final publicJwk = Map<String, dynamic>.from(
             result['public_key'] as Map,
           );
+          onSealingTo?.call(self, id, publicJwk);
           envelopes.add({
             'user_id': id,
             'key_version': version,

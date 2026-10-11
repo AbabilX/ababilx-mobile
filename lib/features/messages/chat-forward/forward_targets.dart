@@ -1,6 +1,7 @@
 import '../../attachments/crypto/attachment_secret.dart';
 import '../data/models/chat_attachment.dart';
 import '../data/models/chat_conversation.dart';
+import '../message_e2ee/encryption_pins.dart';
 import '../message_e2ee/message_vault.dart';
 
 /// Builds the per-destination payloads a forward needs.
@@ -29,6 +30,7 @@ Future<List<Map<String, dynamic>>> buildForwardTargets({
   required List<ChatConversation> conversations,
   List<ChatMessageAttachment> attachments = const [],
   String caption = '',
+  Set<String> pinned = const {},
 }) async {
   if (attachments.any((a) => a.needsKey)) {
     throw StateError('This file cannot be forwarded from this phone yet');
@@ -47,7 +49,10 @@ Future<List<Map<String, dynamic>>> buildForwardTargets({
   final targets = <Map<String, dynamic>>[];
   for (final conversation in conversations) {
     Map<String, dynamic>? sealed;
-    if (conversation.isEncrypted) {
+    // [pinned]: chats this phone has known as encrypted. They are sealed to
+    // even when the list no longer calls them encrypted, and never fall back.
+    final isPinned = pinned.contains(conversation.id);
+    if (mustSealChat(pinned: isPinned, conversation: conversation)) {
       try {
         sealed = await _encryptedTarget(
           vault: vault,
@@ -61,7 +66,9 @@ Future<List<Map<String, dynamic>>> buildForwardTargets({
         // The same rule as an ordinary send: only a group the server marks
         // plaintext_until_keyed may take the text as it is. Anything else —
         // a DM, a group created as a group — refuses.
-        if (!conversation.plaintextUntilKeyed) rethrow;
+        if (!mayStayPlaintext(pinned: isPinned, conversation: conversation)) {
+          rethrow;
+        }
       }
     }
     if (sealed == null && files.isNotEmpty) {

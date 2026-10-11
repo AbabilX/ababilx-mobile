@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -15,7 +16,9 @@ import '../../local-backup/restore/restored_body_store.dart';
 import '../data/models/chat_attachment.dart';
 import '../data/models/chat_message.dart';
 import '../data/models/chat_message_quote.dart';
+import '../safety_number/member_key_changes.dart';
 import '../tiptap_plain_text.dart';
+import 'encryption_pins.dart';
 import 'p256_ecdh.dart';
 import 'new_chat_history_cleanup.dart';
 import 'recovery_key.dart';
@@ -32,6 +35,7 @@ part 'message_vault_codec.dart';
 part 'message_vault_identity.dart';
 part 'message_vault_key_cache.dart';
 part 'message_vault_key_versions.dart';
+part 'message_vault_key_not_ready.dart';
 part 'message_vault_keys.dart';
 part 'message_vault_link.dart';
 part 'message_vault_recover.dart';
@@ -94,6 +98,14 @@ class MessageVault {
   bool _newChatPending = false;
   bool get isStartingNewChat => _newChatPending;
   Future<void> Function(String userId)? onHistoryReset;
+
+  /// Told each time this account is found holding a conversation's key, so
+  /// the conversation is remembered as encrypted (EncryptionPins).
+  void Function(String userId, String conversationId)? onKeyHeld;
+
+  /// Told each public key a conversation key is sealed to (MemberKeyWatch).
+  void Function(String self, String userId, Map<String, dynamic> publicJwk)?
+  onSealingTo;
 
   /// Finds what a private-chat reply quotes (server 0160) in this phone's own
   /// history: the original may be gone from the server, so the reply carries

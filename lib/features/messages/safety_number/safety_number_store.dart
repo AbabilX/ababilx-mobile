@@ -46,7 +46,8 @@ class SafetyNumberStore {
     return stored == fingerprint ? PeerTrust.unchanged : PeerTrust.changed;
   }
 
-  /// Records a fingerprint as the one this device now expects.
+  /// Records a fingerprint as the one this device now expects, and clears a
+  /// flagged change: the user has looked.
   Future<void> remember(
     String ownerUserId,
     String peerUserId,
@@ -54,12 +55,35 @@ class SafetyNumberStore {
   ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key(ownerUserId, peerUserId), fingerprint);
+    await prefs.remove(_flagKey(ownerUserId, peerUserId));
+  }
+
+  static const String _flagPrefix = 'ababilx_peer_key_changed_v1_';
+
+  String _flagKey(String ownerUserId, String peerUserId) =>
+      '$_flagPrefix${ownerUserId}_$peerUserId';
+
+  /// Marks that a key was SEALED to a different identity than the one
+  /// remembered. Kept apart from [check], which compares against whatever the
+  /// server hands out when asked: a server may answer that question with the
+  /// old key and the sealing roster with another.
+  Future<void> flag(String ownerUserId, String peerUserId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_flagKey(ownerUserId, peerUserId), true);
+  }
+
+  Future<bool> isFlagged(String ownerUserId, String peerUserId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_flagKey(ownerUserId, peerUserId)) ?? false;
   }
 
   /// Drops every fingerprint during account switch or a full vault reset.
   Future<void> forgetAll() async {
     final prefs = await SharedPreferences.getInstance();
-    final doomed = prefs.getKeys().where((k) => k.startsWith(_prefix)).toList();
+    final doomed = prefs
+        .getKeys()
+        .where((k) => k.startsWith(_prefix) || k.startsWith(_flagPrefix))
+        .toList();
     for (final key in doomed) {
       await prefs.remove(key);
     }

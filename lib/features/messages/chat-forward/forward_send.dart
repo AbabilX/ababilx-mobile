@@ -8,6 +8,7 @@ import '../../../core/network/friendly_error.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../chat-recipient-picker/chat_recipient_target.dart';
 import '../data/models/chat_models.dart';
+import '../message_e2ee/encryption_pins.dart';
 import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/vault_placeholder.dart';
 import '../providers/chat_provider.dart';
@@ -97,13 +98,18 @@ Future<void> _forwardBehind(
     // any one message managed: a batch where the second message reached one
     // fewer chat than the first must not report the first's number.
     var fewest = conversations.length;
+    final userId = container.read(chatProvider).currentUserId;
+    final pinned = await container
+        .read(encryptionPinsProvider)
+        .pinnedAmong(userId, conversations.map((c) => c.id));
     for (final message in ordered) {
       final prepared = await buildForwardTargets(
         vault: vault,
-        currentUserId: container.read(chatProvider).currentUserId,
+        currentUserId: userId,
         text: message.body,
         conversations: conversations,
         attachments: message.attachments,
+        pinned: pinned,
       );
       final delivered = await notifier.forwardMessage(
         messageId: message.id,

@@ -97,9 +97,16 @@ mixin _ChatMutateMixin
     // hold a key at all — never `isDm`. A personal group is E2EE too, and the
     // DM test sent plaintext for one of its ciphertext rows, which the server
     // refuses ('encrypted messages require an encrypted edit').
+    // A ciphertext row is edited as ciphertext whatever the list calls its
+    // conversation now. With no stored copy to read, the chat decides.
     final secure =
-        (conversation?.isEncrypted ?? false) &&
-        (existing?.isEncrypted ?? false);
+        existing?.isEncrypted ??
+        mustSealChat(
+          pinned: await ref
+              .read(encryptionPinsProvider)
+              .isPinned(state.currentUserId, convId),
+          conversation: conversation,
+        );
     EncryptedDmPayload? encrypted;
     if (secure && body.isNotEmpty) {
       encrypted = await ref
@@ -326,9 +333,11 @@ mixin _ChatMutateMixin
   }) async {
     final secret = plain
         ? null
-        : sealedUploadSecret(
+        : await sealedUploadSecret(
             ref,
             state.conversationById(conversationId),
+            userId: state.currentUserId,
+            conversationId: conversationId,
             contentType: contentType,
             fileName: fileName,
             sizeBytes: sizeBytes,

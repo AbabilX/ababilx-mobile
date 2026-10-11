@@ -267,5 +267,72 @@ void main() {
         throwsA(isA<ChatKeyNotReady>()),
       );
     });
+
+    // The mark is the server's word. A group this phone has known as
+    // encrypted does not go back to plaintext because the list says so.
+    test('a pinned group ignores the mark and refuses', () async {
+      final vault = await unlocked();
+      await expectLater(
+        buildForwardTargets(
+          vault: vault,
+          currentUserId: 'me',
+          text: 'fwd',
+          conversations: [groupRow(marked: true)],
+          pinned: {'g'},
+        ),
+        throwsA(isA<ChatKeyNotReady>()),
+      );
+    });
+
+    // A pinned chat the list now calls a feed is still sealed to.
+    test('a pinned chat relabelled as a feed is sealed, not copied', () async {
+      repo.peerReady = true;
+      final vault = await unlocked();
+      final relabelled = ChatConversation.fromJson({
+        'id': 'g',
+        'scope': 'personal',
+        'type': 'webhook',
+        'name': 'G',
+        'created_at': '2026-09-12T00:00:00Z',
+      });
+      expect(relabelled.isEncrypted, isFalse);
+      final targets = await buildForwardTargets(
+        vault: vault,
+        currentUserId: 'me',
+        text: 'secret',
+        conversations: [relabelled],
+        pinned: {'g'},
+      );
+      expect(targets.single.toString(), isNot(contains('secret')));
+    });
+  });
+
+  test(
+    'holding a conversation key reports it, so the chat is pinned',
+    () async {
+      repo.peerReady = true;
+      final held = <String>[];
+      final vault = await unlocked()
+        ..onKeyHeld = (userId, conversationId) =>
+            held.add('$userId:$conversationId');
+      await vault.encryptNew(
+        conversationId: 'g',
+        text: 'x',
+        currentUserId: 'me',
+      );
+      expect(held, ['me:g']);
+    },
+  );
+
+  test('every other member a key is sealed to is reported', () async {
+    repo.peerReady = true;
+    final sealedTo = <String>[];
+    final vault = await unlocked()
+      ..onSealingTo = (self, userId, publicJwk) {
+        expect(publicJwk['x'], isNotNull);
+        sealedTo.add('$self>$userId');
+      };
+    await vault.encryptNew(conversationId: 'g', text: 'x', currentUserId: 'me');
+    expect(sealedTo, containsAll(['me>me', 'me>peer']));
   });
 }

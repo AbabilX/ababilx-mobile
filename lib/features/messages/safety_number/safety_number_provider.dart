@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/chat_repository.dart';
 import '../message_e2ee/message_vault.dart';
 import '../providers/chat_provider.dart';
+import 'member_key_changes.dart';
 import 'safety_number.dart';
 import 'safety_number_store.dart';
 
@@ -79,12 +80,21 @@ final safetyNumberProvider = FutureProvider.autoDispose
       }
 
       final peerFingerprint = derived['peer']!;
+      final store = ref.read(safetyNumberStoreProvider);
+      var trust = await store.check(myId, peerUserId, peerFingerprint);
+      if (trust == PeerTrust.firstSeen) {
+        // Trust on first use. Without this nothing was ever stored (only the
+        // acknowledgement wrote, and it is offered only after a change), so
+        // a change could never be seen.
+        await store.remember(myId, peerUserId, peerFingerprint);
+      } else if (await store.isFlagged(myId, peerUserId)) {
+        // A key was sealed to another identity, whatever is handed out now.
+        trust = PeerTrust.changed;
+      }
       return SafetyNumberInfo(
         digits: derived['digits']!,
         peerFingerprint: peerFingerprint,
-        trust: await ref
-            .read(safetyNumberStoreProvider)
-            .check(myId, peerUserId, peerFingerprint),
+        trust: trust,
       );
     });
 
@@ -101,4 +111,5 @@ Future<void> acknowledgeSafetyNumber(
       .read(safetyNumberStoreProvider)
       .remember(myId, peerUserId, peerFingerprint);
   ref.invalidate(safetyNumberProvider(peerUserId));
+  ref.invalidate(memberKeyChangesProvider);
 }

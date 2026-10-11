@@ -4,6 +4,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../messages/data/chat_client_message_id.dart';
 import '../../messages/data/chat_repository.dart';
+import '../../messages/message_e2ee/encryption_pins.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/tiptap_plain_text.dart';
 
@@ -75,7 +76,8 @@ Future<bool> markChatNotificationRead(String conversationId) async {
 ///
 /// `recipient_id` is this device's own user id — the push named it so the key
 /// envelope could be opened — and it is what the vault seals as. The server
-/// writes it only into an encrypted push, so its presence IS the discriminator;
+/// writes it only into an encrypted push, so its presence is the first
+/// discriminator, and this phone's own pins are the second;
 /// testing the type for "chat_dm" instead is what made a personal group's
 /// shade-reply go out in plaintext to a conversation that refuses plaintext.
 Future<EncryptedDmPayload?> _seal(
@@ -84,9 +86,17 @@ Future<EncryptedDmPayload?> _seal(
   Map<String, dynamic> data,
   String body,
 ) async {
-  final myUserId = data['recipient_id']?.toString() ?? '';
+  var myUserId = data['recipient_id']?.toString() ?? '';
   final conversationId = data['conversation_id']?.toString() ?? '';
-  if (myUserId.isEmpty || conversationId.isEmpty) return null;
+  if (conversationId.isEmpty) return null;
+  if (myUserId.isEmpty) {
+    // The push did not mark this chat encrypted. That is the server's word;
+    // a chat this phone has known as encrypted is sealed to regardless.
+    final owner = await storage.readLocalDataOwnerUserId() ?? '';
+    const pins = EncryptionPins();
+    if (!await pins.isPinned(owner, conversationId, reload: true)) return null;
+    myUserId = owner;
+  }
 
   final vault = MessageVault(repo, storage);
   if (!await vault.restoreTrustedIdentityOffline()) {

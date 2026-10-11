@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/chat_provider.dart';
+import 'group_key_change_banner.dart';
 import 'safety_number_provider.dart';
 import 'safety_number_screen.dart';
+import 'safety_number_strip.dart';
 
 /// The half of safety numbers that actually protects anyone.
 ///
@@ -21,7 +23,12 @@ class SafetyNumberBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chat = ref.watch(chatProvider);
     final conversation = chat.conversationById(conversationId);
-    // A group has no single peer identity to pin, so there is nothing to watch.
+    // A group has many identities to watch; it gets its own strip.
+    if (conversation != null &&
+        conversation.isGroup &&
+        conversation.isEncrypted) {
+      return GroupKeyChangeBanner(conversationId: conversationId);
+    }
     // hasDmPeer, not isDm: in a note to self the peer is the viewer, so there
     // is no second identity to compare and no substitution to catch.
     final peerUserId =
@@ -34,41 +41,12 @@ class SafetyNumberBanner extends ConsumerWidget {
     final info = ref.watch(safetyNumberProvider(peerUserId)).valueOrNull;
     if (info == null || !info.changed) return const SizedBox.shrink();
 
-    final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.errorContainer,
-      child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) =>
-                SafetyNumberScreen(peerUserId: peerUserId, peerName: peerName),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              Icon(
-                Icons.gpp_maybe,
-                size: 18,
-                color: theme.colorScheme.onErrorContainer,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Your safety number with $peerName changed. Tap to verify.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onErrorContainer,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: theme.colorScheme.onErrorContainer,
-              ),
-            ],
-          ),
+    return SafetyNumberStrip(
+      text: 'Your safety number with $peerName changed. Tap to verify.',
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              SafetyNumberScreen(peerUserId: peerUserId, peerName: peerName),
         ),
       ),
     );

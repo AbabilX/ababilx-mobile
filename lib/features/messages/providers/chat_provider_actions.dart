@@ -266,7 +266,12 @@ mixin _ChatActionsMixin
       // the file's key is sealed under the body's key version, and a message
       // with no ciphertext names none.
       final hasSealedFile = attachments.any((a) => a.secret != null);
-      if (conv?.isEncrypted == true && (body.isNotEmpty || hasSealedFile)) {
+      // Sealed if the list says so OR this phone has known the chat as
+      // encrypted: the server's word alone can add encryption, never remove it.
+      final pins = ref.read(encryptionPinsProvider);
+      final pinned = await pins.isPinned(currentUser, convId);
+      if (mustSealChat(pinned: pinned, conversation: conv) &&
+          (body.isNotEmpty || hasSealedFile)) {
         msg = await sendEncryptedChat(
           vault: ref.read(messageVaultProvider),
           conversationId: convId,
@@ -276,9 +281,10 @@ mixin _ChatActionsMixin
           send: deliver,
           // Only a group the SERVER marks may stay plaintext until everyone
           // in it can be sealed to — a converted workspace channel that has
-          // never had a key. Every other conversation fails the send rather
-          // than downgrade it; see ChatKeyNotReady.
-          sendUnencrypted: conv!.plaintextUntilKeyed
+          // never had a key — and only while this phone has never seen it
+          // encrypted. Every other conversation fails the send rather than
+          // downgrade it; see ChatKeyNotReady.
+          sendUnencrypted: mayStayPlaintext(pinned: pinned, conversation: conv)
               ? () => deliver(null)
               : null,
         );
@@ -286,6 +292,7 @@ mixin _ChatActionsMixin
         msg = await deliver(null);
       }
       if (msg.isEncrypted) {
+        unawaited(pins.pin(currentUser, [convId]));
         msg = await ref
             .read(messageVaultProvider)
             .decryptMessage(msg, currentUser);

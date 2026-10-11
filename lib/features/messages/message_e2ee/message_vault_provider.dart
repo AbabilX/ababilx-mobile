@@ -8,6 +8,11 @@ final messageVaultProvider = Provider<MessageVault>(
           ref.watch(chatKeyCacheProvider),
         )
         ..onHistoryReset = ((userId) => cleanNewChatHistory(ref, userId))
+        ..onKeyHeld = ((userId, conversationId) => unawaited(
+          ref.read(encryptionPinsProvider).pin(userId, [conversationId]),
+        ))
+        ..onSealingTo = ((self, userId, publicJwk) =>
+            watchSealedKey(ref, self, userId, publicJwk))
         ..privateQuoteLookup = ((conversationId, messageId) =>
             resolvePrivateQuote(
               ref.read(chatMessageStoreProvider),
