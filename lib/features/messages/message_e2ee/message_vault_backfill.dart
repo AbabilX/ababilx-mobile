@@ -24,6 +24,7 @@ extension MessageVaultBackfill on MessageVault {
     _backfilled.add(conversationId);
     final identity = _identity;
     try {
+      final only = await _dmRoster(conversationId, self);
       final envelopes = <Map<String, dynamic>>[];
       for (final raw in gaps) {
         final gap = Map<String, dynamic>.from(raw as Map);
@@ -46,6 +47,8 @@ extension MessageVaultBackfill on MessageVault {
         await _cacheEnvelope(conversationId, version, envelope);
         for (final userId in (gap['user_ids'] as List? ?? const [])) {
           final id = userId.toString();
+          // An old key goes only to the people this DM is between.
+          if (only != null && !only.contains(id)) continue;
           final result = await _repo.getE2eePublicKey(id);
           final publicJwk = Map<String, dynamic>.from(
             result['public_key'] as Map,
@@ -71,4 +74,14 @@ extension MessageVaultBackfill on MessageVault {
       return false;
     }
   }
+
+  /// Who a DM's keys may be sealed to, or null for a group and for a DM this
+  /// phone has not listed yet. A vault built by hand (no key cache) runs in
+  /// another isolate and re-reads what the app wrote.
+  Future<Set<String>?> _dmRoster(String conversationId, String self) =>
+      const DmRosterPins().roster(
+        self,
+        conversationId,
+        reload: _keyCache == null,
+      );
 }

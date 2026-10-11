@@ -2070,3 +2070,33 @@ sealed to a different key    -> also FLAGGED (vault onSealingTo, from
   per member per app run.
 - Tests: `encryption_pins_test.dart`, `member_key_watch_test.dart`,
   `group_key_not_ready_test.dart`. **Not device-tested.**
+
+**3. A DM key was sealed to whoever the roster listed** (same day, second
+pass). `_createKey` and the backfill took every id from `e2ee-members` /
+`gaps`. One extra `chat_conversation_members` row on a DM — a database write
+is enough — got the new key and every older one, and no key had changed, so
+nothing warned.
+
+```
+DmRosterPins (message_e2ee/dm_roster_pins.dart, SharedPreferences per account)
+pinned when   a fetched list or a send names the DM's peer (first value kept)
+then          _createKey seals only to {me, peer}; an unready id outside it
+              is ignored; the backfill hands old keys only to the peer
+Note to Self  pinned with no peer -> sealed to this account alone
+```
+
+- The vault reads the pins itself (`_dmRoster`), so a vault built by hand in
+  the notification isolate is bound too (`reload` when it has no key cache).
+- An extra id is skipped, not an error: the chat keeps working, sealed to
+  the two people it is between.
+- **Groups are not covered.** A group's roster has no second source on the
+  phone; a member the server adds is sealed to. Needs signed membership or a
+  local "now also encrypted to X" notice. Same for the backfill to a member
+  whose key CHANGED: still handed over, only warned about.
+- `EncryptionPins` also stopped overwriting the stored pins after a read
+  that failed (`_read`, and a write adds to what is stored).
+- Tests: `dm_roster_pins_test.dart`.
+
+**Still open, found in the same pass:** a plaintext row in a sealed chat is
+drawn like any other message, so whoever can write to the database can put
+words in a member's mouth. Nothing on the phone marks or refuses it yet.

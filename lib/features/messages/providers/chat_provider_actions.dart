@@ -269,6 +269,9 @@ mixin _ChatActionsMixin
       // Sealed if the list says so OR this phone has known the chat as
       // encrypted: the server's word alone can add encryption, never remove it.
       final pins = ref.read(encryptionPinsProvider);
+      // A DM opened a moment ago may not have been in a fetched list yet;
+      // who it is with is fixed before its first key is sealed.
+      if (conv != null) await pins.observe(currentUser, [conv]);
       final pinned = await pins.isPinned(currentUser, convId);
       if (mustSealChat(pinned: pinned, conversation: conv) &&
           (body.isNotEmpty || hasSealedFile)) {

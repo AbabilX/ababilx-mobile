@@ -67,9 +67,9 @@ class ScheduledSender {
 
     final hasSealedFile = files.any((a) => a.secret != null);
     final ScheduledMessage row;
-    final pinned = await _ref
-        .read(encryptionPinsProvider)
-        .isPinned(userId, conversationId);
+    final pins = _ref.read(encryptionPinsProvider);
+    if (conv != null) await pins.observe(userId, [conv]);
+    final pinned = await pins.isPinned(userId, conversationId);
     if (mustSealChat(pinned: pinned, conversation: conv) &&
         (body.isNotEmpty || hasSealedFile)) {
       // Same rule as a send: a refusal that means the key is stale re-keys

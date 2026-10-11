@@ -62,7 +62,12 @@ extension MessageVaultKeys on MessageVault {
       throw StateError('Secure messages are not ready on this device yet');
     }
     final roster = await _repo.getE2eeConversationMembers(conversationId);
-    final unready = (roster['unready_member_ids'] as List?) ?? const [];
+    // A DM this phone knows is sealed to its own two people (DmRosterPins).
+    final only = await _dmRoster(conversationId, self);
+    bool sealable(Object? id) => only == null || only.contains(id.toString());
+    final unready = ((roster['unready_member_ids'] as List?) ?? const [])
+        .where(sealable)
+        .toList();
     // A key cannot be sealed to somebody with no identity, and one that skipped
     // them would lock them out of their own conversation.
     if (unready.isNotEmpty) {
@@ -77,6 +82,7 @@ extension MessageVaultKeys on MessageVault {
     for (final entry in (roster['members'] as List? ?? const [])) {
       final member = Map<String, dynamic>.from(entry as Map);
       final userId = member['user_id'] as String;
+      if (!sealable(userId)) continue;
       final publicKey = userId == self
           ? publicJwk
           : Map<String, dynamic>.from(member['public_key'] as Map);

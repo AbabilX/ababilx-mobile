@@ -55,6 +55,7 @@ import '../../features/settings/recovery-codes/recovery_codes_screen.dart';
 import '../../features/messages/message_e2ee/message_entry_ready.dart';
 import '../../features/messages/message_e2ee/message_recovery_screen.dart';
 import '../../features/onboarding/permissions/permission_intro_gate.dart';
+import '../../features/onboarding/profile-setup/profile_setup_gate.dart';
 
 /// Root navigator key — lets app-wide listeners (incoming call, incoming
 /// local-share request) show UI on top of whatever screen is current.
@@ -141,7 +142,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             const PermissionIntroGate(child: MessageRecoveryScreen()),
       ),
       ShellRoute(
-        builder: (_, _, child) => HomeShell(child: child),
+        builder: (_, _, child) =>
+            ProfileSetupGate(child: HomeShell(child: child)),
         routes: [
           // One page for both, so a swipe moves between them.
           GoRoute(

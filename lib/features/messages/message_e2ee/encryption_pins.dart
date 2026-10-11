@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/models/chat_conversation.dart';
+import 'dm_roster_pins.dart';
+
+export 'dm_roster_pins.dart';
 
 /// Thrown when a send into a conversation this phone knows as encrypted would
 /// have gone out readable. A [StateError], so every place that already shows
@@ -54,19 +57,24 @@ class EncryptionPins {
   static const _chats = 'chat_sealed_conversations_v1:';
   static const _uploads = 'chat_sealed_uploads_v1:';
   static final _memory = <String, Set<String>>{};
+  // Accounts whose pins were really read from disk. Until then every call
+  // tries again, and nothing held only in memory is written over the file.
+  static final _read = <String>{};
 
   Future<Set<String>> _load(String userId, {bool reload = false}) async {
     final held = _memory[userId];
-    if (held != null && !reload) return held;
+    if (held != null && !reload && _read.contains(userId)) return held;
     try {
       final prefs = await SharedPreferences.getInstance();
       // Another isolate may have written since this one last looked.
       if (reload) await prefs.reload();
-      return _memory[userId] = {...?prefs.getStringList('$_chats$userId')};
+      final pins = {...?held, ...?prefs.getStringList('$_chats$userId')};
+      _read.add(userId);
+      return _memory[userId] = pins;
     } catch (_) {
       // Storage that cannot be read is not the server's doing. The send goes
       // on under the list's answer, and the next read tries again.
-      return held ?? <String>{};
+      return _memory[userId] = held ?? <String>{};
     }
   }
 
@@ -95,26 +103,34 @@ class EncryptionPins {
 
   Future<void> pin(String userId, Iterable<String> conversationIds) async {
     if (userId.isEmpty) return;
-    final pins = _memory[userId] ??= await _load(userId);
+    final pins = await _load(userId);
     final before = pins.length;
     pins.addAll(conversationIds.where((id) => id.isNotEmpty));
     if (pins.length == before) return;
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('$_chats$userId', pins.toList());
+      final key = '$_chats$userId';
+      // Added to what is stored, never in place of it: a pin is not removed,
+      // and a read that failed earlier must not shrink the file now.
+      pins.addAll(prefs.getStringList(key) ?? const []);
+      await prefs.setStringList(key, pins.toList());
     } catch (_) {
       // Held in memory for this run; written with the next pin.
     }
   }
 
-  /// Pins every conversation a fetched list shows as encrypted.
+  /// Pins every conversation a fetched list shows as encrypted, and who each
+  /// DM in it is with.
   Future<void> observe(
     String userId,
     Iterable<ChatConversation> conversations,
-  ) => pin(userId, [
-    for (final c in conversations)
-      if (showsAsSealed(c)) c.id,
-  ]);
+  ) async {
+    await const DmRosterPins().observe(userId, conversations);
+    await pin(userId, [
+      for (final c in conversations)
+        if (showsAsSealed(c)) c.id,
+    ]);
+  }
 
   /// Whether this account's uploads are encrypted: what the server says now
   /// ([enabled]), or what it said once.

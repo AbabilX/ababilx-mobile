@@ -398,6 +398,25 @@ class AppTranslations {
           'Send photos, videos and files from your device.',
       'permissions_not_now': 'Not now',
       'permissions_next': 'Next',
+      'profile_setup_name_title': 'Your name',
+      'profile_setup_name_body':
+          'This is the name people see next to your messages and in groups.',
+      'profile_setup_name_label': 'Name',
+      'profile_setup_name_error': 'Could not save your name. Try again.',
+      'profile_setup_username_title': 'Choose a username',
+      'profile_setup_username_body':
+          'People scan your QR code or type your username to start a chat with you. Letters, numbers, and . _ - only.',
+      'profile_setup_username_label': 'Username',
+      'profile_setup_username_error':
+          'Could not save your username. Try again.',
+      'profile_setup_phone_title': 'Add your phone number',
+      'profile_setup_phone_body':
+          'People who already have your number can find you. It is never shown on your profile and never used to sign in.',
+      'profile_setup_phone_label': 'Phone number',
+      'profile_setup_phone_invalid': 'Enter a valid phone number',
+      'profile_setup_skip': 'Skip',
+      'profile_setup_next': 'Next',
+      'profile_setup_done': 'Done',
       'date_jump_title': 'Jump to',
       'date_jump_yesterday': 'Yesterday',
       'date_jump_week': 'Last week',
@@ -1693,6 +1712,25 @@ class AppTranslations {
       'permissions_media_body': 'ফোন থেকে ছবি, ভিডিও ও ফাইল পাঠান।',
       'permissions_not_now': 'এখন না',
       'permissions_next': 'পরবর্তী',
+      'profile_setup_name_title': 'আপনার নাম',
+      'profile_setup_name_body':
+          'আপনার মেসেজের পাশে ও গ্রুপে সবাই এই নামটি দেখবে।',
+      'profile_setup_name_label': 'নাম',
+      'profile_setup_name_error': 'নাম সেভ করা যায়নি। আবার চেষ্টা করুন।',
+      'profile_setup_username_title': 'একটি ইউজারনেম বেছে নিন',
+      'profile_setup_username_body':
+          'আপনার QR কোড স্ক্যান করে বা ইউজারনেম লিখে অন্যরা আপনার সাথে চ্যাট শুরু করতে পারবে। শুধু ইংরেজি অক্ষর, সংখ্যা এবং . _ - ব্যবহার করা যাবে।',
+      'profile_setup_username_label': 'ইউজারনেম',
+      'profile_setup_username_error':
+          'ইউজারনেম সেভ করা যায়নি। আবার চেষ্টা করুন।',
+      'profile_setup_phone_title': 'ফোন নম্বর যোগ করুন',
+      'profile_setup_phone_body':
+          'যাদের কাছে আপনার নম্বর আছে তারা আপনাকে খুঁজে পাবে। নম্বরটি আপনার প্রোফাইলে দেখানো হয় না এবং সাইন ইন করতে ব্যবহার হয় না।',
+      'profile_setup_phone_label': 'ফোন নম্বর',
+      'profile_setup_phone_invalid': 'সঠিক ফোন নম্বর লিখুন',
+      'profile_setup_skip': 'বাদ দিন',
+      'profile_setup_next': 'পরবর্তী',
+      'profile_setup_done': 'শেষ',
       'date_jump_title': 'যেখানে যাবেন',
       'date_jump_yesterday': 'গতকাল',
       'date_jump_week': 'গত সপ্তাহ',
