@@ -684,12 +684,14 @@ class AppTranslations {
       'chat_no_chats': 'Start a conversation before sending a photo.',
       'chat_photo_sending': 'Sending photo…',
       'chat_camera_send_failed': 'Could not send this photo.',
+      'chat_camera_sent_partial': 'Sent to {sent} of {n} chats.',
       'chat_attachment_download': 'Download',
       'chat_attachment_cancel': 'Cancel download',
       'chat_attachment_retry': 'Retry download',
       'chat_attachment_unavailable': 'This file is no longer available',
 
       'chat_contacts': 'Contacts',
+      'chat_filter_chats': 'Chats',
 
       'qr_login_title': 'Sign in on desktop',
       'qr_login_subtitle': 'Scan QR',
@@ -1967,12 +1969,14 @@ class AppTranslations {
       'chat_no_chats': 'ছবি পাঠানোর আগে একটি কথোপকথন শুরু করুন।',
       'chat_photo_sending': 'ছবি পাঠানো হচ্ছে…',
       'chat_camera_send_failed': 'ছবিটি পাঠানো যায়নি।',
+      'chat_camera_sent_partial': '{n}টির মধ্যে {sent}টি চ্যাটে পাঠানো হয়েছে।',
       'chat_attachment_download': 'ডাউনলোড করুন',
       'chat_attachment_cancel': 'ডাউনলোড বাতিল করুন',
       'chat_attachment_retry': 'আবার ডাউনলোড করুন',
       'chat_attachment_unavailable': 'ফাইলটি আর পাওয়া যাচ্ছে না',
 
       'chat_contacts': 'কন্টাক্টস',
+      'chat_filter_chats': 'চ্যাট',
 
       'qr_login_title': 'ডেস্কটপে সাইন ইন',
       'qr_login_subtitle': 'QR স্ক্যান',

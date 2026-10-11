@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../core/router/root_back.dart';
 import '../../../shared/widgets/app_toast.dart';
+import '../../../shared/widgets/capsule_form_header.dart';
 import '../data/models/chat_conversation.dart';
 import '../providers/chat_provider.dart';
 import '../providers/messageable_people_provider.dart';
+import 'chat_recipient_caption_bar.dart';
 import 'chat_recipient_eligible.dart';
+import 'chat_recipient_filters.dart';
 import 'chat_recipient_list.dart';
 import 'chat_recipient_sections.dart';
 import 'chat_recipient_search_field.dart';
@@ -16,10 +20,13 @@ import '../../chat-lock/providers/chat_locks_provider.dart';
 typedef ChatRecipientSubmit =
     Future<void> Function(List<ChatRecipientTarget> recipients, String caption);
 
-/// Full-screen, Signal-inspired destination picker for shares and forwards.
+/// Full-screen destination picker for shares, forwards and the camera: the
+/// app's capsule header (back · title · Send), a search capsule, filter
+/// capsules, then the sectioned list.
 class ChatRecipientPickerScreen extends ConsumerStatefulWidget {
   const ChatRecipientPickerScreen({
     super.key,
+    required this.title,
     required this.actionLabel,
     required this.onSubmit,
     this.initialCaption = '',
@@ -28,6 +35,10 @@ class ChatRecipientPickerScreen extends ConsumerStatefulWidget {
     this.preselectedConversationId = '',
   });
 
+  /// The header pill: what this picker is for ("Forward", "Send to").
+  final String title;
+
+  /// The header's send capsule; the picked count is appended.
   final String actionLabel;
   final ChatRecipientSubmit onSubmit;
   final String initialCaption;
@@ -49,6 +60,7 @@ class _ChatRecipientPickerScreenState
   final _selected = <String, ChatRecipientTarget>{};
   bool _sending = false;
   bool _preselected = false;
+  ChatRecipientFilter _filter = ChatRecipientFilter.all;
 
   @override
   void initState() {
@@ -84,18 +96,39 @@ class _ChatRecipientPickerScreenState
       people: people,
       currentUserId: chat.currentUserId,
       query: query,
+      filter: _filter,
     );
-    // Send bar in the body, not `bottomNavigationBar`: only the body is inset
-    // by `viewInsets`, so only there does the caption ride above the keyboard.
+    final count = _selected.length;
+    // Caption in the body: only the body is inset by the keyboard.
     return Scaffold(
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
+            CapsuleFormHeader(
+              title: widget.title,
+              sendLabel: count == 0
+                  ? widget.actionLabel
+                  : '${widget.actionLabel} ($count)',
+              onBack: () => popOrGoHome(context),
+              onSend: count == 0 || _sending ? null : _submit,
+            ),
             ChatRecipientSearchField(
               controller: _search,
               hintText: _tr('chat_recipient_search'),
               enabled: !_sending,
               onChanged: (_) => setState(() {}),
+            ),
+            ChatRecipientFilters(
+              filter: _filter,
+              enabled: !_sending,
+              onChanged: (next) => setState(() => _filter = next),
+              labels: {
+                ChatRecipientFilter.all: _tr('chat_all'),
+                ChatRecipientFilter.chats: _tr('chat_filter_chats'),
+                ChatRecipientFilter.groups: _tr('chat_groups'),
+                ChatRecipientFilter.contacts: _tr('chat_contacts'),
+              },
             ),
             Expanded(
               child: ChatRecipientList(
@@ -105,55 +138,30 @@ class _ChatRecipientPickerScreenState
                 selected: _selected.keys.toSet(),
                 enabled: !_sending,
                 onToggle: _toggle,
-                recentLabel: query.isEmpty
-                    ? _tr('chat_recent_chats')
-                    : _tr('chat_results'),
+                recentLabel: _recentLabel(query),
                 groupsLabel: _tr('chat_groups'),
                 contactsLabel: _tr('chat_contacts'),
                 emptyLabel: _tr('chat_no_recipients'),
               ),
             ),
-            if (_selected.isNotEmpty) _sendBar(),
+            if (widget.showCaption && count > 0)
+              ChatRecipientCaptionBar(
+                controller: _caption,
+                hintText: _tr('chat_add_message'),
+                enabled: !_sending,
+              ),
           ],
         ),
       ),
     );
   }
 
-  // The enclosing SafeArea already holds the gesture inset.
-  Widget _sendBar() => Material(
-    color: Theme.of(context).colorScheme.surface,
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.showCaption)
-            TextField(
-              controller: _caption,
-              enabled: !_sending,
-              onChanged: (_) => setState(() {}),
-              maxLines: 2,
-              decoration: InputDecoration(hintText: _tr('chat_add_message')),
-            ),
-          if (widget.showCaption) const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _sending ? null : _submit,
-              child: _sending
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text('${widget.actionLabel} (${_selected.length})'),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+  String _recentLabel(String query) {
+    if (query.isNotEmpty) return _tr('chat_results');
+    return _filter == ChatRecipientFilter.chats
+        ? _tr('chat_filter_chats')
+        : _tr('chat_recent_chats');
+  }
 
   /// The spinner must come back for ANY outcome. Reporting failure is the
   /// caller's job, but this catch is the last thing between an unforeseen

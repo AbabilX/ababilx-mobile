@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/app_avatar.dart';
-import '../chat-list/group_avatar_stack.dart';
+import 'chat_recipient_row.dart';
 import 'chat_recipient_target.dart';
 
 /// Flat, sectioned destination list shared by Android shares and forwarding.
@@ -34,11 +33,18 @@ class ChatRecipientList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (recent.isEmpty && groups.isEmpty && contacts.isEmpty) {
-      return Center(child: Text(emptyLabel));
+      return Center(
+        child: Text(
+          emptyLabel,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
     }
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
       children: [
         _Section(label: recentLabel, targets: recent, child: this),
         _Section(label: groupsLabel, targets: groups, child: this),
@@ -76,119 +82,13 @@ class _Section extends StatelessWidget {
           ),
         ),
         for (final target in targets)
-          _RecipientRow(
+          ChatRecipientRow(
             target: target,
             selected: child.selected.contains(target.selectionKey),
             enabled: child.enabled,
             onTap: () => child.onToggle(target),
           ),
       ],
-    );
-  }
-}
-
-class _RecipientRow extends StatelessWidget {
-  const _RecipientRow({
-    required this.target,
-    required this.selected,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final ChatRecipientTarget target;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return Semantics(
-      selected: selected,
-      button: true,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              _RecipientAvatar(target: target),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      target.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (target.subtitle.isNotEmpty)
-                      Text(
-                        target.subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontSize: 13,
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selected ? colors.primary : colors.surface,
-                  border: Border.all(
-                    color: selected ? colors.primary : colors.outline,
-                    width: 2,
-                  ),
-                ),
-                child: selected
-                    ? Icon(
-                        Icons.check_rounded,
-                        size: 16,
-                        color: colors.onPrimary,
-                      )
-                    : null,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RecipientAvatar extends StatelessWidget {
-  const _RecipientAvatar({required this.target});
-
-  final ChatRecipientTarget target;
-
-  @override
-  Widget build(BuildContext context) {
-    if (target.isGroup) {
-      return GroupAvatarStack(
-        avatars: target.memberAvatars,
-        avatarUrl: target.avatarUrl,
-        name: target.name,
-        size: 44,
-      );
-    }
-    return AppAvatar(
-      size: 44,
-      url: target.avatarUrl.isEmpty ? null : target.avatarUrl,
-      name: target.name,
     );
   }
 }

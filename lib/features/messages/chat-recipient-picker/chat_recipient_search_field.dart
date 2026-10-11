@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
+/// The picker's search capsule: a stadium on the same quiet fill as the
+/// header pills, Hugeicons at both ends.
 class ChatRecipientSearchField extends StatelessWidget {
   const ChatRecipientSearchField({
     super.key,
@@ -18,41 +21,65 @@ class ChatRecipientSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: TextField(
-        controller: controller,
-        autofocus: false,
-        enabled: enabled,
-        onChanged: onChanged,
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(fontSize: 15, color: colors.onSurfaceVariant),
-          filled: true,
-          fillColor: colors.surfaceContainerHighest,
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-          suffixIcon: controller.text.isEmpty
-              ? null
-              : IconButton(
-                  tooltip: MaterialLocalizations.of(
-                    context,
-                  ).deleteButtonTooltip,
-                  onPressed: () {
-                    controller.clear();
-                    onChanged('');
-                  },
-                  icon: const Icon(Icons.close_rounded),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: Material(
+        color: colors.surfaceContainerHighest.withValues(alpha: 0.7),
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: Row(
+          children: [
+            const SizedBox(width: 16),
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedSearch01,
+              size: 20,
+              color: colors.onSurfaceVariant,
+              strokeWidth: 1.6,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                enabled: enabled,
+                onChanged: onChanged,
+                textInputAction: TextInputAction.search,
+                style: const TextStyle(fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  hintStyle: TextStyle(
+                    fontSize: 15,
+                    color: colors.onSurfaceVariant,
+                  ),
+                  isDense: true,
+                  filled: false,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 13),
                 ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide.none,
-          ),
+              ),
+            ),
+            if (controller.text.isEmpty)
+              const SizedBox(width: 16)
+            else
+              InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () {
+                  controller.clear();
+                  onChanged('');
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedCancel01,
+                    size: 18,
+                    color: colors.onSurfaceVariant,
+                    strokeWidth: 1.8,
+                  ),
+                ),
+              ),
+          ],
         ),
-        style: const TextStyle(fontSize: 15),
       ),
     );
   }

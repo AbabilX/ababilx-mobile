@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/features/messages/chat-recipient-picker/chat_recipient_list.dart';
@@ -71,7 +72,7 @@ void main() {
     expect(find.text('Murad'), findsOneWidget);
     expect(find.text('Alif'), findsOneWidget);
     // The selected row draws the filled check, the other the empty circle.
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    expect(find.byType(HugeIcon), findsOneWidget);
 
     await tester.tap(find.text('Murad'));
     expect(tapped.single.id, 'c1');

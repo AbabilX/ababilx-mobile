@@ -135,6 +135,7 @@ class _ShareTargetScreenState extends ConsumerState<ShareTargetScreen> {
     final payload = _reviewed ?? pending;
 
     return ChatRecipientPickerScreen(
+      title: AppTranslations.translate(context, ref, 'chat_send_to'),
       actionLabel: AppTranslations.translate(context, ref, 'chat_send'),
       initialCaption: payload.text,
       showCaption: true,

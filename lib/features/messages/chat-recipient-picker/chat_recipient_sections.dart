@@ -16,6 +16,9 @@ class ChatRecipientSections {
   final List<ChatRecipientTarget> contacts;
 }
 
+/// Which kind of destination the picker's capsules narrow the list to.
+enum ChatRecipientFilter { all, chats, groups, contacts }
+
 /// How many chats the idle list shows before the Groups section takes over.
 const int chatRecipientRecentLimit = 7;
 
@@ -38,8 +41,12 @@ ChatRecipientSections buildChatRecipientSections({
   required List<ChatUserSummary> people,
   required String currentUserId,
   required String query,
+  ChatRecipientFilter filter = ChatRecipientFilter.all,
   int recentLimit = chatRecipientRecentLimit,
 }) {
+  if (filter != ChatRecipientFilter.all) {
+    return _narrowed(conversations, people, currentUserId, query, filter);
+  }
   final searching = query.trim().isNotEmpty;
   ChatRecipientTarget targetOf(ChatConversation c) =>
       ChatRecipientTarget.conversation(c, currentUserId);
@@ -77,5 +84,42 @@ ChatRecipientSections buildChatRecipientSections({
     recent: [for (final conversation in shown) targetOf(conversation)],
     groups: groups,
     contacts: contacts,
+  );
+}
+
+/// One kind only, and all of it: a capsule answers "show me my groups", so the
+/// idle list's newest-few cut does not apply. Each kind keeps its own section
+/// so the heading still says what is listed.
+ChatRecipientSections _narrowed(
+  List<ChatConversation> conversations,
+  List<ChatUserSummary> people,
+  String currentUserId,
+  String query,
+  ChatRecipientFilter filter,
+) {
+  final searching = query.trim().isNotEmpty;
+  bool hit(List<String> names) => !searching || matchesNameQuery(query, names);
+
+  if (filter == ChatRecipientFilter.contacts) {
+    return ChatRecipientSections(
+      recent: const [],
+      groups: const [],
+      contacts: [
+        for (final person in people)
+          if (hit([person.name, person.username]))
+            ChatRecipientTarget.person(person),
+      ],
+    );
+  }
+  final wantGroups = filter == ChatRecipientFilter.groups;
+  final matched = [
+    for (final conversation in conversations)
+      if (conversation.isGroupConversation == wantGroups)
+        ChatRecipientTarget.conversation(conversation, currentUserId),
+  ].where((target) => hit([target.name])).toList();
+  return ChatRecipientSections(
+    recent: wantGroups ? const [] : matched,
+    groups: wantGroups ? matched : const [],
+    contacts: const [],
   );
 }

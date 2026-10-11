@@ -24,7 +24,8 @@ Future<void> showForwardMessages(
   await Navigator.of(context, rootNavigator: true).push<void>(
     MaterialPageRoute(
       builder: (_) => ChatRecipientPickerScreen(
-        actionLabel: AppTranslations.translate(context, ref, 'chat_forward'),
+        title: AppTranslations.translate(context, ref, 'chat_forward'),
+        actionLabel: AppTranslations.translate(context, ref, 'chat_send'),
         excludedConversationId: messages.first.conversationId,
         onSubmit: (targets, _) =>
             forwardMessages(context, ref, messages, targets),

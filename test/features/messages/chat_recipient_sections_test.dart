@@ -159,4 +159,52 @@ void main() {
       expect(_names(sections.contacts), ['Person 8']);
     });
   });
+
+  group('filter capsules', () {
+    final conversations = [
+      for (var i = 0; i < 9; i++) _dm('dm$i', 'u$i', 'Person $i'),
+      _group('g1', 'Alpha team'),
+      _group('g2', 'Beta team'),
+    ];
+    final people = [_person('u0', 'Person 0'), _person('x1', 'Stranger')];
+
+    ChatRecipientSections narrowed(
+      ChatRecipientFilter filter, [
+      String q = '',
+    ]) => buildChatRecipientSections(
+      conversations: conversations,
+      people: people,
+      currentUserId: 'me',
+      query: q,
+      filter: filter,
+    );
+
+    test('Chats lists every DM, past the recent cap, and nothing else', () {
+      final sections = narrowed(ChatRecipientFilter.chats);
+      expect(sections.recent.length, 9);
+      expect(sections.groups, isEmpty);
+      expect(sections.contacts, isEmpty);
+    });
+
+    test('Groups lists every group and nothing else', () {
+      final sections = narrowed(ChatRecipientFilter.groups);
+      expect(_names(sections.groups), ['Alpha team', 'Beta team']);
+      expect(sections.recent, isEmpty);
+      expect(sections.contacts, isEmpty);
+    });
+
+    test('Contacts lists people only', () {
+      final sections = narrowed(ChatRecipientFilter.contacts);
+      expect(_names(sections.contacts), ['Person 0', 'Stranger']);
+      expect(sections.recent, isEmpty);
+      expect(sections.groups, isEmpty);
+    });
+
+    test('a search stays inside the chosen kind', () {
+      expect(_names(narrowed(ChatRecipientFilter.groups, 'beta').groups), [
+        'Beta team',
+      ]);
+      expect(narrowed(ChatRecipientFilter.groups, 'person').groups, isEmpty);
+    });
+  });
 }
