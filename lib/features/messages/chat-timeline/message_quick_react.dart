@@ -10,6 +10,8 @@ import '../message_e2ee/vault_placeholder.dart';
 import '../providers/chat_provider.dart';
 import '../tiptap_plain_text.dart';
 import 'message_actions.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/network/friendly_error.dart';
 import '../../../shared/widgets/app_toast.dart';
 
 /// Whether a double tap may copy [msg]: the menu's own Copy rule. A Khaam is
@@ -28,11 +30,34 @@ void quickCopy(BuildContext context, WidgetRef ref, ChatMessage msg) {
 }
 
 /// Tap on a failed bubble: send it again.
-void retryFailedMessage(BuildContext context, WidgetRef ref, ChatMessage msg) {
-  ref.read(chatProvider.notifier).retrySend(msg);
+///
+/// A second failure says why: a bubble that goes back to "Tap to retry" with
+/// no word reads as a tap that did nothing.
+Future<void> retryFailedMessage(
+  BuildContext context,
+  WidgetRef ref,
+  ChatMessage msg,
+) async {
+  String tr(String key) => AppTranslations.translate(context, ref, key);
+  final words = (
+    locked: tr('chat_retry_locked'),
+    offline: tr('chat_retry_offline'),
+    failed: tr('chat_retry_failed'),
+  );
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  HapticFeedback.selectionClick();
   showAppToast(
     context,
-    'Resending message…',
+    tr('chat_resending'),
     duration: const Duration(seconds: 2),
   );
+  final error = await ref.read(chatProvider.notifier).retrySend(msg);
+  if (error == null) return;
+  final text = isLockedFailedMessage(msg)
+      ? words.locked
+      : isOfflineError(error)
+      ? words.offline
+      : '${words.failed} ${serverErrorMessage(error) ?? serverErrorCode(error) ?? ''}'
+            .trim();
+  showAppToastIn(overlay, text, isError: true);
 }

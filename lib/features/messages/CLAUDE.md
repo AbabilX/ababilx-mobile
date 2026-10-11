@@ -1976,3 +1976,35 @@ have a hundred messages missing between them, and nothing on disk says so.
   (shared `older_paging_harness.dart`: a fake server that pages by activity
   and answers an unknown cursor with an empty page, as the real one does),
   `chat_message_merge_order_test.dart`.
+
+## Send later + retry fix — 2026-10-11
+
+**Send later** (server 0171): hold the send arrow → `send-later/`. Full
+contract in the monorepo root `CLAUDE.md` ("Send later"). Phone rules:
+
+- `chatSendBody` (`data/chat_send_body.dart`) builds the body for BOTH a send
+  and a scheduled message. The server replays the stored body through the
+  ordinary send handler, so a key renamed in one place only breaks scheduled
+  messages days later. Pinned by `test/features/send_later/scheduled_message_test.dart`.
+- `ScheduledSender` seals through `sendEncryptedChat` like a send, but writes
+  no pending bubble and no outbox row. `SealedUploads.forget` runs only after
+  the server stored it.
+- `ScheduledMessage.asSealedMessage` stamps each encrypted file's
+  `enc_key_version` with the body's — the request does not carry it, and
+  without it the vault looks for key version 0 and opens nothing.
+- `scheduledMessagesProvider` has no `.timeout`: a timer there outlives a chat
+  opened and closed (it broke two widget tests).
+- A file still uploading cannot be scheduled (no object behind the URL yet);
+  the composer says so.
+
+**Retry of a failed bubble** — three causes, all fixed:
+
+- The pending row is written to disk as `sending` before the request and was
+  never rewritten on failure, so read back from disk it showed "Sending…"
+  for good and could not be tapped. `SendTracker` (`data/send_tracker.dart`)
+  knows which sends are in flight; every disk read passes through
+  `sendTracker.settle`, which turns the rest into `failed`.
+- A failed photo/file/link bubble gave its tap to the media inside it. The
+  row now absorbs pointers while failed: the whole bubble is the retry button.
+- A second failure went back to "Tap to retry" with no word. `retrySend`
+  returns the error and the toast says why (offline, locked, server's reason).

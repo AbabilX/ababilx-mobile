@@ -9,6 +9,7 @@ import '../message_length_limit.dart';
 import 'snippet_discard_sheet.dart';
 import 'snippet_fields.dart';
 import 'snippet_format.dart';
+import '../send-later/send_later_flow.dart';
 import 'snippet_send.dart';
 import 'snippet_strings.dart';
 
@@ -70,7 +71,14 @@ class _SnippetCreateState extends ConsumerState<SnippetCreateScreen> {
 
   SnippetStrings get _s => SnippetStrings.of(ref.read(appLanguageProvider));
 
-  Future<void> _send() async {
+  /// Send held down: pick a time, then the same send with it.
+  Future<void> _sendLater() async {
+    if (_sending) return;
+    final at = await pickSendLaterTime(context, ref, widget.conversationId);
+    if (at != null && mounted) await _send(at: at);
+  }
+
+  Future<void> _send({DateTime? at}) async {
     if (_sending) return;
     final content = _content.text;
     final language = ref.read(appLanguageProvider);
@@ -97,6 +105,7 @@ class _SnippetCreateState extends ConsumerState<SnippetCreateScreen> {
         kind: _kind,
         content: content,
         message: _message.text,
+        sendAt: at,
       );
       if (!mounted) return;
       if (sent) return Navigator.of(context).pop(true);
@@ -190,6 +199,7 @@ class _SnippetCreateState extends ConsumerState<SnippetCreateScreen> {
                 sendLabel: _sending ? s.sending : s.send,
                 onBack: _back,
                 onSend: _sending ? null : _send,
+                onSendLater: _sendLater,
               ),
             ),
           ],

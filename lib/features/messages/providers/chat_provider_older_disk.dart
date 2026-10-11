@@ -44,7 +44,7 @@ mixin _ChatOlderDiskMixin
         .where((m) => !known.contains(m.id) && m.id != threadRootId)
         .toList();
     if (fresh.isEmpty || isDisposed) return (added: 0, exhausted: exhausted);
-    final decrypted = await decryptIfNeeded(fresh);
+    final decrypted = sendTracker.settle(await decryptIfNeeded(fresh));
     await warmMediaFrames(decrypted);
     if (isDisposed) return (added: 0, exhausted: exhausted);
     final latest = state.feeds[key] ?? feed;

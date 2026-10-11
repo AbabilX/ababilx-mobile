@@ -257,6 +257,7 @@ mixin _ChatActionsMixin
       );
     }
 
+    sendTracker.begin(clientRef);
     try {
       await (this as _ChatOutboxMixin).stageOutbox(pendingMsg);
       // ── Step 2: Fire the actual network call ─────────────────────────────
@@ -300,8 +301,10 @@ mixin _ChatActionsMixin
       // Private chat (server 0160) holds the message until this phone says
       // it has it too; its own socket echo lands as already settled.
       unawaited((this as _ChatPrivateMixin).takePrivateCustody([msg]));
+      sendTracker.end(clientRef);
       return msg;
-    } catch (_) {
+    } catch (error) {
+      sendTracker.end(clientRef, error: error);
       // ── Step 4: Mark the bubble as failed so user can retry ───────────────
       // When persistence succeeded, its outbox row stays as the retry record.
       // A storage failure never reaches the network, so no duplicate is possible.
@@ -317,19 +320,24 @@ mixin _ChatActionsMixin
   /// `body` is not the real text, so sending it would leak that placeholder
   /// string as the message. [redecryptFailedMessages] clears this once the
   /// vault unlocks.
-  Future<void> retrySend(ChatMessage failedMsg) async {
-    if (failedMsg.sendStatus != MessageSendStatus.failed) return;
-    if (isLockedFailedMessage(failedMsg)) return;
+  ///
+  /// Returns null when it went out, otherwise why it did not.
+  Future<Object?> retrySend(ChatMessage failedMsg) async {
+    if (failedMsg.sendStatus != MessageSendStatus.failed) return null;
+    if (isLockedFailedMessage(failedMsg)) {
+      return StateError('message is locked');
+    }
     final convId = failedMsg.conversationId;
-    if (convId.isEmpty) return;
+    if (convId.isEmpty) return StateError('no conversation');
+    final clientRef = failedMsg.clientRef ?? failedMsg.id;
 
     // Keep the same client id: if the server committed but its response was
     // lost, this retry returns the original row instead of duplicating it.
     _removePendingFromFeed(convId, failedMsg.id, parentId: failedMsg.parentId);
 
-    await sendMessage(
+    final sent = await sendMessage(
       conversationId: convId,
-      clientMessageId: failedMsg.clientRef,
+      clientMessageId: clientRef,
       body: failedMsg.body,
       attachments: failedMsg.pendingAttachments,
       mentionedUserIds: failedMsg.pendingMentionedUserIds,
@@ -338,6 +346,8 @@ mixin _ChatActionsMixin
       quotePreview: failedMsg.quote,
       taskPriority: TaskCardData.of(failedMsg)?.priority.wire,
     );
+    if (sent != null) return null;
+    return sendTracker.errorOf(clientRef) ?? StateError('not sent');
   }
 
   /// Automatically flushes all failed messages across active feeds when

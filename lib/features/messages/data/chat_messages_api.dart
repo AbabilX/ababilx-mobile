@@ -1,6 +1,7 @@
 import '../../../core/network/api_client.dart';
 import 'models/chat_models.dart';
 import 'chat_endpoints.dart';
+import 'chat_send_body.dart';
 import 'request_single_flight.dart';
 
 class ChatMessagesApi {
@@ -86,22 +87,19 @@ class ChatMessagesApi {
   }) async {
     final res = await _client.post(
       _endpoints.messages(conversationId),
-      data: {
-        'client_message_id': clientMessageId,
-        'body': body,
-        'encrypted_body': ?encryptedBody,
-        'encryption_nonce': ?encryptionNonce,
-        'encryption_version': ?encryptionVersion,
-        'encryption_key_version': ?encryptionKeyVersion,
-        'parent_id': ?parentId,
-        'quoted_message_id': ?quotedMessageId,
-        if (attachments.isNotEmpty)
-          'attachments': attachments.map((a) => a.toWire()).toList(),
-        if (mentionedUserIds.isNotEmpty) 'mentioned_user_ids': mentionedUserIds,
-        'media_policy': ?_mediaPolicy(attachments),
-        // Makes the message a task card (server 0169).
-        if (taskPriority != null) 'task': {'priority': taskPriority},
-      },
+      data: chatSendBody(
+        clientMessageId: clientMessageId,
+        body: body,
+        encryptedBody: encryptedBody,
+        encryptionNonce: encryptionNonce,
+        encryptionVersion: encryptionVersion,
+        encryptionKeyVersion: encryptionKeyVersion,
+        parentId: parentId,
+        quotedMessageId: quotedMessageId,
+        attachments: attachments,
+        mentionedUserIds: mentionedUserIds,
+        taskPriority: taskPriority,
+      ),
     );
     return ChatMessage.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   }
@@ -142,16 +140,6 @@ class ChatMessagesApi {
       ],
       nextCursor: next is String && next.isNotEmpty ? next : null,
     );
-  }
-
-  /// The privacy-mode sheet sets one choice for every attachment of a send;
-  /// the server takes it once per message. Null when nothing is restricted.
-  static Map<String, dynamic>? _mediaPolicy(List<ChatAttachmentInput> atts) {
-    for (final a in atts) {
-      if (!a.restricted) continue;
-      return {'view_seconds': a.viewSeconds, 'allow_save': !a.noSave};
-    }
-    return null;
   }
 
   Future<ChatMessage> patchMessage(

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/media/device_gallery.dart';
-import '../chat_icon.dart';
+import '../chat-list/filter_reorder_blur.dart';
+import 'composer_attach_chips.dart';
+import 'composer_attach_order.dart';
 import 'composer_media_rail.dart';
 
 /// Signal's attachment keyboard: your recent media in a strip, and the
@@ -77,119 +79,63 @@ class ComposerAttachmentKeyboard extends StatelessWidget {
             Divider(height: 1, color: colors.outlineVariant),
             const SizedBox(height: 10),
             if (onGallery != null) ...[
-              ComposerMediaRail(
-                onPick: onPickMedia,
-                selectedUris: selectedMediaUris,
+              FilterReorderBlur(
+                on: attachReordering,
+                child: ComposerMediaRail(
+                  onPick: onPickMedia,
+                  selectedUris: selectedMediaUris,
+                ),
               ),
               const SizedBox(height: 14),
             ],
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  if (onGallery != null)
-                    AttachChip(
-                      label: galleryLabel,
-                      icon: HugeIcons.strokeRoundedImage01,
-                      onTap: onGallery!,
-                    ),
-                  if (onCamera != null)
-                    AttachChip(
-                      label: cameraLabel,
-                      icon: HugeIcons.strokeRoundedCamera01,
-                      onTap: onCamera!,
-                    ),
-                  if (onFile != null)
-                    AttachChip(
-                      label: fileLabel,
-                      icon: HugeIcons.strokeRoundedFile01,
-                      onTap: onFile!,
-                    ),
-                  if (onKhaam != null)
-                    AttachChip(
-                      label: khaamLabel,
-                      icon: HugeIcons.strokeRoundedGift,
-                      onTap: onKhaam!,
-                    ),
-                  if (onGhost != null)
-                    AttachChip(
-                      label: ghostLabel,
-                      icon: HugeIcons.strokeRoundedIncognito,
-                      onTap: onGhost!,
-                    ),
-                  if (onSnippet != null)
-                    AttachChip(
-                      label: snippetLabel,
-                      icon: HugeIcons.strokeRoundedDocumentCode,
-                      onTap: onSnippet!,
-                    ),
-                  if (onTask != null)
-                    AttachChip(
-                      label: taskLabel,
-                      icon: HugeIcons.strokeRoundedTaskAdd01,
-                      onTap: onTask!,
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One rounded-square destination under the rail.
-class AttachChip extends StatelessWidget {
-  const AttachChip({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final String label;
-  final List<List<dynamic>> icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Semantics(
-        button: true,
-        label: label,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: SizedBox(
-            width: 76,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(20),
+            ComposerAttachChips(
+              chips: {
+                if (onGallery != null)
+                  AttachDestination.gallery: AttachChipSpec(
+                    label: galleryLabel,
+                    icon: HugeIcons.strokeRoundedImage01,
+                    onTap: onGallery!,
                   ),
-                  alignment: Alignment.center,
-                  child: ChatIcon(icon, size: 26, color: colors.onSurface),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ],
+                if (onCamera != null)
+                  AttachDestination.camera: AttachChipSpec(
+                    label: cameraLabel,
+                    icon: HugeIcons.strokeRoundedCamera01,
+                    onTap: onCamera!,
+                  ),
+                if (onFile != null)
+                  AttachDestination.file: AttachChipSpec(
+                    label: fileLabel,
+                    icon: HugeIcons.strokeRoundedFile01,
+                    onTap: onFile!,
+                  ),
+                if (onKhaam != null)
+                  AttachDestination.khaam: AttachChipSpec(
+                    label: khaamLabel,
+                    icon: HugeIcons.strokeRoundedGift,
+                    onTap: onKhaam!,
+                  ),
+                if (onGhost != null)
+                  AttachDestination.ghost: AttachChipSpec(
+                    label: ghostLabel,
+                    icon: HugeIcons.strokeRoundedIncognito,
+                    onTap: onGhost!,
+                  ),
+                if (onSnippet != null)
+                  AttachDestination.snippet: AttachChipSpec(
+                    label: snippetLabel,
+                    icon: HugeIcons.strokeRoundedDocumentCode,
+                    onTap: onSnippet!,
+                  ),
+                if (onTask != null)
+                  AttachDestination.task: AttachChipSpec(
+                    label: taskLabel,
+                    icon: HugeIcons.strokeRoundedTaskAdd01,
+                    onTap: onTask!,
+                  ),
+              },
             ),
-          ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );

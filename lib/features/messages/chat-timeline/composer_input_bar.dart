@@ -25,6 +25,7 @@ class ComposerInputBar extends StatelessWidget {
     required this.onVoice,
     required this.onPlus,
     required this.onSend,
+    this.onSendLater,
     this.preparingVoice = false,
     this.onContentInserted,
     this.emojiTooltip = 'Emoji',
@@ -48,6 +49,9 @@ class ComposerInputBar extends StatelessWidget {
   final VoidCallback onVoice;
   final VoidCallback onPlus;
   final VoidCallback onSend;
+
+  /// The send arrow held down. Null for a composer that cannot schedule.
+  final VoidCallback? onSendLater;
 
   /// A sticker or GIF from the keyboard. Null leaves the field text-only.
   final ValueChanged<KeyboardInsertedContent>? onContentInserted;
@@ -170,6 +174,7 @@ class ComposerInputBar extends StatelessWidget {
                 : HugeIcons.strokeRoundedAdd01,
             rotated: attachmentOpen && !canSend,
             onTap: sending ? null : (canSend ? onSend : onPlus),
+            onLongPress: sending || !canSend ? null : onSendLater,
           ),
         ],
       ),

@@ -10,6 +10,7 @@ import '../chat-timeline/composer_reply_target.dart';
 import '../data/models/chat_models.dart';
 import '../group-member-permissions/group_media_guard.dart';
 import '../providers/chat_provider.dart';
+import '../send-later/send_later_flow.dart';
 import '../tiptap_encode.dart';
 import 'snippet_format.dart';
 
@@ -33,6 +34,7 @@ Future<bool> sendSnippet(
   required SnippetKind kind,
   required String content,
   required String message,
+  DateTime? sendAt,
 }) async {
   final notifier = ref.read(chatProvider.notifier);
   final fileName = snippetFileName(title, kind);
@@ -68,6 +70,38 @@ Future<bool> sendSnippet(
   if (!context.mounted) {
     await notifier.discardUpload(conversationId, presign.publicUrl);
     return false;
+  }
+  // Send later (server 0171): stored to go out at [sendAt]. It asks the
+  // privacy-mode sheet itself; a file it did not store is given back.
+  if (sendAt != null) {
+    final text = message.trim();
+    final target = ComposerReplyTarget.resolve(
+      replyTo: ref.read(chatProvider).replyToMessage,
+      threadRootId: parentId,
+    );
+    final stored = await sendLater(
+      context,
+      ref,
+      conversationId: conversationId,
+      body: text.isEmpty ? '' : encodeTiptapBody(plain: text),
+      attachments: [
+        ChatAttachmentInput(
+          fileUrl: presign.publicUrl,
+          fileName: fileName,
+          contentType: kind.contentType,
+          sizeBytes: bytes.length,
+        ),
+      ],
+      parentId: target.parentId,
+      quotedMessageId: target.quotedMessageId,
+      at: sendAt,
+    );
+    if (stored) {
+      notifier.setReplyToMessage(null);
+    } else {
+      await notifier.discardUpload(conversationId, presign.publicUrl);
+    }
+    return stored;
   }
   final files = await askPrivacyMediaRules(
     context,

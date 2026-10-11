@@ -516,6 +516,10 @@ class AppTranslations {
       'chat_unblock_hint':
           'Unblocking removes your block. To reconnect, send a new connection request.',
       'chat_tap_to_retry': 'Tap to retry',
+      'chat_resending': 'Sending again…',
+      'chat_retry_failed': 'Message not sent.',
+      'chat_retry_offline': 'No connection. It will send when you are back online.',
+      'chat_retry_locked': 'Unlock your messages first, then tap again.',
       'chat_file_too_large': 'Files must be 350 MB or smaller.',
       'chat_hold_to_record': 'Hold to record',
       'chat_tap_to_record': 'Tap to record',
@@ -1807,6 +1811,10 @@ class AppTranslations {
       'chat_unblock_hint':
           'আনব্লক করলে আপনার দেওয়া ব্লক উঠে যাবে। আবার সংযুক্ত হতে নতুন কানেকশন অনুরোধ পাঠান।',
       'chat_tap_to_retry': 'আবার চেষ্টা করতে ট্যাপ করুন',
+      'chat_resending': 'আবার পাঠানো হচ্ছে…',
+      'chat_retry_failed': 'মেসেজ পাঠানো যায়নি।',
+      'chat_retry_offline': 'সংযোগ নেই। অনলাইনে ফিরলে পাঠানো হবে।',
+      'chat_retry_locked': 'আগে মেসেজ আনলক করুন, তারপর আবার ট্যাপ করুন।',
       'chat_file_too_large': 'ফাইল ৩৫০ MB বা তার কম হতে হবে।',
       'chat_hold_to_record': 'রেকর্ড করতে ধরে রাখুন',
       'chat_tap_to_record': 'রেকর্ড করতে ট্যাপ করুন',

@@ -13,6 +13,7 @@ import 'task_card_data.dart';
 import 'task_create_fields.dart';
 import '../../../shared/widgets/capsule_form_header.dart';
 import 'task_discard_sheet.dart';
+import '../send-later/send_later_flow.dart';
 import 'task_send.dart';
 import 'task_strings.dart';
 
@@ -83,7 +84,14 @@ class _TaskCreateState extends ConsumerState<TaskCreateScreen> {
         .discardUpload(widget.conversationId, file.fileUrl);
   }
 
-  Future<void> _send() async {
+  /// Send held down: pick a time, then the same send with it.
+  Future<void> _sendLater() async {
+    if (_busy) return;
+    final at = await pickSendLaterTime(context, ref, widget.conversationId);
+    if (at != null && mounted) await _send(at: at);
+  }
+
+  Future<void> _send({DateTime? at}) async {
     if (_busy) return;
     final title = _title.text.trim();
     if (title.isEmpty) {
@@ -107,6 +115,7 @@ class _TaskCreateState extends ConsumerState<TaskCreateScreen> {
       description: _description.text,
       priority: _priority,
       attachments: List.of(_files),
+      sendAt: at,
     );
     if (!mounted) return;
     if (sent) return Navigator.of(context).pop();
@@ -190,6 +199,7 @@ class _TaskCreateState extends ConsumerState<TaskCreateScreen> {
                 sendLabel: _uploads > 0 ? s.uploading : s.send,
                 onBack: _back,
                 onSend: _busy ? null : _send,
+                onSendLater: _sendLater,
               ),
             ),
           ],

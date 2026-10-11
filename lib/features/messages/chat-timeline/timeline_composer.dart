@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../chat-details/group_permissions.dart';
 import '../providers/chat_provider.dart';
+import '../send-later/scheduled_bar.dart';
 import 'composer.dart';
 import 'composer_connection_lock.dart';
 import 'composer_locked.dart';
@@ -45,12 +46,20 @@ class TimelineComposer extends ConsumerWidget {
     if (conversation?.isIncomingRequest == true) {
       return MessageRequestBar(conversation: conversation!);
     }
-    return MessageComposer(
-      conversationId: conversationId,
-      parentId: parentId,
-      hintName: conversation?.displayTitle(chat.currentUserId) ?? 'someone',
-      isGroup: conversation?.isGroupConversation ?? false,
-      onMessageSubmitted: onMessageSubmitted,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Messages waiting to be sent later (server 0171) live here, not in
+        // the timeline.
+        ScheduledBar(conversationId: conversationId, parentId: parentId),
+        MessageComposer(
+          conversationId: conversationId,
+          parentId: parentId,
+          hintName: conversation?.displayTitle(chat.currentUserId) ?? 'someone',
+          isGroup: conversation?.isGroupConversation ?? false,
+          onMessageSubmitted: onMessageSubmitted,
+        ),
+      ],
     );
   }
 }

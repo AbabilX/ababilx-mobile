@@ -41,5 +41,8 @@ mixin _ChatResyncMixin
     // Private messages that arrived while the socket was away are only on
     // the server until this phone takes them (server 0160).
     unawaited((this as _ChatPrivateMixin).pullPrivatePending());
+    // A scheduled message the server could not send for a moved key waits
+    // for one of this account's devices to seal it again (server 0171).
+    unawaited(ref.read(scheduledResealProvider).runAll());
   }
 }

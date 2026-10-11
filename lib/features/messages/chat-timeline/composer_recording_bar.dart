@@ -23,6 +23,7 @@ class ComposerRecordingBar extends StatefulWidget {
     required this.onDelete,
     required this.onPauseToggle,
     required this.onSend,
+    this.onSendLater,
     required this.onViewOnceToggle,
   });
 
@@ -39,6 +40,9 @@ class ComposerRecordingBar extends StatefulWidget {
   final VoidCallback onDelete;
   final VoidCallback onPauseToggle;
   final VoidCallback onSend;
+
+  /// Send held down: send the voice note later.
+  final VoidCallback? onSendLater;
   final VoidCallback onViewOnceToggle;
 
   @override
@@ -231,6 +235,7 @@ class _ComposerRecordingBarState extends State<ComposerRecordingBar>
                   _CircleIconButton(
                     background: const Color(0xFF1B5E3B),
                     onTap: busy ? null : widget.onSend,
+                    onLongPress: busy ? null : widget.onSendLater,
                     child: const Icon(
                       Icons.send_rounded,
                       size: 22,
@@ -252,11 +257,13 @@ class _CircleIconButton extends StatelessWidget {
     required this.background,
     required this.child,
     this.onTap,
+    this.onLongPress,
   });
 
   final Color background;
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -266,6 +273,7 @@ class _CircleIconButton extends StatelessWidget {
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
+        onLongPress: onLongPress,
         child: SizedBox(width: 52, height: 52, child: Center(child: child)),
       ),
     );

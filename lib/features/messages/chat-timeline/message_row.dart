@@ -205,7 +205,12 @@ class _MessageRowState extends ConsumerState<MessageRow>
               child: MessagePressPinch(
                 pressed: _pressed,
                 isMine: isOwnMessage,
-                child: _content(focused: false),
+                // A failed bubble is one retry button: its photo, file or
+                // link must not take the tap that sends it again.
+                child: AbsorbPointer(
+                  absorbing: isFailed && !selecting,
+                  child: _content(focused: false),
+                ),
               ),
             ),
           ),

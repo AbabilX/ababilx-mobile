@@ -1,3 +1,5 @@
+import '../chat-list/filter_reorder_blur.dart';
+import 'composer_attach_order.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -52,6 +54,7 @@ import '../../settings/typing-indicators/typing_indicators_provider.dart';
 import '../chat-typing/typing_sender.dart';
 import '../group-member-permissions/group_media_guard.dart';
 import '../../../shared/widgets/app_toast.dart';
+import '../send-later/send_later_flow.dart';
 
 class MessageComposer extends ConsumerStatefulWidget {
   const MessageComposer({
@@ -567,6 +570,55 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
   }
 
+  /// The send arrow held down: the draft is stored on the server to go out
+  /// at a time the sender picks (server 0171). Nothing enters the timeline;
+  /// on success the composer empties as after a send.
+  Future<void> _sendLater() async {
+    if (!mounted || _selectedRecent.isNotEmpty) return;
+    final plain = _ctrl.text.trim();
+    if (plain.isEmpty && _pending.isEmpty) return;
+    final body = plain.isEmpty
+        ? ''
+        : encodeTiptapBody(plain: plain, mentionByLabel: _mentionByLabel);
+    if (isMessageTooLong(plain, encoded: body)) {
+      await _offerSnippet(plain);
+      return;
+    }
+    // A file still uploading has no object behind its URL yet.
+    if (_uploads.busy) {
+      _showMessage(
+        'Wait for the upload to finish, then hold send again.',
+        'আপলোড শেষ হলে আবার সেন্ড বোতাম চেপে ধরুন।',
+      );
+      return;
+    }
+    final reply = ComposerReplyTarget.resolve(
+      replyTo: ref.read(chatProvider).replyToMessage,
+      threadRootId: widget.parentId,
+    );
+    final stored = await sendLater(
+      context,
+      ref,
+      conversationId: widget.conversationId,
+      body: body,
+      attachments: List.of(_pending),
+      mentionedUserIds: _mentionedUserIds.toList(),
+      parentId: reply.parentId,
+      quotedMessageId: reply.quotedMessageId,
+    );
+    if (!stored || !mounted) return;
+    ref.read(chatProvider.notifier).setReplyToMessage(null);
+    _mentionedUserIds.clear();
+    _mentionByLabel.clear();
+    _pickedAll = false;
+    _typing?.stop();
+    _ctrl.clear();
+    setState(() {
+      _pending.clear();
+      _showMentions = false;
+    });
+  }
+
   void _checkNotInChannelMentions(
     ChatMessage sentMsg,
     List<String> mentionedIds,
@@ -999,7 +1051,15 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
   }
 
-  Future<void> _finishVoiceRecording() async {
+  /// The recording bar's send held down: pick a time first (the recording
+  /// keeps running), then finish it as a scheduled voice note.
+  Future<void> _finishVoiceRecordingLater() async {
+    if (_recordFinishing || !_recording) return;
+    final at = await pickSendLaterTime(context, ref, widget.conversationId);
+    if (at != null && mounted) await _finishVoiceRecording(sendAt: at);
+  }
+
+  Future<void> _finishVoiceRecording({DateTime? sendAt}) async {
     if (_recordFinishing || !_recording) return;
     final notifier = ref.read(chatProvider.notifier);
     _recordFinishing = true;
@@ -1057,21 +1117,45 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
           replyTo: ref.read(chatProvider).replyToMessage,
           threadRootId: widget.parentId,
         );
-        await notifier.sendMessage(
-          conversationId: widget.conversationId,
-          body: '',
-          parentId: reply.parentId,
-          quotedMessageId: reply.quotedMessageId,
-          quotePreview: reply.preview,
-          attachments: [
-            ChatAttachmentInput(
-              fileUrl: presign.publicUrl,
-              fileName: recording.fileName,
-              contentType: RecordedVoiceMessage.contentType,
-              sizeBytes: bytes.length,
-            ),
-          ],
-        );
+        final voice = [
+          ChatAttachmentInput(
+            fileUrl: presign.publicUrl,
+            fileName: recording.fileName,
+            contentType: RecordedVoiceMessage.contentType,
+            sizeBytes: bytes.length,
+          ),
+        ];
+        if (sendAt != null) {
+          final stored =
+              mounted &&
+              await sendLater(
+                context,
+                ref,
+                conversationId: widget.conversationId,
+                body: '',
+                attachments: voice,
+                parentId: reply.parentId,
+                quotedMessageId: reply.quotedMessageId,
+                at: sendAt,
+              );
+          // Not stored: the upload is nobody's, and sendLater said why.
+          if (!stored) {
+            await notifier.discardUpload(
+              widget.conversationId,
+              presign.publicUrl,
+            );
+            return;
+          }
+        } else {
+          await notifier.sendMessage(
+            conversationId: widget.conversationId,
+            body: '',
+            parentId: reply.parentId,
+            quotedMessageId: reply.quotedMessageId,
+            quotePreview: reply.preview,
+            attachments: voice,
+          );
+        }
         notifier.setReplyToMessage(null);
       } catch (_) {
         await notifier.discardUpload(widget.conversationId, presign.publicUrl);
@@ -1154,6 +1238,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         onDelete: () => unawaited(_cancelVoiceRecording()),
         onPauseToggle: () => unawaited(_togglePause()),
         onSend: () => unawaited(_finishVoiceRecording()),
+        onSendLater: () => unawaited(_finishVoiceRecordingLater()),
         onViewOnceToggle: () => setState(() => _viewOnce = !_viewOnce),
       );
     }
@@ -1204,6 +1289,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         onVoice: () => unawaited(_startVoiceRecording()),
         onPlus: _toggleAttachmentPanel,
         onSend: _send,
+        onSendLater: () => unawaited(_sendLater()),
         onContentInserted: _mediaAllowed(visual: true)
             ? (content) => unawaited(_attachInserted(content))
             : null,
@@ -1222,7 +1308,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          composer,
+          FilterReorderBlur(on: attachReordering, child: composer),
           AnimatedSize(
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOutCubic,

@@ -89,6 +89,14 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       ref.invalidate(groupPinsProvider(convId));
       return;
     }
+    // Send later (server 0171): one of this account's scheduled messages
+    // was stored, moved, sent or refused — or is waiting for a device of
+    // ours to seal it again, which the reload does.
+    if (type == 'chat.scheduled.updated') {
+      ref.invalidate(scheduledMessagesProvider(convId));
+      unawaited(ref.read(scheduledResealProvider).runAll());
+      return;
+    }
 
     if (type == 'chat.receipts.updated') {
       _applyReceiptUpdates(

@@ -54,6 +54,7 @@ class AccentCircle extends StatelessWidget {
     required this.icon,
     required this.rotated,
     required this.onTap,
+    this.onLongPress,
     this.size = 48,
   });
 
@@ -64,6 +65,9 @@ class AccentCircle extends StatelessWidget {
   /// "+" turns into a x while the attachment keyboard is up.
   final bool rotated;
   final VoidCallback? onTap;
+
+  /// Held down: send later. Null leaves a hold doing nothing.
+  final VoidCallback? onLongPress;
   final double size;
 
   @override
@@ -78,6 +82,7 @@ class AccentCircle extends StatelessWidget {
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
+          onLongPress: onLongPress,
           child: SizedBox(
             width: size,
             height: size,

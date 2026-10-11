@@ -148,7 +148,7 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
             messages.first,
             threadRootId: threadRootId,
           );
-      messages = await decryptIfNeeded(messages);
+      messages = sendTracker.settle(await decryptIfNeeded(messages));
       ChatOpenTrace.mark(key, 'decrypt');
       await warmMediaFrames(messages);
       ChatOpenTrace.mark(key, 'frames');

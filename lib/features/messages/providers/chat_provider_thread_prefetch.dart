@@ -74,7 +74,7 @@ mixin _ChatThreadPrefetchMixin
       threadRootId: rootId,
     );
     if (cached.isEmpty || isDisposed) return;
-    final decrypted = await decryptIfNeeded(cached);
+    final decrypted = sendTracker.settle(await decryptIfNeeded(cached));
     if (isDisposed) return;
     _mergeThreadReplies(rootId, decrypted.where((m) => m.id != rootId));
   }

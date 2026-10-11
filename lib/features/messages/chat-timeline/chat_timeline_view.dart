@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../chat-list/filter_reorder_blur.dart';
 import '../chat-select/message_selection.dart';
 import '../chat-select/selection_bottom_bar.dart';
 import '../chat-select/selection_top_bar.dart';
@@ -9,6 +10,7 @@ import '../group-pins/group_pins_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/pinned_message_provider.dart';
 import '../safety_number/safety_number_banner.dart';
+import 'composer_attach_order.dart';
 import 'message_list.dart';
 import 'scroll_to_bottom_pill.dart';
 import 'timeline_composer.dart';
@@ -94,7 +96,7 @@ class ChatTimelineView extends ConsumerWidget {
               curve: Curves.easeOutCubic,
               alignment: Alignment.topCenter,
               heightFactor: showHeader ? 1 : 0,
-              child: header,
+              child: FilterReorderBlur(on: attachReordering, child: header!),
             ),
           ),
         // Keyed because the first and last children swap type when selection
@@ -104,67 +106,70 @@ class ChatTimelineView extends ConsumerWidget {
         // the newest message on every Select and every exit.
         Expanded(
           key: const ValueKey('timeline-body'),
-          child: Padding(
-            // The header carries its own top safe-area padding, so it's fine
-            // while visible — but auto-hide collapses it to zero height along
-            // with everything else, and the list underneath was drawing right
-            // under the status bar/notch the moment that happened. Only add
-            // this back while the header is actually gone.
-            padding: EdgeInsets.only(
-              top: showHeader ? 0 : MediaQuery.paddingOf(context).top,
-            ),
-            child: Stack(
-              children: [
-                MessageList(
-                  messages: messages,
-                  loading: loading,
-                  loadingMore: loadingMore,
-                  currentUserId: currentUserId,
-                  scrollController: scrollController,
-                  conversationId: conversationId,
-                  threadRootId: threadRootId,
-                  error: error,
-                  onRetry: onRetry,
-                  unreadAnchorId: unreadAnchorId,
-                  unreadCount: unreadCount,
-                  leading: leading,
-                  insetTop: selecting
-                      ? SelectionTopBar.reservedHeight +
-                            MediaQuery.paddingOf(context).top
-                      : 0,
-                  insetBottom: selecting
-                      ? SelectionBottomBar.reservedHeight +
-                            MediaQuery.paddingOf(context).bottom
-                      : 0,
-                ),
-                if (selecting) ...[
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: SelectionTopBar(conversationId: conversationId),
+          child: FilterReorderBlur(
+            on: attachReordering,
+            child: Padding(
+              // The header carries its own top safe-area padding, so it's fine
+              // while visible — but auto-hide collapses it to zero height along
+              // with everything else, and the list underneath was drawing right
+              // under the status bar/notch the moment that happened. Only add
+              // this back while the header is actually gone.
+              padding: EdgeInsets.only(
+                top: showHeader ? 0 : MediaQuery.paddingOf(context).top,
+              ),
+              child: Stack(
+                children: [
+                  MessageList(
+                    messages: messages,
+                    loading: loading,
+                    loadingMore: loadingMore,
+                    currentUserId: currentUserId,
+                    scrollController: scrollController,
+                    conversationId: conversationId,
+                    threadRootId: threadRootId,
+                    error: error,
+                    onRetry: onRetry,
+                    unreadAnchorId: unreadAnchorId,
+                    unreadCount: unreadCount,
+                    leading: leading,
+                    insetTop: selecting
+                        ? SelectionTopBar.reservedHeight +
+                              MediaQuery.paddingOf(context).top
+                        : 0,
+                    insetBottom: selecting
+                        ? SelectionBottomBar.reservedHeight +
+                              MediaQuery.paddingOf(context).bottom
+                        : 0,
                   ),
+                  if (selecting) ...[
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: SelectionTopBar(conversationId: conversationId),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: SelectionBottomBar(conversationId: conversationId),
+                    ),
+                  ],
                   Positioned(
-                    left: 0,
                     right: 0,
-                    bottom: 0,
-                    child: SelectionBottomBar(conversationId: conversationId),
+                    // Lifted clear of the Forward capsule while selecting.
+                    bottom: selecting
+                        ? SelectionBottomBar.reservedHeight +
+                              MediaQuery.paddingOf(context).bottom
+                        : 0,
+                    child: ScrollToBottomPill(
+                      visible: showJumpPill,
+                      unreadCount: unreadPillCount,
+                      onTap: onJumpToBottom,
+                    ),
                   ),
                 ],
-                Positioned(
-                  right: 0,
-                  // Lifted clear of the Forward capsule while selecting.
-                  bottom: selecting
-                      ? SelectionBottomBar.reservedHeight +
-                            MediaQuery.paddingOf(context).bottom
-                      : 0,
-                  child: ScrollToBottomPill(
-                    visible: showJumpPill,
-                    unreadCount: unreadPillCount,
-                    onTap: onJumpToBottom,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),

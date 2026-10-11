@@ -6,6 +6,9 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
   /// See [ChatNotifier.isDisposed] — guards every write that follows an await.
   bool get isDisposed;
 
+  /// Sends in flight and why the last attempt of each failed.
+  final sendTracker = SendTracker();
+
   void setFeed(String key, ChatFeed feed) {
     if (isDisposed) return;
     if (ref.read(messageVaultProvider).isStartingNewChat) {

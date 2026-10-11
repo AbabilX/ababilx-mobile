@@ -14,12 +14,16 @@ class CapsuleFormHeader extends StatelessWidget {
     required this.sendLabel,
     required this.onBack,
     required this.onSend,
+    this.onSendLater,
   });
 
   final String title;
   final String sendLabel;
   final VoidCallback onBack;
   final VoidCallback? onSend;
+
+  /// Send held down: send later. Off while [onSend] is.
+  final VoidCallback? onSendLater;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +87,7 @@ class CapsuleFormHeader extends StatelessWidget {
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: onSend,
+                  onLongPress: onSend == null ? null : onSendLater,
                   child: SizedBox(
                     height: 44,
                     child: Padding(
