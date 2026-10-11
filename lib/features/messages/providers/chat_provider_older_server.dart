@@ -26,9 +26,12 @@ mixin _ChatOlderServerMixin
     final messages = await (this as _ChatOlderDiskMixin).keepingStoredContent(
       canonicalChatMessages(await decryptIfNeeded(page.messages)),
     );
-    // These rows are new to this phone, so this is their delivery.
-    _acknowledge(conversationId, page.messages);
-    await stageFeedPage(messages);
+    // These rows are new to this phone, so this is their delivery — once
+    // they are on disk, not before.
+    await stageFeedPageThenAck(
+      messages,
+      () => _acknowledge(conversationId, page.messages),
+    );
     unawaited((this as _ChatPrivateMixin).takePrivateCustody(messages));
     ChatOlderTrace.end(clock, conversationId, 'server', messages.length);
     return (page: page, messages: messages);

@@ -213,6 +213,35 @@ class ChatMessageStore {
 
   Future<void> saveOne(ChatMessage message) => saveAll([message]);
 
+  /// Writes [messages] and throws unless every store this phone reads from
+  /// now holds them. This is the only write that may be followed by telling
+  /// the server "this device has it" (a delivered receipt, private-chat
+  /// custody): the server may delete its copy on that word.
+  ///
+  /// Both stores must succeed on Android. Reads answer from SQLCipher once a
+  /// conversation is migrated and from Drift before that, so a row in only
+  /// one of them can be invisible.
+  ///
+  /// A message this phone deliberately deleted is not written and does not
+  /// fail the call: nothing is owed for it.
+  Future<void> saveDurable(List<ChatMessage> messages) async {
+    final kept = deletions.filter(messages);
+    final deletionRevision = deletions.revision;
+    // Both are attempted even when the first fails: a broken SQLCipher store
+    // must not also cost the Drift copy the best-effort path always wrote.
+    Object? failure;
+    StackTrace? failureTrace;
+    try {
+      await _android?.upsert(kept);
+    } catch (e, st) {
+      failure = e;
+      failureTrace = st;
+    }
+    await _drift.saveAllOrThrow(kept);
+    if (deletionRevision != deletions.revision) deletionCleanupComplete = false;
+    if (failure != null) Error.throwWithStackTrace(failure, failureTrace!);
+  }
+
   /// One settled message by server id from this phone's history, or null —
   /// how a private-chat op finds its target and a private quote its original
   /// after the server has let both go (server 0160). A message deleted here

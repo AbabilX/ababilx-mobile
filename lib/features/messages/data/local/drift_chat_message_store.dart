@@ -155,10 +155,21 @@ class DriftChatMessageStore {
     });
   }
 
+  /// Best-effort write: a failed cache write must not break the screen that
+  /// asked for it. Anything that tells the server "this phone holds it" must
+  /// use [saveAllOrThrow] instead.
   Future<void> saveAll(List<ChatMessage> messages) async {
+    try {
+      await saveAllOrThrow(messages);
+    } catch (_) {}
+  }
+
+  /// [saveAll], but a disk failure reaches the caller. The rows are written
+  /// in one transaction, so a throw means none of them is stored.
+  Future<void> saveAllOrThrow(List<ChatMessage> messages) async {
     final writable = messages.where((m) => m.id.isNotEmpty).toList();
     if (writable.isEmpty) return;
-    try {
+    await _db.transaction(() async {
       await _db.batch((batch) {
         for (final message in writable) {
           batch.insert(
@@ -176,10 +187,10 @@ class DriftChatMessageStore {
           [message.id, rowId],
         );
       }
-      for (final id in writable.map((m) => m.conversationId).toSet()) {
-        await _prune(id);
-      }
-    } catch (_) {}
+    });
+    for (final id in writable.map((m) => m.conversationId).toSet()) {
+      await _prune(id);
+    }
   }
 
   /// One settled message by its server id, or null. Drift is a full mirror

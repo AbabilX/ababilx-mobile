@@ -95,8 +95,11 @@ mixin _ChatFeedMixin on Notifier<ChatState> {
       final sorted = await (this as _ChatOlderDiskMixin).keepingStoredContent(
         canonicalChatMessages(messages),
       );
-      _acknowledge(conversationId, page.messages);
-      await cache.stageFeedPage(sorted);
+      // Stored first, acknowledged second: see [stageFeedPageThenAck].
+      await cache.stageFeedPageThenAck(
+        sorted,
+        () => _acknowledge(conversationId, page.messages),
+      );
       unawaited((this as _ChatPrivateMixin).takePrivateCustody(sorted));
       // The disk half may still be reading; its page is older than this one
       // or equal to it, and merging after it keeps both.

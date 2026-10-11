@@ -145,8 +145,10 @@ mixin _ChatOlderMixin
       final sorted = canonicalChatMessages(
         await decryptIfNeeded(page.messages),
       );
-      _acknowledge(conversationId, page.messages);
-      await stageFeedPage(sorted);
+      await stageFeedPageThenAck(
+        sorted,
+        () => _acknowledge(conversationId, page.messages),
+      );
       unawaited((this as _ChatPrivateMixin).takePrivateCustody(sorted));
       if (isDisposed) return;
       final latest = state.feeds[key] ?? feed;

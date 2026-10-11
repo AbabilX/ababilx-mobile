@@ -39,13 +39,16 @@ mixin _ChatPrivateMixin
     ];
     if (owed.isEmpty) return;
     try {
-      await messageStore.saveAll(owed);
+      // Must throw on a failed write: custody is what lets the server delete
+      // its copy, and saveAll swallows every disk error.
+      await messageStore.saveDurable(owed);
       final taken = await takePrivateMedia(ref, owed);
       if (taken.isEmpty) return;
       final device = await (this as ChatNotifier).repo.chatDeviceId();
       await ref.read(privateChatApiProvider).custody(device, taken.toList());
-    } catch (_) {
+    } catch (e) {
       // Still on the server: the next pull offers them again.
+      debugPrint('[PrivateChat] custody not taken: $e');
     } finally {
       _custodyInFlight.removeAll(owed.map((m) => m.id));
     }
@@ -124,7 +127,13 @@ mixin _ChatPrivateMixin
         op.targetMessageId,
       );
     } else {
-      await _applyToTarget(op, target, me);
+      try {
+        await _applyToTarget(op, target, me);
+      } catch (e) {
+        // Not applied on disk: the op stays on the server for the next pull.
+        debugPrint('[PrivateChat] op not applied: $e');
+        return;
+      }
     }
     try {
       final device = await (this as ChatNotifier).repo.chatDeviceId();
@@ -149,7 +158,7 @@ mixin _ChatPrivateMixin
           reacted: op.reacted,
           userName: _privateOpAuthorName(op),
         );
-        await messageStore.saveOne(target.copyWith(reactions: reactions));
+        await messageStore.saveDurable([target.copyWith(reactions: reactions)]);
         updateFeedReactions(op.conversationId, target.id, reactions);
       case PrivateOpEffect.edit:
         final edited = target.copyWith(
@@ -159,7 +168,7 @@ mixin _ChatPrivateMixin
           encryptionVersion: 1,
           encryptionKeyVersion: op.encryptionKeyVersion,
         );
-        await messageStore.saveOne(edited);
+        await messageStore.saveDurable([edited]);
         final opened = (await decryptIfNeeded([edited])).first;
         updateFeedMessage(op.conversationId, opened);
       case PrivateOpEffect.delete:

@@ -282,6 +282,45 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     messageStore.saveOne(message).ignore();
   }
 
+  /// Stores a page, then runs [acknowledge]. A receipt releases the server's
+  /// copy of a webhook-feed message (the feed trim reads `delivered_at`), so
+  /// it is never sent for a page that did not reach the disk; the next page
+  /// load delivers the same rows again.
+  Future<void> stageFeedPageThenAck(
+    List<ChatMessage> messages,
+    void Function() acknowledge,
+  ) async {
+    var stored = true;
+    try {
+      await messageStore.saveDurable(messages);
+    } catch (e) {
+      stored = false;
+      debugPrint('[ChatCache] page not stored, receipts withheld: $e');
+    }
+    if (stored) acknowledge();
+    await warmMediaFrames(messages);
+  }
+
+  /// The realtime path: one arriving message is stored, and only then
+  /// acknowledged as delivered (and read, when its chat is open).
+  Future<void> persistThenAcknowledge(
+    ChatMessage message, {
+    required bool read,
+  }) async {
+    try {
+      await messageStore.saveDurable([message]);
+    } catch (e) {
+      debugPrint('[ChatCache] message not stored, receipt withheld: $e');
+      return;
+    }
+    final repo = (this as ChatNotifier).repo;
+    final ids = [message.id];
+    unawaited(repo.acknowledgeMessages('delivered', ids).catchError((_) {}));
+    if (read) {
+      unawaited(repo.acknowledgeMessages('read', ids).catchError((_) {}));
+    }
+  }
+
   void deleteCachedMessageAsync(String messageId) {
     messageStore.remove(messageId).ignore();
     ref.read(attachmentSweeperProvider).onMessageDeleted(messageId).ignore();

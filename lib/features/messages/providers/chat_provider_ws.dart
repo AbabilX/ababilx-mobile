@@ -214,11 +214,14 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       (this as _ChatOutboxMixin).settleOutbox(msg).ignore();
     }
     final isActive = convId == state.activeConversationId;
-    unawaited(
-      repo.acknowledgeMessages('delivered', [msg.id]).catchError((_) {}),
+    // The delivered / read receipts are sent by [persistThenAcknowledge]
+    // below, after the message is on disk: a receipt lets the server trim
+    // its copy of a webhook-feed message.
+    final stored = msg;
+    void storeThenAck() => unawaited(
+      (this as _ChatCacheMixin).persistThenAcknowledge(stored, read: isActive),
     );
     if (isActive) {
-      unawaited(repo.acknowledgeMessages('read', [msg.id]).catchError((_) {}));
       if (msg.userId != state.currentUserId) {
         // A receipt is per message; the sidebar badge counts against the
         // conversation's own read marker, and that only moved when the chat
@@ -248,6 +251,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       if (feedForConv.messages.any(
         (m) => !m.isPending && sameChatMessage(m, msg),
       )) {
+        storeThenAck();
         return;
       }
 
@@ -277,7 +281,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
             parentId: msg.parentId,
           );
           unawaited(ref.read(attachmentIntakeProvider).onMessage(msg));
-          (this as _ChatCacheMixin).persistMessageAsync(msg);
+          storeThenAck();
           return;
         }
       }
@@ -301,7 +305,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       appendFeedMessage(convId, msg);
     }
     unawaited(ref.read(attachmentIntakeProvider).onMessage(msg));
-    (this as _ChatCacheMixin).persistMessageAsync(msg);
+    storeThenAck();
     unawaited((this as _ChatPrivateMixin).takePrivateCustody([msg]));
   }
 
