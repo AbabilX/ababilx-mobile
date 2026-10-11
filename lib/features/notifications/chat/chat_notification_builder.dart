@@ -66,6 +66,14 @@ AndroidNotificationDetails buildChatNotificationDetails({
       semanticAction: SemanticAction.reply,
     ),
     AndroidNotificationAction(
+      chatThreadReplyActionId,
+      'Reply in thread',
+      // Same direct reply, sent under the newest message in the entry (or
+      // into the thread that message is already part of).
+      inputs: [AndroidNotificationActionInput(label: 'Reply in thread')],
+      cancelNotification: true,
+    ),
+    AndroidNotificationAction(
       chatMarkReadActionId,
       'Mark read',
       semanticAction: SemanticAction.markAsRead,

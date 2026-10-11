@@ -14,12 +14,15 @@ import '../../messages/tiptap_plain_text.dart';
 /// encrypted DM is sealed here exactly as the composer seals it — the server
 /// never sees the plaintext, notification reply or not.
 ///
+/// [parentId] sends it as a thread reply under that message.
+///
 /// Returns false when the reply could not be sent; the caller then tells the
 /// user rather than silently dropping what they typed.
 Future<bool> sendChatNotificationReply(
   Map<String, dynamic> data,
-  String text,
-) async {
+  String text, {
+  String? parentId,
+}) async {
   final conversationId = data['conversation_id']?.toString() ?? '';
   final trimmed = text.trim();
   if (conversationId.isEmpty || trimmed.isEmpty) return false;
@@ -42,6 +45,7 @@ Future<bool> sendChatNotificationReply(
       encryptionNonce: sealed?.nonce,
       encryptionVersion: sealed == null ? null : 1,
       encryptionKeyVersion: sealed?.keyVersion,
+      parentId: parentId,
     );
     // Replying is reading: leaving the conversation unread after it would put
     // the badge back the moment the app opens.

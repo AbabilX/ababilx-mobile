@@ -18,7 +18,17 @@ String chatSystemNotificationTag(String conversationId) =>
 /// Action ids come back on the notification response, so they are the contract
 /// between the button and the handler.
 const chatReplyActionId = 'chat_reply';
+const chatThreadReplyActionId = 'chat_reply_thread';
 const chatMarkReadActionId = 'chat_mark_read';
 
 /// Groups every chat entry under one bundle in the shade.
 const chatNotificationGroupKey = 'com.ababilx.app.CHAT';
+
+/// The message a "Reply in thread" from the shade hangs under: the thread the
+/// notified message is already in (`parent_id`, server-sent for a thread
+/// reply), otherwise that message itself. Empty when the push names neither.
+String chatThreadRootId(Map<String, dynamic> data) {
+  final parent = data['parent_id']?.toString().trim() ?? '';
+  if (parent.isNotEmpty) return parent;
+  return data['message_id']?.toString().trim() ?? '';
+}

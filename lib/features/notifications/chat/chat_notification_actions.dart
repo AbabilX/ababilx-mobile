@@ -27,9 +27,12 @@ void chatNotificationBackgroundAction(NotificationResponse response) {
 /// caller that also does tap navigation knows to stop.
 Future<bool> handleChatNotificationAction(NotificationResponse response) async {
   final actionId = response.actionId;
-  if (actionId != chatReplyActionId && actionId != chatMarkReadActionId) {
-    return false;
-  }
+  const handled = {
+    chatReplyActionId,
+    chatThreadReplyActionId,
+    chatMarkReadActionId,
+  };
+  if (!handled.contains(actionId)) return false;
 
   final data = LocalNotifications.decodeData(response.payload ?? '');
   final conversationId = data['conversation_id']?.toString() ?? '';
@@ -51,8 +54,22 @@ Future<bool> handleChatNotificationAction(NotificationResponse response) async {
   // shade should never look like the typing was thrown away.
   await ChatNotificationPresenter.appendOutgoing(local, data, text);
 
-  final sent = await sendChatNotificationReply(data, text);
-  fcmLog('notif.action.reply', 'conversation=$conversationId sent=$sent');
+  // The payload is the newest push's, so the thread hangs under the newest
+  // message in the entry. With no id to hang it under, nothing is sent: a
+  // thread reply must never fall back into the main chat.
+  final inThread = actionId == chatThreadReplyActionId;
+  final rootId = inThread ? chatThreadRootId(data) : '';
+  final sent = inThread && rootId.isEmpty
+      ? false
+      : await sendChatNotificationReply(
+          data,
+          text,
+          parentId: inThread ? rootId : null,
+        );
+  fcmLog(
+    'notif.action.reply',
+    'conversation=$conversationId thread=$inThread sent=$sent',
+  );
   if (sent) {
     // Replying already marks the conversation read. Match Signal's remote
     // reply behavior by removing the now-consumed tray thread immediately.
