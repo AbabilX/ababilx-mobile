@@ -4,7 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models/chat_conversation.dart';
 import 'dm_roster_pins.dart';
 
+// The vault's part files reach these through this one import.
 export 'dm_roster_pins.dart';
+export 'group_roster_pins.dart';
+export 'sealed_since.dart';
 
 /// Thrown when a send into a conversation this phone knows as encrypted would
 /// have gone out readable. A [StateError], so every place that already shows

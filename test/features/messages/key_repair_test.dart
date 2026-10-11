@@ -1,11 +1,16 @@
 import 'package:ababilx/core/storage/secure_storage.dart';
 import 'package:ababilx/features/messages/data/chat_repository.dart';
+import 'package:ababilx/features/messages/data/local/chat_key_cache.dart';
+import 'package:ababilx/features/messages/data/local/chat_local_db.dart';
 import 'package:ababilx/features/messages/data/models/chat_message.dart';
 import 'package:ababilx/features/messages/message_e2ee/message_vault.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// A server for one account, 'me', whose roster is just itself.
+/// A server for one account, 'me', whose roster is itself and [others].
 class _Server implements ChatRepository {
+  List<String> others = const [];
   Map<String, dynamic> vault = {'exists': false};
   Map<String, dynamic>? publicKey;
   final envelopes = <int, Map<String, dynamic>>{};
@@ -35,7 +40,8 @@ class _Server implements ChatRepository {
   @override
   Future<Map<String, dynamic>> getE2eeConversationMembers(String id) async => {
     'members': [
-      {'user_id': 'me', 'public_key': publicKey},
+      for (final id in ['me', ...others])
+        {'user_id': id, 'public_key': publicKey},
     ],
     'unready_member_ids': const [],
   };
@@ -204,8 +210,15 @@ void main() {
   test(
     'keys other members lost are refilled without opening the chat',
     () async {
-      final server = _Server();
-      final vault = await _unlocked(server);
+      // The app's own vault (it has a key cache): the one that keeps the
+      // roster record an old group key is checked against. 'peer' is in the
+      // group from the first key, so a key they lost is theirs to get back.
+      SharedPreferences.setMockInitialValues({});
+      final db = ChatLocalDb.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final server = _Server()..others = ['peer'];
+      final vault = MessageVault(server, _Storage(), ChatKeyCache(db));
+      await vault.ensureIdentity();
       await vault.encryptNew(
         conversationId: 'group',
         text: 'a',

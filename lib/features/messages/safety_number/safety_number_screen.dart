@@ -166,7 +166,8 @@ class _ChangedNotice extends StatelessWidget {
             child: Text(
               'Your safety number with $peerName has changed. They may have '
               'reinstalled AbabilX or switched devices — or someone may be '
-              'intercepting this conversation.',
+              'intercepting this conversation. Until you confirm it is them, '
+              'your phone will not give them the keys to older messages.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onErrorContainer,
               ),

@@ -11,20 +11,31 @@ part of 'message_vault.dart';
 /// messages from this moment on.
 extension MessageVaultBackfill on MessageVault {
   /// Fills every gap the server reported for [conversationId], returning true
-  /// when at least one envelope landed.
+  /// when at least one envelope landed. [newest] is the newest key version
+  /// this account holds there.
   ///
   /// Best-effort by design: this runs beside a key load, so a failure must
   /// degrade to "their history stays sealed", never to a broken conversation.
+  ///
+  /// The server names who lost a key, and an old key opens history. So the
+  /// phone decides for itself who gets one: in a DM only the peer, in a group
+  /// only a member it knew before that key ([_knewMember]), and nobody whose
+  /// identity changed until the user has looked ([isUnverifiedKeyChange]).
   Future<bool> _backfillKeys(
     String conversationId,
     String self,
     List<dynamic> gaps,
+    int newest,
   ) async {
     if (gaps.isEmpty || _backfilled.contains(conversationId)) return false;
     _backfilled.add(conversationId);
     final identity = _identity;
+    var waiting = false;
     try {
       final only = await _dmRoster(conversationId, self);
+      if (only == null && !await _rosterKnown(conversationId, self)) {
+        return false;
+      }
       final envelopes = <Map<String, dynamic>>[];
       for (final raw in gaps) {
         final gap = Map<String, dynamic>.from(raw as Map);
@@ -49,11 +60,21 @@ extension MessageVaultBackfill on MessageVault {
           final id = userId.toString();
           // An old key goes only to the people this DM is between.
           if (only != null && !only.contains(id)) continue;
+          if (only == null &&
+              !await _knewMember(conversationId, self, id, version, newest)) {
+            continue;
+          }
           final result = await _repo.getE2eePublicKey(id);
           final publicJwk = Map<String, dynamic>.from(
             result['public_key'] as Map,
           );
           onSealingTo?.call(self, id, publicJwk);
+          // A different identity than the one remembered gets no history
+          // until the user has confirmed it is the same person.
+          if (await isUnverifiedKeyChange(self, id, publicJwk)) {
+            waiting = true;
+            continue;
+          }
           envelopes.add({
             'user_id': id,
             'key_version': version,
@@ -61,6 +82,8 @@ extension MessageVaultBackfill on MessageVault {
           });
         }
       }
+      // Somebody is waiting on the user: the next load asks again.
+      if (waiting) _backfilled.remove(conversationId);
       if (envelopes.isEmpty) return false;
       final saved = await _repo.backfillE2eeConversationKey(
         conversationId,
@@ -73,6 +96,59 @@ extension MessageVaultBackfill on MessageVault {
       _backfilled.remove(conversationId);
       return false;
     }
+  }
+
+  /// Makes sure this phone has a roster record for a group before any old
+  /// key leaves it; the first roster it sees is taken as it is. False for a
+  /// vault with no key cache (the notification isolate), which keeps no
+  /// record and so hands no old group key: the app does, when it next runs.
+  Future<bool> _rosterKnown(String conversationId, String self) async {
+    if (_keyCache == null) return false;
+    const pins = GroupRosterPins();
+    if (await pins.known(self, conversationId)) return true;
+    final roster = await _repo.getE2eeConversationMembers(conversationId);
+    await pins.observe(self, conversationId, [
+      for (final m in (roster['members'] as List? ?? const []))
+        if (m is Map) '${m['user_id']}',
+      for (final id in (roster['unready_member_ids'] as List? ?? const []))
+        '$id',
+    ]);
+    return true;
+  }
+
+  /// Whether this phone knew [memberId] as a member before key [version]
+  /// existed (GroupRosterPins): a new member is not handed the archive.
+  Future<bool> _knewMember(
+    String conversationId,
+    String self,
+    String memberId,
+    int version,
+    int newest,
+  ) => const GroupRosterPins().mayHandKey(
+    self,
+    conversationId,
+    memberId,
+    version: version,
+    newest: newest,
+  );
+
+  /// Records who a key was just sealed to, [before] being the newest version
+  /// older than it. Never fails a send.
+  Future<void> _noteRoster(
+    String conversationId,
+    String self,
+    Iterable<String> memberIds,
+    int before,
+  ) async {
+    if (_keyCache == null) return;
+    try {
+      await const GroupRosterPins().observe(
+        self,
+        conversationId,
+        memberIds,
+        before: before,
+      );
+    } catch (_) {}
   }
 
   /// Who a DM's keys may be sealed to, or null for a group and for a DM this

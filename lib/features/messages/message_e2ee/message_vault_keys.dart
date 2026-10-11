@@ -95,6 +95,10 @@ extension MessageVaultKeys on MessageVault {
     );
     final envelope = Map<String, dynamic>.from(saved['envelope'] as Map);
     final version = (saved['key_version'] as num).toInt();
+    // Who this phone has now sealed a group key to (GroupRosterPins).
+    if (only == null) {
+      await _noteRoster(conversationId, self, envelopes.keys, version - 1);
+    }
     final SecretKey opened;
     try {
       opened = await _unwrapKey(envelope, self);
@@ -175,6 +179,7 @@ extension MessageVaultKeys on MessageVault {
       conversationId,
       self,
       (status['gaps'] as List?) ?? const [],
+      version,
     );
     final entry = _DmKey(
       version: version,

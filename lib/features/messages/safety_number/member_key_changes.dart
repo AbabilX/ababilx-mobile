@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/chat_repository.dart';
+import '../message_e2ee/group_roster_pins.dart';
 import '../providers/chat_provider.dart';
 import 'member_key_watch.dart';
 import 'safety_number_provider.dart';
@@ -29,6 +30,30 @@ void watchSealedKey(
   );
 }
 
+/// Whether [publicJwk] is a different identity than the one this phone
+/// remembers for [userId], and the user has not confirmed it yet.
+///
+/// Asked by the vault before it hands an OLD conversation key to someone who
+/// lost theirs. A person who started fresh looks exactly like a key the
+/// server swapped, and an old key opens the whole history: so it waits for
+/// the user (the safety-number screen), where a new message only warns.
+/// Storage that cannot be read holds nothing back; the server cannot cause it.
+Future<bool> isUnverifiedKeyChange(
+  String self,
+  String userId,
+  Map<String, dynamic> publicJwk,
+) async {
+  try {
+    const store = SafetyNumberStore();
+    final trust = await MemberKeyWatch(
+      store,
+    ).observe(self, userId, publicJwk, sealing: true);
+    return trust == PeerTrust.changed;
+  } catch (_) {
+    return false;
+  }
+}
+
 /// The members of a group whose identity key is not the one this phone
 /// remembers, by user id. Empty for almost every group, almost always.
 ///
@@ -47,6 +72,14 @@ final memberKeyChangesProvider = FutureProvider.autoDispose
       } catch (_) {
         return const [];
       }
+      // The same roster is this phone's record of who reads the group: a
+      // member who appeared since the last look is listed (GroupRosterNotice).
+      await const GroupRosterPins().observe(myId, conversationId, [
+        for (final entry in (roster['members'] as List? ?? const []))
+          if (entry is Map) '${entry['user_id']}',
+        for (final id in (roster['unready_member_ids'] as List? ?? const []))
+          '$id',
+      ]);
       final watch = ref.read(memberKeyWatchProvider);
       final changed = <String>[];
       for (final entry in (roster['members'] as List? ?? const [])) {

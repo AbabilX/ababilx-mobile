@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/chat_provider.dart';
 import 'group_key_change_banner.dart';
+import 'group_roster_notice.dart';
 import 'safety_number_provider.dart';
 import 'safety_number_screen.dart';
 import 'safety_number_strip.dart';
@@ -27,7 +28,14 @@ class SafetyNumberBanner extends ConsumerWidget {
     if (conversation != null &&
         conversation.isGroup &&
         conversation.isEncrypted) {
-      return GroupKeyChangeBanner(conversationId: conversationId);
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GroupRosterNotice(conversationId: conversationId),
+          GroupKeyChangeBanner(conversationId: conversationId),
+        ],
+      );
     }
     // hasDmPeer, not isDm: in a note to self the peer is the viewer, so there
     // is no second identity to compare and no substitution to catch.

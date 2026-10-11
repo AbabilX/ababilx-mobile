@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -112,4 +114,6 @@ Future<void> acknowledgeSafetyNumber(
       .remember(myId, peerUserId, peerFingerprint);
   ref.invalidate(safetyNumberProvider(peerUserId));
   ref.invalidate(memberKeyChangesProvider);
+  // Their old keys were held back until now (the vault's backfill).
+  unawaited(ref.read(messageVaultProvider).refillKeyGaps(myId));
 }

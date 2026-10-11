@@ -521,8 +521,15 @@ mixin _ChatMutateMixin
   Future<List<ChatMember>> listChannelMembers(String channelId) =>
       repo.listChannelMembers(channelId);
 
-  Future<void> addChannelMember(String channelId, String userId) =>
-      repo.addChannelMember(channelId, userId);
+  Future<void> addChannelMember(String channelId, String userId) async {
+    await repo.addChannelMember(channelId, userId);
+    // Added from this phone: no "new person" notice for it (GroupRosterPins).
+    await const GroupRosterPins().expect(
+      state.currentUserId,
+      channelId,
+      userId,
+    );
+  }
 
   /// Drops every in-memory trace of a conversation that was just deleted.
   ///

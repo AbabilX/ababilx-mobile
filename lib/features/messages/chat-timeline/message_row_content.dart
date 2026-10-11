@@ -16,6 +16,7 @@ import 'reaction_details_sheet.dart';
 import 'reaction_row.dart';
 import 'sender_name_color.dart';
 import 'signal_bubble_metrics.dart';
+import 'unsealed_message_mark.dart';
 import 'user_profile_sheet.dart';
 import '../nickname/contact_nickname_provider.dart';
 
@@ -148,6 +149,7 @@ class MessageRowContent extends ConsumerWidget {
               initialEmoji: emoji,
             ),
           ),
+        UnsealedMessageMark(message: message),
       ],
     );
 

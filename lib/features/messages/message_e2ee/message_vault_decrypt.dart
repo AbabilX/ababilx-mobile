@@ -121,6 +121,17 @@ extension MessageVaultDecrypt on MessageVault {
     }
     try {
       final body = await _openSealedBody(message, currentUserId);
+      // A message that opened proves this chat was sealed by then; plain
+      // text after it is marked (SealedSince). The app's vault only.
+      if (_keyCache != null) {
+        unawaited(
+          const SealedSince().note(
+            currentUserId,
+            message.conversationId,
+            message.createdAt,
+          ),
+        );
+      }
       return message.copyWith(body: body, quote: quote);
     } catch (_) {
       // A message no key opens may still have come back from a local backup,

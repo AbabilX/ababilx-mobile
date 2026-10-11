@@ -6,8 +6,8 @@ import '../../profile/providers/profile_provider.dart';
 import '../../settings/display-name/display_name_rules.dart';
 import 'profile_setup_step.dart';
 
-/// Step 1: the name everyone else sees. Prefilled with what Google, GitHub
-/// or the email sign-up form already gave; unchanged, Next writes nothing.
+/// Step 1: the name everyone else sees. Prefilled with what Google or the
+/// email sign-up form already gave; unchanged, Next writes nothing.
 class NameStep extends ConsumerStatefulWidget {
   const NameStep({super.key, required this.onDone});
 

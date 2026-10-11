@@ -55,6 +55,14 @@ extension MessageVaultRepair on MessageVault {
     return _gapFill ??= _runGapFill(currentUserId);
   }
 
+  /// Runs the pass again now: the user has confirmed a member's new
+  /// identity, and the last pass held their old keys back for that.
+  Future<void> refillKeyGaps(String currentUserId) {
+    _backfilled.clear();
+    _gapFill = null;
+    return fillKeyGaps(currentUserId);
+  }
+
   Future<void> _runGapFill(String self) async {
     final identity = _identity;
     try {
