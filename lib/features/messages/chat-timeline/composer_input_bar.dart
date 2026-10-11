@@ -57,6 +57,9 @@ class ComposerInputBar extends StatelessWidget {
   final String attachTooltip;
   final String sendLabel;
 
+  /// Height of the one-line pill and diameter of the circle beside it.
+  static const double _size = 54;
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -67,16 +70,18 @@ class ComposerInputBar extends StatelessWidget {
         children: [
           Expanded(
             child: Container(
-              constraints: const BoxConstraints(minHeight: 48),
+              constraints: const BoxConstraints(minHeight: _size),
               decoration: BoxDecoration(
                 color: colors.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(_size / 2),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   PillIcon(
                     icon: HugeIcons.strokeRoundedSmile,
+                    height: _size,
+                    iconSize: 26,
                     tooltip: emojiTooltip,
                     onTap: onEmoji,
                   ),
@@ -86,7 +91,7 @@ class ComposerInputBar extends StatelessWidget {
                       focusNode: focusNode,
                       minLines: 1,
                       maxLines: 5,
-                      style: const TextStyle(fontSize: 16, height: 1.3),
+                      style: const TextStyle(fontSize: 17, height: 1.3),
                       textCapitalization: TextCapitalization.sentences,
                       contentInsertionConfiguration: onContentInserted == null
                           ? null
@@ -101,14 +106,14 @@ class ComposerInputBar extends StatelessWidget {
                         // single character was typed.
                         hintMaxLines: 1,
                         hintStyle: TextStyle(
-                          fontSize: 16,
+                          fontSize: 17,
                           color: colors.onSurfaceVariant,
                         ),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         isDense: true,
-                        contentPadding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
+                        contentPadding: const EdgeInsets.fromLTRB(0, 16, 0, 16),
                       ),
                     ),
                   ),
@@ -121,12 +126,14 @@ class ComposerInputBar extends StatelessWidget {
                   if (!canSend) ...[
                     PillIcon(
                       icon: HugeIcons.strokeRoundedCamera01,
+                      height: _size,
+                      iconSize: 26,
                       tooltip: cameraTooltip,
                       onTap: onCamera,
                     ),
                     preparingVoice
                         ? const Padding(
-                            padding: EdgeInsets.all(13),
+                            padding: EdgeInsets.all(16),
                             child: SizedBox(
                               width: 22,
                               height: 22,
@@ -135,12 +142,16 @@ class ComposerInputBar extends StatelessWidget {
                           )
                         : PillIcon(
                             icon: HugeIcons.strokeRoundedMic01,
+                            height: _size,
+                            iconSize: 26,
                             tooltip: voiceTooltip,
                             onTap: onVoice,
                           ),
                   ] else
                     PillIcon(
                       icon: HugeIcons.strokeRoundedAdd01,
+                      height: _size,
+                      iconSize: 26,
                       tooltip: attachTooltip,
                       onTap: onPlus,
                     ),
@@ -151,6 +162,7 @@ class ComposerInputBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           AccentCircle(
+            size: _size,
             sending: sending,
             label: canSend ? sendLabel : attachTooltip,
             icon: canSend

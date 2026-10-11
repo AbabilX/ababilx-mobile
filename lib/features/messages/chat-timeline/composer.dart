@@ -1159,6 +1159,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
 
     final composer = ComposerExpandedShell(
+      panelOpen: _attachmentPanelOpen,
       pending: _pending,
       onRemove: _removePendingAt,
       onReorder: (oldIndex, newIndex) => setState(() {

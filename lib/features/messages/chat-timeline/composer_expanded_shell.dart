@@ -14,6 +14,7 @@ class ComposerExpandedShell extends StatelessWidget {
     this.replyBanner,
     this.mentionPicker,
     this.selectionBadge,
+    this.panelOpen = false,
   });
 
   final List<ChatAttachmentInput> pending;
@@ -30,16 +31,28 @@ class ComposerExpandedShell extends StatelessWidget {
   /// [ComposerRecentSelectionBadge].
   final Widget? selectionBadge;
 
+  /// The attachment keyboard is up under the bar.
+  final bool panelOpen;
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    // The pill floats on the chat itself. The surface comes back only when
+    // the bar has something to carry besides the pill: the attachment
+    // keyboard under it, or a reply / staged media above it, which would be
+    // unreadable straight on a wallpaper.
+    final solid =
+        panelOpen ||
+        replyBanner != null ||
+        selectionBadge != null ||
+        pending.isNotEmpty;
     final bar = Material(
-      color: colors.surface,
-      // Nested with the input pill (radius 26, 10px side inset): outer =
+      color: solid ? colors.surface : colors.surface.withValues(alpha: 0),
+      // Nested with the input pill (radius 27, 10px side inset): outer =
       // inner + padding, or the white corner reads flatter than the grey pill.
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(37)),
       clipBehavior: Clip.antiAlias,
-      elevation: 8,
+      elevation: solid ? 8 : 0,
       child: SafeArea(
         top: false,
         child: Column(
