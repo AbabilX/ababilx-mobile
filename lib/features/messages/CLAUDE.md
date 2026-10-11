@@ -2089,14 +2089,63 @@ Note to Self  pinned with no peer -> sealed to this account alone
   the notification isolate is bound too (`reload` when it has no key cache).
 - An extra id is skipped, not an error: the chat keeps working, sealed to
   the two people it is between.
-- **Groups are not covered.** A group's roster has no second source on the
-  phone; a member the server adds is sealed to. Needs signed membership or a
-  local "now also encrypted to X" notice. Same for the backfill to a member
-  whose key CHANGED: still handed over, only warned about.
+- Groups: see 4 and 5 below.
 - `EncryptionPins` also stopped overwriting the stored pins after a read
   that failed (`_read`, and a write adds to what is stored).
 - Tests: `dm_roster_pins_test.dart`.
 
-**Still open, found in the same pass:** a plaintext row in a sealed chat is
-drawn like any other message, so whoever can write to the database can put
-words in a member's mouth. Nothing on the phone marks or refuses it yet.
+**4. Old keys were handed to whoever the server named** (third pass, same
+day). The backfill re-seals keys this phone holds to the ids in `gaps`. Two
+ways that gave away history, both closed in `_backfillKeys`:
+
+```
+group, new id     GroupRosterPins (message_e2ee/group_roster_pins.dart):
+                  per group, who the phone has seen in the sealing roster and
+                  the newest key version that existed when it first saw them.
+                  A member first met at version N is never handed N or older
+                  (a row added with a join date in the past got everything).
+changed identity  isUnverifiedKeyChange: an identity that differs from the
+                  one remembered gets NO old key, DM or group, until the user
+                  confirms on the safety-number screen; acknowledgeSafetyNumber
+                  then runs vault.refillKeyGaps.
+```
+
+- First roster seen is taken as it is (trust on first use); a member who
+  left and came back is new again. An identity never seen before is handed
+  its keys (nothing to compare with).
+- A NEW message is still sealed to a changed identity and to a new member:
+  warned, not blocked.
+- The notification isolate (vault with no key cache) keeps no roster record
+  and hands no old GROUP key; the app does on its next run.
+- **Cost, on purpose:** after someone starts fresh, their old messages come
+  back only when a member of that chat taps "I compared them". Before, it
+  was automatic.
+- `GroupRosterNotice` (capsule above the composer, "1 new person can read
+  this chat" -> sheet, closing it clears it) is drawn from the same record,
+  not from the server's "X added Y" line. A member added from this phone
+  raises none (`expect`, in `addChannelMember`).
+- Still the server's word: WHO is in a group. The phone only tells the user
+  and withholds the past. Signed membership is not built.
+
+**5. Plain text in a sealed chat is marked "Not encrypted"**
+(`message_e2ee/unsealed_message.dart`, `chat-timeline/unsealed_message_mark.dart`).
+The server refuses plain text into a sealed chat, so such a row was written
+into the database or by the server itself.
+
+```
+DM      every plain TEXT row is marked (line = 0)
+group   plain text NEWER than the oldest sealed message this phone has
+        OPENED there (SealedSince, server times on both sides)
+never   system / call / feed rows, files with no text, pending sends
+```
+
+- Only a message that opened moves the line, and only back in time.
+- Marked, not hidden. Tap -> sheet explaining it.
+- Also marked, correctly: a kanban comment relayed as a DM ("via AbabilX",
+  server-written) and DM text from before DMs were encrypted (0091).
+- **Not covered:** a forged row with only a file (web/desktop files are
+  plain objects), the chat-list preview line, a notification the OS draws,
+  a group before this phone opened any sealed message in it.
+- Tests: `group_roster_pins_test.dart`, `key_change_hold_test.dart`,
+  `unsealed_message_test.dart` (harness `roster_harness.dart`).
+  **Not device-tested.**
