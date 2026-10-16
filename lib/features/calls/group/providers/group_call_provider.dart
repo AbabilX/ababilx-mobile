@@ -126,7 +126,7 @@ class GroupCallNotifier extends GroupCallBase
   }
 
   @override
-  Future<void> join(String conversationId) async {
+  Future<void> join(String conversationId, {List<String>? ring}) async {
     if (_joinPending || _room != null) return;
     _joinPending = true;
     final joinEpoch = ++_joinEpoch;
@@ -143,7 +143,7 @@ class GroupCallNotifier extends GroupCallBase
     );
     GroupCall? call;
     try {
-      final session = await _repository.join(conversationId);
+      final session = await _repository.join(conversationId, ring: ring);
       call = session.call;
       // Leave may have been tapped while the join request was in flight. Do
       // not let its late response rebuild media/state and reopen the screen.

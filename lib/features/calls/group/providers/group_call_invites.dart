@@ -43,10 +43,14 @@ class GroupCallInvites {
     _applyRingtone();
   }
 
-  /// Ring for [call] unless this device started it, already answered it, or the
-  /// call is older than the ring window.
+  /// Ring for [call] unless this device started it, already answered it, the
+  /// starter did not pick this account, or the call is older than the ring
+  /// window.
   void offer(GroupCall call, {required String currentUserId}) {
     if (call.startedBy == currentUserId) return;
+    // Left out of the starter's ring list: the call still shows in the chat
+    // header as Join, it just does not ring here.
+    if (call.ring == false) return;
     if (_answered.contains(call.id)) return;
     if (_invite?.id == call.id) return;
     final left = groupCallRingTimeLeft(call);

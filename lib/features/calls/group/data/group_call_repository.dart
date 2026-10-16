@@ -13,8 +13,8 @@ class GroupCallRepository {
   Future<GroupCall?> active(String conversationId) =>
       _api.active(conversationId);
 
-  Future<GroupCallSession> join(String conversationId) =>
-      _api.join(conversationId);
+  Future<GroupCallSession> join(String conversationId, {List<String>? ring}) =>
+      _api.join(conversationId, ring: ring);
 
   Future<GroupCall?> leave(String callId) => _api.leave(callId);
 

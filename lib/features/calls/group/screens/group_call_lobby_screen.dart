@@ -5,8 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../shared/widgets/app_avatar.dart';
+import '../../../messages/data/models/chat_models.dart';
+import '../../../messages/providers/chat_provider.dart';
+import '../../../profile/providers/profile_provider.dart';
 import '../call-ui/call_surface.dart';
 import '../call-ui/lobby_widgets.dart';
+import '../call-ui/ring_picker_sheet.dart';
 import '../call_icons.dart';
 import '../providers/group_call_provider.dart';
 
@@ -23,10 +27,45 @@ class GroupCallLobbyScreen extends ConsumerStatefulWidget {
 class _GroupCallLobbyScreenState extends ConsumerState<GroupCallLobbyScreen> {
   bool? _microphoneGranted;
 
+  /// Who a NEW call may ring: the group minus this account. Null until
+  /// loaded; a failed load leaves it null and the row hidden, so the call
+  /// rings everyone as it always did.
+  List<ChatMember>? _ringable;
+
+  /// The pick. Null = everyone (the server's default, sent as no list).
+  Set<String>? _ring;
+
   @override
   void initState() {
     super.initState();
     unawaited(_checkMicrophone());
+    unawaited(_loadRingable());
+  }
+
+  Future<void> _loadRingable() async {
+    final lobby = ref.read(groupCallProvider).lobby;
+    if (lobby == null) return;
+    try {
+      final members = await ref
+          .read(chatProvider.notifier)
+          .listChannelMembers(lobby.conversationId);
+      final me = ref.read(profileProvider).valueOrNull?.id ?? '';
+      if (!mounted) return;
+      setState(() => _ringable = members.where((m) => m.userId != me).toList());
+    } catch (_) {
+      // Best effort: no row, ring everyone.
+    }
+  }
+
+  Future<void> _pickRing() async {
+    final members = _ringable;
+    if (members == null || members.isEmpty) return;
+    final pick = await showRingPickerSheet(
+      context,
+      members: members,
+      selected: _ring,
+    );
+    if (pick != null && mounted) setState(() => _ring = pick.ids);
   }
 
   /// The lobby is the honest moment to ask: before anybody can hear whether
@@ -119,6 +158,16 @@ class _GroupCallLobbyScreenState extends ConsumerState<GroupCallLobbyScreen> {
                             .setLobbyMuted(!lobby.joinMuted),
                         onGrant: () => _checkMicrophone(request: true),
                       ),
+                      // Only a NEW call has anybody to ring; joining one that
+                      // is running rings nobody.
+                      if (active == null && (_ringable?.isNotEmpty ?? false))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: LobbyRingRow(
+                            summary: ringSummary(_ring, _ringable!.length),
+                            onTap: () => unawaited(_pickRing()),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -127,7 +176,10 @@ class _GroupCallLobbyScreenState extends ConsumerState<GroupCallLobbyScreen> {
                   onTap: () => unawaited(
                     ref
                         .read(groupCallProvider.notifier)
-                        .join(lobby.conversationId),
+                        .join(
+                          lobby.conversationId,
+                          ring: active == null ? _ring?.toList() : null,
+                        ),
                   ),
                 ),
               ],

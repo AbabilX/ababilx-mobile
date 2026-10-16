@@ -16,6 +16,7 @@ class GroupCall {
     required this.startedAt,
     this.endedAt,
     this.endReason,
+    this.ring,
   });
 
   final String id;
@@ -35,6 +36,12 @@ class GroupCall {
   final DateTime startedAt;
   final DateTime? endedAt;
   final String? endReason;
+
+  /// Whether this call rings THIS device's account (server 0172): the starter
+  /// may ring only the people they picked. `false` = show the call, stay
+  /// quiet. Null = ring, which is every call from a starter who picked no one
+  /// and every call from an older server.
+  final bool? ring;
 
   bool get active => status == 'starting' || status == 'live';
 
@@ -60,6 +67,7 @@ class GroupCall {
     startedAt: _date(json['started_at']) ?? DateTime.now(),
     endedAt: _date(json['ended_at']),
     endReason: _text(json['end_reason']),
+    ring: json['ring'] is bool ? json['ring'] as bool : null,
   );
 
   static String? _text(dynamic value) {

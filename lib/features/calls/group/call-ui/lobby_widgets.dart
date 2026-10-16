@@ -61,6 +61,43 @@ class LobbyMicrophoneRow extends StatelessWidget {
   }
 }
 
+/// "Ring · Everyone ›" — opens the picker of who a new call rings.
+class LobbyRingRow extends StatelessWidget {
+  const LobbyRingRow({super.key, required this.summary, required this.onTap});
+
+  final String summary;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = CallColors.of(context);
+    return Material(
+      color: palette.tile,
+      borderRadius: BorderRadius.circular(40),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(40),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CallIcon(CallIcons.ring, size: 20, color: palette.onSurface),
+              const SizedBox(width: 10),
+              Text(
+                'Ring · $summary',
+                style: TextStyle(color: palette.onSurface, fontSize: 14),
+              ),
+              const SizedBox(width: 6),
+              CallIcon(CallIcons.chevron, size: 18, color: palette.faint),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class LobbyJoinButton extends StatelessWidget {
   const LobbyJoinButton({super.key, required this.label, required this.onTap});
 

@@ -28,9 +28,17 @@ class GroupCallApi {
     return _callOf(response);
   }
 
-  Future<GroupCallSession> join(String conversationId) async {
+  /// [ring] is who a NEW call rings: null = every member (the old body),
+  /// empty = nobody. Ignored by the server when the call is already running.
+  Future<GroupCallSession> join(
+    String conversationId, {
+    List<String>? ring,
+  }) async {
     final response = await _guard(
-      () => _client.post(ApiConstants.chatGroupCallJoin(conversationId)),
+      () => _client.post(
+        ApiConstants.chatGroupCallJoin(conversationId),
+        data: ring == null ? null : {'ring': ring},
+      ),
     );
     return GroupCallSession.fromJson(
       unwrapApiData<Map<String, dynamic>>(response),

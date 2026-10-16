@@ -32,6 +32,8 @@ class CallIcons {
   static const CallGlyph wiredHeadset = HugeIcons.strokeRoundedHeadphones;
   static const CallGlyph join = HugeIcons.strokeRoundedHeadphones;
   static const CallGlyph alert = HugeIcons.strokeRoundedAlert01;
+  static const CallGlyph ring = HugeIcons.strokeRoundedNotification01;
+  static const CallGlyph chevron = HugeIcons.strokeRoundedArrowRight01;
 }
 
 /// Thin [HugeIcon] wrapper so call sites read like an [Icon].
