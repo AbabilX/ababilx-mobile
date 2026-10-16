@@ -712,8 +712,12 @@ The identity is minted on the device. Its private half is stored on the server
 - **this phone already stores it** → loaded from `flutter_secure_storage`, asked
   nothing. If the account has no `recovery` blob (device-local era), a code is
   minted and shown — the one moment that can be fixed silently.
-- **anything else** → `VaultIdentityState.unlock`, and `VaultGateRecoveryCode`
-  asks for the code (`MessageVaultRecover.unlockWithRecoveryCode`).
+- **anything else** → `VaultIdentityState.unlock`. Since 2026-10-16 the phone
+  asks for no code (`DELIVERY_ONLY.md`, phase 3): `VaultGateRecoveryChoice`
+  offers "Continue with local backup" or "Continue without restoring", both a
+  new identity. `VaultGateRecoveryCode`, the "save your code" screen and
+  Settings → Recovery codes are deleted; `unlockWithRecoveryCode` stays in the
+  vault, unused by the UI, until the rest of phase 3 lands.
 
 A correct code restores the _same_ identity, so every message the account ever
 received decrypts.
@@ -879,10 +883,9 @@ batch    create -> reserve (by size) / PUT / confirm -> pages -> finalize
   `key_ops: []`. That is correct for a public key and makes WebCrypto **reject**
   the private import, so a phone→browser link would fail while phone→phone
   worked. The one case a phone cannot test on its own.
-- Mobile only scans, so a phone that lacks the key takes `VaultGateRecoveryCode`,
-  not a QR of its own. Its last resort is `VaultGateResetDialog`, which returns
-  the **new** recovery code so the gate can show it — a user who just proved
-  they keep nothing must not be handed a replacement invisibly.
+- Mobile only scans, so a phone that lacks the key starts a new identity
+  (local backup or start fresh), not a QR of its own. `VaultGateResetDialog`
+  (emailed-code reset) was unused and is deleted (2026-10-16).
 - **After a reset, the other side hands the old key back.** The conversation
   key survives on their device — the reset only dropped the resetting user's
   envelope for it. `GET .../e2ee-key` reports the fillable versions as `gaps`

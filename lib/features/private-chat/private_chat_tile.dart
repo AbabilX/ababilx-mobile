@@ -9,7 +9,6 @@ import '../messages/chat-details/details_tile.dart';
 import '../messages/chat_icon.dart';
 import '../messages/providers/chat_provider.dart';
 import 'private_chat_sheet.dart';
-import '../profile/delivery/delivery_only.dart';
 import 'private_chat_state.dart';
 
 /// "Private chat" on a DM's details screen (server 0160). Either person can
@@ -69,12 +68,7 @@ class _PrivateChatTileState extends ConsumerState<PrivateChatTile> {
         ? _t('private_chat_off')
         : state.by.isNotEmpty && state.by != me
         ? _t('private_chat_on_them')
-        : _t(
-            deliveryKey(
-              'private_chat_on',
-              deliveryOnly: ref.watch(deliveryOnlyProvider),
-            ),
-          );
+        : _t('private_chat_on');
     return DetailsTile(
       icon: const ChatIcon(HugeIcons.strokeRoundedIncognito),
       title: _t('private_chat'),

@@ -9,12 +9,10 @@ import '../../profile/providers/profile_provider.dart';
 import '../data/chat_repository.dart';
 import '../data/chat_recovery_api.dart';
 import '../providers/chat_provider.dart';
-import '../archive/archive_provider.dart';
 import 'message_vault.dart';
 import 'message_entry_ready.dart';
 import 'new_chat_setup.dart';
 import 'vault_gate_recovery_choice.dart';
-import 'vault_gate_recovery_code.dart';
 
 /// The one post-login decision screen; restore continues in chat after unlock.
 class MessageRecoveryScreen extends ConsumerStatefulWidget {
@@ -24,11 +22,10 @@ class MessageRecoveryScreen extends ConsumerStatefulWidget {
 }
 
 class _State extends ConsumerState<MessageRecoveryScreen> {
-  bool _checking = true, _busy = false, _enterCode = false;
+  bool _checking = true, _busy = false;
   bool _needsPolicy = false;
   String? _error;
   Map<String, dynamic>? _public;
-  bool _hasRecovery = false;
   String _userId = '';
 
   @override
@@ -95,12 +92,7 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
         if (mounted) _finish();
         return;
       }
-      if (mounted) {
-        setState(() {
-          _hasRecovery = status['has_recovery'] == true;
-          _checking = false;
-        });
-      }
+      if (mounted) setState(() => _checking = false);
     } catch (error) {
       if (!mounted) return;
       // A cached profile can predate a policy bump; read the refusal too.
@@ -123,15 +115,6 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
     ref
         .read(newChatSetupProvider.notifier)
         .start(userId: _userId, expectedPublicKey: _public);
-    _finish();
-  }
-
-  Future<void> _recovered() async {
-    // Persisted before navigating, so a killed app resumes.
-    await ref.read(chatProvider.notifier).markHistoryRestorePending();
-    if (!mounted) return;
-    await ref.read(archiveProvider.notifier).markRecoveryPending();
-    if (!mounted) return;
     _finish();
   }
 
@@ -177,15 +160,8 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
                     ),
                   ),
                 )
-              : _enterCode
-              ? VaultGateRecoveryCode(
-                  onUnlocked: _recovered,
-                  onBack: () => setState(() => _enterCode = false),
-                )
               : VaultGateRecoveryChoice(
                   busy: _busy,
-                  hasRecovery: _hasRecovery,
-                  onRecover: () => setState(() => _enterCode = true),
                   onStartFresh: _newSession,
                   backupOption: localBackupAccountOption(
                     busy: _busy,

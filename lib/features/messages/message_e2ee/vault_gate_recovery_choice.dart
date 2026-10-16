@@ -8,22 +8,20 @@ import '../../../shared/onboarding/onboarding_page.dart';
 
 /// How this phone gets the account's messages — Signal-Android's
 /// "Restore or transfer account" (`ArchiveRestoreSelectionScreen`): a title,
-/// a line under it, and one card per way in. Starting fresh is a card too,
-/// and like Signal's skip it is confirmed first: it cannot be taken back.
+/// a line under it, and one card per way in. There is no recovery code any
+/// more (DELIVERY_ONLY.md, phase 3): the local backup is the way back, and
+/// starting fresh is the other card — confirmed first, like Signal's skip,
+/// because it cannot be taken back.
 class VaultGateRecoveryChoice extends ConsumerWidget {
   const VaultGateRecoveryChoice({
     super.key,
     required this.busy,
-    required this.onRecover,
     required this.onStartFresh,
     this.onWrongAccount,
-    this.hasRecovery = true,
     this.backupOption,
   });
 
   final bool busy;
-  final bool hasRecovery;
-  final VoidCallback onRecover;
   final VoidCallback onStartFresh;
 
   /// "Continue with local backup", built by the caller: a new message key
@@ -42,7 +40,7 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
     final wrongAccount = onWrongAccount;
     return OnboardingPage(
       title: t('restore_select_title'),
-      subtitle: t(hasRecovery ? 'restore_select_body' : 'recovery_legacy_body'),
+      subtitle: t('restore_select_body'),
       gap: 28,
       bottom: wrongAccount == null
           ? null
@@ -56,16 +54,6 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
               ),
             ),
       children: [
-        if (hasRecovery) ...[
-          OnboardingOptionCard(
-            icon: HugeIcons.strokeRoundedKey01,
-            title: t('restore_select_code_title'),
-            subtitle: t('restore_select_code_body'),
-            enabled: !busy,
-            onTap: onRecover,
-          ),
-          const SizedBox(height: 12),
-        ],
         if (backupOption != null) ...[
           backupOption!,
           const SizedBox(height: 12),

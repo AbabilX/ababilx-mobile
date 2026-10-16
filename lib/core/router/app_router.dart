@@ -51,7 +51,6 @@ import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import 'home_shell.dart';
 import 'home_tab_pager.dart';
-import '../../features/settings/recovery-codes/recovery_codes_screen.dart';
 import '../../features/messages/message_e2ee/message_entry_ready.dart';
 import '../../features/messages/message_e2ee/message_recovery_screen.dart';
 import '../../features/onboarding/permissions/permission_intro_gate.dart';
@@ -223,10 +222,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/data-storage/chat-lock',
         builder: (_, _) => const ChatLockSettingsScreen(),
-      ),
-      GoRoute(
-        path: '/settings/chat-backup/recovery-codes',
-        builder: (_, _) => const RecoveryCodesScreen(),
       ),
       GoRoute(
         path: '/settings/chat-backup/local',

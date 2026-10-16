@@ -4,14 +4,12 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../messages/chat_icon.dart';
-import '../../profile/delivery/delivery_only.dart';
 
-/// The top of Local backup while delivery-only is on (server 0173): the
-/// server keeps no lasting copy of the chats, so this backup is the only one,
-/// and it lives on the same phone it protects. Said once, plainly, above the
-/// switch — the one place someone deciding to turn it off will read it.
-/// With backup off it turns into the warning itself. Draws nothing while
-/// delivery-only is off, where the server still holds 120 days.
+/// The top of Local backup: the server keeps no lasting copy of the chats
+/// (DELIVERY_ONLY.md), so this backup is the only one, and it lives on the
+/// same phone it protects. Said once, plainly, above the switch — the one
+/// place someone deciding to turn it off will read it. With backup off it
+/// turns into the warning itself.
 class LocalBackupDeliveryNotice extends ConsumerWidget {
   const LocalBackupDeliveryNotice({super.key, required this.backupOn});
 
@@ -19,7 +17,6 @@ class LocalBackupDeliveryNotice extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(deliveryOnlyProvider)) return const SizedBox.shrink();
     String t(String key) => AppTranslations.translate(context, ref, key);
     final theme = Theme.of(context);
     final colors = theme.colorScheme;

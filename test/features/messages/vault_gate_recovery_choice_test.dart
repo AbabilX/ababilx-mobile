@@ -12,9 +12,7 @@ void main() {
   Future<void> show(
     WidgetTester tester, {
     bool busy = false,
-    bool hasRecovery = true,
     String language = 'en',
-    VoidCallback? recover,
     VoidCallback? startFresh,
     VoidCallback? wrongAccount,
     Widget? backupOption,
@@ -25,8 +23,6 @@ void main() {
         home: Scaffold(
           body: VaultGateRecoveryChoice(
             busy: busy,
-            hasRecovery: hasRecovery,
-            onRecover: recover ?? () {},
             onStartFresh: startFresh ?? () {},
             onWrongAccount: wrongAccount,
             backupOption: backupOption,
@@ -36,28 +32,21 @@ void main() {
     ),
   );
 
-  testWidgets('Signal layout: title, then one card per way in', (tester) async {
+  testWidgets('no recovery code: starting fresh is the only card', (
+    tester,
+  ) async {
     await show(tester);
     expect(find.text('Restore your account'), findsOneWidget);
-    expect(find.byType(OnboardingOptionCard), findsNWidgets(2));
+    expect(find.text(code), findsNothing);
+    expect(find.byType(OnboardingOptionCard), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
   });
 
-  testWidgets('a local backup is a third card, above starting fresh', (
-    tester,
-  ) async {
+  testWidgets('a local backup sits above starting fresh', (tester) async {
     await show(tester, backupOption: const Text('backup card'));
-    expect(find.byType(OnboardingOptionCard), findsNWidgets(2));
     final backup = tester.getTopLeft(find.text('backup card')).dy;
-    expect(backup, greaterThan(tester.getTopLeft(find.text(code)).dy));
     expect(backup, lessThan(tester.getTopLeft(find.text(fresh)).dy));
-  });
-
-  testWidgets('the code card recovers at once', (tester) async {
-    var recovered = 0;
-    await show(tester, recover: () => recovered++);
-    await tester.tap(find.text(code));
-    expect(recovered, 1);
+    expect(find.text(code), findsNothing);
   });
 
   testWidgets('starting fresh is confirmed first, and can be cancelled', (
@@ -78,21 +67,9 @@ void main() {
     expect(started, 1);
   });
 
-  testWidgets('no recovery code: only the fresh card', (tester) async {
-    await show(tester, hasRecovery: false);
-    expect(find.text(code), findsNothing);
-    expect(find.text(fresh), findsOneWidget);
-  });
-
   testWidgets('prevents actions while busy', (tester) async {
     var calls = 0;
-    await show(
-      tester,
-      busy: true,
-      recover: () => calls++,
-      startFresh: () => calls++,
-    );
-    await tester.tap(find.text(code));
+    await show(tester, busy: true, startFresh: () => calls++);
     await tester.tap(find.text(fresh));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);

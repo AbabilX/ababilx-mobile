@@ -13,7 +13,6 @@ import 'storage_age_dialog.dart';
 import 'storage_chat_list.dart';
 import 'storage_confirm.dart';
 import 'storage_usage_bar.dart';
-import '../../profile/delivery/delivery_only.dart';
 
 /// Settings → Data and storage → Manage storage.
 ///
@@ -62,9 +61,8 @@ class StorageManagementScreen extends ConsumerWidget {
               SettingsRow(
                 icon: HugeIcons.strokeRoundedDelete02,
                 title: 'Delete all downloaded media',
-                subtitle: ref.watch(deliveryOnlyProvider)
-                    ? 'Messages stay — media the server let go is gone for good'
-                    : 'Messages stay — media can be downloaded again',
+                subtitle:
+                    'Messages stay — media the server let go is gone for good',
                 destructive: true,
                 onTap: data.isEmpty
                     ? null

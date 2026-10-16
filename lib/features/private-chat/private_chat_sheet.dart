@@ -4,7 +4,6 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../core/localization/app_translations.dart';
 import '../messages/chat_icon.dart';
-import '../profile/delivery/delivery_only.dart';
 
 /// The confirmation before private chat moves (server 0160). Switching it on
 /// says exactly what both people get — it binds the other person too, so they
@@ -16,7 +15,6 @@ Future<bool> confirmPrivateChat(
   required bool turnOn,
 }) async {
   String tr(String key) => AppTranslations.translate(context, ref, key);
-  final deliveryOnly = ref.read(deliveryOnlyProvider);
   final go = await showModalBottomSheet<bool>(
     context: context,
     useRootNavigator: true,
@@ -55,10 +53,7 @@ Future<bool> confirmPrivateChat(
               if (turnOn) ...[
                 point(
                   HugeIcons.strokeRoundedCloudServer,
-                  deliveryKey(
-                    'private_chat_point_server',
-                    deliveryOnly: deliveryOnly,
-                  ),
+                  'private_chat_point_server',
                 ),
                 point(
                   HugeIcons.strokeRoundedViewOff,
@@ -82,12 +77,7 @@ Future<bool> confirmPrivateChat(
                 ),
               ] else
                 Text(
-                  tr(
-                    deliveryKey(
-                      'private_chat_off_body',
-                      deliveryOnly: deliveryOnly,
-                    ),
-                  ),
+                  tr('private_chat_off_body'),
                   style: text.bodyMedium?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),

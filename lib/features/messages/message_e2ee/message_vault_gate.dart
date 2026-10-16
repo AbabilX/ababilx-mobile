@@ -9,12 +9,9 @@ import '../../local-backup/ui/restore_account_backup_card.dart';
 import '../providers/chat_provider.dart';
 import 'message_vault.dart';
 import 'vault_gate_error.dart';
-import 'vault_gate_recovery_code.dart';
 import 'vault_gate_recovery_choice.dart';
 import 'new_chat_setup.dart';
 import 'new_chat_setup_banner.dart';
-import '../archive/archive_provider.dart';
-import 'vault_gate_recovery_setup.dart';
 
 /// Guards encrypted content until the phone holds its message identity.
 /// New-chat setup runs in the background; generated codes stay on the phone.
@@ -33,8 +30,6 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
   bool _checking = true;
   Object? _error;
   VaultIdentityState _state = VaultIdentityState.unlock;
-  String _recoveryCode = '';
-  bool _recovering = false;
   bool _resetting = false;
   bool _finishing = false;
 
@@ -55,17 +50,12 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
         firstLoadNetworkTimeout,
       );
       if (!mounted) return;
-      // Nothing keeps a copy of the code, so a missing one here means the chat
-      // opens and the user makes a new one from Settings later — better than
-      // blocking on a screen with nothing to show.
-      final code = state == VaultIdentityState.setup
-          ? (vault.takePendingRecoveryCode() ?? '')
-          : '';
+      // A freshly minted identity opens the chat at once: there is no
+      // recovery code to show any more (DELIVERY_ONLY.md, phase 3).
       setState(() {
-        _state = code.isEmpty && state == VaultIdentityState.setup
+        _state = state == VaultIdentityState.setup
             ? VaultIdentityState.ready
             : state;
-        _recoveryCode = code;
         _checking = false;
       });
       if (_state == VaultIdentityState.ready) await _finish();
@@ -81,11 +71,7 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
   /// Shared by every route into a working vault. Any DM bubble hydrated from a
   /// previous session is still showing the locked placeholder, so it is
   /// resolved here rather than in each caller.
-  ///
-  /// [pullHistory] is only true after the recovery code — not after a local
-  /// key load, not after minting a new identity. That is the one shot the
-  /// newest page of every chat is pulled into this phone.
-  Future<void> _finish({bool pullHistory = false}) async {
+  Future<void> _finish() async {
     if (_finishing) return;
     setState(() {
       _finishing = true;
@@ -101,12 +87,8 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
             .read(messageVaultProvider)
             .fillKeyGaps(ref.read(chatProvider).currentUserId),
       );
-      if (pullHistory) {
-        await chat.markHistoryRestorePending();
-        await ref.read(archiveProvider.notifier).markRecoveryPending();
-      }
-      // No-ops unless recovery just set the pending bit (or a killed first
-      // run left it set). Ordinary unlocks never pull.
+      // No-ops unless a killed earlier run left the pending bit set.
+      // Ordinary unlocks never pull.
       unawaited(chat.startHistoryRestoreIfNeeded());
       if (mounted) widget.onUnlocked();
     } catch (error) {
@@ -159,27 +141,14 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
     if (_state == VaultIdentityState.ready) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
-    if (_state == VaultIdentityState.setup) {
-      return PopScope(
-        canPop: false,
-        child: VaultGateRecoverySetup(code: _recoveryCode, onSaved: _finish),
-      );
-    }
-    if (!_recovering) {
-      return VaultGateRecoveryChoice(
+    return VaultGateRecoveryChoice(
+      busy: _resetting,
+      onStartFresh: _startFresh,
+      backupOption: localBackupAccountOption(
         busy: _resetting,
-        onRecover: () => setState(() => _recovering = true),
         onStartFresh: _startFresh,
-        backupOption: localBackupAccountOption(
-          busy: _resetting,
-          onStartFresh: _startFresh,
-        ),
-        onWrongAccount: _wrongAccount,
-      );
-    }
-    return VaultGateRecoveryCode(
-      onUnlocked: () => _finish(pullHistory: true),
-      onBack: () => setState(() => _recovering = false),
+      ),
+      onWrongAccount: _wrongAccount,
     );
   }
 }

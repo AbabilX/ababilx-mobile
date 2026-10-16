@@ -184,33 +184,9 @@ class AppTranslations {
       'recovery_checking': 'Checking your messages…',
       'recovery_check_failed':
           'Could not check your messages. Check your connection and try again.',
-      'recovery_session_failed':
-          'Could not start your session. Check your connection and try again.',
       'recovery_retry': 'Try again',
-      'recovery_legacy_body':
-          'This account has messages but no recovery code. Start a new session to continue chatting.',
-      'recovery_codes_title': 'Recovery codes',
-      'recovery_codes_body':
-          'Your recovery code is created automatically. Verify your email each time you want to view or copy it. Keep it safe to restore your messages on another phone.',
-      'recovery_codes_setting_hint':
-          'Verify your email to view your recovery code',
-      'recovery_codes_hide_hint':
-          'This code hides after one minute or when you leave this screen.',
-      'recovery_hide': 'Hide code',
-      'recovery_wait_resend':
-          'Please wait one minute before requesting another email.',
-      'recovery_verify_failed':
-          'The verification failed or expired. Try again, or request a new email code.',
-      'recovery_legacy_create':
-          'Your old code was not stored. Verifying and creating a code replaces your old recovery code. Your messages stay readable.',
-      'recovery_verify_create': 'Verify and create a new code',
-      'recovery_verify_view': 'Verify and view code',
-      'recovery_verifying': 'Verifying…',
-      'recovery_resend': 'Resend email code',
-      'recovery_copy': 'Copy code',
-      'recovery_copied': 'Copied',
       'settings_backup': 'Backup',
-      'settings_backup_sub': '120-day cloud history and recovery code',
+      'settings_backup_sub': 'Local backup',
       'local_backup_section': 'On this phone',
       // Delivery-only chat (server 0173): the server keeps no lasting copy.
       'delivery_backup_notice_title': 'This backup is your only copy',
@@ -218,29 +194,12 @@ class AppTranslations {
           'AbabilX deletes messages from its servers once your phones have them. If this phone is lost, reset or reinstalled, your chats come back only from a backup. The backup is saved on this phone, so to survive a lost phone choose a folder that syncs to your cloud, or copy the file somewhere safe.',
       'delivery_backup_off_warning':
           'Backup is off. If this phone is lost or reset, your chats are gone for good.',
-      'local_backup_switch_hint_delivery':
-          'Twice a day, when you open the app, your chats are saved on this phone. They come back by themselves when you sign in again, and survive a reinstall.',
-      'local_backup_off_body_delivery':
-          'AbabilX keeps no copy of your chats. Without a backup, a lost or reset phone, or a reinstall, means your chats are gone.',
-      'backup_recent_title_delivery': 'Your chats live on your phone',
-      'backup_recent_body_delivery':
-          'Messages travel through our servers end-to-end encrypted and are deleted there as soon as your phones have them. A phone that is offline still gets its messages for up to 30 days. Your history is kept only on your phone and in its local backup.',
-      'backup_recovery_footnote_delivery':
-          'Your recovery code opens messages still waiting on the server when you sign in on another device. Older history comes back only from a local backup.',
-      'settings_backup_sub_delivery': 'Local backup and recovery code',
-      'private_chat_on_delivery': 'On — no typing, ticks or online status',
-      'private_chat_point_server_delivery':
-          'Like every chat, messages are deleted from our server once your phones have them.',
-      'private_chat_off_body_delivery':
-          'Typing, ticks, online status and ringing are shared again. Messages already sent stay private.',
       'storage_note_downloadable':
-          'The messages stay — media can be downloaded again.',
-      'storage_note_downloadable_delivery':
           'The messages stay. Media AbabilX has already deleted from its servers cannot be downloaded again, so keep it in a backup first.',
       'local_backup_title': 'Local backup',
       'local_backup_row_hint': 'A copy of your chats, kept on this phone',
       'local_backup_switch_hint':
-          'Twice a day, when you open the app, your chats are saved on this phone. They come back by themselves when you sign in again, and survive a reinstall or a lost recovery code.',
+          'Twice a day, when you open the app, your chats are saved on this phone. They come back by themselves when you sign in again, and survive a reinstall.',
       'local_backup_folder': 'Folder',
       'local_backup_last': 'Last backup',
       'local_backup_never': 'Not yet',
@@ -268,7 +227,7 @@ class AppTranslations {
       'local_backup_restore': 'Restore from a backup',
       'local_backup_restore_hint': 'Bring back chats from a backup file',
       'local_backup_security_note':
-          'The file is locked to your AbabilX account: signing in as you opens it, and no recovery code is needed. It is not end-to-end encrypted. AbabilX holds the key and your phone holds the file, so keep the folder private.',
+          'The file is locked to your AbabilX account: signing in as you opens it. It is not end-to-end encrypted. AbabilX holds the key and your phone holds the file, so keep the folder private.',
       'local_backup_enable_title': 'Turn on local backup?',
       'local_backup_enable_point_daily':
           'Every 12 hours, when you open the app, a copy of your chats is saved to a folder you choose. The two newest copies are kept.',
@@ -288,7 +247,7 @@ class AppTranslations {
           'On this phone, AbabilX keeps the backup in Documents/AbabilX and each photo or video is saved once. In a folder you choose, the backup is one file that is written again every time.',
       'local_backup_off_title': 'Turn off local backup?',
       'local_backup_off_body':
-          'Without it, a lost recovery code or a reinstall can cost you your older chats.',
+          'AbabilX keeps no copy of your chats. Without a backup, a lost or reset phone, or a reinstall, means your chats are gone.',
       'local_backup_off_keep': 'Turn off, keep the backup',
       'local_backup_off_delete': 'Turn off and delete the backup',
       'local_backup_restore_from_phone': 'Backup on this phone',
@@ -342,77 +301,33 @@ class AppTranslations {
           'Could not use the backup folder. Check that it still exists.',
       'local_backup_error_generic': 'Something went wrong. Try again.',
       'backup_section_recent': 'While you chat',
-      'backup_recent_title': 'Your last 120 days save automatically',
+      'backup_recent_title': 'Your chats live on your phone',
       'backup_recent_body':
-          'Messages sync to our servers as you send and receive them. They stay '
-          'there for 120 days, end-to-end encrypted — only your devices can read '
-          'them. A new phone or desktop can load that recent history when you sign in.',
-      'backup_recovery_footnote':
-          'Save your recovery code so you can unlock messages on another device. '
-          'Older than 120 days stays only on phones that already have it.',
-      'backup_section_recovery': 'Recovery',
-      'backup_section_archive': 'Extra encrypted backup',
-      'backup_status_checking': 'Checking…',
-      'backup_status_none': 'No backup yet',
-      'backup_status_ready': 'Backup on server',
-      'backup_status_backing_up': 'Backing up…',
-      'backup_status_restoring': 'Restoring…',
-      'backup_detail_none':
-          'Optional: upload a snapshot of what is on this phone (including older '
-          'than 120 days). Does not duplicate chat on this device.',
-      'backup_detail_other_device': 'Last upload was from another device.',
-      'backup_detail_last': 'Last backup on this phone: {when}',
-      'backup_progress_packed': '{n} messages packed',
-      'backup_progress_restored': '{n} messages restored',
-      'backup_stored_size': 'Stored size',
-      'backup_footnote':
-          'Only your devices hold the key. AbabilX cannot read this backup or recover it if you lose both your phone and recovery code.',
-      'backup_back_up_now': 'Back up now',
-      'backup_restore': 'Restore',
-      'backup_nothing_to_restore': 'Nothing to restore yet',
-      'backup_restore_title': 'Restore backup?',
-      'backup_restore_body':
-          'Messages from the backup are added to what is already on this phone. Nothing here is removed.',
-      'backup_toast_complete': 'Backup complete',
-      'backup_toast_failed': 'Backup failed',
-      'backup_toast_restored': 'Restored {n} messages',
-      'backup_toast_restore_failed': 'Restore failed',
-      'backup_error_vault_locked':
-          'Unlock secure messages first, then try again.',
-      'backup_error_network':
-          'Could not reach the backup. Check your connection.',
+          'Messages travel through our servers end-to-end encrypted and are deleted there as soon as your phones have them. A phone that is offline still gets its messages for up to 30 days. Your history is kept only on your phone and in its local backup.',
       'recovery_restore_failed':
           'Some messages could not be restored. Tap to retry.',
       'onboarding_title': 'Your people.\nAlways close.',
       'onboarding_body':
           'Share everyday moments, catch up with family, and keep your friends a message away.',
       'onboarding_start': 'Get started',
-      'recovery_choice_title': 'Restore your messages',
-      'recovery_choice_body':
-          'Enter your recovery code to restore messages from your backup and available server history, or start a new chat.',
-      'recovery_have_code': 'I have a recovery code',
-      'new_chat_setup_running': 'Preparing your recovery code…',
+      'new_chat_setup_running': 'Setting up your chats…',
       'new_chat_setup_failed': 'Chat setup could not finish. Tap to retry.',
-      'recovery_fresh': 'Start new chat',
       'recovery_fresh_hint':
-          'Starting a new chat clears your old messages and backup, keeps your contacts, and saves a new recovery code in Settings → Backup → Recovery codes.',
+          'Your old messages cannot be read on this phone. Your contacts stay, and they see that your safety number changed.',
       'recovery_wrong_account': 'Wrong account? Sign in with another',
       'restore_select_title': 'Restore your account',
       'restore_select_body':
-          'Your messages are end-to-end encrypted. Choose how you\'d like to bring your message history to this phone.',
-      'restore_select_code_title': 'Use your recovery code',
-      'restore_select_code_body':
-          'Unlock your encrypted messages with the code you saved.',
+          'Your messages are end-to-end encrypted and live on your phone. Bring them back from a local backup, or start fresh.',
       'restore_select_fresh_title': 'Continue without restoring',
       'restore_select_fresh_body':
           'Old messages won\'t be readable on this phone.',
       'restore_select_backup_title': 'Continue with local backup',
       'restore_select_backup_find':
-          'No recovery code? Find the backup this phone made in Documents → AbabilX.',
+          'Find the backup this phone made in Documents → AbabilX.',
       'restore_backup_label': 'Backup from {when} · {size}',
       'restore_backup_confirm_title': 'Continue with this backup?',
       'restore_backup_confirm_body':
-          'Your chats come back from this backup, and your account gets a new message key. This cannot be undone.\n\n• Your old recovery code stops working. You get a new one.\n• Messages that are not in the backup cannot be read again.\n• Your contacts see that your safety number changed.\n• Other devices signed in to your account must be linked again.',
+          'Your chats come back from this backup, and your account gets a new message key. This cannot be undone.\n\n• Messages that are not in the backup cannot be read again.\n• Your contacts see that your safety number changed.\n• Other devices signed in to your account must be linked again.',
       'restore_backup_confirm_go': 'Continue',
       'restore_backup_none':
           'No backup of this account was found in that folder.',
@@ -462,34 +377,10 @@ class AppTranslations {
       'date_jump_month': 'Last month',
       'date_jump_pick': 'Jump to a specific date',
       'date_jump_none': 'No messages from that day',
-      'recovery_enter': 'Enter your recovery code',
-      'recovery_help':
-          'Enter the code you saved when you set up messages. Spacing and case do not matter.',
-      'recovery_working': 'Recovering…',
-      'recovery_restore': 'Recover messages',
       'recovery_back': 'Back',
-      'recovery_invalid': 'Check your recovery code and try again.',
-      'recovery_failed':
-          'Could not recover messages. Check your connection and try again.',
-      'recovery_reset_body':
-          'Your old chat list, messages and media will be removed from your account and this phone. Your account and memberships stay. Other people keep their copies. Verify your email to continue, then save your new recovery code.',
-      'recovery_send': 'Email me a code',
-      'recovery_sending': 'Sending…',
-      'recovery_sent': 'Code sent to {email}',
-      'recovery_email_hint': '9-character code',
-      'recovery_email_invalid': 'Enter the 9-character code from your email.',
-      'recovery_send_failed':
-          'Could not send the code. Check your email settings and connection, then try again.',
-      'recovery_reset_failed':
-          'Could not start fresh. Check your code and connection, then try again.',
-      'recovery_clean_failed':
-          'Your reset succeeded. Tap Continue to finish clearing this phone.',
       'history_restore_banner': 'Restoring messages…',
       'history_restore_messages': 'Restoring messages… {done} / {total}',
       'history_restore_messages_running': 'Restoring messages… {done}',
-      'recovery_continue': 'Continue',
-      'recovery_cancel': 'Cancel',
-      'recovery_saving': 'Starting fresh…',
 
       'login_subtitle':
           'Stay close to friends and family—with privacy and end-to-end encryption built in.',
@@ -867,12 +758,12 @@ class AppTranslations {
       'dm_hide_ticks_peer': 'They turned ticks off in this chat',
       'dm_hide_ticks_off': 'Off',
       'private_chat': 'Private chat',
-      'private_chat_on': 'On — messages leave the server once delivered',
+      'private_chat_on': 'On — no typing, ticks or online status',
       'private_chat_on_them': 'They turned it on — it applies to both of you',
       'private_chat_off': 'Off',
       'private_chat_sheet_title': 'Turn on private chat?',
       'private_chat_point_server':
-          'New messages are deleted from our server as soon as their phone has them.',
+          'Like every chat, messages are deleted from our server once your phones have them.',
       'private_chat_point_status':
           'Neither of you sees the other online, typing, ticks or ringing.',
       'private_chat_point_screens': 'Screenshots are blocked on both phones.',
@@ -880,11 +771,11 @@ class AppTranslations {
       'private_chat_point_media':
           'Photos and files stay inside the app — no saving, sharing or forwarding.',
       'private_chat_point_phone':
-          'Messages live only on your phones. Keep your recovery code safe.',
+          'Messages live only on your phones. Keep local backup on.',
       'private_chat_turn_on': 'Turn on',
       'private_chat_off_title': 'Turn off private chat?',
       'private_chat_off_body':
-          'New messages will be kept on the server again. Messages already sent stay private.',
+          'Typing, ticks, online status and ringing are shared again. Messages already sent stay private.',
       'private_chat_turn_off': 'Turn off',
       'private_chat_needs_connection':
           'Private chat needs an accepted connection with this person.',
@@ -1001,9 +892,6 @@ class AppTranslations {
       'settings_scan_qr_sub': 'Approve a sign-in on desktop or web',
       'settings_link_messages': 'Link a device to your messages',
       'settings_link_messages_sub': 'Scan the code shown on the other device',
-      'settings_recovery': 'Message recovery code',
-      'settings_recovery_sub':
-          'The only way to read your messages on a new device',
       'settings_privacy': 'Privacy policy',
       'settings_invite': 'Invite your friends',
       'settings_invite_text':
@@ -1545,31 +1433,9 @@ class AppTranslations {
       'recovery_checking': 'আপনার মেসেজ পরীক্ষা করা হচ্ছে…',
       'recovery_check_failed':
           'মেসেজ পরীক্ষা করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
-      'recovery_session_failed':
-          'নতুন চ্যাট শুরু করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
       'recovery_retry': 'আবার চেষ্টা করুন',
-      'recovery_legacy_body':
-          'এই অ্যাকাউন্টে মেসেজ আছে, তবে রিকভারি কোড নেই। চ্যাট করতে নতুন চ্যাট শুরু করুন।',
-      'recovery_codes_title': 'রিকভারি কোড',
-      'recovery_codes_body':
-          'আপনার রিকভারি কোড স্বয়ংক্রিয়ভাবে তৈরি হয়। প্রতিবার দেখতে বা কপি করতে ইমেইল যাচাই করুন। অন্য ফোনে মেসেজ ফিরিয়ে আনতে কোডটি নিরাপদে রাখুন।',
-      'recovery_codes_setting_hint': 'রিকভারি কোড দেখতে ইমেইল যাচাই করুন',
-      'recovery_codes_hide_hint':
-          'এক মিনিট পরে বা এই স্ক্রিন ছেড়ে গেলে কোড লুকিয়ে যাবে।',
-      'recovery_hide': 'কোড লুকান',
-      'recovery_wait_resend': 'আবার ইমেইল পাঠানোর আগে এক মিনিট অপেক্ষা করুন।',
-      'recovery_verify_failed':
-          'যাচাই হয়নি অথবা কোডের মেয়াদ শেষ। আবার চেষ্টা করুন বা নতুন ইমেইল কোড নিন।',
-      'recovery_legacy_create':
-          'আপনার পুরোনো কোড সংরক্ষিত নেই। যাচাই করে নতুন কোড তৈরি করলে পুরোনো রিকভারি কোড বদলে যাবে। মেসেজ পড়তে পারবেন আগের মতোই।',
-      'recovery_verify_create': 'যাচাই করে নতুন কোড তৈরি করুন',
-      'recovery_verify_view': 'যাচাই করে কোড দেখুন',
-      'recovery_verifying': 'যাচাই হচ্ছে…',
-      'recovery_resend': 'আবার ইমেইল কোড পাঠান',
-      'recovery_copy': 'কোড কপি করুন',
-      'recovery_copied': 'কপি হয়েছে',
       'settings_backup': 'ব্যাকআপ',
-      'settings_backup_sub': '১২০ দিন ক্লাউড ইতিহাস ও রিকভারি কোড',
+      'settings_backup_sub': 'লোকাল ব্যাকআপ',
       'local_backup_section': 'এই ফোনে',
       // Delivery-only chat (server 0173): the server keeps no lasting copy.
       'delivery_backup_notice_title': 'এই ব্যাকআপই আপনার একমাত্র কপি',
@@ -1577,29 +1443,12 @@ class AppTranslations {
           'আপনার ফোনে পৌঁছানোর পর AbabilX তার সার্ভার থেকে বার্তা মুছে ফেলে। এই ফোন হারালে, রিসেট বা আবার ইনস্টল করলে আপনার চ্যাট শুধু ব্যাকআপ থেকেই ফিরে আসবে। ব্যাকআপ এই ফোনেই থাকে, তাই ফোন হারানোর কথা ভেবে এমন একটি ফোল্ডার বেছে নিন যা আপনার ক্লাউডে সিঙ্ক হয়, অথবা ফাইলটি নিরাপদ কোথাও কপি করে রাখুন।',
       'delivery_backup_off_warning':
           'ব্যাকআপ বন্ধ। এই ফোন হারালে বা রিসেট হলে আপনার চ্যাট চিরতরে হারিয়ে যাবে।',
-      'local_backup_switch_hint_delivery':
-          'দিনে দুবার, অ্যাপ খুললে, আপনার চ্যাট এই ফোনে সেভ হয়। আবার সাইন ইন করলে নিজে থেকেই ফিরে আসে, আর অ্যাপ আবার ইনস্টল করলেও থেকে যায়।',
-      'local_backup_off_body_delivery':
-          'AbabilX আপনার চ্যাটের কোনো কপি রাখে না। ব্যাকআপ ছাড়া ফোন হারালে, রিসেট হলে বা অ্যাপ আবার ইনস্টল করলে আপনার চ্যাট হারিয়ে যাবে।',
-      'backup_recent_title_delivery': 'আপনার চ্যাট থাকে আপনার ফোনে',
-      'backup_recent_body_delivery':
-          'বার্তা এন্ড-টু-এন্ড এনক্রিপ্টেড হয়ে আমাদের সার্ভার দিয়ে যায়, আর আপনার ফোনে পৌঁছানো মাত্র সেখান থেকে মুছে যায়। ফোন অফলাইন থাকলেও ৩০ দিন পর্যন্ত তার বার্তা পায়। আপনার পুরোনো ইতিহাস থাকে শুধু আপনার ফোনে আর তার লোকাল ব্যাকআপে।',
-      'backup_recovery_footnote_delivery':
-          'অন্য ডিভাইসে সাইন ইন করলে রিকভারি কোড দিয়ে সার্ভারে অপেক্ষমাণ বার্তাগুলো খোলা যায়। এর আগের ইতিহাস শুধু লোকাল ব্যাকআপ থেকেই ফিরে আসে।',
-      'settings_backup_sub_delivery': 'লোকাল ব্যাকআপ ও রিকভারি কোড',
-      'private_chat_on_delivery': 'চালু — টাইপিং, টিক বা অনলাইন অবস্থা দেখা যায় না',
-      'private_chat_point_server_delivery':
-          'অন্য সব চ্যাটের মতোই, আপনার ফোনে পৌঁছানোর পর বার্তা আমাদের সার্ভার থেকে মুছে যায়।',
-      'private_chat_off_body_delivery':
-          'টাইপিং, টিক, অনলাইন অবস্থা আর রিং আবার দেখা যাবে। আগে পাঠানো বার্তা প্রাইভেটই থাকবে।',
       'storage_note_downloadable':
-          'বার্তা থেকে যাবে — মিডিয়া আবার ডাউনলোড করা যাবে।',
-      'storage_note_downloadable_delivery':
           'বার্তা থেকে যাবে। AbabilX যে মিডিয়া সার্ভার থেকে মুছে ফেলেছে তা আর ডাউনলোড করা যাবে না, তাই আগে ব্যাকআপে রাখুন।',
       'local_backup_title': 'লোকাল ব্যাকআপ',
       'local_backup_row_hint': 'আপনার চ্যাটের একটি কপি, এই ফোনেই রাখা',
       'local_backup_switch_hint':
-          'দিনে দুবার, অ্যাপ খুললে, আপনার চ্যাট এই ফোনে সেভ হয়। আবার সাইন ইন করলে সেগুলো নিজে থেকেই ফিরে আসে, আর অ্যাপ আবার ইনস্টল করলে বা রিকভারি কোড হারালেও থাকে।',
+          'দিনে দুবার, অ্যাপ খুললে, আপনার চ্যাট এই ফোনে সেভ হয়। আবার সাইন ইন করলে নিজে থেকেই ফিরে আসে, আর অ্যাপ আবার ইনস্টল করলেও থেকে যায়।',
       'local_backup_folder': 'ফোল্ডার',
       'local_backup_last': 'শেষ ব্যাকআপ',
       'local_backup_never': 'এখনো হয়নি',
@@ -1627,7 +1476,7 @@ class AppTranslations {
       'local_backup_restore': 'ব্যাকআপ থেকে ফিরিয়ে আনুন',
       'local_backup_restore_hint': 'ব্যাকআপ ফাইল থেকে চ্যাট ফিরিয়ে আনুন',
       'local_backup_security_note':
-          'ফাইলটি আপনার AbabilX অ্যাকাউন্টে লক করা: আপনার অ্যাকাউন্টে সাইন ইন করলেই খোলে, রিকভারি কোড লাগে না। এটি এন্ড-টু-এন্ড এনক্রিপ্টেড নয়। চাবি AbabilX-এর কাছে আর ফাইল আপনার ফোনে, তাই ফোল্ডারটি গোপন রাখুন।',
+          'ফাইলটি আপনার AbabilX অ্যাকাউন্টে লক করা: আপনার অ্যাকাউন্টে সাইন ইন করলেই খোলে। এটি এন্ড-টু-এন্ড এনক্রিপ্টেড নয়। চাবি AbabilX-এর কাছে আর ফাইল আপনার ফোনে, তাই ফোল্ডারটি গোপন রাখুন।',
       'local_backup_enable_title': 'লোকাল ব্যাকআপ চালু করবেন?',
       'local_backup_enable_point_daily':
           'প্রতি ১২ ঘণ্টায়, অ্যাপ খুললে, আপনার চ্যাটের একটি কপি আপনার বাছাই করা ফোল্ডারে সেভ হয়। সবচেয়ে নতুন দুটি কপি রাখা হয়।',
@@ -1647,7 +1496,7 @@ class AppTranslations {
           'এই ফোনে রাখলে AbabilX ব্যাকআপটি Documents/AbabilX-এ রাখে, আর প্রতিটি ছবি বা ভিডিও একবারই সেভ হয়। আপনার বাছাই করা ফোল্ডারে ব্যাকআপ একটি ফাইল, যা প্রতিবার নতুন করে লেখা হয়।',
       'local_backup_off_title': 'লোকাল ব্যাকআপ বন্ধ করবেন?',
       'local_backup_off_body':
-          'এটি ছাড়া রিকভারি কোড হারালে বা অ্যাপ আবার ইনস্টল করলে পুরোনো চ্যাট হারাতে পারেন।',
+          'AbabilX আপনার চ্যাটের কোনো কপি রাখে না। ব্যাকআপ ছাড়া ফোন হারালে, রিসেট হলে বা অ্যাপ আবার ইনস্টল করলে আপনার চ্যাট হারিয়ে যাবে।',
       'local_backup_off_keep': 'বন্ধ করুন, ব্যাকআপ রেখে দিন',
       'local_backup_off_delete': 'বন্ধ করুন এবং ব্যাকআপ মুছে ফেলুন',
       'local_backup_restore_from_phone': 'এই ফোনের ব্যাকআপ',
@@ -1700,76 +1549,33 @@ class AppTranslations {
           'ব্যাকআপ ফোল্ডার ব্যবহার করা যায়নি। ফোল্ডারটি এখনো আছে কিনা দেখুন।',
       'local_backup_error_generic': 'কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।',
       'backup_section_recent': 'চ্যাট করার সময়',
-      'backup_recent_title': 'গত ১২০ দিনের মেসেজ নিজে থেকেই সেভ হয়',
+      'backup_recent_title': 'আপনার চ্যাট থাকে আপনার ফোনে',
       'backup_recent_body':
-          'মেসেজ পাঠানো ও পাওয়ার সাথে সাথে সার্ভারে সিঙ্ক হয়। সেখানে ১২০ দিন '
-          'থাকে, এন্ড-টু-এন্ড এনক্রিপ্টেড — শুধু আপনার ডিভাইস পড়তে পারে। নতুন ফোন '
-          'বা ডেস্কটপে সাইন ইন করলে এই সাম্প্রতিক ইতিহাস লোড হতে পারে।',
-      'backup_recovery_footnote':
-          'রিকভারি কোড সংরক্ষণ করুন, যাতে অন্য ডিভাইসে মেসেজ আনলক করতে পারেন। '
-          '১২০ দিনের বেশি পুরোনো শুধু যে ফোনে আগে থেকে আছে সেখানেই থাকে।',
-      'backup_section_recovery': 'রিকভারি',
-      'backup_section_archive': 'অতিরিক্ত এনক্রিপ্টেড ব্যাকআপ',
-      'backup_status_checking': 'পরীক্ষা করা হচ্ছে…',
-      'backup_status_none': 'এখনও কোনো ব্যাকআপ নেই',
-      'backup_status_ready': 'সার্ভারে ব্যাকআপ আছে',
-      'backup_status_backing_up': 'ব্যাকআপ হচ্ছে…',
-      'backup_status_restoring': 'রিস্টোর হচ্ছে…',
-      'backup_detail_none':
-          'ঐচ্ছিক: এই ফোনে যা আছে তার স্ন্যাপশট আপলোড (১২০ দিনের বেশি পুরোনোসহ)। '
-          'এই ডিভাইসের চ্যাটে ডুপ্লিকেট বানায় না।',
-      'backup_detail_other_device': 'শেষ আপলোড অন্য ডিভাইস থেকে হয়েছে।',
-      'backup_detail_last': 'এই ফোনে শেষ ব্যাকআপ: {when}',
-      'backup_progress_packed': '{n}টি মেসেজ প্যাক হয়েছে',
-      'backup_progress_restored': '{n}টি মেসেজ রিস্টোর হয়েছে',
-      'backup_stored_size': 'সংরক্ষিত আকার',
-      'backup_footnote':
-          'কী শুধু আপনার ডিভাইসে। AbabilX এই ব্যাকআপ পড়তে পারে না; ফোন ও রিকভারি কোড দুটোই হারালে ফিরিয়ে আনা যাবে না।',
-      'backup_back_up_now': 'এখনই ব্যাকআপ',
-      'backup_restore': 'রিস্টোর',
-      'backup_nothing_to_restore': 'এখনও রিস্টোর করার কিছু নেই',
-      'backup_restore_title': 'ব্যাকআপ রিস্টোর করবেন?',
-      'backup_restore_body':
-          'ব্যাকআপের মেসেজ এই ফোনে যা আছে তার সাথে যোগ হবে। এখানে কিছু মুছবে না।',
-      'backup_toast_complete': 'ব্যাকআপ সম্পন্ন',
-      'backup_toast_failed': 'ব্যাকআপ ব্যর্থ',
-      'backup_toast_restored': '{n}টি মেসেজ রিস্টোর হয়েছে',
-      'backup_toast_restore_failed': 'রিস্টোর ব্যর্থ',
-      'backup_error_vault_locked':
-          'আগে সিকিউর মেসেজ আনলক করুন, তারপর আবার চেষ্টা করুন।',
-      'backup_error_network': 'ব্যাকআপে পৌঁছানো যায়নি। সংযোগ পরীক্ষা করুন।',
+          'বার্তা এন্ড-টু-এন্ড এনক্রিপ্টেড হয়ে আমাদের সার্ভার দিয়ে যায়, আর আপনার ফোনে পৌঁছানো মাত্র সেখান থেকে মুছে যায়। ফোন অফলাইন থাকলেও ৩০ দিন পর্যন্ত তার বার্তা পায়। আপনার পুরোনো ইতিহাস থাকে শুধু আপনার ফোনে আর তার লোকাল ব্যাকআপে।',
       'recovery_restore_failed':
           'কিছু মেসেজ ফিরিয়ে আনা যায়নি। আবার চেষ্টা করতে চাপুন।',
       'onboarding_title': 'আপন মানুষ।\nসবসময় কাছে।',
       'onboarding_body':
           'প্রতিদিনের মুহূর্ত ভাগ করুন, পরিবারের খোঁজ নিন, আর বন্ধুদের সঙ্গে থাকুন এক মেসেজের দূরত্বে।',
       'onboarding_start': 'শুরু করুন',
-      'recovery_choice_title': 'আপনার মেসেজ ফিরিয়ে আনুন',
-      'recovery_choice_body':
-          'ব্যাকআপ ও সার্ভারের উপলব্ধ মেসেজ ফিরিয়ে আনতে রিকভারি কোড দিন, অথবা নতুন চ্যাট শুরু করুন।',
-      'recovery_have_code': 'আমার রিকভারি কোড আছে',
-      'new_chat_setup_running': 'আপনার রিকভারি কোড তৈরি হচ্ছে…',
+      'new_chat_setup_running': 'আপনার চ্যাট প্রস্তুত হচ্ছে…',
       'new_chat_setup_failed':
           'চ্যাট প্রস্তুত করা যায়নি। আবার চেষ্টা করতে চাপুন।',
-      'recovery_fresh': 'নতুন চ্যাট শুরু করুন',
       'recovery_fresh_hint':
-          'নতুন চ্যাট শুরু করলে আপনার পুরোনো মেসেজ ও ব্যাকআপ মুছে যাবে, পরিচিতিরা থাকবে। নতুন রিকভারি কোড সেভ হবে সেটিংস → ব্যাকআপ → রিকভারি কোডে।',
+          'পুরোনো মেসেজ এই ফোনে পড়া যাবে না। আপনার পরিচিতিরা থাকবে, আর তারা দেখবে আপনার সেফটি নম্বর বদলেছে।',
       'recovery_wrong_account': 'ভুল অ্যাকাউন্ট? অন্য একটি দিয়ে সাইন ইন করুন',
       'restore_select_title': 'আপনার অ্যাকাউন্ট ফিরিয়ে আনুন',
       'restore_select_body':
-          'আপনার মেসেজ এন্ড-টু-এন্ড এনক্রিপ্টেড। কীভাবে আগের মেসেজ এই ফোনে আনতে চান, বেছে নিন।',
-      'restore_select_code_title': 'রিকভারি কোড ব্যবহার করুন',
-      'restore_select_code_body':
-          'সেভ করে রাখা কোড দিয়ে আপনার এনক্রিপ্টেড মেসেজ খুলুন।',
+          'আপনার মেসেজ এন্ড-টু-এন্ড এনক্রিপ্টেড এবং থাকে আপনার ফোনে। লোকাল ব্যাকআপ থেকে ফিরিয়ে আনুন, অথবা নতুন করে শুরু করুন।',
       'restore_select_fresh_title': 'ফিরিয়ে না এনে চালিয়ে যান',
       'restore_select_fresh_body': 'পুরোনো মেসেজ এই ফোনে পড়া যাবে না।',
       'restore_select_backup_title': 'লোকাল ব্যাকআপ দিয়ে চালিয়ে যান',
       'restore_select_backup_find':
-          'রিকভারি কোড নেই? Documents → AbabilX থেকে এই ফোনের ব্যাকআপ খুঁজে নিন।',
+          'Documents → AbabilX থেকে এই ফোনের ব্যাকআপ খুঁজে নিন।',
       'restore_backup_label': '{when}-এর ব্যাকআপ · {size}',
       'restore_backup_confirm_title': 'এই ব্যাকআপ দিয়ে চালিয়ে যাবেন?',
       'restore_backup_confirm_body':
-          'এই ব্যাকআপ থেকে আপনার চ্যাট ফিরে আসবে, আর অ্যাকাউন্ট নতুন মেসেজ কী পাবে। এটি আর ফেরানো যাবে না।\n\n• পুরোনো রিকভারি কোড আর কাজ করবে না। নতুন একটি পাবেন।\n• যে মেসেজ ব্যাকআপে নেই, তা আর পড়া যাবে না।\n• আপনার কন্টাক্টরা দেখবে আপনার সেফটি নম্বর বদলেছে।\n• আপনার অ্যাকাউন্টের অন্য ডিভাইসগুলো আবার লিংক করতে হবে।',
+          'এই ব্যাকআপ থেকে আপনার চ্যাট ফিরে আসবে, আর অ্যাকাউন্ট নতুন মেসেজ কী পাবে। এটি আর ফেরানো যাবে না।\n\n• যে মেসেজ ব্যাকআপে নেই, তা আর পড়া যাবে না।\n• আপনার কন্টাক্টরা দেখবে আপনার সেফটি নম্বর বদলেছে।\n• আপনার অ্যাকাউন্টের অন্য ডিভাইসগুলো আবার লিংক করতে হবে।',
       'restore_backup_confirm_go': 'চালিয়ে যান',
       'restore_backup_none':
           'ওই ফোল্ডারে এই অ্যাকাউন্টের কোনো ব্যাকআপ পাওয়া যায়নি।',
@@ -1817,34 +1623,10 @@ class AppTranslations {
       'date_jump_month': 'গত মাস',
       'date_jump_pick': 'নির্দিষ্ট তারিখে যান',
       'date_jump_none': 'ওই দিনের কোনো বার্তা নেই',
-      'recovery_enter': 'আপনার রিকভারি কোড দিন',
-      'recovery_help':
-          'মেসেজ সেটআপের সময় সংরক্ষিত কোডটি দিন। স্পেস ও বড় বা ছোট হাতের অক্ষর যেকোনোভাবে লেখা যাবে।',
-      'recovery_working': 'ফিরিয়ে আনা হচ্ছে…',
-      'recovery_restore': 'মেসেজ ফিরিয়ে আনুন',
       'recovery_back': 'ফিরে যান',
-      'recovery_invalid': 'রিকভারি কোড মিলিয়ে আবার চেষ্টা করুন।',
-      'recovery_failed':
-          'মেসেজ ফেরানো যায়নি। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
-      'recovery_reset_body':
-          'আপনার অ্যাকাউন্ট ও এই ফোন থেকে পুরোনো চ্যাট তালিকা, মেসেজ ও মিডিয়া সরানো হবে। অ্যাকাউন্ট ও সদস্যপদ থাকবে। অন্যদের কপি থাকবে। চালিয়ে যেতে ইমেইল যাচাই করুন, তারপর নতুন রিকভারি কোড সংরক্ষণ করুন।',
-      'recovery_send': 'ইমেইলে কোড পাঠান',
-      'recovery_sending': 'পাঠানো হচ্ছে…',
-      'recovery_sent': '{email}-এ কোড পাঠানো হয়েছে',
-      'recovery_email_hint': '৯ অক্ষরের কোড',
-      'recovery_email_invalid': 'ইমেইলের ৯ অক্ষরের কোড দিন।',
-      'recovery_send_failed':
-          'কোড পাঠানো যায়নি। ইমেইল সেটিংস ও সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
-      'recovery_reset_failed':
-          'নতুনভাবে শুরু করা যায়নি। কোড ও সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
-      'recovery_clean_failed':
-          'রিসেট হয়েছে। এই ফোন পরিষ্কার করা শেষ করতে চালিয়ে যান চাপুন।',
       'history_restore_banner': 'মেসেজ ফিরিয়ে আনা হচ্ছে…',
       'history_restore_messages': 'মেসেজ ফিরিয়ে আনা হচ্ছে… {done} / {total}',
       'history_restore_messages_running': 'মেসেজ ফিরিয়ে আনা হচ্ছে… {done}',
-      'recovery_continue': 'চালিয়ে যান',
-      'recovery_cancel': 'বাতিল',
-      'recovery_saving': 'নতুনভাবে শুরু হচ্ছে…',
 
       'login_subtitle':
           'বন্ধু ও পরিবারের কাছাকাছি থাকুন—গোপনীয়তা ও এন্ড-টু-এন্ড এনক্রিপশনসহ।',
@@ -2215,12 +1997,12 @@ class AppTranslations {
       'dm_hide_ticks_peer': 'তারা এই চ্যাটে টিক বন্ধ করেছে',
       'dm_hide_ticks_off': 'বন্ধ',
       'private_chat': 'প্রাইভেট চ্যাট',
-      'private_chat_on': 'চালু — পৌঁছানোর পর বার্তা সার্ভার থেকে মুছে যায়',
+      'private_chat_on': 'চালু — টাইপিং, টিক বা অনলাইন অবস্থা দেখা যায় না',
       'private_chat_on_them': 'তারা চালু করেছে — দুজনের জন্যই প্রযোজ্য',
       'private_chat_off': 'বন্ধ',
       'private_chat_sheet_title': 'প্রাইভেট চ্যাট চালু করবেন?',
       'private_chat_point_server':
-          'নতুন বার্তা তাদের ফোনে পৌঁছানো মাত্র আমাদের সার্ভার থেকে মুছে যায়।',
+          'অন্য সব চ্যাটের মতোই, আপনার ফোনে পৌঁছানোর পর বার্তা আমাদের সার্ভার থেকে মুছে যায়।',
       'private_chat_point_status':
           'আপনারা কেউ কারও অনলাইন, টাইপিং, টিক বা রিং হওয়া দেখবেন না।',
       'private_chat_point_screens': 'দুই ফোনেই স্ক্রিনশট বন্ধ থাকে।',
@@ -2228,11 +2010,11 @@ class AppTranslations {
       'private_chat_point_media':
           'ছবি ও ফাইল অ্যাপের ভেতরেই থাকে — সেভ, শেয়ার বা ফরোয়ার্ড করা যায় না।',
       'private_chat_point_phone':
-          'বার্তা শুধু আপনাদের ফোনে থাকে। রিকভারি কোড নিরাপদে রাখুন।',
+          'বার্তা শুধু আপনাদের ফোনে থাকে। লোকাল ব্যাকআপ চালু রাখুন।',
       'private_chat_turn_on': 'চালু করুন',
       'private_chat_off_title': 'প্রাইভেট চ্যাট বন্ধ করবেন?',
       'private_chat_off_body':
-          'নতুন বার্তা আবার সার্ভারে রাখা হবে। আগে পাঠানো বার্তা প্রাইভেট থাকবে।',
+          'টাইপিং, টিক, অনলাইন অবস্থা আর রিং আবার দেখা যাবে। আগে পাঠানো বার্তা প্রাইভেটই থাকবে।',
       'private_chat_turn_off': 'বন্ধ করুন',
       'private_chat_needs_connection':
           'প্রাইভেট চ্যাটের জন্য এই ব্যক্তির সাথে গৃহীত সংযোগ দরকার।',
@@ -2347,8 +2129,6 @@ class AppTranslations {
       'settings_scan_qr_sub': 'ডেস্কটপ বা ওয়েবে সাইন ইন অনুমোদন করুন',
       'settings_link_messages': 'আপনার বার্তায় একটি ডিভাইস যুক্ত করুন',
       'settings_link_messages_sub': 'অন্য ডিভাইসে দেখানো কোড স্ক্যান করুন',
-      'settings_recovery': 'বার্তা রিকভারি কোড',
-      'settings_recovery_sub': 'নতুন ডিভাইসে বার্তা পড়ার একমাত্র উপায়',
       'settings_privacy': 'গোপনীয়তা নীতি',
       'settings_invite': 'বন্ধুদের আমন্ত্রণ জানান',
       'settings_invite_text':

@@ -4,7 +4,6 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../messages/chat_icon.dart';
-import '../../profile/delivery/delivery_only.dart';
 
 enum BackupFolderChoice { phone, pick }
 
@@ -94,12 +93,7 @@ Future<BackupOffChoice?> pickBackupOffChoice(
   return _options(
     context,
     title: tr('local_backup_off_title'),
-    body: tr(
-      deliveryKey(
-        'local_backup_off_body',
-        deliveryOnly: ref.read(deliveryOnlyProvider),
-      ),
-    ),
+    body: tr('local_backup_off_body'),
     rows: [
       (
         BackupOffChoice.keep,

@@ -7,22 +7,18 @@ import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_bar_back_button.dart';
 import '../../messages/chat_icon.dart';
 import '../settings-hub/settings_row.dart';
-import '../../profile/delivery/delivery_only.dart';
 import '../settings-hub/settings_section_header.dart';
 
-/// Settings → Backup: how recent history is kept and recovery-code access.
-///
-/// Manual “upload archive” was removed from the UI; chat still syncs for 180
-/// days on the server, and recovery may still merge an older cloud archive
-/// automatically after unlock. See CHAT_RETENTION.md.
+/// Settings → Backup: where the chats live (the phone — the server deletes a
+/// message once every phone has it, DELIVERY_ONLY.md) and the local backup
+/// that is their only lasting copy. No recovery code: a new install starts a
+/// new message key and gets its history from the local backup.
 class ChatBackupScreen extends ConsumerWidget {
   const ChatBackupScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     String t(String key) => AppTranslations.translate(context, ref, key);
-    final deliveryOnly = ref.watch(deliveryOnlyProvider);
-    String d(String key) => t(deliveryKey(key, deliveryOnly: deliveryOnly));
 
     return Scaffold(
       appBar: AppBar(
@@ -36,8 +32,8 @@ class ChatBackupScreen extends ConsumerWidget {
           children: [
             SettingsSectionHeader(t('backup_section_recent')),
             _RecentRetentionNotice(
-              title: d('backup_recent_title'),
-              body: d('backup_recent_body'),
+              title: t('backup_recent_title'),
+              body: t('backup_recent_body'),
             ),
             const Divider(height: 24),
             SettingsSectionHeader(t('local_backup_section')),
@@ -46,24 +42,6 @@ class ChatBackupScreen extends ConsumerWidget {
               title: t('local_backup_title'),
               subtitle: t('local_backup_row_hint'),
               onTap: () => context.push('/settings/chat-backup/local'),
-            ),
-            const Divider(height: 24),
-            SettingsSectionHeader(t('backup_section_recovery')),
-            SettingsRow(
-              icon: HugeIcons.strokeRoundedKey01,
-              title: t('recovery_codes_title'),
-              subtitle: t('recovery_codes_setting_hint'),
-              onTap: () => context.push('/settings/chat-backup/recovery-codes'),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Text(
-                d('backup_recovery_footnote'),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.45,
-                ),
-              ),
             ),
           ],
         ),
@@ -91,7 +69,7 @@ class _RecentRetentionNotice extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 2),
             child: ChatIcon(
-              HugeIcons.strokeRoundedCloud,
+              HugeIcons.strokeRoundedSmartPhone01,
               size: 22,
               color: colors.primary,
             ),

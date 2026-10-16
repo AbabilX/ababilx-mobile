@@ -1,7 +1,6 @@
 import 'package:ababilx/features/messages/chat-forward/forward_resend.dart';
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/core/localization/app_translations.dart';
-import 'package:ababilx/features/profile/delivery/delivery_only.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -128,38 +127,27 @@ void resendRules() {
 }
 
 void deliveryStrings() {
-  test(
-    'every delivery-only wording exists in both languages, beside its base',
-    () {
-      for (final lang in ['en', 'bn']) {
-        final keys = AppTranslations.keysOf(lang);
-        final variants = keys.where((k) => k.endsWith('_delivery'));
-        expect(variants, isNotEmpty);
-        for (final variant in variants) {
-          final base = variant.substring(
-            0,
-            variant.length - '_delivery'.length,
-          );
-          expect(keys, contains(base), reason: '$lang: $variant has no base');
-        }
-        for (final k in [
-          'delivery_backup_notice_title',
-          'delivery_backup_notice_body',
-          'delivery_backup_off_warning',
-        ]) {
-          expect(keys, contains(k), reason: '$lang: $k');
-        }
+  test('the phone speaks only the delivery-only model, in both languages', () {
+    for (final lang in ['en', 'bn']) {
+      final keys = AppTranslations.keysOf(lang);
+      // The server no longer keeps 120 days, and there is no recovery code
+      // to point at from the backup screens.
+      expect(keys.where((k) => k.endsWith('_delivery')), isEmpty);
+      expect(keys, isNot(contains('backup_recovery_footnote')));
+      for (final k in [
+        'delivery_backup_notice_title',
+        'delivery_backup_notice_body',
+        'delivery_backup_off_warning',
+        'backup_recent_title',
+        'backup_recent_body',
+        'settings_backup_sub',
+        'storage_note_downloadable',
+      ]) {
+        expect(keys, contains(k), reason: '$lang: $k');
+        final text = AppTranslations.of(lang, k);
+        expect(text, isNot(contains('120')), reason: '$lang: $k');
+        expect(text.toLowerCase(), isNot(contains('recovery')));
       }
-      expect(
-        AppTranslations.keysOf(
-          'bn',
-        ).where((k) => k.endsWith('_delivery')).toSet(),
-        AppTranslations.keysOf(
-          'en',
-        ).where((k) => k.endsWith('_delivery')).toSet(),
-      );
-      expect(deliveryKey('x', deliveryOnly: false), 'x');
-      expect(deliveryKey('x', deliveryOnly: true), 'x_delivery');
-    },
-  );
+    }
+  });
 }
