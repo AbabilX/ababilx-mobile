@@ -4,7 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'composer_input_bar_buttons.dart';
 import 'composer_keyboard_content.dart';
 
-/// Signal's composer: one pill holding emoji, the text field, camera and mic,
+/// Signal's composer: one pill holding the text field, camera and mic,
 /// with a single accent circle beside it.
 ///
 /// That circle is the only send affordance. It is "+" while there is nothing
@@ -20,7 +20,6 @@ class ComposerInputBar extends StatelessWidget {
     required this.sending,
     required this.canSend,
     required this.attachmentOpen,
-    required this.onEmoji,
     required this.onCamera,
     required this.onVoice,
     required this.onPlus,
@@ -28,7 +27,6 @@ class ComposerInputBar extends StatelessWidget {
     this.onSendLater,
     this.preparingVoice = false,
     this.onContentInserted,
-    this.emojiTooltip = 'Emoji',
     this.cameraTooltip = 'Camera',
     this.voiceTooltip = 'Voice',
     this.attachTooltip = 'Attach',
@@ -44,7 +42,6 @@ class ComposerInputBar extends StatelessWidget {
   /// The attachment keyboard is showing, so "+" reads as a close affordance.
   final bool attachmentOpen;
   final bool preparingVoice;
-  final VoidCallback onEmoji;
   final VoidCallback onCamera;
   final VoidCallback onVoice;
   final VoidCallback onPlus;
@@ -55,7 +52,6 @@ class ComposerInputBar extends StatelessWidget {
 
   /// A sticker or GIF from the keyboard. Null leaves the field text-only.
   final ValueChanged<KeyboardInsertedContent>? onContentInserted;
-  final String emojiTooltip;
   final String cameraTooltip;
   final String voiceTooltip;
   final String attachTooltip;
@@ -82,13 +78,6 @@ class ComposerInputBar extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  PillIcon(
-                    icon: HugeIcons.strokeRoundedSmile,
-                    height: _size,
-                    iconSize: 26,
-                    tooltip: emojiTooltip,
-                    onTap: onEmoji,
-                  ),
                   Expanded(
                     child: TextField(
                       controller: controller,
@@ -113,11 +102,19 @@ class ComposerInputBar extends StatelessWidget {
                           fontSize: 17,
                           color: colors.onSurfaceVariant,
                         ),
+                        // The theme fills every field with a square-cornered
+                        // rectangle; the pill behind this one is the fill.
+                        filled: false,
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         isDense: true,
-                        contentPadding: const EdgeInsets.fromLTRB(0, 16, 0, 16),
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          18,
+                          16,
+                          0,
+                          16,
+                        ),
                       ),
                     ),
                   ),

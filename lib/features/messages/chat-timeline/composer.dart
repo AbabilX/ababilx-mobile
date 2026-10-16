@@ -46,8 +46,6 @@ import 'composer_recent_selection_badge.dart';
 import 'composer_recent_selection_label.dart';
 import 'composer_reply_banner.dart';
 import 'composer_reply_target.dart';
-import 'reaction_emoji_picker.dart';
-import 'composer_text_actions.dart';
 import 'voice_message_recorder.dart';
 import '../../../core/network/ws_client.dart';
 import '../../settings/typing-indicators/typing_indicators_provider.dart';
@@ -861,12 +859,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     setState(() => _pending.removeAt(index));
   }
 
-  Future<void> _pickEmoji() async {
-    final emoji = await showReactionEmojiPicker(context);
-    if (emoji == null || !mounted) return;
-    insertComposerText(_ctrl, emoji);
-    _focus.requestFocus();
-  }
 
   /// Khaam is one sender, one receiver: offered in a DM with a peer, on the
   /// main timeline only.
@@ -1284,7 +1276,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         canSend: _hasDraft,
         attachmentOpen: _attachmentPanelOpen,
         preparingVoice: _recordPreparing,
-        onEmoji: () => unawaited(_pickEmoji()),
         onCamera: () => _selectAttachment(ComposerAttachKind.camera),
         onVoice: () => unawaited(_startVoiceRecording()),
         onPlus: _toggleAttachmentPanel,

@@ -73,7 +73,6 @@ void main() {
         sending: false,
         canSend: false,
         attachmentOpen: false,
-        onEmoji: () {},
         onCamera: () {},
         onVoice: () {},
         onPlus: () {},
