@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
+import '../../../core/router/shell_bottom_bar/tab_reselect.dart';
 import '../../../core/router/swipe_tab_active.dart';
 import '../data/call_log_seen_storage.dart';
 import '../group/providers/group_call_provider.dart';
@@ -132,6 +133,14 @@ class _CallsListState extends ConsumerState<CallsList>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(tabReselectProvider, (_, tap) {
+      if (tap?.route != '/calls') return;
+      if (_filter == _CallFilter.missed) {
+        setState(() => _filter = _CallFilter.all);
+      } else {
+        _openMissedFilter();
+      }
+    });
     final log = ref.watch(callLogProvider);
     final lang = ref.watch(appLanguageProvider);
     // Same gate as ChatHeader: one live call at a time — redial icons go

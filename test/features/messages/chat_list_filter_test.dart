@@ -35,7 +35,7 @@ void main() {
           _conv('c', 'channel'),
           _conv('w', 'webhook'),
         ]),
-        ChatListFilter.values,
+        ChatListFilter.values.where((f) => f != ChatListFilter.localShare),
       );
     });
   });

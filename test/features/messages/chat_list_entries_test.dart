@@ -143,4 +143,42 @@ void main() {
       isNot(contains(ChatListFilter.localShare)),
     );
   });
+
+  test('a pinned thread joins the pinned block by time', () {
+    final merged = mergeChatListEntries(
+      conversations: [
+        chat('pinNew', '2026-10-05T00:00:00Z', pinned: true),
+        chat('pinOld', '2026-10-01T00:00:00Z', pinned: true),
+        chat('new', '2026-10-05T10:00:00Z'),
+      ],
+      threads: [
+        thread('mid', '2026-10-03T10:00:00Z'),
+        thread('pinned', '2026-10-02T10:00:00Z'),
+        thread('free', '2026-10-06T10:00:00Z'),
+      ],
+      pinnedThreads: {'pinned'},
+    );
+    expect(keys(merged), [
+      'pinNew',
+      'local-share:pinned',
+      'pinOld',
+      'local-share:free',
+      'new',
+      'local-share:mid',
+    ]);
+    expect(merged.whereType<ShareThreadEntry>().map((e) => e.pinned), [
+      true,
+      false,
+      false,
+    ]);
+  });
+
+  test('a pinned thread with no pinned conversations sits first', () {
+    final merged = mergeChatListEntries(
+      conversations: [chats[1], chats[2]],
+      threads: [thread('old', '2026-08-01T10:00:00Z')],
+      pinnedThreads: {'old'},
+    );
+    expect(keys(merged), ['local-share:old', 'new', 'old']);
+  });
 }

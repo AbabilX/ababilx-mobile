@@ -21,9 +21,11 @@ class ShareChatRow extends ConsumerWidget {
     required this.thread,
     required this.onTap,
     this.onLongPress,
+    this.pinned = false,
   });
 
   final ShareThread thread;
+  final bool pinned;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
 
@@ -126,7 +128,16 @@ class ShareChatRow extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      ChatUnreadBadge(count: thread.unread),
+                      // Same rule as a conversation row: the pin sits where
+                      // the unread badge goes, and the badge wins.
+                      if (pinned && thread.unread <= 0)
+                        ChatIcon(
+                          HugeIcons.strokeRoundedPin,
+                          size: 15,
+                          color: colors.onSurfaceVariant,
+                        )
+                      else
+                        ChatUnreadBadge(count: thread.unread),
                     ],
                   ),
                 ],

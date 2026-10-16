@@ -9,6 +9,7 @@ import '../../messages/chat_icon.dart';
 import '../engine/protocol/share_peer.dart';
 import '../providers/local_share_providers.dart';
 import '../providers/share_account.dart';
+import '../providers/share_quick_button.dart';
 import '../share_text.dart';
 import '../sheets/device_name_sheet.dart';
 import '../widgets/share_device_avatar.dart';
@@ -91,6 +92,14 @@ class LocalShareScreen extends ConsumerWidget {
               lsText(ref, 'ls_same_wifi_note'),
               style: theme.textTheme.bodySmall?.copyWith(color: muted),
             ),
+          ),
+          SwitchListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+            title: Text(lsText(ref, 'ls_quick_button')),
+            subtitle: Text(lsText(ref, 'ls_quick_button_sub')),
+            value: ref.watch(shareQuickButtonProvider),
+            onChanged: (on) =>
+                unawaited(ref.read(shareQuickButtonProvider.notifier).set(on)),
           ),
           ...header('ls_section_nearby'),
           if (strangers.isEmpty)

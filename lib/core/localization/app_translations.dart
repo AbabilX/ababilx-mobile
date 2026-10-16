@@ -71,6 +71,14 @@ class AppTranslations {
           'This thread appears beside your chats. It still stays on this phone.',
       'ls_hide_from_chats': 'Remove from chat list',
       'ls_hide_from_chats_sub': 'The thread stays in Local Share.',
+      'ls_quick_remove': 'Remove from bar',
+      'ls_quick_remove_sub': 'Turn it back on in Local Share.',
+      'ls_quick_button': 'Quick button',
+      'ls_quick_button_sub':
+          'Show a round Local Share button beside the bottom bar.',
+      'ls_pin_chat': 'Pin chat',
+      'ls_unpin_chat': 'Unpin chat',
+      'ls_pin_limit': 'You can pin up to 4 Local Share chats',
       'ls_chat_tag': 'Local Share',
       'ls_forget': 'Forget this device',
       'ls_forget_sub':
@@ -543,7 +551,8 @@ class AppTranslations {
       'chat_tap_to_retry': 'Tap to retry',
       'chat_resending': 'Sending again…',
       'chat_retry_failed': 'Message not sent.',
-      'chat_retry_offline': 'No connection. It will send when you are back online.',
+      'chat_retry_offline':
+          'No connection. It will send when you are back online.',
       'chat_retry_locked': 'Unlock your messages first, then tap again.',
       'chat_file_too_large': 'Files must be 350 MB or smaller.',
       'chat_hold_to_record': 'Hold to record',
@@ -1399,6 +1408,14 @@ class AppTranslations {
           'এই থ্রেড আপনার চ্যাটের পাশে দেখা যাবে। এটি এই ফোনেই থাকে।',
       'ls_hide_from_chats': 'চ্যাট তালিকা থেকে সরান',
       'ls_hide_from_chats_sub': 'থ্রেডটি লোকাল শেয়ারে থাকবে।',
+      'ls_quick_remove': 'বার থেকে সরান',
+      'ls_quick_remove_sub': 'লোকাল শেয়ার থেকে আবার চালু করতে পারবেন।',
+      'ls_quick_button': 'কুইক বাটন',
+      'ls_quick_button_sub':
+          'নিচের বারের পাশে লোকাল শেয়ারের একটি গোল বাটন দেখান।',
+      'ls_pin_chat': 'চ্যাট পিন করুন',
+      'ls_unpin_chat': 'চ্যাট আনপিন করুন',
+      'ls_pin_limit': 'সর্বোচ্চ ৪টি লোকাল শেয়ার চ্যাট পিন করা যায়',
       'ls_chat_tag': 'লোকাল শেয়ার',
       'ls_forget': 'এই ডিভাইস ভুলে যান',
       'ls_forget_sub':
@@ -1704,7 +1721,8 @@ class AppTranslations {
       'restore_backup_confirm_body':
           'এই ব্যাকআপ থেকে আপনার চ্যাট ফিরে আসবে, আর অ্যাকাউন্ট নতুন মেসেজ কী পাবে। এটি আর ফেরানো যাবে না।\n\n• পুরোনো রিকভারি কোড আর কাজ করবে না। নতুন একটি পাবেন।\n• যে মেসেজ ব্যাকআপে নেই, তা আর পড়া যাবে না।\n• আপনার কন্টাক্টরা দেখবে আপনার সেফটি নম্বর বদলেছে।\n• আপনার অ্যাকাউন্টের অন্য ডিভাইসগুলো আবার লিংক করতে হবে।',
       'restore_backup_confirm_go': 'চালিয়ে যান',
-      'restore_backup_none': 'ওই ফোল্ডারে এই অ্যাকাউন্টের কোনো ব্যাকআপ পাওয়া যায়নি।',
+      'restore_backup_none':
+          'ওই ফোল্ডারে এই অ্যাকাউন্টের কোনো ব্যাকআপ পাওয়া যায়নি।',
       'restore_skip_title': 'ফিরিয়ে না এনে চালিয়ে যাবেন?',
       'restore_skip_confirm': 'চালিয়ে যান',
       'permissions_title': 'অনুমতি দিন',

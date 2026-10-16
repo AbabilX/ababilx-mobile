@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../shared/widgets/app_avatar.dart';
+import '../../../messages/chat-list/conversation_avatar.dart';
 import '../../../messages/data/models/chat_models.dart';
 import '../../../messages/providers/chat_provider.dart';
 import '../../../profile/providers/profile_provider.dart';
@@ -92,6 +93,11 @@ class _GroupCallLobbyScreenState extends ConsumerState<GroupCallLobbyScreen> {
     }
 
     final active = lobby.call;
+    // The group's own picture (or its member stack), as the chat list draws
+    // it; the starter's face only when the chat is not in the sidebar.
+    final conversation = ref.watch(
+      chatProvider.select((s) => s.conversationById(lobby.conversationId)),
+    );
     final muted = lobby.joinMuted || _microphoneGranted == false;
 
     return PopScope(
@@ -124,11 +130,17 @@ class _GroupCallLobbyScreenState extends ConsumerState<GroupCallLobbyScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      AppAvatar(
-                        size: 112,
-                        url: active?.starterAvatarUrl,
-                        name: lobby.conversationName,
-                      ),
+                      conversation != null
+                          ? ConversationAvatar(
+                              conversation: conversation,
+                              title: lobby.conversationName,
+                              size: 112,
+                            )
+                          : AppAvatar(
+                              size: 112,
+                              url: active?.starterAvatarUrl,
+                              name: lobby.conversationName,
+                            ),
                       const SizedBox(height: 20),
                       Text(
                         lobby.conversationName,

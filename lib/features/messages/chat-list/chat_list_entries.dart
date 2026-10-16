@@ -20,22 +20,25 @@ class ConversationEntry extends ChatListEntry {
 }
 
 class ShareThreadEntry extends ChatListEntry {
-  const ShareThreadEntry(this.thread);
+  const ShareThreadEntry(this.thread, {this.pinned = false});
 
   final ShareThread thread;
+  final bool pinned;
 
   @override
   String get key => 'local-share:${thread.device.deviceId}';
 }
 
 /// [conversations] already in list order (pinned block first, newest first in
-/// each). Device threads go under the pinned block and take their place by
+/// each). A device thread the user pinned ([pinnedThreads], device ids) joins
+/// the pinned block by time; the others go under it and take their place by
 /// time among the rest. A thread has no server row, so the only filters it
 /// can answer are All, Unread and Local Share.
 List<ChatListEntry> mergeChatListEntries({
   required List<ChatConversation> conversations,
   required List<ShareThread> threads,
   ChatListFilter filter = ChatListFilter.all,
+  Set<String> pinnedThreads = const {},
 }) {
   final shown = switch (filter) {
     ChatListFilter.all || ChatListFilter.localShare => threads,
@@ -51,19 +54,29 @@ List<ChatListEntry> mergeChatListEntries({
   if (shown.isEmpty) return entries;
   final sorted = [...shown]
     ..sort((a, b) => b.lastOrderMs.compareTo(a.lastOrderMs));
-  var at = entries.indexWhere(
-    (e) => e is ConversationEntry && !e.conversation.pinned,
-  );
-  if (at < 0) at = entries.length;
-  for (final thread in sorted) {
-    while (at < entries.length && _atMs(entries[at]) >= thread.lastOrderMs) {
+  // Pinned threads first, into the pinned block (which ends where the first
+  // unpinned conversation starts), then the rest below it.
+  for (final pinned in [true, false]) {
+    var at = pinned ? 0 : entries.indexWhere((e) => !_isPinned(e));
+    if (at < 0) at = entries.length;
+    for (final thread in sorted) {
+      if (pinnedThreads.contains(thread.device.deviceId) != pinned) continue;
+      while (at < entries.length &&
+          (pinned ? _isPinned(entries[at]) : true) &&
+          _atMs(entries[at]) >= thread.lastOrderMs) {
+        at++;
+      }
+      entries.insert(at, ShareThreadEntry(thread, pinned: pinned));
       at++;
     }
-    entries.insert(at, ShareThreadEntry(thread));
-    at++;
   }
   return entries;
 }
+
+bool _isPinned(ChatListEntry e) => switch (e) {
+  ConversationEntry(:final conversation) => conversation.pinned,
+  ShareThreadEntry(:final pinned) => pinned,
+};
 
 int _atMs(ChatListEntry entry) => switch (entry) {
   ConversationEntry(:final conversation) =>

@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
+import '../../../core/router/shell_bottom_bar/tab_reselect.dart';
 import '../../local_share/data/share_thread_queries.dart';
+import '../../local_share/providers/share_chat_pins.dart';
 import '../../local_share/providers/share_in_chats.dart';
 import '../../local_share/sheets/share_chat_row_sheet.dart';
 import '../chat_list_filters.dart';
@@ -81,6 +83,14 @@ class _ChatListState extends ConsumerState<ChatList> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(tabReselectProvider, (_, tap) {
+      if (tap?.route != '/messages') return;
+      setState(
+        () => _filter = _filter == ChatListFilter.unread
+            ? ChatListFilter.all
+            : ChatListFilter.unread,
+      );
+    });
     final original = ref.watch(chatProvider);
     final chat = ref.watch(newChatSetupProvider).pending
         ? original.copyWith(
@@ -111,6 +121,7 @@ class _ChatListState extends ConsumerState<ChatList> {
       ),
       threads: shareThreads,
       filter: _filter,
+      pinnedThreads: ref.watch(shareChatPinsProvider).valueOrNull ?? const {},
     );
     final recentDms = recentDmsForStrip(dms);
     return Scaffold(

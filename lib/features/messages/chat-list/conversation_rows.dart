@@ -69,6 +69,7 @@ class ConversationRows extends StatelessWidget {
             ShareThreadEntry(:final thread) => ShareChatRow(
               key: ValueKey(entry.key),
               thread: thread,
+              pinned: entry.pinned,
               onTap: () => onShareTap(thread),
               onLongPress: () => onShareLongPress(thread),
             ),

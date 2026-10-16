@@ -11,11 +11,14 @@ import '../../features/notifications/widgets/notification_vitals_watcher.dart';
 import '../../features/policy/widgets/policy_gate_overlay.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../core/localization/app_translations.dart';
+import '../../features/local_share/providers/share_quick_button.dart';
+import '../../features/local_share/sheets/quick_button_sheet.dart';
 import 'shell_bottom_bar/index.dart';
-import 'shell_bottom_bar/nav_double_tap.dart';
 import 'shell_bottom_bar/nav_reorder_blur.dart';
 import 'shell_bottom_bar/shell_chrome_provider.dart';
+import 'shell_bottom_bar/shell_quick_button.dart';
 import 'shell_bottom_bar/shell_tab_order.dart';
+import 'shell_bottom_bar/tab_reselect.dart';
 import 'shell_bottom_bar/shell_tabs.dart';
 
 /// Home shell: the routed page under the floating capsule nav.
@@ -51,13 +54,25 @@ class HomeShell extends ConsumerWidget {
             labelOf: (tab) =>
                 AppTranslations.translate(context, ref, tab.labelKey),
             onSelect: (i) {
-              // A double tap on the bar is the shortcut into Local Share.
-              if (navDoubleTap.hit(null, i)) {
-                context.push('/local-share');
+              if (i == idx) {
+                // Tapping the tab you are on flips its filter: Chats between
+                // All and Unread, Talk between All and Missed.
+                signalTabReselect(ref, tabs[i].route);
               } else {
                 context.go(tabs[i].route);
               }
             },
+            quickButton: ref.watch(shareQuickButtonProvider)
+                ? ShellQuickButton(
+                    label: AppTranslations.translate(
+                      context,
+                      ref,
+                      'settings_local_share',
+                    ),
+                    onTap: () => context.push('/local-share'),
+                    onLongPress: () => unawaited(_removeSheet(context, ref)),
+                  )
+                : null,
             onReorder: (from, to) =>
                 ref.read(shellTabOrderProvider.notifier).move(tabs, from, to),
           );
@@ -81,5 +96,16 @@ class HomeShell extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// The bar steps aside while the sheet is up, or it would float over it.
+  Future<void> _removeSheet(BuildContext context, WidgetRef ref) async {
+    final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
+    hidden.state = true;
+    try {
+      await showQuickButtonSheet(context, ref);
+    } finally {
+      hidden.state = false;
+    }
   }
 }

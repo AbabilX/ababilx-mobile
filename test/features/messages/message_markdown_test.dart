@@ -125,4 +125,36 @@ void main() {
       expect(find.byType(MessageMarkdown), findsNothing);
     });
   });
+
+  for (final edited in [false, true]) {
+    testWidgets('a short message stays narrow (edited: $edited)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Align(
+            alignment: Alignment.topLeft,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 300),
+              child: MessageMarkdown(
+                key: const ValueKey('md'),
+                source: 'hi',
+                style: const TextStyle(fontSize: 15),
+                trailing: edited
+                    ? const TextSpan(
+                        text: ' (edited)',
+                        style: TextStyle(fontSize: 12),
+                      )
+                    : null,
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(
+        tester.getSize(find.byKey(const ValueKey('md'))).width,
+        lessThan(150),
+      );
+    });
+  }
 }

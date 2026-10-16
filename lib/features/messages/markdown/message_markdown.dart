@@ -109,15 +109,20 @@ class MessageMarkdown extends StatelessWidget {
     );
     final tail = trailing;
     if (tail == null) return body;
+    // End-aligned column, body pinned to the start with widthFactor 1: the
+    // column is only as wide as its widest child. An `Align` around the tail
+    // alone expanded to the bubble's whole cap, so every edited message —
+    // however short — drew full width.
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
-        body,
         Align(
-          alignment: AlignmentDirectional.centerEnd,
-          child: Text.rich(tail),
+          alignment: AlignmentDirectional.centerStart,
+          widthFactor: 1,
+          child: body,
         ),
+        Text.rich(tail),
       ],
     );
   }
