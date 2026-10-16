@@ -4,20 +4,16 @@ import 'email_code_args.dart';
 import 'email_code_screen.dart';
 import 'email_forgot_screen.dart';
 import 'email_sign_in_screen.dart';
-import 'email_sign_up_screen.dart';
 
-/// Children of `/login`: `/login/email`, `.../new`, `.../forgot`, `.../code`.
+/// Children of `/login`: `/login/email`, `.../forgot`, `.../code`. Sign-up
+/// (`.../new`, `EmailSignUpScreen`) is not routed: the UI is hidden, the
+/// screen and the server route stay.
 /// The router's redirect treats every `/login/…` path as the login page.
 final emailAuthRoutes = <RouteBase>[
   GoRoute(
     path: 'email',
     builder: (_, _) => const EmailSignInScreen(),
     routes: [
-      GoRoute(
-        path: 'new',
-        builder: (_, state) =>
-            EmailSignUpScreen(initialEmail: state.extra as String?),
-      ),
       GoRoute(
         path: 'forgot',
         builder: (_, state) =>

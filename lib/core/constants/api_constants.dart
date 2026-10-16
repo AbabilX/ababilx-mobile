@@ -46,6 +46,8 @@ class ApiConstants {
   static const String meActiveCall = '/api/me/active-call';
   static const String meName = '/api/me/name';
   static const String meUsername = '/api/me/username';
+  static const String mePassword = '/api/me/password';
+  static const String mePasswordCode = '/api/me/password/code';
   static const String meUploadPresign = '/api/me/upload/presign';
 
   // Chat

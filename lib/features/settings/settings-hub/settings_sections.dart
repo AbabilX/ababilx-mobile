@@ -83,6 +83,14 @@ class SettingsSections extends ConsumerWidget {
               : null,
           onTap: () => context.push('/settings/username'),
         ),
+        // How an account made with Google adds a password for email sign-in;
+        // there is no email sign-up any more, so this is the only way in.
+        SettingsRow(
+          icon: HugeIcons.strokeRoundedSquareLock01,
+          title: t('settings_password'),
+          subtitle: t('settings_password_sub'),
+          onTap: () => context.push('/settings/password'),
+        ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedSearch01,
           title: t('settings_discovery'),

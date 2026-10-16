@@ -440,6 +440,29 @@ class AppTranslations {
           'This app version cannot sign in with email. Update AbabilX and try again.',
       'email_err_app_key_unconfigured':
           'Email sign-in is not available right now.',
+      'settings_password': 'Password',
+      'settings_password_sub': 'Sign in with your email and a password',
+      'password_is_set': 'Password is set',
+      'password_not_set': 'No password yet',
+      'password_set_body':
+          'You can sign in with your email and password, or keep using Google.',
+      'password_none_body':
+          'You sign in with Google. Add a password to also sign in with your email.',
+      'password_cannot_set':
+          'Your account has no email address that can receive a code, so a password cannot be added.',
+      'password_add': 'Set password',
+      'password_change': 'Change password',
+      'password_repeat_field': 'Repeat the password',
+      'password_mismatch': 'Passwords do not match.',
+      'password_save': 'Save password',
+      'password_set_done': 'Password set',
+      'password_changed': 'Password changed',
+      'password_retry': 'Try again',
+      'email_err_no_email':
+          'Your account has no email address that can receive a code.',
+      'email_err_email_owned_elsewhere':
+          'This email belongs to another account, so a password cannot be set here.',
+      'email_err_weak_password': 'Use a password of 8 to 128 characters.',
       'messages': 'Messages',
       'calls': 'Talks',
       'profile': 'Profile',
@@ -1686,6 +1709,29 @@ class AppTranslations {
           'এই অ্যাপ ভার্সনে ইমেইল দিয়ে সাইন ইন করা যায় না। AbabilX আপডেট করে আবার চেষ্টা করুন।',
       'email_err_app_key_unconfigured':
           'এই মুহূর্তে ইমেইল দিয়ে সাইন ইন করা যাচ্ছে না।',
+      'settings_password': 'পাসওয়ার্ড',
+      'settings_password_sub': 'ইমেইল ও পাসওয়ার্ড দিয়ে সাইন ইন করুন',
+      'password_is_set': 'পাসওয়ার্ড দেওয়া আছে',
+      'password_not_set': 'এখনো পাসওয়ার্ড নেই',
+      'password_set_body':
+          'আপনি ইমেইল ও পাসওয়ার্ড দিয়ে সাইন ইন করতে পারেন, অথবা Google ব্যবহার করতে থাকুন।',
+      'password_none_body':
+          'আপনি Google দিয়ে সাইন ইন করেন। ইমেইল দিয়েও সাইন ইন করতে একটি পাসওয়ার্ড যোগ করুন।',
+      'password_cannot_set':
+          'আপনার অ্যাকাউন্টে কোড পাওয়ার মতো কোনো ইমেইল ঠিকানা নেই, তাই পাসওয়ার্ড যোগ করা যাবে না।',
+      'password_add': 'পাসওয়ার্ড দিন',
+      'password_change': 'পাসওয়ার্ড বদলান',
+      'password_repeat_field': 'পাসওয়ার্ডটি আবার লিখুন',
+      'password_mismatch': 'দুটি পাসওয়ার্ড মিলছে না।',
+      'password_save': 'পাসওয়ার্ড সংরক্ষণ করুন',
+      'password_set_done': 'পাসওয়ার্ড দেওয়া হয়েছে',
+      'password_changed': 'পাসওয়ার্ড বদলানো হয়েছে',
+      'password_retry': 'আবার চেষ্টা করুন',
+      'email_err_no_email':
+          'আপনার অ্যাকাউন্টে কোড পাওয়ার মতো কোনো ইমেইল ঠিকানা নেই।',
+      'email_err_email_owned_elsewhere':
+          'এই ইমেইলটি অন্য একটি অ্যাকাউন্টের, তাই এখানে পাসওয়ার্ড দেওয়া যাবে না।',
+      'email_err_weak_password': '৮ থেকে ১২৮ অক্ষরের পাসওয়ার্ড দিন।',
       'messages': 'বার্তা',
       'calls': 'কথা',
       'profile': 'ব্যবহারকারী পরিচিতি',

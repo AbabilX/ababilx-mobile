@@ -7,7 +7,9 @@ import 'email_auth_actions.dart';
 import 'email_auth_repository.dart';
 import 'email_auth_ui.dart';
 
-/// Email + password sign-in, with the ways out to "forgot" and "create".
+/// Email + password sign-in, with the way out to "forgot". There is no
+/// sign-up button (user's call, 2026-10-16): an account starts with Google,
+/// and a password is added later from Settings → Password.
 class EmailSignInScreen extends ConsumerStatefulWidget {
   const EmailSignInScreen({super.key});
 
@@ -112,22 +114,6 @@ class _EmailSignInScreenState extends ConsumerState<EmailSignInScreen> {
           label: t('email_sign_in'),
           busy: _busy,
           onPressed: _submit,
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(t('no_account_prompt')),
-            TextButton(
-              onPressed: _busy
-                  ? null
-                  : () => context.push(
-                      '/login/email/new',
-                      extra: _email.text.trim(),
-                    ),
-              child: Text(t('create_account')),
-            ),
-          ],
         ),
       ],
     );
