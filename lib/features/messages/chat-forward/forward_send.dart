@@ -12,6 +12,7 @@ import '../message_e2ee/encryption_pins.dart';
 import '../message_e2ee/message_vault.dart';
 import '../message_e2ee/vault_placeholder.dart';
 import '../providers/chat_provider.dart';
+import 'forward_resend.dart';
 import 'forward_targets.dart';
 
 /// Sends the forward, preparing one payload per destination on this device.
@@ -111,10 +112,17 @@ Future<void> _forwardBehind(
         attachments: message.attachments,
         pinned: pinned,
       );
-      final delivered = await notifier.forwardMessage(
-        messageId: message.id,
-        targets: prepared,
-      );
+      int delivered;
+      try {
+        delivered = await notifier.forwardMessage(
+          messageId: message.id,
+          targets: prepared,
+        );
+      } catch (error) {
+        // The server let it go to the phones (0173): forward this copy.
+        if (!sourceLeftServer(error, message)) rethrow;
+        delivered = await resendForward(container, message, conversations);
+      }
       if (delivered < fewest) fewest = delivered;
     }
     sent = fewest;

@@ -21,6 +21,7 @@ class AppUser extends Equatable {
     this.independentChat = false,
     this.isNewAccount = false,
     this.encryptedAttachments = false,
+    this.deliveryOnly = false,
   });
 
   final String id;
@@ -56,6 +57,11 @@ class AppUser extends Equatable {
   /// opened whatever this says.
   final bool encryptedAttachments;
 
+  /// `delivery_only` on /api/me (server 0173): the server keeps this
+  /// account's personal chats only until the phones have them, so the local
+  /// backup is the only lasting copy. Off on any server that predates it.
+  final bool deliveryOnly;
+
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
     id: json['id'] as String? ?? '',
     name: json['name'] as String? ?? '',
@@ -71,6 +77,7 @@ class AppUser extends Equatable {
     independentChat: json['independent_chat'] as bool? ?? false,
     isNewAccount: json['is_new_account'] as bool? ?? false,
     encryptedAttachments: json['encrypted_attachments'] as bool? ?? false,
+    deliveryOnly: json['delivery_only'] as bool? ?? false,
   );
 
   Map<String, dynamic> toJson() => {
@@ -88,6 +95,7 @@ class AppUser extends Equatable {
     'independent_chat': independentChat,
     'is_new_account': isNewAccount,
     'encrypted_attachments': encryptedAttachments,
+    'delivery_only': deliveryOnly,
   };
 
   AppUser copyWith({
@@ -112,6 +120,7 @@ class AppUser extends Equatable {
     independentChat: independentChat,
     isNewAccount: isNewAccount,
     encryptedAttachments: encryptedAttachments,
+    deliveryOnly: deliveryOnly,
   );
 
   /// Merges split GET /api/me/* payloads (same order as web `mergeMeUser`).
@@ -132,6 +141,7 @@ class AppUser extends Equatable {
     independentChat,
     isNewAccount,
     encryptedAttachments,
+    deliveryOnly,
   ];
 }
 

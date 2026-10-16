@@ -7,6 +7,7 @@ import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_bar_back_button.dart';
 import '../../messages/chat_icon.dart';
 import '../settings-hub/settings_row.dart';
+import '../../profile/delivery/delivery_only.dart';
 import '../settings-hub/settings_section_header.dart';
 
 /// Settings → Backup: how recent history is kept and recovery-code access.
@@ -20,6 +21,8 @@ class ChatBackupScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     String t(String key) => AppTranslations.translate(context, ref, key);
+    final deliveryOnly = ref.watch(deliveryOnlyProvider);
+    String d(String key) => t(deliveryKey(key, deliveryOnly: deliveryOnly));
 
     return Scaffold(
       appBar: AppBar(
@@ -33,8 +36,8 @@ class ChatBackupScreen extends ConsumerWidget {
           children: [
             SettingsSectionHeader(t('backup_section_recent')),
             _RecentRetentionNotice(
-              title: t('backup_recent_title'),
-              body: t('backup_recent_body'),
+              title: d('backup_recent_title'),
+              body: d('backup_recent_body'),
             ),
             const Divider(height: 24),
             SettingsSectionHeader(t('local_backup_section')),
@@ -55,7 +58,7 @@ class ChatBackupScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Text(
-                t('backup_recovery_footnote'),
+                d('backup_recovery_footnote'),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   height: 1.45,

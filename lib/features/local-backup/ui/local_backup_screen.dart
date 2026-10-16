@@ -7,7 +7,9 @@ import '../../../shared/widgets/app_bar_back_button.dart';
 import '../../settings/settings-hub/settings_row.dart';
 import '../local_backup_provider.dart';
 import 'local_backup_actions.dart';
+import '../../profile/delivery/delivery_only.dart';
 import 'local_backup_choice_rows.dart';
+import 'local_backup_delivery_notice.dart';
 import 'local_backup_labels.dart';
 import 'local_backup_restore_flow.dart';
 
@@ -23,6 +25,7 @@ class LocalBackupScreen extends ConsumerWidget {
     final muted = theme.colorScheme.onSurfaceVariant;
     final state = ref.watch(localBackupProvider);
     final s = state.settings;
+    final deliveryOnly = ref.watch(deliveryOnlyProvider);
 
     final actions = LocalBackupActions(context, ref);
 
@@ -48,6 +51,7 @@ class LocalBackupScreen extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.only(bottom: 32),
               children: [
+                LocalBackupDeliveryNotice(backupOn: s.enabled),
                 SwitchListTile(
                   value: s.enabled,
                   onChanged: state.busy ? null : actions.toggle,
@@ -57,7 +61,12 @@ class LocalBackupScreen extends ConsumerWidget {
                     style: theme.textTheme.titleSmall,
                   ),
                   subtitle: Text(
-                    t('local_backup_switch_hint'),
+                    t(
+                      deliveryKey(
+                        'local_backup_switch_hint',
+                        deliveryOnly: deliveryOnly,
+                      ),
+                    ),
                     style: theme.textTheme.bodySmall?.copyWith(color: muted),
                   ),
                 ),

@@ -3,7 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/widgets/app_capsule.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../attachments/storage/storage_providers.dart';
+import '../../profile/delivery/delivery_only.dart';
+
+/// The sentence every storage delete ends with. Under delivery-only (server
+/// 0173) a cleared file the server already let go cannot come back, so the
+/// promise that it "can be downloaded again" is no longer made.
+String storageDeleteNote(BuildContext context, WidgetRef ref) =>
+    AppTranslations.translate(
+      context,
+      ref,
+      deliveryKey(
+        'storage_note_downloadable',
+        deliveryOnly: ref.read(deliveryOnlyProvider),
+      ),
+    );
 
 /// One confirmation shape for every delete on the storage screens: a bottom
 /// sheet, never a dialog.

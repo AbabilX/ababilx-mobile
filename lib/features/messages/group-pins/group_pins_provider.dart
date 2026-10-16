@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/network/first_load_timeout.dart';
+import '../chat-pins/pin_local_copy.dart';
+import '../data/local/chat_message_store.dart';
 import '../group-member-permissions/group_admin_api.dart';
 import '../providers/chat_provider.dart';
 
@@ -15,13 +17,20 @@ final groupPinsProvider = FutureProvider.autoDispose
         ref.watch(apiClientProvider),
         conversationId,
       ).timeout(firstLoadNetworkTimeout);
+      final local = await pinnedWithLocalCopies(
+        ref.read(chatMessageStoreProvider),
+        [for (final pin in page.pins) pin.message],
+      );
+      final kept = [
+        for (var i = 0; i < page.pins.length; i++)
+          if (local[i] != null) page.pins[i].withMessage(local[i]!),
+      ];
       final opened = await ref.read(chatProvider.notifier).decryptIfNeeded([
-        for (final pin in page.pins) pin.message,
+        for (final pin in kept) pin.message,
       ]);
       return GroupPinsPage(
         pins: [
-          for (var i = 0; i < page.pins.length; i++)
-            page.pins[i].withMessage(opened[i]),
+          for (var i = 0; i < kept.length; i++) kept[i].withMessage(opened[i]),
         ],
         canPin: page.canPin,
       );

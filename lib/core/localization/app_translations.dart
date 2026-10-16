@@ -212,6 +212,31 @@ class AppTranslations {
       'settings_backup': 'Backup',
       'settings_backup_sub': '120-day cloud history and recovery code',
       'local_backup_section': 'On this phone',
+      // Delivery-only chat (server 0173): the server keeps no lasting copy.
+      'delivery_backup_notice_title': 'This backup is your only copy',
+      'delivery_backup_notice_body':
+          'AbabilX deletes messages from its servers once your phones have them. If this phone is lost, reset or reinstalled, your chats come back only from a backup. The backup is saved on this phone, so to survive a lost phone choose a folder that syncs to your cloud, or copy the file somewhere safe.',
+      'delivery_backup_off_warning':
+          'Backup is off. If this phone is lost or reset, your chats are gone for good.',
+      'local_backup_switch_hint_delivery':
+          'Twice a day, when you open the app, your chats are saved on this phone. They come back by themselves when you sign in again, and survive a reinstall.',
+      'local_backup_off_body_delivery':
+          'AbabilX keeps no copy of your chats. Without a backup, a lost or reset phone, or a reinstall, means your chats are gone.',
+      'backup_recent_title_delivery': 'Your chats live on your phone',
+      'backup_recent_body_delivery':
+          'Messages travel through our servers end-to-end encrypted and are deleted there as soon as your phones have them. A phone that is offline still gets its messages for up to 30 days. Your history is kept only on your phone and in its local backup.',
+      'backup_recovery_footnote_delivery':
+          'Your recovery code opens messages still waiting on the server when you sign in on another device. Older history comes back only from a local backup.',
+      'settings_backup_sub_delivery': 'Local backup and recovery code',
+      'private_chat_on_delivery': 'On — no typing, ticks or online status',
+      'private_chat_point_server_delivery':
+          'Like every chat, messages are deleted from our server once your phones have them.',
+      'private_chat_off_body_delivery':
+          'Typing, ticks, online status and ringing are shared again. Messages already sent stay private.',
+      'storage_note_downloadable':
+          'The messages stay — media can be downloaded again.',
+      'storage_note_downloadable_delivery':
+          'The messages stay. Media AbabilX has already deleted from its servers cannot be downloaded again, so keep it in a backup first.',
       'local_backup_title': 'Local backup',
       'local_backup_row_hint': 'A copy of your chats, kept on this phone',
       'local_backup_switch_hint':
@@ -239,7 +264,7 @@ class AppTranslations {
       'local_backup_nothing':
           'Nothing is selected, so no backup can be made. Turn on at least one.',
       'local_backup_protected_note':
-          'Private chats, view-once photos and media the sender did not allow saving are never backed up.',
+          'View-once photos and media the sender did not allow saving are never backed up. In a private chat only the text is.',
       'local_backup_restore': 'Restore from a backup',
       'local_backup_restore_hint': 'Bring back chats from a backup file',
       'local_backup_security_note':
@@ -1546,6 +1571,31 @@ class AppTranslations {
       'settings_backup': 'ব্যাকআপ',
       'settings_backup_sub': '১২০ দিন ক্লাউড ইতিহাস ও রিকভারি কোড',
       'local_backup_section': 'এই ফোনে',
+      // Delivery-only chat (server 0173): the server keeps no lasting copy.
+      'delivery_backup_notice_title': 'এই ব্যাকআপই আপনার একমাত্র কপি',
+      'delivery_backup_notice_body':
+          'আপনার ফোনে পৌঁছানোর পর AbabilX তার সার্ভার থেকে বার্তা মুছে ফেলে। এই ফোন হারালে, রিসেট বা আবার ইনস্টল করলে আপনার চ্যাট শুধু ব্যাকআপ থেকেই ফিরে আসবে। ব্যাকআপ এই ফোনেই থাকে, তাই ফোন হারানোর কথা ভেবে এমন একটি ফোল্ডার বেছে নিন যা আপনার ক্লাউডে সিঙ্ক হয়, অথবা ফাইলটি নিরাপদ কোথাও কপি করে রাখুন।',
+      'delivery_backup_off_warning':
+          'ব্যাকআপ বন্ধ। এই ফোন হারালে বা রিসেট হলে আপনার চ্যাট চিরতরে হারিয়ে যাবে।',
+      'local_backup_switch_hint_delivery':
+          'দিনে দুবার, অ্যাপ খুললে, আপনার চ্যাট এই ফোনে সেভ হয়। আবার সাইন ইন করলে নিজে থেকেই ফিরে আসে, আর অ্যাপ আবার ইনস্টল করলেও থেকে যায়।',
+      'local_backup_off_body_delivery':
+          'AbabilX আপনার চ্যাটের কোনো কপি রাখে না। ব্যাকআপ ছাড়া ফোন হারালে, রিসেট হলে বা অ্যাপ আবার ইনস্টল করলে আপনার চ্যাট হারিয়ে যাবে।',
+      'backup_recent_title_delivery': 'আপনার চ্যাট থাকে আপনার ফোনে',
+      'backup_recent_body_delivery':
+          'বার্তা এন্ড-টু-এন্ড এনক্রিপ্টেড হয়ে আমাদের সার্ভার দিয়ে যায়, আর আপনার ফোনে পৌঁছানো মাত্র সেখান থেকে মুছে যায়। ফোন অফলাইন থাকলেও ৩০ দিন পর্যন্ত তার বার্তা পায়। আপনার পুরোনো ইতিহাস থাকে শুধু আপনার ফোনে আর তার লোকাল ব্যাকআপে।',
+      'backup_recovery_footnote_delivery':
+          'অন্য ডিভাইসে সাইন ইন করলে রিকভারি কোড দিয়ে সার্ভারে অপেক্ষমাণ বার্তাগুলো খোলা যায়। এর আগের ইতিহাস শুধু লোকাল ব্যাকআপ থেকেই ফিরে আসে।',
+      'settings_backup_sub_delivery': 'লোকাল ব্যাকআপ ও রিকভারি কোড',
+      'private_chat_on_delivery': 'চালু — টাইপিং, টিক বা অনলাইন অবস্থা দেখা যায় না',
+      'private_chat_point_server_delivery':
+          'অন্য সব চ্যাটের মতোই, আপনার ফোনে পৌঁছানোর পর বার্তা আমাদের সার্ভার থেকে মুছে যায়।',
+      'private_chat_off_body_delivery':
+          'টাইপিং, টিক, অনলাইন অবস্থা আর রিং আবার দেখা যাবে। আগে পাঠানো বার্তা প্রাইভেটই থাকবে।',
+      'storage_note_downloadable':
+          'বার্তা থেকে যাবে — মিডিয়া আবার ডাউনলোড করা যাবে।',
+      'storage_note_downloadable_delivery':
+          'বার্তা থেকে যাবে। AbabilX যে মিডিয়া সার্ভার থেকে মুছে ফেলেছে তা আর ডাউনলোড করা যাবে না, তাই আগে ব্যাকআপে রাখুন।',
       'local_backup_title': 'লোকাল ব্যাকআপ',
       'local_backup_row_hint': 'আপনার চ্যাটের একটি কপি, এই ফোনেই রাখা',
       'local_backup_switch_hint':
@@ -1573,7 +1623,7 @@ class AppTranslations {
       'local_backup_nothing':
           'কিছুই বাছাই করা নেই, তাই ব্যাকআপ হবে না। অন্তত একটি চালু করুন।',
       'local_backup_protected_note':
-          'প্রাইভেট চ্যাট, একবার দেখার ছবি আর যে মিডিয়া প্রেরক সেভ করতে দেননি — এগুলো কখনো ব্যাকআপ হয় না।',
+          'একবার দেখার ছবি আর যে মিডিয়া প্রেরক সেভ করতে দেননি — এগুলো কখনো ব্যাকআপ হয় না। প্রাইভেট চ্যাটে শুধু লেখা ব্যাকআপ হয়।',
       'local_backup_restore': 'ব্যাকআপ থেকে ফিরিয়ে আনুন',
       'local_backup_restore_hint': 'ব্যাকআপ ফাইল থেকে চ্যাট ফিরিয়ে আনুন',
       'local_backup_security_note':

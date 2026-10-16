@@ -104,8 +104,7 @@ class _ChatRow extends ConsumerWidget {
       context,
       title: 'Delete media from $title?',
       body:
-          'Frees about ${formatBytes(row.bytes)}. The messages stay — media '
-          'can be downloaded again.',
+          'Frees about ${formatBytes(row.bytes)}. ${storageDeleteNote(context, ref)}',
     );
     if (!confirmed) return;
     final freed = await ref

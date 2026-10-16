@@ -6,6 +6,7 @@ ChatMessage _msg(
   int minute, {
   int threadCount = 0,
   bool privateChat = false,
+  bool held = false,
   bool pending = false,
   int revision = 0,
   ChatDeliverySummary? delivery,
@@ -16,6 +17,7 @@ ChatMessage _msg(
   body: 'b',
   threadCount: threadCount,
   privateChat: privateChat,
+  held: held,
   revision: revision,
   delivery: delivery,
   sendStatus: pending ? MessageSendStatus.sending : MessageSendStatus.sent,
@@ -51,6 +53,13 @@ void main() {
 
     test('nothing to stand on is an honest empty list', () {
       expect(olderAnchors([_msg(1, privateChat: true)]), isEmpty);
+    });
+
+    test('never a held message either (delivery-only, server 0173)', () {
+      // It may already be gone to the phones, and its id answers "empty".
+      final anchors = olderAnchors([_msg(1, held: true), _msg(2)]);
+      expect(anchors.map((m) => m.id), ['m2']);
+      expect(olderAnchors([_msg(1, held: true)]), isEmpty);
     });
   });
 

@@ -75,7 +75,11 @@ mixin _ChatMutateMixin
       );
     }
     try {
-      if (existing != null && existing.privateChat) {
+      // A held message is edited by op, sealed like its body. A plaintext
+      // one (a converted group not yet keyed) cannot be: an edit op carries
+      // ciphertext only, so it keeps the ordinary endpoint while the server
+      // still has the row.
+      if (existing != null && existing.heldForPhones && existing.isEncrypted) {
         await (this as _ChatPrivateOpsMixin).editPrivately(existing, body);
         return;
       }
@@ -222,7 +226,7 @@ mixin _ChatMutateMixin
     final convId = state.activeConversationId;
     if (convId == null) return null;
     final found = _findEditableMessage(convId, messageId);
-    return (found?.privateChat ?? false) ? found : null;
+    return (found?.heldForPhones ?? false) ? found : null;
   }
 
   Future<void> _forgetMessage(String messageId) async {

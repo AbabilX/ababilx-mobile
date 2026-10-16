@@ -16,6 +16,7 @@ import '../../../shared/media/media_quality.dart';
 import '../settings-hub/settings_row.dart';
 import '../settings-hub/settings_section_header.dart';
 import 'auto_download_dialog.dart';
+import '../../profile/delivery/delivery_only.dart';
 import 'background_connection_row.dart';
 
 /// Settings → Data and storage. Signal's screen of the same name.
@@ -60,7 +61,12 @@ class DataStorageScreen extends ConsumerWidget {
             SettingsRow(
               icon: HugeIcons.strokeRoundedCloudUpload,
               title: t('settings_backup'),
-              subtitle: t('settings_backup_sub'),
+              subtitle: t(
+                deliveryKey(
+                  'settings_backup_sub',
+                  deliveryOnly: ref.watch(deliveryOnlyProvider),
+                ),
+              ),
               onTap: () => context.push('/settings/chat-backup'),
             ),
             SettingsRow(

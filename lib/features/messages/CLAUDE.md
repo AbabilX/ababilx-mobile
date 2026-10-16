@@ -1681,6 +1681,12 @@ the peer is private toward), but no mobile provider listened.
 
 # Private chat: this phone IS the only copy (2026-09-26, server 0160)
 
+**Since 2026-10-16 (server 0173, `DELIVERY_ONLY.md`) everything below applies
+to every `held` message, not only private chat**: custody, the pull, ops.
+`ChatMessage.heldForPhones` is the storage test; `privateChat` is only the
+quiet rules (no save / share / forward). A forward the server answers 404
+for a held message re-sends from this phone (`chat-forward/forward_resend.dart`).
+
 Full contract in the root `CLAUDE.md`. What bites on this side:
 
 ```
@@ -1705,8 +1711,8 @@ arrives (WS / page / pull)  ->  messageStore.saveAll  ->  takePrivateMedia
   deletion marker and the feed merge never drops rows the server stopped
   returning. Do not add a "reconcile with server" step for private DMs.
 - **Edit / react / delete go through `_ChatPrivateOpsMixin`** whenever the row
-  carries `private_chat` — `_privateTarget` in `chat_provider_mutate.dart`
-  routes them. The ordinary endpoints 404 on a purged row. Received ops apply
+  is `heldForPhones` (`held` or `private_chat`) — `_privateTarget` in
+  `chat_provider_mutate.dart` routes them. The ordinary endpoints 404 on a purged row. Received ops apply
   in `applyPrivateOp`, which checks authorship itself (`privateOpEffect`): the
   server cannot once the target is gone.
 - **Quotes**: `meta.private_quote_id` is resolved in `MessageVault._decryptQuote`

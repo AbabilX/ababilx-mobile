@@ -1,10 +1,11 @@
 part of 'chat_provider.dart';
 
-/// Private chat (server 0160), this phone's half of the custody deal: the
-/// server keeps a private message only until every phone of both people says
-/// it holds it — the author's too, or a message written in a browser or on
-/// the other phone would reach no phone of its author — so this phone must
-/// take each one — written to disk, media downloaded — and then say so. It also pulls the ones it was never shown
+/// Private chat (server 0160) and delivery-only (0173), this phone's half of
+/// the custody deal: the server keeps a held message only until every phone
+/// of every member says it holds it — the author's too, or a message written
+/// in a browser or on the other phone would reach no phone of its author — so
+/// this phone must take each one — written to disk, media downloaded — and
+/// then say so. It also pulls the ones it was never shown
 /// (chat not opened, socket down) and applies ops to its own copies.
 ///
 /// The order is the whole point and must not be reordered:
@@ -24,14 +25,14 @@ mixin _ChatPrivateMixin
   Future<void>? _privatePull;
   final Set<String> _custodyInFlight = {};
 
-  /// Confirms custody of every private message in [messages], this
+  /// Confirms custody of every held message in [messages], this
   /// account's own included, once each is on disk with its media. Anything
   /// else is skipped, so any page or event can be handed over as it is, and
   /// twice is harmless.
   Future<void> takePrivateCustody(List<ChatMessage> messages) async {
     final owed = [
       for (final m in messages)
-        if (m.privateChat &&
+        if (m.heldForPhones &&
             !m.isPending &&
             m.id.isNotEmpty &&
             _custodyInFlight.add(m.id))
@@ -98,9 +99,23 @@ mixin _ChatPrivateMixin
   /// A pulled message joins its feed (or the buffer an unopened feed reads
   /// first) and, when it is the newest, the list preview. Unread is not
   /// touched: the server already counted it (`private_unread`).
+  ///
+  /// A thread reply (delivery-only groups and DMs have threads, server 0173)
+  /// joins its thread, exactly as one arriving over the socket does — the
+  /// main timeline lists top-level messages only, and appending it there
+  /// would draw the reply in the conversation out of its thread.
   void _showPulled(ChatMessage message) {
     final conv = state.conversationById(message.conversationId);
-    appendFeedMessage(message.conversationId, message);
+    final rootId = message.parentId;
+    if (rootId != null) {
+      appendFeedMessage(message.conversationId, message, threadRootId: rootId);
+      final actions = this as _ChatActionsMixin;
+      if (actions.appendThreadReply(rootId, message)) {
+        actions.incrementThreadCount(message.conversationId, rootId);
+      }
+    } else {
+      appendFeedMessage(message.conversationId, message);
+    }
     final shown = DateTime.tryParse(conv?.lastMessageAt ?? '');
     final at = DateTime.tryParse(message.createdAt);
     if (conv == null || shown == null || (at != null && !at.isBefore(shown))) {

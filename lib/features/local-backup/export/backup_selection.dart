@@ -36,20 +36,17 @@ bool choiceAllows(BackupChoices choices, BackupMediaKind kind) =>
 /// chat's messages never reach the exporter at all.
 bool conversationIncluded(ChatConversation? conversation, BackupChoices c) {
   if (conversation == null) return c.groups;
-  // Private chat keeps a message on the phones only, by both people's
-  // agreement. The whole chat stays out while it is on.
-  if (conversation.privateChat) return false;
+  // A private chat is in (2026-10-16): under delivery-only the phone holds
+  // the only lasting copy of every chat, and leaving private ones out meant
+  // they vanished with the phone. Its no-save media still stays out
+  // (attachmentBytesIncluded).
   // Note to Self is a DM (`is_self`), and is a DM here.
   return conversation.isDm ? c.directMessages : c.groups;
 }
 
 /// Whether this stored row belongs in a backup at all.
 bool messageIncluded(ChatMessage m) =>
-    m.id.isNotEmpty &&
-    !m.isPending &&
-    !m.isDeleted &&
-    !m.contentPurged &&
-    !m.privateChat;
+    m.id.isNotEmpty && !m.isPending && !m.isDeleted && !m.contentPurged;
 
 /// Whether an attachment's BYTES go in. Its row stays with the message either
 /// way, so a skipped kind still shows as a file that can be fetched again

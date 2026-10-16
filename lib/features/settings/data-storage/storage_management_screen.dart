@@ -13,6 +13,7 @@ import 'storage_age_dialog.dart';
 import 'storage_chat_list.dart';
 import 'storage_confirm.dart';
 import 'storage_usage_bar.dart';
+import '../../profile/delivery/delivery_only.dart';
 
 /// Settings → Data and storage → Manage storage.
 ///
@@ -61,7 +62,9 @@ class StorageManagementScreen extends ConsumerWidget {
               SettingsRow(
                 icon: HugeIcons.strokeRoundedDelete02,
                 title: 'Delete all downloaded media',
-                subtitle: 'Messages stay — media can be downloaded again',
+                subtitle: ref.watch(deliveryOnlyProvider)
+                    ? 'Messages stay — media the server let go is gone for good'
+                    : 'Messages stay — media can be downloaded again',
                 destructive: true,
                 onTap: data.isEmpty
                     ? null
@@ -80,9 +83,7 @@ class StorageManagementScreen extends ConsumerWidget {
     final confirmed = await confirmStorageDelete(
       context,
       title: age.label.replaceFirst('Older', 'Delete media older'),
-      body:
-          'Your messages are not deleted — anything still on the server can be '
-          'downloaded again.',
+      body: storageDeleteNote(context, ref),
     );
     if (!confirmed) return;
     final freed = await ref
@@ -102,8 +103,7 @@ class StorageManagementScreen extends ConsumerWidget {
       context,
       title: 'Delete all downloaded media?',
       body:
-          'Frees about ${formatBytes(bytes)}. Your messages are not deleted — '
-          'anything still on the server can be downloaded again.',
+          'Frees about ${formatBytes(bytes)}. ${storageDeleteNote(context, ref)}',
     );
     if (!confirmed) return;
     final freed = await ref.read(storageManagerProvider).releaseAll();

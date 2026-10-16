@@ -122,8 +122,7 @@ class _StorageReviewScreenState extends ConsumerState<StorageReviewScreen> {
       context,
       title: 'Delete ${_selected.length} files?',
       body:
-          'Frees about ${formatBytes(bytes)}. The messages stay — media can be '
-          'downloaded again.',
+          'Frees about ${formatBytes(bytes)}. ${storageDeleteNote(context, ref)}',
     );
     if (!confirmed) return;
     final freed = await ref.read(storageManagerProvider).release(_selected);

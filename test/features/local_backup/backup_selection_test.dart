@@ -135,18 +135,15 @@ void main() {
     },
   );
 
-  test(
-    'private chat stays out: the chat while on, and every private message',
-    () {
-      expect(
-        conversationIncluded(conv('dm', privateChat: true), defaults),
-        isFalse,
-      );
-      expect(messageIncluded(msg(privateChat: true)), isFalse);
-      expect(messageIncluded(msg()), isTrue);
-      expect(messageIncluded(msg(deletedAt: '2026-09-27T00:00:00Z')), isFalse);
-    },
-  );
+  test('private chat is backed up like any DM (delivery-only, 2026-10-16)', () {
+    expect(
+      conversationIncluded(conv('dm', privateChat: true), defaults),
+      isTrue,
+    );
+    expect(messageIncluded(msg(privateChat: true)), isTrue);
+    expect(messageIncluded(msg()), isTrue);
+    expect(messageIncluded(msg(deletedAt: '2026-09-27T00:00:00Z')), isFalse);
+  });
 
   test('choices survive a round trip and fill missing keys with defaults', () {
     final c = defaults.copyWith(videos: true, groups: false);

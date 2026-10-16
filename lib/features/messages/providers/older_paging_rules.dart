@@ -14,7 +14,10 @@ const olderAheadRows = 100;
 /// The server takes a message id as its cursor and answers an EMPTY page for
 /// an id it no longer has — the same answer as "nothing older". So the id
 /// has to be one the server still holds: never an unsent bubble, and never a
-/// private-chat message, which the server lets go once the phones have it.
+/// held message (private chat, or any message under delivery-only, server
+/// 0173), which the server lets go once the phones have it. With none left,
+/// the conversation reads the store for the session — which, under
+/// delivery-only, is where its history lives.
 /// A message without thread replies comes first: the server lists by last
 /// activity, and only for those is that the moment they were written.
 List<ChatMessage> olderAnchors(
@@ -25,7 +28,7 @@ List<ChatMessage> olderAnchors(
   final plain = <ChatMessage>[];
   final threaded = <ChatMessage>[];
   for (final message in window.take(scan)) {
-    if (message.isPending || message.privateChat || message.id.isEmpty) {
+    if (message.isPending || message.heldForPhones || message.id.isEmpty) {
       continue;
     }
     (message.threadCount > 0 ? threaded : plain).add(message);

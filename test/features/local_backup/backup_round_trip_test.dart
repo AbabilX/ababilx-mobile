@@ -101,7 +101,8 @@ void main() {
       },
     ).run(writer);
     await writer.close();
-    expect(stats.messages, 5);
+    // Private chats are in since delivery-only (2026-10-16).
+    expect(stats.messages, 7);
     expect(stats.files, 1);
     expect(stats.unreadable, 1);
 
@@ -121,7 +122,7 @@ void main() {
       tempDir: Directory('${dir.path}/restore-tmp'),
     ).run(file, key);
 
-    expect(saved.map((m) => m.id), ['g1', 'd1', 'd2', 'd3', 'd4']);
+    expect(saved.map((m) => m.id), ['g1', 'd1', 'd2', 'd3', 'd4', 'p1', 'x1']);
     // The sealed row comes back as the server serves it, never as plaintext.
     final d1 = saved.firstWhere((m) => m.id == 'd1');
     expect(d1.isEncrypted, isTrue);
@@ -132,7 +133,7 @@ void main() {
     expect(adopted['https://cdn/photo.jpg'], [1, 2, 3]);
     // The row keeps its attachments, so a skipped video can still be fetched.
     expect(saved.firstWhere((m) => m.id == 'd3').attachments, hasLength(1));
-    expect(restored.messages, 5);
+    expect(restored.messages, 7);
     expect(restored.files, 1);
   });
 
