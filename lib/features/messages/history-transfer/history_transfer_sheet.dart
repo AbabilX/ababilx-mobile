@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'history_transfer_approval.dart';
 import 'history_transfer_exporter.dart';
 import 'history_transfer_provider.dart';
+import 'history_window.dart';
 
 /// The one screen the phone shows for a transfer: what is being approved
 /// before it starts, and how far it has got after.
@@ -24,8 +25,9 @@ class HistoryTransferSheet {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${view.label} is asking for the messages and files on this '
-              'phone, including ones the server no longer keeps.',
+              '${view.label} is asking for the last '
+              '${historyWindowLabel(view.historyDays)} of messages and files '
+              'on this phone. Older ones stay here.',
             ),
             const SizedBox(height: 14),
             Text(
@@ -46,7 +48,7 @@ class HistoryTransferSheet {
             const SizedBox(height: 14),
             Text(
               'Your phone keeps everything it has. Sending can take a while '
-              'on a large history and continues in the background.',
+              'on a large history; keep AbabilX open while it sends.',
               style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
             ),
           ],

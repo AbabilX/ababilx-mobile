@@ -191,7 +191,7 @@ class AppTranslations {
       // Delivery-only chat (server 0173): the server keeps no lasting copy.
       'delivery_backup_notice_title': 'This backup is your only copy',
       'delivery_backup_notice_body':
-          'AbabilX deletes messages from its servers once your phones have them. If this phone is lost, reset or reinstalled, your chats come back only from a backup. The backup is saved on this phone, so to survive a lost phone choose a folder that syncs to your cloud, or copy the file somewhere safe.',
+          'AbabilX deletes messages from its servers once your phones and linked computers have them. If this phone is lost, reset or reinstalled, your chats come back only from a backup. The backup is saved on this phone, so to survive a lost phone choose a folder that syncs to your cloud, or copy the file somewhere safe.',
       'delivery_backup_off_warning':
           'Backup is off. If this phone is lost or reset, your chats are gone for good.',
       'storage_note_downloadable':
@@ -303,7 +303,7 @@ class AppTranslations {
       'backup_section_recent': 'While you chat',
       'backup_recent_title': 'Your chats live on your phone',
       'backup_recent_body':
-          'Messages travel through our servers end-to-end encrypted and are deleted there as soon as your phones have them. A phone that is offline still gets its messages for up to 30 days. Your history is kept only on your phone and in its local backup.',
+          "Messages travel through our servers end-to-end encrypted and are deleted there as soon as your phones and linked computers have them. A device that is offline still gets its messages for up to 30 days. Your history is kept only on your devices and in this phone's local backup.",
       'recovery_restore_failed':
           'Some messages could not be restored. Tap to retry.',
       'onboarding_title': 'Your people.\nAlways close.',
@@ -684,9 +684,9 @@ class AppTranslations {
       'qr_login_one_scan_body':
           'This device will be signed in and get your messages. Approve only if it is you.',
       'qr_login_code_hint': 'Check this matches the code on that screen:',
-      'qr_login_send_history': 'Also send older messages',
+      'qr_login_send_history': 'Also send the last 3 months',
       'qr_login_send_history_body':
-          'History this phone keeps beyond the server, files included.',
+          'Messages and files from the last 3 months on this phone. Older ones stay here.',
       'app_language': 'Application Language',
       'devices_title': 'Linked devices',
       'devices_refresh': 'Refresh',
@@ -720,6 +720,15 @@ class AppTranslations {
       'devices_signed_out': 'Device signed out',
       'devices_signed_out_others': 'Other devices signed out',
       'devices_sign_out_failed': 'Could not sign that device out.',
+      'devices_keeps_chats': 'Keeps chats',
+      'devices_linked_note':
+          'Up to 5 computers and browsers keep your chats, even while this '
+          'phone is off. One not used for 14 days is signed out, and all of '
+          'them are if this phone is not used for 14 days.',
+      'linked_limit_title': 'Too many linked devices',
+      'linked_limit_body':
+          'Up to {limit} computers and browsers can keep your chats. Sign one '
+          'out to link this one.',
       'sign_out': 'Sign Out',
       'confirm_signout': 'Are you sure you want to sign out?',
       'cancel': 'Cancel',
@@ -786,7 +795,7 @@ class AppTranslations {
       'private_chat_off': 'Off',
       'private_chat_sheet_title': 'Turn on private chat?',
       'private_chat_point_server':
-          'Like every chat, messages are deleted from our server once your phones have them.',
+          'Like every chat, messages are deleted from our server once your devices have them.',
       'private_chat_point_status':
           'Neither of you sees the other online, typing, ticks or ringing.',
       'private_chat_point_screens': 'Screenshots are blocked on both phones.',
@@ -794,7 +803,7 @@ class AppTranslations {
       'private_chat_point_media':
           'Photos and files stay inside the app — no saving, sharing or forwarding.',
       'private_chat_point_phone':
-          'Messages live only on your phones. Keep local backup on.',
+          'Messages live only on your phones and linked computers. Keep local backup on.',
       'private_chat_turn_on': 'Turn on',
       'private_chat_off_title': 'Turn off private chat?',
       'private_chat_off_body':
@@ -1463,7 +1472,7 @@ class AppTranslations {
       // Delivery-only chat (server 0173): the server keeps no lasting copy.
       'delivery_backup_notice_title': 'এই ব্যাকআপই আপনার একমাত্র কপি',
       'delivery_backup_notice_body':
-          'আপনার ফোনে পৌঁছানোর পর AbabilX তার সার্ভার থেকে বার্তা মুছে ফেলে। এই ফোন হারালে, রিসেট বা আবার ইনস্টল করলে আপনার চ্যাট শুধু ব্যাকআপ থেকেই ফিরে আসবে। ব্যাকআপ এই ফোনেই থাকে, তাই ফোন হারানোর কথা ভেবে এমন একটি ফোল্ডার বেছে নিন যা আপনার ক্লাউডে সিঙ্ক হয়, অথবা ফাইলটি নিরাপদ কোথাও কপি করে রাখুন।',
+          'আপনার ফোন ও যুক্ত কম্পিউটারে পৌঁছানোর পর AbabilX তার সার্ভার থেকে বার্তা মুছে ফেলে। এই ফোন হারালে, রিসেট বা আবার ইনস্টল করলে আপনার চ্যাট শুধু ব্যাকআপ থেকেই ফিরে আসবে। ব্যাকআপ এই ফোনেই থাকে, তাই ফোন হারানোর কথা ভেবে এমন একটি ফোল্ডার বেছে নিন যা আপনার ক্লাউডে সিঙ্ক হয়, অথবা ফাইলটি নিরাপদ কোথাও কপি করে রাখুন।',
       'delivery_backup_off_warning':
           'ব্যাকআপ বন্ধ। এই ফোন হারালে বা রিসেট হলে আপনার চ্যাট চিরতরে হারিয়ে যাবে।',
       'storage_note_downloadable':
@@ -1574,7 +1583,7 @@ class AppTranslations {
       'backup_section_recent': 'চ্যাট করার সময়',
       'backup_recent_title': 'আপনার চ্যাট থাকে আপনার ফোনে',
       'backup_recent_body':
-          'বার্তা এন্ড-টু-এন্ড এনক্রিপ্টেড হয়ে আমাদের সার্ভার দিয়ে যায়, আর আপনার ফোনে পৌঁছানো মাত্র সেখান থেকে মুছে যায়। ফোন অফলাইন থাকলেও ৩০ দিন পর্যন্ত তার বার্তা পায়। আপনার পুরোনো ইতিহাস থাকে শুধু আপনার ফোনে আর তার লোকাল ব্যাকআপে।',
+          'বার্তা এন্ড-টু-এন্ড এনক্রিপ্টেড হয়ে আমাদের সার্ভার দিয়ে যায়, আর আপনার ফোন ও যুক্ত কম্পিউটারে পৌঁছানো মাত্র সেখান থেকে মুছে যায়। ডিভাইস অফলাইন থাকলেও ৩০ দিন পর্যন্ত তার বার্তা পায়। আপনার পুরোনো ইতিহাস থাকে শুধু আপনার ডিভাইসে আর এই ফোনের লোকাল ব্যাকআপে।',
       'recovery_restore_failed':
           'কিছু মেসেজ ফিরিয়ে আনা যায়নি। আবার চেষ্টা করতে চাপুন।',
       'onboarding_title': 'আপন মানুষ।\nসবসময় কাছে।',
@@ -1946,9 +1955,9 @@ class AppTranslations {
       'qr_login_one_scan_body':
           'এই ডিভাইসে সাইন ইন হবে এবং আপনার মেসেজ পাবে। শুধু আপনি হলে অনুমোদন করুন।',
       'qr_login_code_hint': 'ওই স্ক্রিনের কোডের সাথে মিলিয়ে নিন:',
-      'qr_login_send_history': 'পুরোনো মেসেজও পাঠান',
+      'qr_login_send_history': 'শেষ ৩ মাসের মেসেজও পাঠান',
       'qr_login_send_history_body':
-          'সার্ভারে না থাকা যে হিস্টোরি এই ফোনে আছে, ফাইলসহ।',
+          'এই ফোনে থাকা শেষ ৩ মাসের মেসেজ ও ফাইল। এর আগেরগুলো এই ফোনেই থাকবে।',
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',
       'devices_title': 'যুক্ত ডিভাইস',
       'devices_refresh': 'রিফ্রেশ',
@@ -1981,6 +1990,15 @@ class AppTranslations {
       'devices_signed_out': 'ডিভাইস সাইন আউট হয়েছে',
       'devices_signed_out_others': 'অন্য ডিভাইসগুলো সাইন আউট হয়েছে',
       'devices_sign_out_failed': 'ডিভাইসটি সাইন আউট করা যায়নি।',
+      'devices_keeps_chats': 'চ্যাট রাখে',
+      'devices_linked_note':
+          'ফোন বন্ধ থাকলেও সর্বোচ্চ ৫টি কম্পিউটার ও ব্রাউজারে আপনার চ্যাট থাকে। '
+          'কোনোটি ১৪ দিন ব্যবহার না হলে সেটি সাইন আউট হয়ে যায়, আর এই ফোন ১৪ দিন '
+          'ব্যবহার না হলে সবগুলোই সাইন আউট হয়।',
+      'linked_limit_title': 'যুক্ত ডিভাইস সীমা পূর্ণ',
+      'linked_limit_body':
+          'সর্বোচ্চ {limit}টি কম্পিউটার ও ব্রাউজারে আপনার চ্যাট রাখা যায়। এটি যুক্ত '
+          'করতে একটি সাইন আউট করুন।',
       'sign_out': 'প্রস্থান করুন',
       'confirm_signout': 'আপনি কি নিশ্চিত যে আপনি প্রস্থান করতে চান?',
       'cancel': 'বাতিল',
@@ -2048,7 +2066,7 @@ class AppTranslations {
       'private_chat_off': 'বন্ধ',
       'private_chat_sheet_title': 'প্রাইভেট চ্যাট চালু করবেন?',
       'private_chat_point_server':
-          'অন্য সব চ্যাটের মতোই, আপনার ফোনে পৌঁছানোর পর বার্তা আমাদের সার্ভার থেকে মুছে যায়।',
+          'অন্য সব চ্যাটের মতোই, আপনার ডিভাইসে পৌঁছানোর পর বার্তা আমাদের সার্ভার থেকে মুছে যায়।',
       'private_chat_point_status':
           'আপনারা কেউ কারও অনলাইন, টাইপিং, টিক বা রিং হওয়া দেখবেন না।',
       'private_chat_point_screens': 'দুই ফোনেই স্ক্রিনশট বন্ধ থাকে।',
@@ -2056,7 +2074,7 @@ class AppTranslations {
       'private_chat_point_media':
           'ছবি ও ফাইল অ্যাপের ভেতরেই থাকে — সেভ, শেয়ার বা ফরোয়ার্ড করা যায় না।',
       'private_chat_point_phone':
-          'বার্তা শুধু আপনাদের ফোনে থাকে। লোকাল ব্যাকআপ চালু রাখুন।',
+          'বার্তা শুধু আপনাদের ফোন ও যুক্ত কম্পিউটারে থাকে। লোকাল ব্যাকআপ চালু রাখুন।',
       'private_chat_turn_on': 'চালু করুন',
       'private_chat_off_title': 'প্রাইভেট চ্যাট বন্ধ করবেন?',
       'private_chat_off_body':

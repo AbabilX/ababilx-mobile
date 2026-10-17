@@ -50,6 +50,10 @@ ChatMessageAttachment _file(String url, String name, int size) =>
       createdAt: '2023-01-01T00:00:00.000Z',
     );
 
+/// The fixtures are dated January 2023; the three-month window is measured
+/// from here so they all fall inside it.
+DateTime _fixtureNow() => DateTime.utc(2023, 2, 1);
+
 void main() {
   late ChatLocalDb db;
   late Directory temp;
@@ -111,6 +115,7 @@ void main() {
         openStore: (_) => storeFor('a'),
         pollEvery: Duration.zero,
         destinationInventoryWait: Duration.zero,
+        clock: _fixtureNow,
       ).run(transferId: id, transferKey: key);
 
       expect(outcome.completed, isTrue);
@@ -141,6 +146,71 @@ void main() {
     },
   );
 
+  test('only the last three months are sent, with their files', () async {
+    final messages = ChatMessageStore(db);
+    final blobs = AttachmentBlobStore(db);
+    const old = 'https://cdn.test/chat/c1/old.jpg';
+    await heldPhoto(blobs, old, 3000);
+    await messages.saveAll([
+      _msg(1, files: [_file(old, 'old.jpg', 3000)]),
+      _msg(2),
+      _msg(3),
+    ]);
+    final relay = FakeRelay(id, key);
+
+    final outcome = await HistoryTransferV2Exporter(
+      api: relay,
+      messages: messages,
+      blobs: blobs,
+      conversations: const [],
+      openStore: (_) => storeFor('window'),
+      pollEvery: Duration.zero,
+      destinationInventoryWait: Duration.zero,
+      // 90 days before this is 2023-01-02T00:00Z: m1 is a day too old.
+      clock: () => DateTime.utc(2023, 4, 2),
+    ).run(transferId: id, transferKey: key);
+
+    expect(outcome.completed, isTrue);
+    expect(outcome.messages, 2);
+    expect(outcome.filesSent, 0);
+    final text = utf8.decode(gzip.decode(await relay.stream(0, 'messages')));
+    expect(text, isNot(contains('"id":"m1"')));
+    expect(text, contains('"id":"m2"'));
+    expect(text, contains('"id":"m3"'));
+  });
+
+  test('a reply in the window brings its older thread root along', () async {
+    final messages = ChatMessageStore(db);
+    final reply = ChatMessage(
+      id: 'm3',
+      conversationId: 'c1',
+      userId: 'u1',
+      userName: 'Alice',
+      body: 'reply',
+      createdAt: '2023-01-03T00:00:00.000Z',
+      parentId: 'm1',
+    );
+    await messages.saveAll([_msg(1), _msg(2), reply]);
+    final relay = FakeRelay(id, key);
+
+    final outcome = await HistoryTransferV2Exporter(
+      api: relay,
+      messages: messages,
+      blobs: AttachmentBlobStore(db),
+      conversations: const [],
+      openStore: (_) => storeFor('roots'),
+      pollEvery: Duration.zero,
+      destinationInventoryWait: Duration.zero,
+      // The window starts 2023-01-02: m1 is older, but m3 replies to it.
+      clock: () => DateTime.utc(2023, 4, 2),
+    ).run(transferId: id, transferKey: key);
+
+    expect(outcome.messages, 3);
+    final text = utf8.decode(gzip.decode(await relay.stream(0, 'messages')));
+    expect(text, contains('"id":"m1"'));
+    expect(text.trim().split('\n').last, contains('"messages":3'));
+  });
+
   test('a resumed run never re-uploads a settled chunk', () async {
     final messages = ChatMessageStore(db);
     await messages.saveAll([_msg(1), _msg(2)]);
@@ -153,6 +223,7 @@ void main() {
       openStore: (_) => storeFor('b'),
       pollEvery: Duration.zero,
       destinationInventoryWait: Duration.zero,
+      clock: _fixtureNow,
     ).run(transferId: id, transferKey: key);
     expect(relay.puts.contains('0/0'), isFalse);
   });
@@ -177,6 +248,7 @@ void main() {
         openStore: (_) => storeFor('c'),
         pollEvery: Duration.zero,
         destinationInventoryWait: Duration.zero,
+        clock: _fixtureNow,
       ).run(transferId: id, transferKey: key);
       expect(outcome.completed, isTrue);
       expect(outcome.filesOmitted, 1);
@@ -220,6 +292,7 @@ void main() {
         openStore: (_) => storeFor(directory),
         pollEvery: Duration.zero,
         destinationInventoryWait: Duration.zero,
+        clock: _fixtureNow,
       );
 
       await expectLater(

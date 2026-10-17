@@ -94,6 +94,10 @@ ChatMessageAttachment _file(String url, String name, int size) =>
       createdAt: '2026-09-10T00:00:00.000Z',
     );
 
+/// The fixtures are dated September 2026; the three-month window is
+/// measured from here so they all fall inside it.
+DateTime _fixtureNow() => DateTime.utc(2026, 9, 20);
+
 void main() {
   late ChatLocalDb db;
   late Directory temp;
@@ -168,6 +172,7 @@ void main() {
           store: store,
           blobs: blobs,
           openSnapshot: (id) async => snapshotIn('t1'),
+          clock: _fixtureNow,
         ).run(
           transferId: 't1',
           transferKey: key,
@@ -225,6 +230,7 @@ void main() {
       store: store,
       blobs: AttachmentBlobStore(db),
       openSnapshot: (id) async => snapshotIn('t2'),
+      clock: _fixtureNow,
     ).run(
       transferId: 't2',
       transferKey: Uint8List(32),
@@ -252,6 +258,7 @@ void main() {
           blobs: AttachmentBlobStore(db),
           isCancelled: () => true,
           openSnapshot: (id) async => snapshotIn('t3'),
+          clock: _fixtureNow,
         ).run(
           transferId: 't3',
           transferKey: Uint8List(32),

@@ -157,7 +157,8 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
                     ];
                   },
                 ),
-                const SizedBox(height: 24),
+                DevicesNote(_t('devices_linked_note')),
+                const SizedBox(height: 12),
                 DevicesEncryptionNote(text: _t('devices_e2ee_note')),
               ],
             ),

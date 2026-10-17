@@ -11,6 +11,7 @@ import 'history_transfer_payload.dart';
 import 'history_transfer_provider.dart';
 import 'history_transfer_sheet.dart';
 import 'history_transfer_verification.dart';
+import 'history_window.dart';
 import 'v2/v2_crypto.dart';
 import 'v2/v2_exporter.dart';
 
@@ -59,6 +60,7 @@ class HistoryTransferApproval {
         deviceName: request.deviceName,
         client: request.client,
         code: await historyTransferVerificationCode(scanned.destinationJwk),
+        historyDays: request.historyDays,
       );
       if (scanned.version >= 2 && view.version >= 2) {
         validateHistoryTransferV2Capabilities(
@@ -112,6 +114,7 @@ class HistoryTransferApproval {
                 transferId: id,
                 transferKey: key,
                 deviceId: view.deviceName,
+                historyDays: view.historyDays,
               ),
       );
       if (context.mounted) {
@@ -163,10 +166,14 @@ class HistoryTransferRequestView {
     required this.deviceName,
     required this.client,
     required this.code,
+    this.historyDays = defaultHistoryWindowDays,
   });
 
   final String id;
   final int version;
+
+  /// How far back the export reaches, for the sheet's wording.
+  final int historyDays;
 
   final String deviceName;
   final String client;

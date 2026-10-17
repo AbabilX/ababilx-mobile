@@ -10,6 +10,7 @@ import 'history_transfer_manifest.dart';
 import 'history_transfer_snapshot.dart';
 import 'history_transfer_snapshot_builder.dart';
 import 'history_transfer_uploader.dart';
+import 'history_window.dart';
 
 /// The phone's side of a history transfer, in three phases.
 ///
@@ -32,6 +33,7 @@ class HistoryTransferExporter {
     this.onPhase,
     this.isCancelled,
     this.openSnapshot,
+    this.clock = DateTime.now,
   });
 
   final HistoryTransferApi api;
@@ -45,11 +47,15 @@ class HistoryTransferExporter {
   final Future<HistoryTransferSnapshot> Function(String transferId)?
   openSnapshot;
 
+  /// Where the history window ends; injected by tests.
+  final DateTime Function() clock;
+
   Future<HistoryTransferOutcome> run({
     required String transferId,
     required List<int> transferKey,
     required String deviceId,
     required List<ChatConversation> conversations,
+    int historyDays = defaultHistoryWindowDays,
   }) async {
     final snapshot = await (openSnapshot ?? HistoryTransferSnapshot.open)(
       transferId,
@@ -72,6 +78,7 @@ class HistoryTransferExporter {
             transferKey: transferKey,
             deviceId: deviceId,
             conversations: conversations,
+            sinceMs: historyWindowAfterMs(historyDays, clock()),
           );
     }
 

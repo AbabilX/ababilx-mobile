@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
+import 'linked_device_limit.dart';
 
 /// Approves or rejects a desktop/web QR sign-in handshake scanned by this
 /// phone. The scanned payload is `ababilx://desktop-login?t=<token>`; the
@@ -36,6 +37,8 @@ class QrLoginRepository {
 
   /// [identityEnvelope] is this phone's message identity sealed to the `k`
   /// the camera read (one-scan QR), so the new device needs no link code.
+  /// Throws [LinkedDeviceLimit] when the account already has its linked
+  /// devices (server 0174); nothing was approved then.
   Future<void> approve(
     String payload, {
     Map<String, dynamic>? identityEnvelope,
@@ -56,6 +59,8 @@ class QrLoginRepository {
       await _api.post(path, data: {'token': payload.trim(), ...extra});
     } on DioException catch (e) {
       if (_isExpired(e)) throw QrLoginExpired();
+      final limit = LinkedDeviceLimit.from(e);
+      if (limit != null) throw limit;
       rethrow;
     }
   }

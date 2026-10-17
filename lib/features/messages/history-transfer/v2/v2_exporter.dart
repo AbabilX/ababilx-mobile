@@ -3,6 +3,7 @@ import 'dart:math';
 import '../../../attachments/data/local/attachment_blob_store.dart';
 import '../../data/local/chat_message_store.dart';
 import '../../data/models/chat_models.dart';
+import '../history_window.dart';
 import 'v2_api.dart';
 import 'v2_batch_uploader.dart';
 import 'v2_conversations.dart';
@@ -43,6 +44,7 @@ class HistoryTransferV2Exporter {
     this.openStore = V2Store.open,
     this.pollEvery = const Duration(seconds: 3),
     this.destinationInventoryWait = const Duration(seconds: 60),
+    this.clock = DateTime.now,
   });
 
   final HistoryTransferV2Api api;
@@ -56,6 +58,9 @@ class HistoryTransferV2Exporter {
 
   /// How long planning waits for the browser's list of files it already has.
   final Duration destinationInventoryWait;
+
+  /// Where the history window ends; injected by tests.
+  final DateTime Function() clock;
 
   bool get _cancelled => isCancelled?.call() ?? false;
 
@@ -178,6 +183,9 @@ class HistoryTransferV2Exporter {
       transferId: transferId,
       transferKey: key,
       conversations: frames,
+      // Only the last three months go (user's call, 2026-10-18). Media
+      // follows the messages, so older files are not sent either.
+      sinceMs: historyWindowAfterMs(limits.historyDays, clock()),
       targetChunks: limits.targetChunks,
       onProgress: (n) => onProgress?.call(V2Phase.planning, 0, 0, n, 0),
     );
@@ -227,10 +235,17 @@ class HistoryTransferV2Exporter {
 }
 
 class V2ServerLimits {
-  const V2ServerLimits({required this.targetChunks, required this.maxBatches});
+  const V2ServerLimits({
+    required this.targetChunks,
+    required this.maxBatches,
+    this.historyDays = defaultHistoryWindowDays,
+  });
 
   final int targetChunks;
   final int maxBatches;
+
+  /// `history_window_days`: how many days back the export reaches.
+  final int historyDays;
 }
 
 /// Refuse an incompatible relay before the user approves it. The selected
@@ -274,7 +289,11 @@ V2ServerLimits validateHistoryTransferV2Capabilities(
       'This server does not support this history transfer format.',
     );
   }
-  return V2ServerLimits(targetChunks: targetChunks, maxBatches: batches);
+  return V2ServerLimits(
+    targetChunks: targetChunks,
+    maxBatches: batches,
+    historyDays: historyWindowDays(value['history_window_days']),
+  );
 }
 
 class V2Outcome {

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import 'history_transfer_envelope_codec.dart';
+import 'history_window.dart';
 
 /// The phone's half of `/api/messaging/history-transfers/*`.
 ///
@@ -159,6 +160,7 @@ class HistoryTransferRequest {
     required this.deviceName,
     required this.client,
     required this.version,
+    this.historyDays = defaultHistoryWindowDays,
   });
 
   final String id;
@@ -166,12 +168,16 @@ class HistoryTransferRequest {
   final String client;
   final int version;
 
+  /// `history_days`: how far back this phone sends (server 0174).
+  final int historyDays;
+
   factory HistoryTransferRequest.fromJson(Map<String, dynamic> json) =>
       HistoryTransferRequest(
         id: json['id'] as String? ?? '',
         deviceName: json['destination_device_name'] as String? ?? '',
         client: json['destination_client'] as String? ?? '',
         version: (json['transfer_version'] as num?)?.toInt() ?? 1,
+        historyDays: historyWindowDays(json['history_days']),
       );
 }
 

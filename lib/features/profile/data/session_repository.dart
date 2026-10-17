@@ -16,6 +16,7 @@ class UserSession {
     required this.createdAt,
     required this.lastSeenAt,
     required this.current,
+    this.linked = false,
   });
 
   final String id;
@@ -35,6 +36,10 @@ class UserSession {
   /// This app's own session. Never offered a plain revoke — only Sign Out.
   final bool current;
 
+  /// A web or desktop sign-in that keeps its own copy of the chats (server
+  /// 0174). Signing it out also unlinks it.
+  final bool linked;
+
   factory UserSession.fromJson(Map<String, dynamic> json) => UserSession(
     id: json['id'] as String? ?? '',
     client: json['client'] as String? ?? '',
@@ -44,6 +49,7 @@ class UserSession {
     createdAt: json['created_at'] as String? ?? '',
     lastSeenAt: json['last_seen_at'] as String? ?? '',
     current: json['current'] as bool? ?? false,
+    linked: json['linked'] as bool? ?? false,
   );
 
   UserSession withLabel(String next) => UserSession(
@@ -55,6 +61,7 @@ class UserSession {
     createdAt: createdAt,
     lastSeenAt: lastSeenAt,
     current: current,
+    linked: linked,
   );
 }
 

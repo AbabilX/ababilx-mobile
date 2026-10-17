@@ -18,6 +18,7 @@ import '../../messages/message_e2ee/device_link_approval.dart';
 import '../../messages/message_e2ee/message_vault.dart';
 import '../data/one_scan_payload.dart';
 import '../data/qr_login_repository.dart';
+import 'linked_limit_sheet.dart';
 import 'qr_login_confirm_dialog.dart';
 
 /// Scan a QR from another device and act on it.
@@ -125,12 +126,21 @@ class QrLoginFlow {
         await repo.deny(payload);
         return;
       }
-      await repo.approve(
-        payload,
-        identityEnvelope: linkJwk == null
-            ? null
-            : await vault.sealIdentityForDevice(linkJwk),
+      final envelope = linkJwk == null
+          ? null
+          : await vault.sealIdentityForDevice(linkJwk);
+      if (!context.mounted) return;
+      // Past the linked-device limit (server 0174) the user signs one out
+      // and the same code is approved again; backing out ends it.
+      final approved = await approveMakingRoom(
+        context,
+        ref,
+        () => repo.approve(payload, identityEnvelope: envelope),
       );
+      if (!approved) {
+        await repo.deny(payload).catchError((_) {});
+        return;
+      }
       if (context.mounted) _toast(context, ref, 'qr_login_done');
     } on QrLoginExpired {
       if (context.mounted) _toast(context, ref, 'qr_login_expired');

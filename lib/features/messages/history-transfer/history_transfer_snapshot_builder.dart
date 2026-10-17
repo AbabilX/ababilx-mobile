@@ -43,6 +43,7 @@ class HistoryTransferSnapshotBuilder {
     required List<int> transferKey,
     required String deviceId,
     required List<ChatConversation> conversations,
+    int? sinceMs,
   }) async {
     final gzip = GzipChunker();
     var index = 0;
@@ -77,7 +78,9 @@ class HistoryTransferSnapshotBuilder {
       writeFrame(ArchiveFrame.conversationFrame(conversation));
     }
 
-    int? afterMs;
+    // Only messages after [sinceMs] go (the three-month window,
+    // `history_window.dart`); older ones stay on this phone.
+    int? afterMs = sinceMs;
     String? afterId;
     while (true) {
       final page = await store.exportPage(

@@ -876,6 +876,13 @@ batch    create -> reserve (by size) / PUT / confirm -> pages -> finalize
   service; suspension pauses it and the next run resumes from the plan.
 - The approval echoes the scanned `k` string byte-for-byte (v1 re-encoded it).
 - Tests: `history_transfer_v2_{fixtures,crypto,export,media_plan}_test.dart`.
+- **Three months, not everything** (2026-10-18, server 0174): both v1 and
+  v2 start the export cursor at `historyWindowAfterMs(days)`
+  (`history_window.dart`); days come from the server (`history_window_days`
+  on capabilities for v2, `history_days` on info for v1), 90 when absent.
+  Files ride with their messages, so older media is not sent. v2 adds the
+  root of any exported thread reply even when the root is older
+  (`v2_thread_roots.dart`); v1 does not. `history_window_test.dart`.
 
 ## Traps
 

@@ -8,6 +8,7 @@ import 'history_transfer_api.dart';
 import 'history_transfer_exporter.dart';
 import 'history_transfer_local_conversations.dart';
 import 'history_transfer_state.dart';
+import 'history_window.dart';
 
 export 'history_transfer_state.dart';
 import 'v2/v2_api.dart';
@@ -37,6 +38,7 @@ class HistoryTransferNotifier extends Notifier<HistoryTransferState> {
     required String transferId,
     required List<int> transferKey,
     required String deviceId,
+    int historyDays = defaultHistoryWindowDays,
   }) async {
     _cancelled = false;
     state = HistoryTransferState(
@@ -57,6 +59,7 @@ class HistoryTransferNotifier extends Notifier<HistoryTransferState> {
             transferKey: transferKey,
             deviceId: deviceId,
             conversations: await _conversations(),
+            historyDays: historyDays,
           );
       state = state.copyWith(
         finished: outcome.completed,

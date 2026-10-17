@@ -68,6 +68,17 @@ class SessionTile extends ConsumerWidget {
               color: colors.primary,
             ),
           ],
+          if (session.linked) ...[
+            const SizedBox(width: 8),
+            _Chip(
+              text: AppTranslations.translate(
+                context,
+                ref,
+                'devices_keeps_chats',
+              ),
+              color: colors.tertiary,
+            ),
+          ],
         ],
       ),
       subtitle: Column(

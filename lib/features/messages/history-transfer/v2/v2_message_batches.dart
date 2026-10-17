@@ -10,10 +10,12 @@ import 'v2_conversations.dart';
 import 'v2_crypto.dart';
 import 'v2_plan.dart';
 import 'v2_store.dart';
+import 'v2_thread_roots.dart';
 
-/// Seals every confirmed message on this phone into v2 message batches on
-/// disk. No age cutoff: the phone is the archive, and anything older than the
-/// server's 120 days is exactly what the destination is missing.
+/// Seals the confirmed messages on this phone sent after [sinceMs] into v2
+/// message batches on disk. The exporter passes the start of the history
+/// window (`history_window.dart`, three months); older messages stay on the
+/// phone. Null sends everything.
 ///
 /// Each batch is one gzip member of NDJSON frames — header, a `conv` frame
 /// before the first message that names it, messages oldest first, `end` — so a
@@ -26,6 +28,7 @@ class V2MessageBatchBuilder {
     required this.transferId,
     required this.transferKey,
     required this.conversations,
+    this.sinceMs,
     this.targetChunks = 64,
     this.onProgress,
   });
@@ -38,6 +41,8 @@ class V2MessageBatchBuilder {
   final String transferId;
   final List<int> transferKey;
   final V2Conversations conversations;
+  /// Export cursor to start after (`historyWindowAfterMs`).
+  final int? sinceMs;
   final int targetChunks;
   final void Function(int messages)? onProgress;
 
@@ -48,10 +53,11 @@ class V2MessageBatchBuilder {
 
   late _OpenBatch _open;
   final List<V2PlannedBatch> _batches = [];
+  final V2ThreadRoots _roots = V2ThreadRoots();
 
   Future<List<V2PlannedBatch>> build() async {
     _start(0);
-    int? afterMs;
+    int? afterMs = sinceMs;
     String? afterId;
     while (true) {
       final page = await messages.exportPage(
@@ -76,6 +82,9 @@ class V2MessageBatchBuilder {
       afterMs = messageTimeMs(page.last);
       afterId = localMessageRowId(page.last);
       if (page.length < _readPage) break;
+    }
+    for (final root in await _roots.missing(messages)) {
+      _add(root);
     }
     await _close();
     return _batches;
@@ -103,6 +112,7 @@ class V2MessageBatchBuilder {
     _write({'t': 'msg', 'm': json});
     _open.messages++;
     messageCount++;
+    _roots.saw(message);
     for (final attachment in message.attachments) {
       if (attachment.fileUrl.isEmpty) continue;
       attachments.putIfAbsent(attachment.fileUrl, () => attachment);
