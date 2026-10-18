@@ -5,5 +5,5 @@
 /// `test/core/app_version_test.dart` fails if they drift, because the update
 /// check (`features/app-update/`) sends [appBuildNumber] to the server: a
 /// stale number here would tell every phone it is out of date, or never.
-const appVersionName = '5.5.0';
-const appBuildNumber = 42;
+const appVersionName = '5.5.1';
+const appBuildNumber = 43;
