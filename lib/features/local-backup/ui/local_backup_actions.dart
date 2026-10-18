@@ -44,7 +44,20 @@ class LocalBackupActions {
     );
   }
 
-  Future<void> backUpNow() async => _toast(await _notifier.backUpNow());
+  /// The automatic folder keeps every week nothing touched, so the toast says
+  /// what this run added rather than implying it copied everything again.
+  Future<void> backUpNow() async {
+    final error = await _notifier.backUpNow();
+    final sealed = _notifier.lastSealed;
+    if (error != null || sealed == null) return _toast(error);
+    if (!context.mounted) return;
+    showAppToast(
+      context,
+      sealed == 0
+          ? _t('local_backup_done_unchanged')
+          : _t('local_backup_done_new').replaceAll('{n}', '$sealed'),
+    );
+  }
 
   Future<void> changeFolder() async {
     final choice = await pickBackupFolderChoice(context, ref);

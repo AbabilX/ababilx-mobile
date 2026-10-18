@@ -11,6 +11,7 @@ import androidx.core.view.WindowCompat
 import com.ababilx.app.backup.LocalBackupChannel
 import com.ababilx.app.callaudio.CallAudioSession
 import com.ababilx.app.localshare.LocalShareFolderChannel
+import com.ababilx.app.historysync.HistorySyncChannel
 import com.ababilx.app.localshare.LocalShareNetChannel
 import com.ababilx.app.mediasend.MediaSendChannel
 import com.ababilx.call_ringer.CallRinger
@@ -126,6 +127,7 @@ class MainActivity : FlutterActivity() {
 
     /** Local Share: Wi-Fi locks + the transfer service (features/local_share). */
     private val localShareNet by lazy { LocalShareNetChannel(applicationContext) }
+    private val historySync by lazy { HistorySyncChannel(applicationContext) }
 
     /** Local Share: sending a whole folder. */
     private val localShareFolder by lazy { LocalShareFolderChannel(this) }
@@ -182,6 +184,7 @@ class MainActivity : FlutterActivity() {
         deviceAuth.attach(flutterEngine)
         localBackup.attach(flutterEngine)
         localShareNet.attach(flutterEngine)
+        historySync.attach(flutterEngine)
         localShareFolder.attach(flutterEngine)
     }
 

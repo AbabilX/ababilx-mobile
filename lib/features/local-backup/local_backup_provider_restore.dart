@@ -56,6 +56,7 @@ mixin LocalBackupRestoring on Notifier<LocalBackupState> {
     state = state.copyWith(
       phase: LocalBackupPhase.restoring,
       progress: 0,
+      progressTotal: 0,
       bytesRead: 0,
       bytesTotal: source.bytes,
     );

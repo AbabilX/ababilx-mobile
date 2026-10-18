@@ -68,17 +68,24 @@ extension MessageVaultAttachments on MessageVault {
     required String currentUserId,
     required ChatMessageAttachment attachment,
     String? sealerId,
+    bool localOnly = false,
   }) async {
     if (!attachment.needsKey || !isUnlocked || currentUserId.isEmpty) {
       return attachment;
     }
     final sealer = sealerId ?? attachment.uploadedBy;
     try {
-      final key = await _readKey(
-        conversationId,
-        currentUserId,
-        attachment.encKeyVersion,
-      );
+      final key = localOnly
+          ? await _localReadKey(
+              conversationId,
+              currentUserId,
+              attachment.encKeyVersion,
+            )
+          : await _readKey(
+              conversationId,
+              currentUserId,
+              attachment.encKeyVersion,
+            );
       if (key == null || key.version != attachment.encKeyVersion) {
         return attachment;
       }
@@ -96,8 +103,9 @@ extension MessageVaultAttachments on MessageVault {
   /// [message] with every encrypted attachment opened that can be.
   Future<ChatMessage> _openAttachments(
     ChatMessage message,
-    String currentUserId,
-  ) async {
+    String currentUserId, {
+    bool localOnly = false,
+  }) async {
     if (!message.attachments.any((a) => a.needsKey)) return message;
     final opened = await Future.wait(
       message.attachments.map(
@@ -106,6 +114,7 @@ extension MessageVaultAttachments on MessageVault {
           currentUserId: currentUserId,
           attachment: a,
           sealerId: message.userId.isEmpty ? null : message.userId,
+          localOnly: localOnly,
         ),
       ),
     );

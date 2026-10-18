@@ -160,9 +160,10 @@ class QrLoginFlow {
           loginToken: signInTokenOf(payload),
           historyKeyParam: keys.historyKeyParam!,
           version: keys.historyVersion,
+          live: keys.historyLive,
         ).then((sentTo) {
           if (sentTo != null) {
-            showAppToastIn(overlay, 'Sending your history to $sentTo.');
+            showAppToastIn(overlay, 'Sending your chats to $sentTo.');
           }
         }),
       );

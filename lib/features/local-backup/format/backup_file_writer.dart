@@ -57,8 +57,13 @@ class BackupFileWriter {
   int get framesWritten => _frameCount;
   int get filesWritten => _fileCount;
 
-  Future<void> addFrame(Map<String, dynamic> frame) async {
-    _frames.add(utf8.encode('${jsonEncode(frame)}\n'));
+  Future<void> addFrame(Map<String, dynamic> frame) =>
+      addFrameJson(jsonEncode(frame));
+
+  /// [addFrame] for a frame the caller already encoded as one JSON object
+  /// (the backup's message rows, whose JSON it hashed anyway).
+  Future<void> addFrameJson(String json) async {
+    _frames.add(utf8.encode('$json\n'));
     _frameCount++;
     if (_frames.length >= frameRecordBytes) await _flushFrames();
   }

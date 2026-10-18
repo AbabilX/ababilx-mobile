@@ -7,6 +7,7 @@ import '../../core/network/ws_client.dart';
 import '../calls/group/providers/group_call_provider.dart';
 import '../calls/providers/voice_call_provider.dart';
 import '../ghost/providers/ghost_provider.dart';
+import '../messages/history-transfer/live/live_session.dart';
 import 'socket_hold.dart';
 
 /// Lets the realtime socket go once the app has been off screen for
@@ -78,6 +79,7 @@ class _WsBackgroundReleaseState extends ConsumerState<WsBackgroundRelease>
     voice: ref.read(voiceCallProvider).phase,
     group: ref.read(groupCallProvider).phase,
     ghostInSession: ref.read(ghostProvider).inSession,
+    historyLiveOpen: ref.read(historyLiveProvider).open,
   );
 
   @override

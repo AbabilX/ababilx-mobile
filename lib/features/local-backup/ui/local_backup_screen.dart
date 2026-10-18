@@ -86,12 +86,15 @@ class LocalBackupScreen extends ConsumerWidget {
                         ? Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const LinearProgressIndicator(),
+                              LinearProgressIndicator(
+                                value: state.progressTotal > 0
+                                    ? (state.progress / state.progressTotal)
+                                          .clamp(0.0, 1.0)
+                                    : null,
+                              ),
                               const SizedBox(height: 8),
                               Text(
-                                t(
-                                  'local_backup_running',
-                                ).replaceAll('{n}', '${state.progress}'),
+                                _runningLabel(t, state),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: muted,
                                 ),
@@ -133,3 +136,13 @@ class LocalBackupScreen extends ConsumerWidget {
     );
   }
 }
+
+/// "Saving changes… 120 of 480 messages" once the changed weeks are known,
+/// "Backing up… 2 400 messages" while the backup is still counting.
+String _runningLabel(String Function(String) t, LocalBackupState state) =>
+    state.progressTotal > 0
+    // A message arriving mid-run can be sealed beyond the count taken first.
+    ? t('local_backup_sealing')
+          .replaceAll('{n}', '${state.progress.clamp(0, state.progressTotal)}')
+          .replaceAll('{total}', '${state.progressTotal}')
+    : t('local_backup_running').replaceAll('{n}', '${state.progress}');

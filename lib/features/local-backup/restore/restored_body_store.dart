@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/backup_key_store.dart';
 import '../format/backup_crypto.dart';
@@ -23,7 +25,35 @@ class RestoredBodyStore {
 
   final BackupKeyStore _keys;
   static const _channel = MethodChannel('com.ababilx.app/chat_store');
+  static const _presentKey = 'restored_bodies_present_v1:';
   final _sealKeys = <String, SecretKey>{};
+  final _present = <String, bool>{};
+
+  /// Whether a restore ever wrote text for [userId] on this phone. The vault
+  /// reads restored text before asking the server only when it did, so an
+  /// account that never restored pays nothing for it. Remembered in memory;
+  /// set again by the first restored body found, which covers restores made
+  /// before this flag existed.
+  Future<bool> present(String userId) async {
+    if (!Platform.isAndroid || userId.isEmpty) return false;
+    final known = _present[userId];
+    if (known != null) return known;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return _present[userId] = prefs.getBool('$_presentKey$userId') ?? false;
+    } catch (_) {
+      return _present[userId] = false;
+    }
+  }
+
+  Future<void> _markPresent(String userId) async {
+    if (_present[userId] == true) return;
+    _present[userId] = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('$_presentKey$userId', true);
+    } catch (_) {}
+  }
 
   Future<SecretKey?> _key(String userId) async {
     final cached = _sealKeys[userId];
@@ -47,6 +77,7 @@ class RestoredBodyStore {
       rows[entry.key] = base64.encode(sealed);
     }
     await _channel.invokeMethod<void>('putRestored', {'rows': rows});
+    await _markPresent(userId);
   }
 
   Future<String?> lookup(String messageId, String userId) async {
@@ -63,6 +94,7 @@ class RestoredBodyStore {
         BackupCrypto.restoredAad(messageId),
         base64.decode(sealed),
       );
+      unawaited(_markPresent(userId));
       return utf8.decode(plain);
     } catch (_) {
       return null;

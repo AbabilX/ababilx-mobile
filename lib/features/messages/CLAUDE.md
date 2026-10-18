@@ -1689,6 +1689,22 @@ the peer is private toward), but no mobile provider listened.
   The server's minute-tick re-broadcast (`RefreshConnectedPresence`) fills it
   within 60 s.
 
+# Restored text before the network (2026-10-18)
+
+Report: "after restore, every DM shows a loading spinner once". A restored row
+is sealed under a key the phone no longer holds (start fresh), so each first
+open asked the server for that key version — answered "none", remembered one
+minute — before falling back to `restored_bodies`. Now `_decryptBody` reads in
+the order **memory/disk key → restored text → network**
+(`_restoredBeforeNetwork`, `_localReadKey`), only while the account has any
+restored text (`RestoredBodyStore.present`, a per-account flag set on write and
+on the first restored body found) and never for an edited row (the edit may be
+newer than the backup). The network is still asked in the background, so a
+reinstall that kept the identity opens files with the real key next time; a
+restored row's files are opened from local keys only. The restore runner also
+calls `adoptRestoredBackup()` after the last week lands: feeds fetched before
+the restore were never re-read from disk that session.
+
 # Private chat: this phone IS the only copy (2026-09-26, server 0160)
 
 **Since 2026-10-16 (server 0173, `DELIVERY_ONLY.md`) everything below applies
@@ -2164,4 +2180,22 @@ never   system / call / feed rows, files with no text, pending sends
   a group before this phone opened any sealed message in it.
 - Tests: `group_roster_pins_test.dart`, `key_change_hold_test.dart`,
   `unsealed_message_test.dart` (harness `roster_harness.dart`).
+  **Not device-tested.**
+# Live history: this phone answers the linked computer (2026-10-18, server 0175)
+
+`history-transfer/live/`. A one-scan QR with `hl=1` + a server listing
+`live_versions: [1]` → approve with `live: true`; nothing is uploaded.
+`HistoryLiveNotifier` (booted by `HistoryLiveSync`) listens for
+`history.wake`, opens a WebRTC data channel (this side is the only
+offerer), sends `hello` (cached sidebar + deletion markers) and answers
+`get` (store `page`, newest first, inside the 90-day window) and `file`
+(local plaintext copy, 256 KiB slices). Contract:
+`ababilx-server/docs/history-live-protocol.md`.
+
+- Link keys live in secure storage (`live_links.dart`), per account.
+- One send queue: a page goes out between two slices of a file.
+- `HistorySyncService` (Kotlin, dataSync FGS) runs while the channel is
+  open; the socket is held in background (`socketHeldInBackground`
+  `historyLiveOpen`); closed after 10 min with no request, 20 s silence.
+- Wire + seal pinned against web: `test/features/history_transfer_live/`.
   **Not device-tested.**

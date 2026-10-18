@@ -27,6 +27,10 @@ class LocalBackupNotifier extends Notifier<LocalBackupState>
 
   String _userId = '';
 
+  /// Messages the last successful run sealed, when it could keep the rest
+  /// (automatic folder); null after a whole-file backup or a failure.
+  int? lastSealed;
+
   @override
   LocalBackupState build() {
     ref.onDispose(() => cancelled = true);
@@ -119,16 +123,24 @@ class LocalBackupNotifier extends Notifier<LocalBackupState>
   Future<String?> backUpNow() async {
     if (state.busy) return LocalBackupFailure.busy.messageKey;
     cancelled = false;
-    state = state.copyWith(phase: LocalBackupPhase.backingUp, progress: 0);
+    lastSealed = null;
+    state = state.copyWith(
+      phase: LocalBackupPhase.backingUp,
+      progress: 0,
+      progressTotal: 0,
+    );
     try {
-      final (entry, _) = await _runner.backUp(
+      final (entry, stats) = await _runner.backUp(
         userId: await _user(),
         settings: state.settings,
-        onProgress: (n) {
-          if (!cancelled) state = state.copyWith(progress: n);
+        onProgress: (done, total) {
+          if (!cancelled) {
+            state = state.copyWith(progress: done, progressTotal: total);
+          }
         },
         shouldContinue: () => !cancelled,
       );
+      if (!state.settings.hasFolder) lastSealed = stats.sealed;
       await _save(
         state.settings.copyWith(
           lastBackupMs: DateTime.now().millisecondsSinceEpoch,

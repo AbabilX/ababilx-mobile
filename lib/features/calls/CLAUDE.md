@@ -4,6 +4,54 @@
 > editing anything under `ringtone/`, `native/`, `audio/`, or
 > `packages/call_ringer/`.
 
+## A ring that opens the app opens `/call` first (2026-10-18)
+
+Report: "after receiving a call the call screen comes 2-3 s late when the app
+was not open". The killed-app path waited, in series, for the chat list's
+first frame, the socket handshake (plus a token refresh on an old JWT) and a
+`GET` of the call — all before the ringing screen.
+
+```
+main()      LaunchRing.read()  CallKit activeCalls(), beside the other preloads
+build()     voiceCallProvider starts in incomingRinging (or connecting for
+            an Answer pressed on the notification) from the record's `extra`
+redirect    /launch -> /call when shouldOpenCallScreen (and past the
+            message-key gate: a call needs no message key)
+bootstrap   socket connect NOT awaited first; ring timer + _confirmRing (GET)
+            after the screen is up; a launch Answer runs acceptIncoming once
+```
+
+- `voiceCallFromNativeRing` (`native/native_ring_call.dart`, tested) is the
+  only reader of the record: DM rings only, not expired, caller present.
+  `VoiceCallEndedGuard` is checked too. The server stays the authority:
+  `_confirmRing` ends a ring the server calls gone or not ringable, and swaps
+  in the server's row otherwise. A request that says nothing keeps ringing.
+- `_recoverNativeCall` (resume with a CallKit record) rings from the record
+  the same way; only a record without a usable `extra` waits for the lookup.
+- `WsClient.connect()` now resolves when the attempt already in flight ends,
+  so `await connect()` before preparing the engine (accept) still means "the
+  socket is up" even though bootstrap no longer awaits it first.
+- `_launchAcceptId` is the one Accept allowed past the "already connecting"
+  guard (state starts at `connecting` so no ringing frame is drawn).
+
+## Only CallStoreSync leaves `/call` (2026-10-18)
+
+Report: "called someone, declined, then a white screen" (debug: `'element.
+_lifecycleState == _ElementLifecycle.inactive': is not true`). Reproduced in a
+widget test against go_router 14.8.1: re-entering the shell (`/messages`)
+while a route that replaced it with `go` is still animating in builds the
+shell's `_CustomNavigator` (`GlobalObjectKey`) twice — Duplicate GlobalKey,
+then the inactive-lifecycle assertion, and the tree never recovers.
+
+`VoiceCallScreen` used to leave on its own timer (650 / 900 ms) beside
+CallStoreSync's (700 ms): two owners, two navigations for one ending, to two
+different places (`/messages` and the chat). The screen timer is gone;
+CallStoreSync leaves once per call id (ended 650 ms, failed 900 ms) to
+`callExitRoute`. **Never add a second automatic exit from `/call`, and never
+`go` back into the shell inside another route's push animation.** In debug and
+profile builds `[RouteTrail]` (core/router/route_trail.dart) prints the last
+route changes beside any framework error — read it before guessing.
+
 ## One ringing screen, and a busy phone never rings — Signal's model (2026-10-02)
 
 Reports: "still ringing after I answered and started talking", "two caller

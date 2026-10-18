@@ -13,6 +13,7 @@ bool socketHeldInBackground({
   required VoiceCallPhase voice,
   required GroupCallPhase group,
   required bool ghostInSession,
+  bool historyLiveOpen = false,
 }) {
   final voiceLive = switch (voice) {
     VoiceCallPhase.idle ||
@@ -26,5 +27,7 @@ bool socketHeldInBackground({
     GroupCallPhase.connected => true,
     _ => false,
   };
-  return voiceLive || groupLive || ghostInSession;
+  // A linked computer reading this phone's chats: its WebRTC restarts and
+  // wakes travel over the socket, and a dataSync service keeps us running.
+  return voiceLive || groupLive || ghostInSession || historyLiveOpen;
 }

@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 
 import '../format/backup_file_writer.dart';
 import 'account_backup_dir.dart';
+import 'backup_folder_view.dart';
 
 /// Where an attachment's bytes go when they are not written into the backup
 /// file itself.
@@ -39,6 +40,8 @@ class BackupMediaStore implements BackupMediaSink {
     required this.userId,
     required int freeBytes,
     this.reserveBytes = defaultReserveBytes,
+    this.installTag = '',
+    this.folderView,
   }) : _free = freeBytes;
 
   /// Free space a run leaves alone. A backup that fills the phone stops the
@@ -49,6 +52,13 @@ class BackupMediaStore implements BackupMediaSink {
   final List<int> accountKey;
   final String userId;
   final int reserveBytes;
+
+  /// See [BackupFolderView]: whose files this install may count as its own.
+  final String installTag;
+
+  /// Given by tests; otherwise listed from [dir] on first use.
+  final BackupFolderView? folderView;
+  BackupFolderView? _view;
 
   int _free;
   final _wanted = <String>{};
@@ -67,22 +77,34 @@ class BackupMediaStore implements BackupMediaSink {
     return '${hash.substring(0, 40)}${AccountBackupDir.mediaExtension}';
   }
 
+  /// Read once per run: one listing instead of two calls per attachment.
+  Future<BackupFolderView> _folder() async => _view ??=
+      folderView ?? await BackupFolderView.read(dir, installTag: installTag);
+
   @override
   Future<bool> holds(String fileUrl) async {
-    final name = nameFor(fileUrl);
-    _wanted.add(name);
-    return _whole(File('${dir.path}/$name'));
+    final base = nameFor(fileUrl);
+    final held = (await _folder()).held(base);
+    // Not held, nothing to keep: a stranger's file is not ours to name.
+    if (held != null) _wanted.add(held);
+    return held != null;
   }
-
-  /// An empty file is a claim a run never filled (see [put]), not a copy.
-  static Future<bool> _whole(File file) async =>
-      await file.exists() && await file.length() > 0;
 
   @override
   Future<bool> put(Map<String, dynamic> frame, File source) async {
     final url = frame['u'];
     if (url is! String || url.isEmpty) return false;
-    final name = nameFor(url);
+    final base = nameFor(url);
+    final folder = await _folder();
+    final held = folder.held(base);
+    if (held != null) {
+      _wanted.add(held);
+      return true;
+    }
+    // A name a stranger's file holds (an earlier install) gets this
+    // install's alternative; both taken is a file this run cannot store.
+    final name = await folder.free(base);
+    if (name == null) return false;
     _wanted.add(name);
     final target = File('${dir.path}/$name');
     final partial = File('${target.path}.partial');
@@ -94,11 +116,9 @@ class BackupMediaStore implements BackupMediaSink {
         return false;
       }
       await dir.create(recursive: true);
-      if (await _whole(target)) return true;
       if (await target.exists()) await target.delete();
-      // Claim the name before sealing a byte. After a reinstall the old copy
-      // is still here but hidden from this install, and the name is taken:
-      // this fails at once instead of after a whole video was written.
+      // Claim the name before sealing a byte, so a name taken after the
+      // listing fails at once instead of after a whole video was written.
       await target.create(exclusive: true);
       claimed = true;
       final writer = await BackupFileWriter.create(
@@ -114,12 +134,12 @@ class BackupMediaStore implements BackupMediaSink {
       }
       await writer.close();
       await partial.rename(target.path);
+      folder.wrote(name, await target.length());
       _free -= size;
       _written++;
       return true;
     } catch (_) {
-      // A name taken by a copy this install cannot see lands here too; that
-      // copy is still on the phone and a restore from the folder reads it.
+      // Tried again next run: nothing here is counted as stored.
       try {
         if (await partial.exists()) await partial.delete();
         if (claimed && await target.exists() && await target.length() == 0) {

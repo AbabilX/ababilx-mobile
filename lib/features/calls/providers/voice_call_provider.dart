@@ -27,6 +27,8 @@ import '../incoming_call_ringtone.dart';
 import '../native/android_call_ui.dart';
 import '../native/android_group_call_ui.dart';
 import '../native/incoming_call_admission.dart';
+import '../native/launch_ring.dart';
+import '../native/native_ring_call.dart';
 import '../native/native_call_events.dart';
 import '../native/answered_elsewhere.dart';
 import '../native/call_answered_guard.dart';
@@ -97,6 +99,14 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   /// The call this device is answering whose accept the server has not
   /// confirmed yet. Hanging up in that window declines rather than ends.
   String? _answeringCallId;
+
+  /// The ring that opened the app (see [LaunchRing]), seeded by [build] and
+  /// picked up by [bootstrap].
+  LaunchRingRecord? _launchRing;
+
+  /// An Answer pressed before the app ran: state starts at `connecting` so no
+  /// ringing frame is drawn, and [acceptIncoming] must still run for it once.
+  String? _launchAcceptId;
   final Set<String> _finishedCallIds = {};
   final Set<String> _remoteRingingCallIds = {};
   final CallKitEndedSuppress _suppressCallKitEnded = CallKitEndedSuppress();
@@ -219,6 +229,27 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       final speaker = devices.active == CallAudioOutput.speaker;
       if (speaker != state.speaker) state = state.copyWith(speaker: speaker);
     });
+    final launch = LaunchRing.take();
+    if (launch != null) {
+      _launchRing = launch;
+      if (launch.accepted) {
+        _launchAcceptId = launch.call.id;
+        // Hanging up before the accept reaches the server declines.
+        _answeringCallId = launch.call.id;
+      }
+      voiceCallLog(
+        'launch.ring',
+        callId: launch.call.id,
+        reason: launch.accepted ? 'accepted' : 'ringing',
+      );
+      return VoiceCallState(
+        phase: launch.accepted
+            ? VoiceCallPhase.connecting
+            : VoiceCallPhase.incomingRinging,
+        call: launch.call,
+        currentUserId: userId,
+      );
+    }
     return VoiceCallState(currentUserId: userId);
   }
 
@@ -233,14 +264,117 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _foregroundPushSub = FirebaseMessaging.onMessage.listen(
       _handleForegroundCallPush,
     );
-    await _ws.connect();
+    // The socket is not waited for before the ring is looked at. On a cold
+    // start its handshake — plus the token refresh an hours-old JWT needs —
+    // sat between the CallKit record and the ringing screen. Its replayed
+    // `call.incoming` finds the ring already in state and stops there.
+    final connecting = _ws.connect();
     unawaited(prewarmCallPermissions());
     unawaited(_ensureIdentity());
-    // Not `_recoverNativeCall` alone: the socket connected above replays
-    // `call.incoming` for a call still ringing on the server, so by now state
-    // may already hold it as ringing — and recovery skips an active call. The
-    // sync adopts an Accept CallKit recorded before this engine existed.
-    await syncFromNativeIncoming();
+    final launch = _launchRing;
+    _launchRing = null;
+    if (launch != null) {
+      await _resumeLaunchRing(launch);
+    } else {
+      // Not `_recoverNativeCall` alone: the socket may already have replayed
+      // the ring into state, and recovery skips an active call. The sync
+      // adopts an Accept CallKit recorded before this engine existed.
+      await syncFromNativeIncoming();
+    }
+    await connecting;
+  }
+
+  /// Picks up the ring [build] started in. The screen is already up; this
+  /// starts what a ring owns (its timer, or the answer) and asks the server.
+  Future<void> _resumeLaunchRing(LaunchRingRecord launch) async {
+    final call = launch.call;
+    if (state.call?.id != call.id) return;
+    if (launch.accepted) {
+      // The plugin's own UI teardown after Accept arrives as ENDED.
+      _suppressCallKitEnded.arm(call.id, source: 'launch.accepted');
+      await acceptIncoming(call.id);
+      return;
+    }
+    if (state.phase != VoiceCallPhase.incomingRinging) return;
+    _startRingTimer(call);
+    // The CallKit notification is still up; this screen is the ring now.
+    if (flutterOwnsRingingUi) await ensureNativeIncomingUi();
+    unawaited(_confirmRing(call.id, source: 'launch'));
+  }
+
+  /// Rings [call] from its CallKit record at once, then asks the server.
+  Future<void> _ringFromNative(
+    VoiceCall call, {
+    required bool accepted,
+    required String source,
+  }) async {
+    _claimStateFor(call.id, source: source);
+    _write(
+      VoiceCallState(
+        phase: VoiceCallPhase.incomingRinging,
+        call: call,
+        currentUserId: state.currentUserId,
+      ),
+      source,
+    );
+    if (accepted) {
+      _suppressCallKitEnded.arm(call.id, source: '$source.accepted');
+      // The accept itself is the server check: a call that is over answers
+      // it with nothing to control, and the screen ends quietly.
+      await acceptIncoming(call.id);
+      return;
+    }
+    _startRingTimer(call);
+    unawaited(_confirmRing(call.id, source: source));
+  }
+
+  /// The server's word on a ring drawn from the CallKit record alone: a call
+  /// that is over takes the screen down, a live one replaces the record's
+  /// copy. A request that says nothing about the call keeps it ringing.
+  Future<void> _confirmRing(String callId, {required String source}) async {
+    bool ringing() =>
+        state.call?.id == callId &&
+        state.phase == VoiceCallPhase.incomingRinging;
+    final VoiceCallSession session;
+    try {
+      session = await _repository.get(callId);
+    } catch (error) {
+      if (!ringing()) return;
+      final failure = classifyCallLookupFailure(error);
+      voiceCallLog(
+        '$source.confirm_failed',
+        callId: callId,
+        phase: _phaseName,
+        reason: failure.name,
+      );
+      switch (failure) {
+        case CallLookupFailure.gone:
+          _rememberFinished(callId);
+          await _finishLocal(VoiceCallPhase.ended, reason: '$source.gone');
+        case CallLookupFailure.rejected:
+          await _finishLocal(VoiceCallPhase.ended, reason: '$source.rejected');
+        case CallLookupFailure.transient:
+        case CallLookupFailure.conflict:
+        case CallLookupFailure.malformed:
+          _lookupRetry.schedule(
+            callId,
+            () => unawaited(_confirmRing(callId, source: source)),
+            limit: 3,
+          );
+      }
+      return;
+    }
+    _lookupRetry.settle(callId);
+    if (!ringing()) return;
+    if (!isVoiceCallRingable(session.call)) {
+      _rememberFinished(callId);
+      await _finishLocal(
+        VoiceCallPhase.ended,
+        reason: '$source.status_${session.call.status}',
+      );
+      return;
+    }
+    state = state.copyWith(call: session.call, iceServers: session.iceServers);
   }
 
   /// The profile's first load on a fresh install can fail, and nothing retries
@@ -396,8 +530,16 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       return;
     }
     // Duplicate Accept while already connecting must not dismiss CallKit.
-    if (state.phase == VoiceCallPhase.connecting ||
-        state.phase == VoiceCallPhase.connected) {
+    // The one exception is the Answer that opened the app: state started at
+    // `connecting` for it so no ringing frame was drawn, and it still has to
+    // reach the server once.
+    final launchAccept =
+        _launchAcceptId != null &&
+        _launchAcceptId == (callId ?? state.call?.id);
+    if (launchAccept) _launchAcceptId = null;
+    if (!launchAccept &&
+        (state.phase == VoiceCallPhase.connecting ||
+            state.phase == VoiceCallPhase.connected)) {
       if (callId == null || state.call?.id == callId) {
         voiceCallLog(
           'accept.skip',
@@ -1905,8 +2047,26 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         _traceStale('recover', native.id, reason: 'engine_live');
         return;
       }
-      if (_wasFinished(native.id)) {
+      if (_wasFinished(native.id) ||
+          await VoiceCallEndedGuard.wasEnded(native.id)) {
         await _endNative(native.id, source: 'recover.finished');
+        return;
+      }
+      // The record carries everything the ringing screen draws, so it rings
+      // now and the server is asked after (`_confirmRing`). Only a record too
+      // old to say so waits for the lookup below.
+      final fromRecord = voiceCallFromNativeRing(
+        native.extra,
+        id: native.id,
+        currentUserId: state.currentUserId,
+      );
+      if (fromRecord != null) {
+        if (state.active) return;
+        await _ringFromNative(
+          fromRecord,
+          accepted: native.isAccepted,
+          source: 'recover',
+        );
         return;
       }
       VoiceCallSession session;

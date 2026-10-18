@@ -98,12 +98,17 @@ extension MessageVaultDecrypt on MessageVault {
   Future<ChatMessage> decryptMessage(
     ChatMessage message,
     String currentUserId,
-  ) async => _openAttachments(
-    await _decryptBody(message, currentUserId),
-    currentUserId,
-  );
+  ) async {
+    final (opened, restored) = await _decryptBody(message, currentUserId);
+    // A restored row's files are sealed under the same key its text was, and
+    // no key on this phone opened that: they are opened from what is held
+    // here only. The server is still asked, in the background (below).
+    return _openAttachments(opened, currentUserId, localOnly: restored);
+  }
 
-  Future<ChatMessage> _decryptBody(
+  /// The message with its text, and whether that text came from a local
+  /// backup rather than a key.
+  Future<(ChatMessage, bool)> _decryptBody(
     ChatMessage message,
     String currentUserId,
   ) async {
@@ -111,13 +116,22 @@ extension MessageVaultDecrypt on MessageVault {
     // quote one, so the quote is resolved before the outer early-return.
     final quote = await _decryptQuote(message, currentUserId);
     if (!message.isEncrypted) {
-      return quote == null ? message : message.copyWith(quote: quote);
+      return (quote == null ? message : message.copyWith(quote: quote), false);
     }
     if (!isUnlocked) {
-      return message.copyWith(body: 'Encrypted message', quote: quote);
+      return (message.copyWith(body: 'Encrypted message', quote: quote), false);
     }
     if (currentUserId.isEmpty) {
-      return message.copyWith(body: 'Encrypted message', quote: quote);
+      return (message.copyWith(body: 'Encrypted message', quote: quote), false);
+    }
+    // After a restore, a row no key on this phone opens is nearly always one
+    // sealed before "start fresh", and its text is already here. Reading it
+    // before the server spared every restored chat a key lookup — answered
+    // "none" — on its first open, which drew the loading spinner each time.
+    // A key this phone holds still wins: the row may have been edited since.
+    final early = await _restoredBeforeNetwork(message, currentUserId);
+    if (early != null) {
+      return (message.copyWith(body: early, quote: quote), true);
     }
     try {
       final body = await _openSealedBody(message, currentUserId);
@@ -132,16 +146,52 @@ extension MessageVaultDecrypt on MessageVault {
           ),
         );
       }
-      return message.copyWith(body: body, quote: quote);
+      return (message.copyWith(body: body, quote: quote), false);
     } catch (_) {
       // A message no key opens may still have come back from a local backup,
       // which carries its text (features/local-backup, after "start fresh").
       final restored = await _restoredBody(message.id, currentUserId);
-      return message.copyWith(
-        body: restored ?? 'Unable to decrypt this message',
-        quote: quote,
+      return (
+        message.copyWith(
+          body: restored ?? 'Unable to decrypt this message',
+          quote: quote,
+        ),
+        restored != null,
       );
     }
+  }
+
+  /// The restored text of [message] when this account has any and no key on
+  /// this phone opens the row — else null, and the ordinary order runs.
+  Future<String?> _restoredBeforeNetwork(
+    ChatMessage message,
+    String currentUserId,
+  ) async {
+    final present = restoredBodiesPresent;
+    // An edited row may have been edited after the backup was made; its
+    // restored text would be the old words. The ordinary order decides it.
+    if (message.editedAt != null) return null;
+    if (present == null || !await present(currentUserId)) return null;
+    final version = message.encryptionKeyVersion;
+    final held = await _localReadKey(
+      message.conversationId,
+      currentUserId,
+      version,
+    );
+    if (held != null) return null;
+    final restored = await _restoredBody(message.id, currentUserId);
+    if (restored == null) return null;
+    // The server may still hold this version (a reinstall that kept the
+    // identity): fetched behind the screen, so the files and the next open
+    // use the real key. One request per version, misses remembered.
+    unawaited(
+      _readKey(
+        message.conversationId,
+        currentUserId,
+        version,
+      ).then((_) {}, onError: (_) {}),
+    );
+    return restored;
   }
 
   /// The ciphertext opened under its conversation key, or a throw — never a
@@ -163,6 +213,11 @@ extension MessageVaultDecrypt on MessageVault {
     if (key == null || key.version != message.encryptionKeyVersion) {
       throw StateError('Secure message key is unavailable');
     }
+    return _openWithKey(key, message);
+  }
+
+  /// [message]'s ciphertext opened under [key], or a throw.
+  Future<String> _openWithKey(_DmKey key, ChatMessage message) async {
     final clear = await _aes.decrypt(
       _box(message.encryptedBody!, message.encryptionNonce!),
       secretKey: key.key,

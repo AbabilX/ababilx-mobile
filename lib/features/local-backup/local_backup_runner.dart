@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -15,7 +16,9 @@ import '../messages/providers/chat_provider.dart';
 import '../profile/providers/profile_provider.dart';
 import 'auto/account_backup_dir.dart';
 import 'auto/backup_media_store.dart';
+import 'auto/backup_message_segments.dart';
 import 'data/backup_file_name.dart';
+import 'data/backup_install_tag.dart';
 import 'data/backup_key_store.dart';
 import 'data/local_backup_failure.dart';
 import 'data/local_backup_settings.dart';
@@ -50,7 +53,7 @@ class LocalBackupRunner {
   Future<(BackupFolderEntry, BackupExportStats)> backUp({
     required String userId,
     required LocalBackupSettings settings,
-    void Function(int messages)? onProgress,
+    BackupProgress? onProgress,
     bool Function()? shouldContinue,
   }) async {
     final folderUri = settings.folderUri ?? '';
@@ -61,6 +64,12 @@ class LocalBackupRunner {
     if (picked && !await folder.hasAccess(folderUri)) {
       throw LocalBackupFailure.folderLost;
     }
+    final clock = Stopwatch()..start();
+    // The call log is paged from the server one request after another; it
+    // runs while the deletions sync and the key load, not after them.
+    final extraParts = LocalBackupExtras(_ref);
+    final calls = extraParts.allCalls();
+    unawaited(calls.then((_) {}, onError: (_) {}));
     final key = await _ref.read(backupKeyStoreProvider).keyFor(userId);
     await syncChatDeletions(_ref, userId);
 
@@ -71,6 +80,7 @@ class LocalBackupRunner {
     final name = backupFileName(username, now);
     AccountBackupDir? account;
     BackupMediaStore? media;
+    BackupMessageSegments? segments;
     final File temp;
     if (picked) {
       final dir = await _work('out');
@@ -79,11 +89,19 @@ class LocalBackupRunner {
     } else {
       final (dir, free) = await accountDir(userId);
       account = dir;
+      final tag = await BackupInstallTag.value();
       media = BackupMediaStore(
         dir: dir.media,
         accountKey: key,
         userId: userId,
         freeBytes: free,
+        installTag: tag,
+      );
+      segments = BackupMessageSegments(
+        dir: dir.media,
+        accountKey: key,
+        userId: userId,
+        installTag: tag,
       );
       temp = await dir.partial(name);
     }
@@ -95,16 +113,17 @@ class LocalBackupRunner {
     );
     try {
       // Calls, settings and pictures first: a restore cut short has them.
-      final extras = await LocalBackupExtras(_ref).write(writer);
+      final extras = await extraParts.write(writer, calls: await calls);
       debugPrint(
         '[LocalBackup] export extras: calls=${extras.calls} '
-        'settings=${extras.settings} pictures=${extras.pictures}',
+        'settings=${extras.settings} pictures=${extras.pictures} '
+        'at=${clock.elapsedMilliseconds}ms',
       );
       final stats = await BackupExporter(
         readPage: (afterMs, afterId) =>
             store.exportPage(afterMs: afterMs, afterId: afterId, limit: 500),
         allows: store.deletions.allows,
-        openBody: (m) => vault.openBodyForBackup(m, userId),
+        openBody: vault.backupBodyOpener(userId),
         localFile: (url) async {
           final row = await blobs.read(attachmentUrlKey(url));
           final path = row?.localPath;
@@ -115,15 +134,18 @@ class LocalBackupRunner {
         choices: settings.choices,
         conversations: await _conversations(userId),
         media: media,
+        segments: segments,
       ).run(writer, onProgress: onProgress, shouldContinue: shouldContinue);
       await writer.close();
       debugPrint(
         '[LocalBackup] export: messages=${stats.messages} '
         'files=${stats.files} unreadable=${stats.unreadable} '
         'bytes=${await temp.length()} newMedia=${media?.written} '
-        'noSpace=${media?.skippedForSpace}',
+        'noSpace=${media?.skippedForSpace} sealed=${stats.sealed} '
+        'weeksNew=${segments?.written} weeksKept=${segments?.reused} '
+        '${stats.timing} total=${clock.elapsedMilliseconds}ms',
       );
-      if (account == null || media == null) {
+      if (account == null || media == null || segments == null) {
         final entry = await folder.write(
           folderUri: folderUri,
           sourcePath: temp.path,
@@ -132,7 +154,10 @@ class LocalBackupRunner {
         );
         return (entry, stats);
       }
-      final done = await account.commit(temp, name, media.wanted);
+      final done = await account.commit(temp, name, {
+        ...media.wanted,
+        ...segments.wanted,
+      });
       final entry = BackupFolderEntry(
         uri: done.path,
         name: name,

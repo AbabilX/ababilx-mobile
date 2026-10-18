@@ -1,15 +1,24 @@
 import '../auto/account_backup_dir.dart';
+import '../auto/backup_message_segments.dart';
 import '../platform/backup_folder_channel.dart';
 
 /// One file a restore reads: a path this app can open directly, or a
 /// document in a granted folder that has to be copied into the cache first.
 class BackupSourceFile {
-  const BackupSourceFile.local(String this.path, this.bytes) : uri = null;
-  const BackupSourceFile.document(String this.uri, this.bytes) : path = null;
+  const BackupSourceFile.local(String this.path, this.bytes, {this.fileName})
+    : uri = null;
+  const BackupSourceFile.document(String this.uri, this.bytes, {this.fileName})
+    : path = null;
 
   final String? path;
   final String? uri;
   final int bytes;
+
+  /// Set where [path] cannot say it (a document in a granted folder).
+  final String? fileName;
+
+  /// The file's own name, which is how a backup's `seg` list finds its weeks.
+  String get name => fileName ?? path?.split('/').last ?? '';
 }
 
 /// Everything one restore reads: the messages file, then the media files the
@@ -28,6 +37,25 @@ class BackupRestoreSource {
   final int? createdAtMs;
 
   int get bytes => media.fold(main.bytes, (sum, file) => sum + file.bytes);
+}
+
+/// What a restore reads after the main file, in order: the message weeks the
+/// main file lists (newest first, as listed), then every attachment file.
+///
+/// A week the main file does not list belongs to the other kept backup — an
+/// older copy of the same messages — and is left out: reading it costs time
+/// and brings back nothing the listed weeks do not. A backup written before
+/// weeks existed lists none, and its own file holds every message.
+List<BackupSourceFile> restoreReadOrder(
+  List<BackupSourceFile> media,
+  List<String> weeks,
+) {
+  final byName = {for (final file in media) file.name: file};
+  return [
+    for (final name in weeks) ?byName[name],
+    for (final file in media)
+      if (!BackupMessageSegments.isSegmentName(file.name)) file,
+  ];
 }
 
 /// The backups in the automatic folder that this install can read, newest
@@ -121,7 +149,7 @@ Future<GrantedFolderBackups> readGrantedFolder(
     media: [
       for (final file in media)
         if (!file.isDir && file.name.endsWith(AccountBackupDir.mediaExtension))
-          BackupSourceFile.document(file.uri, file.bytes),
+          BackupSourceFile.document(file.uri, file.bytes, fileName: file.name),
     ],
   );
 }

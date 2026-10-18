@@ -57,12 +57,16 @@ class HistoryTransferApi {
     required Map<String, dynamic> destinationJwk,
     String? destinationKeyParam,
     String? loginToken,
+    bool live = false,
   }) async {
     final res = await _client.post(
       ApiConstants.historyTransferApprove,
       data: {
         'token': token,
         'login_token': ?loginToken,
+        // Live history link (server 0175): no relay upload, the phone answers
+        // the new device over WebRTC.
+        if (live) 'live': true,
         'device_name': deviceName,
         'transfer_envelope': _encodeEnvelope(envelope),
         'destination_public_key':

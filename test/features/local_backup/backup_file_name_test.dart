@@ -4,17 +4,29 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final at = DateTime(2026, 9, 27, 17, 1, 38);
 
-  test('the file carries the username and the moment it was made', () {
-    expect(backupFileName('murad', at), 'murad-2026-09-27-170138.abxbackup');
+  test('the file carries the app, the username and a readable moment', () {
+    expect(
+      backupFileName('murad', at),
+      'AbabilX-murad-2026-09-27_17-01-38.abxbackup',
+    );
     expect(
       backupFileName('Murad.Dev', at),
-      'murad.dev-2026-09-27-170138.abxbackup',
+      'AbabilX-murad.dev-2026-09-27_17-01-38.abxbackup',
     );
   });
 
-  test('no handle, or nothing usable in it, falls back to ababilx', () {
-    expect(backupFileName('', at), 'ababilx-2026-09-27-170138.abxbackup');
-    expect(backupFileName('../', at), 'ababilx-2026-09-27-170138.abxbackup');
-    expect(backupFileName('a/b', at), 'ab-2026-09-27-170138.abxbackup');
+  test('no handle, or nothing usable in it, leaves the app and the date', () {
+    expect(backupFileName('', at), 'AbabilX-2026-09-27_17-01-38.abxbackup');
+    expect(backupFileName('../', at), 'AbabilX-2026-09-27_17-01-38.abxbackup');
+    expect(
+      backupFileName('a/b', at),
+      'AbabilX-ab-2026-09-27_17-01-38.abxbackup',
+    );
+  });
+
+  test('names sort by age', () {
+    final older = backupFileName('murad', DateTime(2026, 9, 27, 9, 5, 1));
+    final newer = backupFileName('murad', DateTime(2026, 10, 2, 8, 0, 0));
+    expect(older.compareTo(newer), lessThan(0));
   });
 }

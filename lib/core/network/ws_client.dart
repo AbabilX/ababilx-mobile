@@ -62,12 +62,18 @@ class WsClient {
   Stream<void> get disconnects => _disconnects.stream;
   bool get connected => _connected;
 
-  Future<void> connect() async {
+  /// Resolves once this attempt — or the one already running — is over.
+  ///
+  /// It used to return at once while another caller's handshake was still in
+  /// flight, so "await connect(), then expect the socket" held only for
+  /// whoever happened to start it. Answering a call relies on that: the
+  /// caller's offer is relayed to this socket, so it has to be up first.
+  Future<void> connect() {
     _closed = false;
     _suspended = false;
     _started = true;
-    if (_connected || _connecting) return;
-    await _connectOnce();
+    if (_connected) return Future<void>.value();
+    return _inFlight ?? _connectOnce();
   }
 
   void disconnect() {
@@ -79,7 +85,22 @@ class WsClient {
     _connected = false;
   }
 
-  Future<void> _connectOnce({bool retriedAuth = false}) async {
+  /// The handshake in progress, for [connect] to share.
+  Future<void>? _inFlight;
+
+  Future<void> _connectOnce({bool retriedAuth = false}) {
+    if (_closed || _connected) return Future<void>.value();
+    final running = _inFlight;
+    if (running != null || _connecting) return running ?? Future<void>.value();
+    final attempt = _attempt(retriedAuth: retriedAuth);
+    _inFlight = attempt;
+    attempt.whenComplete(() {
+      if (identical(_inFlight, attempt)) _inFlight = null;
+    }).ignore();
+    return attempt;
+  }
+
+  Future<void> _attempt({required bool retriedAuth}) async {
     if (_closed || _connecting || _connected) return;
     _connecting = true;
 
@@ -96,7 +117,7 @@ class WsClient {
       _connecting = false;
       // Stale/missing access token — refresh then retry once.
       if (!retriedAuth && await _refreshAuth()) {
-        await _connectOnce(retriedAuth: true);
+        await _attempt(retriedAuth: true);
         return;
       }
       _scheduleReconnect();
@@ -146,7 +167,7 @@ class WsClient {
       _connected = false;
       // 401 / upgrade failure often means expired JWT — refresh once, then retry.
       if (!retriedAuth && await _refreshAuth() && !_closed) {
-        await _connectOnce(retriedAuth: true);
+        await _attempt(retriedAuth: true);
         return;
       }
       _scheduleReconnect();

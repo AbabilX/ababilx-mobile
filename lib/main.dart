@@ -16,6 +16,7 @@ import 'features/calls/native/android_group_call_ui.dart';
 import 'features/calls/native/background_voice_call_gate.dart';
 import 'features/calls/native/answered_elsewhere.dart';
 import 'features/calls/native/call_answered_guard.dart';
+import 'features/calls/native/launch_ring.dart';
 import 'features/calls/native/missed_call_notice.dart';
 import 'features/calls/native/voice_call_ended_guard.dart';
 import 'features/ghost/ghost_push.dart';
@@ -172,12 +173,18 @@ void main() async {
     );
   }
 
-  // Before the first frame, so the chat list leaves locked chats out from
-  // its very first paint.
-  await ChatLockIndex.preload();
-  // Before the first frame too: every avatar lookup after this is
-  // synchronous, so a face on the phone is never drawn as a letter first.
-  await AvatarStore.instance.init();
+  // All before the first frame, side by side — none needs another:
+  // - the lock index, so the chat list leaves locked chats out from its very
+  //   first paint;
+  // - the avatar store, so every avatar lookup after this is synchronous and
+  //   a face is never drawn as a letter first;
+  // - the ring that opened the app, so a killed phone answering a call shows
+  //   the call screen first instead of the chat list (see LaunchRing).
+  await Future.wait<void>([
+    ChatLockIndex.preload(),
+    AvatarStore.instance.init(),
+    LaunchRing.read(),
+  ]);
 
   // Signal's launch: the splash stays until auth knows chats or login.
   LaunchHold.hold();

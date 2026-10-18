@@ -81,6 +81,8 @@ class MessageVault {
   // read the same envelope off disk and unwrapped it with its own P-256
   // agreement, which is what made a restored chat open slowly.
   final _readKeyLoads = <String, Future<_DmKey?>>{};
+  // The same, for memory-and-disk only reads ([MessageVaultKeyCache._localReadKey]).
+  final _localKeyLoads = <String, Future<_DmKey?>>{};
   // When the server last said this account holds no envelope for a version.
   final _versionMisses = <String, DateTime>{};
   // Envelopes already reported as unopenable this session, 'conversation:version'.
@@ -117,6 +119,11 @@ class MessageVault {
   /// Text a local backup brought back for a message no key opens any more
   /// (features/local-backup). Asked only after the key path has failed.
   Future<String?> Function(String messageId, String userId)? restoredBodyLookup;
+
+  /// Whether this account has text a local backup brought back at all. When
+  /// it does, a row no key ON THIS PHONE opens reads that text before the
+  /// server is asked (see `_decryptBody`). Unset: the old order.
+  Future<bool> Function(String userId)? restoredBodiesPresent;
 
   /// Reads the freshly generated code once and forgets it.
   String? takePendingRecoveryCode() {
@@ -194,6 +201,7 @@ class MessageVault {
     _versionMisses.clear();
     _versionLoads.clear();
     _readKeyLoads.clear();
+    _localKeyLoads.clear();
     _reportedUnreadable.clear();
     _gapFill = null;
   }

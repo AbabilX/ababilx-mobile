@@ -30,6 +30,7 @@ import '../../features/calls/group/screens/group_call_lobby_screen.dart';
 import '../../features/calls/group/screens/group_call_screen.dart';
 import '../../features/calls/call-info/call_info_path.dart';
 import '../../features/calls/call-info/call_info_screen.dart';
+import '../../features/calls/providers/voice_call_provider.dart';
 import '../../features/calls/screens/voice_call_screen.dart';
 import '../../features/local_share/screens/local_share_screen.dart';
 import '../../features/local_share/screens/local_share_thread_screen.dart';
@@ -52,6 +53,7 @@ import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import 'home_shell.dart';
 import 'home_tab_pager.dart';
+import 'route_trail.dart';
 import '../../features/messages/message_e2ee/message_entry_ready.dart';
 import '../../features/messages/message_e2ee/message_recovery_screen.dart';
 import '../../features/onboarding/permissions/permission_intro_gate.dart';
@@ -114,16 +116,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (!isLoggedIn && !isLoginPage) return '/login';
+      // A ring that opened the app (LaunchRing) goes straight to its own
+      // screen: building the chat list first only delayed it, on a phone
+      // already ringing. Back from there still lands on Messages.
+      final ringing =
+          isLoggedIn && ref.read(voiceCallProvider).shouldOpenCallScreen;
       if (isLoggedIn && !ref.read(messageEntryReadyProvider)) {
-        return state.matchedLocation == '/message-recovery'
-            ? null
-            : '/message-recovery';
+        // A call needs no message key. Sent to the check screen, it rang on
+        // with nothing on screen to answer it — Flutter had taken the ringing
+        // UI back from CallKit.
+        if (location == '/message-recovery' || location == '/call') {
+          return null;
+        }
+        return isLaunch && ringing ? '/call' : '/message-recovery';
       }
       if (isLoggedIn &&
           (isLoginPage ||
               isLaunch ||
               state.matchedLocation == '/message-recovery')) {
-        // Always land on Messages first. FcmService.flushPendingNav seeds
+        if (isLaunch && ringing) return '/call';
+        // Otherwise land on Messages first. FcmService.flushPendingNav seeds
         // the deep-link (push) so Android back returns here instead of exit.
         return '/messages';
       }
@@ -393,6 +405,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     ),
   );
 
+  RouteTrail.attach(router);
   ref.onDispose(router.dispose);
   return router;
 });

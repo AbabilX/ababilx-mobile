@@ -36,6 +36,9 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
   /// not permission for lifecycle resume to expand it again.
   bool _callScreenWasPresented = false;
 
+  /// The call whose ending already scheduled the way out of /call.
+  String _leftCallId = '';
+
   String get _currentPath => currentRoutePath(widget.router);
 
   /// Flutter route/UI can update while resumed or in the brief inactive
@@ -203,8 +206,18 @@ class _CallStoreSyncState extends ConsumerState<CallStoreSync>
       if (!next.shouldOpenCallScreen) _callScreenWasPresented = false;
       if (!shouldLeave) return;
       final conversationId = next.conversationId ?? previous?.conversationId;
-      final delay = terminal
-          ? const Duration(milliseconds: 700)
+      // The only owner of leaving /call, and once per call: `ended` and the
+      // `idle` after it both ask, and a second navigation while the first
+      // route is still animating in is how the chat list came to be built
+      // twice. A brief beat on a terminal phase so "Busy" / "Call ended" can
+      // be read; a failure gets a little longer.
+      final leaving = next.call?.id ?? previous?.call?.id ?? '';
+      if (leaving.isNotEmpty && leaving == _leftCallId) return;
+      _leftCallId = leaving;
+      final delay = next.phase == VoiceCallPhase.failed
+          ? const Duration(milliseconds: 900)
+          : terminal
+          ? const Duration(milliseconds: 650)
           : Duration.zero;
       Future<void>.delayed(delay, () {
         if (!mounted || _currentPath != '/call') return;

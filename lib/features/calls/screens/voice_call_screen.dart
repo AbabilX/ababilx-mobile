@@ -39,9 +39,7 @@ class VoiceCallScreen extends ConsumerStatefulWidget {
 
 class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
   Timer? _clock;
-  Timer? _autoClose;
   bool _ringtoneOn = false;
-  bool _closing = false;
 
   @override
   void initState() {
@@ -62,7 +60,6 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
   @override
   void dispose() {
     _clock?.cancel();
-    _autoClose?.cancel();
     unawaited(IncomingCallRingtone.stop());
     unawaited(AndroidCallScreenLock.setKeepScreenOn(false));
     super.dispose();
@@ -78,38 +75,6 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
     if (!_ringtoneOn) return;
     _ringtoneOn = false;
     unawaited(IncomingCallRingtone.stop());
-  }
-
-  void _scheduleAutoClose(VoiceCallPhase phase) {
-    if (phase != VoiceCallPhase.ended && phase != VoiceCallPhase.failed) {
-      _autoClose?.cancel();
-      _autoClose = null;
-      return;
-    }
-    if (_closing) return;
-    _autoClose?.cancel();
-    // Brief beat so the caller can read "busy" / "ended"; callee decline
-    // already feels instant because phase flips before the API returns.
-    final delay = phase == VoiceCallPhase.failed
-        ? const Duration(milliseconds: 900)
-        : const Duration(milliseconds: 650);
-    _autoClose = Timer(delay, () {
-      if (!mounted || _closing) return;
-      final current = ref.read(voiceCallProvider).phase;
-      if (current != VoiceCallPhase.ended &&
-          current != VoiceCallPhase.failed &&
-          current != VoiceCallPhase.idle) {
-        return;
-      }
-      _closing = true;
-      callTrace(
-        'ROUTE_AWAY_FROM_CALL',
-        callId: ref.read(voiceCallProvider).call?.id,
-        previousPhase: current.name,
-        source: 'VoiceCallScreen.autoClose',
-      );
-      popOrGoHome(context);
-    });
   }
 
   /// Decline, then write [text] into the call's DM. The screen closes with
@@ -151,9 +116,13 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Leaving the screen when the call is over is CallStoreSync's alone.
+    // This screen used to leave on its own timer too, a beat before or after
+    // it: two navigations for one ending, the second while the first route
+    // was still animating in — the window in which re-entering the chat list
+    // builds its navigator twice (Duplicate GlobalKey, then a white screen).
     ref.listen(voiceCallProvider.select((s) => s.phase), (prev, next) {
       _syncRingtone(next);
-      _scheduleAutoClose(next);
     });
     final call = ref.watch(voiceCallProvider);
     final notifier = ref.read(voiceCallProvider.notifier);

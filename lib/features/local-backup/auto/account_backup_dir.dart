@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import '../format/backup_file_reader.dart';
 import '../format/backup_header.dart';
 
@@ -68,42 +70,69 @@ class AccountBackupDir {
   /// Makes [partial] the newest backup, then keeps the newest [keep] and only
   /// the media one of them still refers to. The old backups go only after the
   /// new one is whole.
+  ///
+  /// The media list is written before the backup takes its name: a phone cut
+  /// off between the two leaves a list with no backup (cleared below, next
+  /// time), never a backup with no list — which would stop all pruning.
   Future<File> commit(
     File partial,
     String name,
     Set<String> mediaNames, {
     int keep = 2,
   }) async {
-    final done = await partial.rename('${root.path}/$name');
-    await File('${done.path}$_refs').writeAsString(mediaNames.join('\n'));
+    final target = '${root.path}/$name';
+    await File(
+      '$target$_refs',
+    ).writeAsString(mediaNames.join('\n'), flush: true);
+    final done = await partial.rename(target);
     final all = await backups();
+    var removed = 0;
     for (final old in all.skip(keep)) {
-      await _remove(old);
+      if (await _remove(old)) removed++;
       await _remove(File('${old.path}$_refs'));
     }
-    await _pruneMedia(all.take(keep).toList());
+    await _clearStrayLists();
+    final media = await _pruneMedia(all.take(keep).toList());
+    debugPrint(
+      '[LocalBackup] commit: backups=${all.length} removed=$removed '
+      'mediaRemoved=$media',
+    );
     return done;
+  }
+
+  /// `.media` lists whose backup is gone (see [commit]).
+  Future<void> _clearStrayLists() async {
+    await for (final entry in root.list(followLinks: false)) {
+      if (entry is! File ||
+          !entry.path.endsWith('${BackupFormat.extension}$_refs')) {
+        continue;
+      }
+      final main = entry.path.substring(0, entry.path.length - _refs.length);
+      if (!await File(main).exists()) await _remove(entry);
+    }
   }
 
   /// A media file leaves only when no kept backup names it. A kept backup
   /// whose list cannot be read stops the pruning: deleting on a guess would
   /// empty a backup that is still the only copy.
-  Future<void> _pruneMedia(List<File> kept) async {
+  Future<int> _pruneMedia(List<File> kept) async {
     final wanted = <String>{};
     for (final backup in kept) {
       try {
         final text = await File('${backup.path}$_refs').readAsString();
         wanted.addAll(text.split('\n').where((n) => n.isNotEmpty));
       } catch (_) {
-        return;
+        return 0;
       }
     }
-    if (!await media.exists()) return;
+    if (!await media.exists()) return 0;
+    var removed = 0;
     await for (final entry in media.list(followLinks: false)) {
       if (entry is! File) continue;
       final name = entry.uri.pathSegments.last;
-      if (!wanted.contains(name)) await _remove(entry);
+      if (!wanted.contains(name) && await _remove(entry)) removed++;
     }
+    return removed;
   }
 
   /// Bytes this account's backup takes on the phone.
@@ -122,9 +151,13 @@ class AccountBackupDir {
     } catch (_) {}
   }
 
-  static Future<void> _remove(File file) async {
+  static Future<bool> _remove(File file) async {
     try {
-      if (await file.exists()) await file.delete();
-    } catch (_) {}
+      if (!await file.exists()) return false;
+      await file.delete();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }

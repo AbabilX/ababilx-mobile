@@ -253,6 +253,26 @@ mixin _ChatCacheMixin on Notifier<ChatState>, _ChatFeedMixin {
     receivedBuffer.clear();
   }
 
+  /// A local-backup restore just wrote history under every chat. A feed in
+  /// memory was read — or fetched — before it landed, and a fetched one is
+  /// never read from disk again this session, so it went on showing the
+  /// server's few messages without the restored ones. Every feed but the one
+  /// on screen is dropped, so its next open reads the disk; the one on screen
+  /// is read again now.
+  Future<void> adoptRestoredBackup() async {
+    resetFeedHydration();
+    if (isDisposed) return;
+    final active = state.activeConversationId ?? '';
+    final key = active.isEmpty ? null : feedKey(active);
+    final open = key == null ? null : state.feeds[key];
+    state = state.copyWith(
+      feeds: {
+        if (key != null && open != null) key: open.copyWith(fetchedAt: 0),
+      },
+    );
+    if (active.isNotEmpty) await hydrateFeedFromCache(active);
+  }
+
   /// Persists a network page before it becomes the canonical in-memory feed.
   Future<void> persistFeed(List<ChatMessage> messages) =>
       messageStore.saveAll(messages);

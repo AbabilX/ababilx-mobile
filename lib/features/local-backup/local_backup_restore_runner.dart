@@ -9,6 +9,7 @@ import '../attachments/providers/attachment_providers.dart';
 import '../messages/data/local/chat_deletion_sync.dart';
 import '../messages/data/local/chat_message_store.dart';
 import '../messages/providers/chat_provider.dart';
+import 'auto/backup_message_segments.dart';
 import 'data/backup_key_store.dart';
 import 'format/backup_errors.dart';
 import 'format/backup_file_reader.dart';
@@ -57,14 +58,26 @@ class LocalBackupRestoreRunner {
       final adopter = _ref.read(attachmentAdopterProvider);
       final extras = LocalBackupExtras(_ref);
       final collected = await extras.collector();
-      final total = source.bytes;
+      var total = source.bytes;
       var before = 0;
+      // The message weeks the main file lists (automatic folder): read next,
+      // newest first. Every other frame is the chat list, calls, settings.
+      final weeks = <String>[];
+      Future<void> other(Map<String, dynamic> frame) async {
+        final name = frame['n'];
+        if (frame['t'] == 'seg') {
+          if (name is String && name.isNotEmpty) weeks.add(name);
+          return;
+        }
+        await collected.onFrame(frame);
+      }
+
       BackupImporter importer({bool others = true}) => BackupImporter(
         saveMessages: (m) => store.saveRecovered(m, fromBackup: true),
         saveBodies: (b) => bodies.putAll(userId, b),
         adoptFile: adopter.adoptFile,
         tempDir: Directory('${dir.path}/files'),
-        onOtherFrame: others ? collected.onFrame : null,
+        onOtherFrame: others ? other : null,
         onOtherFile: others ? collected.onFile : null,
       );
       final stats = await importer().run(
@@ -75,6 +88,18 @@ class LocalBackupRestoreRunner {
         shouldContinue: shouldContinue,
       );
       before = source.main.bytes;
+      final rest = restoreReadOrder(source.media, weeks);
+      total = rest.fold(before, (sum, file) => sum + file.bytes);
+      final found = rest
+          .where((f) => BackupMessageSegments.isSegmentName(f.name))
+          .length;
+      if (found < weeks.length) {
+        // A listed week this install cannot see: its messages are missing.
+        debugPrint(
+          '[LocalBackup] restore: ${weeks.length - found} of '
+          '${weeks.length} weeks not found',
+        );
+      }
       // Chat list, calls, settings and pictures: works offline from here on.
       await extras.apply(collected, userId);
       // Chats already opened this session read their pages again from disk.
@@ -83,18 +108,22 @@ class LocalBackupRestoreRunner {
       unawaited(chat.fetchSidebarSilent().catchError((_) {}));
 
       var files = stats.files;
-      for (final item in source.media) {
+      var messages = stats.messages;
+      for (final item in rest) {
         if (shouldContinue?.call() == false) throw const BackupCancelledError();
         final offset = before;
+        final counted = messages;
         try {
           final file = await _open(item, temp);
           final one = await importer(others: false).run(
             file,
             key,
+            onProgress: (n) => onProgress?.call(counted + n),
             onBytes: (read, _) => onBytes?.call(offset + read, total),
             shouldContinue: shouldContinue,
           );
           files += one.files;
+          messages += one.messages;
         } on BackupCancelledError {
           rethrow;
         } catch (error) {
@@ -105,10 +134,15 @@ class LocalBackupRestoreRunner {
         before += item.bytes;
         onBytes?.call(before, total);
       }
+      // The weeks landed after the first refresh above: chats read their
+      // pages from disk again, and previews follow the newest restored text.
+      await chat.adoptRestoredBackup();
+      unawaited(chat.fetchSidebarSilent().catchError((_) {}));
       debugPrint(
-        '[LocalBackup] restore done: messages=${stats.messages} files=$files',
+        '[LocalBackup] restore done: messages=$messages files=$files '
+        'weeks=${weeks.length}',
       );
-      return BackupRestoreStats(messages: stats.messages, files: files);
+      return BackupRestoreStats(messages: messages, files: files);
     } finally {
       try {
         if (await temp.exists()) await temp.delete();

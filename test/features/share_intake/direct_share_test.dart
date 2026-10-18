@@ -7,18 +7,23 @@ import 'package:ababilx/features/share_intake/data/shared_payload.dart';
 import 'package:ababilx/features/share_intake/direct-share/direct_share_targets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-ChatConversation _dm(String id, String at, {String request = 'none'}) =>
-    ChatConversation(
-      id: id,
-      teamId: '',
-      type: 'dm',
-      createdAt: '',
-      lastMessageAt: at,
-      peerUserId: 'peer-$id',
-      peerUserName: 'Peer $id',
-      peerUserAvatar: 'https://cdn.example/$id.jpg',
-      requestState: request,
-    );
+ChatConversation _dm(
+  String id,
+  String at, {
+  String request = 'none',
+  bool pinned = false,
+}) => ChatConversation(
+  id: id,
+  teamId: '',
+  type: 'dm',
+  createdAt: '',
+  lastMessageAt: at,
+  peerUserId: 'peer-$id',
+  peerUserName: 'Peer $id',
+  peerUserAvatar: 'https://cdn.example/$id.jpg',
+  requestState: request,
+  pinned: pinned,
+);
 
 void main() {
   test('a share picked from a Direct Share target names its chat', () {
@@ -58,6 +63,21 @@ void main() {
     expect(targets.first['name'], 'Peer new');
     expect(targets.first['avatarUrl'], 'https://cdn.example/new.jpg');
     expect(targets.first['isGroup'], false);
+  });
+
+  test('recency, not pins: a pinned old chat waits its turn', () {
+    // The chat list's pinned block is a list order, not a share order — the
+    // chat just written in must lead the share sheet's Recent row.
+    final shareable = shareableConversations(
+      dms: [
+        _dm('pinned-old', '2026-08-01T00:00:00Z', pinned: true),
+        _dm('fresh', '2026-09-27T10:00:00Z'),
+        _dm('mid', '2026-09-20T00:00:00Z'),
+      ],
+      channels: const [],
+      locks: const {},
+    );
+    expect(shareable.map((c) => c.id), ['fresh', 'mid', 'pinned-old']);
   });
 
   test('every launcher alias declares the share-target shortcuts', () {

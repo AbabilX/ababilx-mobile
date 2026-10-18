@@ -454,6 +454,13 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
+        <!-- Alive only while a linked computer reads this phone's chats over
+             a live history link (server 0175). The answering runs in Dart. -->
+        <service
+            android:name=".historysync.HistorySyncService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <!-- FCM defaults: channel + white status-bar icon + brand tint -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"

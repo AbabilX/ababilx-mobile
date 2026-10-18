@@ -133,6 +133,9 @@ class ApiConstants {
   // Phone -> new web/desktop device history transfer. The phone is always the
   // source; listing and acknowledging chunks belong to the destination.
   static const String historyTransfers = '/api/messaging/history-transfers';
+  // Live history links (server 0175): phone answers a linked computer over
+  // WebRTC instead of uploading to the relay.
+  static const String historyLive = '/api/messaging/history-live';
   static const String historyTransferActive =
       '/api/messaging/history-transfers/active';
   static const String historyTransferInfo =

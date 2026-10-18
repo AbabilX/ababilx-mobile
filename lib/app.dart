@@ -7,6 +7,7 @@ import 'core/router/root_back.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_provider.dart';
 import 'features/messages/chat_store_sync.dart';
+import 'features/messages/history-transfer/live/history_live_sync.dart';
 import 'features/notifications/fcm_bootstrap.dart';
 import 'features/calls/call_store_sync.dart';
 import 'features/calls/group/group_call_invite_host.dart';
@@ -57,24 +58,27 @@ class AbabilXApp extends ConsumerWidget {
                       child: WsBackgroundRelease(
                         child: GhostSync(
                           router: router,
-                          child: ChatStoreSync(
-                            child: MaterialApp.router(
-                              title: 'AbabilX',
-                              debugShowCheckedModeBanner: false,
-                              theme: AppTheme.light,
-                              darkTheme: darkTheme,
-                              themeMode: themeMode,
-                              routerConfig: router,
-                              // AppUpdateGate sits under the lock-screen host, so
-                              // its cover over the keyguard stays on top.
-                              builder: (context, child) => CallLockScreenHost(
-                                router: router,
-                                child: AppUpdateGate(
-                                  child: RootBackScope(
-                                    child: GroupCallInviteHost(
-                                      child: ActiveCallBanner(
-                                        router: router,
-                                        child: child ?? const SizedBox.shrink(),
+                          child: HistoryLiveSync(
+                            child: ChatStoreSync(
+                              child: MaterialApp.router(
+                                title: 'AbabilX',
+                                debugShowCheckedModeBanner: false,
+                                theme: AppTheme.light,
+                                darkTheme: darkTheme,
+                                themeMode: themeMode,
+                                routerConfig: router,
+                                // AppUpdateGate sits under the lock-screen host, so
+                                // its cover over the keyguard stays on top.
+                                builder: (context, child) => CallLockScreenHost(
+                                  router: router,
+                                  child: AppUpdateGate(
+                                    child: RootBackScope(
+                                      child: GroupCallInviteHost(
+                                        child: ActiveCallBanner(
+                                          router: router,
+                                          child:
+                                              child ?? const SizedBox.shrink(),
+                                        ),
                                       ),
                                     ),
                                   ),

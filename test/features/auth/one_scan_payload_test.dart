@@ -28,4 +28,16 @@ void main() {
     expect(signInTokenOf('ababilx://desktop-login?t=abc'), 'abc');
     expect(signInTokenOf('abc'), 'abc');
   });
+
+  test('hl=1 asks for a live history link; absent keeps the relay', () {
+    final live = parseOneScanKeys(
+      'ababilx://desktop-login?t=abc&k=X&h=Y&hv=2&hl=1',
+    );
+    expect(live.historyLive, isTrue);
+    expect(live.historyVersion, 2);
+    expect(
+      parseOneScanKeys('ababilx://desktop-login?t=abc&k=X&h=Y&hv=2').historyLive,
+      isFalse,
+    );
+  });
 }

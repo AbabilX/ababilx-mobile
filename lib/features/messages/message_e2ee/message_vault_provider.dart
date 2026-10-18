@@ -20,5 +20,7 @@ final messageVaultProvider = Provider<MessageVault>(
               messageId,
             ))
         ..restoredBodyLookup = ((messageId, userId) =>
-            ref.read(restoredBodyStoreProvider).lookup(messageId, userId)),
+            ref.read(restoredBodyStoreProvider).lookup(messageId, userId))
+        ..restoredBodiesPresent = ((userId) =>
+            ref.read(restoredBodyStoreProvider).present(userId)),
 );

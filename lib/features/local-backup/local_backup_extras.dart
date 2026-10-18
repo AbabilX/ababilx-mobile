@@ -43,11 +43,15 @@ class LocalBackupExtras {
     '${(await getApplicationSupportDirectory()).path}/chat_wallpapers',
   );
 
-  Future<BackupExtrasStats> write(BackupFileWriter writer) async {
+  /// [calls] is [allCalls], when the caller started it earlier.
+  Future<BackupExtrasStats> write(
+    BackupFileWriter writer, {
+    List<CallLogEntry>? calls,
+  }) async {
     await AvatarStore.instance.init();
     return writeBackupExtras(
       writer,
-      calls: await _allCalls(),
+      calls: calls ?? await allCalls(),
       wallpaperDir: await _wallpaperDir(),
       avatarDir: AvatarStore.instance.directory,
       avatars: AvatarStore.instance.entries,
@@ -56,7 +60,7 @@ class LocalBackupExtras {
 
   /// Every call this phone can reach: restored, cached, on screen, then the
   /// server's history page by page while it answers (offline, what is local).
-  Future<List<CallLogEntry>> _allCalls() async {
+  Future<List<CallLogEntry>> allCalls() async {
     final byId = <String, CallLogEntry>{};
     void add(Iterable<CallLogEntry> calls) {
       for (final c in calls) {

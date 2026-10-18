@@ -97,12 +97,36 @@ extension MessageVaultKeyCache on MessageVault {
     }
   }
 
+  /// [_readKey] without the network: memory, then this device's own stored
+  /// envelope. Single-flight like it, for the same fifty-messages reason.
+  Future<_DmKey?> _localReadKey(
+    String conversationId,
+    String self,
+    int? version,
+  ) async {
+    if (version == null) return null;
+    final live = _keys[conversationId];
+    if (live != null && live.version == version) return live;
+    final slot = '$conversationId:$version';
+    final held = _readKeys[slot];
+    if (held != null) return held;
+    final inFlight = _localKeyLoads[slot];
+    if (inFlight != null) return inFlight;
+    final load = _storedKey(conversationId, self, version);
+    _localKeyLoads[slot] = load;
+    try {
+      return await load;
+    } finally {
+      if (identical(_localKeyLoads[slot], load)) _localKeyLoads.remove(slot);
+    }
+  }
+
   Future<_DmKey?> _resolveReadKey(
     String conversationId,
     String self,
     int version,
   ) async {
-    final stored = await _storedKey(conversationId, self, version);
+    final stored = await _localReadKey(conversationId, self, version);
     if (stored != null) return stored;
     try {
       var key = await _loadKey(conversationId, self);
