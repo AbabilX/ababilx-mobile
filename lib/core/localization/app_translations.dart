@@ -687,9 +687,6 @@ class AppTranslations {
       'qr_login_one_scan_body':
           'This device will be signed in and get your messages. Approve only if it is you.',
       'qr_login_code_hint': 'Check this matches the code on that screen:',
-      'qr_login_send_history': 'Also send the last 3 months',
-      'qr_login_send_history_body':
-          'Messages and files from the last 3 months on this phone. Older ones stay here.',
       'app_language': 'Application Language',
       'devices_title': 'Linked devices',
       'devices_refresh': 'Refresh',
@@ -1961,9 +1958,6 @@ class AppTranslations {
       'qr_login_one_scan_body':
           'এই ডিভাইসে সাইন ইন হবে এবং আপনার মেসেজ পাবে। শুধু আপনি হলে অনুমোদন করুন।',
       'qr_login_code_hint': 'ওই স্ক্রিনের কোডের সাথে মিলিয়ে নিন:',
-      'qr_login_send_history': 'শেষ ৩ মাসের মেসেজও পাঠান',
-      'qr_login_send_history_body':
-          'এই ফোনে থাকা শেষ ৩ মাসের মেসেজ ও ফাইল। এর আগেরগুলো এই ফোনেই থাকবে।',
       'app_language': 'অ্যাপ্লিকেশনের ভাষা',
       'devices_title': 'যুক্ত ডিভাইস',
       'devices_refresh': 'রিফ্রেশ',

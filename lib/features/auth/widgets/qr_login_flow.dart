@@ -19,7 +19,7 @@ import '../../messages/message_e2ee/message_vault.dart';
 import '../data/one_scan_payload.dart';
 import '../data/qr_login_repository.dart';
 import 'linked_limit_sheet.dart';
-import 'qr_login_confirm_dialog.dart';
+import 'qr_login_confirm_sheet.dart';
 
 /// Scan a QR from another device and act on it.
 ///
@@ -112,17 +112,16 @@ class QrLoginFlow {
         : await vault.linkVerificationCode(linkJwk);
     if (!context.mounted) return;
 
-    final choice = await showQrLoginConfirmDialog(
+    final approved = await showQrLoginConfirmSheet(
       context,
       ref,
       request: request,
       code: code,
-      offerHistory: canShare && keys.hasHistoryKey,
     );
     if (!context.mounted) return;
 
     try {
-      if (!choice.approved) {
+      if (!approved) {
         await repo.deny(payload);
         return;
       }
@@ -132,12 +131,12 @@ class QrLoginFlow {
       if (!context.mounted) return;
       // Past the linked-device limit (server 0174) the user signs one out
       // and the same code is approved again; backing out ends it.
-      final approved = await approveMakingRoom(
+      final signedIn = await approveMakingRoom(
         context,
         ref,
         () => repo.approve(payload, identityEnvelope: envelope),
       );
-      if (!approved) {
+      if (!signedIn) {
         await repo.deny(payload).catchError((_) {});
         return;
       }
@@ -150,7 +149,9 @@ class QrLoginFlow {
       return;
     }
 
-    if (choice.sendHistory && context.mounted) {
+    // Chats go with the sign-in whenever the code carries a history key —
+    // no switch to turn it off (user's call, 2026-10-18).
+    if (canShare && keys.hasHistoryKey && context.mounted) {
       // Not awaited: the new device opens its transfer only once signed in,
       // and the scanner must not sit open (bottom bar hidden) while it does.
       final overlay = Overlay.maybeOf(context, rootOverlay: true);
@@ -160,7 +161,7 @@ class QrLoginFlow {
           loginToken: signInTokenOf(payload),
           historyKeyParam: keys.historyKeyParam!,
           version: keys.historyVersion,
-          live: keys.historyLive,
+          allowLiveLink: keys.historyLive,
         ).then((sentTo) {
           if (sentTo != null) {
             showAppToastIn(overlay, 'Sending your chats to $sentTo.');

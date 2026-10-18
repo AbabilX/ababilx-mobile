@@ -1,14 +1,13 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/ws_client.dart';
 import '../../../attachments/providers/attachment_providers.dart';
 import '../../data/local/chat_message_store.dart';
+import '../../message_e2ee/message_vault.dart';
 import '../../providers/chat_provider.dart';
 import '../history_transfer_local_conversations.dart';
 import '../history_window.dart';
@@ -17,14 +16,9 @@ import 'live_api.dart';
 import 'live_channel.dart';
 import 'live_links.dart';
 import 'live_signal_seal.dart';
+import 'live_state.dart';
 
-/// Whether a linked computer is reading this phone's chats right now.
-class HistoryLiveState {
-  const HistoryLiveState({this.open = false, this.device = ''});
-
-  final bool open;
-  final String device;
-}
+export 'live_state.dart';
 
 /// The phone's side of live history links (server 0175,
 /// `ababilx-server/docs/history-live-protocol.md`).
@@ -35,12 +29,14 @@ class HistoryLiveState {
 /// right after linking, older pages as someone scrolls, a file on tap — and
 /// this answers it. The server relays sealed signals and sees nothing else.
 class HistoryLiveNotifier extends Notifier<HistoryLiveState> {
-  static const _sync = MethodChannel('com.ababilx.app/history_sync');
-
   final _links = LiveLinks();
   LiveChannel? _channel;
   LiveLink? _link;
   bool _opening = false;
+  DateTime? _offeredAt;
+
+  /// An offer's time to connect before a wake may replace it (TURN is slow).
+  static const _negotiateFor = Duration(seconds: 15);
   Future<void> _signalsIn = Future.value();
   Future<void> _signalsOut = Future.value();
 
@@ -63,7 +59,10 @@ class HistoryLiveNotifier extends Notifier<HistoryLiveState> {
     required String device,
   }) async {
     final userId = _userId;
-    if (userId.isEmpty) return;
+    if (userId.isEmpty) {
+      debugPrint('[HistoryLive] adopt skipped: no user id');
+      return;
+    }
     await _links.save(userId, LiveLink(id: linkId, key: key, device: device));
   }
 
@@ -72,6 +71,7 @@ class HistoryLiveNotifier extends Notifier<HistoryLiveState> {
     final id = ev['id'] as String? ?? '';
     if (id.isEmpty) return;
     if (type == 'history.wake') {
+      debugPrint('[HistoryLive] wake link=$id');
       unawaited(_open(id));
     } else if (type == 'history.signal' && ev['from_role'] == 'destination') {
       final raw = ev['history_signal'];
@@ -108,13 +108,20 @@ class HistoryLiveNotifier extends Notifier<HistoryLiveState> {
 
   /// A fresh connection and offer, unless one is already open for [id].
   Future<void> _open(String id, {bool force = false}) async {
-    if (!force && _link?.id == id && (_channel?.open ?? false)) return;
+    if (!force && _link?.id == id && _channel != null) {
+      if (_channel!.open) return;
+      final at = _offeredAt;
+      if (at != null && DateTime.now().difference(at) < _negotiateFor) return;
+    }
     if (_opening) return;
     _opening = true;
     try {
       final userId = _userId;
       final link = userId.isEmpty ? null : await _links.read(userId, id);
-      if (link == null) return;
+      if (link == null) {
+        debugPrint('[HistoryLive] no stored link=$id, wake ignored');
+        return;
+      }
       await _channel?.close();
       final info = await LiveApi(ref.read(apiClientProvider)).link(id);
       final windowStart =
@@ -129,9 +136,11 @@ class HistoryLiveNotifier extends Notifier<HistoryLiveState> {
           blobs: ref.read(attachmentBlobStoreProvider),
           send: send,
           windowStartMs: windowStart,
+          open: ref.read(messageVaultProvider).backupBodyOpener(userId),
         ),
       );
       _channel = channel;
+      _offeredAt = DateTime.now();
       await channel.start(info.iceServers);
       debugPrint('[HistoryLive] offered link=$id');
     } catch (error) {
@@ -143,14 +152,9 @@ class HistoryLiveNotifier extends Notifier<HistoryLiveState> {
   }
 
   Future<void> _opened(LiveLink link) async {
+    debugPrint('[HistoryLive] channel open link=${link.id}');
     state = HistoryLiveState(open: true, device: link.device);
-    if (Platform.isAndroid) {
-      unawaited(
-        _sync
-            .invokeMethod('started', {'device': link.device})
-            .catchError((_) => null),
-      );
-    }
+    historySyncService(started: true, device: link.device);
     final started = DateTime.now();
     final conversations = await localTransferConversations(ref);
     await _channel?.answers.hello('', conversations).catchError((_) {});
@@ -161,11 +165,10 @@ class HistoryLiveNotifier extends Notifier<HistoryLiveState> {
   }
 
   void _closed(LiveLink link) {
+    debugPrint('[HistoryLive] channel closed link=${link.id}');
     if (_link?.id == link.id) _channel = null;
     state = const HistoryLiveState();
-    if (Platform.isAndroid) {
-      unawaited(_sync.invokeMethod('ended').catchError((_) => null));
-    }
+    historySyncService(started: false);
   }
 
   void _sendSignal(LiveLink link, String kind, Map<String, dynamic> payload) {

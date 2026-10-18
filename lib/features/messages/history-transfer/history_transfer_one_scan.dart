@@ -31,16 +31,20 @@ class HistoryTransferOneScan {
     required String loginToken,
     required String historyKeyParam,
     required int version,
-    bool live = false,
+    bool allowLiveLink = false,
   }) async {
     if (version > HistoryTransferV2Crypto.version || version < 2) return null;
     final api = ref.read(historyTransferApiProvider);
     final v2Api = ref.read(historyTransferV2ApiProvider);
     final notifier = ref.read(historyTransferProvider.notifier);
+    // Read every provider NOW: [ref] belongs to the scanner, which closes
+    // while this waits, and a read after that throws — the server had
+    // already made the link, so the phone lost its key and never answered.
+    final live = ref.read(historyLiveProvider.notifier);
     final destinationJwk = HistoryTransferEnvelopeCodec.decode(historyKeyParam);
 
     final deadline = DateTime.now().add(_wait);
-    var allowLive = live;
+    var allowLive = allowLiveLink;
     while (true) {
       var triedLive = false;
       try {
@@ -67,9 +71,7 @@ class HistoryTransferOneScan {
         );
         if (goLive) {
           // Nothing is uploaded: the computer asks for what it needs.
-          await ref
-              .read(historyLiveProvider.notifier)
-              .adopt(linkId: id, key: key, device: request.deviceName);
+          await live.adopt(linkId: id, key: key, device: request.deviceName);
         } else {
           unawaited(notifier.sendV2(transferId: id, transferKey: key));
         }

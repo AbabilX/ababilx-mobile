@@ -22,12 +22,19 @@ class LiveAnswers {
     required this.blobs,
     required this.send,
     required this.windowStartMs,
+    required this.open,
   });
 
   final ChatMessageStore messages;
   final AttachmentBlobStore blobs;
   final LiveSend send;
   final int windowStartMs;
+
+  /// Opens a sealed body the way this phone reads it (its own key, then the
+  /// text restored from a local backup, then the server). After "start
+  /// fresh" the server holds no key for this account, so the linked browser
+  /// can read only what the phone opens for it (user's call, 2026-10-18).
+  final Future<String?> Function(ChatMessage message) open;
   final _cancelled = <int>{};
 
   static const maxPage = 100;
@@ -113,12 +120,26 @@ class LiveAnswers {
       'conv': conv,
       'count': page.length,
       'more': more,
-    }, gzipLines(page.map(_row)));
+    }, gzipLines([for (final m in page) await _row(m)]));
   }
 
-  static Map<String, dynamic> _row(ChatMessage m) => m.toJson()
-    ..remove('send_status')
-    ..removeWhere((key, _) => key.startsWith('pending_'));
+  /// The stored row; a sealed body goes as the text this phone reads. The
+  /// channel is end to end between the user's own two devices.
+  Future<Map<String, dynamic>> _row(ChatMessage m) async {
+    final json = m.toJson()
+      ..remove('send_status')
+      ..removeWhere((key, _) => key.startsWith('pending_'));
+    if (!m.isEncrypted) return json;
+    final text = await open(m).catchError((_) => null);
+    if (text == null) return json;
+    return json
+      ..['body'] = text
+      ..['opened_on_phone'] = true
+      ..remove('encrypted_body')
+      ..remove('encryption_nonce')
+      ..remove('encryption_version')
+      ..remove('encryption_key_version');
+  }
 
   Future<void> _file(int req, String url) async {
     final key = attachmentUrlKey(url);
