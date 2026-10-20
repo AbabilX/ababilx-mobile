@@ -20,6 +20,7 @@ import '../call_lookup_retry.dart';
 import '../call_permissions.dart';
 import '../call_trace.dart';
 import '../callkit_ended_suppress.dart';
+import '../call_haptics.dart';
 import '../data/models/voice_call.dart';
 import '../data/models/voice_call_session.dart';
 import '../data/voice_call_repository.dart';
@@ -214,6 +215,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   @override
   VoiceCallState build() {
     ref.onDispose(dispose);
+    listenSelf((prev, next) {
+      final haptic = prev == null ? null : voiceCallHaptic(prev, next);
+      if (haptic != null) CallHaptics.buzz(haptic);
+    });
     final userId = ref.read(profileProvider).valueOrNull?.id ?? '';
     ref.listen(profileProvider, (_, next) {
       final id = next.valueOrNull?.id;

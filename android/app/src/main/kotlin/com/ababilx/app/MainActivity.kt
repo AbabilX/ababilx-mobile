@@ -109,6 +109,7 @@ class MainActivity : FlutterActivity() {
 
     /** Roaming, which connectivity_plus cannot see — gates media auto-download. */
     private val networkState by lazy { NetworkStateChannel(applicationContext) }
+    private val callHaptics by lazy { CallHapticsChannel(applicationContext) }
 
     /** An explicit Save into Downloads or the gallery — never automatic. */
     private val mediaStore by lazy { MediaStoreChannel(this) }
@@ -178,6 +179,7 @@ class MainActivity : FlutterActivity() {
         battery.attach(flutterEngine)
         video.attach(flutterEngine)
         networkState.attach(flutterEngine)
+        callHaptics.attach(flutterEngine)
         mediaStore.attach(flutterEngine)
         secureWindow.attach(flutterEngine)
         ghostBlobs.attach(flutterEngine)
@@ -303,6 +305,7 @@ class MainActivity : FlutterActivity() {
         chatStore.dispose()
         battery.dispose()
         networkState.dispose()
+        callHaptics.dispose()
         super.onDestroy()
     }
 

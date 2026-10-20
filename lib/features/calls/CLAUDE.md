@@ -4,6 +4,18 @@
 > editing anything under `ringtone/`, `native/`, `audio/`, or
 > `packages/call_ringer/`.
 
+## Call haptics come from state, not buttons (2026-10-20)
+
+`call_haptics.dart` + `CallHapticsChannel.kt` (`com.ababilx.app/call_haptics`,
+Vibrator predefined effects; HapticFeedback was faint or silent on many
+phones). `voiceCallHaptic(prev, next)` (pure, `call_haptics_test.dart`) is
+read by `listenSelf` in `VoiceCallNotifier.build`: connected (heavy click),
+`status` turning `declined` — double click on the callee, two firm pulses on
+the caller (the other side said no) — and mute / unmute on the same call.
+`GroupCallNotifier` buzzes on mute / unmute only. So the lock screen,
+the notification and remote events are felt like an in-app tap. The old
+button taps (`mediumImpact`, `selectionClick`) stay.
+
 ## A ring that opens the app opens `/call` first (2026-10-18)
 
 Report: "after receiving a call the call screen comes 2-3 s late when the app

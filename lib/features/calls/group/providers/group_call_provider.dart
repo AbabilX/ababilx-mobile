@@ -11,6 +11,7 @@ import '../../../profile/providers/profile_provider.dart';
 import '../../audio/call_audio_devices.dart';
 import '../../audio/call_audio_output.dart';
 import '../../audio/call_audio_route.dart';
+import '../../call_haptics.dart';
 import '../../call_lifecycle.dart';
 import '../../call_ringtone.dart';
 import '../../ringtone/callkit_ring_events.dart';
@@ -73,6 +74,12 @@ class GroupCallNotifier extends GroupCallBase
   @override
   GroupCallState build() {
     ref.onDispose(() => unawaited(_teardown()));
+    // The microphone going off or on is felt, whichever control did it.
+    listenSelf((prev, next) {
+      if (prev == null || next.call == null) return;
+      if (prev.call?.id != next.call?.id || prev.muted == next.muted) return;
+      CallHaptics.buzz(next.muted ? CallHaptic.mute : CallHaptic.unmute);
+    });
     _currentUserId = ref.read(profileProvider).valueOrNull?.id ?? '';
     ref.listen(profileProvider, (_, next) {
       final id = next.valueOrNull?.id;
