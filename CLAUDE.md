@@ -78,11 +78,12 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   An install with a saved tab order sees Home last until dragged.
   Top to bottom: greeting header (time-of-day + first name, search, QR,
   own circular face with online/privacy mark → You sheet) · focus card
-  (unread: stacked faces, "N new messages · in N chats", Catch up →
-  `/home/unread`; else "You're all caught up" over clock art only (no
-  theme art): morning 06–11 · afternoon 11–17 · evening 17–22 white ·
-  night 22–06 white; black on bright slots; cover + topRight;
-  `home_caught_up_art.dart`) · shortcuts (`quick-views/`: Drafts &
+  (clock art always on — morning 06–11 · afternoon 11–17 · evening 17–22 ·
+  night 22–06; black ink on bright, white on evening/night; cover +
+  topRight; no theme art. Foreground only swaps: unread = stacked faces +
+  "N new messages · in N chats" + Catch up → `/home/unread`; clear =
+  "You're all caught up"; `home_caught_up_art.dart`) · shortcuts
+  (`quick-views/`: Drafts &
   scheduled, Groups, Flock
   (feeds, `/home/flock`), Local Share (→ `/local-share`); per-card pastel
   icon accent + chevron; hold and drag to reorder, `quickViewReordering`
