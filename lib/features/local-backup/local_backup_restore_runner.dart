@@ -89,7 +89,23 @@ class LocalBackupRestoreRunner {
         shouldContinue: shouldContinue,
       );
       before = source.main.bytes;
-      final rest = restoreReadOrder(source.media, weeks);
+      // No message, no week: a backup an empty phone wrote. Its media and
+      // its settings (the empty phone's own) must not be laid over the real
+      // backup the caller tries next.
+      if (stats.messages == 0 && weeks.isEmpty) {
+        debugPrint('[LocalBackup] restore: no messages in this backup');
+        return BackupRestoreStats(messages: 0, files: stats.files);
+      }
+      final listed = await _listed(source.mediaList, dir);
+      final rest = restoreReadOrder(
+        listed == null
+            ? source.media
+            : [
+                for (final f in source.media)
+                  if (listed.contains(f.name)) f,
+              ],
+        weeks,
+      );
       total = rest.fold(before, (sum, file) => sum + file.bytes);
       final found = rest
           .where((f) => BackupMessageSegments.isSegmentName(f.name))
@@ -148,6 +164,23 @@ class LocalBackupRestoreRunner {
       try {
         if (await temp.exists()) await temp.delete();
       } catch (_) {}
+    }
+  }
+
+  /// The names in a backup's `.media` list; null when it has none or it
+  /// cannot be read (then every media file is read, as before the list).
+  Future<Set<String>?> _listed(BackupSourceFile? list, Directory dir) async {
+    if (list == null) return null;
+    try {
+      final file = await _open(list, File('${dir.path}/restore.media'));
+      final names = (await file.readAsString()).split('\n');
+      return {
+        for (final n in names)
+          if (n.isNotEmpty) n,
+      };
+    } catch (error) {
+      debugPrint('[LocalBackup] restore: media list unreadable: $error');
+      return null;
     }
   }
 

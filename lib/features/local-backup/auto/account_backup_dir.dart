@@ -23,7 +23,10 @@ class AccountBackupDir {
 
   static const mediaExtension = '.abxmedia';
   static const _partial = '.partial';
-  static const _refs = '.media';
+  static const _refs = refsExtension;
+
+  /// Beside each backup: the media names it refers to, one per line.
+  static const refsExtension = '.media';
 
   final String userId;
   final Directory root;

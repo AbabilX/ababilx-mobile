@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../auto/account_backup_dir.dart';
 import '../auto/backup_message_segments.dart';
 import '../platform/backup_folder_channel.dart';
@@ -27,11 +29,18 @@ class BackupRestoreSource {
   const BackupRestoreSource({
     required this.main,
     this.media = const [],
+    this.mediaList,
     this.createdAtMs,
   });
 
   final BackupSourceFile main;
   final List<BackupSourceFile> media;
+
+  /// The `.media` list written beside [main]: the media files THIS backup
+  /// refers to. [media] is the whole folder — after a few reinstalls mostly
+  /// copies no kept backup names — so a restore reads only what this lists.
+  /// Null when there is none (a backup from before the list existed).
+  final BackupSourceFile? mediaList;
 
   /// When the backup was written, for "a backup from yesterday" on screen.
   final int? createdAtMs;
@@ -70,11 +79,18 @@ Future<List<BackupRestoreSource>> accountDirSources(
     for (final file in await dir.mediaFiles())
       BackupSourceFile.local(file.path, await file.length()),
   ];
+  Future<BackupSourceFile?> list(File backup) async {
+    final file = File('${backup.path}${AccountBackupDir.refsExtension}');
+    if (!await file.exists()) return null;
+    return BackupSourceFile.local(file.path, await file.length());
+  }
+
   return [
     for (final backup in backups)
       BackupRestoreSource(
         main: BackupSourceFile.local(backup.path, await backup.length()),
         media: media,
+        mediaList: await list(backup),
         createdAtMs: (await backup.lastModified()).millisecondsSinceEpoch,
       ),
   ];
@@ -86,7 +102,11 @@ class GrantedFolderBackups {
     required this.entries,
     required this.media,
     required this.accountLayout,
+    this.lists = const {},
   });
+
+  /// `.media` lists beside the backups, by file name.
+  final Map<String, BackupFolderEntry> lists;
 
   /// Backup files, newest first, whichever account wrote them.
   final List<BackupFolderEntry> entries;
@@ -99,6 +119,11 @@ class GrantedFolderBackups {
   BackupRestoreSource sourceFor(BackupFolderEntry entry) => BackupRestoreSource(
     main: BackupSourceFile.document(entry.uri, entry.bytes),
     media: media,
+    mediaList:
+        switch (lists['${entry.name}${AccountBackupDir.refsExtension}']) {
+          final list? => BackupSourceFile.document(list.uri, list.bytes),
+          null => null,
+        },
     createdAtMs: entry.modifiedMs,
   );
 }
@@ -146,6 +171,11 @@ Future<GrantedFolderBackups> readGrantedFolder(
   return GrantedFolderBackups(
     entries: entries,
     accountLayout: accountLayout || mediaDir != null,
+    lists: {
+      for (final e in level)
+        if (!e.isDir && e.name.endsWith(AccountBackupDir.refsExtension))
+          e.name: e,
+    },
     media: [
       for (final file in media)
         if (!file.isDir && file.name.endsWith(AccountBackupDir.mediaExtension))
