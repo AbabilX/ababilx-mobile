@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/home/catch-up/catch_up_screen.dart';
 import '../../features/home/pages/home_conversations_page.dart';
 import '../../features/home/pages/home_drafts_page.dart';
 import '../../features/chat-lock/screens/locked_chats_screen.dart';
@@ -386,8 +387,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       // reason as the routes above.
       // Home's quick views (`features/home/`). Outside the shell, like a chat.
       GoRoute(
+        path: '/home/catch-up',
+        builder: (_, _) => const CatchUpScreen(),
+      ),
+      // Old Unread list URL → Catch up deck (1A).
+      GoRoute(
         path: '/home/unread',
-        builder: (_, _) => const HomeConversationsPage.unread(),
+        redirect: (_, _) => '/home/catch-up',
       ),
       GoRoute(
         path: '/home/groups',

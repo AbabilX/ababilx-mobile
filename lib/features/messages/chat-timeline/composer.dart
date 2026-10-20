@@ -28,6 +28,7 @@ import '../snippet/snippet_too_long_sheet.dart';
 import '../task/task_create_screen.dart';
 import '../task/task_strings.dart';
 import '../providers/chat_connections_provider.dart';
+import '../../home/catch-up/catch_up_reply.dart';
 import '../providers/messageable_people_provider.dart';
 import 'composer_attach.dart';
 import 'composer_uploads_gate.dart';
@@ -558,6 +559,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         clientRef,
         parentId: widget.parentId,
       );
+    }
+    if (sentMsg != null && mounted && chatOpenedFromCatchUp(context)) {
+      returnHomeAfterCatchUpReply(context);
+      return;
     }
     // Slack parity: Check if any mentioned users are not members of this channel/group
     if (widget.isGroup &&
@@ -1138,7 +1143,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
             return;
           }
         } else {
-          await notifier.sendMessage(
+          final sent = await notifier.sendMessage(
             conversationId: widget.conversationId,
             body: '',
             parentId: reply.parentId,
@@ -1146,6 +1151,10 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
             quotePreview: reply.preview,
             attachments: voice,
           );
+          if (sent != null && mounted) {
+            returnHomeAfterCatchUpReply(context);
+            return;
+          }
         }
         notifier.setReplyToMessage(null);
       } catch (_) {

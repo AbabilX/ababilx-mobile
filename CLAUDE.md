@@ -81,9 +81,12 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   (clock art always on — morning 06–11 · afternoon 11–17 · evening 17–22 ·
   night 22–06; black ink on bright, white on evening/night; cover +
   topRight; no theme art. Foreground only swaps: unread = stacked faces +
-  "N new messages · in N chats" + Catch up → `/home/unread`; clear =
-  "You're all caught up"; `home_caught_up_art.dart`) · shortcuts
-  (`quick-views/`: Drafts &
+  "N new messages · in N chats" + Catch up → `/home/catch-up` (Slack-like
+  flip deck: swipe right / Mark as Read, swipe left / Keep Unread, Undo;
+  card = face + last 5 bubbles, tap opens the chat; a sent reply drops the
+  deck and lands on `/home`; `/home/unread` redirects here);
+  clear = "You're all caught up"; `home_caught_up_art.dart`,
+  `catch-up/`) · shortcuts (`quick-views/`: Drafts &
   scheduled, Groups, Flock
   (feeds, `/home/flock`), Local Share (→ `/local-share`); per-card pastel
   icon accent + chevron; hold and drag to reorder, `quickViewReordering`
@@ -94,7 +97,7 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   unpinned, chat-list rows, See all › → Messages). No dividers or folds.
   Every fixed-height row computes its height through
   `MediaQuery.textScalerOf` — a fixed height overflowed on an enlarged
-  system font. Pages `/home/unread|groups|drafts` sit outside the shell.
+  system font. Pages `/home/catch-up|groups|drafts` sit outside the shell.
   Drafts come from `ComposerDraftStore.listAll` (re-read on tab show and on
   page return); scheduled from `GET /api/chat/scheduled`, invalidated on
   `chat.scheduled.updated`. Locked chats never appear. Not built:

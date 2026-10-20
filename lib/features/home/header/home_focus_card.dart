@@ -36,7 +36,7 @@ class HomeFocusCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(_radius),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: clear ? null : () => context.push('/home/unread'),
+          onTap: clear ? null : () => context.push('/home/catch-up'),
           child: SizedBox(
             height: _height,
             width: double.infinity,
@@ -167,7 +167,7 @@ class _UnreadCopy extends ConsumerWidget {
             ),
           ),
           FilledButton(
-            onPressed: () => context.push('/home/unread'),
+            onPressed: () => context.push('/home/catch-up'),
             style: FilledButton.styleFrom(
               shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(horizontal: 16),
