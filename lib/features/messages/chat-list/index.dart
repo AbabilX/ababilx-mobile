@@ -100,18 +100,20 @@ class _ChatListState extends ConsumerState<ChatList> {
                 .toList(),
           )
         : original;
-    // Locked chats live behind a long press on the title, nowhere here.
+    // Locked chats are a filter action pill (+ title long-press); the list
+    // itself never shows them.
     final locks = ref.watch(chatLocksProvider);
     final dms = withoutLockedChats(chat.dms, locks);
     final channels = withoutLockedChats(chat.channels, locks);
     final shareThreads = ref.watch(shareChatThreadsProvider);
-    final filters = availableChatListFilters([
-      ...dms,
-      ...channels,
-    ], hasShareThreads: shareThreads.isNotEmpty);
-    // A pill whose last chat went away (read the last unread, left the last
-    // group) takes the selection back to All rather than an empty list.
-    if (!filters.contains(_filter)) _filter = ChatListFilter.all;
+    final filters = availableChatListFilters(
+      [...dms, ...channels],
+      hasLocked: locks.isNotEmpty,
+    );
+    // Unread gone, or a leftover quick-view selection from an older build.
+    if (!filters.contains(_filter) || isChatListFilterAction(_filter)) {
+      _filter = ChatListFilter.all;
+    }
     // Local Share device threads the user moved here sit among the chats.
     final rows = mergeChatListEntries(
       conversations: unifiedConversations(

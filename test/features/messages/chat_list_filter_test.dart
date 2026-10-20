@@ -16,49 +16,60 @@ ChatConversation _conv(String id, String type, {int unread = 0}) =>
 
 void main() {
   group('which pills are offered', () {
-    test('DMs only, all read: no row at all, not a lone All', () {
-      expect(availableChatListFilters([_conv('a', 'dm')]), isEmpty);
-    });
-
-    test('each pill appears only while something is behind it', () {
-      expect(availableChatListFilters([_conv('a', 'dm', unread: 2)]), [
+    test('quick views always sit on the row, like Home', () {
+      expect(availableChatListFilters([_conv('a', 'dm')]), [
         ChatListFilter.all,
-        ChatListFilter.unread,
+        ChatListFilter.groups,
+        ChatListFilter.webhooks,
+        ChatListFilter.localShare,
+        ChatListFilter.drafts,
       ]);
+    });
+
+    test('Unread joins only while something is unread', () {
       expect(
-        availableChatListFilters([_conv('a', 'dm'), _conv('g', 'group')]),
-        [ChatListFilter.all, ChatListFilter.groups],
+        availableChatListFilters([_conv('a', 'dm', unread: 2)]),
+        contains(ChatListFilter.unread),
       );
       expect(
-        availableChatListFilters([
-          _conv('a', 'dm', unread: 1),
-          _conv('c', 'channel'),
-          _conv('w', 'webhook'),
-        ]),
-        ChatListFilter.values.where((f) => f != ChatListFilter.localShare),
+        availableChatListFilters([_conv('a', 'dm')]),
+        isNot(contains(ChatListFilter.unread)),
+      );
+    });
+
+    test('Locked only while this phone has a locked chat', () {
+      expect(
+        availableChatListFilters([_conv('a', 'dm')], hasLocked: true),
+        contains(ChatListFilter.locked),
+      );
+      expect(
+        availableChatListFilters([_conv('a', 'dm')]),
+        isNot(contains(ChatListFilter.locked)),
       );
     });
   });
 
-  test('Groups holds groups and channels, never a feed or a DM', () {
-    final rows = unifiedConversations(
-      dms: [_conv('d', 'dm')],
-      channels: [
-        _conv('g', 'group'),
-        _conv('c', 'channel'),
-        _conv('w', 'webhook'),
-      ],
-      filter: ChatListFilter.groups,
-    );
-    expect(rows.map((c) => c.id), unorderedEquals(['g', 'c']));
+  test('quick-view pills are actions, not list filters', () {
+    for (final f in [
+      ChatListFilter.groups,
+      ChatListFilter.webhooks,
+      ChatListFilter.localShare,
+      ChatListFilter.drafts,
+      ChatListFilter.locked,
+    ]) {
+      expect(isChatListFilterAction(f), isTrue);
+      expect(matchesChatListFilter(_conv('g', 'group'), f), isFalse);
+    }
+    expect(isChatListFilterAction(ChatListFilter.all), isFalse);
+    expect(isChatListFilterAction(ChatListFilter.unread), isFalse);
   });
 
-  test('Webhooks holds feeds only', () {
+  test('Unread still filters the list', () {
     final rows = unifiedConversations(
-      dms: [_conv('d', 'dm')],
-      channels: [_conv('g', 'group'), _conv('w', 'webhook')],
-      filter: ChatListFilter.webhooks,
+      dms: [_conv('d', 'dm', unread: 1), _conv('e', 'dm')],
+      channels: [_conv('g', 'group', unread: 2)],
+      filter: ChatListFilter.unread,
     );
-    expect(rows.map((c) => c.id), ['w']);
+    expect(rows.map((c) => c.id), unorderedEquals(['d', 'g']));
   });
 }

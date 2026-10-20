@@ -134,13 +134,10 @@ void main() {
       filter: ChatListFilter.localShare,
     );
     expect(keys(merged), ['local-share:a']);
-    expect(
-      availableChatListFilters(chats, hasShareThreads: true),
-      contains(ChatListFilter.localShare),
-    );
+    // Local Share is a permanent quick-view pill (navigates), always offered.
     expect(
       availableChatListFilters(chats),
-      isNot(contains(ChatListFilter.localShare)),
+      contains(ChatListFilter.localShare),
     );
   });
 

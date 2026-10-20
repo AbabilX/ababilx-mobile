@@ -86,15 +86,9 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   card = face + last 5 bubbles, tap opens the chat; a sent reply drops the
   deck and lands on `/home`; `/home/unread` redirects here);
   clear = "You're all caught up"; `home_caught_up_art.dart`,
-  `catch-up/`) · shortcuts (`quick-views/`: Drafts &
-  scheduled, Groups, Flock
-  (feeds, `/home/flock`), Local Share (→ `/local-share`), Locked chats
-  (→ `/messages/locked`, only while `chatLocksProvider` is non-empty);
-  icons use chip ink, no pastel fill; hold and drag to reorder,
-  `quickViewReordering` blurs the rest, `home_quick_view_order_v1`) ·
-  Pinned faces · Nearby devices (Local Share peers, capsules, hidden when
-  none) · Talk again (1:1 callers ≥2 from Talks' cached log; tap person →
-  call at once, phone badge is a hint only; See all → Talks) · Recent
+  `catch-up/`) · Pinned faces · Nearby devices (Local Share peers, capsules,
+  hidden when none) · Talk again (1:1 callers ≥2 from Talks' cached log; tap
+  person → call at once, phone badge is a hint only; See all → Talks) · Recent
   chats (6 newest unpinned, chat-list rows, See all › → Messages). No
   dividers or folds. Every fixed-height row computes its height through
   `MediaQuery.textScalerOf` — a fixed height overflowed on an enlarged
@@ -102,8 +96,11 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   Drafts come from `ComposerDraftStore.listAll` (re-read on tab show and on
   page return); scheduled from `GET /api/chat/scheduled`, invalidated on
   `chat.scheduled.updated`. Locked chats never appear in Home lists
-  (Pinned / Recent / Catch up) — only the Locked shortcut. Not built:
-  Threads/Mentions, Tasks across DMs, Saved, Pins across chats.
+  (Pinned / Recent / Catch up). Home quick views (Drafts · Groups · Flock ·
+  Local Share · Locked) live on the Messages filter row — same routes,
+  navigate-on-tap; Locked only while `chatLocksProvider` is non-empty. All /
+  Unread still filter the list. Not built: Threads/Mentions, Tasks across
+  DMs, Saved, Pins across chats.
 - **Chats ↔ Talks swipe** (2026-09-30, `core/router/swipe_tab_pager.dart` +
   `home_tab_pager.dart`): `/messages` and `/calls` build ONE `MaterialPage`
   keyed `home-tab-pager`, so a route change updates the page and the

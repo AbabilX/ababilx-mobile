@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../home/data/home_drafts.dart';
 import '../chat_icon.dart';
 import '../chat_list_filters.dart';
 import 'filter_order.dart';
 import 'filter_reorder_blur.dart';
 
 /// One horizontally scrollable row of pills above the conversation list:
-/// All | Unread messages | Groups | Flock (webhook feeds; Ababil = a flock
-/// of birds) — each only while something is behind it
-/// (`availableChatListFilters`), and the row is gone when All would be the
-/// only pill.
+/// All | Unread (while any) | Drafts | Groups | Flock | Local Share | Locked
+/// (while any lock). All / Unread filter the list; the rest are Home's old
+/// quick views — same routes, always offered (Locked only when locked).
 ///
 /// Personal and Workspaces pills used to sit here too. Since the server's
 /// migration 0145 every conversation is personal — no workspace owns one — so
@@ -35,6 +36,8 @@ class FilterChipsRow extends ConsumerWidget {
     ChatListFilter.groups: 'chat_groups',
     ChatListFilter.webhooks: 'chat_filter_webhooks',
     ChatListFilter.localShare: 'chat_filter_local_share',
+    ChatListFilter.drafts: 'home_drafts',
+    ChatListFilter.locked: 'home_locked',
   };
 
   static final _icons = {
@@ -42,6 +45,17 @@ class FilterChipsRow extends ConsumerWidget {
     ChatListFilter.groups: HugeIcons.strokeRoundedUserGroup,
     ChatListFilter.webhooks: HugeIcons.strokeRoundedWebhook,
     ChatListFilter.localShare: HugeIcons.strokeRoundedWifi01,
+    ChatListFilter.drafts: HugeIcons.strokeRoundedSent,
+    ChatListFilter.locked: HugeIcons.strokeRoundedSquareLock02,
+  };
+
+  /// Same destinations Home's quick-view cards used.
+  static const _actionRoutes = {
+    ChatListFilter.drafts: '/home/drafts',
+    ChatListFilter.groups: '/home/groups',
+    ChatListFilter.webhooks: '/home/flock',
+    ChatListFilter.localShare: '/local-share',
+    ChatListFilter.locked: '/messages/locked',
   };
 
   @override
@@ -51,8 +65,18 @@ class FilterChipsRow extends ConsumerWidget {
     Widget chip(ChatListFilter option) => _Chip(
       label: AppTranslations.translate(context, ref, _labels[option]!),
       icon: _icons[option],
-      selected: option == filter,
-      onTap: () {
+      selected: !isChatListFilterAction(option) && option == filter,
+      onTap: () async {
+        final route = _actionRoutes[option];
+        if (route != null) {
+          await context.push(route);
+          // Draft / scheduled counts may have changed on that page.
+          if (option == ChatListFilter.drafts) {
+            ref.invalidate(homeDraftsProvider);
+            ref.invalidate(homeScheduledProvider);
+          }
+          return;
+        }
         if (option != filter) onChanged(option);
       },
     );
