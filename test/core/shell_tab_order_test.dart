@@ -7,6 +7,7 @@ void main() {
 
   test('no saved order keeps the default', () {
     expect(routes(applyTabOrder(homeShellTabs, const [])), [
+      '/home',
       '/messages',
       '/calls',
     ]);
@@ -15,6 +16,7 @@ void main() {
   test('saved order wins; an unknown tab goes last', () {
     expect(routes(applyTabOrder(homeShellTabs, ['/calls'])), [
       '/calls',
+      '/home',
       '/messages',
     ]);
   });

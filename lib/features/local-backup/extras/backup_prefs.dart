@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'backup_pref_merge.dart';
+
 /// The app settings a backup carries — Signal's backup restores the person's
 /// preferences with their messages, so a new phone feels like the old one.
 ///
@@ -82,7 +84,8 @@ abstract final class BackupPrefs {
   /// restore normally lands on a new install, where nothing is set; on the
   /// same phone (after "start fresh") a choice made since the backup is newer
   /// than the backup's. Locks merge instead: a chat locked on either side
-  /// stays locked. [rewrite] maps a stored path to where its file landed.
+  /// stays locked; so do the lists in [BackupPrefMerge] (favourites, kept
+  /// wallpaper photos). [rewrite] maps a stored path to where its file landed.
   static Future<int> restore(
     List<Map<String, dynamic>> frames, {
     required String Function(String value) rewrite,
@@ -103,9 +106,16 @@ abstract final class BackupPrefs {
           written++;
           continue;
         }
-        if (present) continue;
-        final value = _value(f['y'], f['v'], rewrite);
+        var value = _value(f['y'], f['v'], rewrite);
         if (value == null) continue;
+        if (present) {
+          if (!BackupPrefMerge.merges(key)) continue;
+          final phone = isAsync
+              ? await _readAsync(async, key)
+              : legacy.get(key);
+          value = BackupPrefMerge.merge(key, phone, value);
+          if (value == null) continue;
+        }
         await (isAsync
             ? _writeAsync(async, key, value)
             : _write(legacy, key, value));
@@ -149,6 +159,9 @@ abstract final class BackupPrefs {
     List<String>() => p.setStringList(k, v),
     _ => Future<void>.value(),
   };
+
+  static Future<Object?> _readAsync(SharedPreferencesAsync p, String k) async =>
+      (await p.getAll(allowList: {k}))[k];
 
   static Future<void> _restoreLocks(SharedPreferencesAsync p, Object? v) async {
     if (v is! String) return;

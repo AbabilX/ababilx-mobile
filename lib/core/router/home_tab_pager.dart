@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/calls/screens/calls_screen.dart';
+import '../../features/home/home_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
 import 'shell_bottom_bar/shell_tab_order.dart';
 import 'shell_bottom_bar/shell_tabs.dart';
@@ -17,7 +18,7 @@ Page<void> homeTabPage(GoRouterState state) => MaterialPage<void>(
   child: _HomePager(route: state.matchedLocation),
 );
 
-/// Chats and Talks in the order the user arranged the bar in: swiping follows
+/// Home, Chats and Talks in the order the user arranged the bar in: swiping follows
 /// that order, and so does the page the route names.
 class _HomePager extends ConsumerWidget {
   const _HomePager({required this.route});
@@ -25,6 +26,7 @@ class _HomePager extends ConsumerWidget {
   final String route;
 
   static const _screens = {
+    '/home': HomeScreen(),
     '/messages': MessagesScreen(),
     '/calls': CallsScreen(),
   };

@@ -1,3 +1,4 @@
+import 'features/settings/start-tab/start_tab.dart';
 import 'dart:io' show Platform;
 import 'dart:ui' show DartPluginRegistrant;
 
@@ -184,6 +185,7 @@ void main() async {
     ChatLockIndex.preload(),
     AvatarStore.instance.init(),
     LaunchRing.read(),
+    StartTab.preload(),
   ]);
 
   // Signal's launch: the splash stays until auth knows chats or login.

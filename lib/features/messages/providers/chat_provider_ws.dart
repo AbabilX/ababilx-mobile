@@ -94,6 +94,7 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
     // ours to seal it again, which the reload does.
     if (type == 'chat.scheduled.updated') {
       ref.invalidate(scheduledMessagesProvider(convId));
+      ref.invalidate(homeScheduledProvider);
       unawaited(ref.read(scheduledResealProvider).runAll());
       return;
     }

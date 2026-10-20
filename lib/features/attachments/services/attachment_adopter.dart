@@ -60,6 +60,18 @@ class AttachmentAdopter {
   final AttachmentQueue _queue;
   final AttachmentDimensionReader? _dimensions;
 
+  /// Whether this phone already holds [fileUrl]'s bytes. Lets a restore skip
+  /// a file it would only copy and then drop as already present.
+  Future<bool> holds(String fileUrl) async {
+    final urlKey = attachmentUrlKey(fileUrl);
+    if (urlKey.isEmpty) return false;
+    try {
+      return await _blobs.isReady(urlKey);
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// A file the picker gave us a real path to (gallery item, camera capture).
   Future<void> adoptFile({
     required String fileUrl,

@@ -68,6 +68,33 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   when `hasTeam`. Turning a switch off hides the tab from the bar only;
   deep links still open the route. Leaving a team still redirects
   `/wall` `/board` `/crm` to Messages via `shellRouteAccessDenied`.
+- **Home tab** (2026-10-20, `lib/features/home/`, own design — not Slack's).
+  Bar is Home | Messages | Calls; Home is one more page of the same pager
+  (`home_tab_pager.dart`). The app lands on the tab picked at Settings →
+  Open on launch (`settings/start-tab/`, `start_tab_v1`, Messages by
+  default); it is read in `main` before the first frame because the
+  router's redirect is synchronous, and `kAppHomePath` (system back) follows
+  it. `shellTabIndex` falls back to Messages, not index 0.
+  An install with a saved tab order sees Home last until dragged.
+  Top to bottom: greeting header (time-of-day + first name, search, QR,
+  own face → You sheet) · focus card (unread: stacked faces, "N new
+  messages · in N chats", Catch up → `/home/unread`; else "all caught
+  up") · shortcuts (`quick-views/`: Drafts & scheduled, Groups, Flock (feeds,
+  `/home/flock`), Local Share (→ `/local-share`, nearby/unread count); add a value
+  + spec in `quick_views.dart`, only with a real list behind it; hold and
+  drag to reorder, `quickViewReordering` blurs the rest,
+  `home_quick_view_order_v1`) · Pinned faces · Nearby devices (Local Share
+  peers, capsules, hidden when none; a capsule's picture is built at the
+  capsule's full height so its circle is the stadium's left end) · Talk again (1:1 callers >=2 from
+  Talks' cached log; capsule opens chat, round button calls) · Recent
+  chats (6 newest unpinned, chat-list rows, See all → Messages). No dividers
+  or folds. Every fixed-height row computes its height through
+  `MediaQuery.textScalerOf` — a fixed height overflowed on an enlarged
+  system font. Pages `/home/unread|groups|drafts` sit outside the shell.
+  Drafts come from `ComposerDraftStore.listAll` (re-read on tab show and on
+  page return); scheduled from `GET /api/chat/scheduled`, invalidated on
+  `chat.scheduled.updated`. Locked chats never appear. Not built:
+  Threads/Mentions, Tasks across DMs, Saved, Pins across chats.
 - **Chats ↔ Talks swipe** (2026-09-30, `core/router/swipe_tab_pager.dart` +
   `home_tab_pager.dart`): `/messages` and `/calls` build ONE `MaterialPage`
   keyed `home-tab-pager`, so a route change updates the page and the

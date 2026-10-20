@@ -71,7 +71,7 @@ class _ScheduledList extends ConsumerWidget {
                   shrinkWrap: true,
                   padding: const EdgeInsets.only(bottom: 8),
                   itemCount: rows.length,
-                  itemBuilder: (context, i) => _Row(row: rows[i]),
+                  itemBuilder: (context, i) => ScheduledRow(row: rows[i]),
                 ),
               ),
           ],
@@ -81,8 +81,9 @@ class _ScheduledList extends ConsumerWidget {
   }
 }
 
-class _Row extends ConsumerWidget {
-  const _Row({required this.row});
+/// One scheduled message: what it says and when it goes. Tap = its actions.
+class ScheduledRow extends ConsumerWidget {
+  const ScheduledRow({super.key, required this.row});
 
   final ScheduledMessage row;
 

@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-/// App "home" — system back lands here before the OS can exit.
-const kAppHomePath = '/messages';
+import '../../features/settings/start-tab/start_tab.dart';
+
+/// App "home" — system back lands here before the OS can exit. The tab
+/// picked at Settings → Open on launch; Messages unless changed.
+String get kAppHomePath => StartTab.route;
 
 bool isAppHomeLocation(String location) => location == kAppHomePath;
 
-/// Pop one route if possible; otherwise go to Messages home.
+/// Pop one route if possible; otherwise go to the start tab.
 ///
 /// Returns `true` when back was handled (stay in app).
-/// Returns `false` only on Messages home or login — caller may exit.
+/// Returns `false` only on the start tab or login — caller may exit.
 bool handleRootBack(BuildContext context) {
   final router = GoRouter.maybeOf(context);
   if (router != null && router.canPop()) {

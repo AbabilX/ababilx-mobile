@@ -26,6 +26,13 @@ class ShellTab {
   final bool showsUnread;
 }
 
+const homeShellTab = ShellTab(
+  route: '/home',
+  labelKey: 'home',
+  icon: HugeIcons.strokeRoundedHome01,
+  selectedIcon: HugeIcons.strokeRoundedHome03,
+);
+
 const messagesShellTab = ShellTab(
   route: '/messages',
   labelKey: 'messages',
@@ -41,14 +48,21 @@ const callsShellTab = ShellTab(
   selectedIcon: HugeIcons.strokeRoundedCall,
 );
 
-/// Destinations in the home bottom bar: Messages and Calls, the two-tab
-/// Signal shape. Workspace tabs (Wall, Board, CRM) were removed from mobile.
-const List<ShellTab> homeShellTabs = [messagesShellTab, callsShellTab];
+/// Destinations in the home bottom bar: Home (Slack's quick views), Messages
+/// and Calls. Workspace tabs (Wall, Board, CRM) were removed from mobile.
+const List<ShellTab> homeShellTabs = [
+  homeShellTab,
+  messagesShellTab,
+  callsShellTab,
+];
 
-/// Index of the tab owning [location], or 0 when nothing matches.
+/// Index of the tab owning [location]. Nothing matching falls back to
+/// Messages, not to whatever tab happens to sit first — Home is first, and
+/// is not where a stray route goes.
 int shellTabIndex(List<ShellTab> tabs, String location) {
   for (var i = 0; i < tabs.length; i++) {
     if (location.startsWith(tabs[i].route)) return i;
   }
-  return 0;
+  final messages = tabs.indexWhere((t) => t.route == messagesShellTab.route);
+  return messages < 0 ? 0 : messages;
 }

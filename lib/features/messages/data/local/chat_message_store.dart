@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/chat_message.dart';
 import 'android_chat_message_store.dart';
+import 'archive_page_merge.dart';
 import 'chat_local_db.dart';
 import 'chat_sidebar_cache.dart' show chatLocalDbProvider;
 import 'drift_chat_message_store.dart';

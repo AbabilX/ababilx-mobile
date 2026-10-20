@@ -13,6 +13,9 @@ import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import 'language_dialog.dart';
 import 'settings_row.dart';
+import '../start-tab/start_tab.dart';
+import '../start-tab/start_tab_sheet.dart';
+import '../../../core/router/shell_bottom_bar/shell_tabs.dart';
 import 'sign_out_dialog.dart';
 import '../donate/donate_sheet.dart';
 
@@ -38,6 +41,19 @@ class SettingsSections extends ConsumerWidget {
           icon: HugeIcons.strokeRoundedNotification03,
           title: t('settings_notifications'),
           onTap: () => context.push('/settings/notifications'),
+        ),
+        SettingsRow(
+          icon: HugeIcons.strokeRoundedHome01,
+          title: t('settings_start_tab'),
+          value: t(
+            homeShellTabs
+                .firstWhere(
+                  (tab) => tab.route == ref.watch(startTabProvider),
+                  orElse: () => messagesShellTab,
+                )
+                .labelKey,
+          ),
+          onTap: () => showStartTabSheet(context, ref),
         ),
         SettingsRow(
           icon: HugeIcons.strokeRoundedMobileNavigator01,

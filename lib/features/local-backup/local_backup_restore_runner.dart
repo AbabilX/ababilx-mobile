@@ -76,6 +76,7 @@ class LocalBackupRestoreRunner {
         saveMessages: (m) => store.saveRecovered(m, fromBackup: true),
         saveBodies: (b) => bodies.putAll(userId, b),
         adoptFile: adopter.adoptFile,
+        holdsFile: adopter.holds,
         tempDir: Directory('${dir.path}/files'),
         onOtherFrame: others ? other : null,
         onOtherFile: others ? collected.onFile : null,

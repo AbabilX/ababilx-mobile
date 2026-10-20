@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/home/pages/home_conversations_page.dart';
+import '../../features/home/pages/home_drafts_page.dart';
 import '../../features/chat-lock/screens/locked_chats_screen.dart';
 import '../../features/chat-lock/widgets/chat_lock_gate.dart';
 import '../../features/ghost/screens/ghost_chat_screen.dart';
@@ -12,6 +14,7 @@ import '../../features/profile/screens/sessions_screen.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
 import '../../features/settings/app-icon/app_icon_screen.dart';
+import '../../features/settings/start-tab/start_tab.dart';
 import '../../features/messages/chat-details/conversation_details_screen.dart';
 import '../../features/messages/chat-details/group_members_screen.dart';
 import '../../features/messages/data/models/chat_models.dart';
@@ -135,9 +138,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               isLaunch ||
               state.matchedLocation == '/message-recovery')) {
         if (isLaunch && ringing) return '/call';
-        // Otherwise land on Messages first. FcmService.flushPendingNav seeds
-        // the deep-link (push) so Android back returns here instead of exit.
-        return '/messages';
+        // Otherwise land on the tab picked in Settings (Messages unless
+        // changed). FcmService.flushPendingNav seeds the deep-link (push) so
+        // Android back returns here instead of exit.
+        return StartTab.route;
       }
       return null;
     },
@@ -157,7 +161,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _, child) =>
             ProfileSetupGate(child: HomeShell(child: child)),
         routes: [
-          // One page for both, so a swipe moves between them.
+          // One page for all three, so a swipe moves between them.
+          GoRoute(path: '/home', pageBuilder: (_, state) => homeTabPage(state)),
           GoRoute(
             path: '/messages',
             pageBuilder: (_, state) => homeTabPage(state),
@@ -379,6 +384,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Locked chats (device-local). Reached by a long press on the chat
       // list's title only. Declared before '/messages/:id' for the same
       // reason as the routes above.
+      // Home's quick views (`features/home/`). Outside the shell, like a chat.
+      GoRoute(
+        path: '/home/unread',
+        builder: (_, _) => const HomeConversationsPage.unread(),
+      ),
+      GoRoute(
+        path: '/home/groups',
+        builder: (_, _) => const HomeConversationsPage.groups(),
+      ),
+      GoRoute(
+        path: '/home/flock',
+        builder: (_, _) => const HomeConversationsPage.flock(),
+      ),
+      GoRoute(path: '/home/drafts', builder: (_, _) => const HomeDraftsPage()),
       GoRoute(
         path: '/messages/locked',
         builder: (_, _) => const LockedChatsScreen(),

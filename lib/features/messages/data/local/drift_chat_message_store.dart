@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'recovery_message_merge.dart';
 
 import '../models/chat_message.dart';
+import 'archive_page_merge.dart';
 import 'chat_local_db.dart';
 import 'chat_message_row.dart';
 
@@ -81,6 +82,44 @@ class DriftChatMessageStore {
     } catch (_) {
       return const [];
     }
+  }
+
+  /// [exportPage]'s cursor without the payloads: just where each row sits.
+  /// Lets the Android archive read find rows only this store holds without
+  /// parsing every row twice. Throws on a disk failure (the caller decides).
+  Future<List<ArchiveRowKey>> exportKeys({
+    int? afterMs,
+    String? afterId,
+    required int limit,
+  }) async {
+    final t = _db.cachedMessages;
+    final query = _db.selectOnly(t)..addColumns([t.id, t.createdAtMs]);
+    if (afterMs != null) {
+      query.where(
+        afterId == null
+            ? t.createdAtMs.isBiggerThanValue(afterMs)
+            : t.createdAtMs.isBiggerThanValue(afterMs) |
+                  (t.createdAtMs.equals(afterMs) &
+                      t.id.isBiggerThanValue(afterId)),
+      );
+    }
+    query
+      ..orderBy([
+        OrderingTerm(expression: t.createdAtMs),
+        OrderingTerm(expression: t.id),
+      ])
+      ..limit(limit);
+    return [
+      for (final row in await query.get())
+        (ms: row.read(t.createdAtMs)!, id: row.read(t.id)!),
+    ];
+  }
+
+  /// The rows stored under these row ids, in no particular order.
+  Future<List<ChatMessage>> rowsByIds(List<String> ids) async {
+    if (ids.isEmpty) return const [];
+    final query = _db.select(_db.cachedMessages)..where((t) => t.id.isIn(ids));
+    return messagesFromRows(await query.get());
   }
 
   Future<bool> hasOlderThan(

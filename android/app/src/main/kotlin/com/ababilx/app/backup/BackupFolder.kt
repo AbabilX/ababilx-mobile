@@ -109,8 +109,10 @@ object BackupFolder {
     fun write(context: Context, tree: Uri, source: File, name: String, owner: String, keep: Int): Entry {
         val resolver = context.contentResolver
         val root = rootDocument(tree)
+        // A partial cut off before its header was written names no owner and
+        // would sit in the folder for good; it is nobody's backup either way.
         list(context, tree)
-            .filter { it.owner == owner && it.name.endsWith(PARTIAL) }
+            .filter { it.name.endsWith(PARTIAL) && (it.owner == owner || it.owner == null) }
             .forEach { runCatching { DocumentsContract.deleteDocument(resolver, it.uri) } }
 
         val partial = create(resolver, root, name + PARTIAL)

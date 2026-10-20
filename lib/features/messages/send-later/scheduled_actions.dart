@@ -8,6 +8,7 @@ import '../../../shared/widgets/app_toast.dart';
 import '../chat_icon.dart';
 import 'scheduled_api.dart';
 import 'scheduled_message.dart';
+import '../../home/data/home_drafts.dart';
 import 'scheduled_provider.dart';
 import 'scheduled_reseal.dart';
 import 'send_later_sheet.dart';
@@ -66,8 +67,11 @@ Future<void> showScheduledActions(
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
   final client = ref.read(apiClientProvider);
   final reseal = ref.read(scheduledResealProvider);
-  void refresh() =>
-      ref.invalidate(scheduledMessagesProvider(row.conversationId));
+  void refresh() {
+    ref.invalidate(scheduledMessagesProvider(row.conversationId));
+    ref.invalidate(homeScheduledProvider);
+  }
+
   try {
     switch (action) {
       case _Action.sendNow:

@@ -29,6 +29,7 @@ class BackupImporter {
     required this.saveBodies,
     required this.adoptFile,
     required this.tempDir,
+    this.holdsFile,
     this.onOtherFrame,
     this.onOtherFile,
   });
@@ -37,6 +38,11 @@ class BackupImporter {
   final Future<void> Function(Map<String, String> bodies) saveBodies;
   final AdoptRestoredFile adoptFile;
   final Directory tempDir;
+
+  /// True when this phone already holds the file under that URL. Its bytes
+  /// are then passed over instead of copied out and dropped as a duplicate —
+  /// a second restore of the same backup reads, but writes no file again.
+  final Future<bool> Function(String fileUrl)? holdsFile;
 
   /// Everything that is not a message (chat list, calls, settings) and every
   /// file that is not an attachment (`x` set: pictures). See
@@ -98,6 +104,7 @@ class BackupImporter {
           if (frame['x'] != null) return onOtherFile?.call(frame);
           final url = frame['u'];
           if (url is! String || url.isEmpty) return null;
+          if (await holdsFile?.call(url) ?? false) return null;
           return _RestoredFileSink(
             File('${tempDir.path}/${files + 1}.part'),
             expectedBytes: (frame['s'] as num?)?.toInt() ?? -1,

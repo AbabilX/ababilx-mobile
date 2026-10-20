@@ -17,6 +17,10 @@ Future<void> ensureChatMessageIndexes(DatabaseConnectionUser db) async {
   const statements = [
     'CREATE INDEX IF NOT EXISTS idx_cached_messages_timeline '
         'ON cached_messages (conversation_id, thread_root_id, created_at_ms, id)',
+    // The archive cursor (backup, history transfer): every row by time, then
+    // id. Without it each export page sorted the whole table again.
+    'CREATE INDEX IF NOT EXISTS idx_cached_messages_archive '
+        'ON cached_messages (created_at_ms, id)',
     "CREATE INDEX IF NOT EXISTS idx_cached_messages_payload_id "
         "ON cached_messages (json_extract(payload_json, '\$.id'))",
     "CREATE INDEX IF NOT EXISTS idx_cached_messages_send_status "

@@ -14,7 +14,9 @@ extension ChatMessageArchiveSource on ChatMessageStore {
   ///
   /// Reads the same store the rest of the facade prefers: SQLCipher on
   /// Android, drift elsewhere. Exporting from the wrong one would silently
-  /// back up the rollback copy instead of the live history.
+  /// back up the rollback copy instead of the live history — so on Android
+  /// the SQLCipher copy of a row always wins, and drift only adds the rows
+  /// SQLCipher does not hold at all (see [mergeArchivePage]).
   Future<List<ChatMessage>> exportPage({
     int? afterMs,
     String? afterId,
@@ -30,9 +32,25 @@ extension ChatMessageArchiveSource on ChatMessageStore {
       );
     }
     try {
-      return await native.exportPage(
+      final primary = await native.exportPage(
         afterMs: afterMs,
         afterId: afterId,
+        limit: bounded,
+      );
+      final List<ArchiveRowKey> mirrorKeys;
+      try {
+        mirrorKeys = await _drift.exportKeys(
+          afterMs: afterMs,
+          afterId: afterId,
+          limit: bounded,
+        );
+      } catch (_) {
+        return primary; // the rollback copy unreadable: SQLCipher alone
+      }
+      return await mergeArchivePage(
+        primary: primary,
+        mirrorKeys: mirrorKeys,
+        mirrorRows: _drift.rowsByIds,
         limit: bounded,
       );
     } catch (_) {

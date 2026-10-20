@@ -28,7 +28,7 @@ class ChatLocalDb extends _$ChatLocalDb {
   ChatLocalDb.forTesting(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -102,7 +102,9 @@ class ChatLocalDb extends _$ChatLocalDb {
       }
       // V8 → V9: the message indexes a fresh install never got. Additive —
       // building them reads the table once, and every later read is indexed.
-      if (from < 9) {
+      // V9 → V10: the archive index (backup export order). Same helper, every
+      // statement IF NOT EXISTS, so a phone below V9 builds all of them once.
+      if (from < 10) {
         await ensureChatMessageIndexes(m.database);
       }
     },

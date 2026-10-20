@@ -108,6 +108,31 @@ class ComposerDraftStore {
     }
   }
 
+  /// Every non-empty draft [ownerId] has, one per composer. Read by Home's
+  /// Drafts card; a `.send` binding is not a draft and is skipped.
+  Future<List<ComposerDraft>> listAll(String ownerId) async {
+    if (ownerId.isEmpty) return const [];
+    await Future.wait(_pendingWrites.values.toList());
+    final prefs = await SharedPreferences.getInstance();
+    final prefix = '$_prefix${_segment(ownerId)}.';
+    final drafts = <ComposerDraft>[];
+    for (final key in prefs.getKeys()) {
+      if (!key.startsWith(prefix)) continue;
+      final parts = key.substring(prefix.length).split('.');
+      if (parts.length != 2) continue;
+      final text = prefs.getString(key) ?? '';
+      if (text.trim().isEmpty) continue;
+      drafts.add(
+        ComposerDraft(
+          conversationId: Uri.decodeComponent(parts[0]),
+          parentId: parts[1] == 'root' ? null : Uri.decodeComponent(parts[1]),
+          text: text,
+        ),
+      );
+    }
+    return drafts;
+  }
+
   Future<void> clearAll() async {
     await Future.wait(_pendingWrites.values.toList());
     final prefs = await SharedPreferences.getInstance();
@@ -115,6 +140,19 @@ class ComposerDraftStore {
       await prefs.remove(key);
     }
   }
+}
+
+/// One composer's unsent text: the main timeline ([parentId] null) or a thread.
+class ComposerDraft {
+  const ComposerDraft({
+    required this.conversationId,
+    required this.parentId,
+    required this.text,
+  });
+
+  final String conversationId;
+  final String? parentId;
+  final String text;
 }
 
 final composerDraftStoreProvider = Provider<ComposerDraftStore>(
