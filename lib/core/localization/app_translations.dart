@@ -293,6 +293,8 @@ class AppTranslations {
       'local_backup_error_folder':
           'This phone lost access to the backup folder. Choose it again.',
       'local_backup_error_nothing': 'Nothing is selected to back up.',
+      'local_backup_error_empty':
+          'No messages on this phone yet, so your last backup was kept.',
       'local_backup_error_locked':
           'Unlock your messages first, then try again.',
       'local_backup_error_busy': 'A backup or restore is already running.',
@@ -507,6 +509,15 @@ class AppTranslations {
       'chat_emoji': 'Emoji',
       'chat_mention': 'Mention someone',
       'chat_share_contact': 'Share contact',
+      'chat_share': 'Share',
+      'chat_shared_one': 'Shared to 1 chat',
+      'chat_shared_many': 'Shared to {n} chats',
+      'chat_share_failed': 'Could not share. Try again.',
+      'chat_copy_link': 'Copy link',
+      'chat_link_copied': 'Link copied',
+      'chat_share_via': 'Share to another app',
+      'chat_send_in_chat': 'Send in a chat',
+      'chat_share_contact_text': 'Message {name} on AbabilX',
       'chat_expand': 'Expand composer',
       'chat_send': 'Send',
       'chat_next': 'Next',
@@ -1521,7 +1532,8 @@ class AppTranslations {
       'local_backup_never': 'এখনো হয়নি',
       'local_backup_now': 'এখনই ব্যাকআপ নিন',
       'local_backup_running': 'ব্যাকআপ চলছে… {n}টি মেসেজ',
-      'local_backup_sealing': 'পরিবর্তন সেভ হচ্ছে… {total}টির মধ্যে {n}টি মেসেজ',
+      'local_backup_sealing':
+          'পরিবর্তন সেভ হচ্ছে… {total}টির মধ্যে {n}টি মেসেজ',
       'local_backup_done': 'ব্যাকআপ সেভ হয়েছে',
       'local_backup_done_new': 'ব্যাকআপ সেভ হয়েছে · {n}টি মেসেজ আপডেট হয়েছে',
       'local_backup_done_unchanged': 'ব্যাকআপ আপ টু ডেট',
@@ -1608,6 +1620,8 @@ class AppTranslations {
       'local_backup_error_folder':
           'এই ফোন ব্যাকআপ ফোল্ডারে ঢোকার অনুমতি হারিয়েছে। ফোল্ডারটি আবার বাছুন।',
       'local_backup_error_nothing': 'ব্যাকআপের জন্য কিছুই বাছাই করা নেই।',
+      'local_backup_error_empty':
+          'এই ফোনে এখনো কোনো মেসেজ নেই, তাই আগের ব্যাকআপ রাখা হয়েছে।',
       'local_backup_error_locked':
           'আগে আপনার মেসেজ আনলক করুন, তারপর আবার চেষ্টা করুন।',
       'local_backup_error_busy': 'একটি ব্যাকআপ বা রিস্টোর আগে থেকেই চলছে।',
@@ -1820,6 +1834,15 @@ class AppTranslations {
       'chat_emoji': 'ইমোজি',
       'chat_mention': 'কাউকে মেনশন করুন',
       'chat_share_contact': 'কন্টাক্ট শেয়ার করুন',
+      'chat_share': 'শেয়ার',
+      'chat_shared_one': '১টি চ্যাটে শেয়ার হয়েছে',
+      'chat_shared_many': '{n}টি চ্যাটে শেয়ার হয়েছে',
+      'chat_share_failed': 'শেয়ার করা যায়নি। আবার চেষ্টা করুন।',
+      'chat_copy_link': 'লিংক কপি করুন',
+      'chat_link_copied': 'লিংক কপি হয়েছে',
+      'chat_share_via': 'অন্য অ্যাপে শেয়ার করুন',
+      'chat_send_in_chat': 'চ্যাটে পাঠান',
+      'chat_share_contact_text': 'AbabilX-এ {name}-কে মেসেজ করুন',
       'chat_expand': 'কম্পোজার বড় করুন',
       'chat_send': 'পাঠান',
       'chat_next': 'পরবর্তী',

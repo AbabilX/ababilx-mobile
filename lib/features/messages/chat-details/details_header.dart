@@ -28,6 +28,7 @@ import 'avatar_preview.dart';
 import 'details_action_button.dart';
 import 'group_banner_header.dart';
 import 'pinned_messages_action.dart';
+import 'share_contact_sheet.dart';
 
 /// The top of the details screen: picture, name, what this chat is, and the
 /// row of square actions. Signal puts the name itself on a chevron for a 1:1
@@ -122,65 +123,84 @@ class DetailsHeader extends ConsumerWidget {
         ),
         _subtitle(context, ref, colors),
         const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (conversation.hasDmPeer &&
-                conversation.canMessage &&
-                !conversation.isAccountDeleted)
+        // Up to five squares; a narrow phone shrinks the row rather than
+        // overflowing it.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (conversation.hasDmPeer &&
+                  conversation.canMessage &&
+                  !conversation.isAccountDeleted)
+                DetailsActionButton(
+                  icon: const Icon(Icons.call_rounded),
+                  label: AppTranslations.translate(context, ref, 'chat_call'),
+                  onTap: callActive
+                      ? null
+                      : () => startAudioCall(ref, conversation),
+                )
+              else if (conversation.canGroupCall)
+                DetailsActionButton(
+                  icon: const Icon(Icons.headset_mic_rounded),
+                  label: AppTranslations.translate(context, ref, 'chat_meet'),
+                  onTap: callActive
+                      ? null
+                      : () => unawaited(
+                          ref
+                              .read(groupCallProvider.notifier)
+                              .join(conversation.id),
+                        ),
+                ),
+              const SizedBox(width: 16),
               DetailsActionButton(
-                icon: const Icon(Icons.call_rounded),
-                label: AppTranslations.translate(context, ref, 'chat_call'),
-                onTap: callActive
-                    ? null
-                    : () => startAudioCall(ref, conversation),
-              )
-            else if (conversation.canGroupCall)
+                icon: ChatIcon(
+                  conversation.isMentionsOnlyMute
+                      ? HugeIcons.strokeRoundedAt
+                      : conversation.isMutedNow
+                      ? HugeIcons.strokeRoundedNotificationOff01
+                      : HugeIcons.strokeRoundedNotification01,
+                ),
+                label: conversation.isMutedNow ? 'Unmute' : 'Mute',
+                active: conversation.isMutedNow,
+                onTap: () => unawaited(
+                  changeConversationMute(context, ref, conversation),
+                ),
+              ),
+              const SizedBox(width: 16),
               DetailsActionButton(
-                icon: const Icon(Icons.headset_mic_rounded),
-                label: AppTranslations.translate(context, ref, 'chat_meet'),
-                onTap: callActive
-                    ? null
-                    : () => unawaited(
-                        ref
-                            .read(groupCallProvider.notifier)
-                            .join(conversation.id),
-                      ),
+                icon: const ChatIcon(HugeIcons.strokeRoundedSearch01),
+                label: 'Search',
+                // A hit comes back as a message id and is handed on to the
+                // chat, which walks its timeline to it — same path as a pin.
+                onTap: () async {
+                  final messageId = await openChatSearch(
+                    context,
+                    ref,
+                    conversationId: conversation.id,
+                    conversationTitle: title,
+                  );
+                  if (messageId != null && context.mounted) {
+                    context.pop(messageId);
+                  }
+                },
               ),
-            const SizedBox(width: 16),
-            DetailsActionButton(
-              icon: ChatIcon(
-                conversation.isMentionsOnlyMute
-                    ? HugeIcons.strokeRoundedAt
-                    : conversation.isMutedNow
-                    ? HugeIcons.strokeRoundedNotificationOff01
-                    : HugeIcons.strokeRoundedNotification01,
-              ),
-              label: conversation.isMutedNow ? 'Unmute' : 'Mute',
-              active: conversation.isMutedNow,
-              onTap: () =>
-                  unawaited(changeConversationMute(context, ref, conversation)),
-            ),
-            const SizedBox(width: 16),
-            DetailsActionButton(
-              icon: const ChatIcon(HugeIcons.strokeRoundedSearch01),
-              label: 'Search',
-              // A hit comes back as a message id and is handed on to the
-              // chat, which walks its timeline to it — same path as a pin.
-              onTap: () async {
-                final messageId = await openChatSearch(
-                  context,
-                  ref,
-                  conversationId: conversation.id,
-                  conversationTitle: title,
-                );
-                if (messageId != null && context.mounted) {
-                  context.pop(messageId);
-                }
-              },
-            ),
-            PinnedMessagesAction(conversationId: conversation.id),
-          ],
+              // Only while the person can be found at all: the server sends
+              // nothing to share once every discovery switch is off or
+              // privacy mode is on.
+              if (conversation.canShareContact) ...[
+                const SizedBox(width: 16),
+                DetailsActionButton(
+                  icon: const ChatIcon(HugeIcons.strokeRoundedShare08),
+                  label: AppTranslations.translate(context, ref, 'chat_share'),
+                  onTap: () => unawaited(
+                    showShareContactSheet(context, ref, conversation),
+                  ),
+                ),
+              ],
+              PinnedMessagesAction(conversationId: conversation.id),
+            ],
+          ),
         ),
         const SizedBox(height: 20),
       ],

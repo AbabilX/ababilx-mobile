@@ -30,6 +30,9 @@ extension ChatConversationJson on ChatConversation {
     'peer_user_name': peerUserName,
     'peer_user_avatar': peerUserAvatar,
     'peer_user_cover': peerUserCover,
+    if (peerShareHandle.isNotEmpty) 'peer_share_handle': peerShareHandle,
+    if (peerShareEmail.isNotEmpty) 'peer_share_email': peerShareEmail,
+    if (peerSharePhone.isNotEmpty) 'peer_share_phone': peerSharePhone,
     'peer_user_email': peerUserEmail,
     // A group's own picture and identity. Left out, every cold start drew the
     // member montage (or the bare icon) until the network answered.

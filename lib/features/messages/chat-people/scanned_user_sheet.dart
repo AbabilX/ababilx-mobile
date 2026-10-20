@@ -9,6 +9,7 @@ import '../../profile/providers/profile_provider.dart';
 import '../data/chat_repository.dart';
 import '../data/models/chat_connection.dart';
 import '../providers/chat_provider.dart';
+import 'user_qr_payload.dart';
 
 /// What a scanned personal QR code opens: the person it points at, and one
 /// button to start talking to them.
@@ -28,16 +29,23 @@ class ScannedUserSheet {
     String username,
   ) async {
     final me = ref.read(profileProvider).valueOrNull;
-    if (me != null && me.username.isNotEmpty && me.username == username) {
+    final byContact = isEmailRef(username) || isPhoneRef(username);
+    if (me != null &&
+        ((me.username.isNotEmpty && me.username == username) ||
+            (me.email.isNotEmpty && me.email.toLowerCase() == username))) {
       showAppToast(context, 'That is your own QR code.');
       return;
     }
 
     ChatUserSummary? user;
     try {
-      user = await ref
-          .read(chatRepositoryProvider)
-          .lookupUserByUsername(username);
+      final repo = ref.read(chatRepositoryProvider);
+      // An email or a number goes through people search, which matches both
+      // exactly and only finds someone whose switch for it is on — so a link
+      // stops working the moment its owner turns that switch off.
+      user = byContact
+          ? (await repo.searchUsers(username)).users.firstOrNull
+          : await repo.lookupUserByUsername(username);
     } catch (_) {
       if (context.mounted) {
         showAppToast(context, 'Could not look that code up.', isError: true);
@@ -49,7 +57,13 @@ class ScannedUserSheet {
       // A blocked pair resolves to nothing as well, deliberately: telling the
       // scanner "you are blocked" is telling them something the block exists
       // to withhold.
-      showAppToast(context, 'No account uses @$username.', isError: true);
+      showAppToast(
+        context,
+        byContact
+            ? 'No account can be found by $username.'
+            : 'No account uses @$username.',
+        isError: true,
+      );
       return;
     }
 

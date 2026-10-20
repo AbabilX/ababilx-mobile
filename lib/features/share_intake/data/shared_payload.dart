@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:equatable/equatable.dart';
 
 import '../../../shared/media/picked_media_file.dart';
+import '../../messages/chat-people/user_qr_payload.dart';
 import '../../settings/username/username_rules.dart';
 
 /// One item another app handed us through the share sheet.
@@ -135,7 +136,13 @@ class SharedPayload extends Equatable {
       final json = jsonDecode(raw);
       if (json is! Map<String, dynamic>) return null;
       final handle = json[key];
-      if (handle is! String || !isValidUsername(handle)) return null;
+      if (handle is! String) return null;
+      // A person's link may carry an email or a phone number instead.
+      final contact = handle.trim().toLowerCase();
+      if (key == 'open_user' && (isEmailRef(contact) || isPhoneRef(contact))) {
+        return contact;
+      }
+      if (!isValidUsername(handle)) return null;
       return normalizeUsername(handle);
     } catch (_) {
       return null;

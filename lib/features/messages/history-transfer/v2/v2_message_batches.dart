@@ -41,6 +41,7 @@ class V2MessageBatchBuilder {
   final String transferId;
   final List<int> transferKey;
   final V2Conversations conversations;
+
   /// Export cursor to start after (`historyWindowAfterMs`).
   final int? sinceMs;
   final int targetChunks;

@@ -145,6 +145,9 @@ class LocalBackupRunner {
         'weeksNew=${segments?.written} weeksKept=${segments?.reused} '
         '${stats.timing} total=${clock.elapsedMilliseconds}ms',
       );
+      // Nothing on the phone is not a backup: committed, it would be the
+      // newest and the one a restore picks, while the real one is pruned.
+      if (stats.messages == 0) throw LocalBackupFailure.emptyPhone;
       if (account == null || media == null || segments == null) {
         final entry = await folder.write(
           folderUri: folderUri,

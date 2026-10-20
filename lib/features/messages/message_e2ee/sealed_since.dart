@@ -96,9 +96,9 @@ class SealedSince {
         final key = '$_prefix$userId';
         final lines = _memory[userId] ?? <String, int>{};
         // Never raised by a write: what is stored is kept where it is older.
-        _parse(prefs.getStringList(key)).forEach(
-          (id, at) => _lower(lines, id, at),
-        );
+        _parse(
+          prefs.getStringList(key),
+        ).forEach((id, at) => _lower(lines, id, at));
         await prefs.setStringList(key, [
           for (final line in lines.entries) '${line.key} ${line.value}',
         ]);

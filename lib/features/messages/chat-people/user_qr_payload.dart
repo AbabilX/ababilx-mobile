@@ -25,7 +25,28 @@ const String userLinkHost = 'www.ababilx.com';
 String buildUserLink(String username) =>
     'https://$userLinkHost/u/${Uri.encodeComponent(normalizeUsername(username))}';
 
-/// The handle inside a scanned code, or null when this is not one of ours.
+/// A shared person link (DM details' Share) carries whatever that person lets
+/// strangers find them by: their handle, or else their email, or else their
+/// phone number in international form. An email has an `@` inside and a
+/// number starts with `+`, so neither can be mistaken for a handle.
+final RegExp _emailShape = RegExp(r'^[^\s@/]+@[^\s@/]+\.[^\s@/]+$');
+final RegExp _phoneShape = RegExp(r'^\+[0-9]{8,15}$');
+
+bool isEmailRef(String value) => _emailShape.hasMatch(value);
+bool isPhoneRef(String value) => _phoneShape.hasMatch(value);
+
+/// The link for a shared person: a handle is normalised, an email or a phone
+/// number goes in as it is.
+String buildContactLink(String value) {
+  final v = value.trim();
+  if (isEmailRef(v.toLowerCase()) || isPhoneRef(v)) {
+    return 'https://$userLinkHost/u/${Uri.encodeComponent(v.toLowerCase())}';
+  }
+  return buildUserLink(v);
+}
+
+/// The handle (or, from a shared link, the email or phone number) inside a
+/// scanned code, or null when this is not one of ours.
 ///
 /// A bare `@handle` is accepted as well — printed on a poster or a business
 /// card, that is what a person would encode, and the `@` is what makes the
@@ -59,6 +80,8 @@ bool isUserQrPayload(String raw) => usernameFromQrPayload(raw) != null;
 /// whether it exists. Checking here keeps a mistyped or hostile code from
 /// becoming a request URL.
 String? _valid(String handle) {
+  final ref = handle.trim().toLowerCase();
+  if (isEmailRef(ref) || isPhoneRef(ref)) return ref;
   if (!isValidUsername(handle)) return null;
   return normalizeUsername(handle);
 }

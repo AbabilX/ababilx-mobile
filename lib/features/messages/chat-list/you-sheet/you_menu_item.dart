@@ -44,11 +44,7 @@ class YouMenuItem extends StatelessWidget {
                   ),
                 ),
                 alignment: Alignment.center,
-                child: ChatIcon(
-                  icon,
-                  size: 24,
-                  color: colors.onSurface,
-                ),
+                child: ChatIcon(icon, size: 24, color: colors.onSurface),
               ),
               const SizedBox(height: 8),
               Text(
@@ -69,10 +65,7 @@ class YouMenuItem extends StatelessWidget {
     );
 
     if (tooltip != null && tooltip!.isNotEmpty) {
-      return Tooltip(
-        message: tooltip!,
-        child: item,
-      );
+      return Tooltip(message: tooltip!, child: item);
     }
     return item;
   }

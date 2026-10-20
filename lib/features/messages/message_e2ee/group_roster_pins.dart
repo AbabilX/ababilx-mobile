@@ -44,7 +44,10 @@ class GroupRosterPins {
       '$_prefix$userId:$conversationId';
 
   /// The record, or null when this phone has none for the conversation.
-  Future<Map<String, _Seat>?> _load(String userId, String conversationId) async {
+  Future<Map<String, _Seat>?> _load(
+    String userId,
+    String conversationId,
+  ) async {
     final key = _key(userId, conversationId);
     final held = _memory[key];
     if (held != null) return held;

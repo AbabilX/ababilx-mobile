@@ -28,6 +28,14 @@ object UserLinkIntent {
     private val HOSTS = setOf("www.ababilx.com", "ababilx.com")
     private val SHAPE = Regex("^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
 
+    /**
+     * A person's link may carry an email or an international phone number
+     * instead of a handle (`/u/a@b.com`, `/u/+8801...`): whatever that person
+     * lets strangers find them by.
+     */
+    private val EMAIL = Regex("^[^\\s@/]+@[^\\s@/]+\\.[^\\s@/]+$")
+    private val PHONE = Regex("^\\+[0-9]{8,15}$")
+
     /** The intent to forward for a link, or null when it is not one of ours. */
     fun forwardFor(data: Uri?): Intent? {
         if (data == null || !data.isHierarchical) return null
@@ -48,12 +56,21 @@ object UserLinkIntent {
             }
             else -> return null
         }
-        val value = clean(raw) ?: return null
+        val value = (if (extra == EXTRA_HANDLE) contact(raw) else null)
+            ?: clean(raw) ?: return null
         return Intent(ACTION_OPEN).putExtra(extra, value)
     }
 
     /** A forwarded extra, shape-checked again: the launcher is exported. */
-    fun forwarded(intent: Intent, extra: String): String? = clean(intent.getStringExtra(extra))
+    fun forwarded(intent: Intent, extra: String): String? {
+        val raw = intent.getStringExtra(extra)
+        return (if (extra == EXTRA_HANDLE) contact(raw) else null) ?: clean(raw)
+    }
+
+    private fun contact(raw: String?): String? =
+        raw?.trim()?.lowercase()?.takeIf {
+            it.length <= 254 && (EMAIL.matches(it) || PHONE.matches(it))
+        }
 
     private fun clean(raw: String?): String? {
         val value = raw?.trim()?.lowercase()?.removePrefix("@") ?: return null

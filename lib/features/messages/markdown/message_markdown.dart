@@ -1,9 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../shared/widgets/app_toast.dart';
+import '../../share_intake/providers/share_intake_provider.dart';
+import '../chat-people/user_qr_payload.dart';
 import '../tiptap_autolink.dart';
 import '../tiptap_inline.dart';
 import 'link_disguise.dart';
@@ -128,6 +131,16 @@ class MessageMarkdown extends StatelessWidget {
   }
 
   void _onLink(BuildContext context, String url, String label) {
+    // A shared person link opens them here (the sheet a scanned code
+    // opens), not in a browser that would hand it back to the app.
+    final handle = usernameFromQrPayload(url);
+    if (handle != null && !url.trim().startsWith('@')) {
+      ProviderScope.containerOf(
+        context,
+        listen: false,
+      ).read(userLinkOpenProvider.notifier).state = handle;
+      return;
+    }
     if (!url.startsWith(mentionLinkScheme)) {
       // Text that reads as one site over a link to another: say where it
       // really goes, and open it only on a second, informed tap.

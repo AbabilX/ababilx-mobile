@@ -63,6 +63,9 @@ class ChatConversation extends Equatable {
     this.peerUserName,
     this.peerUserAvatar,
     this.peerUserCover,
+    this.peerShareHandle = '',
+    this.peerShareEmail = '',
+    this.peerSharePhone = '',
     this.peerUserEmail,
     this.peerLeft = false,
     this.isSelf = false,
@@ -128,6 +131,19 @@ class ChatConversation extends Equatable {
   /// The peer's profile cover (`users.cover_url`). Drawn behind the details
   /// header the same way [bannerUrl] is drawn for a group.
   final String? peerUserCover;
+
+  /// What DM details' Share sends. The server fills each one only while the
+  /// peer's own discovery switch for it is on and privacy mode is off; all
+  /// empty = no Share action.
+  final String peerShareHandle;
+  final String peerShareEmail;
+  final String peerSharePhone;
+
+  bool get canShareContact =>
+      hasDmPeer &&
+      (peerShareHandle.isNotEmpty ||
+          peerShareEmail.isNotEmpty ||
+          peerSharePhone.isNotEmpty);
   final String? peerUserEmail;
   final bool peerLeft;
 
@@ -362,6 +378,9 @@ class ChatConversation extends Equatable {
       peerUserName: _jsonString(json['peer_user_name']),
       peerUserAvatar: _jsonString(json['peer_user_avatar']),
       peerUserCover: _jsonString(json['peer_user_cover']),
+      peerShareHandle: _jsonString(json['peer_share_handle']) ?? '',
+      peerShareEmail: _jsonString(json['peer_share_email']) ?? '',
+      peerSharePhone: _jsonString(json['peer_share_phone']) ?? '',
       peerUserEmail: _jsonString(
         json['peer_user_email'] ?? json['peerUserEmail'],
       ),
@@ -496,6 +515,9 @@ class ChatConversation extends Equatable {
     peerUserName: peerUserName,
     peerUserAvatar: peerUserAvatar,
     peerUserCover: peerUserCover,
+    peerShareHandle: peerShareHandle,
+    peerShareEmail: peerShareEmail,
+    peerSharePhone: peerSharePhone,
     peerLeft: peerLeft,
     isSelf: isSelf,
     peerPrivacy: peerPrivacy,
@@ -560,6 +582,9 @@ class ChatConversation extends Equatable {
     avatarUrl,
     bannerUrl,
     peerUserCover,
+    peerShareHandle,
+    peerShareEmail,
+    peerSharePhone,
     myRole,
     groupPrivacy,
     publicLink,

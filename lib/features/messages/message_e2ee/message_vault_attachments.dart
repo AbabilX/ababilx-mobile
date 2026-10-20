@@ -100,6 +100,15 @@ extension MessageVaultAttachments on MessageVault {
     }
   }
 
+  /// [message] with its file keys opened again — for a copy whose keys did
+  /// not open when it was read (vault still locked, a key request that
+  /// failed). The picture can still show from disk while the key is
+  /// missing, and anything that re-seals the key — a forward — needs it.
+  Future<ChatMessage> reopenAttachments(
+    ChatMessage message,
+    String currentUserId,
+  ) => _openAttachments(message, currentUserId);
+
   /// [message] with every encrypted attachment opened that can be.
   Future<ChatMessage> _openAttachments(
     ChatMessage message,

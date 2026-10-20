@@ -17,6 +17,10 @@ class LocalBackupFailure implements Exception {
   static const nothingSelected = LocalBackupFailure(
     'local_backup_error_nothing',
   );
+  /// The phone holds no message yet (a new install before its restore).
+  /// Writing that would make an empty file the newest backup and push a
+  /// real one out of the kept two.
+  static const emptyPhone = LocalBackupFailure('local_backup_error_empty');
   static const locked = LocalBackupFailure('local_backup_error_locked');
   static const busy = LocalBackupFailure('local_backup_error_busy');
   static const folderRefused = LocalBackupFailure(

@@ -80,8 +80,7 @@ class _RosterSheetState extends ConsumerState<_RosterSheet> {
                 builder: (context, members) => ListView(
                   shrinkWrap: true,
                   children: [
-                    for (final id in widget.memberIds)
-                      _row(members.data?[id]),
+                    for (final id in widget.memberIds) _row(members.data?[id]),
                   ],
                 ),
               ),

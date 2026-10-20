@@ -859,7 +859,6 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     setState(() => _pending.removeAt(index));
   }
 
-
   /// Khaam is one sender, one receiver: offered in a DM with a peer, on the
   /// main timeline only.
   VoidCallback? get _khaamAction {

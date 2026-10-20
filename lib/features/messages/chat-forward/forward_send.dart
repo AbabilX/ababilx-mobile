@@ -103,7 +103,10 @@ Future<void> _forwardBehind(
     final pinned = await container
         .read(encryptionPinsProvider)
         .pinnedAmong(userId, conversations.map((c) => c.id));
-    for (final message in ordered) {
+    for (final listed in ordered) {
+      // The timeline's copy may hold a file whose key did not open when it
+      // was read; asked again here, it usually does.
+      final message = await vault.reopenAttachments(listed, userId);
       final prepared = await buildForwardTargets(
         vault: vault,
         currentUserId: userId,

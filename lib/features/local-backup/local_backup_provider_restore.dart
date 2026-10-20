@@ -30,20 +30,26 @@ mixin LocalBackupRestoring on Notifier<LocalBackupState> {
     }
   }
 
-  /// Restores the first of [sources] that is a whole backup. An incomplete
-  /// or damaged newest file falls through to the one before it — that is
-  /// what the second copy is kept for.
+  /// Restores the first of [sources] that is a whole backup with messages
+  /// in it. An incomplete or damaged newest file falls through to the one
+  /// before it — that is what the second copy is kept for — and so does one
+  /// with no message (written by an empty phone before this build refused
+  /// to): restoring it alone reads as "restored, nothing came back".
   Future<(BackupRestoreStats?, String?)> restoreFirst(
     List<BackupRestoreSource> sources,
   ) async {
     (BackupRestoreStats?, String?) last = (null, 'local_backup_error_generic');
     for (final source in sources) {
-      last = await restore(source);
-      final error = last.$2;
-      if (error != 'local_backup_error_incomplete' &&
-          error != 'local_backup_error_damaged') {
-        break;
+      final result = await restore(source);
+      final error = result.$2;
+      if (error == 'local_backup_error_incomplete' ||
+          error == 'local_backup_error_damaged') {
+        last = result;
+        continue;
       }
+      // Keep a real answer over an empty one already in hand.
+      if (last.$1 == null || (result.$1?.messages ?? 0) > 0) last = result;
+      if (error != null || (result.$1?.messages ?? 0) > 0) break;
     }
     return last;
   }

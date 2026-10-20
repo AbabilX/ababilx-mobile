@@ -15,12 +15,17 @@ Future<YouSheetAction?> showYouSheet(BuildContext context) {
   return navigator.push<YouSheetAction>(
     _BlurredModalBottomSheetRoute<YouSheetAction>(
       builder: (_) => const YouSheet(),
-      capturedThemes: InheritedTheme.capture(from: context, to: navigator.context),
+      capturedThemes: InheritedTheme.capture(
+        from: context,
+        to: navigator.context,
+      ),
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: false,
       barrierLabel: localizations.scrimLabel,
-      barrierOnTapHint: localizations.scrimOnTapHint(localizations.bottomSheetLabel),
+      barrierOnTapHint: localizations.scrimOnTapHint(
+        localizations.bottomSheetLabel,
+      ),
       modalBarrierColor: Colors.black.withValues(alpha: 0.18),
       barrierFilter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
     ),
