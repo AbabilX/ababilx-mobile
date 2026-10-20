@@ -184,6 +184,11 @@ flutter:
     - assets/images/login_background_v2.png
     - assets/images/onboarding_connections_v1.png
     - assets/images/donate_support_build.png
+    # Home focus card ("You're all caught up") — clock slots only (no theme art).
+    - assets/images/home_caught_up_bg_morning.webp
+    - assets/images/home_caught_up_bg_afternoon.webp
+    - assets/images/home_caught_up_bg_evening.webp
+    - assets/images/home_caught_up_bg_night.webp
     # Bundled chat wallpapers; see chatWallpaperPresets.
     # mobile_light / mobile_dark are the theme-aware fresh-install default.
     - assets/images/wallpapers/mobile_light.webp

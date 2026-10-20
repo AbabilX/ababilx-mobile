@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../auth/widgets/qr_login_flow.dart';
@@ -11,6 +12,7 @@ import '../../messages/chat-list/you-sheet/index.dart';
 import '../../messages/chat-list/you-sheet/you_sheet_action.dart';
 import '../../messages/chat_icon.dart';
 import '../../privacy-mode/privacy_header_badge.dart';
+import '../../privacy-mode/privacy_mode_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../quick-views/quick_view_summary.dart';
 
@@ -106,11 +108,66 @@ class HomeHeader extends ConsumerWidget {
           const SizedBox(width: 4),
           GestureDetector(
             onTap: () => _openYou(context, ref),
-            child: AppAvatar(size: 40, url: user?.avatarUrl, name: user?.name),
+            child: _OwnFace(name: user?.name, url: user?.avatarUrl),
           ),
           const SizedBox(width: 8),
         ],
       ),
+    );
+  }
+}
+
+/// Own face: circular, with the online green (or privacy shield) mark — same
+/// rule as the chat-list header pill.
+class _OwnFace extends ConsumerWidget {
+  const _OwnFace({this.name, this.url});
+
+  final String? name;
+  final String? url;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final private = ref.watch(privacyModeProvider);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ClipOval(child: AppAvatar(size: 40, url: url, name: name)),
+        if (private)
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: Container(
+              width: 16,
+              height: 16,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: colors.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: colors.surface, width: 1.5),
+              ),
+              child: ChatIcon(
+                HugeIcons.strokeRoundedShield01,
+                size: 9,
+                color: colors.onPrimary,
+              ),
+            ),
+          )
+        else
+          Positioned(
+            right: -1,
+            bottom: -1,
+            child: Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: AppColors.green,
+                shape: BoxShape.circle,
+                border: Border.all(color: colors.surface, width: 1.5),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

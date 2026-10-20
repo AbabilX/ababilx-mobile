@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// A Home block: a small muted label (and an optional "See all" on the
-/// right), then [child]. No dividers, no fold — space separates blocks.
+/// A Home block: a bold title (and an optional "See all ›" on the right),
+/// then [child]. No dividers, no fold — space separates blocks.
 class HomeSection extends StatelessWidget {
   const HomeSection({
     super.key,
@@ -25,7 +25,7 @@ class HomeSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
-            height: 32,
+            height: 36,
             child: Padding(
               padding: const EdgeInsets.only(left: 20, right: 8),
               child: Row(
@@ -34,9 +34,9 @@ class HomeSection extends StatelessWidget {
                     child: Text(
                       title,
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: colors.onSurfaceVariant,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: colors.onSurface,
                       ),
                     ),
                   ),
@@ -44,16 +44,34 @@ class HomeSection extends StatelessWidget {
                     TextButton(
                       onPressed: onAction,
                       style: TextButton.styleFrom(
+                        foregroundColor: colors.primary,
                         visualDensity: VisualDensity.compact,
                         shape: const StadiumBorder(),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
-                      child: Text(actionLabel!),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            actionLabel!,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: colors.primary,
+                          ),
+                        ],
+                      ),
                     ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           child,
         ],
       ),
@@ -87,7 +105,7 @@ class HomeStrip extends StatelessWidget {
   );
 }
 
-/// A face over a name, for the Pinned row.
+/// A face over a name, for the Pinned and Talk-again rows.
 class HomeFaceTile extends StatelessWidget {
   const HomeFaceTile({
     super.key,
@@ -95,23 +113,27 @@ class HomeFaceTile extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.bold = false,
+    this.face = 60,
+    this.width = 72,
   });
 
   /// What the row reserves; scaled with the phone's font.
-  static double heightFor(BuildContext context) =>
-      60 + 6 + MediaQuery.textScalerOf(context).scale(12) * 1.3 + 6;
+  static double heightFor(BuildContext context, {double face = 60}) =>
+      face + 6 + MediaQuery.textScalerOf(context).scale(12) * 1.3 + 6;
 
   final Widget avatar;
   final String label;
   final VoidCallback onTap;
   final bool bold;
+  final double face;
+  final double width;
 
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(16),
     child: SizedBox(
-      width: 72,
+      width: width,
       child: Column(
         children: [
           avatar,
@@ -135,7 +157,7 @@ class HomeFaceTile extends StatelessWidget {
 
 /// A rounded capsule: a picture filling its full height on the left, so the
 /// picture's circle IS the capsule's left end, then a label and an optional
-/// trailing action. Used for nearby devices and the people to call.
+/// trailing action. Used for nearby devices.
 class HomeCapsule extends StatelessWidget {
   const HomeCapsule({
     super.key,

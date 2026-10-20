@@ -26,7 +26,7 @@ class HomePinnedSection extends ConsumerWidget {
     return HomeSection(
       title: homeText(context, ref, 'home_pinned'),
       child: HomeStrip(
-        height: HomeFaceTile.heightFor(context),
+        height: HomeFaceTile.heightFor(context, face: 60),
         gap: 6,
         children: [
           for (final c in pinned)

@@ -77,18 +77,21 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   it. `shellTabIndex` falls back to Messages, not index 0.
   An install with a saved tab order sees Home last until dragged.
   Top to bottom: greeting header (time-of-day + first name, search, QR,
-  own face → You sheet) · focus card (unread: stacked faces, "N new
-  messages · in N chats", Catch up → `/home/unread`; else "all caught
-  up") · shortcuts (`quick-views/`: Drafts & scheduled, Groups, Flock (feeds,
-  `/home/flock`), Local Share (→ `/local-share`, nearby/unread count); add a value
-  + spec in `quick_views.dart`, only with a real list behind it; hold and
-  drag to reorder, `quickViewReordering` blurs the rest,
-  `home_quick_view_order_v1`) · Pinned faces · Nearby devices (Local Share
-  peers, capsules, hidden when none; a capsule's picture is built at the
-  capsule's full height so its circle is the stadium's left end) · Talk again (1:1 callers >=2 from
-  Talks' cached log; capsule opens chat, round button calls) · Recent
-  chats (6 newest unpinned, chat-list rows, See all → Messages). No dividers
-  or folds. Every fixed-height row computes its height through
+  own circular face with online/privacy mark → You sheet) · focus card
+  (unread: stacked faces, "N new messages · in N chats", Catch up →
+  `/home/unread`; else "You're all caught up" over clock art only (no
+  theme art): morning 06–11 · afternoon 11–17 · evening 17–22 white ·
+  night 22–06 white; black on bright slots; cover + topRight;
+  `home_caught_up_art.dart`) · shortcuts (`quick-views/`: Drafts &
+  scheduled, Groups, Flock
+  (feeds, `/home/flock`), Local Share (→ `/local-share`); per-card pastel
+  icon accent + chevron; hold and drag to reorder, `quickViewReordering`
+  blurs the rest, `home_quick_view_order_v1`) · Pinned faces · Nearby
+  devices (Local Share peers, capsules, hidden when none) · Talk again
+  (1:1 callers ≥2 from Talks' cached log; tap person → call at once, phone
+  badge is a hint only; See all → Talks) · Recent chats (6 newest
+  unpinned, chat-list rows, See all › → Messages). No dividers or folds.
+  Every fixed-height row computes its height through
   `MediaQuery.textScalerOf` — a fixed height overflowed on an enlarged
   system font. Pages `/home/unread|groups|drafts` sit outside the shell.
   Drafts come from `ComposerDraftStore.listAll` (re-read on tab show and on

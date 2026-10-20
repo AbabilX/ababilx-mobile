@@ -12,17 +12,18 @@ import '../data/home_callers.dart';
 import '../quick-views/quick_view_summary.dart';
 import 'home_section.dart';
 
-/// "Talk again": the people this account calls most, as capsules — face,
-/// name, and a round call button. The capsule opens the chat; only the
-/// button places the call, so a stray tap never rings anyone.
+/// "Talk again": people this account calls most — circular face, name under
+/// it, phone badge as a hint. Tapping the person places the call at once
+/// (See all still opens Talks).
 class HomeCallersSection extends ConsumerWidget {
   const HomeCallersSection({super.key});
+
+  static const _face = 64.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final callers = ref.watch(homeFrequentCallersProvider);
     if (callers.isEmpty) return const SizedBox.shrink();
-    final colors = Theme.of(context).colorScheme;
     final busy =
         ref.watch(voiceCallProvider.select((s) => s.active)) ||
         ref.watch(groupCallProvider.select((s) => s.active));
@@ -31,36 +32,86 @@ class HomeCallersSection extends ConsumerWidget {
       actionLabel: homeText(context, ref, 'home_see_all'),
       onAction: () => context.go('/calls'),
       child: HomeStrip(
-        height: HomeCapsule.heightFor(context),
+        height: HomeFaceTile.heightFor(context, face: _face),
+        gap: 12,
         children: [
           for (final caller in callers)
-            HomeCapsule(
+            HomeFaceTile(
               key: ValueKey(caller.latest.conversationId),
-              leading: (size) => AppAvatar(
-                size: size,
+              face: _face,
+              width: 76,
+              label: caller.latest.title,
+              avatar: _CallFace(
                 url: caller.latest.avatarUrl,
                 name: caller.latest.title,
+                size: _face,
+                enabled: !busy,
               ),
-              label: caller.latest.title,
-              onTap: () =>
-                  context.push('/messages/${caller.latest.conversationId}'),
-              trailing: IconButton.filled(
-                onPressed: busy
-                    ? null
-                    : () => redialCall(
-                        context,
-                        ref,
-                        caller.latest.conversationId,
-                        isGroup: false,
-                      ),
-                visualDensity: VisualDensity.compact,
-                icon: ChatIcon(
-                  HugeIcons.strokeRoundedCall02,
-                  size: 18,
-                  color: colors.onPrimary,
-                ),
+              onTap: busy
+                  ? () {}
+                  : () => redialCall(
+                      context,
+                      ref,
+                      caller.latest.conversationId,
+                      isGroup: false,
+                    ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Circular picture with a teal phone badge — decoration only; the tile
+/// around it owns the tap → call.
+class _CallFace extends StatelessWidget {
+  const _CallFace({
+    required this.url,
+    required this.name,
+    required this.size,
+    required this.enabled,
+  });
+
+  final String? url;
+  final String name;
+  final double size;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final badge = enabled ? colors.primary : colors.onSurfaceVariant;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipOval(
+            child: Opacity(
+              opacity: enabled ? 1 : 0.5,
+              child: AppAvatar(size: size, url: url, name: name),
+            ),
+          ),
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: Container(
+              width: 26,
+              height: 26,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: badge,
+                shape: BoxShape.circle,
+                border: Border.all(color: colors.surface, width: 2),
+              ),
+              child: ChatIcon(
+                HugeIcons.strokeRoundedCall02,
+                size: 14,
+                color: colors.onPrimary,
               ),
             ),
+          ),
         ],
       ),
     );

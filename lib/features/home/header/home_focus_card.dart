@@ -3,63 +3,96 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../messages/chat-list/conversation_avatar.dart';
 import '../../messages/chat_icon.dart';
+import '../../messages/data/models/chat_models.dart';
 import '../../messages/nickname/contact_nickname_provider.dart';
 import '../../messages/nickname/nickname_title.dart';
 import '../../messages/providers/chat_provider.dart';
 import '../data/home_chats.dart';
 import '../quick-views/quick_view_summary.dart';
+import 'home_caught_up_art.dart';
 
 /// The one thing Home says first: what is waiting. Unread chats show as a
 /// stack of faces beside "12 new messages · in 3 chats" and a Catch up
-/// capsule; nothing waiting turns it into a quiet "all caught up".
+/// capsule; nothing waiting turns it into a quiet "all caught up" over the
+/// clock's art only (morning · afternoon · evening · night — no theme art).
 class HomeFocusCard extends ConsumerWidget {
   const HomeFocusCard({super.key});
+
+  static const _radius = 24.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final unread = ref.watch(homeUnreadProvider);
     final clear = unread.isEmpty;
-    final fill = clear ? colors.surfaceContainerHigh : colors.primaryContainer;
-    final ink = clear ? colors.onSurface : colors.onPrimaryContainer;
+    final art = homeCaughtUpArt(DateTime.now());
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Material(
-        color: fill,
-        borderRadius: BorderRadius.circular(24),
+        color: clear ? art.underfill : colors.primaryContainer,
+        borderRadius: BorderRadius.circular(_radius),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(24),
           onTap: clear ? null : () => context.push('/home/unread'),
-          child: Padding(
+          child: clear
+              ? _CaughtUpBody(art: art)
+              : _UnreadBody(unread: unread),
+        ),
+      ),
+    );
+  }
+}
+
+/// Calm state: clock art fills the card (cover + topRight); check + copy
+/// sit on the left. Ink is fixed per slot (black on bright art, white on
+/// evening/night).
+class _CaughtUpBody extends ConsumerWidget {
+  const _CaughtUpBody({required this.art});
+
+  final ({String asset, Color underfill, Color ink}) art;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ink = art.ink;
+    return SizedBox(
+      height: 108,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              art.asset,
+              fit: BoxFit.cover,
+              alignment: Alignment.topRight,
+              filterQuality: FilterQuality.high,
+              gaplessPlayback: true,
+            ),
+          ),
+          Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
             child: Row(
               children: [
-                clear
-                    ? CircleAvatar(
-                        radius: 22,
-                        backgroundColor: colors.surfaceContainerHighest,
-                        child: ChatIcon(
-                          HugeIcons.strokeRoundedCheckmarkCircle02,
-                          color: colors.primary,
-                        ),
-                      )
-                    : _Faces(ids: [for (final c in unread.take(3)) c.id]),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.green,
+                  child: const ChatIcon(
+                    HugeIcons.strokeRoundedTick02,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        clear
-                            ? homeText(context, ref, 'home_focus_clear')
-                            : homeText(
-                                context,
-                                ref,
-                                'home_focus_new',
-                                unreadMessageCount(unread),
-                              ),
+                        homeText(context, ref, 'home_focus_clear'),
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
@@ -67,14 +100,7 @@ class HomeFocusCard extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        clear
-                            ? homeText(context, ref, 'home_focus_clear_sub')
-                            : homeText(
-                                context,
-                                ref,
-                                'home_focus_in_chats',
-                                unread.length,
-                              ),
+                        homeText(context, ref, 'home_focus_clear_sub'),
                         style: TextStyle(
                           fontSize: 13,
                           color: ink.withValues(alpha: 0.75),
@@ -83,19 +109,66 @@ class HomeFocusCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (!clear)
-                  FilledButton(
-                    onPressed: () => context.push('/home/unread'),
-                    style: FilledButton.styleFrom(
-                      shape: const StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                    child: Text(homeText(context, ref, 'home_catch_up')),
-                  ),
               ],
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UnreadBody extends ConsumerWidget {
+  const _UnreadBody({required this.unread});
+
+  final List<ChatConversation> unread;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final ink = colors.onPrimaryContainer;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
+      child: Row(
+        children: [
+          _Faces(ids: [for (final c in unread.take(3)) c.id]),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  homeText(
+                    context,
+                    ref,
+                    'home_focus_new',
+                    unreadMessageCount(unread),
+                  ),
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: ink,
+                  ),
+                ),
+                Text(
+                  homeText(context, ref, 'home_focus_in_chats', unread.length),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: ink.withValues(alpha: 0.75),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          FilledButton(
+            onPressed: () => context.push('/home/unread'),
+            style: FilledButton.styleFrom(
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            child: Text(homeText(context, ref, 'home_catch_up')),
+          ),
+        ],
       ),
     );
   }

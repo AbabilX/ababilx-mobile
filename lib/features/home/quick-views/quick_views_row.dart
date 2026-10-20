@@ -29,11 +29,11 @@ class QuickViewsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final views = ref.watch(quickViewPrefsProvider).arranged;
     return SizedBox(
-      height: QuickViewCard.heightFor(context) + 12,
+      height: QuickViewCard.heightFor(context) + 8,
       child: ReorderableListView.builder(
         scrollDirection: Axis.horizontal,
         buildDefaultDragHandles: false,
-        padding: const EdgeInsets.fromLTRB(16, 12, 6, 0),
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
         itemCount: views.length,
         proxyDecorator: (child, _, _) =>
             Material(color: Colors.transparent, child: child),
@@ -45,17 +45,19 @@ class QuickViewsRow extends ConsumerWidget {
         onReorderItem: ref.read(quickViewPrefsProvider.notifier).move,
         itemBuilder: (context, i) {
           final view = views[i];
-          final spec = quickViewSpecs[view]!;
+          final QuickViewSpec spec = quickViewSpecs[view]!;
           final summary = summarizeQuickView(context, ref, view);
           return ReorderableDelayedDragStartListener(
             key: ValueKey(view),
             index: i,
             child: Padding(
-              padding: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.only(right: 8),
               child: QuickViewCard(
                 icon: spec.icon,
                 title: homeText(context, ref, spec.labelKey),
                 subtitle: summary.subtitle,
+                accent: spec.accent,
+                accentFill: spec.accentFill,
                 attention: summary.attention,
                 alert: summary.alert,
                 onTap: () => _open(context, ref, spec.route),

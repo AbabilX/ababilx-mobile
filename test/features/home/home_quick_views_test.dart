@@ -1,9 +1,11 @@
 import 'package:ababilx/features/calls/data/models/call_log_entry.dart';
 import 'package:ababilx/features/home/data/home_callers.dart';
+import 'package:ababilx/features/home/header/home_caught_up_art.dart';
 import 'package:ababilx/features/home/header/home_header.dart';
 import 'package:ababilx/features/home/quick-views/quick_view_prefs.dart';
 import 'package:ababilx/features/home/quick-views/quick_views.dart';
 import 'package:ababilx/features/messages/data/local/composer_draft_store.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -86,6 +88,38 @@ void main() {
       expect([for (final c in got) c.latest.conversationId], ['b', 'c']);
       expect(got.first.count, 3);
       expect(got.first.latest.id, 'b-2');
+    });
+  });
+
+  group('caught-up art', () {
+    test('four clock windows cover every hour', () {
+      expect(isHomeCaughtUpNight(DateTime(2026, 1, 1, 22)), isTrue);
+      expect(isHomeCaughtUpNight(DateTime(2026, 1, 1, 5, 59)), isTrue);
+      expect(isHomeCaughtUpMorning(DateTime(2026, 1, 1, 6)), isTrue);
+      expect(isHomeCaughtUpMorning(DateTime(2026, 1, 1, 10, 59)), isTrue);
+      expect(isHomeCaughtUpAfternoon(DateTime(2026, 1, 1, 11)), isTrue);
+      expect(isHomeCaughtUpAfternoon(DateTime(2026, 1, 1, 16, 59)), isTrue);
+      expect(isHomeCaughtUpAfternoon(DateTime(2026, 1, 1, 17)), isFalse);
+      expect(isHomeCaughtUpEvening(DateTime(2026, 1, 1, 17)), isTrue);
+      expect(isHomeCaughtUpEvening(DateTime(2026, 1, 1, 21, 59)), isTrue);
+      expect(isHomeCaughtUpEvening(DateTime(2026, 1, 1, 22)), isFalse);
+    });
+
+    test('slots pick asset and ink from the clock, not theme', () {
+      expect(homeCaughtUpArt(DateTime(2026, 1, 1, 23)).asset,
+          homeCaughtUpBgNightAsset);
+      expect(homeCaughtUpArt(DateTime(2026, 1, 1, 23)).ink, Colors.white);
+      expect(homeCaughtUpArt(DateTime(2026, 1, 1, 8)).asset,
+          homeCaughtUpBgMorningAsset);
+      expect(homeCaughtUpArt(DateTime(2026, 1, 1, 8)).ink, Colors.black);
+      expect(homeCaughtUpArt(DateTime(2026, 1, 1, 12)).asset,
+          homeCaughtUpBgAfternoonAsset);
+      expect(homeCaughtUpArt(DateTime(2026, 1, 1, 12)).ink, Colors.black);
+      expect(homeCaughtUpArt(DateTime(2026, 1, 1, 16)).asset,
+          homeCaughtUpBgAfternoonAsset);
+      expect(homeCaughtUpArt(DateTime(2026, 1, 1, 19)).asset,
+          homeCaughtUpBgEveningAsset);
+      expect(homeCaughtUpArt(DateTime(2026, 1, 1, 19)).ink, Colors.white);
     });
   });
 
