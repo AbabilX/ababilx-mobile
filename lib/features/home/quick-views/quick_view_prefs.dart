@@ -31,13 +31,20 @@ class QuickViewPrefsNotifier extends Notifier<QuickViewPrefs> {
   }
 
   /// [to] is already adjusted for the removed slot (`onReorderItem`).
-  Future<void> move(int from, int to) async {
-    final next = [for (final v in state.arranged) v.name];
+  /// [visible] is the row on screen (Locked may be filtered out), so indices
+  /// match what the person dragged; names missing from it stay at the end.
+  Future<void> move(int from, int to, {required List<HomeQuickView> visible}) async {
+    final next = [for (final v in visible) v.name];
     if (from < 0 || from >= next.length || from == to) return;
     next.insert(to.clamp(0, next.length - 1), next.removeAt(from));
-    state = QuickViewPrefs(order: next);
+    final hidden = [
+      for (final name in state.order)
+        if (!next.contains(name)) name,
+    ];
+    final order = [...next, ...hidden];
+    state = QuickViewPrefs(order: order);
     try {
-      await SharedPreferencesAsync().setStringList(_orderKey, next);
+      await SharedPreferencesAsync().setStringList(_orderKey, order);
     } catch (_) {}
   }
 }

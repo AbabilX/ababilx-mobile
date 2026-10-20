@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../chat-lock/providers/chat_locks_provider.dart';
 import '../data/home_drafts.dart';
 import 'quick_view_card.dart';
 import 'quick_view_prefs.dart';
@@ -27,7 +28,11 @@ class QuickViewsRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final views = ref.watch(quickViewPrefsProvider).arranged;
+    final hasLocked = ref.watch(chatLocksProvider.select((m) => m.isNotEmpty));
+    final views = visibleQuickViews(
+      ref.watch(quickViewPrefsProvider).arranged,
+      hasLocked: hasLocked,
+    );
     return SizedBox(
       height: QuickViewCard.heightFor(context) + 8,
       child: ReorderableListView.builder(
@@ -42,7 +47,9 @@ class QuickViewsRow extends ConsumerWidget {
           quickViewReordering.value = true;
         },
         onReorderEnd: (_) => quickViewReordering.value = false,
-        onReorderItem: ref.read(quickViewPrefsProvider.notifier).move,
+        onReorderItem: (from, to) => ref
+            .read(quickViewPrefsProvider.notifier)
+            .move(from, to, visible: views),
         itemBuilder: (context, i) {
           final view = views[i];
           final QuickViewSpec spec = quickViewSpecs[view]!;
@@ -56,8 +63,6 @@ class QuickViewsRow extends ConsumerWidget {
                 icon: spec.icon,
                 title: homeText(context, ref, spec.labelKey),
                 subtitle: summary.subtitle,
-                accent: spec.accent,
-                accentFill: spec.accentFill,
                 attention: summary.attention,
                 alert: summary.alert,
                 onTap: () => _open(context, ref, spec.route),

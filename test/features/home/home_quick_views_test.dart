@@ -51,6 +51,7 @@ void main() {
         HomeQuickView.drafts,
         HomeQuickView.flock,
         HomeQuickView.localShare,
+        HomeQuickView.locked,
       ]);
     });
 
@@ -58,6 +59,18 @@ void main() {
       for (final v in HomeQuickView.values) {
         expect(quickViewSpecs[v], isNotNull, reason: v.name);
       }
+    });
+
+    test('Locked only shows while this phone has a locked chat', () {
+      final all = orderQuickViews(const []);
+      expect(
+        visibleQuickViews(all, hasLocked: false),
+        isNot(contains(HomeQuickView.locked)),
+      );
+      expect(
+        visibleQuickViews(all, hasLocked: true),
+        contains(HomeQuickView.locked),
+      );
     });
   });
 

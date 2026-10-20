@@ -1,34 +1,26 @@
-import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 /// The cards along the top of Home (Slack's "quick views"). Each one opens
 /// its own page. Only views with something real behind them are listed —
 /// Threads, Tasks, Saved and Pins join when their server lists exist, since a
 /// card that opens nothing is worse than a missing one. Unread is not a card:
-/// the focus card above the row says it louder.
-enum HomeQuickView { drafts, groups, flock, localShare }
+/// the focus card above the row says it louder. Locked chats only appear while
+/// at least one chat is locked on this phone.
+enum HomeQuickView { drafts, groups, flock, localShare, locked }
 
-/// One shortcut's label, icon, route and pastel accent (mock: blue / green /
-/// purple / teal).
+/// One shortcut's label, icon and route. Icons take the chip's ink colour —
+/// no per-view accent or circle fill.
 class QuickViewSpec {
   const QuickViewSpec({
     required this.labelKey,
     required this.icon,
     required this.route,
-    required this.accent,
-    required this.accentFill,
   });
 
   /// [AppTranslations] key of the card's title.
   final String labelKey;
   final List<List<dynamic>> icon;
   final String route;
-
-  /// Icon colour.
-  final Color accent;
-
-  /// Soft circle behind the icon.
-  final Color accentFill;
 }
 
 const Map<HomeQuickView, QuickViewSpec> quickViewSpecs = {
@@ -36,35 +28,32 @@ const Map<HomeQuickView, QuickViewSpec> quickViewSpecs = {
     labelKey: 'home_drafts',
     icon: HugeIcons.strokeRoundedSent,
     route: '/home/drafts',
-    accent: Color(0xFF3B82F6),
-    accentFill: Color(0xFFDBEAFE),
   ),
   HomeQuickView.groups: QuickViewSpec(
     labelKey: 'home_groups',
     icon: HugeIcons.strokeRoundedUserGroup,
     route: '/home/groups',
-    accent: Color(0xFF16A34A),
-    accentFill: Color(0xFFDCFCE7),
   ),
   HomeQuickView.flock: QuickViewSpec(
     labelKey: 'chat_filter_webhooks',
     icon: HugeIcons.strokeRoundedWebhook,
     route: '/home/flock',
-    accent: Color(0xFF9333EA),
-    accentFill: Color(0xFFF3E8FF),
   ),
   HomeQuickView.localShare: QuickViewSpec(
     labelKey: 'chat_filter_local_share',
     icon: HugeIcons.strokeRoundedWifi01,
     route: '/local-share',
-    accent: Color(0xFF0D9488),
-    accentFill: Color(0xFFCCFBF1),
+  ),
+  HomeQuickView.locked: QuickViewSpec(
+    labelKey: 'home_locked',
+    icon: HugeIcons.strokeRoundedSquareLock02,
+    route: '/messages/locked',
   ),
 };
 
-/// Stored order and hidden set applied to [HomeQuickView.values]: a view the
-/// stored order has never heard of (added by a newer build) keeps its default
-/// place after the known ones, and shows until the user turns it off.
+/// Stored order applied to [HomeQuickView.values]: a view the stored order has
+/// never heard of (added by a newer build) keeps its default place after the
+/// known ones.
 List<HomeQuickView> orderQuickViews(List<String> order) {
   int rank(HomeQuickView v) {
     final i = order.indexOf(v.name);
@@ -73,3 +62,13 @@ List<HomeQuickView> orderQuickViews(List<String> order) {
 
   return [...HomeQuickView.values]..sort((a, b) => rank(a).compareTo(rank(b)));
 }
+
+/// [arranged] with Locked left out while this phone has no locked chat —
+/// a card that opens an empty folder is worse than a missing one.
+List<HomeQuickView> visibleQuickViews(
+  List<HomeQuickView> arranged, {
+  required bool hasLocked,
+}) => [
+  for (final v in arranged)
+    if (v != HomeQuickView.locked || hasLocked) v,
+];

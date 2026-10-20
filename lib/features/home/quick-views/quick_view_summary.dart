@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../chat-lock/providers/chat_locks_provider.dart';
 import '../data/home_chats.dart';
 import '../../local_share/data/share_thread_queries.dart';
 import '../../local_share/providers/local_share_providers.dart';
@@ -93,5 +94,8 @@ QuickViewSummary summarizeQuickView(
           : QuickViewSummary(
               homeText(context, ref, 'home_n_devices', threads.length),
             );
+    case HomeQuickView.locked:
+      final n = ref.watch(chatLocksProvider.select((m) => m.length));
+      return QuickViewSummary(homeText(context, ref, 'home_n_locked', n));
   }
 }

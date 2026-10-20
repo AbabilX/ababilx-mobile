@@ -88,19 +88,21 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   clear = "You're all caught up"; `home_caught_up_art.dart`,
   `catch-up/`) · shortcuts (`quick-views/`: Drafts &
   scheduled, Groups, Flock
-  (feeds, `/home/flock`), Local Share (→ `/local-share`); per-card pastel
-  icon accent + chevron; hold and drag to reorder, `quickViewReordering`
-  blurs the rest, `home_quick_view_order_v1`) · Pinned faces · Nearby
-  devices (Local Share peers, capsules, hidden when none) · Talk again
-  (1:1 callers ≥2 from Talks' cached log; tap person → call at once, phone
-  badge is a hint only; See all → Talks) · Recent chats (6 newest
-  unpinned, chat-list rows, See all › → Messages). No dividers or folds.
-  Every fixed-height row computes its height through
+  (feeds, `/home/flock`), Local Share (→ `/local-share`), Locked chats
+  (→ `/messages/locked`, only while `chatLocksProvider` is non-empty);
+  icons use chip ink, no pastel fill; hold and drag to reorder,
+  `quickViewReordering` blurs the rest, `home_quick_view_order_v1`) ·
+  Pinned faces · Nearby devices (Local Share peers, capsules, hidden when
+  none) · Talk again (1:1 callers ≥2 from Talks' cached log; tap person →
+  call at once, phone badge is a hint only; See all → Talks) · Recent
+  chats (6 newest unpinned, chat-list rows, See all › → Messages). No
+  dividers or folds. Every fixed-height row computes its height through
   `MediaQuery.textScalerOf` — a fixed height overflowed on an enlarged
   system font. Pages `/home/catch-up|groups|drafts` sit outside the shell.
   Drafts come from `ComposerDraftStore.listAll` (re-read on tab show and on
   page return); scheduled from `GET /api/chat/scheduled`, invalidated on
-  `chat.scheduled.updated`. Locked chats never appear. Not built:
+  `chat.scheduled.updated`. Locked chats never appear in Home lists
+  (Pinned / Recent / Catch up) — only the Locked shortcut. Not built:
   Threads/Mentions, Tasks across DMs, Saved, Pins across chats.
 - **Chats ↔ Talks swipe** (2026-09-30, `core/router/swipe_tab_pager.dart` +
   `home_tab_pager.dart`): `/messages` and `/calls` build ONE `MaterialPage`

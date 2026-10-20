@@ -12,8 +12,6 @@ class QuickViewCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
-    required this.accent,
-    required this.accentFill,
     this.attention = false,
     this.alert = false,
   });
@@ -30,8 +28,6 @@ class QuickViewCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  final Color accent;
-  final Color accentFill;
   final bool attention;
   final bool alert;
 
@@ -49,20 +45,11 @@ class QuickViewCard extends StatelessWidget {
         onTap: onTap,
         customBorder: const StadiumBorder(),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 7, 12, 7),
+          padding: const EdgeInsets.fromLTRB(10, 7, 12, 7),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 26,
-                height: 26,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: accentFill,
-                  shape: BoxShape.circle,
-                ),
-                child: ChatIcon(icon, size: 14, color: accent),
-              ),
+              ChatIcon(icon, size: 16, color: ink),
               const SizedBox(width: 8),
               Text(
                 title,
