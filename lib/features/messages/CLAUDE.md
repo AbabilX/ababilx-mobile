@@ -1870,6 +1870,14 @@ receive  vault.decryptMessage -> _openAttachments -> real name/type/size + secre
 - A stated plaintext size larger than the object is refused before anything
   is allocated (`AttachmentChunkCipher.checkStatedSize`): the size is the
   sender's, and the RAM paths allocate it.
+- **Forward never needs the file key it cannot open** (2026-10-20,
+  device-verified). `forwardMessages` first retries the keys
+  (`vault.reopenAttachments`: a key that failed to open at read time —
+  vault still locked, a failed request — usually opens now). Still keyless
+  (history restored from a local backup under a new identity) → the file
+  goes out through `resendForward`, uploaded again from this phone's copy
+  with a new key, with the real name/type from the attachment store. No
+  "Forwarded" label on that path.
 - Locked chats, the view-once viewer and the notification picture decrypt in
   memory (`RamMediaCache.know`, `privacy_timed_sealed.dart`,
   `chat_push_image.dart`). A locked chat's encrypted video is played from the

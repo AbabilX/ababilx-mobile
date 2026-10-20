@@ -40,7 +40,7 @@ Future<int> resendForward(
   if (reason != null) throw StateError(reason);
   final notifier = container.read(chatProvider.notifier);
   final blobs = container.read(attachmentBlobStoreProvider);
-  final files = <(ChatMessageAttachment, File)>[];
+  final files = <(String name, String type, File file)>[];
   for (final a in message.attachments) {
     final row = await blobs.read(attachmentUrlKey(a.fileUrl));
     final path = row?.localPath ?? '';
@@ -48,25 +48,33 @@ Future<int> resendForward(
     if (path.isEmpty || !await file.exists()) {
       throw StateError('This file is not on this phone any more.');
     }
-    files.add((a, file));
+    // A file whose key never opened here still carries the server's generic
+    // name and type ("file", image/x-ababilx-sealed); the store kept the real
+    // ones when the file landed.
+    final real = a.needsKey && row!.fileName.isNotEmpty;
+    files.add((
+      real ? row.fileName : a.fileName,
+      real ? row.contentType : a.contentType,
+      file,
+    ));
   }
   var delivered = 0;
   for (final conversation in conversations) {
     final inputs = <ChatAttachmentInput>[];
-    for (final (a, file) in files) {
+    for (final (name, type, file) in files) {
       final size = await file.length();
       final presign = await notifier.presignAttachment(
         conversation.id,
-        contentType: a.contentType,
-        fileName: a.fileName,
+        contentType: type,
+        fileName: name,
         sizeBytes: size,
       );
-      await notifier.uploadAttachmentFile(presign, file, a.contentType, size);
+      await notifier.uploadAttachmentFile(presign, file, type, size);
       inputs.add(
         ChatAttachmentInput(
           fileUrl: presign.publicUrl,
-          fileName: a.fileName,
-          contentType: a.contentType,
+          fileName: name,
+          contentType: type,
           sizeBytes: size,
         ),
       );

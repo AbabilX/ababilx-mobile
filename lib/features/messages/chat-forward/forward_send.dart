@@ -107,6 +107,18 @@ Future<void> _forwardBehind(
       // The timeline's copy may hold a file whose key did not open when it
       // was read; asked again here, it usually does.
       final message = await vault.reopenAttachments(listed, userId);
+      // Still no key: this phone does not hold the key version the file was
+      // sealed under (history restored from a local backup after a new
+      // identity). The file itself is here, so it goes out as a new upload.
+      if (message.attachments.any((a) => a.needsKey)) {
+        final delivered = await resendForward(
+          container,
+          message,
+          conversations,
+        );
+        if (delivered < fewest) fewest = delivered;
+        continue;
+      }
       final prepared = await buildForwardTargets(
         vault: vault,
         currentUserId: userId,
