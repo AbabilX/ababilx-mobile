@@ -31,7 +31,11 @@ class ContactNicknames {
   ///
   /// The nickname goes through [safeDisplayName] too. It is typed on this
   /// phone, but a name pasted out of a chat carries whatever was in it.
-  String resolve({String? userId, String? name, String fallback = 'Unknown'}) {
+  String resolve({
+    String? userId,
+    String? name,
+    String fallback = namelessUserLabel,
+  }) {
     final nickname = forUser(userId);
     if (nickname != null) return safeDisplayName(nickname, fallback: fallback);
     return safeDisplayName(name, fallback: fallback);

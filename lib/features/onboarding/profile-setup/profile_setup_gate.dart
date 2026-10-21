@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../messages/add-friends/add_friends_pending.dart';
 import '../../profile/providers/profile_provider.dart';
 import 'profile_setup_flow.dart';
 import 'profile_setup_store.dart';
@@ -35,6 +36,8 @@ class _ProfileSetupGateState extends ConsumerState<ProfileSetupGate> {
 
   Future<void> _finish() async {
     setState(() => _show = false);
+    // The chat list opens Add friends (link, code, camera) once.
+    ref.read(addFriendsAfterOnboardingProvider.notifier).state = true;
     final userId = _userId;
     if (userId != null) {
       await ProfileSetupStore.write(userId, ProfileSetupStore.done);

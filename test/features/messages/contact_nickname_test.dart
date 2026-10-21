@@ -46,7 +46,7 @@ void main() {
     test('renames a peer whose own name renders as nothing', () {
       const blank = 'ㅤㅤ'; // U+3164 Hangul fillers
       const none = ContactNicknames();
-      expect(none.resolve(userId: 'peer', name: blank), 'Unknown');
+      expect(none.resolve(userId: 'peer', name: blank), 'AbabilX user');
       const named = ContactNicknames({'peer': 'Junayed'});
       expect(named.resolve(userId: 'peer', name: blank), 'Junayed');
     });

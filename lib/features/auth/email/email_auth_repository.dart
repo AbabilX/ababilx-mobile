@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
+import '../data/app_key.dart';
 import '../data/auth_session.dart';
 
 /// A refusal the server explained: [code] to branch on, [message] to show.
@@ -35,14 +36,7 @@ class EmailAuthRepository {
 
   static const _clientName = 'mobile';
 
-  /// Sent on these calls only. Hardcoded: it ships in the APK either way, so
-  /// it is bot friction, not a secret. Must equal the API's ABABILX_APP_KEY;
-  /// `--dart-define=ABABILX_APP_KEY=…` still overrides it.
-  static const _appKey = String.fromEnvironment(
-    'ABABILX_APP_KEY',
-    defaultValue:
-        '878c6721d52f43c7e6a781bb33dceaf4f96c2484259e9dd4ef967a90889911f3',
-  );
+  static const _appKey = ababilxAppKey;
 
   Future<Response<Map<String, dynamic>>> _post(
     String path,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/network/friendly_error.dart';
 import '../../privacy-mode/privacy_mode_provider.dart';
+import '../discovery/discovery_identity_section.dart';
 import '../discovery/discovery_phone_field.dart';
 import '../discovery/discovery_provider.dart';
 import '../typing-indicators/typing_indicators_tile.dart';
@@ -65,6 +66,7 @@ class DiscoveryScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+            const DiscoveryIdentitySection(),
             DiscoveryPhoneField(
               stored: data.phoneNumber,
               onSave: (value) =>

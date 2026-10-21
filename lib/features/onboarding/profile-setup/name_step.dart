@@ -5,6 +5,7 @@ import '../../../core/localization/app_translations.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../settings/display-name/display_name_rules.dart';
 import 'profile_setup_step.dart';
+import 'random_profile.dart';
 
 /// Step 1: the name everyone else sees. Prefilled with what Google or the
 /// email sign-up form already gave; unchanged, Next writes nothing.
@@ -59,6 +60,13 @@ class _NameStepState extends ConsumerState<NameStep> {
     }
   }
 
+  /// Skip: a random two-word name, unless one is already there.
+  Future<void> _skip() async {
+    if (_stored.isNotEmpty) return widget.onDone();
+    _ctrl.text = RandomProfile.name();
+    await _next();
+  }
+
   @override
   Widget build(BuildContext context) {
     final left = displayNameRunesLeft(_ctrl.text);
@@ -69,6 +77,7 @@ class _NameStepState extends ConsumerState<NameStep> {
       bodyKey: 'profile_setup_name_body',
       busy: _saving,
       onNext: valid ? _next : null,
+      onSkip: _skip,
       field: TextField(
         controller: _ctrl,
         autofocus: true,

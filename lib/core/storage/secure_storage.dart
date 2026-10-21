@@ -58,6 +58,13 @@ class SecureStorage {
   Future<void> deletePendingRecovery(String userId) =>
       _storage.delete(key: 'pending_recovery_v1_$userId');
 
+  Future<String?> readAccountKey() =>
+      _storage.read(key: StorageKeys.accountKey);
+  Future<void> writeAccountKey(String seed) =>
+      _storage.write(key: StorageKeys.accountKey, value: seed);
+  Future<void> deleteAccountKey() =>
+      _storage.delete(key: StorageKeys.accountKey);
+
   /// Ends authentication without destroying this phone's message archive.
   Future<void> clearAuthSession() async {
     await deleteJwt();

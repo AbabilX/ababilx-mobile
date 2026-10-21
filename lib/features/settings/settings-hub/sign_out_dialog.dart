@@ -5,7 +5,13 @@ import '../../../core/localization/app_translations.dart';
 
 /// Confirm before ending the session. Sign-out is not destructive to data, but
 /// it is a full re-auth on the way back in, so it never happens on one tap.
-Future<bool> confirmSignOut(BuildContext context) async {
+///
+/// [keyOnly]: a "Start New Chat" account has no email or Google to come back
+/// with, so its sign-out is final and the dialog says so plainly.
+Future<bool> confirmSignOut(
+  BuildContext context, {
+  bool keyOnly = false,
+}) async {
   final colors = Theme.of(context).colorScheme;
   final theme = Theme.of(context);
   final confirmed = await showDialog<bool>(
@@ -47,7 +53,11 @@ Future<bool> confirmSignOut(BuildContext context) async {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  t('settings_sign_out_body'),
+                  t(
+                    keyOnly
+                        ? 'settings_sign_out_body_key_only'
+                        : 'settings_sign_out_body',
+                  ),
                   style: TextStyle(
                     color: colors.onSurfaceVariant,
                     fontSize: 14,
@@ -80,7 +90,7 @@ Future<bool> confirmSignOut(BuildContext context) async {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: Text(
-                          t('sign_out'),
+                          t(keyOnly ? 'sign_out_key_only_confirm' : 'sign_out'),
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),

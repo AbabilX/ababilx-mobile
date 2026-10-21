@@ -372,6 +372,102 @@ class AppTranslations {
           'A picture helps people recognise you in chats and calls. You can change it any time in Settings.',
       'profile_setup_photo_choose': 'Choose a photo',
       'profile_setup_photo_change': 'Change photo',
+      'profile_setup_photo_icons': 'Or pick an icon',
+      'add_friends_title': 'Add new friends',
+      'add_friends_row_body': 'Share your link or scan a friend’s code',
+      'add_friends_tab_code': 'My code',
+      'add_friends_tab_scan': 'Scan',
+      'add_friends_copied': 'Link copied',
+      'add_friends_share': 'Share link',
+      'add_friends_share_text': 'Message me on AbabilX: {link}',
+      'add_friends_find': 'Find by username',
+      'add_friends_code_hint':
+          'Anyone who scans this code or opens your link starts a chat with you.',
+      'add_friends_scan_hint': 'Point the camera at a friend’s AbabilX code.',
+      'chat_local_share_empty':
+          'No device threads yet. Devices on your Wi-Fi show up in Local Share.',
+      'chat_local_share_find': 'Find nearby devices',
+      'start_chat_sheet_title': 'Keep your account safe?',
+      'start_chat_sheet_body':
+          'Sign in with Google and you can get this account back on any phone. Without it, losing this phone loses the account.',
+      'start_chat_sheet_google': 'Continue with Google',
+      'start_chat_sheet_skip': 'Skip, start without an account',
+      'email_err_invalid_email': 'Enter a valid email address.',
+      'email_err_email_taken':
+          'This email belongs to another account. Use a different email.',
+      'email_err_has_email': 'Your account already has an email.',
+      'account_email_save': 'Save',
+      'account_email_change': 'Change email',
+      'account_setup_title': 'Secure your account',
+      'account_setup_sub':
+          'Add an email and password so you never lose this account',
+      'account_setup_body':
+          'Your account has no email yet. If you lose this phone, it is gone. Add an email and a password: next time, sign in with them and you are back in the same account.',
+      'account_setup_done':
+          'Your account is secured with {email}. Sign in with it and your password on a new phone.',
+      'account_setup_saved': 'Account secured',
+      'discovery_add_email': 'Add your email',
+      'discovery_add_email_body':
+          'We send a 6-digit code to check it is yours. Then people who know it can find you, and you can sign in with it.',
+      'discovery_add_username': 'Add a username',
+      'discovery_add_username_body':
+          'A handle people can search for and your QR code carries.',
+      'local_backup_error_set_pin':
+          'Set a backup PIN first. Backups start after that.',
+      'local_backup_error_needs_pin':
+          'Enter your backup PIN to open this backup.',
+      'backup_pin_rule': 'Use 6 to 10 characters: digits 0-9 and letters a-f.',
+      'backup_pin_mismatch': 'The two PINs do not match.',
+      'backup_pin_set_title': 'Set a backup PIN',
+      'backup_pin_set_body':
+          'This PIN alone opens your backup on a new phone. Nobody can reset it, so remember it.',
+      'backup_pin_enter_title': 'Enter your backup PIN',
+      'backup_pin_enter_body': 'The PIN (6 to 10 characters) you set for your backup.',
+      'backup_pin_field': 'PIN',
+      'backup_pin_repeat': 'Repeat PIN',
+      'backup_pin_continue': 'Continue',
+      'backup_pin_wrong': 'That PIN does not open this backup. Try again.',
+      'backup_pin_saved': 'Backup PIN set',
+      'local_backup_req_missing': 'Add',
+      'local_backup_req_pin': 'Backup PIN',
+      'local_backup_req_pin_body':
+          'The PIN that opens your backup. Needed before backups start.',
+      'local_backup_req_pin_set':
+          'Set. Only this PIN opens your backup — remember it.',
+      'chat_export_section': 'Export chats',
+      'chat_export_title': 'Export chats',
+      'chat_export_hint':
+          'Every chat, photo and file in one zip. No password: anyone with the file can read it.',
+      'chat_export_running': 'Exporting… {n} messages',
+      'chat_export_confirm_title': 'Export every chat?',
+      'chat_export_confirm_body':
+          'The zip is NOT encrypted. It holds every chat on this phone, with its photos, videos, voice notes and files — including private chats and media people asked you not to save. Anyone who gets the file can read all of it.',
+      'chat_export_confirm_go': 'Export',
+      'chat_export_done_title': 'Chats exported',
+      'chat_export_done_body':
+          '{chats} chats, {messages} messages, {files} files.\n\nSaved to {path}',
+      'chat_export_share': 'Share',
+      'chat_export_close': 'Close',
+      'chat_export_error': 'Could not export your chats. Try again.',
+      'chat_export_empty': 'There are no messages on this phone to export.',
+      'chat_import_title': 'Import chats',
+      'chat_import_hint':
+          'Open an AbabilX chat export (.zip). Its chats are kept on this phone to read; nothing is sent.',
+      'chat_import_running': 'Importing…',
+      'chat_import_done': 'Imported {chats} chats, {messages} messages',
+      'chat_import_error_not_export':
+          'This file is not an AbabilX chat export.',
+      'chat_import_error_unreadable':
+          'Could not read this export. Check there is space on the phone and try again.',
+      'chat_imported_title': 'Imported chats',
+      'chat_imported_empty': 'No imported chats yet.',
+      'chat_imported_from': 'Exported {date}',
+      'chat_imported_count': '{n} messages',
+      'chat_imported_delete': 'Delete this import',
+      'chat_imported_delete_title':
+          'Delete these imported chats from this phone? The zip file itself is not touched.',
+      'chat_imported_no_file': 'not in this export',
+      'chat_imported_edited': 'edited',
       'profile_setup_photo_error': 'Could not save your photo. Try again.',
       'profile_setup_skip': 'Skip',
       'profile_setup_next': 'Next',
@@ -395,6 +491,13 @@ class AppTranslations {
           'Signing in as {account} will permanently remove the previous account’s messages, private media and message keys from this phone. Files saved to AbabilXStorage will stay.',
       'account_switch_confirm': 'Delete local data and continue',
       'continue_email': 'Continue with email',
+      'start_new_chat': 'Start New Chat',
+      'sign_in_google': 'Sign in with Google',
+      'sign_in_email_password': 'Sign in with email and password',
+      'account_switch_new_account': 'a new account',
+      'settings_sign_out_body_key_only':
+          'This account has no email or Google sign-in. If you sign out, you can never open it again, and its chats on this phone stay locked. Start New Chat will make a different account.',
+      'sign_out_key_only_confirm': 'Sign out for good',
       'email_sign_in_title': 'Sign in with email',
       'email_field': 'Email',
       'password_field': 'Password',
@@ -1708,6 +1811,102 @@ class AppTranslations {
           'ছবি থাকলে চ্যাট ও কলে অন্যরা আপনাকে সহজে চিনতে পারবে। সেটিংস থেকে যেকোনো সময় বদলাতে পারবেন।',
       'profile_setup_photo_choose': 'ছবি বেছে নিন',
       'profile_setup_photo_change': 'ছবি বদলান',
+      'profile_setup_photo_icons': 'অথবা একটি আইকন বেছে নিন',
+      'add_friends_title': 'নতুন বন্ধু যোগ করুন',
+      'add_friends_row_body':
+          'আপনার লিংক শেয়ার করুন বা বন্ধুর কোড স্ক্যান করুন',
+      'add_friends_tab_code': 'আমার কোড',
+      'add_friends_tab_scan': 'স্ক্যান',
+      'add_friends_copied': 'লিংক কপি হয়েছে',
+      'add_friends_share': 'লিংক শেয়ার',
+      'add_friends_share_text': 'AbabilX-এ আমাকে মেসেজ করুন: {link}',
+      'add_friends_find': 'ইউজারনেম দিয়ে খুঁজুন',
+      'add_friends_code_hint':
+          'এই কোড স্ক্যান করলে বা আপনার লিংক খুললে যে কেউ আপনার সাথে চ্যাট শুরু করতে পারবে।',
+      'add_friends_scan_hint': 'বন্ধুর AbabilX কোডের দিকে ক্যামেরা ধরুন।',
+      'chat_local_share_empty':
+          'এখনো কোনো ডিভাইস থ্রেড নেই। আপনার Wi-Fi-এর ডিভাইস Local Share-এ দেখা যাবে।',
+      'chat_local_share_find': 'কাছের ডিভাইস খুঁজুন',
+      'start_chat_sheet_title': 'অ্যাকাউন্ট নিরাপদ রাখবেন?',
+      'start_chat_sheet_body':
+          'Google দিয়ে সাইন ইন করলে যেকোনো ফোনে এই অ্যাকাউন্ট ফিরে পাবেন। না করলে ফোন হারালে অ্যাকাউন্টও হারাবে।',
+      'start_chat_sheet_google': 'Google দিয়ে চালিয়ে যান',
+      'start_chat_sheet_skip': 'এড়িয়ে যান, অ্যাকাউন্ট ছাড়াই শুরু করুন',
+      'email_err_invalid_email': 'সঠিক ইমেইল ঠিকানা লিখুন।',
+      'email_err_email_taken':
+          'এই ইমেইল অন্য একটি অ্যাকাউন্টের। অন্য ইমেইল ব্যবহার করুন।',
+      'email_err_has_email': 'আপনার অ্যাকাউন্টে আগেই একটি ইমেইল আছে।',
+      'account_email_save': 'সংরক্ষণ',
+      'account_email_change': 'ইমেইল বদলান',
+      'account_setup_title': 'অ্যাকাউন্ট সুরক্ষিত করুন',
+      'account_setup_sub':
+          'ইমেইল ও পাসওয়ার্ড যোগ করুন, যাতে অ্যাকাউন্ট কখনো না হারায়',
+      'account_setup_body':
+          'আপনার অ্যাকাউন্টে এখনো কোনো ইমেইল নেই। ফোন হারালে অ্যাকাউন্টও হারাবে। ইমেইল ও পাসওয়ার্ড যোগ করুন: পরে সেগুলো দিয়ে সাইন ইন করলে একই অ্যাকাউন্টে ফিরে আসবেন।',
+      'account_setup_done':
+          'আপনার অ্যাকাউন্ট {email} দিয়ে সুরক্ষিত। নতুন ফোনে এই ইমেইল ও পাসওয়ার্ড দিয়ে সাইন ইন করুন।',
+      'account_setup_saved': 'অ্যাকাউন্ট সুরক্ষিত হয়েছে',
+      'discovery_add_email': 'আপনার ইমেইল যোগ করুন',
+      'discovery_add_email_body':
+          'এটি আপনার কিনা যাচাই করতে আমরা ৬ সংখ্যার কোড পাঠাব। এরপর যারা এটি জানেন তারা আপনাকে খুঁজে পাবেন, আর আপনি এটি দিয়ে সাইন ইন করতে পারবেন।',
+      'discovery_add_username': 'ইউজারনেম যোগ করুন',
+      'discovery_add_username_body':
+          'একটি হ্যান্ডেল, যা দিয়ে লোকে আপনাকে খুঁজবে এবং যা আপনার QR কোডে থাকে।',
+      'local_backup_error_set_pin':
+          'আগে একটি ব্যাকআপ পিন সেট করুন। এরপর ব্যাকআপ শুরু হবে।',
+      'local_backup_error_needs_pin': 'এই ব্যাকআপ খুলতে আপনার ব্যাকআপ পিন দিন।',
+      'backup_pin_rule': '৬ থেকে ১০টি অক্ষর দিন: ০-৯ সংখ্যা ও a-f অক্ষর।',
+      'backup_pin_mismatch': 'দুটি পিন মেলেনি।',
+      'backup_pin_set_title': 'ব্যাকআপ পিন সেট করুন',
+      'backup_pin_set_body':
+          'নতুন ফোনে শুধু এই পিন দিয়েই ব্যাকআপ খুলবে। কেউ এটি রিসেট করতে পারে না, তাই মনে রাখুন।',
+      'backup_pin_enter_title': 'আপনার ব্যাকআপ পিন দিন',
+      'backup_pin_enter_body': 'ব্যাকআপের জন্য যে পিন (৬ থেকে ১০ অক্ষর) সেট করেছিলেন।',
+      'backup_pin_field': 'পিন',
+      'backup_pin_repeat': 'আবার পিন দিন',
+      'backup_pin_continue': 'চালিয়ে যান',
+      'backup_pin_wrong': 'এই পিন দিয়ে ব্যাকআপটি খোলে না। আবার চেষ্টা করুন।',
+      'backup_pin_saved': 'ব্যাকআপ পিন সেট হয়েছে',
+      'local_backup_req_missing': 'যোগ করুন',
+      'local_backup_req_pin': 'ব্যাকআপ পিন',
+      'local_backup_req_pin_body':
+          'যে পিন দিয়ে আপনার ব্যাকআপ খোলে। ব্যাকআপ শুরুর আগে লাগবে।',
+      'local_backup_req_pin_set':
+          'সেট করা আছে। শুধু এই পিন দিয়েই ব্যাকআপ খোলে — মনে রাখুন।',
+      'chat_export_section': 'চ্যাট এক্সপোর্ট',
+      'chat_export_title': 'চ্যাট এক্সপোর্ট করুন',
+      'chat_export_hint':
+          'সব চ্যাট, ছবি ও ফাইল একটি zip-এ। কোনো পাসওয়ার্ড নেই: ফাইলটি যার কাছে থাকবে সে-ই পড়তে পারবে।',
+      'chat_export_running': 'এক্সপোর্ট হচ্ছে… {n}টি মেসেজ',
+      'chat_export_confirm_title': 'সব চ্যাট এক্সপোর্ট করবেন?',
+      'chat_export_confirm_body':
+          'zip ফাইলটি এনক্রিপ্টেড নয়। এতে এই ফোনের সব চ্যাট থাকবে, ছবি, ভিডিও, ভয়েস নোট ও ফাইলসহ — প্রাইভেট চ্যাট এবং যে মিডিয়া সেভ না করতে বলা হয়েছিল সেগুলোও। ফাইলটি যে পাবে সে সবকিছু পড়তে পারবে।',
+      'chat_export_confirm_go': 'এক্সপোর্ট',
+      'chat_export_done_title': 'চ্যাট এক্সপোর্ট হয়েছে',
+      'chat_export_done_body':
+          '{chats}টি চ্যাট, {messages}টি মেসেজ, {files}টি ফাইল।\n\nসেভ হয়েছে: {path}',
+      'chat_export_share': 'শেয়ার',
+      'chat_export_close': 'বন্ধ করুন',
+      'chat_export_error': 'চ্যাট এক্সপোর্ট করা যায়নি। আবার চেষ্টা করুন।',
+      'chat_export_empty': 'এই ফোনে এক্সপোর্ট করার মতো কোনো মেসেজ নেই।',
+      'chat_import_title': 'চ্যাট ইমপোর্ট করুন',
+      'chat_import_hint':
+          'AbabilX-এর চ্যাট এক্সপোর্ট (.zip) খুলুন। চ্যাটগুলো পড়ার জন্য এই ফোনে থাকবে; কিছুই পাঠানো হয় না।',
+      'chat_import_running': 'ইমপোর্ট হচ্ছে…',
+      'chat_import_done': '{chats}টি চ্যাট, {messages}টি মেসেজ ইমপোর্ট হয়েছে',
+      'chat_import_error_not_export':
+          'এটি AbabilX-এর চ্যাট এক্সপোর্ট ফাইল নয়।',
+      'chat_import_error_unreadable':
+          'এক্সপোর্টটি পড়া যায়নি। ফোনে জায়গা আছে কিনা দেখে আবার চেষ্টা করুন।',
+      'chat_imported_title': 'ইমপোর্ট করা চ্যাট',
+      'chat_imported_empty': 'এখনো কোনো চ্যাট ইমপোর্ট করা হয়নি।',
+      'chat_imported_from': 'এক্সপোর্ট: {date}',
+      'chat_imported_count': '{n}টি মেসেজ',
+      'chat_imported_delete': 'এই ইমপোর্ট মুছুন',
+      'chat_imported_delete_title':
+          'ইমপোর্ট করা এই চ্যাটগুলো এই ফোন থেকে মুছবেন? zip ফাইলটি থাকবে।',
+      'chat_imported_no_file': 'এই এক্সপোর্টে নেই',
+      'chat_imported_edited': 'সম্পাদিত',
       'profile_setup_photo_error': 'ছবি সেভ করা যায়নি। আবার চেষ্টা করুন।',
       'profile_setup_skip': 'বাদ দিন',
       'profile_setup_next': 'পরবর্তী',
@@ -1731,6 +1930,13 @@ class AppTranslations {
           '{account} হিসেবে ঢুকলে আগের অ্যাকাউন্টের বার্তা, ব্যক্তিগত মিডিয়া ও মেসেজ কী এই ফোন থেকে স্থায়ীভাবে মুছে যাবে। AbabilXStorage-এ সেভ করা ফাইল থাকবে।',
       'account_switch_confirm': 'লোকাল ডেটা মুছে এগিয়ে যান',
       'continue_email': 'ইমেইল দিয়ে এগিয়ে যান',
+      'start_new_chat': 'নতুন চ্যাট শুরু করুন',
+      'sign_in_google': 'গুগল দিয়ে সাইন ইন করুন',
+      'sign_in_email_password': 'ইমেইল ও পাসওয়ার্ড দিয়ে সাইন ইন করুন',
+      'account_switch_new_account': 'একটি নতুন অ্যাকাউন্ট',
+      'settings_sign_out_body_key_only':
+          'এই অ্যাকাউন্টে কোনো ইমেইল বা গুগল সাইন-ইন নেই। সাইন আউট করলে আর কখনো এটি খুলতে পারবেন না, আর এই ফোনের চ্যাটগুলো লক থাকবে। নতুন চ্যাট শুরু করলে আলাদা একটি অ্যাকাউন্ট তৈরি হবে।',
+      'sign_out_key_only_confirm': 'চিরতরে সাইন আউট করুন',
       'email_sign_in_title': 'ইমেইল দিয়ে সাইন ইন',
       'email_field': 'ইমেইল',
       'password_field': 'পাসওয়ার্ড',

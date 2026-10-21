@@ -76,6 +76,14 @@ class AuthRepository {
       } else {
         await _storage.writeRefreshToken(refresh);
       }
+      // A Google/email sign-in drops any leftover account key, so a refused
+      // refresh can never sign this phone into a different account.
+      final seed = session.accountKeySeed;
+      if (seed == null) {
+        await _storage.deleteAccountKey();
+      } else {
+        await _storage.writeAccountKey(seed);
+      }
       await _storage.writeLocalDataOwnerUserId(session.userId);
       await _storage.writeJwt(session.accessToken);
     } catch (_) {
@@ -98,6 +106,9 @@ class AuthRepository {
   /// Google are asked first but never allowed to abort it — a plugin error or
   /// a dead network would otherwise leave the JWT on disk, and the app comes
   /// back up still signed in with a sign-out the user believes happened.
+  ///
+  /// A key-only account's key goes too: signing out of one is final, and the
+  /// next "Start New Chat" is a new account (user's decision, 2026-10-20).
   Future<void> signOut() async {
     try {
       await _firebaseAuth.signOut();
@@ -105,8 +116,13 @@ class AuthRepository {
     try {
       await _googleSignIn.signOut();
     } catch (_) {}
+    await _storage.deleteAccountKey();
     await _storage.clearAuthSession();
   }
+
+  /// True while this phone is signed in with a key-only account.
+  Future<bool> hasAccountKey() async =>
+      (await _storage.readAccountKey())?.isNotEmpty ?? false;
 
   Future<String?> readToken() => _storage.readJwt();
 }

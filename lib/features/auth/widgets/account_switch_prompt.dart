@@ -24,9 +24,12 @@ Future<void> settleAccountSwitch(
       return AlertDialog(
         title: Text(t('account_switch_title')),
         content: Text(
-          t(
-            'account_switch_body',
-          ).replaceAll('{account}', outcome.accountLabel),
+          t('account_switch_body').replaceAll(
+            '{account}',
+            outcome.accountLabel.isEmpty
+                ? t('account_switch_new_account')
+                : outcome.accountLabel,
+          ),
         ),
         actions: [
           TextButton(

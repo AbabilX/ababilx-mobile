@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:ababilx/core/localization/app_translations.dart';
 import 'package:ababilx/features/onboarding/profile-setup/profile_setup_gate.dart';
 import 'package:ababilx/features/onboarding/profile-setup/profile_setup_store.dart';
@@ -16,6 +18,18 @@ class _Profile extends ProfileNotifier {
 
   @override
   Future<AppUser> build() async => user;
+
+  final avatars = <Uint8List>[];
+  final names = <String>[];
+
+  @override
+  Future<void> updateName(String name) async {
+    names.add(name);
+    state = AsyncData(state.value!.copyWith(name: name));
+  }
+
+  @override
+  Future<void> updateAvatar(Uint8List bytes) async => avatars.add(bytes);
 
   @override
   Future<void> updateUsername(String username) async {
@@ -73,7 +87,9 @@ void main() {
     expect(find.text('chat list'), findsOneWidget);
   });
 
-  testWidgets('name, username, then a skippable phone number and picture', (tester) async {
+  testWidgets('name, username, then a skippable phone number and picture', (
+    tester,
+  ) async {
     final profile = await show(tester, user(isNew: true));
     expect(find.text('Your name'), findsOneWidget);
     expect(await ProfileSetupStore.read('u1'), ProfileSetupStore.pending);
@@ -104,9 +120,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Add a profile picture'), findsOneWidget);
 
-    await tester.tap(find.text('Skip'));
+    // Skip gives a random icon picture and leaves.
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Skip'));
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    });
     await tester.pumpAndSettle();
     expect(find.text('chat list'), findsOneWidget);
+    expect(profile.avatars, hasLength(1));
     expect(await ProfileSetupStore.read('u1'), ProfileSetupStore.done);
+  });
+
+  testWidgets('Skip on name and username fills random ones', (tester) async {
+    final profile = await show(tester, user(isNew: true).copyWith(name: ''));
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+    expect(profile.names.single, matches(RegExp(r'^[A-Z][a-z]+ [A-Z][a-z]+$')));
+    expect(find.text('Choose a username'), findsOneWidget);
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+    expect(profile.saved.single, matches(RegExp(r'^[a-z_]+\d{4}$')));
+    expect(find.text('Add your phone number'), findsOneWidget);
   });
 }

@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../device/start_new_chat_action.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/email_sign_in_action.dart';
 import '../widgets/google_sign_in_action.dart';
 import '../widgets/login_brand.dart';
+import '../widgets/login_error_note.dart';
 import '../widgets/onboarding_gate.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -17,14 +19,39 @@ class LoginScreen extends StatelessWidget {
       const OnboardingGate(child: _LoginContent());
 }
 
-class _LoginContent extends ConsumerWidget {
+enum _LoginWay { newChat, google }
+
+/// Three ways in, always all three, in this order (user's decision,
+/// 2026-10-20): Start New Chat (a new account, nothing asked), Google and
+/// email + password (existing accounts, same id and data as before).
+class _LoginContent extends ConsumerStatefulWidget {
   const _LoginContent();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_LoginContent> createState() => _LoginContentState();
+}
+
+class _LoginContentState extends ConsumerState<_LoginContent> {
+  _LoginWay? _running;
+
+  Future<void> _run(
+    _LoginWay way,
+    Future<void> Function(BuildContext, WidgetRef) action,
+  ) async {
+    setState(() => _running = way);
+    try {
+      await action(context, ref);
+    } finally {
+      if (mounted) setState(() => _running = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
     final error = authState.error?.toString().replaceAll('Exception: ', '');
+    String t(String key) => AppTranslations.translate(context, ref, key);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -47,35 +74,36 @@ class _LoginContent extends ConsumerWidget {
                   children: [
                     LoginBrand(
                       isLoading: isLoading,
-                      subtitle: AppTranslations.translate(
-                        context,
-                        ref,
-                        'login_subtitle',
-                      ),
+                      subtitle: t('login_subtitle'),
                     ),
                     const SizedBox(height: 32),
-                    LoginGoogleAction(
-                      isLoading: isLoading,
-                      error: error,
-                      label: AppTranslations.translate(
-                        context,
-                        ref,
-                        'continue_google',
-                      ),
-                      onPressed: () => runGoogleSignIn(context, ref),
+                    StartNewChatAction(
+                      label: t('start_new_chat'),
+                      busy: isLoading && _running == _LoginWay.newChat,
+                      onPressed: isLoading
+                          ? null
+                          : () => _run(_LoginWay.newChat, runStartNewChat),
                     ),
-                    if (!isLoading) ...[
-                      const SizedBox(height: 12),
-                      LoginEmailAction(
-                        label: AppTranslations.translate(
-                          context,
-                          ref,
-                          'continue_email',
-                        ),
-                        onPressed: () => context.push('/login/email'),
-                      ),
+                    const SizedBox(height: 12),
+                    LoginGoogleAction(
+                      label: t('sign_in_google'),
+                      busy: isLoading && _running == _LoginWay.google,
+                      onPressed: isLoading
+                          ? null
+                          : () => _run(_LoginWay.google, runGoogleSignIn),
+                    ),
+                    const SizedBox(height: 8),
+                    LoginEmailAction(
+                      label: t('sign_in_email_password'),
+                      onPressed: isLoading
+                          ? null
+                          : () => context.push('/login/email'),
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 20),
+                      LoginErrorNote(message: error),
                     ],
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),

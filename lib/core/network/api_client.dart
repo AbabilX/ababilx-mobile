@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../features/auth/device/device_relogin.dart';
 import '../constants/api_constants.dart';
 import '../storage/secure_storage.dart';
 
@@ -29,7 +30,8 @@ class ApiClient {
           // A wrong password is a 401 too, and says nothing about the stored
           // session — refreshing on it would sign a signed-out phone "out".
           if (error.response?.statusCode != 401 ||
-              error.requestOptions.path.startsWith('/auth/email/')) {
+              error.requestOptions.path.startsWith('/auth/email/') ||
+              error.requestOptions.path.startsWith('/auth/device/')) {
             handler.next(error);
             return;
           }
@@ -86,7 +88,25 @@ class ApiClient {
   Future<bool> ensureFreshAccessToken() async =>
       await _tryRefreshToken() == RefreshOutcome.refreshed;
 
+  /// A refused refresh token is the end of the session — unless this phone
+  /// holds a key-only account's key, which signs it straight back in.
   Future<RefreshOutcome> _refreshAccessToken() async {
+    final outcome = await _refreshWithToken();
+    if (outcome != RefreshOutcome.rejected) return outcome;
+    return reloginWithAccountKey(_bareDio, _storage);
+  }
+
+  /// No interceptors: the key sign-in must never re-enter the 401 handler.
+  late final Dio _bareDio = Dio(
+    BaseOptions(
+      baseUrl: ApiConstants.baseUrl,
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 30),
+      headers: {'Content-Type': 'application/json'},
+    ),
+  );
+
+  Future<RefreshOutcome> _refreshWithToken() async {
     final refreshToken = await _storage.readRefreshToken();
     if (refreshToken == null) return RefreshOutcome.rejected;
 

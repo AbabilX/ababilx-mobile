@@ -35,14 +35,14 @@ class PasswordRepository {
 
   final ApiClient _client;
 
-  Future<PasswordStatus> status() => _guard(() async {
+  Future<PasswordStatus> status() => guard(() async {
     final res = await _client.dio.get<Map<String, dynamic>>(
       ApiConstants.mePassword,
     );
     return PasswordStatus.fromJson(unwrapApiData<Map<String, dynamic>>(res));
   });
 
-  Future<EmailCodeSent> sendCode() => _guard(() async {
+  Future<EmailCodeSent> sendCode() => guard(() async {
     final res = await _client.dio.post<Map<String, dynamic>>(
       ApiConstants.mePasswordCode,
     );
@@ -54,7 +54,7 @@ class PasswordRepository {
   });
 
   Future<void> setPassword({required String code, required String password}) =>
-      _guard(
+      guard(
         () => _client.dio.put<Map<String, dynamic>>(
           ApiConstants.mePassword,
           data: {'code': code, 'password': password},
@@ -64,7 +64,7 @@ class PasswordRepository {
   /// A refusal with a `code` becomes an [EmailAuthException], so the screen
   /// reuses the email sign-in translations (`email_err_<code>`). A wrong code
   /// is a 400 here, never a 401 — under `/api` a 401 signs the phone out.
-  Future<T> _guard<T>(Future<T> Function() call) async {
+  Future<T> guard<T>(Future<T> Function() call) async {
     try {
       return await call();
     } on DioException catch (error) {

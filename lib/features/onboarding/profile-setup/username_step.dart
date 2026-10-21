@@ -7,6 +7,7 @@ import '../../profile/data/username_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../settings/username/username_rules.dart';
 import 'profile_setup_step.dart';
+import 'random_profile.dart';
 
 /// Step 2: the handle a personal QR code carries. Required here.
 ///
@@ -68,6 +69,39 @@ class _UsernameStepState extends ConsumerState<UsernameStep> {
     });
   }
 
+  /// Skip: a random handle from the name (`calm_falcon4821`), drawn again
+  /// while the server says it is taken. Keeps one the account already has.
+  Future<void> _skip() async {
+    if (_stored.isNotEmpty) return widget.onDone();
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    final name = ref.read(profileProvider).valueOrNull?.name ?? '';
+    for (var i = 0; i < 6; i++) {
+      final handle = RandomProfile.username(
+        name.isEmpty ? RandomProfile.name() : name,
+      );
+      try {
+        await ref.read(profileProvider.notifier).updateUsername(handle);
+        if (mounted) widget.onDone();
+        return;
+      } on UsernameException catch (error) {
+        if (error.reason != UsernameFailure.taken) break;
+      } catch (_) {
+        break;
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _saving = false;
+      _error = AppTranslations.of(
+        ref.read(appLanguageProvider),
+        'profile_setup_username_error',
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final valid = isValidUsername(_ctrl.text);
@@ -77,6 +111,7 @@ class _UsernameStepState extends ConsumerState<UsernameStep> {
       bodyKey: 'profile_setup_username_body',
       busy: _saving,
       onNext: valid ? _next : null,
+      onSkip: _skip,
       field: TextField(
         controller: _ctrl,
         autofocus: true,

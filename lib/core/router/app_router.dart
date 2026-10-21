@@ -51,6 +51,9 @@ import '../../features/privacy-mode/people/privacy_people_screen.dart';
 import '../../features/privacy-mode/privacy_mode_screen.dart';
 import '../../features/settings/screens/edit_name_screen.dart';
 import '../../features/settings/screens/edit_username_screen.dart';
+import '../../features/chat-export/ui/imported_archives_screen.dart';
+import '../../features/chat-export/ui/imported_chat_screen.dart';
+import '../../features/settings/account-setup/account_setup_screen.dart';
 import '../../features/settings/password/password_screen.dart';
 import '../../features/settings/screens/my_qr_screen.dart';
 import '../../features/share_intake/screens/share_target_screen.dart';
@@ -214,6 +217,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/password',
         builder: (_, _) => const PasswordScreen(),
       ),
+      GoRoute(
+        path: '/settings/account-setup',
+        builder: (_, _) => const AccountSetupScreen(),
+      ),
       // Your own code, not the scanner. The scanner is the icon in the chat
       // list header; this is the thing held up to it.
       GoRoute(path: '/settings/qr', builder: (_, _) => const MyQrScreen()),
@@ -249,6 +256,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/chat-backup/local',
         builder: (_, _) => const LocalBackupScreen(),
+      ),
+      GoRoute(
+        path: '/settings/chat-backup/imported',
+        builder: (_, _) => const ImportedArchivesScreen(),
+      ),
+      GoRoute(
+        path: '/settings/chat-backup/imported/:archive/:folder',
+        builder: (_, state) => ImportedChatScreen(
+          archiveId: state.pathParameters['archive']!,
+          folder: state.pathParameters['folder']!,
+        ),
       ),
       GoRoute(
         path: '/settings/chat-backup',

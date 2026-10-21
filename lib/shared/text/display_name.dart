@@ -12,6 +12,11 @@
 /// there, not inside a widget.
 library;
 
+/// What a person with no name is called. A "Start New Chat" account has no
+/// name, email or username at all (2026-10-20), and a blank row reads as a
+/// broken one.
+const String namelessUserLabel = 'AbabilX user';
+
 /// Rendering cap. Nothing legible lives past this, and it bounds the layout
 /// cost of a name built to be pathological.
 const int displayNameMaxRunes = 64;

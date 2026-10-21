@@ -5,8 +5,10 @@ import 'phone_step.dart';
 import 'photo_step.dart';
 import 'username_step.dart';
 
-/// Name → username → phone number → profile picture, one a screen. Name and
-/// username must be set; the phone number and the picture can be skipped.
+/// Name → username → phone number → profile picture, one a screen. Every
+/// step can be skipped: Skip fills a random name, a random unique handle and
+/// a random icon picture (the phone number stays empty), so a new account is
+/// in its chats in four taps.
 class ProfileSetupFlow extends StatefulWidget {
   const ProfileSetupFlow({super.key, required this.onDone});
 

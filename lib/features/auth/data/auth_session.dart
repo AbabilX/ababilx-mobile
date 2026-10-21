@@ -27,11 +27,15 @@ class PreparedAuthSession {
     required this.userId,
     required this.user,
     this.refreshToken,
+    this.accountKeySeed,
   });
 
   /// Reads the answer every sign-in endpoint gives: `access_token` (or the
   /// older `token`), `refresh_token`, and the `user` row.
-  factory PreparedAuthSession.fromLoginBody(Map<String, dynamic> body) {
+  factory PreparedAuthSession.fromLoginBody(
+    Map<String, dynamic> body, {
+    String? accountKeySeed,
+  }) {
     if (body['success'] != true) {
       throw Exception(body['error']?.toString() ?? 'Login failed');
     }
@@ -51,6 +55,7 @@ class PreparedAuthSession {
       refreshToken: body['refresh_token'] as String?,
       userId: userId,
       user: user,
+      accountKeySeed: accountKeySeed,
     );
   }
 
@@ -59,11 +64,17 @@ class PreparedAuthSession {
   final String userId;
   final Map<String, dynamic> user;
 
+  /// Set only for a key-only account ("Start New Chat"): the key is its one
+  /// credential, written when the session is committed — after any account
+  /// switch wipe, which would otherwise delete it with the old account's data.
+  final String? accountKeySeed;
+
+  /// Email, else name; empty for a key-only account, which has neither —
+  /// the switch prompt then says "a new account" instead of a raw id.
   String get accountLabel {
     final email = user['email']?.toString().trim() ?? '';
     if (email.isNotEmpty) return email;
-    final name = user['name']?.toString().trim() ?? '';
-    return name.isNotEmpty ? name : userId;
+    return user['name']?.toString().trim() ?? '';
   }
 }
 

@@ -57,9 +57,32 @@ class QrLoginFlow {
   }
 
   static Future<void> _dispatch(BuildContext context, WidgetRef ref) async {
-    final repo = ref.read(qrLoginRepositoryProvider);
     final payload = await QrScanSheet.show(context);
     if (payload == null || !context.mounted) return;
+    await _act(context, ref, payload);
+  }
+
+  /// [start] for a code already read elsewhere (Add friends scans inline).
+  static Future<void> handle(
+    BuildContext context,
+    WidgetRef ref,
+    String payload,
+  ) async {
+    final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
+    hidden.state = true;
+    try {
+      await _act(context, ref, payload);
+    } finally {
+      hidden.state = false;
+    }
+  }
+
+  static Future<void> _act(
+    BuildContext context,
+    WidgetRef ref,
+    String payload,
+  ) async {
+    final repo = ref.read(qrLoginRepositoryProvider);
 
     if (isDeviceLinkPayload(payload)) {
       await DeviceLinkApproval.start(context, ref, payload);

@@ -8,9 +8,11 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../auth/data/auth_repository.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
+import 'account_password_row.dart';
 import 'language_dialog.dart';
 import 'settings_row.dart';
 import '../start-tab/start_tab.dart';
@@ -99,14 +101,7 @@ class SettingsSections extends ConsumerWidget {
               : null,
           onTap: () => context.push('/settings/username'),
         ),
-        // How an account made with Google adds a password for email sign-in;
-        // there is no email sign-up any more, so this is the only way in.
-        SettingsRow(
-          icon: HugeIcons.strokeRoundedSquareLock01,
-          title: t('settings_password'),
-          subtitle: t('settings_password_sub'),
-          onTap: () => context.push('/settings/password'),
-        ),
+        AccountPasswordRow(user: user),
         SettingsRow(
           icon: HugeIcons.strokeRoundedSearch01,
           title: t('settings_discovery'),
@@ -179,7 +174,11 @@ class SettingsSections extends ConsumerWidget {
           title: t('sign_out'),
           destructive: true,
           onTap: () async {
-            if (!await confirmSignOut(context)) return;
+            final keyOnly = await ref
+                .read(authRepositoryProvider)
+                .hasAccountKey();
+            if (!context.mounted) return;
+            if (!await confirmSignOut(context, keyOnly: keyOnly)) return;
             await ref.read(authProvider.notifier).signOut();
           },
         ),

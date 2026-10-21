@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-/// The quieter second way in, under "Continue with Google": same pill, no
-/// fill, so Google stays the obvious choice for most people.
+/// Third and quietest: a text button for accounts that use email and
+/// password. Same account, same id as before — only the way in moved down.
 class LoginEmailAction extends StatelessWidget {
   const LoginEmailAction({
     super.key,
@@ -11,25 +11,30 @@ class LoginEmailAction extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onPressed;
+
+  /// Null while any sign-in is running.
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return SizedBox(
       width: double.infinity,
-      height: 56,
-      child: OutlinedButton.icon(
+      height: 52,
+      child: TextButton.icon(
         onPressed: onPressed,
         icon: const Icon(Icons.mail_outline_rounded),
         label: Text(
           label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
-        style: OutlinedButton.styleFrom(
+        style: TextButton.styleFrom(
           foregroundColor: colors.onSurface,
-          backgroundColor: colors.surfaceContainerLowest.withValues(alpha: 0.7),
-          side: BorderSide(color: colors.outlineVariant, width: 1.2),
+          backgroundColor: colors.surfaceContainerLowest.withValues(
+            alpha: 0.55,
+          ),
           shape: const StadiumBorder(),
         ),
       ),

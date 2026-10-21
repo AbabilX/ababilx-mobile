@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../attachments/providers/attachment_providers.dart';
@@ -11,9 +12,12 @@ import '../../notifications/chat/chat_notification_dismissals.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/network/friendly_error.dart';
 import '../data/account_data_wiper.dart';
 import '../data/auth_repository.dart';
 import '../data/auth_session.dart';
+import '../device/device_account_key.dart';
+import '../device/device_auth_repository.dart';
 
 /// Auth state — null = logged out / unknown, String = user id or JWT marker.
 /// GoRouter redirect checks this to decide whether to show login.
@@ -22,7 +26,15 @@ class AuthNotifier extends AsyncNotifier<bool> {
 
   @override
   Future<bool> build() async {
-    final token = await ref.read(authRepositoryProvider).readToken();
+    var token = await ref.read(authRepositoryProvider).readToken();
+    // A key-only account whose session was dropped is signed back in by its
+    // key rather than parked on the login screen, where "Start New Chat"
+    // would replace it.
+    if (token == null &&
+        await ref.read(authRepositoryProvider).hasAccountKey()) {
+      await ref.read(apiClientProvider).ensureFreshAccessToken();
+      token = await ref.read(authRepositoryProvider).readToken();
+    }
     if (token == null) return false;
     await _bootstrapLegacyOwner();
     // Decided before auth resolves, so a returning launch routes straight to
@@ -44,6 +56,29 @@ class AuthNotifier extends AsyncNotifier<bool> {
       return await _adopt(session);
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
+      return SignInFailed(error);
+    }
+  }
+
+  /// "Start New Chat": a brand-new account with no email, Google, phone or
+  /// name. The phone makes its key, the server makes the id. Goes through
+  /// [_adopt], so another account's data on this phone is never replaced
+  /// without the usual question.
+  Future<SignInOutcome> startNewChat() async {
+    state = const AsyncLoading();
+    try {
+      final key = await DeviceAccountKey.generate();
+      final session = await ref
+          .read(deviceAuthRepositoryProvider)
+          .register(key);
+      return await _adopt(session);
+    } catch (error, stackTrace) {
+      // The server's own sentence when it gave one, else offline/timeout copy
+      // rather than a DioException dump on the login screen.
+      final shown = error is DioException
+          ? Exception(friendlyErrorMessage(error))
+          : error;
+      state = AsyncError(shown, stackTrace);
       return SignInFailed(error);
     }
   }

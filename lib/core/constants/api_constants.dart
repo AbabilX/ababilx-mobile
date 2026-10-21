@@ -4,7 +4,12 @@ class ApiConstants {
   static const chatRestoreMessageCount = "/api/chat/recovery/message-count";
   ApiConstants._();
 
-  static const String baseUrl = 'https://api.ababilx.com';
+  /// `--dart-define=ABABILX_API_URL=http://<mac-ip>:7896` points a debug build
+  /// at the local stack (ababilx-server/local); release builds never set it.
+  static const String baseUrl = String.fromEnvironment(
+    'ABABILX_API_URL',
+    defaultValue: 'https://api.ababilx.com',
+  );
   static const String webPrivacyPolicyUrl =
       'https://ababilx.com/privacy-policy';
 
@@ -16,6 +21,9 @@ class ApiConstants {
   static const String emailReset = '/auth/email/reset';
   static const String emailResetConfirm = '/auth/email/reset/confirm';
   static const String authRefresh = '/auth/refresh';
+  static const String deviceChallenge = '/auth/device/challenge';
+  static const String deviceRegister = '/auth/device/register';
+  static const String deviceLogin = '/auth/device/login';
   static const String qrLoginInfo = '/api/auth/qr/info';
   static const String qrLoginApprove = '/api/auth/qr/approve';
   static const String qrLoginDeny = '/api/auth/qr/deny';
@@ -48,6 +56,8 @@ class ApiConstants {
   static const String meUsername = '/api/me/username';
   static const String mePassword = '/api/me/password';
   static const String mePasswordCode = '/api/me/password/code';
+  static const String meEmail = '/api/me/email';
+  static const String meEmailCode = '/api/me/email/code';
   static const String meUploadPresign = '/api/me/upload/presign';
 
   // Chat
@@ -274,7 +284,9 @@ class ApiConstants {
   static const String wsAuthSubprotocol = 'ababilx-ws';
 
   static String get notificationsWsUrl {
-    final wsBase = baseUrl.replaceFirst('https://', 'wss://');
+    final wsBase = baseUrl
+        .replaceFirst('https://', 'wss://')
+        .replaceFirst('http://', 'ws://');
     return '$wsBase$notificationsStream';
   }
 }
@@ -289,4 +301,8 @@ class StorageKeys {
   static const String messagingDeviceIdentity =
       'ababilx_messaging_device_identity';
   static const String localDataOwnerUserId = 'ababilx_local_data_owner_user_id';
+
+  /// Ed25519 seed of a key-only account ("Start New Chat"). The account's
+  /// only credential: deleted on sign-out, and with it the account.
+  static const String accountKey = 'account_key_v1';
 }
