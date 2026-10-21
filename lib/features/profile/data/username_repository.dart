@@ -31,13 +31,25 @@ class UsernameException implements Exception {
 
 /// Sets or clears the account handle.
 ///
-/// Uniqueness is decided by the server's index, never by asking first: two
-/// people typing the same handle at the same moment would both be told it was
-/// free. A 409 on save is the answer, and it is the only correct one.
+/// [available] is the typing read. It does not claim the handle: two people
+/// can both be told it is free. [save] is what claims it, and a 409 from the
+/// unique index is still the answer that wins.
 class UsernameRepository {
   const UsernameRepository(this._client);
 
   final ApiClient _client;
+
+  /// True when no other account holds [username]. The caller's own handle
+  /// is free. [username] must already be normalized.
+  Future<bool> available(String username) async {
+    final response = await _client.get(
+      ApiConstants.meUsernameAvailable,
+      queryParameters: {'username': username},
+    );
+    final data = (response.data as Map<String, dynamic>)['data'];
+    if (data is Map<String, dynamic>) return data['available'] == true;
+    return false;
+  }
 
   /// Returns the handle the server stored — lowercased, `@` stripped — so the
   /// phone shows what everyone else will see rather than what was typed.

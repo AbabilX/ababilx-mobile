@@ -54,6 +54,10 @@ class ApiConstants {
   static const String meActiveCall = '/api/me/active-call';
   static const String meName = '/api/me/name';
   static const String meUsername = '/api/me/username';
+
+  /// Typing read: is this handle free for the signed-in account. The PUT is
+  /// still what claims it.
+  static const String meUsernameAvailable = '/api/me/username/available';
   static const String mePassword = '/api/me/password';
   static const String mePasswordCode = '/api/me/password/code';
   static const String meEmail = '/api/me/email';

@@ -362,6 +362,11 @@ class AppTranslations {
       'profile_setup_username_label': 'Username',
       'profile_setup_username_error':
           'Could not save your username. Try again.',
+      'profile_setup_username_checking': 'Checking…',
+      'profile_setup_username_taken': 'That username is already taken.',
+      'profile_setup_username_available': 'Available',
+      'profile_setup_username_check_error':
+          'Could not check that username. Try again.',
       'profile_setup_phone_title': 'Add your phone number',
       'profile_setup_phone_body':
           'People who already have your number can find you. It is never shown on your profile and never used to sign in.',
@@ -372,7 +377,7 @@ class AppTranslations {
           'A picture helps people recognise you in chats and calls. You can change it any time in Settings.',
       'profile_setup_photo_choose': 'Choose a photo',
       'profile_setup_photo_change': 'Change photo',
-      'profile_setup_photo_icons': 'Or pick an icon',
+      'profile_setup_photo_icons': 'Pick an icon',
       'add_friends_title': 'Add new friends',
       'add_friends_row_body': 'Share your link or scan a friend’s code',
       'add_friends_tab_code': 'My code',
@@ -1801,6 +1806,11 @@ class AppTranslations {
       'profile_setup_username_label': 'ইউজারনেম',
       'profile_setup_username_error':
           'ইউজারনেম সেভ করা যায়নি। আবার চেষ্টা করুন।',
+      'profile_setup_username_checking': 'চেক করা হচ্ছে…',
+      'profile_setup_username_taken': 'এই ইউজারনেমটি আগেই নেওয়া হয়েছে।',
+      'profile_setup_username_available': 'ব্যবহার করা যাবে',
+      'profile_setup_username_check_error':
+          'ইউজারনেম চেক করা যায়নি। আবার চেষ্টা করুন।',
       'profile_setup_phone_title': 'ফোন নম্বর যোগ করুন',
       'profile_setup_phone_body':
           'যাদের কাছে আপনার নম্বর আছে তারা আপনাকে খুঁজে পাবে। নম্বরটি আপনার প্রোফাইলে দেখানো হয় না এবং সাইন ইন করতে ব্যবহার হয় না।',
@@ -1811,7 +1821,7 @@ class AppTranslations {
           'ছবি থাকলে চ্যাট ও কলে অন্যরা আপনাকে সহজে চিনতে পারবে। সেটিংস থেকে যেকোনো সময় বদলাতে পারবেন।',
       'profile_setup_photo_choose': 'ছবি বেছে নিন',
       'profile_setup_photo_change': 'ছবি বদলান',
-      'profile_setup_photo_icons': 'অথবা একটি আইকন বেছে নিন',
+      'profile_setup_photo_icons': 'একটি আইকন বেছে নিন',
       'add_friends_title': 'নতুন বন্ধু যোগ করুন',
       'add_friends_row_body':
           'আপনার লিংক শেয়ার করুন বা বন্ধুর কোড স্ক্যান করুন',

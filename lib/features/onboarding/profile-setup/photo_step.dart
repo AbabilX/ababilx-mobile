@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -10,12 +9,17 @@ import '../../../shared/media/image_crop_editor.dart';
 import '../../../shared/media/pick_image_bytes.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../profile/providers/profile_provider.dart';
+import 'icon_avatar_choices.dart';
 import 'icon_avatar_picker.dart';
 import 'profile_setup_step.dart';
 
-/// Step 4: the profile picture. Optional — a Google account usually arrives
-/// with one, and Settings changes it later. Same pick → crop → upload path
-/// as Settings, plus a row of icons that skip the gallery entirely.
+/// Step 4: the profile picture.
+///
+/// The choice lives on this step until Next. With no picture yet, the first
+/// Hugeicons tile is selected in state (never null, never uploaded on open).
+/// Tapping another icon or picking from the gallery only replaces that
+/// state. Next writes once — or writes nothing when a picture is already
+/// on the account and nothing here changed.
 class PhotoStep extends ConsumerStatefulWidget {
   const PhotoStep({super.key, required this.onDone});
 
@@ -30,20 +34,18 @@ class _PhotoStepState extends ConsumerState<PhotoStep> {
   bool _failed = false;
   final _icons = GlobalKey<IconAvatarPickerState>();
 
-  /// Skip: a random icon becomes the picture. Its upload runs on after the
-  /// step closes (the provider outlives this screen), so Skip is instant; a
-  /// failed upload just leaves the initial, set later in Settings.
-  Future<void> _skip() async {
-    final jpeg = await _icons.currentState?.renderRandom();
-    if (jpeg != null) {
-      unawaited(
-        ref
-            .read(profileProvider.notifier)
-            .updateAvatar(jpeg)
-            .catchError((Object _) {}),
-      );
-    }
-    if (mounted) widget.onDone();
+  /// Selected tile. Set to the default when the account has no picture.
+  /// Stays null while an existing picture is kept as-is.
+  int? _iconIndex;
+
+  /// Cropped gallery bytes. Wins over [_iconIndex] until another icon is tapped.
+  Uint8List? _gallery;
+
+  @override
+  void initState() {
+    super.initState();
+    final url = ref.read(profileProvider).valueOrNull?.avatarUrl ?? '';
+    if (url.isEmpty) _iconIndex = iconAvatarDefaultIndex;
   }
 
   Future<void> _pick() async {
@@ -53,10 +55,13 @@ class _PhotoStepState extends ConsumerState<PhotoStep> {
       MaterialPageRoute(builder: (_) => ImageCropEditor(bytes: bytes)),
     );
     if (cropped == null || !mounted) return;
-    await _save(cropped);
+    setState(() {
+      _gallery = cropped;
+      _failed = false;
+    });
   }
 
-  Future<void> _save(Uint8List bytes) async {
+  Future<bool> _save(Uint8List bytes) async {
     setState(() {
       _saving = true;
       _failed = false;
@@ -64,6 +69,7 @@ class _PhotoStepState extends ConsumerState<PhotoStep> {
     try {
       await ref.read(profileProvider.notifier).updateAvatar(bytes);
       if (mounted) setState(() => _saving = false);
+      return true;
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -71,7 +77,27 @@ class _PhotoStepState extends ConsumerState<PhotoStep> {
           _failed = true;
         });
       }
+      return false;
     }
+  }
+
+  Future<void> _next() async {
+    final gallery = _gallery;
+    if (gallery != null) {
+      if (await _save(gallery) && mounted) widget.onDone();
+      return;
+    }
+    if (_iconIndex == null) {
+      widget.onDone();
+      return;
+    }
+    final jpeg = await _icons.currentState?.renderSelected();
+    if (!mounted) return;
+    if (jpeg == null) {
+      setState(() => _failed = true);
+      return;
+    }
+    if (await _save(jpeg) && mounted) widget.onDone();
   }
 
   @override
@@ -81,13 +107,13 @@ class _PhotoStepState extends ConsumerState<PhotoStep> {
     final colors = theme.colorScheme;
     final user = ref.watch(profileProvider).valueOrNull;
     final hasPhoto = (user?.avatarUrl ?? '').isNotEmpty;
+    final hasChoice = _gallery != null || _iconIndex != null || hasPhoto;
     return ProfileSetupStep(
       step: 3,
       titleKey: 'profile_setup_photo_title',
       bodyKey: 'profile_setup_photo_body',
       busy: _saving,
-      onNext: hasPhoto ? widget.onDone : null,
-      onSkip: hasPhoto ? null : _skip,
+      onNext: hasChoice && !_saving ? _next : null,
       // Full width, so the picture and the icons sit on the screen's centre
       // line rather than on the widest child's.
       field: SizedBox(
@@ -99,8 +125,9 @@ class _PhotoStepState extends ConsumerState<PhotoStep> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  AppAvatar(
-                    size: 128,
+                  _Preview(
+                    gallery: _gallery,
+                    iconIndex: _gallery == null ? _iconIndex : null,
                     url: user?.avatarUrl,
                     name: user?.name,
                     owner: user == null ? null : 'user:${user.id}',
@@ -133,7 +160,7 @@ class _PhotoStepState extends ConsumerState<PhotoStep> {
               onPressed: _saving ? null : _pick,
               child: Text(
                 t(
-                  hasPhoto
+                  hasPhoto || _gallery != null
                       ? 'profile_setup_photo_change'
                       : 'profile_setup_photo_choose',
                 ),
@@ -147,7 +174,20 @@ class _PhotoStepState extends ConsumerState<PhotoStep> {
               ),
             ),
             const SizedBox(height: 16),
-            IconAvatarPicker(key: _icons, enabled: !_saving, onPicked: _save),
+            IconAvatarPicker(
+              key: _icons,
+              enabled: !_saving,
+              // A gallery photo is the choice; the ring comes back when an
+              // icon is tapped again.
+              selected: _gallery == null ? _iconIndex : null,
+              onSelect: (index) {
+                setState(() {
+                  _iconIndex = index;
+                  _gallery = null;
+                  _failed = false;
+                });
+              },
+            ),
             if (_failed)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -162,6 +202,67 @@ class _PhotoStepState extends ConsumerState<PhotoStep> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _Preview extends StatelessWidget {
+  const _Preview({
+    required this.gallery,
+    required this.iconIndex,
+    required this.url,
+    required this.name,
+    required this.owner,
+  });
+
+  final Uint8List? gallery;
+  final int? iconIndex;
+  final String? url;
+  final String? name;
+  final String? owner;
+
+  static const double _size = 128;
+
+  @override
+  Widget build(BuildContext context) {
+    final gallery = this.gallery;
+    if (gallery != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(AppAvatar.radius),
+        child: Image.memory(
+          gallery,
+          width: _size,
+          height: _size,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+    final index = iconIndex;
+    if (index != null) {
+      final choice = iconAvatarChoices[index];
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(AppAvatar.radius),
+        child: ColoredBox(
+          color: choice.background,
+          child: SizedBox(
+            width: _size,
+            height: _size,
+            child: Center(
+              child: HugeIcon(
+                icon: choice.icon,
+                size: _size * 0.5,
+                color: choice.ink,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return AppAvatar(
+      size: _size,
+      url: url,
+      name: name,
+      owner: owner,
     );
   }
 }

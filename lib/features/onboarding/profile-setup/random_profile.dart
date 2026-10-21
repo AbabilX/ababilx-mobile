@@ -1,8 +1,8 @@
 import 'dart:math';
 
-/// What Skip fills in during profile setup: a friendly two-word name and a
-/// handle built from it plus four digits. Uniqueness is the server's answer
-/// (409 on save); the username step simply draws again.
+/// What profile setup fills in: a friendly two-word name and a handle built
+/// from it plus four digits. The username step asks the server whether that
+/// handle is free before it keeps the draw.
 abstract final class RandomProfile {
   static const _adjectives = [
     'Calm',

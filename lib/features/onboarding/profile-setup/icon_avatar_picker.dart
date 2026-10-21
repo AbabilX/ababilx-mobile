@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -9,21 +8,25 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../shared/media/crop_render.dart';
 import 'icon_avatar_choices.dart';
 
-/// The quick way past the picture step: tap an icon and it becomes the
-/// profile picture. Each tile is drawn once more at [_exportPixels] and saved
-/// as an ordinary JPEG avatar, so web, desktop and older phones show it
-/// with nothing new on the server or in their code.
+/// Icon tiles for the picture step. A tap only reports which tile is
+/// selected — the JPEG is rendered when the step saves, on Next.
+///
+/// What is exported is an ordinary JPEG avatar, so web, desktop and older
+/// phones show it with nothing new on the server or in their code.
 class IconAvatarPicker extends StatefulWidget {
   const IconAvatarPicker({
     super.key,
     required this.enabled,
-    required this.onPicked,
+    required this.selected,
+    required this.onSelect,
   });
 
   final bool enabled;
 
-  /// JPEG bytes of the chosen tile, square.
-  final Future<void> Function(Uint8List jpeg) onPicked;
+  /// The ringed tile, or null when a gallery photo is the current choice.
+  final int? selected;
+
+  final ValueChanged<int> onSelect;
 
   @override
   State<IconAvatarPicker> createState() => IconAvatarPickerState();
@@ -37,19 +40,14 @@ const double _ringSpace = 10;
 
 class IconAvatarPickerState extends State<IconAvatarPicker> {
   final _keys = List.generate(iconAvatarChoices.length, (_) => GlobalKey());
-  int? _picked;
   double _tile = 52;
 
-  /// Skip on the picture step: one of the icons, at random, as JPEG bytes.
-  /// The caller uploads it; nothing here waits on the network.
-  Future<Uint8List?> renderRandom() =>
-      _render(Random.secure().nextInt(iconAvatarChoices.length));
-
-  Future<void> _pick(int index) async {
-    final jpeg = await _render(index);
-    if (jpeg == null || !mounted) return;
-    setState(() => _picked = index);
-    await widget.onPicked(jpeg);
+  /// The selected tile as JPEG bytes. Null when nothing is selected or the
+  /// tile has not been painted yet.
+  Future<Uint8List?> renderSelected() {
+    final index = widget.selected;
+    if (index == null) return Future.value();
+    return _render(index);
   }
 
   Future<Uint8List?> _render(int index) async {
@@ -78,8 +76,7 @@ class IconAvatarPickerState extends State<IconAvatarPicker> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    // Four to a row across the full width: 12 icons as 4 × 3, never
-    // 5 + 5 + 2, and the tiles grow to fill the row instead of leaving a gap.
+    // Four to a row across the full width; tiles grow to fill the row.
     return LayoutBuilder(
       builder: (context, box) {
         _tile = ((box.maxWidth - (_perRow - 1) * _gap) / _perRow - _ringSpace)
@@ -94,9 +91,9 @@ class IconAvatarPickerState extends State<IconAvatarPicker> {
                 boundaryKey: _keys[i],
                 choice: iconAvatarChoices[i],
                 size: _tile,
-                selected: _picked == i,
+                selected: widget.selected == i,
                 ring: colors.primary,
-                onTap: widget.enabled ? () => _pick(i) : null,
+                onTap: widget.enabled ? () => widget.onSelect(i) : null,
               ),
           ],
         );

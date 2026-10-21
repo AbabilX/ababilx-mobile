@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ababilx/features/messages/chat-people/user_qr_payload.dart';
+import 'package:ababilx/features/settings/username/username_availability.dart';
 import 'package:ababilx/features/settings/username/username_rules.dart';
 
 void main() {
@@ -33,6 +34,68 @@ void main() {
       expect(usernameError('murad khan'), isNotNull); // space
       expect(usernameError('murаd'), isNotNull); // Cyrillic lookalike
       expect(usernameError('support'), isNotNull); // reserved
+    });
+  });
+
+  group('usernameReadyToSave', () {
+    test('a valid handle proceeds only after the server calls it free', () {
+      expect(
+        usernameReadyToSave(
+          typed: 'murad',
+          stored: '',
+          availability: UsernameAvailability.unknown,
+          checkedHandle: null,
+        ),
+        isFalse,
+      );
+      expect(
+        usernameReadyToSave(
+          typed: 'murad',
+          stored: '',
+          availability: UsernameAvailability.checking,
+          checkedHandle: null,
+        ),
+        isFalse,
+      );
+      expect(
+        usernameReadyToSave(
+          typed: 'murad',
+          stored: '',
+          availability: UsernameAvailability.taken,
+          checkedHandle: 'murad',
+        ),
+        isFalse,
+      );
+      expect(
+        usernameReadyToSave(
+          typed: 'murad',
+          stored: '',
+          availability: UsernameAvailability.free,
+          checkedHandle: 'other',
+        ),
+        isFalse,
+      );
+      expect(
+        usernameReadyToSave(
+          typed: 'murad',
+          stored: '',
+          availability: UsernameAvailability.free,
+          checkedHandle: 'murad',
+        ),
+        isTrue,
+      );
+    });
+
+    test('the handle already on the account needs no lookup', () {
+      expect(
+        usernameReadyToSave(
+          typed: 'murad',
+          stored: 'murad',
+          availability: UsernameAvailability.unknown,
+          checkedHandle: null,
+        ),
+        isTrue,
+      );
     });
   });
 
