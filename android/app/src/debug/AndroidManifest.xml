@@ -4,4 +4,7 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- abxCleartext is "true" only for ABABILX_LOCAL_APP=1 builds, which talk
+         plain http to the local stack (ababilx-server/local). -->
+    <application android:usesCleartextTraffic="${abxCleartext}"/>
 </manifest>

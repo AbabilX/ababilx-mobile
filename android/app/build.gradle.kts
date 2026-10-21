@@ -20,6 +20,17 @@ if (releaseBuildRequested && !keystorePropertiesFile.exists()) {
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+val abxLocalApp = System.getenv("ABABILX_LOCAL_APP") == "1"
+if (abxLocalApp && releaseBuildRequested) {
+    throw GradleException("ABABILX_LOCAL_APP is for debug builds only.")
+}
+if (abxLocalApp) {
+    // Firebase knows only com.ababilx.app; Dart initialises from
+    // firebase_options.dart, so the copy runs without push.
+    tasks.configureEach {
+        if (name.contains("GoogleServices")) enabled = false
+    }
+}
 
 android {
     namespace = "com.ababilx.app"
@@ -50,7 +61,17 @@ android {
             }
         }
     }
+    defaultConfig.manifestPlaceholders["abxCleartext"] = "false"
     buildTypes {
+        // ABABILX_LOCAL_APP=1: a debug build that installs BESIDE the real app
+        // (com.ababilx.app.local) and may speak plain http to the local stack
+        // (ababilx-server/local). Never set for a store build.
+        if (abxLocalApp) {
+            getByName("debug") {
+                applicationIdSuffix = ".local"
+                manifestPlaceholders["abxCleartext"] = "true"
+            }
+        }
         release {
             signingConfig = signingConfigs.findByName("release")
             proguardFiles(
