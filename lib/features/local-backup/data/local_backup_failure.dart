@@ -24,6 +24,9 @@ class LocalBackupFailure implements Exception {
   static const emptyPhone = LocalBackupFailure('local_backup_error_empty');
   static const locked = LocalBackupFailure('local_backup_error_locked');
   static const busy = LocalBackupFailure('local_backup_error_busy');
+
+  /// Backups start only once a backup PIN (what opens the file) is set.
+  static const needsPin = LocalBackupFailure('local_backup_error_set_pin');
   static const folderRefused = LocalBackupFailure(
     'local_backup_error_folder_refused',
   );

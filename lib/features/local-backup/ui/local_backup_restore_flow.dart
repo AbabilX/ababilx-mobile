@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
+import '../data/backup_pin_store.dart';
 import '../local_backup_provider.dart';
 import '../platform/backup_folder_channel.dart';
 import '../restore/backup_restore_source.dart';
+import 'backup_pin_sheet.dart';
 import 'restore_pick_sheets.dart';
 
 /// Where is the backup → which one → restore. Used by Settings and by the
@@ -100,11 +102,25 @@ Future<String?> runLocalBackupRestore(
   final root = Navigator.of(context, rootNavigator: true).context;
   final container = ProviderScope.containerOf(context, listen: false);
   final lang = container.read(appLanguageProvider);
-  final run = container
-      .read(localBackupProvider.notifier)
-      .restoreFirst(sources);
+  final notifier = container.read(localBackupProvider.notifier);
+  final run = notifier.restoreFirst(sources);
   if (openChats) GoRouter.of(context).go('/messages');
-  final (stats, error) = await run;
+  var (stats, error) = await run;
+  // A PIN backup this install has no key for: the PIN alone opens it. The
+  // key is kept only once it has opened the backup.
+  String? wrong;
+  while (error == 'local_backup_error_needs_pin') {
+    if (!root.mounted) break;
+    final pin = await showBackupPinSheet(root, confirm: false, error: wrong);
+    if (pin == null) break;
+    final userId = await notifier.currentUser();
+    final key = await BackupPinStore.derive(userId, pin);
+    (stats, error) = await notifier.restoreFirst(sources, pinKey: key);
+    if (error == null) {
+      await container.read(backupPinStoreProvider).save(userId, key);
+    }
+    wrong = AppTranslations.of(lang, 'backup_pin_wrong');
+  }
   if (!root.mounted) return error;
   if (stats != null) {
     showAppToast(

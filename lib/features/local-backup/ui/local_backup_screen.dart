@@ -10,6 +10,7 @@ import 'local_backup_actions.dart';
 import 'local_backup_choice_rows.dart';
 import 'local_backup_delivery_notice.dart';
 import 'local_backup_labels.dart';
+import 'local_backup_requirements.dart';
 import 'local_backup_restore_flow.dart';
 
 /// Settings → Backup → Local backup. The switch, where and when the last
@@ -64,6 +65,7 @@ class LocalBackupScreen extends ConsumerWidget {
                   ),
                 ),
                 if (s.enabled) ...[
+                  const LocalBackupRequirements(),
                   SettingsRow(
                     icon: HugeIcons.strokeRoundedFolder01,
                     title: t('local_backup_folder'),

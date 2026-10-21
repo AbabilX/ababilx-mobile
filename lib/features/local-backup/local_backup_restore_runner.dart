@@ -10,12 +10,12 @@ import '../messages/data/local/chat_deletion_sync.dart';
 import '../messages/data/local/chat_message_store.dart';
 import '../messages/providers/chat_provider.dart';
 import 'auto/backup_message_segments.dart';
-import 'data/backup_key_store.dart';
 import 'format/backup_errors.dart';
 import 'format/backup_file_reader.dart';
 import 'local_backup_extras.dart';
 import 'platform/backup_folder_channel.dart';
 import 'restore/backup_importer.dart';
+import 'restore/backup_key_pick.dart';
 import 'restore/backup_restore_source.dart';
 import 'restore/restored_body_store.dart';
 
@@ -34,6 +34,7 @@ class LocalBackupRestoreRunner {
     void Function(int messages)? onProgress,
     void Function(int read, int total)? onBytes,
     bool Function()? shouldContinue,
+    List<int>? pinKey,
   }) async {
     final cache = (await getTemporaryDirectory()).path;
     final dir = Directory('$cache/local-backup/in');
@@ -47,7 +48,8 @@ class LocalBackupRestoreRunner {
         'media=${source.media.length} owner=${header.userId} me=$userId',
       );
       if (header.userId != userId) throw const BackupWrongAccountError();
-      final key = await _ref.read(backupKeyStoreProvider).keyFor(userId);
+      final keys = await backupKeyCandidates(_ref, userId, pinKey);
+      final key = await openingKey(header, keys);
       await syncChatDeletions(_ref, userId);
       final store = _ref.read(chatMessageStoreProvider);
       // A fresh start marks every chat "history before now is gone", and the
@@ -132,9 +134,10 @@ class LocalBackupRestoreRunner {
         final counted = messages;
         try {
           final file = await _open(item, temp);
+          final head = await BackupFileReader.readHeader(file);
           final one = await importer(others: false).run(
             file,
-            key,
+            await openingKey(head, keys),
             onProgress: (n) => onProgress?.call(counted + n),
             onBytes: (read, _) => onBytes?.call(offset + read, total),
             shouldContinue: shouldContinue,

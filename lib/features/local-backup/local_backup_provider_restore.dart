@@ -36,11 +36,12 @@ mixin LocalBackupRestoring on Notifier<LocalBackupState> {
   /// with no message (written by an empty phone before this build refused
   /// to): restoring it alone reads as "restored, nothing came back".
   Future<(BackupRestoreStats?, String?)> restoreFirst(
-    List<BackupRestoreSource> sources,
-  ) async {
+    List<BackupRestoreSource> sources, {
+    List<int>? pinKey,
+  }) async {
     (BackupRestoreStats?, String?) last = (null, 'local_backup_error_generic');
     for (final source in sources) {
-      final result = await restore(source);
+      final result = await restore(source, pinKey: pinKey);
       final error = result.$2;
       if (error == 'local_backup_error_incomplete' ||
           error == 'local_backup_error_damaged') {
@@ -55,8 +56,9 @@ mixin LocalBackupRestoring on Notifier<LocalBackupState> {
   }
 
   Future<(BackupRestoreStats?, String?)> restore(
-    BackupRestoreSource source,
-  ) async {
+    BackupRestoreSource source, {
+    List<int>? pinKey,
+  }) async {
     if (state.busy) return (null, LocalBackupFailure.busy.messageKey);
     cancelled = false;
     state = state.copyWith(
@@ -79,6 +81,7 @@ mixin LocalBackupRestoring on Notifier<LocalBackupState> {
           }
         },
         shouldContinue: () => !cancelled,
+        pinKey: pinKey,
       );
       return (stats, null);
     } catch (error) {

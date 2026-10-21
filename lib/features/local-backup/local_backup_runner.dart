@@ -19,7 +19,7 @@ import 'auto/backup_media_store.dart';
 import 'auto/backup_message_segments.dart';
 import 'data/backup_file_name.dart';
 import 'data/backup_install_tag.dart';
-import 'data/backup_key_store.dart';
+import 'data/backup_requirements.dart';
 import 'data/local_backup_failure.dart';
 import 'data/local_backup_settings.dart';
 import 'export/backup_exporter.dart';
@@ -64,13 +64,12 @@ class LocalBackupRunner {
     if (picked && !await folder.hasAccess(folderUri)) {
       throw LocalBackupFailure.folderLost;
     }
+    final key = await requireBackupKey(_ref, userId);
     final clock = Stopwatch()..start();
-    // The call log is paged from the server one request after another; it
-    // runs while the deletions sync and the key load, not after them.
+    // The call log pages from the server while the deletions sync.
     final extraParts = LocalBackupExtras(_ref);
     final calls = extraParts.allCalls();
     unawaited(calls.then((_) {}, onError: (_) {}));
-    final key = await _ref.read(backupKeyStoreProvider).keyFor(userId);
     await syncChatDeletions(_ref, userId);
 
     final store = _ref.read(chatMessageStoreProvider);

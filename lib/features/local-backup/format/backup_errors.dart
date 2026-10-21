@@ -41,3 +41,11 @@ class BackupCancelledError extends BackupError {
   @override
   String get messageKey => 'local_backup_error_cancelled';
 }
+
+/// A PIN backup this install holds no key for (a reinstall), or the PIN
+/// typed does not open it. The restore flow asks for the PIN and tries again.
+class BackupNeedsPinError extends BackupError {
+  const BackupNeedsPinError();
+  @override
+  String get messageKey => 'local_backup_error_needs_pin';
+}
