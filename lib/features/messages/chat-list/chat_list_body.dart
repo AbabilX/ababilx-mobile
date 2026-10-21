@@ -9,14 +9,17 @@ import '../add-friends/add_friends_sheet.dart';
 import '../chat_list_filters.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
+import 'add_friends_reveal.dart';
 import 'add_friends_row.dart';
 import 'chat_list_entries.dart';
 import 'conversation_rows.dart';
 import 'list_empty.dart';
 
 /// What sits under the tabs: the rows of the chosen tab, the drafts list
-/// for Drafts, or that tab's empty state. All also leads with Add new
-/// friends, empty or not.
+/// for Drafts, or that tab's empty state. All leads with Add new friends
+/// while the list has five chats or fewer. Past that the row stays hidden
+/// until the user scrolls up, stays for five seconds, then hides again.
+/// A further pull refreshes as before.
 class ChatListBody extends ConsumerWidget {
   const ChatListBody({
     super.key,
@@ -68,6 +71,8 @@ class ChatListBody extends ConsumerWidget {
     return ConversationRows(
       entries: entries,
       header: addFriends,
+      hideHeaderUntilPull:
+          addFriends != null && addFriendsHeaderCollapses(entries.length),
       currentUserId: currentUserId,
       onRefresh: () => ref.read(chatProvider.notifier).fetchSidebar(),
       onTap: (c) => context.push('/messages/${c.id}'),
