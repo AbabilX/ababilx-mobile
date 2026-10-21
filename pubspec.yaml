@@ -81,6 +81,7 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.6
   url_launcher: ^6.3.2
+  archive: ^4.0.9
   file_picker: ^10.3.8
   share_plus: ^12.0.2
   fl_chart: ^1.2.0

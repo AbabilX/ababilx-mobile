@@ -6,6 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_bar_back_button.dart';
 import '../../messages/chat_icon.dart';
+import '../../chat-export/ui/chat_export_section.dart';
 import '../settings-hub/settings_row.dart';
 import '../settings-hub/settings_section_header.dart';
 
@@ -43,6 +44,8 @@ class ChatBackupScreen extends ConsumerWidget {
               subtitle: t('local_backup_row_hint'),
               onTap: () => context.push('/settings/chat-backup/local'),
             ),
+            const Divider(height: 24),
+            const ChatExportSection(),
           ],
         ),
       ),
