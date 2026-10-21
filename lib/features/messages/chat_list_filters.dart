@@ -13,66 +13,49 @@ enum ChatListFilter {
   webhooks,
   localShare,
 
-  /// Opens `/home/drafts` — Home quick view; not a list filter.
+  /// Drafts and scheduled messages, drawn in place of the rows.
   drafts,
 
-  /// Opens `/messages/locked` — Home quick view; not a list filter.
+  /// Opens `/messages/locked` — the one pill that is a page: locked chats
+  /// stay behind their unlock, never in the list.
   locked,
 }
 
 /// Groups means every conversation with a roster people post into — a
 /// channel converted by 0145 is a group in all but name. Feeds are their own
-/// pill: they are read-only and would bury the groups people talk in.
-/// Quick-view pills (Groups / Flock / Local Share / Drafts / Locked) navigate
-/// away; they never match a conversation row here.
+/// tab: they are read-only and would bury the groups people talk in.
+/// Local Share and Drafts hold no conversation rows: the list draws device
+/// threads and drafts for them instead.
 bool matchesChatListFilter(ChatConversation c, ChatListFilter filter) =>
     switch (filter) {
       ChatListFilter.all => true,
       ChatListFilter.unread => c.unreadCount > 0,
-      // Quick-view actions — list matching is unused while they navigate.
-      ChatListFilter.groups ||
-      ChatListFilter.webhooks ||
+      ChatListFilter.groups => (c.isGroup || c.isChannel) && !c.isWebhook,
+      ChatListFilter.webhooks => c.isWebhook,
       ChatListFilter.localShare ||
       ChatListFilter.drafts ||
       ChatListFilter.locked => false,
     };
 
-/// Home's old quick views: tap opens a page instead of filtering the list.
-bool isChatListFilterAction(ChatListFilter filter) => switch (filter) {
-  ChatListFilter.groups ||
-  ChatListFilter.webhooks ||
-  ChatListFilter.localShare ||
-  ChatListFilter.drafts ||
-  ChatListFilter.locked => true,
-  _ => false,
-};
+/// A pill that opens a page instead of filtering the list in place.
+bool isChatListFilterAction(ChatListFilter filter) =>
+    filter == ChatListFilter.locked;
 
-/// Pills on the chat list. All + Unread filter the list; the rest are Home's
-/// quick views (always offered, Locked only while this phone has a lock).
-/// The row is never empty — quick views alone keep All + the four/five.
+/// Tabs on the chat list, all filtering in place except Locked. All, Groups,
+/// Flock, Local Share and Drafts are always offered (an empty tab says so);
+/// Unread only while something is unread, Locked only while a lock exists.
 List<ChatListFilter> availableChatListFilters(
   List<ChatConversation> all, {
-  bool hasShareThreads = false,
-  bool hasDrafts = false,
   bool hasLocked = false,
-}) {
-  // hasShareThreads / hasDrafts kept for call-site compatibility; quick views
-  // always show like Home did (empty page is fine; empty card was worse only
-  // for Locked).
-  final _ = (hasShareThreads, hasDrafts);
-  final options = [
-    for (final f in ChatListFilter.values)
-      if (f != ChatListFilter.all &&
-          switch (f) {
-            ChatListFilter.unread => all.any((c) => matchesChatListFilter(c, f)),
-            ChatListFilter.locked => hasLocked,
-            // Drafts · Groups · Flock · Local Share — always, same as Home.
-            _ => isChatListFilterAction(f),
-          })
-        f,
-  ];
-  return [ChatListFilter.all, ...options];
-}
+}) => [
+  for (final f in ChatListFilter.values)
+    if (switch (f) {
+      ChatListFilter.unread => all.any((c) => matchesChatListFilter(c, f)),
+      ChatListFilter.locked => hasLocked,
+      _ => true,
+    })
+      f,
+];
 
 List<ChatConversation> unifiedConversations({
   required List<ChatConversation> dms,

@@ -320,7 +320,7 @@ class ChatConversation extends Equatable {
     if (isGroupConversation) {
       return safeDisplayName(name ?? slug, fallback: 'Group');
     }
-    return safeDisplayName(peerUserName, fallback: 'Direct message');
+    return safeDisplayName(peerUserName, fallback: namelessUserLabel);
   }
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) {

@@ -134,7 +134,7 @@ void main() {
       filter: ChatListFilter.localShare,
     );
     expect(keys(merged), ['local-share:a']);
-    // Local Share is a permanent quick-view pill (navigates), always offered.
+    // Local Share is a permanent tab, always offered.
     expect(
       availableChatListFilters(chats),
       contains(ChatListFilter.localShare),

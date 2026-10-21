@@ -49,3 +49,12 @@ final shareChatThreadsProvider = Provider<List<ShareThread>>((ref) {
       if (shown.contains(t.device.deviceId) && !t.device.blocked) t,
   ];
 });
+
+/// Every device thread but blocked ones: the chat list's Local Share tab.
+final shareTabThreadsProvider = Provider<List<ShareThread>>((ref) {
+  final threads = ref.watch(localShareThreadsProvider).valueOrNull ?? const [];
+  return [
+    for (final t in threads)
+      if (!t.device.blocked) t,
+  ];
+});

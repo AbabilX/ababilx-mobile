@@ -9,6 +9,7 @@ import '../../local_share/data/share_thread_queries.dart';
 import '../../local_share/providers/share_chat_pins.dart';
 import '../../local_share/providers/share_in_chats.dart';
 import '../../local_share/sheets/share_chat_row_sheet.dart';
+import '../add-friends/add_friends_pending.dart';
 import '../chat_list_filters.dart';
 import '../message_e2ee/new_chat_setup.dart';
 import '../data/models/chat_models.dart';
@@ -16,15 +17,14 @@ import '../providers/chat_provider.dart';
 import '../nickname/contact_nickname_provider.dart';
 import '../nickname/nickname_title.dart';
 import 'camera_send_flow.dart';
+import 'chat_list_body.dart';
 import 'chat_list_entries.dart';
 import 'conversation_actions_run.dart';
 import 'conversation_actions_sheet.dart';
 import 'filter_chips_row.dart';
 import 'filter_reorder_blur.dart';
-import 'conversation_rows.dart';
 import 'list_fab.dart';
 import 'list_header.dart';
-import 'list_empty.dart';
 import 'recent_contacts_strip.dart';
 import '../../chat-lock/chat_lock_filter.dart';
 import '../../chat-lock/providers/chat_locks_provider.dart';
@@ -82,7 +82,21 @@ class _ChatListState extends ConsumerState<ChatList> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => offerAddFriendsIfDue(context, ref),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen(addFriendsAfterOnboardingProvider, (_, due) {
+      if (!due) return;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => offerAddFriendsIfDue(context, ref),
+      );
+    });
     ref.listen(tabReselectProvider, (_, tap) {
       if (tap?.route != '/messages') return;
       setState(
@@ -100,17 +114,21 @@ class _ChatListState extends ConsumerState<ChatList> {
                 .toList(),
           )
         : original;
-    // Locked chats are a filter action pill (+ title long-press); the list
-    // itself never shows them.
+    // Locked chats live behind their pill and the title's long press.
     final locks = ref.watch(chatLocksProvider);
     final dms = withoutLockedChats(chat.dms, locks);
     final channels = withoutLockedChats(chat.channels, locks);
-    final shareThreads = ref.watch(shareChatThreadsProvider);
-    final filters = availableChatListFilters(
-      [...dms, ...channels],
-      hasLocked: locks.isNotEmpty,
+    // Local Share tab: every device thread, not only those moved here.
+    final shareThreads = ref.watch(
+      _filter == ChatListFilter.localShare
+          ? shareTabThreadsProvider
+          : shareChatThreadsProvider,
     );
-    // Unread gone, or a leftover quick-view selection from an older build.
+    final filters = availableChatListFilters([
+      ...dms,
+      ...channels,
+    ], hasLocked: locks.isNotEmpty);
+    // Unread gone, or a tab that opens a page.
     if (!filters.contains(_filter) || isChatListFilterAction(_filter)) {
       _filter = ChatListFilter.all;
     }
@@ -151,28 +169,15 @@ class _ChatListState extends ConsumerState<ChatList> {
             ),
             Expanded(
               child: FilterReorderBlur(
-                child: chat.sidebarLoading && rows.isEmpty
-                    ? const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2.5),
-                      )
-                    : rows.isEmpty
-                    ? ConversationListEmpty(
-                        filter: _filter,
-                        onStart: () => context.push('/messages/new'),
-                        onShowAll: () =>
-                            setState(() => _filter = ChatListFilter.all),
-                      )
-                    : ConversationRows(
-                        entries: rows,
-                        currentUserId: chat.currentUserId,
-                        onRefresh: () =>
-                            ref.read(chatProvider.notifier).fetchSidebar(),
-                        onTap: (c) => context.push('/messages/${c.id}'),
-                        onLongPress: _openActions,
-                        onShareTap: (t) =>
-                            context.push('/local-share/${t.device.deviceId}'),
-                        onShareLongPress: _openShareActions,
-                      ),
+                child: ChatListBody(
+                  filter: _filter,
+                  entries: rows,
+                  loading: chat.sidebarLoading,
+                  currentUserId: chat.currentUserId,
+                  onShowAll: () => setState(() => _filter = ChatListFilter.all),
+                  onLongPress: _openActions,
+                  onShareLongPress: _openShareActions,
+                ),
               ),
             ),
           ],

@@ -17,7 +17,11 @@ class ConversationRows extends StatelessWidget {
     required this.onRefresh,
     required this.onLongPress,
     this.currentUserId,
+    this.header,
   });
+
+  /// A first row above the entries (the All tab's Add new friends).
+  final Widget? header;
 
   final List<ChatListEntry> entries;
   final void Function(ChatConversation) onTap;
@@ -33,7 +37,8 @@ class ConversationRows extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (entries.isEmpty) {
+    final head = header;
+    if (entries.isEmpty && head == null) {
       return RefreshIndicator(
         onRefresh: onRefresh,
         child: ListView(
@@ -50,14 +55,15 @@ class ConversationRows extends StatelessWidget {
         padding: EdgeInsets.only(
           bottom: ShellPillMetrics.contentBottom(context),
         ),
-        itemCount: entries.length,
+        itemCount: entries.length + (head == null ? 0 : 1),
         separatorBuilder: (_, _) => Divider(
           height: 1,
           indent: 82,
           color: Theme.of(context).colorScheme.outlineVariant,
         ),
-        itemBuilder: (_, i) {
-          final entry = entries[i];
+        itemBuilder: (_, index) {
+          if (head != null && index == 0) return head;
+          final entry = entries[head == null ? index : index - 1];
           return switch (entry) {
             ConversationEntry(conversation: final c) => ConversationRow(
               key: ValueKey(entry.key),

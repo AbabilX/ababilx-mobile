@@ -16,7 +16,7 @@ ChatConversation _conv(String id, String type, {int unread = 0}) =>
 
 void main() {
   group('which pills are offered', () {
-    test('quick views always sit on the row, like Home', () {
+    test('every tab sits on the row', () {
       expect(availableChatListFilters([_conv('a', 'dm')]), [
         ChatListFilter.all,
         ChatListFilter.groups,
@@ -49,19 +49,33 @@ void main() {
     });
   });
 
-  test('quick-view pills are actions, not list filters', () {
-    for (final f in [
-      ChatListFilter.groups,
-      ChatListFilter.webhooks,
-      ChatListFilter.localShare,
-      ChatListFilter.drafts,
-      ChatListFilter.locked,
-    ]) {
-      expect(isChatListFilterAction(f), isTrue);
-      expect(matchesChatListFilter(_conv('g', 'group'), f), isFalse);
+  test('only Locked opens a page; the rest filter in place', () {
+    expect(isChatListFilterAction(ChatListFilter.locked), isTrue);
+    for (final f in ChatListFilter.values) {
+      if (f == ChatListFilter.locked) continue;
+      expect(isChatListFilterAction(f), isFalse, reason: '$f');
     }
-    expect(isChatListFilterAction(ChatListFilter.all), isFalse);
-    expect(isChatListFilterAction(ChatListFilter.unread), isFalse);
+  });
+
+  test('Groups and Flock filter the list', () {
+    final dms = [_conv('d', 'dm')];
+    final channels = [
+      _conv('g', 'group'),
+      _conv('c', 'channel'),
+      _conv('w', 'webhook'),
+    ];
+    final groups = unifiedConversations(
+      dms: dms,
+      channels: channels,
+      filter: ChatListFilter.groups,
+    );
+    expect(groups.map((c) => c.id), unorderedEquals(['g', 'c']));
+    final flock = unifiedConversations(
+      dms: dms,
+      channels: channels,
+      filter: ChatListFilter.webhooks,
+    );
+    expect(flock.map((c) => c.id), ['w']);
   });
 
   test('Unread still filters the list', () {

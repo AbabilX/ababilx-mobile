@@ -10,10 +10,10 @@ import '../chat_list_filters.dart';
 import 'filter_order.dart';
 import 'filter_reorder_blur.dart';
 
-/// One horizontally scrollable row of pills above the conversation list:
+/// One horizontally scrollable row of tabs above the conversation list:
 /// All | Unread (while any) | Drafts | Groups | Flock | Local Share | Locked
-/// (while any lock). All / Unread filter the list; the rest are Home's old
-/// quick views — same routes, always offered (Locked only when locked).
+/// (while any lock). Every tab filters the list in place; only Locked opens
+/// its page, because locked chats stay behind their unlock.
 ///
 /// Personal and Workspaces pills used to sit here too. Since the server's
 /// migration 0145 every conversation is personal — no workspace owns one — so
@@ -49,14 +49,8 @@ class FilterChipsRow extends ConsumerWidget {
     ChatListFilter.locked: HugeIcons.strokeRoundedSquareLock02,
   };
 
-  /// Same destinations Home's quick-view cards used.
-  static const _actionRoutes = {
-    ChatListFilter.drafts: '/home/drafts',
-    ChatListFilter.groups: '/home/groups',
-    ChatListFilter.webhooks: '/home/flock',
-    ChatListFilter.localShare: '/local-share',
-    ChatListFilter.locked: '/messages/locked',
-  };
+  /// The one tab that is a page.
+  static const _actionRoutes = {ChatListFilter.locked: '/messages/locked'};
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -70,12 +64,13 @@ class FilterChipsRow extends ConsumerWidget {
         final route = _actionRoutes[option];
         if (route != null) {
           await context.push(route);
-          // Draft / scheduled counts may have changed on that page.
-          if (option == ChatListFilter.drafts) {
-            ref.invalidate(homeDraftsProvider);
-            ref.invalidate(homeScheduledProvider);
-          }
           return;
+        }
+        // Drafts are re-read each time the tab is opened: a composer writes
+        // as the person types, and nothing else tells this list.
+        if (option == ChatListFilter.drafts) {
+          ref.invalidate(homeDraftsProvider);
+          ref.invalidate(homeScheduledProvider);
         }
         if (option != filter) onChanged(option);
       },
