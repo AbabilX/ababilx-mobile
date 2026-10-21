@@ -18,6 +18,11 @@ extension MessageVaultLink on MessageVault {
   String encodeLinkPublicKey(P256KeyPair ephemeral) =>
       _b64(utf8.encode(jsonEncode(_publicJwkFromIdentity(ephemeral))));
 
+  /// The ephemeral public JWK itself, for a link where the key travels
+  /// through the server under a MAC instead of through a QR.
+  Map<String, dynamic> linkPublicJwk(P256KeyPair ephemeral) =>
+      _publicJwkFromIdentity(ephemeral);
+
   Map<String, dynamic> decodeLinkPublicKey(String param) =>
       Map<String, dynamic>.from(jsonDecode(utf8.decode(_bytes(param))) as Map);
 

@@ -91,6 +91,11 @@ class ApiConstants {
   static const String chatE2eeLinkDeny = '/api/chat/e2ee/link/deny';
   static const String chatE2eeLinkPoll = '/api/chat/e2ee/link/poll';
 
+  /// A computer sends its message identity to this phone (server 0182).
+  static const String chatE2eePushOffer = '/api/chat/e2ee/push/offer';
+  static const String chatE2eePushReceive = '/api/chat/e2ee/push/receive';
+  static const String chatE2eePushDeny = '/api/chat/e2ee/push/deny';
+
   /// Conversations where this account holds a key another member lost.
   static const String chatE2eeFillableGaps = '/api/chat/e2ee/gaps';
   // Start fresh: an emailed code buys a brand-new identity for someone with no
