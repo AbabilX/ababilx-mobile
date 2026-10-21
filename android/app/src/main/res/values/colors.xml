@@ -44,5 +44,5 @@
          values-night or values-v31 override, so the icon looks the same in
          light and dark theme. It changes only when the user turns on the
          system's themed icons, which draw the monochrome layer instead. -->
-    <color name="ic_launcher_plate">#FF0B6AFB</color>
+    <color name="ic_launcher_plate">#FFFFFFFF</color>
 </resources>
