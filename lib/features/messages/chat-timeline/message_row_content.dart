@@ -118,37 +118,46 @@ class MessageRowContent extends ConsumerWidget {
             color: webhook ? scheme.primary : senderNameColor(message.userId),
             onTap: showProfile,
           ),
-        BubbleSideIndicators(
-          message: message,
-          isOwn: isOwnMessage,
-          onOpenThread: onOpenThread,
-          child: MessageBubble(
-            isOwn: isOwnMessage,
-            clusterPosition: clusterPosition,
-            colors: colors,
-            dimmed: isSending,
-            transparent: isBareMediaBubble(message),
-            child: MessageBubbleContent(
+        // Bubble + reactions share one width (the bubble's). Reactions always
+        // sit on the trailing edge — left-aligned peer columns used to park
+        // the pill under the bubble's leading corner.
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            BubbleSideIndicators(
               message: message,
-              colors: colors,
               isOwn: isOwnMessage,
-              isSending: isSending,
-              isFailed: isFailed,
-              pulse: pulse,
-              showFooter: _endsCluster || isSending || isFailed,
+              onOpenThread: onOpenThread,
+              child: MessageBubble(
+                isOwn: isOwnMessage,
+                clusterPosition: clusterPosition,
+                colors: colors,
+                dimmed: isSending,
+                transparent: isBareMediaBubble(message),
+                child: MessageBubbleContent(
+                  message: message,
+                  colors: colors,
+                  isOwn: isOwnMessage,
+                  isSending: isSending,
+                  isFailed: isFailed,
+                  pulse: pulse,
+                  showFooter: _endsCluster || isSending || isFailed,
+                ),
+              ),
             ),
-          ),
+            if (!message.isDeleted && message.reactions.isNotEmpty)
+              ReactionRow(
+                reactions: message.reactions,
+                hasWallpaper: hasWallpaper,
+                onOpen: (emoji) => showReactionDetailsSheet(
+                  context: context,
+                  messageId: message.id,
+                  initialEmoji: emoji,
+                ),
+              ),
+          ],
         ),
-        if (!message.isDeleted && message.reactions.isNotEmpty)
-          ReactionRow(
-            reactions: message.reactions,
-            hasWallpaper: hasWallpaper,
-            onOpen: (emoji) => showReactionDetailsSheet(
-              context: context,
-              messageId: message.id,
-              initialEmoji: emoji,
-            ),
-          ),
         UnsealedMessageMark(message: message),
       ],
     );

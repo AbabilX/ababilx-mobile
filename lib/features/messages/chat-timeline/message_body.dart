@@ -67,6 +67,11 @@ class MessageBody extends ConsumerWidget {
       isOwn: isOwn,
       senderName: senderName,
     );
+    // Media captions already span the picture's width — put "(edited)" on
+    // that trailing edge. Plain text bubbles keep the inline trailing so a
+    // short edited line does not stretch to the bubble cap.
+    final editedInCaption =
+        bleedMedia && !long && message.editedAt != null;
     final text = <Widget>[
       if (message.forwardedFromName != null)
         Padding(
@@ -76,12 +81,24 @@ class MessageBody extends ConsumerWidget {
             style: TextStyle(fontSize: 12, color: colors.muted),
           ),
         ),
-      if (plain.isNotEmpty) _text(context, ref, collapsed: long),
+      if (plain.isNotEmpty)
+        _text(
+          context,
+          ref,
+          collapsed: long,
+          includeEdited: !editedInCaption,
+        ),
       if (long)
         ReadMoreRow(
           body: message.body,
           colors: colors,
           editedAt: message.editedAt,
+        ),
+      if (editedInCaption)
+        Text(
+          '(edited)',
+          textAlign: TextAlign.right,
+          style: TextStyle(fontSize: 12, color: colors.muted),
         ),
     ];
     final caption = text.isEmpty
@@ -95,7 +112,7 @@ class MessageBody extends ConsumerWidget {
               SignalBubbleMetrics.bottomPadding,
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: text,
             ),
           )
@@ -170,7 +187,12 @@ class MessageBody extends ConsumerWidget {
   /// The body itself. A collapsed one is clipped and faded out, and drops the
   /// "(edited)" marker with it — the marker trails the last block, which is
   /// exactly the part being cut off, and the full-screen view carries it.
-  Widget _text(BuildContext context, WidgetRef ref, {required bool collapsed}) {
+  Widget _text(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool collapsed,
+    bool includeEdited = true,
+  }) {
     final viewer = TiptapViewer(
       content: message.body,
       markdown: true,
@@ -188,7 +210,7 @@ class MessageBody extends ConsumerWidget {
         fontSize: SignalBubbleMetrics.bodyTextSize,
         height: 1.35,
       ),
-      trailing: collapsed || message.editedAt == null
+      trailing: !includeEdited || collapsed || message.editedAt == null
           ? null
           : TextSpan(
               text: ' (edited)',

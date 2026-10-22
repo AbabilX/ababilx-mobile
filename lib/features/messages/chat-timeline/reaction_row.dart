@@ -28,7 +28,6 @@ class ReactionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     if (reactions.isEmpty) return const SizedBox.shrink();
     final colors = Theme.of(context).colorScheme;
-    final reactedByMe = reactions.any((r) => r.reactedByMe);
     final total = reactions.fold<int>(0, (sum, r) => sum + r.count);
 
     return Transform.translate(
@@ -37,14 +36,9 @@ class ReactionRow extends StatelessWidget {
         color: hasWallpaper
             ? colors.surfaceContainerHighest
             : colors.surfaceContainerHigh,
-        shape: StadiumBorder(
-          side: BorderSide(
-            color: reactedByMe
-                ? colors.primary.withValues(alpha: 0.55)
-                : colors.outlineVariant.withValues(alpha: 0.4),
-            width: reactedByMe ? 1.4 : 1,
-          ),
-        ),
+        // No stroke — a border next to the bubble read as chrome; the fill
+        // alone is enough, and "mine" is still clear from the emoji set.
+        shape: const StadiumBorder(),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
