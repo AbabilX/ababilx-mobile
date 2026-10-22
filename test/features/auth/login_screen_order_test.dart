@@ -25,8 +25,9 @@ class _SignedOut extends AuthNotifier {
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  // User's rule (2026-10-20): all three, always, in this order.
-  testWidgets('Start New Chat, then Google, then email', (tester) async {
+  // User's rule (2026-10-23): Start New Chat, then Continue with account;
+  // Google and email live in the account sheet.
+  testWidgets('Start New Chat, then Continue with account', (tester) async {
     SharedPreferences.setMockInitialValues({
       OnboardingGate.preferenceKey: true,
     });
@@ -45,17 +46,41 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final labels = [
-      'Start New Chat',
-      'Sign in with Google',
-      'Sign in with email and password',
-    ];
+    final labels = ['Start New Chat', 'Continue with account'];
     final tops = [
       for (final label in labels) tester.getTopLeft(find.text(label)).dy,
     ];
     expect(tops[0], lessThan(tops[1]));
-    expect(tops[1], lessThan(tops[2]));
     expect(find.byType(FilledButton), findsOneWidget);
+    expect(find.text('Sign in with Google'), findsNothing);
+    expect(find.text('Sign in with email and password'), findsNothing);
+  });
+
+  testWidgets('Continue with account opens Google and email choices', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      OnboardingGate.preferenceKey: true,
+    });
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appLanguageProvider.overrideWithValue('en'),
+          authProvider.overrideWith(_SignedOut.new),
+        ],
+        child: const MaterialApp(home: LoginScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue with account'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Sign in with email and password'), findsOneWidget);
   });
 
   // User's call (2026-10-21): Google is offered BEFORE an account exists, so

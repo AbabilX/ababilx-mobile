@@ -497,6 +497,9 @@ class AppTranslations {
       'account_switch_confirm': 'Delete local data and continue',
       'continue_email': 'Continue with email',
       'start_new_chat': 'Start New Chat',
+      'continue_with_account': 'Continue with account',
+      'continue_with_account_body':
+          'Sign in with Google or email and password to open an account you already have.',
       'sign_in_google': 'Sign in with Google',
       'sign_in_email_password': 'Sign in with email and password',
       'account_switch_new_account': 'a new account',
@@ -1941,6 +1944,9 @@ class AppTranslations {
       'account_switch_confirm': 'লোকাল ডেটা মুছে এগিয়ে যান',
       'continue_email': 'ইমেইল দিয়ে এগিয়ে যান',
       'start_new_chat': 'নতুন চ্যাট শুরু করুন',
+      'continue_with_account': 'অ্যাকাউন্ট দিয়ে চালিয়ে যান',
+      'continue_with_account_body':
+          'আগে থেকে থাকা অ্যাকাউন্ট খুলতে গুগল বা ইমেইল ও পাসওয়ার্ড দিয়ে সাইন ইন করুন।',
       'sign_in_google': 'গুগল দিয়ে সাইন ইন করুন',
       'sign_in_email_password': 'ইমেইল ও পাসওয়ার্ড দিয়ে সাইন ইন করুন',
       'account_switch_new_account': 'একটি নতুন অ্যাকাউন্ট',

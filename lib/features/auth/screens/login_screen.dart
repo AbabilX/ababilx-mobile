@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../device/start_new_chat_action.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/email_sign_in_action.dart';
-import '../widgets/google_sign_in_action.dart';
+import '../widgets/continue_with_account_action.dart';
 import '../widgets/login_brand.dart';
 import '../widgets/login_error_note.dart';
 import '../widgets/onboarding_gate.dart';
@@ -19,11 +17,11 @@ class LoginScreen extends StatelessWidget {
       const OnboardingGate(child: _LoginContent());
 }
 
-enum _LoginWay { newChat, google }
+enum _LoginWay { newChat, continueAccount }
 
-/// Three ways in, always all three, in this order (user's decision,
-/// 2026-10-20): Start New Chat (a new account, nothing asked), Google and
-/// email + password (existing accounts, same id and data as before).
+/// Two choices on the start screen (user's call, 2026-10-23): Start New Chat
+/// (filled, as before), and Continue with account → sheet with Google and
+/// email + password for existing accounts.
 class _LoginContent extends ConsumerStatefulWidget {
   const _LoginContent();
 
@@ -52,6 +50,7 @@ class _LoginContentState extends ConsumerState<_LoginContent> {
     final isLoading = authState.isLoading;
     final error = authState.error?.toString().replaceAll('Exception: ', '');
     String t(String key) => AppTranslations.translate(context, ref, key);
+    final continueBusy = isLoading && _running == _LoginWay.continueAccount;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -85,19 +84,14 @@ class _LoginContentState extends ConsumerState<_LoginContent> {
                           : () => _run(_LoginWay.newChat, runStartNewChat),
                     ),
                     const SizedBox(height: 12),
-                    LoginGoogleAction(
-                      label: t('sign_in_google'),
-                      busy: isLoading && _running == _LoginWay.google,
-                      onPressed: isLoading
+                    ContinueWithAccountAction(
+                      label: t('continue_with_account'),
+                      onPressed: isLoading || continueBusy
                           ? null
-                          : () => _run(_LoginWay.google, runGoogleSignIn),
-                    ),
-                    const SizedBox(height: 8),
-                    LoginEmailAction(
-                      label: t('sign_in_email_password'),
-                      onPressed: isLoading
-                          ? null
-                          : () => context.push('/login/email'),
+                          : () => _run(
+                                _LoginWay.continueAccount,
+                                runContinueWithAccount,
+                              ),
                     ),
                     if (error != null) ...[
                       const SizedBox(height: 20),
