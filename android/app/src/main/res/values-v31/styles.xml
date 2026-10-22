@@ -1,23 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Android 12+ system splash, Signal's: the launcher icon on the app's
-         background. No windowSplashScreenAnimatedIcon on purpose — the system
-         then draws the icon of the component that was launched, so a disguise
-         alias (Calculator, Notes…) opens on its own icon, never AbabilX's.
-         Held until Flutter's first frame (lib/core/launch/launch_hold.dart). -->
+    <!-- Android 12+ splash: Lights out black, white mark, no icon plate.
+         "from AbabilX" in white along the bottom. Held until Flutter's first
+         frame (lib/core/launch/launch_hold.dart). -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">@color/launch_bg</item>
         <item name="android:windowSplashScreenBackground">@color/launch_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/splash_branding</item>
     </style>
 
-    <!-- In-app theme picked against the OS one (MainActivity.splashTheme). -->
+    <!-- In-app theme picked against the OS one (MainActivity.splashTheme).
+         Same black field — the splash does not follow the app theme. -->
     <style name="LaunchTheme.Light" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">@color/launch_bg_light</item>
         <item name="android:windowSplashScreenBackground">@color/launch_bg_light</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/splash_branding</item>
     </style>
 
-    <style name="LaunchTheme.Dark" parent="@android:style/Theme.Black.NoTitleBar">
+    <style name="LaunchTheme.Dark" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">@color/launch_bg_dark</item>
         <item name="android:windowSplashScreenBackground">@color/launch_bg_dark</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/splash_branding</item>
+    </style>
+
+    <!-- Disguise launcher aliases. White field, no AbabilX mark or line. -->
+    <style name="LaunchTheme.Plain" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/launch_plain</item>
+        <item name="android:windowSplashScreenBackground">@color/launch_plain</item>
     </style>
 </resources>

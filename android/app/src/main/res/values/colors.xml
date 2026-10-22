@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="notification_color">#6366F1</color>
-    <!-- Launch splash = the app's own background (Flutter theme surface),
-         so the splash hands over to the first screen without a colour jump. -->
-    <color name="launch_bg">#FFF4FBF8</color>
-    <color name="launch_bg_light">#FFF4FBF8</color>
-    <color name="launch_bg_dark">#FF0E1514</color>
+    <!-- Splash field is Lights out black. Icon and text stay white. -->
+    <color name="launch_bg">#FF000000</color>
+    <color name="launch_bg_light">#FF000000</color>
+    <color name="launch_bg_dark">#FF000000</color>
+    <!-- Disguise aliases stay a plain white field, not this black. -->
+    <color name="launch_plain">#FFFFFFFF</color>
     <!-- Disguise launcher plates: look like other apps, not AbabilX. -->
     <color name="icon_bg_calendar">#E11D48</color>
     <color name="icon_bg_calculator">#1C1C1E</color>
@@ -37,12 +38,7 @@
     <color name="media_send_camera_selected">#33FFFFFF</color>
     <color name="media_send_camera_record">#FFD92F20</color>
     <color name="media_send_camera_card">#FF1A1A1A</color>
-    <!-- Default launcher plate: the blue of the swallow-in-a-bubble mark.
-         The foreground layer is opaque and carries its own gradient, so this
-         only shows at the edges while a launcher animates the layers.
-         Never white: the bubble is white and would vanish on it. ONE colour on purpose: no
-         values-night or values-v31 override, so the icon looks the same in
-         light and dark theme. It changes only when the user turns on the
-         system's themed icons, which draw the monochrome layer instead. -->
+    <!-- Default launcher plate is white. No night override, so the icon
+         stays white in both themes. Themed icons use the monochrome bird. -->
     <color name="ic_launcher_plate">#FFFFFFFF</color>
 </resources>

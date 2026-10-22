@@ -244,6 +244,7 @@
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
+            android:theme="@style/LaunchTheme.Plain"
             android:icon="@mipmap/ic_launcher_calendar"
             android:label="AbabilX">
             <intent-filter>
@@ -262,6 +263,7 @@
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
+            android:theme="@style/LaunchTheme.Plain"
             android:icon="@mipmap/ic_launcher_calculator"
             android:label="AbabilX">
             <intent-filter>
@@ -280,6 +282,7 @@
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
+            android:theme="@style/LaunchTheme.Plain"
             android:icon="@mipmap/ic_launcher_notes"
             android:label="AbabilX">
             <intent-filter>
@@ -301,6 +304,7 @@
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
+            android:theme="@style/LaunchTheme.Plain"
             android:icon="@mipmap/ic_launcher_night"
             android:label="AbabilX">
             <intent-filter>
@@ -319,6 +323,7 @@
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
+            android:theme="@style/LaunchTheme.Plain"
             android:icon="@mipmap/ic_launcher_ember"
             android:label="AbabilX">
             <intent-filter>
@@ -337,6 +342,7 @@
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
+            android:theme="@style/LaunchTheme.Plain"
             android:icon="@mipmap/ic_launcher_pulse"
             android:label="AbabilX">
             <intent-filter>
@@ -355,6 +361,7 @@
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
+            android:theme="@style/LaunchTheme.Plain"
             android:icon="@mipmap/ic_launcher_weather"
             android:label="AbabilX">
             <intent-filter>
@@ -373,6 +380,7 @@
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
+            android:theme="@style/LaunchTheme.Plain"
             android:icon="@mipmap/ic_launcher_ink"
             android:label="AbabilX">
             <intent-filter>
@@ -391,6 +399,7 @@
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
+            android:theme="@style/LaunchTheme.Plain"
             android:icon="@mipmap/ic_launcher_indigo"
             android:label="AbabilX">
             <intent-filter>
@@ -409,6 +418,7 @@
             android:taskAffinity=""
             android:enabled="false"
             android:exported="true"
+            android:theme="@style/LaunchTheme.Plain"
             android:icon="@mipmap/ic_launcher_forest"
             android:label="AbabilX">
             <intent-filter>

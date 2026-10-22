@@ -32,7 +32,7 @@ class AppIconOption {
 /// Disguise marks for the home screen — calendar / calculator / notes, not
 /// the AbabilX swallow. Must stay in step with `AppIconChannel.ALIASES`.
 const List<AppIconOption> appIconOptions = [
-  AppIconOption(id: 'default', label: 'Default', background: Color(0xFF12121A)),
+  AppIconOption(id: 'default', label: 'Default', background: Color(0xFFFFFFFF)),
   AppIconOption(
     id: 'calendar',
     label: 'Calendar',

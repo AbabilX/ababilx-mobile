@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Below Android 12 the launch window is the plain app background, as
-     Signal's is. No icon: under a disguise launcher icon it would show
-     AbabilX's. Android 12+ draws the system splash (values-v31). -->
+<!-- Same black splash as drawable/launch_background.xml. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/launch_bg" />
+    <item android:gravity="center">
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/splash_icon" />
+    </item>
+    <item
+        android:bottom="48dp"
+        android:gravity="bottom|center_horizontal">
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/splash_branding" />
+    </item>
 </layer-list>

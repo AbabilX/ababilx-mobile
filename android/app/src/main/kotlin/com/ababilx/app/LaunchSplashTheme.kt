@@ -5,9 +5,9 @@ import android.content.res.Resources
 import android.os.Build
 
 /**
- * Signal's `SplashScreenUtil`: the Android 12+ splash follows the theme
- * picked inside the app, not only the OS one. The system applies it from the
- * NEXT cold start, so it is set on every launch from the stored choice.
+ * The Android 12+ splash stays the white branded screen. Light and dark
+ * choices both point at that white theme, so a dark app no longer paints
+ * its own background behind the icon. Applied on the NEXT cold start.
  *
  * The choice is Dart's `ThemeModeStore` (`ababilx_theme_mode`), written
  * through shared_preferences' legacy store: file `FlutterSharedPreferences`,
