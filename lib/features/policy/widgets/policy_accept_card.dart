@@ -77,6 +77,7 @@ class _PolicyAcceptCardState extends ConsumerState<PolicyAcceptCard> {
                     const SizedBox(height: 16),
                     for (final key in [
                       'policy_bullet_secure',
+                      'policy_bullet_no_account',
                       'policy_bullet_ghost',
                       'policy_bullet_1',
                       'policy_bullet_2',

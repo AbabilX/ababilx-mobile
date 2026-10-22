@@ -929,10 +929,13 @@ class AppTranslations {
       'policy_subtitle_bold': 'World-class',
       'policy_subtitle': ' secured messaging, built so you can trust it.',
       'policy_bullet_secure':
-          'End-to-end encrypted. No government, no military, no hacker — not even us — can read your chats. Seize our servers and all you get is locked text.',
+          'End-to-end encrypted. Not even we can read your chats — our servers only hold locked text for delivery, not a long-term archive.',
+      'policy_bullet_no_account':
+          'Start New Chat with no email or phone — your device holds the key; the server never sees it. Add Google or email later only if you want.',
       'policy_bullet_ghost':
           'Ghost Chat: phone to phone, never stored. One tap wipes both phones.',
-      'policy_bullet_1': 'No ads, no trackers, no selling your data. Ever.',
+      'policy_bullet_1':
+          'Privacy mode and private chat — you control typing, ticks, presence, and notifications. No ads, no trackers, no selling your data.',
       'policy_bullet_2': 'Delete a chat or your account anytime.',
       'policy_read_full': 'Read the full policy',
       'policy_accept': 'I Agree',
@@ -2368,11 +2371,13 @@ class AppTranslations {
       'policy_subtitle_bold': 'বিশ্বমানের',
       'policy_subtitle': ' সুরক্ষিত মেসেজিং, যাতে আপনি ভরসা রাখতে পারেন।',
       'policy_bullet_secure':
-          'এন্ড-টু-এন্ড এনক্রিপ্টেড। কোনো সরকার, সেনাবাহিনী বা হ্যাকার — এমনকি আমরাও — আপনার চ্যাট পড়তে পারে না। আমাদের সার্ভার দখল করলেও মিলবে শুধু তালাবন্ধ লেখা।',
+          'এন্ড-টু-এন্ড এনক্রিপ্টেড। আমরাও চ্যাট পড়তে পারি না — সার্ভারে শুধু ডেলিভারির জন্য তালাবন্ধ লেখা, দীর্ঘ আর্কাইভ নয়।',
+      'policy_bullet_no_account':
+          'ইমেইল বা ফোন ছাড়াই নতুন চ্যাট শুরু — কী শুধু আপনার ডিভাইসে; সার্ভার দেখে না। চাইলে পরে Google বা ইমেইল যোগ করুন, বাধ্য নন।',
       'policy_bullet_ghost':
           'ঘোস্ট চ্যাট: সরাসরি ফোন থেকে ফোনে, কোথাও সংরক্ষণ হয় না। এক ট্যাপে দুই ফোন থেকেই মুছে যায়।',
       'policy_bullet_1':
-          'কোনো বিজ্ঞাপন নেই, ট্র্যাকার নেই, ডেটা বিক্রি নেই। কখনো না।',
+          'প্রাইভেসি মোড ও প্রাইভেট চ্যাট — টাইপিং, টিক, উপস্থিতি ও নোটিফিকেশন আপনি নিয়ন্ত্রণ করেন। বিজ্ঞাপন/ট্র্যাকার নেই, ডেটা বিক্রি নেই।',
       'policy_bullet_2': 'যেকোনো সময় চ্যাট বা অ্যাকাউন্ট মুছে ফেলুন।',
       'policy_read_full': 'সম্পূর্ণ নীতিমালা পড়ুন',
       'policy_accept': 'আমি সম্মত',
