@@ -489,7 +489,7 @@ class AppTranslations {
       'history_restore_messages_running': 'Restoring messages… {done}',
 
       'login_subtitle':
-          'Stay close to friends and family—with privacy and end-to-end encryption built in.',
+          'Stay close to friends and family—with world-class security, privacy, and end-to-end encryption built in.',
       'continue_google': 'Continue with Google',
       'account_switch_title': 'Switch accounts on this phone?',
       'account_switch_body':
@@ -1936,7 +1936,7 @@ class AppTranslations {
       'history_restore_messages_running': 'মেসেজ ফিরিয়ে আনা হচ্ছে… {done}',
 
       'login_subtitle':
-          'বন্ধু ও পরিবারের কাছাকাছি থাকুন—গোপনীয়তা ও এন্ড-টু-এন্ড এনক্রিপশনসহ।',
+          'বন্ধু ও পরিবারের কাছাকাছি থাকুন—বিশ্বমানের নিরাপত্তা, গোপনীয়তা ও এন্ড-টু-এন্ড এনক্রিপশনসহ।',
       'continue_google': 'গুগল অ্যাকাউন্ট দিয়ে এগিয়ে যান',
       'account_switch_title': 'এই ফোনে অ্যাকাউন্ট বদলাবেন?',
       'account_switch_body':
