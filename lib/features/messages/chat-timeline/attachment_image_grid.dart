@@ -49,7 +49,11 @@ class AttachmentImageGrid extends StatelessWidget {
             : SignalBubbleMetrics.mediaMinWidthSolo,
         preview: preview,
         inset: withCaption,
-        clear: isStickerLike(images.first),
+        clear: drawsClearInBubble(
+          images.first,
+          withCaption: withCaption,
+          captioned: captioned,
+        ),
       );
     }
     return Padding(

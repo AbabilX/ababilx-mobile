@@ -48,4 +48,22 @@ void main() {
       isFalse,
     );
   });
+
+  test('captioned PNG screenshots fill the frame, bare stickers stay clear', () {
+    final png = _file('Screenshot.png', 'image/png');
+    expect(isStickerLike(png), isTrue);
+    expect(
+      drawsClearInBubble(png, withCaption: false, captioned: false),
+      isTrue,
+    );
+    expect(
+      drawsClearInBubble(png, withCaption: false, captioned: true),
+      isFalse,
+      reason: 'caption floor + contain = grey gutters beside portrait',
+    );
+    expect(
+      drawsClearInBubble(png, withCaption: true, captioned: false),
+      isFalse,
+    );
+  });
 }
