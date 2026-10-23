@@ -317,6 +317,8 @@ class AppTranslations {
       'onboarding_start': 'Get started',
       'new_chat_setup_running': 'Setting up your chats…',
       'new_chat_setup_failed': 'Chat setup could not finish. Tap to retry.',
+      'sign_in_again_to_continue': 'Sign in again to continue',
+      'sign_in_again': 'Sign in again',
       'recovery_fresh_hint':
           'Your old messages cannot be read on this phone. Your contacts stay, and they see that your safety number changed.',
       'recovery_wrong_account': 'Wrong account? Sign in with another',
@@ -1796,6 +1798,8 @@ class AppTranslations {
       'new_chat_setup_running': 'আপনার চ্যাট প্রস্তুত হচ্ছে…',
       'new_chat_setup_failed':
           'চ্যাট প্রস্তুত করা যায়নি। আবার চেষ্টা করতে চাপুন।',
+      'sign_in_again_to_continue': 'চালিয়ে যেতে আবার সাইন ইন করুন',
+      'sign_in_again': 'আবার সাইন ইন করুন',
       'recovery_fresh_hint':
           'পুরোনো মেসেজ এই ফোনে পড়া যাবে না। আপনার পরিচিতিরা থাকবে, আর তারা দেখবে আপনার সেফটি নম্বর বদলেছে।',
       'recovery_wrong_account': 'ভুল অ্যাকাউন্ট? অন্য একটি দিয়ে সাইন ইন করুন',

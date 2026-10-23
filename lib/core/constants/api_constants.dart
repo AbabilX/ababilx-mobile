@@ -21,6 +21,7 @@ class ApiConstants {
   static const String emailReset = '/auth/email/reset';
   static const String emailResetConfirm = '/auth/email/reset/confirm';
   static const String authRefresh = '/auth/refresh';
+  static const String authLogout = '/auth/logout';
   static const String deviceChallenge = '/auth/device/challenge';
   static const String deviceRegister = '/auth/device/register';
   static const String deviceLogin = '/auth/device/login';

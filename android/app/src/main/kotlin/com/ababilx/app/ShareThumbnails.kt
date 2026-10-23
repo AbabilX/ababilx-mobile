@@ -28,6 +28,7 @@ object ShareThumbnails {
      */
     fun of(context: Context, uriString: String, maxPx: Int): ByteArray? {
         val uri = Uri.parse(uriString)
+        if (!ShareUriPolicy.acceptForRead(context, uri)) return null
         // MediaProvider's own cached thumbnail, when this is a library item.
         // It costs one call instead of a getType() lookup plus two or three
         // stream opens, and for a video it replaces a full frame extraction —

@@ -105,6 +105,8 @@ object ShareIntakeBridge {
         val files = JSONArray()
         val resolver = context.contentResolver
         for (uri in uris) {
+            // Our own files and providers are never another app's to send.
+            if (!ShareUriPolicy.acceptIncoming(context, uri)) continue
             describe(resolver, uri)?.let(files::put)
         }
         if (files.length() == 0 && text.isEmpty()) return null
@@ -144,6 +146,7 @@ object ShareIntakeBridge {
      */
     fun materialize(context: Context, uriString: String, fileName: String): String? {
         val uri = Uri.parse(uriString)
+        if (!ShareUriPolicy.acceptForRead(context, uri)) return null
         val dir = File(context.cacheDir, "shared").apply { mkdirs() }
         // The sender's display name is not unique and not trusted; keep it for
         // the extension only and let a UUID own the path.

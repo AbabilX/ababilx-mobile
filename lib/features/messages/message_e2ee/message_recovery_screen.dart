@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../core/network/recent_sign_in.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../policy/policy_precheck.dart';
 import '../../policy/widgets/policy_accept_card.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -25,6 +27,7 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
   bool _checking = true, _busy = false;
   bool _needsPolicy = false;
   String? _error;
+  bool _signOutToContinue = false;
   Map<String, dynamic>? _public;
   String _userId = '';
 
@@ -100,9 +103,14 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
         setState(() => _needsPolicy = true);
         return;
       }
+      final signIn =
+          error is RecentSignInRequired &&
+          error.outcome != ReauthOutcome.unavailable;
       setState(() {
         _checking = false;
-        _error = 'recovery_check_failed';
+        _error = signIn ? 'sign_in_again_to_continue' : 'recovery_check_failed';
+        _signOutToContinue =
+            signIn && error.outcome == ReauthOutcome.notSupported;
       });
     }
   }
@@ -153,8 +161,18 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
                         Text(t(_error!), textAlign: TextAlign.center),
                         const SizedBox(height: 16),
                         FilledButton(
-                          onPressed: _check,
-                          child: Text(t('recovery_retry')),
+                          // Signing out keeps the archive and the pending
+                          // key, which is committed after the next sign-in.
+                          onPressed: _signOutToContinue
+                              ? ref.read(authProvider.notifier).signOut
+                              : _check,
+                          child: Text(
+                            t(
+                              _signOutToContinue
+                                  ? 'sign_in_again'
+                                  : 'recovery_retry',
+                            ),
+                          ),
                         ),
                       ],
                     ),

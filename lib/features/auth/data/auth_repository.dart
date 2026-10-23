@@ -26,6 +26,23 @@ class AuthRepository {
   ///   2. Sign into Firebase with those credentials
   ///   3. Get Google ID token → send to our backend → receive app JWT
   Future<PreparedAuthSession?> prepareGoogleSignIn() async {
+    final idToken = await googleIdToken();
+    if (idToken == null) return null;
+
+    // Exchange Google ID token for our app JWT
+    final response = await _client.post(
+      ApiConstants.mobileGoogleAuth,
+      data: {'id_token': idToken},
+    );
+
+    return PreparedAuthSession.fromLoginBody(
+      response.data as Map<String, dynamic>,
+    );
+  }
+
+  /// Steps 1 and 2: the Google picker and Firebase, up to the Google ID
+  /// token. Null when the person backs out of the picker.
+  Future<String?> googleIdToken() async {
     // Disconnect any cached account to force a fresh account picker
     // and ensure a valid idToken is issued every time.
     await _googleSignIn.signOut();
@@ -54,16 +71,7 @@ class AuthRepository {
         'No ID token — check SHA-1 fingerprint in Firebase console',
       );
     }
-
-    // Exchange Google ID token for our app JWT
-    final response = await _client.post(
-      ApiConstants.mobileGoogleAuth,
-      data: {'id_token': idToken},
-    );
-
-    return PreparedAuthSession.fromLoginBody(
-      response.data as Map<String, dynamic>,
-    );
+    return idToken;
   }
 
   /// The access token is written last. A partial write can therefore never

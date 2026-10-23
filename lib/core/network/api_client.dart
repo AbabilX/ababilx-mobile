@@ -136,6 +136,10 @@ class ApiClient {
 
   Dio get dio => _dio;
 
+  /// No interceptors, for auth calls that must never re-enter the 401
+  /// handler (a sign-in, retiring a replaced session).
+  Dio get bareDio => _bareDio;
+
   Future<Response<T>> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,

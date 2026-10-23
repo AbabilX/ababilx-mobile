@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/network/recent_sign_in.dart';
 import '../data/chat_recovery_api.dart';
 import '../data/chat_repository.dart';
 import '../providers/chat_provider.dart';
@@ -9,9 +10,13 @@ enum NewChatSetupState {
   idle,
   running,
   failed,
+
+  /// The server wants a recent sign-in and the phone could not do one by
+  /// itself (cancelled Google picker, or an email account).
+  needsSignIn,
   ready;
 
-  bool get pending => this == running || this == failed;
+  bool get pending => this == running || this == failed || this == needsSignIn;
 }
 
 final newChatSetupProvider = NotifierProvider<NewChatSetup, NewChatSetupState>(
@@ -23,6 +28,11 @@ final newChatSetupProvider = NotifierProvider<NewChatSetup, NewChatSetupState>(
 class NewChatSetup extends Notifier<NewChatSetupState> {
   Future<void> Function(int)? _operation;
   int _epoch = 0;
+  ReauthOutcome? _signInOutcome;
+
+  /// No sign-in this phone can run by itself (email account): the way on is
+  /// signing out and in again. Otherwise a retry asks again.
+  bool get signOutToContinue => _signInOutcome == ReauthOutcome.notSupported;
   @override
   NewChatSetupState build() => NewChatSetupState.idle;
 
@@ -68,6 +78,13 @@ class NewChatSetup extends Notifier<NewChatSetupState> {
     try {
       await _operation!(epoch);
       if (epoch == _epoch) state = NewChatSetupState.ready;
+    } on RecentSignInRequired catch (error) {
+      if (epoch != _epoch) return;
+      _signInOutcome = error.outcome;
+      // Offline is not a refusal: an ordinary retry is the right offer.
+      state = error.outcome == ReauthOutcome.unavailable
+          ? NewChatSetupState.failed
+          : NewChatSetupState.needsSignIn;
     } catch (_) {
       if (epoch == _epoch) state = NewChatSetupState.failed;
     }
