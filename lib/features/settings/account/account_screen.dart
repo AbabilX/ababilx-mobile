@@ -12,6 +12,7 @@ import '../../profile/providers/profile_provider.dart';
 import '../settings-hub/account_password_row.dart';
 import '../settings-hub/settings_row.dart';
 import '../settings-hub/sign_out_dialog.dart';
+import 'delete_account_sheet.dart';
 
 /// Settings → Account: who you are and where you are signed in. Handle,
 /// password, who can find you, signing a computer in, and signing out.
@@ -84,6 +85,13 @@ class AccountScreen extends ConsumerWidget {
                     }
                     await ref.read(authProvider.notifier).signOut();
                   },
+                ),
+                SettingsRow(
+                  icon: HugeIcons.strokeRoundedDelete02,
+                  title: t('delete_account'),
+                  subtitle: t('delete_account_sub'),
+                  destructive: true,
+                  onTap: () => showDeleteAccountSheet(context),
                 ),
               ],
             ),

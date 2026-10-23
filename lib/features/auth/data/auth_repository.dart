@@ -120,6 +120,12 @@ class AuthRepository {
     await _storage.clearAuthSession();
   }
 
+  /// Deletes the account on the server for good. Throws on refusal, so the
+  /// caller keeps the session and says why.
+  Future<void> deleteAccount() async {
+    await _client.delete<dynamic>(ApiConstants.meDeleteAccount);
+  }
+
   /// True while this phone is signed in with a key-only account.
   Future<bool> hasAccountKey() async =>
       (await _storage.readAccountKey())?.isNotEmpty ?? false;

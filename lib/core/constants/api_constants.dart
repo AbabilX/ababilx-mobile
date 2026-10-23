@@ -33,6 +33,7 @@ class ApiConstants {
   static const String meProfile = '/api/me/profile';
   static const String meStatus = '/api/me/status';
   static const String meAcceptPolicy = '/api/me/accept-policy';
+  static const String meDeleteAccount = '/api/me/delete-account';
   static const String meSessions = '/api/me/sessions';
   static const String meSessionsRevokeOthers = '/api/me/sessions/revoke-others';
   static const String meDiscovery = '/api/me/discovery';

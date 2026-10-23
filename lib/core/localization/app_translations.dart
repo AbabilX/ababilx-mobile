@@ -506,6 +506,19 @@ class AppTranslations {
       'settings_sign_out_body_key_only':
           'This account has no email or Google sign-in. If you sign out, you can never open it again, and its chats on this phone stay locked. Start New Chat will make a different account.',
       'sign_out_key_only_confirm': 'Sign out for good',
+      'delete_account': 'Delete account',
+      'delete_account_sub': 'Permanently delete your account and data',
+      'delete_account_point_profile':
+          'Your profile, keys, settings and devices are deleted from our servers.',
+      'delete_account_point_phone':
+          'Your chats and files are wiped from this phone.',
+      'delete_account_point_others':
+          'Messages already delivered stay on the other person\'s phone.',
+      'delete_account_point_final':
+          'This cannot be undone. If you own a workspace, it is deleted too.',
+      'delete_account_type': 'Type {word} to confirm.',
+      'delete_account_confirm': 'Delete my account',
+      'delete_account_failed': 'Could not delete your account. Try again.',
       'email_sign_in_title': 'Sign in with email',
       'email_field': 'Email',
       'password_field': 'Password',
@@ -1969,6 +1982,19 @@ class AppTranslations {
       'settings_sign_out_body_key_only':
           'এই অ্যাকাউন্টে কোনো ইমেইল বা গুগল সাইন-ইন নেই। সাইন আউট করলে আর কখনো এটি খুলতে পারবেন না, আর এই ফোনের চ্যাটগুলো লক থাকবে। নতুন চ্যাট শুরু করলে আলাদা একটি অ্যাকাউন্ট তৈরি হবে।',
       'sign_out_key_only_confirm': 'চিরতরে সাইন আউট করুন',
+      'delete_account': 'অ্যাকাউন্ট মুছুন',
+      'delete_account_sub': 'আপনার অ্যাকাউন্ট ও ডেটা চিরতরে মুছে ফেলুন',
+      'delete_account_point_profile':
+          'আপনার প্রোফাইল, কী, সেটিংস ও ডিভাইস আমাদের সার্ভার থেকে মুছে যাবে।',
+      'delete_account_point_phone':
+          'এই ফোন থেকে আপনার চ্যাট ও ফাইল মুছে যাবে।',
+      'delete_account_point_others':
+          'যে মেসেজ আগেই পৌঁছে গেছে তা অন্যজনের ফোনে থেকে যাবে।',
+      'delete_account_point_final':
+          'এটি আর ফেরানো যাবে না। আপনার নিজের ওয়ার্কস্পেস থাকলে সেটিও মুছে যাবে।',
+      'delete_account_type': 'নিশ্চিত করতে {word} লিখুন।',
+      'delete_account_confirm': 'আমার অ্যাকাউন্ট মুছুন',
+      'delete_account_failed': 'অ্যাকাউন্ট মোছা যায়নি। আবার চেষ্টা করুন।',
       'email_sign_in_title': 'ইমেইল দিয়ে সাইন ইন',
       'email_field': 'ইমেইল',
       'password_field': 'পাসওয়ার্ড',

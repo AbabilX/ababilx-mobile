@@ -160,6 +160,15 @@ class AuthNotifier extends AsyncNotifier<bool> {
     if (userId.isNotEmpty) await storage.writeLocalDataOwnerUserId(userId);
   }
 
+  /// Deletes the account on the server, then ends the session and wipes
+  /// everything it left on this phone. Throws if the server refuses, with the
+  /// session untouched.
+  Future<void> deleteAccount() async {
+    await ref.read(authRepositoryProvider).deleteAccount();
+    await signOut();
+    await ref.read(accountDataWiperProvider).clear();
+  }
+
   Future<void> signOut() async {
     ref.read(newChatSetupProvider.notifier).reset();
     await ref.read(archiveProvider.notifier).cancel();
