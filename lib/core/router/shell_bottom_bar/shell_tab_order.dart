@@ -33,11 +33,18 @@ class ShellTabOrderNotifier extends Notifier<List<String>> {
   }
 
   /// Moves the tab at [from] to [to] in the order [shown] is drawn in.
+  /// A tab missing from [shown] (Home switched off) keeps its saved place,
+  /// so switching it back on puts it where it was.
   Future<void> move(List<ShellTab> shown, int from, int to) async {
     if (from == to || from < 0 || to < 0) return;
     if (from >= shown.length || to >= shown.length) return;
     final next = [for (final t in shown) t.route];
     next.insert(to, next.removeAt(from));
+    final full = applyTabOrder(homeShellTabs, state);
+    for (var i = 0; i < full.length; i++) {
+      final route = full[i].route;
+      if (!next.contains(route)) next.insert(i.clamp(0, next.length), route);
+    }
     state = next;
     try {
       await SharedPreferencesAsync().setStringList(_key, next);

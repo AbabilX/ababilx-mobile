@@ -11,13 +11,8 @@ import '../../auth/providers/auth_provider.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/data/profile_repository.dart';
-import '../../profile/providers/profile_provider.dart';
 import 'account_password_row.dart';
-import 'language_dialog.dart';
 import 'settings_row.dart';
-import '../start-tab/start_tab.dart';
-import '../start-tab/start_tab_sheet.dart';
-import '../../../core/router/shell_bottom_bar/shell_tabs.dart';
 import 'sign_out_dialog.dart';
 import '../donate/donate_sheet.dart';
 
@@ -44,30 +39,14 @@ class SettingsSections extends ConsumerWidget {
           title: t('settings_notifications'),
           onTap: () => context.push('/settings/notifications'),
         ),
-        SettingsRow(
-          icon: HugeIcons.strokeRoundedHome01,
-          title: t('settings_start_tab'),
-          value: t(
-            homeShellTabs
-                .firstWhere(
-                  (tab) => tab.route == ref.watch(startTabProvider),
-                  orElse: () => messagesShellTab,
-                )
-                .labelKey,
-          ),
-          onTap: () => showStartTabSheet(context, ref),
-        ),
-        SettingsRow(
-          icon: HugeIcons.strokeRoundedMobileNavigator01,
-          title: t('settings_app_icon'),
-          subtitle: t('settings_app_icon_sub'),
-          onTap: () => context.push('/settings/app-icon'),
-        ),
+        // Language, tabs (which show, their order, the launch tab), app icon
+        // and chat wallpaper: everything about how the app looks, behind one
+        // row.
         SettingsRow(
           icon: HugeIcons.strokeRoundedPaintBoard,
-          title: t('settings_wallpaper'),
-          subtitle: t('settings_wallpaper_sub'),
-          onTap: () => context.push('/settings/wallpaper'),
+          title: t('settings_appearance'),
+          subtitle: t('settings_appearance_sub'),
+          onTap: () => context.push('/settings/appearance'),
         ),
         // Sent media quality lives inside this screen now, next to the
         // auto-download and storage settings it belongs with — one address
@@ -77,16 +56,6 @@ class SettingsSections extends ConsumerWidget {
           title: t('settings_data_storage'),
           subtitle: t('settings_data_storage_sub'),
           onTap: () => context.push('/settings/data-storage'),
-        ),
-        SettingsRow(
-          icon: HugeIcons.strokeRoundedLanguageSkill,
-          title: t('app_language'),
-          value: languageLabel(user.appLanguage),
-          onTap: () async {
-            final picked = await showLanguageDialog(context, user.appLanguage);
-            if (picked == null) return;
-            await ref.read(profileProvider.notifier).updateLanguage(picked);
-          },
         ),
         // Local Share hub is intentionally hidden from Settings for now;
         // the feature (route + sync) stays wired for a later re-enable.

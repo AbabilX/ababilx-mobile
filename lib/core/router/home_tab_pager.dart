@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/calls/screens/calls_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
+import '../../features/settings/appearance/home_tab_setting.dart';
 import 'shell_bottom_bar/shell_tab_order.dart';
 import 'shell_bottom_bar/shell_tabs.dart';
 import 'swipe_tab_pager.dart';
@@ -33,7 +34,10 @@ class _HomePager extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tabs = applyTabOrder(homeShellTabs, ref.watch(shellTabOrderProvider));
+    final tabs = applyTabOrder(
+      ref.watch(shownShellTabsProvider),
+      ref.watch(shellTabOrderProvider),
+    );
     final routes = [for (final t in tabs) t.route];
     return SwipeTabPager(
       index: shellTabIndex(tabs, route),

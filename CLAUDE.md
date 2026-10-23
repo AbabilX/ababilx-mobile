@@ -70,9 +70,17 @@ Visible tabs = **team/CRM access ∩ device-local prefs**.
   `/wall` `/board` `/crm` to Messages via `shellRouteAccessDenied`.
 - **Home tab** (2026-10-20, `lib/features/home/`, own design — not Slack's).
   Bar is Home | Messages | Calls; Home is one more page of the same pager
-  (`home_tab_pager.dart`). The app lands on the tab picked at Settings →
-  Open on launch (`settings/start-tab/`, `start_tab_v1`, Messages by
-  default); it is read in `main` before the first frame because the
+  (`home_tab_pager.dart`). **Home is optional** (2026-10-23): Settings →
+  Appearance → Tabs (`settings/appearance/`) switches it on
+  (`home_tab_shown_v1`, OFF by default — opt-in, user's call; `/home` then redirects to Messages),
+  drags the order (same `shell_tab_order_v1` as the bar's long press; a
+  hidden Home keeps its place), orders and hides Home's own blocks
+  (`features/home/home_sections.dart`, `home_sections_order_v1` /
+  `home_sections_hidden_v1`; default = the layout below) and picks the
+  launch tab. App icon and chat
+  wallpaper moved under Appearance too. The app lands on the tab picked
+  there (`settings/start-tab/`, `start_tab_v1`, Messages by default, and
+  Messages while the picked tab is hidden); it is read in `main` before the first frame because the
   router's redirect is synchronous, and `kAppHomePath` (system back) follows
   it. `shellTabIndex` falls back to Messages, not index 0.
   An install with a saved tab order sees Home last until dragged.

@@ -36,9 +36,11 @@ class CatchUpBubbles extends ConsumerWidget {
                   MessageRowContent(
                     message: messages[i],
                     pulse: _pulse,
-                    isSending: messages[i].isPending &&
+                    isSending:
+                        messages[i].isPending &&
                         messages[i].sendStatus != MessageSendStatus.failed,
-                    isFailed: messages[i].sendStatus == MessageSendStatus.failed,
+                    isFailed:
+                        messages[i].sendStatus == MessageSendStatus.failed,
                     isOwnMessage: messages[i].userId == currentUserId,
                     clusterPosition: chatMessageClusterPosition(
                       i > 0 ? messages[i - 1] : null,

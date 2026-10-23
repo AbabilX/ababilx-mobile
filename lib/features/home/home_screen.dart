@@ -6,6 +6,7 @@ import '../../core/router/swipe_tab_active.dart';
 import '../../shared/widgets/portrait_lock_scope.dart';
 import '../messages/providers/chat_provider.dart';
 import 'data/home_drafts.dart';
+import 'home_sections.dart';
 import 'header/home_focus_card.dart';
 import 'header/home_header.dart';
 import 'sections/home_callers_section.dart';
@@ -16,7 +17,8 @@ import 'sections/home_nearby_section.dart';
 ///
 /// greeting (fixed, never scrolls away) · focus card (unread, or all caught up) ·
 /// pinned faces · nearby devices (only while one is here) · people to talk to
-/// again · recent chats.
+/// again · recent chats. That is the default; Settings → Appearance → Tabs
+/// reorders the blocks and switches any of them off (`home_sections.dart`).
 ///
 /// Drafts / Locked shortcuts live on the Messages filter row now. Everything
 /// else is read from what Messages, Talks and Local Share already hold; Home
@@ -61,12 +63,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SwipeTabVisits {
                     padding: EdgeInsets.only(
                       bottom: ShellPillMetrics.contentBottom(context) + 8,
                     ),
-                    children: const [
-                      HomeFocusCard(),
-                      HomePinnedSection(),
-                      HomeNearbySection(),
-                      HomeCallersSection(),
-                      HomeRecentChatsSection(),
+                    children: [
+                      for (final section
+                          in ref.watch(homeSectionsProvider).shown)
+                        _sectionWidget(section.id),
                     ],
                   ),
                 ),
@@ -78,3 +78,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SwipeTabVisits {
     );
   }
 }
+
+Widget _sectionWidget(String id) => switch (id) {
+  'focus' => const HomeFocusCard(),
+  'pinned' => const HomePinnedSection(),
+  'nearby' => const HomeNearbySection(),
+  'callers' => const HomeCallersSection(),
+  _ => const HomeRecentChatsSection(),
+};

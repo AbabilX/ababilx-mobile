@@ -71,8 +71,9 @@ class _CatchUpScreenState extends ConsumerState<CatchUpScreen> {
     final queue = _queue!;
     final chats = ref.watch(homeConversationsProvider);
     final currentId = queue.current;
-    var current =
-        currentId == null ? null : homeConversationById(chats, currentId);
+    var current = currentId == null
+        ? null
+        : homeConversationById(chats, currentId);
     // Chat left / locked / gone mid-session — drop it, no undo entry.
     if (currentId != null && current == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

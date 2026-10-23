@@ -15,6 +15,9 @@ import '../../features/profile/screens/sessions_screen.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
 import '../../features/settings/app-icon/app_icon_screen.dart';
+import '../../features/settings/appearance/appearance_screen.dart';
+import '../../features/settings/appearance/home_tab_setting.dart';
+import '../../features/settings/appearance/tabs_settings_screen.dart';
 import '../../features/settings/start-tab/start_tab.dart';
 import '../../features/messages/chat-details/conversation_details_screen.dart';
 import '../../features/messages/chat-details/group_members_screen.dart';
@@ -166,7 +169,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             ProfileSetupGate(child: HomeShell(child: child)),
         routes: [
           // One page for all three, so a swipe moves between them.
-          GoRoute(path: '/home', pageBuilder: (_, state) => homeTabPage(state)),
+          // Home can be switched off (Settings → Appearance → Tabs); then
+          // anything sent to it (a Catch up reply) lands on Messages.
+          GoRoute(
+            path: '/home',
+            redirect: (_, _) => HomeTabSetting.shown ? null : '/messages',
+            pageBuilder: (_, state) => homeTabPage(state),
+          ),
           GoRoute(
             path: '/messages',
             pageBuilder: (_, state) => homeTabPage(state),
@@ -281,6 +290,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const StorageReviewScreen(),
       ),
       // The default background for every chat.
+      GoRoute(
+        path: '/settings/appearance',
+        builder: (_, _) => const AppearanceScreen(),
+      ),
+      GoRoute(
+        path: '/settings/appearance/tabs',
+        builder: (_, _) => const TabsSettingsScreen(),
+      ),
       GoRoute(
         path: '/settings/app-icon',
         builder: (_, _) => const AppIconScreen(),
@@ -404,15 +421,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       // list's title only. Declared before '/messages/:id' for the same
       // reason as the routes above.
       // Home's quick views (`features/home/`). Outside the shell, like a chat.
-      GoRoute(
-        path: '/home/catch-up',
-        builder: (_, _) => const CatchUpScreen(),
-      ),
+      GoRoute(path: '/home/catch-up', builder: (_, _) => const CatchUpScreen()),
       // Old Unread list URL → Catch up deck (1A).
-      GoRoute(
-        path: '/home/unread',
-        redirect: (_, _) => '/home/catch-up',
-      ),
+      GoRoute(path: '/home/unread', redirect: (_, _) => '/home/catch-up'),
       GoRoute(
         path: '/home/groups',
         builder: (_, _) => const HomeConversationsPage.groups(),

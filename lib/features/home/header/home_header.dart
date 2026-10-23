@@ -132,7 +132,9 @@ class _OwnFace extends ConsumerWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        ClipOval(child: AppAvatar(size: 40, url: url, name: name)),
+        ClipOval(
+          child: AppAvatar(size: 40, url: url, name: name),
+        ),
         if (private)
           Positioned(
             right: -2,

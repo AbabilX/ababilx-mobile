@@ -57,18 +57,19 @@ class _CatchUpDeckState extends ConsumerState<CatchUpDeck>
   void initState() {
     super.initState();
     widget.controller?._commit = commit;
-    _fly = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 220),
-    )..addStatusListener((status) {
-      if (status != AnimationStatus.completed) return;
-      final step = _pending;
-      _pending = null;
-      _dx = 0;
-      _flyAnim = null;
-      _fly.reset();
-      if (step != null) widget.onStep(step);
-    });
+    _fly =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 220),
+        )..addStatusListener((status) {
+          if (status != AnimationStatus.completed) return;
+          final step = _pending;
+          _pending = null;
+          _dx = 0;
+          _flyAnim = null;
+          _fly.reset();
+          if (step != null) widget.onStep(step);
+        });
   }
 
   @override

@@ -26,7 +26,9 @@ class CatchUpCard extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final me = ref.watch(chatProvider.select((s) => s.currentUserId));
-    final title = ref.watch(contactNicknamesProvider).titleFor(conversation, me);
+    final title = ref
+        .watch(contactNicknamesProvider)
+        .titleFor(conversation, me);
     final messages = ref.watch(catchUpMessagesProvider(conversation.id));
     final n = conversation.unreadCount;
     // Stage is surfaceContainerLowest, bubble fill is surfaceContainerHigh,

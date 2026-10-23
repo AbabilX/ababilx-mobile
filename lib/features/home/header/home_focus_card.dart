@@ -54,7 +54,11 @@ class HomeFocusCard extends ConsumerWidget {
                 ),
                 clear
                     ? _CaughtUpCopy(ink: art.ink)
-                    : _UnreadCopy(unread: unread, ink: art.ink, ring: art.underfill),
+                    : _UnreadCopy(
+                        unread: unread,
+                        ink: art.ink,
+                        ring: art.underfill,
+                      ),
               ],
             ),
           ),
@@ -133,10 +137,7 @@ class _UnreadCopy extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
       child: Row(
         children: [
-          _Faces(
-            ids: [for (final c in unread.take(3)) c.id],
-            ring: ring,
-          ),
+          _Faces(ids: [for (final c in unread.take(3)) c.id], ring: ring),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

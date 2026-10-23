@@ -17,6 +17,7 @@ import 'shell_bottom_bar/index.dart';
 import 'shell_bottom_bar/nav_reorder_blur.dart';
 import 'shell_bottom_bar/shell_chrome_provider.dart';
 import 'shell_bottom_bar/shell_quick_button.dart';
+import '../../features/settings/appearance/home_tab_setting.dart';
 import 'shell_bottom_bar/shell_tab_order.dart';
 import 'shell_bottom_bar/tab_reselect.dart';
 import 'shell_bottom_bar/shell_tabs.dart';
@@ -40,7 +41,10 @@ class HomeShell extends ConsumerWidget {
     if (profileLang != null) {
       unawaited(DeclineReplies.rememberLanguage(profileLang.toLowerCase()));
     }
-    final tabs = applyTabOrder(homeShellTabs, ref.watch(shellTabOrderProvider));
+    final tabs = applyTabOrder(
+      ref.watch(shownShellTabsProvider),
+      ref.watch(shellTabOrderProvider),
+    );
     final location = GoRouterState.of(context).matchedLocation;
     final idx = shellTabIndex(tabs, location);
     final unread = ref.watch(totalUnreadProvider);

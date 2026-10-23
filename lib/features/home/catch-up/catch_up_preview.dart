@@ -10,7 +10,11 @@ import '../../messages/tiptap_plain_text.dart';
 
 /// One line on a Catch up card: who said it, and a one-line preview.
 class CatchUpLine {
-  const CatchUpLine({required this.name, required this.text, required this.mine});
+  const CatchUpLine({
+    required this.name,
+    required this.text,
+    required this.mine,
+  });
 
   final String name;
   final String text;
@@ -32,7 +36,10 @@ final catchUpMessagesProvider = FutureProvider.autoDispose
           messages = page.messages;
         } catch (_) {}
       }
-      messages = [for (final m in messages) if (!m.isDeleted) m];
+      messages = [
+        for (final m in messages)
+          if (!m.isDeleted) m,
+      ];
       messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       if (messages.length > 5) {
         messages = messages.sublist(messages.length - 5);
@@ -66,7 +73,9 @@ String _lineText(ChatMessage message) {
     final file = message.attachments.first;
     if (file.contentType.toLowerCase().startsWith('image/')) return 'Photo';
     if (file.contentType.toLowerCase().startsWith('video/')) return 'Video';
-    if (file.contentType.toLowerCase().startsWith('audio/')) return 'Voice message';
+    if (file.contentType.toLowerCase().startsWith('audio/')) {
+      return 'Voice message';
+    }
     final name = file.fileName.trim();
     return name.isEmpty ? 'Attachment' : name;
   }

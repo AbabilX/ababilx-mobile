@@ -1,3 +1,4 @@
+import 'features/settings/appearance/home_tab_setting.dart';
 import 'features/settings/start-tab/start_tab.dart';
 import 'dart:io' show Platform;
 import 'dart:ui' show DartPluginRegistrant;
@@ -181,6 +182,8 @@ void main() async {
   //   a face is never drawn as a letter first;
   // - the ring that opened the app, so a killed phone answering a call shows
   //   the call screen first instead of the chat list (see LaunchRing).
+  // Home's switch first: the launch tab is checked against it.
+  await HomeTabSetting.preload();
   await Future.wait<void>([
     ChatLockIndex.preload(),
     AvatarStore.instance.init(),
