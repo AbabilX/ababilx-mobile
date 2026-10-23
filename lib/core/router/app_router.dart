@@ -15,6 +15,7 @@ import '../../features/profile/screens/sessions_screen.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/messages/wallpaper/chat_wallpaper_screen.dart';
 import '../../features/settings/app-icon/app_icon_screen.dart';
+import '../../features/settings/account/account_screen.dart';
 import '../../features/settings/appearance/appearance_screen.dart';
 import '../../features/settings/appearance/home_tab_setting.dart';
 import '../../features/settings/appearance/tabs_settings_screen.dart';
@@ -290,6 +291,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const StorageReviewScreen(),
       ),
       // The default background for every chat.
+      GoRoute(
+        path: '/settings/account',
+        builder: (_, _) => const AccountScreen(),
+      ),
       GoRoute(
         path: '/settings/appearance',
         builder: (_, _) => const AppearanceScreen(),
