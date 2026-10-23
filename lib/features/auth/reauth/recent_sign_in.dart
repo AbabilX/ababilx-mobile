@@ -26,6 +26,7 @@ class RecentSignIn {
     required this.keyRelogin,
     required this.googleSignIn,
     required this.accountProvider,
+    required this.refreshSettled,
   });
 
   final SecureStorage storage;
@@ -33,7 +34,13 @@ class RecentSignIn {
   final Future<RefreshOutcome> Function() keyRelogin;
   final Future<PreparedAuthSession?> Function() googleSignIn;
   final Future<String> Function() accountProvider;
+
+  /// Waits for the API client's running token refresh, if any.
+  final Future<void> Function() refreshSettled;
   Future<ReauthOutcome>? _inFlight;
+
+  /// The refresh token this sign-in stored; null until one is.
+  String? _fresh;
 
   /// One attempt at a time: two refusals at once ask the person once.
   Future<ReauthOutcome> reauthenticate() {
@@ -43,19 +50,37 @@ class RecentSignIn {
   }
 
   Future<ReauthOutcome> _run() async {
+    _fresh = null;
     final previous = await storage.readRefreshToken();
     final outcome = await _signIn();
-    // The new sign-in replaces this phone's session; the old one is ended
-    // so it does not linger in Linked devices with a token nobody holds.
-    if (outcome == ReauthOutcome.signedIn) await _retire(previous);
+    if (outcome == ReauthOutcome.signedIn) await _retireReplaced(previous);
     return outcome;
+  }
+
+  /// Ends the session this sign-in replaced, so it does not linger in Linked
+  /// devices — but only while storage still holds the new token. A refresh
+  /// that read the old token before the sign-in wrote can land after it and
+  /// put the old session back; ending that session then would sign the phone
+  /// out. Left alone, the old session simply expires.
+  Future<void> _retireReplaced(String? previous) async {
+    try {
+      await refreshSettled();
+    } catch (_) {}
+    final fresh = _fresh;
+    if (fresh == null || fresh == previous) return;
+    if (await storage.readRefreshToken() != fresh) return;
+    await _retire(previous);
   }
 
   Future<ReauthOutcome> _signIn() async {
     // A key-only account ("Start New Chat"): its key on this phone IS its
     // sign-in, a fresh challenge signed by it.
     if ((await storage.readAccountKey())?.isNotEmpty == true) {
-      return switch (await keyRelogin()) {
+      final outcome = await keyRelogin();
+      if (outcome == RefreshOutcome.refreshed) {
+        _fresh = await storage.readRefreshToken();
+      }
+      return switch (outcome) {
         RefreshOutcome.refreshed => ReauthOutcome.signedIn,
         RefreshOutcome.rejected => ReauthOutcome.failed,
         RefreshOutcome.unavailable => ReauthOutcome.unavailable,
@@ -96,6 +121,7 @@ class RecentSignIn {
     await storage.writeRefreshToken(refresh);
     // Access token last, as AuthRepository.commitSession writes it.
     await storage.writeJwt(session.accessToken);
+    _fresh = refresh;
     return ReauthOutcome.signedIn;
   }
 
@@ -134,5 +160,6 @@ final recentSignInProvider = Provider<RecentSignIn>((ref) {
     },
     accountProvider: () async =>
         ref.read(profileProvider).valueOrNull?.provider ?? '',
+    refreshSettled: client.refreshSettled,
   );
 });

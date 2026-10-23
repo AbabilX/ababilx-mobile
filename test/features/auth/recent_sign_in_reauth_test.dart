@@ -88,6 +88,7 @@ void main() {
       return google == null ? _session(_owner) : await google();
     },
     accountProvider: () async => provider,
+    refreshSettled: () async {},
   );
 
   List<String?> retired() => [

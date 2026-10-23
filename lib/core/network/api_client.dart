@@ -136,9 +136,11 @@ class ApiClient {
 
   Dio get dio => _dio;
 
-  /// No interceptors, for auth calls that must never re-enter the 401
-  /// handler (a sign-in, retiring a replaced session).
+  /// No interceptors: auth calls that must never re-enter the 401 handler.
   Dio get bareDio => _bareDio;
+
+  /// Completes once no token refresh is running (they run one at a time).
+  Future<void> refreshSettled() async => await _refreshInFlight;
 
   Future<Response<T>> get<T>(
     String path, {
