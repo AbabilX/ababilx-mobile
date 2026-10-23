@@ -94,17 +94,8 @@ class DiscoveryScreen extends ConsumerWidget {
                     ref.read(discoveryProvider.notifier).setToggle(byEmail: v),
               ),
             ),
-            _Toggle(
-              title: 'Find me by phone number',
-              subtitle: data.phoneNumber.isEmpty
-                  ? 'Add a number above for this to do anything.'
-                  : 'Exact match only, country code included.',
-              value: data.byPhone && !private,
-              onChanged: unlessPrivate(
-                (v) =>
-                    ref.read(discoveryProvider.notifier).setToggle(byPhone: v),
-              ),
-            ),
+            // No "Find me by phone number": phone search is paused
+            // (numbers are not verified). The number is still saved.
             const Divider(height: 24),
             const TypingIndicatorsTile(),
           ],

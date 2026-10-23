@@ -50,9 +50,9 @@ class _FindPeopleTabState extends ConsumerState<FindPeopleTab> {
                 ref,
                 'chat_search_people',
               ),
-              // Email and phone are exact matches and phone needs the country
-              // code, so the field says so rather than letting people guess.
-              helperText: '@username, email, or +8801712345678',
+              // Email is an exact match. Phone search is paused (numbers
+              // are not verified), so it is not offered here.
+              helperText: '@username or email',
               helperMaxLines: 2,
             ),
           ),

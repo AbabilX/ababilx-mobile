@@ -166,8 +166,9 @@ class _DiscoveryPhoneFieldState extends State<DiscoveryPhoneField> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Used only so people who already have your number can find you. '
-            'It is never shown on your profile, and never used to sign in.',
+            'Search by phone number is paused for now, so nobody can find '
+            'you by it. It is never shown on your profile, and never used '
+            'to sign in.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
