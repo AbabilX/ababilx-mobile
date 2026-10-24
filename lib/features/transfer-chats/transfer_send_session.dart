@@ -141,7 +141,9 @@ class TransferSendSession {
           _set(state.value.copyWith(phase: SendPhase.done));
           return;
         }
-        if (remote.step == TransferStep.failed) throw _Stop(remote.error);
+        if (remote.step == TransferStep.failed) {
+          throw _Stop(remote.error.isEmpty ? 'failed' : remote.error);
+        }
       } on _Stop {
         rethrow;
       } catch (_) {

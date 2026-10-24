@@ -120,7 +120,9 @@ class TransferReceiveSession {
           error: switch (error) {
             BackupWrongAccountError() => 'wrong_account',
             BackupIncompleteError() => 'incomplete',
-            FileSystemException() => 'no_space',
+            // ENOSPC is 28 on Linux, so on Android.
+            FileSystemException(:final osError) when osError?.errorCode == 28 =>
+              'no_space',
             _ => 'failed',
           },
         ),

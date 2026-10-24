@@ -127,21 +127,28 @@ class TransferChatsServer {
       return _reply(request, HttpStatus.conflict);
     }
     _streaming = true;
-    final file = await streamFile();
-    final sink = file.openWrite();
+    File? file;
+    IOSink? sink;
     var bytes = 0;
     try {
-      await for (final chunk in request) {
-        sink.add(chunk);
-        bytes += chunk.length;
-        onBytes?.call(bytes);
-      }
+      file = await streamFile();
+      sink = file.openWrite();
+      // addStream pauses the request while the disk catches up, so a LAN
+      // faster than this phone's flash never piles up in memory.
+      await sink.addStream(
+        request.map((chunk) {
+          bytes += chunk.length;
+          onBytes?.call(bytes);
+          return chunk;
+        }),
+      );
       await sink.flush();
       await sink.close();
     } catch (_) {
-      // The sender went away mid-stream. It may try again from the start.
-      await sink.close().catchError((_) {});
-      await file.delete().catchError((_) => file);
+      // The sender went away mid-stream, or the file could not be written.
+      // It may try again from the start.
+      await sink?.close().catchError((_) {});
+      await file?.delete().catchError((_) => file!);
       _streaming = false;
       return;
     }
