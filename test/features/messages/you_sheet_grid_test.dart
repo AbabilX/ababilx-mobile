@@ -1,5 +1,6 @@
 import 'package:ababilx/core/theme/theme_mode_provider.dart';
 import 'package:ababilx/features/messages/chat-list/you-sheet/index.dart';
+import 'package:ababilx/features/messages/chat-list/you-sheet/you_away.dart';
 import 'package:ababilx/features/messages/chat-list/you-sheet/you_menu.dart';
 import 'package:ababilx/features/messages/chat-list/you-sheet/you_menu_item.dart';
 import 'package:ababilx/features/privacy-mode/privacy_mode_provider.dart';
@@ -13,6 +14,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
+        overrides: [_away],
         child: const MaterialApp(home: Scaffold(body: YouSheet())),
       ),
     );
@@ -40,7 +42,7 @@ void main() {
   testWidgets('Tapping Theme cycles themeMode and updates label in YouMenu', (
     tester,
   ) async {
-    final container = ProviderContainer();
+    final container = ProviderContainer(overrides: [_away]);
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
@@ -81,7 +83,7 @@ void main() {
   testWidgets('Privacy lights up while privacy mode is on', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [privacyModeProvider.overrideWith(_OnPrivacy.new)],
+        overrides: [privacyModeProvider.overrideWith(_OnPrivacy.new), _away],
         child: const MaterialApp(home: Scaffold(body: YouMenu())),
       ),
     );
@@ -94,4 +96,12 @@ void main() {
 class _OnPrivacy extends PrivacyModeNotifier {
   @override
   bool build() => true;
+}
+
+/// The real one opens the socket and asks the server.
+final _away = awayProvider.overrideWith(_Away.new);
+
+class _Away extends AwayNotifier {
+  @override
+  bool build() => false;
 }

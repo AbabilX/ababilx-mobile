@@ -6,9 +6,8 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../../../../core/theme/theme_mode_provider.dart';
 import '../../../../shared/widgets/app_toast.dart';
+import '../../../presence/online_presence_provider.dart';
 import '../../../privacy-mode/privacy_mode_provider.dart';
-import '../../../profile/providers/profile_provider.dart';
-import '../../../profile/providers/user_status_provider.dart';
 import 'you_away.dart';
 import 'you_menu_item.dart';
 import 'you_sheet_action.dart';
@@ -42,8 +41,7 @@ class YouMenu extends ConsumerWidget {
     String tr(String key) => AppTranslations.translate(context, ref, key);
     final themeMode = ref.watch(themeModeProvider);
     final themeLabel = _themeModeLabels[themeMode] ?? 'Theme';
-    final userId = ref.watch(profileProvider).valueOrNull?.id ?? '';
-    final away = isAwayStatus(ref.watch(userStatusForProvider(userId)));
+    final away = ref.watch(awayProvider);
     final private = ref.watch(privacyModeProvider);
 
     void go(String path) {
@@ -52,8 +50,9 @@ class YouMenu extends ConsumerWidget {
     }
 
     Future<void> flipAway() async {
-      if (userId.isEmpty) return;
-      final ok = await toggleAway(ref, userId);
+      final ok = await ref.read(awayProvider.notifier).set(!away);
+      // Away sees nobody online either; the server's empty roster follows.
+      if (ok && !away) ref.read(onlinePresenceProvider.notifier).clear();
       if (!ok && context.mounted) showAppToast(context, tr('you_away_failed'));
     }
 

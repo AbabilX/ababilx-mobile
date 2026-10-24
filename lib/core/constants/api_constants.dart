@@ -48,6 +48,7 @@ class ApiConstants {
   /// Privacy mode (server migration 0152): typing, receipts, presence,
   /// ringing and connected-call history withheld from DM peers.
   static const String mePrivacyMode = '/api/me/privacy-mode';
+  static const String meAppearOffline = '/api/me/appear-offline';
 
   /// Per-person privacy (server migration 0153): GET lists the choices,
   /// PUT `.../people/:userId` `{mode: default|always|never}` sets one.

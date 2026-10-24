@@ -2,12 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'theme_mode_store.dart';
 
-enum AppThemeMode {
-  system,
-  light,
-  dark,
-  lightsOut,
-}
+enum AppThemeMode { system, light, dark, lightsOut }
 
 final themeModeStoreProvider = Provider((_) => const ThemeModeStore());
 

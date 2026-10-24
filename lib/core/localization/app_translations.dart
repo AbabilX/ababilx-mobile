@@ -1233,8 +1233,9 @@ class AppTranslations {
       'chat_status_offline': 'Offline',
       'settings_privacy_mode': 'Privacy mode',
       'you_away': 'Away',
-      'you_away_tip': 'Show people you are away (clears after 24 hours)',
-      'you_away_failed': 'Could not change your status. Try again.',
+      'you_away_tip':
+          'Look offline. You won\'t see who is online either. Messages still arrive.',
+      'you_away_failed': 'Could not change Away. Try again.',
       'you_privacy': 'Privacy',
       'you_scan_qr': 'Scan QR',
       'you_devices': 'Devices',
@@ -2727,8 +2728,9 @@ class AppTranslations {
       'chat_status_offline': 'অফলাইন',
       'settings_privacy_mode': 'প্রাইভেসি মোড',
       'you_away': 'দূরে আছি',
-      'you_away_tip': 'সবাইকে জানান আপনি দূরে আছেন (২৪ ঘণ্টা পর মুছে যাবে)',
-      'you_away_failed': 'স্ট্যাটাস বদলানো যায়নি। আবার চেষ্টা করুন।',
+      'you_away_tip':
+          'অফলাইন দেখাবে। আপনিও কে অনলাইন দেখতে পাবেন না। বার্তা তবুও আসবে।',
+      'you_away_failed': 'দূরে আছি বদলানো যায়নি। আবার চেষ্টা করুন।',
       'you_privacy': 'প্রাইভেসি',
       'you_scan_qr': 'QR স্ক্যান',
       'you_devices': 'ডিভাইস',
