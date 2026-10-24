@@ -43,7 +43,12 @@ const _en = {
   'settings_title': 'Transfer chats',
   'settings_sub': 'Send your chats to a new phone',
   'error_other_account':
-      'That code belongs to a phone signed in to another account.',
+      'That code belongs to a device signed in to another account.',
+  'from_computer': 'From a computer? Scan its code',
+  'error_pull_here':
+      "That code sends a computer's chats to a new phone. Scan it from the new phone's restore screen.",
+  'error_not_computer':
+      "That is not a computer's Transfer chats code. On the computer open Settings → Security → Send chats to a phone.",
   'error_locked': 'This phone has no message key to send.',
   'error_unreachable':
       'Could not reach the new phone. Put both on the same Wi-Fi and scan again.',
@@ -88,7 +93,12 @@ const _bn = {
   'close': 'বন্ধ',
   'settings_title': 'চ্যাট ট্রান্সফার',
   'settings_sub': 'নতুন ফোনে চ্যাট পাঠান',
-  'error_other_account': 'কোডটি অন্য অ্যাকাউন্টে সাইন ইন করা ফোনের।',
+  'error_other_account': 'কোডটি অন্য অ্যাকাউন্টে সাইন ইন করা ডিভাইসের।',
+  'from_computer': 'কম্পিউটার থেকে? তার কোড স্ক্যান করুন',
+  'error_pull_here':
+      'এই কোড কম্পিউটারের চ্যাট নতুন ফোনে পাঠায়। নতুন ফোনের রিস্টোর স্ক্রিন থেকে স্ক্যান করুন।',
+  'error_not_computer':
+      'এটি কম্পিউটারের চ্যাট ট্রান্সফার কোড নয়। কম্পিউটারে সেটিংস → সিকিউরিটি → ফোনে চ্যাট পাঠান খুলুন।',
   'error_locked': 'এই ফোনে পাঠানোর মতো মেসেজ কী নেই।',
   'error_unreachable':
       'নতুন ফোন পাওয়া গেল না। দুটিকে একই Wi-Fi-তে রেখে আবার স্ক্যান করুন।',

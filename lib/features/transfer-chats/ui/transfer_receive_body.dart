@@ -13,6 +13,7 @@ class TransferReceiveBody extends ConsumerWidget {
     required this.status,
     required this.onRetry,
     required this.onDone,
+    this.onScanComputer,
   });
 
   /// Null while starting, empty when there is no Wi-Fi.
@@ -20,6 +21,10 @@ class TransferReceiveBody extends ConsumerWidget {
   final TransferStatus status;
   final VoidCallback onRetry;
   final VoidCallback onDone;
+
+  /// Shown under this phone's own code: a computer cannot scan, so its code
+  /// is scanned from here instead.
+  final VoidCallback? onScanComputer;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,7 +38,16 @@ class TransferReceiveBody extends ConsumerWidget {
         if (code.isEmpty) {
           return TransferMessage(text: t('receive_no_wifi'), onRetry: onRetry);
         }
-        return _Code(payload: code);
+        return Column(
+          children: [
+            _Code(payload: code),
+            if (onScanComputer != null)
+              TextButton(
+                onPressed: onScanComputer,
+                child: Text(t('from_computer')),
+              ),
+          ],
+        );
       case TransferStep.receiving:
         return TransferProgress(
           text: '${t('receiving')}  ${formatTransferBytes(status.bytes)}',

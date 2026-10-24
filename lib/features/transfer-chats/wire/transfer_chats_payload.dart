@@ -18,6 +18,7 @@ class TransferChatsCode {
     required this.linkKey,
     required this.userId,
     required this.sessionId,
+    this.pull = false,
   });
 
   /// `ip:port` of the new device on the local network, best first.
@@ -36,6 +37,11 @@ class TransferChatsCode {
   /// The new device's sign-in. The old device finds it in its own account's
   /// session list before it sends anything.
   final String sessionId;
+
+  /// `r=pull`: a computer drew this code (it has no camera) and SENDS. The
+  /// phone that scans it is the new device: it gives its own link key in
+  /// `hello` and takes the stream. No `k` in the code then.
+  final bool pull;
 }
 
 List<int> newTransferSecret() {
@@ -46,9 +52,10 @@ List<int> newTransferSecret() {
 String buildTransferChatsPayload(TransferChatsCode code) {
   final params = {
     'v': '$transferChatsVersion',
+    if (code.pull) 'r': 'pull',
     'a': code.addresses.join(','),
     's': base64Url.encode(code.secret).replaceAll('=', ''),
-    'k': code.linkKey,
+    if (!code.pull) 'k': code.linkKey,
     'u': code.userId,
     'sid': code.sessionId,
   };
@@ -77,10 +84,11 @@ TransferChatsCode? parseTransferChatsPayload(String raw) {
   final linkKey = q['k'] ?? '';
   final userId = q['u'] ?? '';
   final sessionId = q['sid'] ?? '';
+  final pull = q['r'] == 'pull';
   if (addresses.isEmpty ||
       secret == null ||
       secret.length != transferSecretBytes ||
-      linkKey.isEmpty ||
+      (linkKey.isEmpty && !pull) ||
       userId.isEmpty ||
       sessionId.isEmpty) {
     return null;
@@ -91,6 +99,7 @@ TransferChatsCode? parseTransferChatsPayload(String raw) {
     linkKey: linkKey,
     userId: userId,
     sessionId: sessionId,
+    pull: pull,
   );
 }
 

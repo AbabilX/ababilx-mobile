@@ -7,6 +7,10 @@ const transferPathIdentity = '/abx-transfer/v1/identity';
 const transferPathStream = '/abx-transfer/v1/stream';
 const transferPathStatus = '/abx-transfer/v1/status';
 
+/// A computer that sends (`r=pull`) also serves these.
+const transferPathHello = '/abx-transfer/v1/hello';
+const transferPathReport = '/abx-transfer/v1/report';
+
 const _authInfo = 'ababilx-transfer-chats-auth-v1';
 
 /// The bearer token every request carries: HMAC-SHA256 over a fixed label,

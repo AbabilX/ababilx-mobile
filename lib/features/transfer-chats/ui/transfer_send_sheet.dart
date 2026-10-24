@@ -23,8 +23,10 @@ Future<void> showTransferSendSheet(
   String payload,
 ) async {
   final code = parseTransferChatsPayload(payload);
-  if (code == null) {
-    showAppToast(context, transferText(ref, 'error_failed'), isError: true);
+  if (code == null || code.pull) {
+    // A computer's "send" code belongs on the NEW phone's restore screen.
+    final key = code == null ? 'error_failed' : 'error_pull_here';
+    showAppToast(context, transferText(ref, key), isError: true);
     return;
   }
   final session = TransferSendSession(

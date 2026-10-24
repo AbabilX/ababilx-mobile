@@ -9,8 +9,11 @@ class TransferUnreachable implements Exception {
 }
 
 class TransferRefused implements Exception {
-  const TransferRefused(this.status);
+  const TransferRefused(this.status, [this.code = '']);
   final int status;
+
+  /// The server's own reason, when it gave one (`other_account`).
+  final String code;
 }
 
 /// The old device's side: talks to the address the code named.
@@ -91,6 +94,66 @@ class TransferChatsClient {
     await response.drain<void>();
     if (response.statusCode != HttpStatus.ok) {
       throw TransferRefused(response.statusCode);
+    }
+  }
+
+  /// Pull mode: who this phone is -> the message key sealed to [linkKey].
+  Future<Map<String, dynamic>> hello(Map<String, dynamic> body) async {
+    final request = await _open('POST', transferPathHello);
+    request.headers.contentType = ContentType.json;
+    request.write(jsonEncode(body));
+    final response = await request.close();
+    final text = await response.transform(utf8.decoder).join();
+    final json = _json(text);
+    if (response.statusCode != HttpStatus.ok) {
+      throw TransferRefused(
+        response.statusCode,
+        json['error'] as String? ?? '',
+      );
+    }
+    return Map<String, dynamic>.from(json['envelope'] as Map);
+  }
+
+  /// Pull mode: the stream into [file]. A stream the computer broke off
+  /// (a failed export) throws here, never lands as a short file.
+  Future<void> pullStream(File file, void Function(int bytes) onBytes) async {
+    final request = await _open('GET', transferPathStream);
+    final response = await request.close();
+    if (response.statusCode != HttpStatus.ok) {
+      await response.drain<void>();
+      throw TransferRefused(response.statusCode);
+    }
+    final sink = file.openWrite();
+    var bytes = 0;
+    try {
+      await sink.addStream(
+        response.map((chunk) {
+          bytes += chunk.length;
+          onBytes(bytes);
+          return chunk;
+        }),
+      );
+    } finally {
+      await sink.close();
+    }
+  }
+
+  /// Pull mode: this phone's own progress, so the computer can say when it
+  /// is done and offer to delete its copy. Best effort.
+  Future<void> report(TransferStatus status) async {
+    try {
+      final request = await _open('POST', transferPathReport);
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(status.toJson()));
+      await (await request.close()).drain<void>();
+    } catch (_) {}
+  }
+
+  static Map<String, dynamic> _json(String text) {
+    try {
+      return Map<String, dynamic>.from(jsonDecode(text) as Map);
+    } catch (_) {
+      return const {};
     }
   }
 
