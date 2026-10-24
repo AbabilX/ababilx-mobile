@@ -369,11 +369,6 @@ class AppTranslations {
       'profile_setup_username_available': 'Available',
       'profile_setup_username_check_error':
           'Could not check that username. Try again.',
-      'profile_setup_phone_title': 'Add your phone number',
-      'profile_setup_phone_body':
-          'People who already have your number can find you. It is never shown on your profile and never used to sign in.',
-      'profile_setup_phone_label': 'Phone number',
-      'profile_setup_phone_invalid': 'Enter a valid phone number',
       'profile_setup_photo_title': 'Add a profile picture',
       'profile_setup_photo_body':
           'A picture helps people recognise you in chats and calls. You can change it any time in Settings.',
@@ -429,7 +424,8 @@ class AppTranslations {
       'backup_pin_set_body':
           'This PIN alone opens your backup on a new phone. Nobody can reset it, so remember it.',
       'backup_pin_enter_title': 'Enter your backup PIN',
-      'backup_pin_enter_body': 'The PIN (6 to 10 characters) you set for your backup.',
+      'backup_pin_enter_body':
+          'The PIN (6 to 10 characters) you set for your backup.',
       'backup_pin_field': 'PIN',
       'backup_pin_repeat': 'Repeat PIN',
       'backup_pin_continue': 'Continue',
@@ -696,8 +692,9 @@ class AppTranslations {
       'chat_find_people': 'Find',
       'chat_requests': 'Requests',
       'chat_connections': 'Connections',
-      'chat_search_people': 'Username, email or phone',
-      'chat_search_people_full': 'Name, username, email or number',
+      'chat_search_people': 'Username or email',
+      'chat_search_people_help': 'Type the full @username or email',
+      'chat_search_people_full': 'Name, username or email',
       'chat_search_recipients': 'Search people',
       'chat_search_chats': 'Chats',
       'chat_search_messages': 'Messages',
@@ -705,7 +702,12 @@ class AppTranslations {
       'chat_search_min_chars': 'Type to search',
       'chat_search_recent': 'Recent',
       'chat_find_by_username': 'Find by username',
-      'chat_find_by_phone': 'Find by phone number',
+      'chat_username_hint': 'username',
+      'chat_username_help':
+          'Type their full username. Capital letters don\'t matter.',
+      'chat_username_none': 'No one has @{name}',
+      'chat_username_none_body':
+          'Check the spelling. It has to be the whole username.',
       'chat_no_people': 'No people available',
       'chat_someone': 'this person',
       'chat_request_prompt':
@@ -715,13 +717,25 @@ class AppTranslations {
       'chat_request_block': 'Block',
       'chat_search_failed': 'Could not search for people',
       'chat_no_people_body':
-          'Search above by username, email or phone number to find people.',
+          'Search above by name, username or email to find people.',
       'chat_connect': 'Connect',
       'chat_message': 'Message',
       'chat_accept': 'Accept',
       'chat_reject': 'Reject',
       'chat_remove': 'Remove connection',
       'chat_block': 'Block',
+      'edit_name_remove': 'Remove my name',
+      'edit_name_remove_title': 'Remove your name?',
+      'edit_name_remove_body':
+          'People will see {username} instead, in chats, groups and calls. You can add a name again any time.',
+      'edit_name_remove_body_nameless':
+          'You have no username, so people will see "AbabilX user". You can add a name again any time.',
+      'details_remove_connection': 'Remove connection',
+      'details_remove_connection_title': 'Remove {name}?',
+      'details_remove_connection_body':
+          '{name} will no longer be one of your connections. Your chat history stays. They cannot message you again until you accept a new connection request from them.',
+      'details_remove_connection_confirm': 'Remove connection',
+      'details_remove_connection_done': 'Connection removed',
       'chat_new_personal_group': 'New personal group',
       'chat_group_name': 'Group name',
       'chat_create': 'Create',
@@ -1096,13 +1110,16 @@ class AppTranslations {
       'settings_appearance': 'Appearance',
       'settings_appearance_sub': 'Language, tabs, app icon, chat wallpaper',
       'settings_tabs': 'Tabs',
-      'settings_tabs_sub': 'Show Home, order tabs and Home page, open on launch',
+      'settings_tabs_sub':
+          'Show Home, order tabs and Home page, open on launch',
       'settings_tabs_bar': 'Tabs in the bar',
-      'settings_tabs_bar_footer': 'Drag ☰ to change the order. You can also hold a tab on the bar and drag it.',
+      'settings_tabs_bar_footer':
+          'Drag ☰ to change the order. You can also hold a tab on the bar and drag it.',
       'settings_tabs_always': 'Always shown',
       'settings_tabs_home_sub': 'Catch up, pinned and recent chats',
       'settings_home_sections': 'Home page',
-      'settings_home_sections_footer': 'Drag ☰ to change what comes first on Home. Switch a section off to hide it.',
+      'settings_home_sections_footer':
+          'Drag ☰ to change what comes first on Home. Switch a section off to hide it.',
       'settings_home_nearby_sub': 'Shows only while a device is near',
       'settings_app_icon': 'App icon',
       'settings_app_icon_sub':
@@ -1119,10 +1136,9 @@ class AppTranslations {
       'settings_discovery': 'Discovery',
       'settings_discovery_sub': 'Your phone number and who can find you',
       'settings_people_sub': 'Connections, requests and blocked accounts',
-      'settings_scan_qr': 'Scan QR to sign in',
-      'settings_scan_qr_sub': 'Approve a sign-in on desktop or web',
-      'settings_link_messages': 'Link a device to your messages',
-      'settings_link_messages_sub': 'Scan the code shown on the other device',
+      'settings_link_messages': 'Link a device',
+      'settings_link_messages_sub':
+          'Scan the QR code on a computer or browser to sign in with your messages',
       'settings_privacy': 'Privacy policy',
       'settings_invite': 'Invite your friends',
       'settings_invite_text':
@@ -1216,6 +1232,14 @@ class AppTranslations {
       'chat_status_online': 'Online',
       'chat_status_offline': 'Offline',
       'settings_privacy_mode': 'Privacy mode',
+      'you_away': 'Away',
+      'you_away_tip': 'Show people you are away (clears after 24 hours)',
+      'you_away_failed': 'Could not change your status. Try again.',
+      'you_privacy': 'Privacy',
+      'you_scan_qr': 'Scan QR',
+      'you_devices': 'Devices',
+      'you_devices_tip': 'Linked devices',
+      'you_settings': 'Settings',
       'settings_privacy_mode_sub':
           'Hide typing, ticks, online and calls. Nobody can find you',
       'privacy_mode_title': 'Privacy mode',
@@ -1379,6 +1403,20 @@ class AppTranslations {
       'typing_indicators_hint':
           "If you turn this off, you also won't see when others are typing.",
       'typing_indicators_save_failed': 'Could not save typing indicators',
+      'message_policy_title': 'Who can message me',
+      'message_policy_requests': 'Message requests',
+      'message_policy_requests_hint':
+          'Anyone can message you. A stranger\'s first message waits as a request you can accept, delete or block.',
+      'message_policy_connections': 'Connections only',
+      'message_policy_connections_hint':
+          'Strangers must send a connection request first. Only after you accept can they message you.',
+      'message_policy_save_failed': 'Could not save who can message you',
+      'chat_lock_connections_only':
+          '{name} only takes messages from connections. Send a connection request first.',
+      'chat_lock_connections_only_sent':
+          'Connection request sent. You can message {name} once they accept.',
+      'chat_people_connect': 'Connect',
+      'chat_people_requested': 'Requested',
       'call_status_incoming': 'Incoming call…',
       'call_status_connecting': 'Connecting…',
       'call_status_securing': 'Exchanging security keys…',
@@ -1847,11 +1885,6 @@ class AppTranslations {
       'profile_setup_username_available': 'ব্যবহার করা যাবে',
       'profile_setup_username_check_error':
           'ইউজারনেম চেক করা যায়নি। আবার চেষ্টা করুন।',
-      'profile_setup_phone_title': 'ফোন নম্বর যোগ করুন',
-      'profile_setup_phone_body':
-          'যাদের কাছে আপনার নম্বর আছে তারা আপনাকে খুঁজে পাবে। নম্বরটি আপনার প্রোফাইলে দেখানো হয় না এবং সাইন ইন করতে ব্যবহার হয় না।',
-      'profile_setup_phone_label': 'ফোন নম্বর',
-      'profile_setup_phone_invalid': 'সঠিক ফোন নম্বর লিখুন',
       'profile_setup_photo_title': 'প্রোফাইল ছবি যোগ করুন',
       'profile_setup_photo_body':
           'ছবি থাকলে চ্যাট ও কলে অন্যরা আপনাকে সহজে চিনতে পারবে। সেটিংস থেকে যেকোনো সময় বদলাতে পারবেন।',
@@ -1907,7 +1940,8 @@ class AppTranslations {
       'backup_pin_set_body':
           'নতুন ফোনে শুধু এই পিন দিয়েই ব্যাকআপ খুলবে। কেউ এটি রিসেট করতে পারে না, তাই মনে রাখুন।',
       'backup_pin_enter_title': 'আপনার ব্যাকআপ পিন দিন',
-      'backup_pin_enter_body': 'ব্যাকআপের জন্য যে পিন (৬ থেকে ১০ অক্ষর) সেট করেছিলেন।',
+      'backup_pin_enter_body':
+          'ব্যাকআপের জন্য যে পিন (৬ থেকে ১০ অক্ষর) সেট করেছিলেন।',
       'backup_pin_field': 'পিন',
       'backup_pin_repeat': 'আবার পিন দিন',
       'backup_pin_continue': 'চালিয়ে যান',
@@ -1990,8 +2024,7 @@ class AppTranslations {
       'delete_account_sub': 'আপনার অ্যাকাউন্ট ও ডেটা চিরতরে মুছে ফেলুন',
       'delete_account_point_profile':
           'আপনার প্রোফাইল, কী, সেটিংস ও ডিভাইস আমাদের সার্ভার থেকে মুছে যাবে।',
-      'delete_account_point_phone':
-          'এই ফোন থেকে আপনার চ্যাট ও ফাইল মুছে যাবে।',
+      'delete_account_point_phone': 'এই ফোন থেকে আপনার চ্যাট ও ফাইল মুছে যাবে।',
       'delete_account_point_others':
           'যে মেসেজ আগেই পৌঁছে গেছে তা অন্যজনের ফোনে থেকে যাবে।',
       'delete_account_point_final':
@@ -2173,8 +2206,9 @@ class AppTranslations {
       'chat_find_people': 'খুঁজুন',
       'chat_requests': 'অনুরোধ',
       'chat_connections': 'সংযোগ',
-      'chat_search_people': 'ইউজারনেম, ইমেইল বা ফোন',
-      'chat_search_people_full': 'নাম, ইউজারনেম, ইমেইল বা নম্বর',
+      'chat_search_people': 'ইউজারনেম বা ইমেইল',
+      'chat_search_people_help': 'পুরো @ইউজারনেম বা ইমেইল লিখুন',
+      'chat_search_people_full': 'নাম, ইউজারনেম বা ইমেইল',
       'chat_search_recipients': 'মানুষ খুঁজুন',
       'chat_search_chats': 'চ্যাট',
       'chat_search_messages': 'বার্তা',
@@ -2182,7 +2216,11 @@ class AppTranslations {
       'chat_search_min_chars': 'খুঁজতে লিখুন',
       'chat_search_recent': 'সাম্প্রতিক',
       'chat_find_by_username': 'ইউজারনেম দিয়ে খুঁজুন',
-      'chat_find_by_phone': 'ফোন নম্বর দিয়ে খুঁজুন',
+      'chat_username_hint': 'ইউজারনেম',
+      'chat_username_help':
+          'পুরো ইউজারনেম লিখুন। বড় বা ছোট হাতের অক্ষরে কিছু যায় আসে না।',
+      'chat_username_none': '@{name} নামে কেউ নেই',
+      'chat_username_none_body': 'বানান দেখে নিন। পুরো ইউজারনেম লিখতে হবে।',
       'chat_no_people': 'পাঠানোর মতো কাউকে পাওয়া যায়নি',
       'chat_someone': 'এই ব্যক্তি',
       'chat_request_prompt':
@@ -2192,13 +2230,25 @@ class AppTranslations {
       'chat_request_block': 'ব্লক',
       'chat_search_failed': 'মানুষ খুঁজতে সমস্যা হয়েছে',
       'chat_no_people_body':
-          'উপরে ইউজারনেম, ইমেইল বা ফোন নম্বর দিয়ে খুঁজে মানুষ যোগ করুন।',
+          'উপরে নাম, ইউজারনেম বা ইমেইল দিয়ে খুঁজে মানুষ যোগ করুন।',
       'chat_connect': 'সংযুক্ত হন',
       'chat_message': 'বার্তা দিন',
       'chat_accept': 'গ্রহণ',
       'chat_reject': 'প্রত্যাখ্যান',
       'chat_remove': 'সংযোগ সরান',
       'chat_block': 'ব্লক',
+      'edit_name_remove': 'আমার নাম সরান',
+      'edit_name_remove_title': 'আপনার নাম সরাবেন?',
+      'edit_name_remove_body':
+          'চ্যাট, গ্রুপ ও কলে মানুষ এর বদলে {username} দেখবে। যেকোনো সময় আবার নাম যোগ করতে পারবেন।',
+      'edit_name_remove_body_nameless':
+          'আপনার কোনো ইউজারনেম নেই, তাই মানুষ "AbabilX user" দেখবে। যেকোনো সময় আবার নাম যোগ করতে পারবেন।',
+      'details_remove_connection': 'কানেকশন সরান',
+      'details_remove_connection_title': '{name}-কে সরাবেন?',
+      'details_remove_connection_body':
+          '{name} আর আপনার কানেকশন থাকবেন না। চ্যাটের ইতিহাস থেকে যাবে। তাদের নতুন কানেকশন রিকোয়েস্ট আপনি গ্রহণ না করা পর্যন্ত তারা আর মেসেজ করতে পারবেন না।',
+      'details_remove_connection_confirm': 'কানেকশন সরান',
+      'details_remove_connection_done': 'কানেকশন সরানো হয়েছে',
       'chat_new_personal_group': 'নতুন ব্যক্তিগত গ্রুপ',
       'chat_group_name': 'গ্রুপের নাম',
       'chat_create': 'তৈরি করুন',
@@ -2567,11 +2617,13 @@ class AppTranslations {
       'settings_tabs': 'ট্যাব',
       'settings_tabs_sub': 'হোম দেখানো বা লুকানো, ক্রম, খুললে দেখাবে',
       'settings_tabs_bar': 'বারের ট্যাব',
-      'settings_tabs_bar_footer': 'ক্রম বদলাতে ☰ টেনে সরান। বারে ট্যাব চেপে ধরে টেনেও সরাতে পারেন।',
+      'settings_tabs_bar_footer':
+          'ক্রম বদলাতে ☰ টেনে সরান। বারে ট্যাব চেপে ধরে টেনেও সরাতে পারেন।',
       'settings_tabs_always': 'সবসময় দেখাবে',
       'settings_tabs_home_sub': 'ক্যাচ আপ, পিন করা ও সাম্প্রতিক চ্যাট',
       'settings_home_sections': 'হোম পেজ',
-      'settings_home_sections_footer': 'হোমে কী আগে আসবে বদলাতে ☰ টেনে সরান। কোনো অংশ লুকাতে সুইচ বন্ধ করুন।',
+      'settings_home_sections_footer':
+          'হোমে কী আগে আসবে বদলাতে ☰ টেনে সরান। কোনো অংশ লুকাতে সুইচ বন্ধ করুন।',
       'settings_home_nearby_sub': 'কাছে কোনো ডিভাইস থাকলেই দেখাবে',
       'settings_app_icon': 'অ্যাপ আইকন',
       'settings_app_icon_sub':
@@ -2587,10 +2639,9 @@ class AppTranslations {
       'settings_discovery': 'খুঁজে পাওয়া',
       'settings_discovery_sub': 'আপনার ফোন নম্বর এবং কে আপনাকে খুঁজে পাবে',
       'settings_people_sub': 'সংযোগ, অনুরোধ ও ব্লক করা অ্যাকাউন্ট',
-      'settings_scan_qr': 'সাইন ইন করতে কিউআর স্ক্যান করুন',
-      'settings_scan_qr_sub': 'ডেস্কটপ বা ওয়েবে সাইন ইন অনুমোদন করুন',
-      'settings_link_messages': 'আপনার বার্তায় একটি ডিভাইস যুক্ত করুন',
-      'settings_link_messages_sub': 'অন্য ডিভাইসে দেখানো কোড স্ক্যান করুন',
+      'settings_link_messages': 'ডিভাইস যুক্ত করুন',
+      'settings_link_messages_sub':
+          'কম্পিউটার বা ব্রাউজারের কিউআর কোড স্ক্যান করে আপনার বার্তাসহ সাইন ইন করুন',
       'settings_privacy': 'গোপনীয়তা নীতি',
       'settings_invite': 'বন্ধুদের আমন্ত্রণ জানান',
       'settings_invite_text':
@@ -2675,6 +2726,14 @@ class AppTranslations {
       'chat_status_online': 'অনলাইন',
       'chat_status_offline': 'অফলাইন',
       'settings_privacy_mode': 'প্রাইভেসি মোড',
+      'you_away': 'দূরে আছি',
+      'you_away_tip': 'সবাইকে জানান আপনি দূরে আছেন (২৪ ঘণ্টা পর মুছে যাবে)',
+      'you_away_failed': 'স্ট্যাটাস বদলানো যায়নি। আবার চেষ্টা করুন।',
+      'you_privacy': 'প্রাইভেসি',
+      'you_scan_qr': 'QR স্ক্যান',
+      'you_devices': 'ডিভাইস',
+      'you_devices_tip': 'লিংক করা ডিভাইস',
+      'you_settings': 'সেটিংস',
       'settings_privacy_mode_sub': 'টাইপিং, টিক, অনলাইন ও কল লুকান',
       'privacy_mode_title': 'প্রাইভেসি মোড',
       'privacy_mode_hint':
@@ -2832,6 +2891,20 @@ class AppTranslations {
       'typing_indicators_hint':
           'এটি বন্ধ করলে অন্যরা কখন টাইপ করছে তাও দেখতে পাবেন না।',
       'typing_indicators_save_failed': 'টাইপিং ইন্ডিকেটর সেভ করা যায়নি',
+      'message_policy_title': 'কে আমাকে মেসেজ করতে পারবে',
+      'message_policy_requests': 'মেসেজ রিকোয়েস্ট',
+      'message_policy_requests_hint':
+          'যে কেউ আপনাকে মেসেজ করতে পারবে। অপরিচিত কারও প্রথম মেসেজ রিকোয়েস্ট হিসেবে থাকবে — আপনি গ্রহণ, মুছে ফেলা বা ব্লক করতে পারবেন।',
+      'message_policy_connections': 'শুধু কানেকশন',
+      'message_policy_connections_hint':
+          'অপরিচিতদের আগে কানেকশন রিকোয়েস্ট পাঠাতে হবে। আপনি গ্রহণ করার পরেই তারা মেসেজ করতে পারবে।',
+      'message_policy_save_failed': 'কে মেসেজ করতে পারবে তা সেভ করা যায়নি',
+      'chat_lock_connections_only':
+          '{name} শুধু কানেকশনদের মেসেজ নেন। আগে একটি কানেকশন রিকোয়েস্ট পাঠান।',
+      'chat_lock_connections_only_sent':
+          'কানেকশন রিকোয়েস্ট পাঠানো হয়েছে। {name} গ্রহণ করলে মেসেজ করতে পারবেন।',
+      'chat_people_connect': 'কানেক্ট',
+      'chat_people_requested': 'রিকোয়েস্ট পাঠানো হয়েছে',
       'call_status_incoming': 'ইনকামিং কল…',
       'call_status_connecting': 'সংযোগ হচ্ছে…',
       'call_status_securing': 'নিরাপত্তা কী বিনিময় হচ্ছে…',

@@ -87,9 +87,7 @@ void main() {
     expect(find.text('chat list'), findsOneWidget);
   });
 
-  testWidgets('name, username, then a skippable phone number and picture', (
-    tester,
-  ) async {
+  testWidgets('name, username, then a skippable picture', (tester) async {
     final profile = await show(tester, user(isNew: true));
     expect(find.text('Your name'), findsOneWidget);
     expect(await ProfileSetupStore.read('u1'), ProfileSetupStore.pending);
@@ -109,10 +107,6 @@ void main() {
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
     expect(profile.saved, ['murad.dev']);
-    expect(find.text('Add your phone number'), findsOneWidget);
-
-    await tester.tap(find.text('Skip'));
-    await tester.pumpAndSettle();
     expect(find.text('Add a profile picture'), findsOneWidget);
 
     // No picture yet: Done is dead, Skip leaves.
@@ -140,6 +134,6 @@ void main() {
     await tester.tap(find.text('Skip'));
     await tester.pumpAndSettle();
     expect(profile.saved.single, matches(RegExp(r'^[a-z_]+\d{4}$')));
-    expect(find.text('Add your phone number'), findsOneWidget);
+    expect(find.text('Add a profile picture'), findsOneWidget);
   });
 }

@@ -29,7 +29,7 @@ class ScannedUserSheet {
     String username,
   ) async {
     final me = ref.read(profileProvider).valueOrNull;
-    final byContact = isEmailRef(username) || isPhoneRef(username);
+    final byContact = isEmailRef(username);
     if (me != null &&
         ((me.username.isNotEmpty && me.username == username) ||
             (me.email.isNotEmpty && me.email.toLowerCase() == username))) {

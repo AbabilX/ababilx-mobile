@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_translations.dart';
+import '../../../core/network/friendly_error.dart';
+import '../../../shared/widgets/app_toast.dart';
 import '../providers/chat_connections_provider.dart';
 import '../providers/chat_provider.dart';
 import '../data/models/chat_connection.dart';
@@ -19,6 +21,8 @@ class FindPeopleTab extends ConsumerStatefulWidget {
 
 class _FindPeopleTabState extends ConsumerState<FindPeopleTab> {
   Timer? _debounce;
+  String _query = '';
+  bool _requesting = false;
 
   @override
   void dispose() {
@@ -27,6 +31,7 @@ class _FindPeopleTabState extends ConsumerState<FindPeopleTab> {
   }
 
   void _search(String value) {
+    _query = value;
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 350), () {
       ref.read(chatConnectionsProvider.notifier).search(value);
@@ -50,9 +55,14 @@ class _FindPeopleTabState extends ConsumerState<FindPeopleTab> {
                 ref,
                 'chat_search_people',
               ),
-              // Email is an exact match. Phone search is paused (numbers
-              // are not verified), so it is not offered here.
-              helperText: '@username or email',
+              // Username and email are exact matches only (a partial
+              // handle finds nobody). Phone search is paused (numbers are
+              // not verified), so it is not offered here.
+              helperText: AppTranslations.translate(
+                context,
+                ref,
+                'chat_search_people_help',
+              ),
               helperMaxLines: 2,
             ),
           ),
@@ -85,10 +95,24 @@ class _FindPeopleTabState extends ConsumerState<FindPeopleTab> {
     );
   }
 
-  /// One action for everyone. There is no "connect first" state left to
-  /// render: the server allows the DM, and the person on the other end
-  /// answers the message request inside the thread.
+  /// "Message" for everyone the server lets the viewer write to — the person
+  /// on the other end answers the message request inside the thread. A
+  /// connections-only person (server 0184) gets "Connect" instead: a
+  /// connection request, then "Requested" until they accept.
   Widget _action(BuildContext context, WidgetRef ref, ChatUserSummary user) {
+    String t(String key) => AppTranslations.translate(context, ref, key);
+    if (!user.canMessage && user.connectionsOnly) {
+      if (user.connection == 'pending_out') {
+        return TextButton(
+          onPressed: null,
+          child: Text(t('chat_people_requested')),
+        );
+      }
+      return TextButton(
+        onPressed: _requesting ? null : () => _connect(user.userId),
+        child: Text(t('chat_people_connect')),
+      );
+    }
     return TextButton(
       onPressed: () async {
         final dm = await ref.read(chatProvider.notifier).startDm(user.userId);
@@ -96,5 +120,23 @@ class _FindPeopleTabState extends ConsumerState<FindPeopleTab> {
       },
       child: Text(AppTranslations.translate(context, ref, 'chat_message')),
     );
+  }
+
+  Future<void> _connect(String userId) async {
+    setState(() => _requesting = true);
+    final notifier = ref.read(chatConnectionsProvider.notifier);
+    try {
+      await notifier.sendRequest(userId);
+      await notifier.search(_query);
+    } catch (error) {
+      if (mounted) {
+        showAppToast(
+          context,
+          serverErrorMessage(error) ?? friendlyErrorMessage(error),
+          isError: true,
+        );
+      }
+    }
+    if (mounted) setState(() => _requesting = false);
   }
 }

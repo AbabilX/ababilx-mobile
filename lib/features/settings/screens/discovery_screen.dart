@@ -6,16 +6,12 @@ import '../../../core/localization/app_translations.dart';
 import '../../../core/network/friendly_error.dart';
 import '../../privacy-mode/privacy_mode_provider.dart';
 import '../discovery/discovery_identity_section.dart';
-import '../discovery/discovery_phone_field.dart';
 import '../discovery/discovery_provider.dart';
 import '../typing-indicators/typing_indicators_tile.dart';
 
 /// How people can find you in search.
 ///
-/// This is the mobile half of `/user/settings` → Discovery on the web. Until
-/// it existed, an account created on the phone had no way to add a number or
-/// turn username search back on — the username toggle is off by default for
-/// new accounts, so a mobile-only user was simply unfindable by handle.
+/// This is the mobile half of `/user/settings` → Discovery on the web.
 class DiscoveryScreen extends ConsumerWidget {
   const DiscoveryScreen({super.key});
 
@@ -67,17 +63,12 @@ class DiscoveryScreen extends ConsumerWidget {
                 ),
               ),
             const DiscoveryIdentitySection(),
-            DiscoveryPhoneField(
-              stored: data.phoneNumber,
-              onSave: (value) =>
-                  ref.read(discoveryProvider.notifier).savePhone(value),
-            ),
             const Divider(height: 24),
             _Toggle(
               title: 'Find me by username',
               subtitle:
-                  'A handle is short and matches as a prefix, so it can '
-                  'be guessed. Off by default.',
+                  'Someone has to type your full username — a partial '
+                  'one finds nobody.',
               value: data.byUsername && !private,
               onChanged: unlessPrivate(
                 (v) => ref
@@ -94,8 +85,8 @@ class DiscoveryScreen extends ConsumerWidget {
                     ref.read(discoveryProvider.notifier).setToggle(byEmail: v),
               ),
             ),
-            // No "Find me by phone number": phone search is paused
-            // (numbers are not verified). The number is still saved.
+            // No phone number here at all: phone search is paused on
+            // mobile (numbers are never verified).
             const Divider(height: 24),
             const TypingIndicatorsTile(),
           ],

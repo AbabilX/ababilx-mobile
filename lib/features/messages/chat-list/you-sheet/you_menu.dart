@@ -5,10 +5,21 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../core/localization/app_translations.dart';
 import '../../../../core/theme/theme_mode_provider.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../../privacy-mode/privacy_mode_provider.dart';
+import '../../../profile/providers/profile_provider.dart';
+import '../../../profile/providers/user_status_provider.dart';
+import 'you_away.dart';
 import 'you_menu_item.dart';
 import 'you_sheet_action.dart';
 
-/// Quick-action grid for the You sheet: Theme, Settings, QR Scanner, and Local Share.
+/// The You sheet's two rows.
+///
+/// Top row = switches that act in place and show their state (lit when on):
+/// Away · Privacy · Theme, then People (the screen you
+/// most often want next). Bottom row = places that close the sheet: Scan QR and
+/// Devices together (scanning is how a device gets linked), Local Share, and
+/// Settings last as the catch-all.
 class YouMenu extends ConsumerWidget {
   const YouMenu({super.key});
 
@@ -19,79 +30,108 @@ class YouMenu extends ConsumerWidget {
     AppThemeMode.lightsOut: 'Lights Out',
   };
 
-  List<List<dynamic>> _themeIcon(AppThemeMode mode) {
-    switch (mode) {
-      case AppThemeMode.light:
-        return HugeIcons.strokeRoundedSun01;
-      case AppThemeMode.dark:
-        return HugeIcons.strokeRoundedMoon02;
-      case AppThemeMode.system:
-        return HugeIcons.strokeRoundedDarkMode;
-      case AppThemeMode.lightsOut:
-        return HugeIcons.strokeRoundedMoonEclipse;
-    }
-  }
+  List<List<dynamic>> _themeIcon(AppThemeMode mode) => switch (mode) {
+    AppThemeMode.light => HugeIcons.strokeRoundedSun01,
+    AppThemeMode.dark => HugeIcons.strokeRoundedMoon02,
+    AppThemeMode.system => HugeIcons.strokeRoundedDarkMode,
+    AppThemeMode.lightsOut => HugeIcons.strokeRoundedMoonEclipse,
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    String tr(String key) => AppTranslations.translate(context, ref, key);
     final themeMode = ref.watch(themeModeProvider);
     final themeLabel = _themeModeLabels[themeMode] ?? 'Theme';
+    final userId = ref.watch(profileProvider).valueOrNull?.id ?? '';
+    final away = isAwayStatus(ref.watch(userStatusForProvider(userId)));
+    final private = ref.watch(privacyModeProvider);
+
+    void go(String path) {
+      Navigator.pop(context);
+      context.push(path);
+    }
+
+    Future<void> flipAway() async {
+      if (userId.isEmpty) return;
+      final ok = await toggleAway(ref, userId);
+      if (!ok && context.mounted) showAppToast(context, tr('you_away_failed'));
+    }
+
+    Future<void> flipPrivacy() async {
+      final ok = await ref.read(privacyModeProvider.notifier).set(!private);
+      if (!ok && context.mounted) {
+        showAppToast(context, tr('privacy_mode_save_failed'));
+      }
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          Expanded(
-            child: YouMenuItem(
+          _row([
+            YouMenuItem(
+              icon: HugeIcons.strokeRoundedMoon01,
+              label: tr('you_away'),
+              tooltip: tr('you_away_tip'),
+              active: away,
+              onTap: flipAway,
+            ),
+            YouMenuItem(
+              icon: HugeIcons.strokeRoundedShield01,
+              label: tr('you_privacy'),
+              tooltip: tr('privacy_mode_title'),
+              active: private,
+              onTap: flipPrivacy,
+            ),
+            YouMenuItem(
               icon: _themeIcon(themeMode),
               label: themeLabel,
               tooltip: 'Theme: $themeLabel',
               onTap: () => ref.read(themeModeProvider.notifier).cycle(),
             ),
-          ),
-          Expanded(
-            child: YouMenuItem(
-              icon: HugeIcons.strokeRoundedSettings02,
-              label: 'Settings',
-              tooltip: 'Settings',
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/settings');
-              },
+            YouMenuItem(
+              icon: HugeIcons.strokeRoundedUserMultiple,
+              label: tr('chat_people'),
+              tooltip: tr('chat_people'),
+              onTap: () => go('/messages/people'),
             ),
-          ),
-          Expanded(
-            child: YouMenuItem(
+          ]),
+          const SizedBox(height: 4),
+          _row([
+            YouMenuItem(
               icon: HugeIcons.strokeRoundedQrCode,
-              label: 'Scan QR',
-              tooltip: 'Scan QR code',
-              onTap: () {
-                // Let the parent start scanning after this route finishes closing.
-                // Pushing a second modal while this one is popping can leave the
-                // navigator with a blank surface after a QR result is returned.
-                Navigator.pop(context, YouSheetAction.scanQrLogin);
-              },
+              label: tr('you_scan_qr'),
+              tooltip: tr('you_scan_qr'),
+              // The parent starts scanning once this route has closed:
+              // pushing a modal while this one pops can leave a blank surface.
+              onTap: () => Navigator.pop(context, YouSheetAction.scanQrLogin),
             ),
-          ),
-          Expanded(
-            child: YouMenuItem(
+            YouMenuItem(
+              icon: HugeIcons.strokeRoundedLaptopPhoneSync,
+              label: tr('you_devices'),
+              tooltip: tr('you_devices_tip'),
+              onTap: () => go('/profile/devices'),
+            ),
+            YouMenuItem(
               icon: HugeIcons.strokeRoundedFolderTransfer,
-              label: AppTranslations.translate(
-                context,
-                ref,
-                'settings_local_share',
-              ),
-              tooltip: AppTranslations.translate(
-                context,
-                ref,
-                'settings_local_share',
-              ),
+              label: tr('settings_local_share'),
+              tooltip: tr('settings_local_share'),
               onTap: () => Navigator.pop(context, YouSheetAction.localShare),
             ),
-          ),
+            YouMenuItem(
+              icon: HugeIcons.strokeRoundedSettings02,
+              label: tr('you_settings'),
+              tooltip: tr('you_settings'),
+              onTap: () => go('/settings'),
+            ),
+          ]),
         ],
       ),
     );
   }
+
+  Widget _row(List<Widget> items) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [for (final item in items) Expanded(child: item)],
+  );
 }

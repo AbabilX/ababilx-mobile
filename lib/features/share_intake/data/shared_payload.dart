@@ -137,9 +137,9 @@ class SharedPayload extends Equatable {
       if (json is! Map<String, dynamic>) return null;
       final handle = json[key];
       if (handle is! String) return null;
-      // A person's link may carry an email or a phone number instead.
+      // A person's link may carry an email instead.
       final contact = handle.trim().toLowerCase();
-      if (key == 'open_user' && (isEmailRef(contact) || isPhoneRef(contact))) {
+      if (key == 'open_user' && isEmailRef(contact)) {
         return contact;
       }
       if (!isValidUsername(handle)) return null;

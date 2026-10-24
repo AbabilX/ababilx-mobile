@@ -8,6 +8,7 @@ import '../../../core/localization/app_translations.dart';
 import '../../../core/router/root_back.dart';
 import '../../messages/chat-details/details_floating_chrome.dart';
 import '../../messages/chat-details/group_banner_header.dart';
+import '../../../shared/text/display_name.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../avatar/avatar_flow.dart';
@@ -64,7 +65,8 @@ class _SettingsBody extends ConsumerWidget {
           children: [
             GroupBannerHeader(
               url: user.coverUrl,
-              title: user.name,
+              // No name (removed, server 0185): the handle, as others see it.
+              title: personLabel(user.name, user.username),
               avatarUrl: user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
               extendBehindTop: true,
               showEditBadges: true,

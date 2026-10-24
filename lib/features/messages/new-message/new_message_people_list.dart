@@ -10,12 +10,16 @@ class NewMessagePeopleList extends StatelessWidget {
     required this.emptyTitle,
     required this.emptyBody,
     required this.onTap,
+    this.showLetters = true,
   });
 
   final List<ChatUserSummary> people;
   final String emptyTitle;
   final String emptyBody;
   final ValueChanged<ChatUserSummary> onTap;
+
+  /// A–Z headers help a long list, not a single search hit.
+  final bool showLetters;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +41,7 @@ class NewMessagePeopleList extends StatelessWidget {
         final previousLetter = index == 0
             ? null
             : _letter(people[index - 1].name);
-        final showLetter = letter != previousLetter;
+        final showLetter = showLetters && letter != previousLetter;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -1,3 +1,4 @@
+import '../../../shared/text/display_name.dart';
 import '../data/models/chat_models.dart';
 import 'contact_nickname.dart';
 
@@ -16,7 +17,7 @@ extension ConversationNicknameTitle on ContactNicknames {
     return resolve(
       userId: conversation.peerUserId,
       name: conversation.peerUserName,
-      fallback: 'Direct message',
+      fallback: namelessUserLabel,
     );
   }
 }

@@ -12,8 +12,8 @@ import '../data/models/chat_conversation.dart';
 import '../providers/chat_provider.dart';
 
 /// The deep link that opens this DM's person, carrying what they let
-/// strangers find them by: `/u/<username>`, else `/u/<email>`, else
-/// `/u/<+phone>`. It opens them in the app (the sheet a scanned QR code opens)
+/// strangers find them by: `/u/<username>`, else `/u/<email>` (never a phone
+/// number: phone search is paused on mobile). It opens them in the app (the sheet a scanned QR code opens)
 /// and, without the app, the web page offering it. Empty when every switch is
 /// off or privacy mode is on — the server sends nothing to share then.
 String sharedContactLink(ChatConversation conversation) {
@@ -21,7 +21,6 @@ String sharedContactLink(ChatConversation conversation) {
   for (final value in [
     conversation.peerShareHandle,
     conversation.peerShareEmail,
-    conversation.peerSharePhone,
   ]) {
     if (value.trim().isNotEmpty) return buildContactLink(value);
   }

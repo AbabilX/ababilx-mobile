@@ -47,21 +47,3 @@ class DiscoverySettings extends Equatable {
   @override
   List<Object?> get props => [phoneNumber, byUsername, byEmail, byPhone];
 }
-
-/// Client-side mirror of `NormalizePhone` in
-/// `ababilx-server/services/chat/access_connections.go`.
-///
-/// The server is the authority; this exists so the Save button can react as
-/// the user types instead of round-tripping to learn the number was rejected.
-/// A formatting normaliser, not a validator, and never proof of ownership —
-/// there is no OTP behind it.
-String? normalizePhoneNumber(String raw) {
-  final trimmed = raw.trim();
-  if (trimmed.isEmpty) return '';
-  // The country code is required: without it the same digits mean different
-  // people in different countries, and stored numbers are all E.164.
-  if (!trimmed.startsWith('+')) return null;
-  final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
-  if (digits.length < 8 || digits.length > 15) return null;
-  return '+$digits';
-}

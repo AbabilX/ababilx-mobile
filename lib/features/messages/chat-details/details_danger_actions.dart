@@ -7,6 +7,7 @@ import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import 'details_block_tile.dart';
+import 'details_remove_connection_tile.dart';
 import 'details_tile.dart';
 import 'group_permissions.dart';
 import 'report_spam_action.dart';
@@ -67,6 +68,10 @@ class DetailsDangerActions extends ConsumerWidget {
                   ref.read(chatProvider.notifier).hideDm(conversation.id),
             ),
           ),
+          if (conversation.isPersonal &&
+              conversation.hasDmPeer &&
+              !conversation.isAccountDeleted)
+            DetailsRemoveConnectionTile(conversation: conversation),
           if (conversation.isPersonal &&
               conversation.hasDmPeer &&
               !conversation.isAccountDeleted)

@@ -141,9 +141,8 @@ class ChatConversation extends Equatable {
 
   bool get canShareContact =>
       hasDmPeer &&
-      (peerShareHandle.isNotEmpty ||
-          peerShareEmail.isNotEmpty ||
-          peerSharePhone.isNotEmpty);
+      // No phone: phone search is paused on mobile.
+      (peerShareHandle.isNotEmpty || peerShareEmail.isNotEmpty);
   final String? peerUserEmail;
   final bool peerLeft;
 

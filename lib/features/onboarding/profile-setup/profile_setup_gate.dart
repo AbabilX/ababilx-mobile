@@ -6,7 +6,7 @@ import '../../profile/providers/profile_provider.dart';
 import 'profile_setup_flow.dart';
 import 'profile_setup_store.dart';
 
-/// Puts name, username and phone number in front of [child] for a new
+/// Puts name, username and picture in front of [child] for a new
 /// account — after the recovery screen, where Signal puts its own profile
 /// step. Decided once per account; once shown it stays until finished, even
 /// if the server's new-account window closes while the person is typing.

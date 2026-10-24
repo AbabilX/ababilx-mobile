@@ -12,13 +12,15 @@ import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../transfer-chats/ui/transfer_chats_copy.dart';
+import '../message-policy/message_policy_tile.dart';
 import '../settings-hub/account_password_row.dart';
 import '../settings-hub/settings_row.dart';
 import '../settings-hub/sign_out_dialog.dart';
 import 'delete_account_sheet.dart';
 
 /// Settings → Account: who you are and where you are signed in. Handle,
-/// password, who can find you, signing a computer in, and signing out.
+/// password, who can find you, who can message you, signing a computer in,
+/// and signing out.
 /// Linked devices stays on the Settings hub itself.
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
@@ -56,19 +58,15 @@ class AccountScreen extends ConsumerWidget {
                   subtitle: t('settings_discovery_sub'),
                   onTap: () => context.push('/settings/discovery'),
                 ),
+                const MessagePolicyTile(),
                 const Divider(height: 24),
+                // One scanner for both jobs: a computer's sign-in QR also
+                // carries the message key (one-scan), so "sign in" and "link
+                // messages" were two rows opening the same flow. The words
+                // keep "messages" — the new device tells people to "open
+                // AbabilX where your messages already work and scan".
                 SettingsRow(
                   icon: HugeIcons.strokeRoundedQrCode,
-                  title: t('settings_scan_qr'),
-                  subtitle: t('settings_scan_qr_sub'),
-                  onTap: () => QrLoginFlow.start(context, ref),
-                ),
-                // Same scanner, named for the other job it does. The new
-                // device is told to "open AbabilX where your messages already
-                // work and scan" — without a row that says messages, the only
-                // thing matching that instruction reads as sign-in.
-                SettingsRow(
-                  icon: HugeIcons.strokeRoundedLink01,
                   title: t('settings_link_messages'),
                   subtitle: t('settings_link_messages_sub'),
                   onTap: () => QrLoginFlow.start(context, ref),

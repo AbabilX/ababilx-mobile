@@ -109,7 +109,7 @@ class _PhotoStepState extends ConsumerState<PhotoStep> {
     final hasPhoto = (user?.avatarUrl ?? '').isNotEmpty;
     final hasChoice = _gallery != null || _iconIndex != null || hasPhoto;
     return ProfileSetupStep(
-      step: 3,
+      step: 2,
       titleKey: 'profile_setup_photo_title',
       bodyKey: 'profile_setup_photo_body',
       busy: _saving,
@@ -258,11 +258,6 @@ class _Preview extends StatelessWidget {
         ),
       );
     }
-    return AppAvatar(
-      size: _size,
-      url: url,
-      name: name,
-      owner: owner,
-    );
+    return AppAvatar(size: _size, url: url, name: name, owner: owner);
   }
 }

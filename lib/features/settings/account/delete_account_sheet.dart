@@ -52,7 +52,8 @@ class _State extends ConsumerState<_DeleteAccountSheet> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = serverErrorMessage(error) ??
+        _error =
+            serverErrorMessage(error) ??
             AppTranslations.translate(context, ref, 'delete_account_failed');
       });
     }

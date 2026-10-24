@@ -153,3 +153,16 @@ String _truncateRunes(String value, int limit) {
   }
   return String.fromCharCodes(runes.take(end)).trimRight();
 }
+
+/// How to name a person when a row carries both their display name and their
+/// handle: the name, else "@username", else [namelessUserLabel]. A person may
+/// remove their name (server migration 0185); chat read paths already fold
+/// the handle in server-side, this covers rows that ship the two apart
+/// (people search, connections, requests).
+String personLabel(String? name, String? username) {
+  final handle = username?.trim() ?? '';
+  return safeDisplayName(
+    name,
+    fallback: handle.isEmpty ? namelessUserLabel : '@$handle',
+  );
+}

@@ -11,7 +11,10 @@ class PeopleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final detail = user.username.isNotEmpty ? '@${user.username}' : null;
+    // A nameless person's title already IS their handle; do not repeat it.
+    final detail = user.username.isNotEmpty && !user.name.startsWith('@')
+        ? '@${user.username}'
+        : null;
     return ListTile(
       leading: AppAvatar(size: 42, url: user.avatarUrl, name: user.name),
       title: Text(user.name),

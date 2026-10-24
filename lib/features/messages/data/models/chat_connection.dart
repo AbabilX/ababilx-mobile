@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../shared/text/display_name.dart';
+
 class ChatUserSummary extends Equatable {
   const ChatUserSummary({
     required this.userId,
@@ -9,6 +11,7 @@ class ChatUserSummary extends Equatable {
     this.connection = 'none',
     this.canMessage = false,
     this.privacyMode = false,
+    this.connectionsOnly = false,
   });
 
   final String userId;
@@ -22,15 +25,26 @@ class ChatUserSummary extends Equatable {
   /// them into a group, so group pickers leave them out.
   final bool privacyMode;
 
+  /// The person takes messages from connections only (server 0184). With
+  /// [canMessage] false, offer "Connect" instead of "Message".
+  final bool connectionsOnly;
+
   factory ChatUserSummary.fromJson(Map<String, dynamic> json) =>
       ChatUserSummary(
         userId: _jsonString(json['user_id']),
-        name: _jsonString(json['name']),
+        // A person may remove their name (server 0185): every row below
+        // (search, connections, requests, pickers) then reads their handle,
+        // else "AbabilX user" — one place instead of every widget.
+        name: _personName(
+          _jsonString(json['name']),
+          _jsonString(json['username']),
+        ),
         username: _jsonString(json['username']),
         avatarUrl: _jsonString(json['avatar_url']),
         connection: _jsonString(json['connection'], fallback: 'none'),
         canMessage: json['can_message'] == true,
         privacyMode: json['privacy_mode'] == true,
+        connectionsOnly: json['connections_only'] == true,
       );
 
   @override
@@ -42,6 +56,7 @@ class ChatUserSummary extends Equatable {
     connection,
     canMessage,
     privacyMode,
+    connectionsOnly,
   ];
 }
 
@@ -109,4 +124,9 @@ class ChatUserSearchResult extends Equatable {
 
   @override
   List<Object?> get props => [matchedBy, users];
+}
+
+String _personName(String name, String username) {
+  if (name.trim().isNotEmpty) return name;
+  return username.trim().isNotEmpty ? '@${username.trim()}' : namelessUserLabel;
 }

@@ -59,8 +59,19 @@ class _ComposerConnectionLockState
     final colors = Theme.of(context).colorScheme;
     final reason = widget.conversation.lockReason;
     final name = _peerName;
-    final showRequest = reason == 'connection_removed';
+    // Connections-only peer (server 0184): offer the request until one is
+    // waiting; request_state "outgoing" says it is.
+    final requestSent = widget.conversation.requestState == 'outgoing';
+    final showRequest =
+        reason == 'connection_removed' ||
+        (reason == 'connections_only' && !requestSent);
     final body = switch (reason) {
+      'connections_only' when requestSent => _tr(
+        'chat_lock_connections_only_sent',
+      ).replaceFirst('{name}', name),
+      'connections_only' => _tr(
+        'chat_lock_connections_only',
+      ).replaceFirst('{name}', name),
       'connection_removed' => _tr(
         'chat_lock_removed',
       ).replaceFirst('{name}', name),

@@ -113,9 +113,7 @@ void main() {
     await tester.pump(const Duration(seconds: 61));
   });
 
-  testWidgets('an account with no usable email cannot set one', (
-    tester,
-  ) async {
+  testWidgets('an account with no usable email cannot set one', (tester) async {
     final repo = _FakeRepo(_status(canSet: false));
     await _show(tester, repo, const PasswordScreen());
     await tester.pumpAndSettle();

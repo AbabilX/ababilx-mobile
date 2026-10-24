@@ -1,6 +1,7 @@
 import 'package:ababilx/features/messages/data/models/chat_models.dart';
 import 'package:ababilx/features/messages/nickname/contact_nickname.dart';
 import 'package:ababilx/features/messages/nickname/nickname_title.dart';
+import 'package:ababilx/shared/text/display_name.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 ChatConversation _dm({String? peerName, String peerId = 'peer'}) =>
@@ -78,9 +79,11 @@ void main() {
       expect(nicknames.titleFor(_group, 'me'), 'Full Team');
     });
 
-    test('a DM with no name and no nickname says what it is', () {
+    test('a DM with no name and no nickname reads as a nameless person', () {
+      // Server folds @username into an empty name (0185); with neither,
+      // every surface says "AbabilX user", never a blank or "Direct message".
       const nicknames = ContactNicknames();
-      expect(nicknames.titleFor(_dm(), 'me'), 'Direct message');
+      expect(nicknames.titleFor(_dm(), 'me'), namelessUserLabel);
     });
   });
 }

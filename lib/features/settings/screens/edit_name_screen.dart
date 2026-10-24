@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:ababilx/shared/widgets/app_bar_back_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+import '../../../core/localization/app_translations.dart';
 
 import '../../../core/router/root_back.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../display-name/display_name_rules.dart';
+import '../display-name/remove_name_sheet.dart';
 
 /// Edit your own display name — Signal's "Profile name" screen.
 ///
@@ -44,11 +48,26 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
   bool get _canSave {
     if (_saving) return false;
     final next = normalizeDisplayName(_ctrl.text);
-    return isValidDisplayName(_ctrl.text) && next != _stored;
+    // An empty field removes the name (server 0185) — allowed only when
+    // there is one to remove.
+    final valid = isValidDisplayName(_ctrl.text) || next.isEmpty;
+    return valid && next != _stored;
   }
 
-  Future<void> _save() async {
+  /// "Remove my name": confirmed in a bottom sheet, then saved as empty.
+  Future<void> _remove() async {
+    final ok = await showRemoveNameSheet(context, ref);
+    if (ok != true || !mounted) return;
+    _ctrl.clear();
+    await _save(confirmed: true);
+  }
+
+  Future<void> _save({bool confirmed = false}) async {
     if (!_canSave) return;
+    if (!confirmed && normalizeDisplayName(_ctrl.text).isEmpty) {
+      final ok = await showRemoveNameSheet(context, ref);
+      if (ok != true || !mounted) return;
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -122,6 +141,24 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
               color: colors.onSurfaceVariant,
             ),
           ),
+          if (_stored.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                onPressed: _saving ? null : _remove,
+                style: TextButton.styleFrom(foregroundColor: colors.error),
+                icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedUserRemove01,
+                  color: colors.error,
+                  size: 20,
+                ),
+                label: Text(
+                  AppTranslations.translate(context, ref, 'edit_name_remove'),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

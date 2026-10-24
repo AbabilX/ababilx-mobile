@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,6 +9,7 @@ import '../chat-people/personal_group_sheet.dart';
 import '../chat-webhook/webhook_create_sheet.dart';
 import '../data/models/chat_connection.dart';
 import '../new-message/new_message_action.dart';
+import '../new-message/new_message_handle_results.dart';
 import '../new-message/new_message_people_list.dart';
 import '../new-message/new_message_search.dart';
 import '../providers/chat_connections_provider.dart';
@@ -29,6 +29,9 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
   final _search = TextEditingController();
   final _focus = FocusNode();
   Timer? _debounce;
+
+  /// "Find by username": the field takes a bare handle behind a grey `@`.
+  bool _byUsername = false;
 
   @override
   void initState() {
@@ -61,81 +64,88 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
     );
     String tr(String key) => AppTranslations.translate(context, ref, key);
 
-    return Scaffold(
-      appBar: AppBar(title: Text(tr('chat_new_message'))),
-      body: CustomScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        slivers: [
-          SliverToBoxAdapter(
-            child: NewMessageSearch(
-              controller: _search,
-              focusNode: _focus,
-              hintText: tr('chat_search_people_full'),
-              onChanged: _onSearch,
-            ),
+    final query = _search.text.trim();
+
+    return PopScope(
+      // Back leaves username mode before it leaves the screen.
+      canPop: !_byUsername,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _setUsernameMode(false);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            tr(_byUsername ? 'chat_find_by_username' : 'chat_new_message'),
           ),
-          if (connectionState.searching)
-            const SliverToBoxAdapter(
-              child: LinearProgressIndicator(minHeight: 2),
+        ),
+        body: CustomScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          slivers: [
+            SliverToBoxAdapter(
+              child: NewMessageSearch(
+                key: ValueKey(_byUsername),
+                controller: _search,
+                focusNode: _focus,
+                handle: _byUsername,
+                hintText: tr(
+                  _byUsername
+                      ? 'chat_username_hint'
+                      : 'chat_search_people_full',
+                ),
+                helper: _byUsername ? tr('chat_username_help') : null,
+                onChanged: _onSearch,
+              ),
             ),
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                NewMessageAction(
-                  icon: Icons.group_outlined,
-                  label: tr('chat_new_group'),
-                  onTap: _newGroup,
+            if (connectionState.searching)
+              const SliverToBoxAdapter(
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
+            if (_byUsername)
+              NewMessageHandleResults(
+                query: query,
+                searching: connectionState.searching,
+                error: connectionState.error,
+                people: connectionState.searchResults,
+                noneTitle: tr('chat_username_none').replaceAll('{name}', query),
+                noneBody: tr('chat_username_none_body'),
+                onTap: _onPersonTap,
+              )
+            else ...[
+              SliverToBoxAdapter(
+                child: NewMessageActions(
+                  onGroup: _newGroup,
+                  onUsername: () => _setUsernameMode(true),
+                  onFeed: _newWebhookFeed,
                 ),
-                NewMessageAction(
-                  icon: Icons.alternate_email_rounded,
-                  label: tr('chat_find_by_username'),
-                  onTap: _focusSearch,
-                ),
-                NewMessageAction(
-                  icon: Icons.numbers_rounded,
-                  label: tr('chat_find_by_phone'),
-                  onTap: _focusSearch,
-                ),
-                // Last of the actions: the two search hints above answer the
-                // question this screen is usually open for, and a feed is set
-                // up once and then never again.
-                //
-                // Never gated: a feed belongs to an account, so this is
-                // offered to everyone. It was briefly hidden behind
-                // hasTeamProvider, which reads false while the team gate is
-                // still loading as well as when there is genuinely no
-                // workspace — the row simply went missing.
-                NewMessageAction(
-                  hugeIcon: HugeIcons.strokeRoundedWebhook,
-                  label: tr('chat_new_webhook_feed'),
-                  onTap: _newWebhookFeed,
-                ),
-              ],
-            ),
-          ),
-          NewMessagePeopleList(
-            people: people,
-            // A failed lookup and a genuinely empty directory used to render
-            // identically — a blank list — which is how a 404 from an
-            // unregistered /api/chat/* route reads to the user as "nobody
-            // matched anything I type".
-            emptyTitle: connectionState.error.isEmpty
-                ? tr('chat_no_people')
-                : tr('chat_search_failed'),
-            emptyBody: connectionState.error.isEmpty
-                ? tr('chat_no_people_body')
-                : connectionState.error,
-            onTap: _onPersonTap,
-          ),
-          const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
-        ],
+              ),
+              NewMessagePeopleList(
+                people: people,
+                // A failed lookup and an empty directory must not look alike.
+                emptyTitle: connectionState.error.isEmpty
+                    ? tr('chat_no_people')
+                    : tr('chat_search_failed'),
+                emptyBody: connectionState.error.isEmpty
+                    ? tr('chat_no_people_body')
+                    : connectionState.error,
+                onTap: _onPersonTap,
+              ),
+            ],
+            const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+          ],
+        ),
       ),
     );
   }
 
-  void _focusSearch() {
+  /// Each mode starts from an empty field: a name typed for the local list
+  /// is not a handle, and a handle has no use in the local list.
+  void _setUsernameMode(bool on) {
+    if (_byUsername == on) return;
+    _debounce?.cancel();
+    _search.clear();
+    ref.read(chatConnectionsProvider.notifier).search('');
+    setState(() => _byUsername = on);
     _focus.requestFocus();
-    _search.selection = TextSelection.collapsed(offset: _search.text.length);
   }
 
   List<ChatUserSummary> _visiblePeople(
@@ -147,8 +157,7 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
     final nicknames = ref.read(contactNicknamesProvider);
     final users = <String, ChatUserSummary>{};
     for (final user in [...messageable, ...discovered]) {
-      // The nickname is searched too: once you have renamed someone whose own
-      // name you cannot read, that rename has to be how you find them.
+      // A nickname is how you find someone whose own name you cannot read.
       final matches = matchesNameQuery(query, [
         nicknames.forUser(user.userId),
         user.name,
@@ -161,18 +170,13 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
     return result;
   }
 
-  /// One tap, one outcome. Nobody has to be "connected" first — the DM opens,
-  /// and if they are a stranger the first message you send becomes a request
-  /// they answer at their end.
+  /// The DM opens; to a stranger the first message is a request.
   Future<void> _onPersonTap(ChatUserSummary user) async {
     final dm = await ref.read(chatProvider.notifier).startDm(user.userId);
     if (mounted) context.pushReplacement('/messages/${dm.id}');
   }
 
-  /// A feed needs no workspace: an account can own a personal one, and the
-  /// sheet offers the workspace/personal choice itself when there is a team to
-  /// choose. This used to refuse without one, which was the constraint
-  /// migration 0128 removed.
+  /// A feed needs no workspace (migration 0128).
   Future<void> _newWebhookFeed() async {
     final feed = await showWebhookCreateSheet(context, ref);
     if (feed != null && mounted) {

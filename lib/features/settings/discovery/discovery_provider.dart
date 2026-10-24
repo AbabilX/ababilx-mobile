@@ -1,7 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/friendly_error.dart';
 import 'discovery_repository.dart';
 import 'discovery_settings.dart';
 
@@ -29,31 +27,6 @@ class DiscoveryNotifier extends AsyncNotifier<DiscoverySettings> {
     // A failed toggle must not blank the screen — put the last known settings
     // back and let the caller show the error.
     if (state.hasError && previous != null) state = AsyncData(previous);
-  }
-
-  /// Returns null on success, or a sentence to show the user.
-  ///
-  /// The phone is unverified and unique, so first claimer wins; the conflict
-  /// has to be named, not swallowed into "Something went wrong".
-  Future<String?> savePhone(String phoneNumber) async {
-    try {
-      state = AsyncData(
-        await ref
-            .read(discoveryRepositoryProvider)
-            .update(phoneNumber: phoneNumber),
-      );
-      return null;
-    } on DioException catch (e) {
-      return switch (serverErrorCode(e)) {
-        'phone_already_in_use' =>
-          'That number is already on another AbabilX account.',
-        'phone_invalid' =>
-          'Enter the number with its country code, e.g. +8801712345678.',
-        _ => serverErrorMessage(e) ?? friendlyErrorMessage(e),
-      };
-    } catch (e) {
-      return friendlyErrorMessage(e);
-    }
   }
 }
 
