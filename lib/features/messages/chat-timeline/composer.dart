@@ -1233,6 +1233,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
         useBengaliDigits: language == 'bn',
         pauseLabel: tr('chat_voice_pause'),
         resumeLabel: tr('chat_voice_resume'),
+        pausedLabel: tr('chat_voice_paused'),
         preparingLabel: tr('chat_recording_starting'),
         sendingLabel: tr('chat_voice_sending'),
         onDelete: () => unawaited(_cancelVoiceRecording()),

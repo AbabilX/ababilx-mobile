@@ -21,8 +21,10 @@ void main() {
     expect(BackupPinStore.validPin('12a4f6'), isTrue);
     expect(BackupPinStore.validPin('12A4F6beef'), isTrue);
     expect(BackupPinStore.validPin('12345'), isFalse);
-    expect(BackupPinStore.validPin('12345678901'), isFalse);
-    expect(BackupPinStore.validPin('12g456'), isFalse);
+    expect(BackupPinStore.validPin('12345678901'), isTrue);
+    expect(BackupPinStore.validPin('my pin #1'), isTrue);
+    expect(BackupPinStore.validPin('আমার পিন১'), isTrue);
+    expect(BackupPinStore.validPin('a' * 33), isFalse);
   });
 
   test('the key is byte-identical to the desktop derivation', () async {

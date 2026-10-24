@@ -162,9 +162,12 @@ class AuthNotifier extends AsyncNotifier<bool> {
 
   /// Deletes the account on the server, then ends the session and wipes
   /// everything it left on this phone. Throws if the server refuses, with the
-  /// session untouched.
-  Future<void> deleteAccount() async {
+  /// session untouched. [onDeleted] runs between the two: whatever is on
+  /// screen (the confirm sheet) must close BEFORE sign-out sends the router to
+  /// /login, or its pop lands on the login page and leaves a black screen.
+  Future<void> deleteAccount({void Function()? onDeleted}) async {
     await ref.read(authRepositoryProvider).deleteAccount();
+    onDeleted?.call();
     await signOut();
     await ref.read(accountDataWiperProvider).clear();
   }

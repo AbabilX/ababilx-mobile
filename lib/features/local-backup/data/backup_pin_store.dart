@@ -15,9 +15,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// the Keystore-backed secure storage, so the scheduled run never asks; the
 /// PIN itself is never stored.
 ///
-/// The PIN is 6 to 10 hex characters (0-9, a-f), stored lowercase so the
-/// keyboard's case never changes the key. Plain digits are hex too, so a
-/// 6-digit PIN set earlier still opens its backups.
+/// The PIN is 6 to 32 characters of anything (letters, digits, symbols,
+/// Bangla), counted in code points and lowercased so the keyboard's case
+/// never changes the key. Earlier PINs (6-10 hex) still pass, so their
+/// backups still open. Desktop `pin.ts` has the same rule.
 ///
 /// **Honest limit, accepted by the user:** a 6-digit PIN is 10^6 guesses.
 /// Anyone holding the backup file can try them all offline; the iteration
@@ -31,7 +32,7 @@ class BackupPinStore {
   static const saltPrefix = 'ababilx-backup-pin-v1:';
   static const iterations = 300000;
   static const minLength = 6;
-  static const maxLength = 10;
+  static const maxLength = 32;
 
   final FlutterSecureStorage _storage;
   final _memory = <String, List<int>>{};
@@ -41,8 +42,10 @@ class BackupPinStore {
   /// Lowercase, no spaces: the form the key is derived from.
   static String normalize(String pin) => pin.trim().toLowerCase();
 
-  static bool validPin(String pin) =>
-      RegExp('^[0-9a-f]{$minLength,$maxLength}\$').hasMatch(normalize(pin));
+  static bool validPin(String pin) {
+    final length = normalize(pin).runes.length;
+    return length >= minLength && length <= maxLength;
+  }
 
   /// The stored key, or null when no PIN was set on this install.
   Future<List<int>?> keyFor(String userId) async {

@@ -45,9 +45,12 @@ class _State extends ConsumerState<_DeleteAccountSheet> {
       _busy = true;
       _error = null;
     });
+    final navigator = Navigator.of(context);
+    final auth = ref.read(authProvider.notifier);
     try {
-      await ref.read(authProvider.notifier).deleteAccount();
-      if (mounted) Navigator.of(context).pop();
+      // Close the sheet the moment the server says yes; sign-out then takes
+      // the app to the start page with nothing left to pop.
+      await auth.deleteAccount(onDeleted: navigator.pop);
     } catch (error) {
       if (!mounted) return;
       setState(() {

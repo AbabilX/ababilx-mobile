@@ -32,6 +32,9 @@ class MicrophonePermissionException implements Exception {
 class VoiceMessageRecorder {
   final _recorder = AudioRecorder();
   DateTime? _startedAt;
+
+  /// Runs only while the mic is live, so a pause is not counted as audio.
+  final _live = Stopwatch();
   String? _path;
   bool _paused = false;
 
@@ -72,17 +75,22 @@ class VoiceMessageRecorder {
     _path = path;
     _startedAt = DateTime.now();
     _paused = false;
+    _live
+      ..reset()
+      ..start();
   }
 
   Future<void> pause() async {
     if (!active || _paused) return;
     await _recorder.pause();
+    _live.stop();
     _paused = true;
   }
 
   Future<void> resume() async {
     if (!active || !_paused) return;
     await _recorder.resume();
+    _live.start();
     _paused = false;
   }
 
@@ -94,6 +102,8 @@ class VoiceMessageRecorder {
     _path = null;
     _startedAt = null;
     _paused = false;
+    _live.stop();
+    final duration = _live.elapsed;
 
     final stoppedPath = await _recorder.stop();
     final filePath = stoppedPath ?? path;
@@ -101,7 +111,6 @@ class VoiceMessageRecorder {
     final sizeBytes = await _waitForFinalizedFile(file);
     if (sizeBytes == 0) return null;
 
-    final duration = DateTime.now().difference(startedAt);
     final seconds = duration.inSeconds.clamp(1, 3599);
     return RecordedVoiceMessage(
       path: filePath,
@@ -133,6 +142,9 @@ class VoiceMessageRecorder {
     _path = null;
     _startedAt = null;
     _paused = false;
+    _live
+      ..stop()
+      ..reset();
     try {
       await _recorder.cancel();
     } catch (_) {}

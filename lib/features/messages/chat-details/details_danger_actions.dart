@@ -132,6 +132,10 @@ class DetailsDangerActions extends ConsumerWidget {
       ),
     );
     if (ok != true || !context.mounted) return;
+    // Taken before the call: once the chat leaves the list this row unmounts
+    // (details redraws as "Conversation not found"), and a context.go after
+    // that never runs — the screen stayed stuck there.
+    final router = GoRouter.of(context);
     try {
       await run();
     } catch (e) {
@@ -139,9 +143,8 @@ class DetailsDangerActions extends ConsumerWidget {
       showAppToast(context, 'Failed: $e', isError: true);
       return;
     }
-    if (!context.mounted) return;
     // The details screen sits on top of the conversation, and both are gone
     // now, so unwind to the list rather than popping back into a dead chat.
-    context.go('/messages');
+    router.go('/messages');
   }
 }

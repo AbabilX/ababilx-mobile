@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../data/backup_pin_store.dart';
 
-/// Asks for the backup PIN (6 to 10 hex characters). [confirm] (setting it up) asks twice
+/// Asks for the backup PIN (6 to 32 characters of anything). [confirm] (setting it up) asks twice
 /// and says it cannot be recovered; restoring asks once. Returns the PIN, or
 /// null when dismissed. [error] is shown above the field (a wrong PIN).
 Future<String?> showBackupPinSheet(
@@ -35,6 +36,9 @@ class _PinSheetState extends ConsumerState<_PinSheet> {
   final _repeat = TextEditingController();
   late String? _error = widget.error;
 
+  /// One eye for both fields: showing one and not its repeat helps nobody.
+  bool _hidden = true;
+
   String t(String key) => AppTranslations.translate(context, ref, key);
 
   @override
@@ -56,29 +60,45 @@ class _PinSheetState extends ConsumerState<_PinSheet> {
     Navigator.of(context).pop(BackupPinStore.normalize(_pin.text));
   }
 
-  Widget _field(TextEditingController c, String label, {bool last = false}) =>
-      TextField(
-        controller: c,
-        autofocus: c == _pin,
-        obscureText: true,
-        keyboardType: TextInputType.visiblePassword,
-        autocorrect: false,
-        enableSuggestions: false,
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp('[0-9a-fA-F]')),
-          LengthLimitingTextInputFormatter(BackupPinStore.maxLength),
-        ],
-        textAlign: TextAlign.center,
-        // Hex only, so tracking cannot split Bangla text.
-        style: Theme.of(
-          context,
-        ).textTheme.headlineSmall?.copyWith(letterSpacing: 8),
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
+  Widget _field(TextEditingController c, String label, {bool last = false}) {
+    final colors = Theme.of(context).colorScheme;
+    return TextField(
+      controller: c,
+      autofocus: c == _pin,
+      obscureText: _hidden,
+      keyboardType: TextInputType.visiblePassword,
+      autocorrect: false,
+      enableSuggestions: false,
+      // Any character; only the length is capped (code units, a little
+      // above the rule's code-point limit so a Bangla PIN is not cut short).
+      inputFormatters: [
+        LengthLimitingTextInputFormatter(BackupPinStore.maxLength * 2),
+      ],
+      textInputAction: last ? TextInputAction.done : TextInputAction.next,
+      style: Theme.of(context).textTheme.titleMedium,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: colors.surfaceContainerHighest,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
-        onSubmitted: (_) => last ? _done() : null,
-      );
+        suffixIcon: IconButton(
+          tooltip: t(_hidden ? 'backup_pin_show' : 'backup_pin_hide'),
+          onPressed: () => setState(() => _hidden = !_hidden),
+          icon: HugeIcon(
+            icon: _hidden
+                ? HugeIcons.strokeRoundedView
+                : HugeIcons.strokeRoundedViewOff,
+            size: 22,
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+      ),
+      onSubmitted: (_) => last ? _done() : null,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
