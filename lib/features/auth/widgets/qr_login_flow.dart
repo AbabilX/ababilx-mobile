@@ -16,37 +16,32 @@ import '../../messages/history-transfer/history_transfer_one_scan.dart';
 import '../../messages/history-transfer/history_transfer_payload.dart';
 import '../../messages/message_e2ee/device_link_approval.dart';
 import '../../messages/message_e2ee/message_vault.dart';
+import '../../transfer-chats/ui/transfer_send_sheet.dart';
+import '../../transfer-chats/wire/transfer_chats_payload.dart';
 import '../data/one_scan_payload.dart';
 import '../data/qr_login_repository.dart';
 import 'linked_limit_sheet.dart';
 import 'qr_login_confirm_sheet.dart';
 
-/// Scan a QR from another device and act on it.
+/// Scan a QR from another device and act on it, told apart by the
+/// `ababilx://` host: a **sign-in** code hands that device a session; a
+/// **device-link** code hands it this account's message key (the server has
+/// no copy to give); a **history-transfer** code asks for the messages and
+/// files this phone holds; a **transfer-chats** code is a new phone on this
+/// Wi-Fi asking for everything (`features/transfer-chats/`); a **user** code
+/// is somebody's handle, and opens a chat with them.
 ///
-/// Four things can come off the camera, told apart by the `ababilx://` host:
-/// a **sign-in** code hands that device a session; a **device-link** code
-/// hands it this account's message key, which is the only way a new device can
-/// read messages at all — the server has no copy to give it; a
-/// **history-transfer** code asks for the messages and files this phone still
-/// holds, including the ones the server let go at 120 days; a **user** code is
-/// somebody's handle, and opens a chat with them.
-///
-/// A sign-in code from a current web or desktop build also carries that
-/// device's message key and history key (`one_scan_payload.dart`), so ONE
-/// scan and ONE dialog sign it in, hand it the messages and start the history
-/// transfer — the link and history codes remain for devices already signed in.
-///
-/// The two device codes show what is being approved first, and declining calls
-/// the matching deny endpoint so the waiting device stops immediately rather
-/// than sitting on a dead code. A user code approves nothing — it is a public
-/// handle, and the sheet it opens is the confirmation.
+/// A current web/desktop sign-in code also carries the device's message and
+/// history keys (`one_scan_payload.dart`): one scan, one dialog. Device codes
+/// show what is approved first; declining calls the deny endpoint so the
+/// waiting device stops at once. A user code approves nothing — a handle is
+/// public, and its sheet is the confirmation.
 class QrLoginFlow {
   QrLoginFlow._();
 
   static Future<void> start(BuildContext context, WidgetRef ref) async {
-    // Home's floating pill is painted over this navigator, so a sheet from
-    // the chat list (camera or the person it just scanned) sits underneath
-    // it unless the bar is hidden — same as the You sheet.
+    // Home's floating pill is painted over this navigator: hide it, or a
+    // sheet from the chat list sits underneath it (same as the You sheet).
     final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
     hidden.state = true;
     try {
@@ -90,6 +85,10 @@ class QrLoginFlow {
     }
     if (isHistoryTransferPayload(payload)) {
       await HistoryTransferApproval.start(context, ref, payload);
+      return;
+    }
+    if (isTransferChatsPayload(payload)) {
+      await showTransferSendSheet(context, ref, payload);
       return;
     }
     final handle = usernameFromQrPayload(payload);

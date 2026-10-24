@@ -16,6 +16,7 @@ void main() {
     VoidCallback? startFresh,
     VoidCallback? wrongAccount,
     Widget? backupOption,
+    Widget? transferOption,
   }) => tester.pumpWidget(
     ProviderScope(
       overrides: [appLanguageProvider.overrideWithValue(language)],
@@ -26,6 +27,7 @@ void main() {
             onStartFresh: startFresh ?? () {},
             onWrongAccount: wrongAccount,
             backupOption: backupOption,
+            transferOption: transferOption,
           ),
         ),
       ),
@@ -47,6 +49,19 @@ void main() {
     final backup = tester.getTopLeft(find.text('backup card')).dy;
     expect(backup, lessThan(tester.getTopLeft(find.text(fresh)).dy));
     expect(find.text(code), findsNothing);
+  });
+
+  testWidgets('transfer chats sits right above starting fresh', (
+    tester,
+  ) async {
+    await show(
+      tester,
+      backupOption: const Text('backup card'),
+      transferOption: const Text('transfer card'),
+    );
+    double top(String text) => tester.getTopLeft(find.text(text)).dy;
+    expect(top('backup card'), lessThan(top('transfer card')));
+    expect(top('transfer card'), lessThan(top(fresh)));
   });
 
   testWidgets('starting fresh is confirmed first, and can be cancelled', (

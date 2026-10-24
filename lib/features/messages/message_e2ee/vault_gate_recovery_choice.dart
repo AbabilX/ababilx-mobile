@@ -19,6 +19,7 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
     required this.onStartFresh,
     this.onWrongAccount,
     this.backupOption,
+    this.transferOption,
   });
 
   final bool busy;
@@ -27,6 +28,10 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
   /// "Continue with local backup", built by the caller: a new message key
   /// like [onStartFresh], then the chats from the backup on this phone.
   final Widget? backupOption;
+
+  /// "Transfer chats from another phone": the old phone sends the message
+  /// key and every chat over Wi-Fi. Sits right above "Continue without".
+  final Widget? transferOption;
 
   /// Signed in as somebody else — the gate is the first screen that names the
   /// account's messages, so it is where that is noticed, and without a way out
@@ -56,6 +61,10 @@ class VaultGateRecoveryChoice extends ConsumerWidget {
       children: [
         if (backupOption != null) ...[
           backupOption!,
+          const SizedBox(height: 12),
+        ],
+        if (transferOption != null) ...[
+          transferOption!,
           const SizedBox(height: 12),
         ],
         OnboardingOptionCard(

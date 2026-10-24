@@ -1,4 +1,5 @@
 import '../../local-backup/ui/restore_account_backup_card.dart';
+import '../../transfer-chats/ui/transfer_chats_card.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -184,6 +185,11 @@ class _State extends ConsumerState<MessageRecoveryScreen> {
                   backupOption: localBackupAccountOption(
                     busy: _busy,
                     onStartFresh: _newSession,
+                  ),
+                  // The key arrived with the chats: the check finds it held.
+                  transferOption: transferChatsOption(
+                    busy: _busy,
+                    onDone: () => unawaited(_check()),
                   ),
                 ),
         ),

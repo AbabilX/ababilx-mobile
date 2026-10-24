@@ -15,7 +15,13 @@ import 'backup_header.dart';
 /// photos costs the same peak as one with ten. Only ciphertext ever reaches
 /// the disk.
 class BackupFileWriter {
-  BackupFileWriter._(this._file, this._sink, this._key, this._digest);
+  BackupFileWriter._(
+    this._file,
+    this._sink,
+    this._key,
+    this._digest, [
+    this._drain = false,
+  ]);
 
   static const frameRecordBytes = 256 * 1024;
   static const filePartBytes = 512 * 1024;
@@ -26,6 +32,30 @@ class BackupFileWriter {
     required String userId,
     required int createdAtMs,
   }) async {
+    final sink = file.openWrite();
+    final (key, digest) = await _start(sink, accountKey, userId, createdAtMs);
+    return BackupFileWriter._(file, sink, key, digest);
+  }
+
+  /// The same stream written into [sink] instead of a file — Transfer chats
+  /// sends it straight into an HTTP request. Each record waits for the sink
+  /// to take it, so a slow network holds the export rather than memory.
+  static Future<BackupFileWriter> toSink(
+    IOSink sink, {
+    required List<int> key,
+    required String userId,
+    required int createdAtMs,
+  }) async {
+    final (fileKey, digest) = await _start(sink, key, userId, createdAtMs);
+    return BackupFileWriter._(null, sink, fileKey, digest, true);
+  }
+
+  static Future<(SecretKey, String)> _start(
+    IOSink sink,
+    List<int> accountKey,
+    String userId,
+    int createdAtMs,
+  ) async {
     final salt = BackupCrypto.randomBytes(BackupCrypto.saltBytes);
     final header = EncodedHeader.of(
       BackupHeader(
@@ -35,17 +65,16 @@ class BackupFileWriter {
         createdAtMs: createdAtMs,
       ),
     );
-    final key = await BackupCrypto.fileKey(accountKey, salt);
-    final sink = file.openWrite();
     sink
       ..add(BackupFormat.magic)
       ..add(u32(header.bytes.length))
       ..add(header.bytes);
-    return BackupFileWriter._(file, sink, key, header.digest);
+    return (await BackupCrypto.fileKey(accountKey, salt), header.digest);
   }
 
-  final File _file;
+  final File? _file;
   final IOSink _sink;
+  final bool _drain;
   final SecretKey _key;
   final String _digest;
   final _frames = BytesBuilder(copy: false);
@@ -119,8 +148,10 @@ class BackupFileWriter {
         await _sink.close();
       } catch (_) {}
     }
+    final file = _file;
+    if (file == null) return;
     try {
-      if (await _file.exists()) await _file.delete();
+      if (await file.exists()) await file.delete();
     } catch (_) {}
   }
 
@@ -142,5 +173,6 @@ class BackupFileWriter {
       ..add(u32(sealed.length))
       ..add(sealed);
     _index++;
+    if (_drain) await _sink.flush();
   }
 }

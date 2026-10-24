@@ -26,7 +26,6 @@ import 'export/backup_exporter.dart';
 import 'local_backup_extras.dart';
 import 'format/backup_file_writer.dart';
 import 'platform/backup_folder_channel.dart';
-
 export 'data/backup_file_name.dart';
 
 /// Wires the exporter to this app's store, vault and attachments, and to
@@ -73,7 +72,6 @@ class LocalBackupRunner {
     await syncChatDeletions(_ref, userId);
 
     final store = _ref.read(chatMessageStoreProvider);
-    final blobs = _ref.read(attachmentBlobStoreProvider);
     final now = DateTime.now();
     final username = _ref.read(profileProvider).valueOrNull?.username ?? '';
     final name = backupFileName(username, now);
@@ -123,15 +121,9 @@ class LocalBackupRunner {
             store.exportPage(afterMs: afterMs, afterId: afterId, limit: 500),
         allows: store.deletions.allows,
         openBody: vault.backupBodyOpener(userId),
-        localFile: (url) async {
-          final row = await blobs.read(attachmentUrlKey(url));
-          final path = row?.localPath;
-          if (path == null || path.isEmpty) return null;
-          final file = File(path);
-          return await file.exists() ? file : null;
-        },
+        localFile: localFile,
         choices: settings.choices,
-        conversations: await _conversations(userId),
+        conversations: await conversations(userId),
         media: media,
         segments: segments,
       ).run(writer, onProgress: onProgress, shouldContinue: shouldContinue);
@@ -178,10 +170,21 @@ class LocalBackupRunner {
     }
   }
 
+  /// The downloaded file for an attachment URL; null when not on disk.
+  Future<File?> localFile(String url) async {
+    final row = await _ref
+        .read(attachmentBlobStoreProvider)
+        .read(attachmentUrlKey(url));
+    final path = row?.localPath;
+    if (path == null || path.isEmpty) return null;
+    final file = File(path);
+    return await file.exists() ? file : null;
+  }
+
   /// The chats a message's kind is read from. The live list, else the sidebar
   /// cache: an unknown chat counts as a group, so reading neither would file
   /// every DM under "Groups" and miss every private chat's switch.
-  Future<Map<String, ChatConversation>> _conversations(String userId) async {
+  Future<Map<String, ChatConversation>> conversations(String userId) async {
     final chat = _ref.read(chatProvider);
     var all = [...chat.channels, ...chat.dms];
     if (all.isEmpty) {

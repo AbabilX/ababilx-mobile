@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/first_load_timeout.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../local-backup/ui/restore_account_backup_card.dart';
+import '../../transfer-chats/ui/transfer_chats_card.dart';
 import '../providers/chat_provider.dart';
 import 'message_vault.dart';
 import 'vault_gate_error.dart';
@@ -147,6 +148,10 @@ class _MessageVaultGateState extends ConsumerState<MessageVaultGate> {
       backupOption: localBackupAccountOption(
         busy: _resetting,
         onStartFresh: _startFresh,
+      ),
+      transferOption: transferChatsOption(
+        busy: _resetting,
+        onDone: () => unawaited(_load()),
       ),
       onWrongAccount: _wrongAccount,
     );
