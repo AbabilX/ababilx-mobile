@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/widgets/app_bar_back_button.dart';
 import '../../../shared/widgets/app_toast.dart';
+import '../../../shared/widgets/themed_illustration.dart';
 import '../../local_share/widgets/qr_scan_sheet.dart';
 import '../wire/transfer_chats_payload.dart';
 import 'transfer_chats_copy.dart';
@@ -70,13 +71,7 @@ class TransferChatsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
-          Center(
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedSmartPhone02,
-              size: 56,
-              color: theme.colorScheme.primary,
-            ),
-          ),
+          const ThemedIllustration('assets/images/transfer_chats.svg'),
           const SizedBox(height: 16),
           Text(t('screen_body'), style: muted, textAlign: TextAlign.center),
           const SizedBox(height: 28),

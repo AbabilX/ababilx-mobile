@@ -76,6 +76,8 @@ dependencies:
   # lib/shared/media/crop_render.dart for why that trade is worth making.
   image: ^4.8.0
   hugeicons: ^1.2.0
+  # Already in the lock through hugeicons; listed for the unDraw illustrations.
+  flutter_svg: ^2.3.0
   # Local chat cache (SQLite via Drift — cache-first sidebar)
   drift: ^2.34.2
   path: ^1.9.1
@@ -185,6 +187,7 @@ flutter:
     - assets/images/login_background_v2.png
     - assets/images/onboarding_connections_v1.png
     - assets/images/donate_support_build.png
+    - assets/images/transfer_chats.svg
     # Home focus card ("You're all caught up") — clock slots only (no theme art).
     - assets/images/home_caught_up_bg_morning.webp
     - assets/images/home_caught_up_bg_afternoon.webp
