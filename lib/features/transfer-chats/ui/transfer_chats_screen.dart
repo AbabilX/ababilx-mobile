@@ -81,10 +81,6 @@ class TransferChatsScreen extends ConsumerWidget {
           Text(t('screen_body'), style: muted, textAlign: TextAlign.center),
           const SizedBox(height: 28),
           step(1, 'step_new'),
-          Padding(
-            padding: const EdgeInsets.only(left: 36, bottom: 14),
-            child: Text(t('step_computer'), style: muted),
-          ),
           step(2, 'step_wifi'),
           step(3, 'step_scan'),
           const SizedBox(height: 12),
