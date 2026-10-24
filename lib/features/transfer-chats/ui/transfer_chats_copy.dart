@@ -14,7 +14,7 @@ const _en = {
   'card_body': 'Your old phone sends everything over Wi-Fi.',
   'receive_title': 'Transfer chats',
   'receive_steps':
-      'On your old phone, open AbabilX, tap the scan button on the chat list (or Settings → Transfer chats) and scan this code.',
+      'On your old phone, open AbabilX → Settings → Account → Transfer chats, tap Scan code and scan this code.',
   'receive_same_wifi': 'Both phones must be on the same Wi-Fi. Keep both open.',
   'receive_no_wifi': 'Connect this phone to Wi-Fi first.',
   'receive_retry': 'Try again',
@@ -41,7 +41,22 @@ const _en = {
   'wiped': 'Chats deleted from this phone.',
   'close': 'Close',
   'settings_title': 'Transfer chats',
-  'settings_sub': 'Send your chats to a new phone',
+  'screen_body':
+      'Move your chats, files and message key to a new phone or a computer over Wi-Fi. Nothing goes through AbabilX servers.',
+  'step_new': 'On your new phone, sign in and tap "Transfer chats from another phone".',
+  'step_computer':
+      'On a computer: Settings → Security → Transfer chats → Receive chats.',
+  'step_wifi': 'Keep both on the same Wi-Fi, with AbabilX open.',
+  'step_scan': 'Tap Scan code and point this phone at the code they show.',
+  'scan_button': 'Scan code',
+  'scan_title': 'Scan the transfer code',
+  'scan_hint': 'Point the camera at the code on your new phone or computer.',
+  'scan_computer_title': "Scan the computer's code",
+  'scan_computer_hint':
+      'On the computer: Settings → Security → Transfer chats → Send chats.',
+  'error_not_transfer':
+      'That is not a Transfer chats code. Scan the code on your new phone or computer.',
+  'settings_sub': 'Move your chats to a new phone or a computer',
   'error_other_account':
       'That code belongs to a device signed in to another account.',
   'from_computer': 'From a computer? Scan its code',
@@ -65,7 +80,7 @@ const _bn = {
   'card_body': 'আপনার পুরোনো ফোন Wi-Fi দিয়ে সব পাঠিয়ে দেবে।',
   'receive_title': 'চ্যাট ট্রান্সফার',
   'receive_steps':
-      'পুরোনো ফোনে AbabilX খুলুন, চ্যাট লিস্টের স্ক্যান বাটনে (বা সেটিংস → চ্যাট ট্রান্সফার) চাপুন এবং এই কোডটি স্ক্যান করুন।',
+      'পুরোনো ফোনে AbabilX খুলুন → সেটিংস → অ্যাকাউন্ট → চ্যাট ট্রান্সফার, কোড স্ক্যান করুন চেপে এই কোডটি স্ক্যান করুন।',
   'receive_same_wifi': 'দুটি ফোনই একই Wi-Fi-তে থাকতে হবে। দুটিই খোলা রাখুন।',
   'receive_no_wifi': 'আগে এই ফোনটি Wi-Fi-তে যুক্ত করুন।',
   'receive_retry': 'আবার চেষ্টা করুন',
@@ -92,7 +107,22 @@ const _bn = {
   'wiped': 'এই ফোন থেকে চ্যাট মুছে ফেলা হয়েছে।',
   'close': 'বন্ধ',
   'settings_title': 'চ্যাট ট্রান্সফার',
-  'settings_sub': 'নতুন ফোনে চ্যাট পাঠান',
+  'screen_body':
+      'Wi-Fi দিয়ে আপনার চ্যাট, ফাইল ও মেসেজ কী নতুন ফোন বা কম্পিউটারে নিন। কিছুই AbabilX সার্ভার দিয়ে যায় না।',
+  'step_new': 'নতুন ফোনে সাইন ইন করে "অন্য ফোন থেকে চ্যাট আনুন" চাপুন।',
+  'step_computer':
+      'কম্পিউটারে: সেটিংস → Security → Transfer chats → Receive chats।',
+  'step_wifi': 'দুটিকেই একই Wi-Fi-তে রাখুন, AbabilX খোলা রাখুন।',
+  'step_scan': 'কোড স্ক্যান করুন চাপুন এবং সেখানে দেখানো কোডের দিকে এই ফোনটি ধরুন।',
+  'scan_button': 'কোড স্ক্যান করুন',
+  'scan_title': 'ট্রান্সফার কোড স্ক্যান করুন',
+  'scan_hint': 'নতুন ফোন বা কম্পিউটারে দেখানো কোডের দিকে ক্যামেরা ধরুন।',
+  'scan_computer_title': 'কম্পিউটারের কোড স্ক্যান করুন',
+  'scan_computer_hint':
+      'কম্পিউটারে: সেটিংস → Security → Transfer chats → Send chats।',
+  'error_not_transfer':
+      'এটি চ্যাট ট্রান্সফার কোড নয়। নতুন ফোন বা কম্পিউটারে দেখানো কোডটি স্ক্যান করুন।',
+  'settings_sub': 'নতুন ফোন বা কম্পিউটারে চ্যাট নিন',
   'error_other_account': 'কোডটি অন্য অ্যাকাউন্টে সাইন ইন করা ডিভাইসের।',
   'from_computer': 'কম্পিউটার থেকে? তার কোড স্ক্যান করুন',
   'error_pull_here':

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,7 @@ import '../../auth/data/auth_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../transfer-chats/ui/transfer_chats_copy.dart';
 import '../settings-hub/account_password_row.dart';
 import '../settings-hub/settings_row.dart';
 import '../settings-hub/sign_out_dialog.dart';
@@ -70,6 +73,16 @@ class AccountScreen extends ConsumerWidget {
                   subtitle: t('settings_link_messages_sub'),
                   onTap: () => QrLoginFlow.start(context, ref),
                 ),
+                // Signal keeps "Transfer account" under Account: moving the
+                // whole account to a new phone or a computer.
+                if (Platform.isAndroid)
+                  SettingsRow(
+                    icon: HugeIcons.strokeRoundedSmartPhone02,
+                    title: transferText(ref, 'settings_title'),
+                    subtitle: transferText(ref, 'settings_sub'),
+                    onTap: () =>
+                        context.push('/settings/account/transfer-chats'),
+                  ),
                 const Divider(height: 24),
                 SettingsRow(
                   icon: HugeIcons.strokeRoundedLogout01,

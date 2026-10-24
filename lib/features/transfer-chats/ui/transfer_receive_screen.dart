@@ -97,7 +97,11 @@ class _State extends ConsumerState<TransferReceiveScreen> {
 
   /// A computer drew the code; this phone takes its chats.
   Future<void> _fromComputer() async {
-    final raw = await QrScanSheet.show(context);
+    final raw = await QrScanSheet.show(
+      context,
+      title: transferText(ref, 'scan_computer_title'),
+      hint: transferText(ref, 'scan_computer_hint'),
+    );
     if (raw == null || !mounted) return;
     final code = parseTransferChatsPayload(raw);
     if (code == null || !code.pull) {

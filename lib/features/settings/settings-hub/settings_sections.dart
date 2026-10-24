@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,9 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/localization/app_translations.dart';
-import '../../auth/widgets/qr_login_flow.dart';
 import '../../profile/data/profile_repository.dart';
-import '../../transfer-chats/ui/transfer_chats_copy.dart';
 import 'settings_row.dart';
 import '../donate/donate_sheet.dart';
 
@@ -64,14 +60,6 @@ class SettingsSections extends ConsumerWidget {
           subtitle: t('settings_data_storage_sub'),
           onTap: () => context.push('/settings/data-storage'),
         ),
-        // The old phone's way in: scan the code a new phone shows.
-        if (Platform.isAndroid)
-          SettingsRow(
-            icon: HugeIcons.strokeRoundedSmartPhone02,
-            title: transferText(ref, 'settings_title'),
-            subtitle: transferText(ref, 'settings_sub'),
-            onTap: () => QrLoginFlow.start(context, ref),
-          ),
         // Local Share hub is intentionally hidden from Settings for now;
         // the feature (route + sync) stays wired for a later re-enable.
         SettingsRow(
