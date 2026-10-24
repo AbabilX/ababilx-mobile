@@ -6,6 +6,8 @@ import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../home/pages/home_drafts_list.dart';
 import '../../local_share/data/share_thread_queries.dart';
 import '../add-friends/add_friends_sheet.dart';
+import '../chat-folders/chat_folders.dart';
+import '../chat-folders/folder_empty.dart';
 import '../chat_list_filters.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
@@ -30,6 +32,8 @@ class ChatListBody extends ConsumerWidget {
     required this.onShowAll,
     required this.onLongPress,
     required this.onShareLongPress,
+    this.folder,
+    this.onEditFolder,
   });
 
   final ChatListFilter filter;
@@ -39,6 +43,10 @@ class ChatListBody extends ConsumerWidget {
   final VoidCallback onShowAll;
   final void Function(ChatConversation) onLongPress;
   final void Function(ShareThread) onShareLongPress;
+
+  /// A user folder in place of a tab: its chats only, no Add friends row.
+  final ChatFolder? folder;
+  final VoidCallback? onEditFolder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,7 +58,10 @@ class ChatListBody extends ConsumerWidget {
     if (loading && entries.isEmpty) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
-    final addFriends = filter == ChatListFilter.all
+    if (folder != null && entries.isEmpty) {
+      return FolderEmpty(name: folder!.name, onAdd: onEditFolder);
+    }
+    final addFriends = filter == ChatListFilter.all && folder == null
         ? AddFriendsRow(onTap: () => showAddFriendsSheet(context, ref))
         : null;
     if (entries.isEmpty) {

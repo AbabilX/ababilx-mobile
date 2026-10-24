@@ -138,7 +138,8 @@ class _ConversationRowsState extends State<ConversationRows> {
     if (!_holdRefresh) return false;
     final delta = _pullDelta(notification);
     if (delta <= 0) return false;
-    if (notification.metrics.pixels > 1 && notification.metrics.extentBefore > 1) {
+    if (notification.metrics.pixels > 1 &&
+        notification.metrics.extentBefore > 1) {
       return false;
     }
     final wasOpen = _gate.open;
@@ -190,9 +191,7 @@ class _ConversationRowsState extends State<ConversationRows> {
     final showInline = head != null && !tuck;
     final list = ListView.separated(
       key: _listKey,
-      padding: EdgeInsets.only(
-        bottom: ShellPillMetrics.contentBottom(context),
-      ),
+      padding: EdgeInsets.only(bottom: ShellPillMetrics.contentBottom(context)),
       itemCount: widget.entries.length + (showInline ? 1 : 0),
       separatorBuilder: (_, _) => Divider(
         height: 1,

@@ -16,14 +16,26 @@ ChatConversation _conv(String id, String type, {int unread = 0}) =>
 
 void main() {
   group('which pills are offered', () {
-    test('every tab sits on the row', () {
+    test('only All when nothing else has anything', () {
       expect(availableChatListFilters([_conv('a', 'dm')]), [
         ChatListFilter.all,
-        ChatListFilter.groups,
-        ChatListFilter.webhooks,
-        ChatListFilter.localShare,
-        ChatListFilter.drafts,
       ]);
+    });
+
+    test('a tab joins once it has something in it', () {
+      expect(
+        availableChatListFilters(
+          [_conv('a', 'dm'), _conv('g', 'group')],
+          hasLocalShare: true,
+          hasDrafts: true,
+        ),
+        [
+          ChatListFilter.all,
+          ChatListFilter.groups,
+          ChatListFilter.localShare,
+          ChatListFilter.drafts,
+        ],
+      );
     });
 
     test('Unread joins only while something is unread', () {

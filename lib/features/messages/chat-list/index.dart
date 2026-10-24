@@ -2,25 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/router/shell_bottom_bar/shell_chrome_provider.dart';
 import '../../../core/router/shell_bottom_bar/shell_pill_metrics.dart';
 import '../../../core/router/shell_bottom_bar/tab_reselect.dart';
-import '../../local_share/data/share_thread_queries.dart';
 import '../../local_share/providers/share_chat_pins.dart';
 import '../../local_share/providers/share_in_chats.dart';
-import '../../local_share/sheets/share_chat_row_sheet.dart';
 import '../add-friends/add_friends_pending.dart';
 import '../chat_list_filters.dart';
 import '../message_e2ee/new_chat_setup.dart';
-import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
-import '../nickname/contact_nickname_provider.dart';
-import '../nickname/nickname_title.dart';
 import 'camera_send_flow.dart';
 import 'chat_list_body.dart';
 import 'chat_list_entries.dart';
-import 'conversation_actions_run.dart';
-import 'conversation_actions_sheet.dart';
+import '../chat-folders/chat_folders.dart';
+import '../../home/data/home_drafts.dart';
+import 'chat_list_sheets.dart';
 import 'filter_chips_row.dart';
 import 'filter_reorder_blur.dart';
 import 'list_fab.dart';
@@ -41,44 +36,12 @@ class ChatList extends ConsumerStatefulWidget {
 class _ChatListState extends ConsumerState<ChatList> {
   ChatListFilter _filter = ChatListFilter.all;
 
-  /// Long press on a row. The sheet only chooses; the action runs here, on
-  /// the list's own context, because the sheet is gone before the request
-  /// comes back and the pin cap is reported after it.
-  ///
-  /// The floating nav pill is a `Positioned` in the shell's Stack, painted
-  /// OVER this branch's navigator — so a sheet raised from here comes up
-  /// underneath it, scrim and all. Hiding the bar covers BOTH the chooser
-  /// and any follow-up sheet (mute options): restoring it in between would
-  /// paint the pill over the mute sheet. The `finally` is load-bearing — a
-  /// sheet dismissed by a back gesture must not leave the app with no nav.
-  Future<void> _openActions(ChatConversation conversation) async {
-    final title = ref
-        .read(contactNicknamesProvider)
-        .titleFor(conversation, ref.read(chatProvider).currentUserId);
-    final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
-    hidden.state = true;
-    try {
-      final action = await showConversationActionsSheet(
-        context,
-        conversation,
-        title,
-      );
-      if (action == null || !mounted) return;
-      await runConversationAction(context, ref, conversation, title, action);
-    } finally {
-      hidden.state = false;
-    }
-  }
+  /// A user folder shown instead of a built-in tab.
+  String? _folderId;
 
-  /// Same nav-pill rule as [_openActions]: the sheet must not come up under it.
-  Future<void> _openShareActions(ShareThread thread) async {
-    final hidden = ref.read(shellBottomBarHiddenProvider.notifier);
-    hidden.state = true;
-    try {
-      await showShareChatRowSheet(context, ref, thread);
-    } finally {
-      hidden.state = false;
-    }
+  Future<void> _newFolder() async {
+    final id = await openFolderSheet(context, ref);
+    if (id != null && mounted) setState(() => _folderId = id);
   }
 
   @override
@@ -99,11 +62,12 @@ class _ChatListState extends ConsumerState<ChatList> {
     });
     ref.listen(tabReselectProvider, (_, tap) {
       if (tap?.route != '/messages') return;
-      setState(
-        () => _filter = _filter == ChatListFilter.unread
+      setState(() {
+        _folderId = null;
+        _filter = _filter == ChatListFilter.unread
             ? ChatListFilter.all
-            : ChatListFilter.unread,
-      );
+            : ChatListFilter.unread;
+      });
     });
     final original = ref.watch(chatProvider);
     final chat = ref.watch(newChatSetupProvider).pending
@@ -124,22 +88,33 @@ class _ChatListState extends ConsumerState<ChatList> {
           ? shareTabThreadsProvider
           : shareChatThreadsProvider,
     );
-    final filters = availableChatListFilters([
-      ...dms,
-      ...channels,
-    ], hasLocked: locks.isNotEmpty);
+    final filters = availableChatListFilters(
+      [...dms, ...channels],
+      hasLocked: locks.isNotEmpty,
+      hasLocalShare: ref.watch(shareTabThreadsProvider).isNotEmpty,
+      // Local drafts only: scheduled messages would cost a request per
+      // list build, and the Drafts tab still lists them once opened.
+      hasDrafts: ref.watch(homeDraftsProvider).valueOrNull?.isNotEmpty ?? false,
+    );
+    final folders = ref.watch(chatFoldersProvider);
+    final folder = folders.where((f) => f.id == _folderId).firstOrNull;
+    if (folder == null) _folderId = null;
     // Unread gone, or a tab that opens a page.
     if (!filters.contains(_filter) || isChatListFilterAction(_filter)) {
       _filter = ChatListFilter.all;
     }
     // Local Share device threads the user moved here sit among the chats.
     final rows = mergeChatListEntries(
-      conversations: unifiedConversations(
-        dms: dms,
-        channels: channels,
-        filter: _filter,
-      ),
-      threads: shareThreads,
+      conversations: folder != null
+          ? [
+              for (final c in unifiedConversations(
+                dms: dms,
+                channels: channels,
+              ))
+                if (folder.ids.contains(c.id)) c,
+            ]
+          : unifiedConversations(dms: dms, channels: channels, filter: _filter),
+      threads: folder != null ? const [] : shareThreads,
       filter: _filter,
       pinnedThreads: ref.watch(shareChatPinsProvider).valueOrNull ?? const {},
     );
@@ -165,18 +140,31 @@ class _ChatListState extends ConsumerState<ChatList> {
             FilterChipsRow(
               filters: filters,
               filter: _filter,
-              onChanged: (next) => setState(() => _filter = next),
+              onChanged: (next) => setState(() {
+                _folderId = null;
+                _filter = next;
+              }),
+              folders: folders,
+              folderId: _folderId,
+              onFolder: (id) => setState(() => _folderId = id),
+              onNewFolder: _newFolder,
+              onEditFolder: (f) => openFolderSheet(context, ref, f),
             ),
             Expanded(
               child: FilterReorderBlur(
                 child: ChatListBody(
-                  filter: _filter,
+                  filter: folder != null ? ChatListFilter.all : _filter,
+                  folder: folder,
+                  onEditFolder: () => openFolderSheet(context, ref, folder),
                   entries: rows,
                   loading: chat.sidebarLoading,
                   currentUserId: chat.currentUserId,
-                  onShowAll: () => setState(() => _filter = ChatListFilter.all),
-                  onLongPress: _openActions,
-                  onShareLongPress: _openShareActions,
+                  onShowAll: () => setState(() {
+                    _folderId = null;
+                    _filter = ChatListFilter.all;
+                  }),
+                  onLongPress: (c) => openConversationActions(context, ref, c),
+                  onShareLongPress: (t) => openShareActions(context, ref, t),
                 ),
               ),
             ),

@@ -5,15 +5,18 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../../home/data/home_drafts.dart';
-import '../chat_icon.dart';
+import '../chat-folders/chat_folders.dart';
 import '../chat_list_filters.dart';
+import 'filter_chip.dart';
 import 'filter_order.dart';
 import 'filter_reorder_blur.dart';
 
 /// One horizontally scrollable row of tabs above the conversation list:
 /// All | Unread (while any) | Drafts | Groups | Flock | Local Share | Locked
-/// (while any lock). Every tab filters the list in place; only Locked opens
-/// its page, because locked chats stay behind their unlock.
+/// (while any lock), then the user's own folders and a + that makes one
+/// (Telegram's folders). Every tab filters the list in place; only Locked
+/// opens its page, because locked chats stay behind their unlock. Hold a
+/// built-in pill to drag it; hold a folder to edit it.
 ///
 /// Personal and Workspaces pills used to sit here too. Since the server's
 /// migration 0145 every conversation is personal — no workspace owns one — so
@@ -24,11 +27,23 @@ class FilterChipsRow extends ConsumerWidget {
     required this.filters,
     required this.filter,
     required this.onChanged,
+    this.folders = const [],
+    this.folderId,
+    this.onFolder,
+    this.onNewFolder,
+    this.onEditFolder,
   });
 
   final List<ChatListFilter> filters;
   final ChatListFilter filter;
   final ValueChanged<ChatListFilter> onChanged;
+  final List<ChatFolder> folders;
+
+  /// The folder shown, or null for a built-in tab.
+  final String? folderId;
+  final ValueChanged<String>? onFolder;
+  final VoidCallback? onNewFolder;
+  final ValueChanged<ChatFolder>? onEditFolder;
 
   static const _labels = {
     ChatListFilter.all: 'chat_all',
@@ -56,10 +71,14 @@ class FilterChipsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (filters.isEmpty) return const SizedBox.shrink();
     final ordered = applyFilterOrder(filters, ref.watch(filterOrderProvider));
-    Widget chip(ChatListFilter option) => _Chip(
-      label: AppTranslations.translate(context, ref, _labels[option]!),
+    String t(String key) => AppTranslations.translate(context, ref, key);
+    Widget chip(ChatListFilter option) => FilterChipPill(
+      label: t(_labels[option]!),
       icon: _icons[option],
-      selected: !isChatListFilterAction(option) && option == filter,
+      selected:
+          folderId == null &&
+          !isChatListFilterAction(option) &&
+          option == filter,
       onTap: () async {
         final route = _actionRoutes[option];
         if (route != null) {
@@ -72,7 +91,7 @@ class FilterChipsRow extends ConsumerWidget {
           ref.invalidate(homeDraftsProvider);
           ref.invalidate(homeScheduledProvider);
         }
-        if (option != filter) onChanged(option);
+        if (option != filter || folderId != null) onChanged(option);
       },
     );
     // Hold a pill and drag to arrange them. All stays first, so it is not
@@ -83,12 +102,15 @@ class FilterChipsRow extends ConsumerWidget {
         scrollDirection: Axis.horizontal,
         buildDefaultDragHandles: false,
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-        itemCount: ordered.length,
+        itemCount: ordered.length + folders.length + 1,
         proxyDecorator: (child, _, _) =>
             Material(color: Colors.transparent, child: child),
         onReorderStart: (_) => filterReordering.value = true,
         onReorderEnd: (_) => filterReordering.value = false,
         onReorderItem: (from, to) {
+          // Folders and the + stay after the built-in pills.
+          if (from >= ordered.length) return;
+          if (to > ordered.length) to = ordered.length;
           final first = ordered.first == ChatListFilter.all;
           if (from == 0 && first) return;
           if (to == 0 && first) to = 1;
@@ -98,6 +120,7 @@ class FilterChipsRow extends ConsumerWidget {
           ref.read(filterOrderProvider.notifier).save(next);
         },
         itemBuilder: (context, i) {
+          if (i >= ordered.length) return _folderChip(t, i - ordered.length);
           final option = ordered[i];
           final item = Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -114,57 +137,32 @@ class FilterChipsRow extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.icon,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final List<List<dynamic>>? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Material(
-      color: selected ? colors.surfaceContainerHighest : Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected ? Colors.transparent : colors.outlineVariant,
-            ),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                ChatIcon(icon!, size: 14, color: colors.onSurfaceVariant),
-                const SizedBox(width: 4),
-              ],
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  fontSize: 12,
-                  height: 1.1,
-                ),
-              ),
-            ],
-          ),
-        ),
+  Widget _folderChip(String Function(String) t, int i) {
+    final Widget pill;
+    if (i == folders.length) {
+      if (folders.length >= maxChatFolders) return const SizedBox.shrink();
+      pill = FilterChipPill(
+        label: t('chat_folder_new'),
+        icon: HugeIcons.strokeRoundedFolderAdd,
+        selected: false,
+        onTap: () => onNewFolder?.call(),
+      );
+    } else {
+      final f = folders[i];
+      pill = FilterChipPill(
+        label: f.name,
+        icon: HugeIcons.strokeRoundedFolder01,
+        selected: f.id == folderId,
+        onTap: () => onFolder?.call(f.id),
+        onLongPress: () => onEditFolder?.call(f),
+      );
+    }
+    return KeyedSubtree(
+      key: ValueKey(
+        i == folders.length ? 'folder:+' : 'folder:${folders[i].id}',
       ),
+      child: Padding(padding: const EdgeInsets.only(right: 8), child: pill),
     );
   }
 }

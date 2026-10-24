@@ -134,10 +134,14 @@ void main() {
       filter: ChatListFilter.localShare,
     );
     expect(keys(merged), ['local-share:a']);
-    // Local Share is a permanent tab, always offered.
+    // Local Share is offered while a device thread exists.
+    expect(
+      availableChatListFilters(chats, hasLocalShare: true),
+      contains(ChatListFilter.localShare),
+    );
     expect(
       availableChatListFilters(chats),
-      contains(ChatListFilter.localShare),
+      isNot(contains(ChatListFilter.localShare)),
     );
   });
 

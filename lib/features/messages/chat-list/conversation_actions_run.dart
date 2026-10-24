@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/app_toast.dart';
 import '../data/models/chat_models.dart';
+import '../chat-folders/add_to_folder_sheet.dart';
 import '../providers/chat_provider.dart';
 import '../chat-mute/mute_flow.dart';
 import 'conversation_actions_sheet.dart';
@@ -37,6 +38,8 @@ Future<void> runConversationAction(
       await changeConversationMute(context, ref, conversation);
     case ConversationAction.markRead:
       await notifier.markConversationRead(conversation.id);
+    case ConversationAction.folder:
+      await showAddToFolderSheet(context, ref, conversation);
     case ConversationAction.end:
       if (!await confirmConversationEndAction(context, conversation, title)) {
         return;

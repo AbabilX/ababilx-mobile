@@ -15,7 +15,7 @@ import '../data/models/chat_models.dart';
 /// archives a group for everyone in it, so the row would either do nothing or
 /// hide the chat from the other person; **Mark as unread**, because nothing on
 /// the server stores it. A dead menu row is worse than a missing one.
-enum ConversationAction { pin, unpin, mute, unmute, markRead, end }
+enum ConversationAction { pin, unpin, mute, unmute, markRead, folder, end }
 
 /// Signal's long press, as a sheet for the row that was pressed rather than an
 /// action mode over a selection.
@@ -26,8 +26,9 @@ enum ConversationAction { pin, unpin, mute, unmute, markRead, end }
 Future<ConversationAction?> showConversationActionsSheet(
   BuildContext context,
   ChatConversation conversation,
-  String title,
-) {
+  String title, {
+  String folderLabel = 'Add to folder',
+}) {
   return showModalBottomSheet<ConversationAction>(
     context: context,
     showDragHandle: true,
@@ -46,7 +47,7 @@ Future<ConversationAction?> showConversationActionsSheet(
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
           ),
-          ..._tiles(sheetContext, conversation),
+          ..._tiles(sheetContext, conversation, folderLabel),
           const SizedBox(height: 8),
         ],
       ),
@@ -54,7 +55,11 @@ Future<ConversationAction?> showConversationActionsSheet(
   );
 }
 
-List<Widget> _tiles(BuildContext context, ChatConversation conversation) {
+List<Widget> _tiles(
+  BuildContext context,
+  ChatConversation conversation,
+  String folderLabel,
+) {
   void choose(ConversationAction action) => Navigator.of(context).pop(action);
   final pinned = conversation.pinned;
   final muted = conversation.isMutedNow;
@@ -80,6 +85,11 @@ List<Widget> _tiles(BuildContext context, ChatConversation conversation) {
       label: muted ? 'Unmute notifications' : 'Mute notifications',
       onTap: () =>
           choose(muted ? ConversationAction.unmute : ConversationAction.mute),
+    ),
+    _ActionTile(
+      icon: HugeIcons.strokeRoundedFolder01,
+      label: folderLabel,
+      onTap: () => choose(ConversationAction.folder),
     ),
     _ActionTile(
       icon: isGroup

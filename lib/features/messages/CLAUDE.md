@@ -2207,3 +2207,21 @@ offerer), sends `hello` (cached sidebar + deletion markers) and answers
   `historyLiveOpen`); closed after 10 min with no request, 20 s silence.
 - Wire + seal pinned against web: `test/features/history_transfer_live/`.
   **Not device-tested.**
+
+# Chat-list tabs and folders (2026-10-24)
+
+- **A tab shows only while it has something** (user's call): All always;
+  Unread, Groups, Flock only while a chat matches; Local Share while a device
+  thread exists; Drafts while a LOCAL draft exists (scheduled messages are
+  not counted — that would be a request per list build); Locked while a lock
+  exists. `availableChatListFilters`, pinned by `chat_list_filter_test.dart`.
+- **Folders = Telegram's**, device-local per account (`chat-folders/`,
+  SharedPreferences `chat_folders_v1:<user>`, max 10, never sent to the
+  server). After the built-in pills: one pill per folder + a "New folder"
+  pill. Tap a folder to show only its chats; hold it to edit (name, tick
+  chats, delete). Long press a chat → **Add to folder** ticks the folders it
+  is in (no folder yet → straight into New folder with that chat in it).
+  Locked chats are never offered or shown in a folder. Folder pills are not
+  draggable; the built-in ones still are.
+- Sheets raised from the list go through `chat_list_sheets.dart`
+  (`withNavHidden`), which hides the nav pill over the whole chain.

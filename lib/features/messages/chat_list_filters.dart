@@ -41,18 +41,25 @@ bool matchesChatListFilter(ChatConversation c, ChatListFilter filter) =>
 bool isChatListFilterAction(ChatListFilter filter) =>
     filter == ChatListFilter.locked;
 
-/// Tabs on the chat list, all filtering in place except Locked. All, Groups,
-/// Flock, Local Share and Drafts are always offered (an empty tab says so);
-/// Unread only while something is unread, Locked only while a lock exists.
+/// Tabs on the chat list, all filtering in place except Locked. All is
+/// always there; every other tab only while it has something in it — a
+/// group, a feed, a nearby-device thread, a draft, a lock (user's call,
+/// 2026-10-24: an empty tab is noise).
 List<ChatListFilter> availableChatListFilters(
   List<ChatConversation> all, {
   bool hasLocked = false,
+  bool hasLocalShare = false,
+  bool hasDrafts = false,
 }) => [
   for (final f in ChatListFilter.values)
     if (switch (f) {
-      ChatListFilter.unread => all.any((c) => matchesChatListFilter(c, f)),
+      ChatListFilter.all => true,
+      ChatListFilter.unread ||
+      ChatListFilter.groups ||
+      ChatListFilter.webhooks => all.any((c) => matchesChatListFilter(c, f)),
+      ChatListFilter.localShare => hasLocalShare,
+      ChatListFilter.drafts => hasDrafts,
       ChatListFilter.locked => hasLocked,
-      _ => true,
     })
       f,
 ];
