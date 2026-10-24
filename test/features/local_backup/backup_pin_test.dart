@@ -25,6 +25,16 @@ void main() {
     expect(BackupPinStore.validPin('12g456'), isFalse);
   });
 
+  test('the key is byte-identical to the desktop derivation', () async {
+    // Pinned in ababilxdesktopcode src/lib/local-backup/pin.test.mjs too:
+    // a desktop backup opens on the phone with the same PIN, and back.
+    final key = await BackupPinStore.derive('u1', 'AB12CD', rounds: 1000);
+    expect(
+      key.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+      '095977759c6420708feca876919a9be3ed92f671b3330ac840223de7edbc39c7',
+    );
+  });
+
   test('letter case does not change the key', () async {
     final lower = await BackupPinStore.derive('u1', 'ab12cd', rounds: 1000);
     final upper = await BackupPinStore.derive('u1', 'AB12CD', rounds: 1000);
