@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sanitize a checkout before publishing to the public AbabilX mirror.
-# Strips Android upload signing material that must never leave the private repo.
+# Strips paths listed in PATHS_TO_REMOVE_BEFORE_PUBLIC.txt plus keystore blobs.
 set -euo pipefail
 
 usage() {
@@ -17,10 +17,19 @@ fi
 [[ $# -eq 1 ]] || usage
 root="$(cd "$1" && pwd)"
 
+# Must never ship to the public mirror (see PATHS_TO_REMOVE_BEFORE_PUBLIC.txt).
+FORBIDDEN_PATHS=(
+  android/key.properties
+  upload-keystore.jks
+  android/app/google-services.json
+)
+
 strip_secrets() {
   local dir="$1"
-  # Exact private signing inputs (tracked today on private main).
-  rm -f "$dir/android/key.properties" "$dir/upload-keystore.jks"
+  local rel
+  for rel in "${FORBIDDEN_PATHS[@]}"; do
+    rm -f "$dir/$rel"
+  done
   # Any other keystore blobs that may appear under the tree.
   find "$dir" \( -name '*.jks' -o -name '*.keystore' \) -type f -print -delete
   # Never publish local IDE / secret env copies.
@@ -31,14 +40,13 @@ strip_secrets() {
 assert_clean() {
   local dir="$1"
   local bad=0
-  if [[ -e "$dir/android/key.properties" ]]; then
-    echo "refusing public mirror: android/key.properties still present" >&2
-    bad=1
-  fi
-  if [[ -e "$dir/upload-keystore.jks" ]]; then
-    echo "refusing public mirror: upload-keystore.jks still present" >&2
-    bad=1
-  fi
+  local rel
+  for rel in "${FORBIDDEN_PATHS[@]}"; do
+    if [[ -e "$dir/$rel" ]]; then
+      echo "refusing public mirror: $rel still present" >&2
+      bad=1
+    fi
+  done
   while IFS= read -r -d '' f; do
     echo "refusing public mirror: signing blob still present: ${f#"$dir"/}" >&2
     bad=1
