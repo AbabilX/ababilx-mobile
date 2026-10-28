@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../mention_boundary.dart';
+import 'composer_format.dart';
 
 const _email = r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)+';
 
@@ -55,7 +56,8 @@ class ComposerHighlightController extends TextEditingController {
     required bool withComposing,
   }) {
     final highlights = findComposerHighlights(text, mentionLabels());
-    if (highlights.isEmpty) {
+    final emphasis = findComposerEmphasis(text);
+    if (highlights.isEmpty && emphasis.isEmpty) {
       return super.buildTextSpan(
         context: context,
         style: style,
@@ -80,6 +82,11 @@ class ComposerHighlightController extends TextEditingController {
         ..add(h.start)
         ..add(h.end);
     }
+    for (final mark in emphasis) {
+      cuts
+        ..add(mark.start)
+        ..add(mark.end);
+    }
     if (composing.isValid) {
       cuts
         ..add(composing.start)
@@ -94,6 +101,22 @@ class ComposerHighlightController extends TextEditingController {
       if (start >= end) continue;
       final inChip = highlights.any((h) => start >= h.start && end <= h.end);
       var pieceStyle = inChip ? chip : style;
+      final mark = _emphasisAt(emphasis, start, end);
+      if (mark.bold) {
+        pieceStyle = (pieceStyle ?? const TextStyle()).copyWith(
+          fontWeight: FontWeight.w700,
+        );
+      }
+      if (mark.italic) {
+        pieceStyle = (pieceStyle ?? const TextStyle()).copyWith(
+          fontStyle: FontStyle.italic,
+        );
+      }
+      if (mark.link) {
+        pieceStyle = (pieceStyle ?? const TextStyle()).copyWith(
+          decoration: TextDecoration.underline,
+        );
+      }
       if (composing.isValid &&
           start >= composing.start &&
           end <= composing.end) {
@@ -115,3 +138,17 @@ class ComposerHighlightController extends TextEditingController {
 
 bool _inMention(List<ComposerHighlight> highlights, int offset) =>
     highlights.any((h) => h.isMention && offset >= h.start && offset < h.end);
+
+ComposerEmphasis _emphasisAt(List<ComposerEmphasis> marks, int start, int end) {
+  var bold = false;
+  var italic = false;
+  var link = false;
+  for (final mark in marks) {
+    if (start >= mark.start && end <= mark.end) {
+      bold = bold || mark.bold;
+      italic = italic || mark.italic;
+      link = link || mark.link;
+    }
+  }
+  return ComposerEmphasis(start, end, bold: bold, italic: italic, link: link);
+}

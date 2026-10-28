@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'composer_format_menu.dart';
 import 'composer_input_bar_buttons.dart';
 import 'composer_keyboard_content.dart';
+import 'composer_selection_bar.dart';
 
 /// Signal's composer: one pill holding the text field, camera and mic,
 /// with a single accent circle beside it.
@@ -79,41 +81,49 @@ class ComposerInputBar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: ComposerSelectionBar(
                       controller: controller,
-                      focusNode: focusNode,
-                      minLines: 1,
-                      maxLines: 5,
-                      style: const TextStyle(fontSize: 17, height: 1.3),
-                      textCapitalization: TextCapitalization.sentences,
-                      contentInsertionConfiguration: onContentInserted == null
-                          ? null
-                          : ContentInsertionConfiguration(
-                              onContentInserted: onContentInserted!,
-                              allowedMimeTypes: keyboardContentMimeTypes,
-                            ),
-                      decoration: InputDecoration(
-                        hintText: hint,
-                        // A long peer name ("Message Junayed Ahamed") wrapped
-                        // and opened the composer two lines tall before a
-                        // single character was typed.
-                        hintMaxLines: 1,
-                        hintStyle: TextStyle(
-                          fontSize: 17,
-                          color: colors.onSurfaceVariant,
+                      child: TextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        contextMenuBuilder: (_, state) => composerFormatMenu(
+                          pageContext: context,
+                          editor: state,
+                          controller: controller,
                         ),
-                        // The theme fills every field with a square-cornered
-                        // rectangle; the pill behind this one is the fill.
-                        filled: false,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.fromLTRB(
-                          18,
-                          16,
-                          0,
-                          16,
+                        minLines: 1,
+                        maxLines: 5,
+                        style: const TextStyle(fontSize: 17, height: 1.3),
+                        textCapitalization: TextCapitalization.sentences,
+                        contentInsertionConfiguration: onContentInserted == null
+                            ? null
+                            : ContentInsertionConfiguration(
+                                onContentInserted: onContentInserted!,
+                                allowedMimeTypes: keyboardContentMimeTypes,
+                              ),
+                        decoration: InputDecoration(
+                          hintText: hint,
+                          // A long peer name ("Message Junayed Ahamed") wrapped
+                          // and opened the composer two lines tall before a
+                          // single character was typed.
+                          hintMaxLines: 1,
+                          hintStyle: TextStyle(
+                            fontSize: 17,
+                            color: colors.onSurfaceVariant,
+                          ),
+                          // The theme fills every field with a square-cornered
+                          // rectangle; the pill behind this one is the fill.
+                          filled: false,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.fromLTRB(
+                            18,
+                            16,
+                            0,
+                            16,
+                          ),
                         ),
                       ),
                     ),
