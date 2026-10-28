@@ -1,0 +1,6 @@
+# Copy to android/key.properties locally; this example contains no credentials.
+# Resolve storeFile relative to android/app, or use an absolute private path.
+storeFile=/absolute/private/path/upload-keystore.jks
+storePassword=SET_LOCALLY
+keyAlias=SET_LOCALLY
+keyPassword=SET_LOCALLY
