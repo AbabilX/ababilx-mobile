@@ -56,6 +56,7 @@ class ChatState {
     this.threadRepliesByRoot = const {},
     this.sending = false,
     this.searchQuery = '',
+    this.searchIdentity,
     this.searchResults = const [],
     this.searchLoading = false,
     this.wsConnected = false,
@@ -73,6 +74,7 @@ class ChatState {
   final Map<String, List<ChatMessage>> threadRepliesByRoot;
   final bool sending;
   final String searchQuery;
+  final ({String query, String? conversationId})? searchIdentity;
   final List<ChatMessage> searchResults;
   final bool searchLoading;
   final bool wsConnected;
@@ -108,6 +110,7 @@ class ChatState {
     Map<String, List<ChatMessage>>? threadRepliesByRoot,
     bool? sending,
     String? searchQuery,
+    ({String query, String? conversationId})? searchIdentity,
     List<ChatMessage>? searchResults,
     bool? searchLoading,
     bool? wsConnected,
@@ -130,6 +133,7 @@ class ChatState {
     threadRepliesByRoot: threadRepliesByRoot ?? this.threadRepliesByRoot,
     sending: sending ?? this.sending,
     searchQuery: searchQuery ?? this.searchQuery,
+    searchIdentity: searchIdentity ?? this.searchIdentity,
     searchResults: searchResults ?? this.searchResults,
     searchLoading: searchLoading ?? this.searchLoading,
     wsConnected: wsConnected ?? this.wsConnected,
