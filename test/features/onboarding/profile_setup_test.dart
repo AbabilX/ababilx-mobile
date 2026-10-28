@@ -1,4 +1,8 @@
 import 'dart:typed_data';
+import 'package:ababilx/core/network/api_client.dart';
+import 'package:ababilx/core/storage/secure_storage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:ababilx/features/profile/data/username_repository.dart';
 
 import 'package:ababilx/core/localization/app_translations.dart';
 import 'package:ababilx/features/onboarding/profile-setup/profile_setup_gate.dart';
@@ -38,6 +42,18 @@ class _Profile extends ProfileNotifier {
   }
 }
 
+class _Usernames extends UsernameRepository {
+  _Usernames() : super(ApiClient(const SecureStorage(FlutterSecureStorage())));
+  final checked = <String>[];
+  @override
+  Future<bool> available(String username) async {
+    checked.add(username);
+    if (username == 'unavailable') return false;
+    if (username == 'network_error') throw StateError('offline');
+    return true;
+  }
+}
+
 void main() {
   setUp(() {
     SharedPreferencesAsyncPlatform.instance =
@@ -59,6 +75,7 @@ void main() {
         overrides: [
           appLanguageProvider.overrideWithValue('en'),
           profileProvider.overrideWith(() => profile),
+          usernameRepositoryProvider.overrideWithValue(_Usernames()),
         ],
         child: const MaterialApp(
           home: ProfileSetupGate(child: Text('chat list')),
@@ -87,7 +104,9 @@ void main() {
     expect(find.text('chat list'), findsOneWidget);
   });
 
-  testWidgets('name, username, then a skippable picture', (tester) async {
+  testWidgets('name, checked username, then the default picture', (
+    tester,
+  ) async {
     final profile = await show(tester, user(isNew: true));
     expect(find.text('Your name'), findsOneWidget);
     expect(await ProfileSetupStore.read('u1'), ProfileSetupStore.pending);
@@ -97,27 +116,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Choose a username'), findsOneWidget);
 
-    // A username is required: Next is dead until one is typed.
+    // Clearing the suggested handle disables Next.
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pump();
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
     expect(find.text('Choose a username'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'Murad.Dev');
     await tester.pump();
+    expect(profile.saved, isEmpty);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    expect(find.text('Available'), findsOneWidget);
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
     expect(profile.saved, ['murad.dev']);
     expect(find.text('Add a profile picture'), findsOneWidget);
 
-    // No picture yet: Done is dead, Skip leaves.
-    await tester.tap(find.text('Done'));
-    await tester.pumpAndSettle();
-    expect(find.text('Add a profile picture'), findsOneWidget);
-
-    // Skip gives a random icon picture and leaves.
+    // A default icon is selected; Done saves it, with no Skip button.
+    expect(find.text('Skip'), findsNothing);
     await tester.runAsync(() async {
-      await tester.tap(find.text('Skip'));
-      await Future<void>.delayed(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Done'));
+      for (var i = 0; i < 100 && profile.avatars.isEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
     });
     await tester.pumpAndSettle();
     expect(find.text('chat list'), findsOneWidget);
@@ -136,4 +159,26 @@ void main() {
     expect(profile.saved.single, matches(RegExp(r'^[a-z_]+\d{4}$')));
     expect(find.text('Add a profile picture'), findsOneWidget);
   });
+  for (final handle in ['unavailable', 'network_error']) {
+    testWidgets('username check blocks saving $handle', (tester) async {
+      final profile = await show(tester, user(isNew: true));
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), handle);
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          handle == 'unavailable'
+              ? 'That username is already taken.'
+              : 'Could not check that username. Try again.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      expect(profile.saved, isEmpty);
+      expect(find.text('Choose a username'), findsOneWidget);
+    });
+  }
 }
