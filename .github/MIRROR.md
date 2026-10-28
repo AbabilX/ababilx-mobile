@@ -5,10 +5,10 @@ Private `main` → public [`AbabilX/ababilx-mobile`](https://github.com/AbabilX/
 ## Behaviour
 
 - Trigger: push to `main`, or manual `workflow_dispatch`
-- Publishes the **current tree only** (updates public `main`)
-- Strips paths from `PATHS_TO_REMOVE_BEFORE_PUBLIC.txt` via `tool/mirror_public_prepare.sh`
+- Publishes the **current tree only** (updates public `main`). Private commits and contributors are not copied. The public history is only these mirror commits.
+- Strips signing material via `tool/mirror_public_prepare.sh`
   (`android/key.properties`, `upload-keystore.jks`, `android/app/google-services.json`, plus any `*.jks` / `*.keystore`)
-- Also strips `*.pem`, `plan.md`, `PLAY_STORE_WHATS_NEW.txt`, `docs/legal-audit/`, and audit `*.md` under `docs/audits/` and `tool/audit/`. The Play upload certificate is not a private key, and the app does not read it.
+- Also strips `*.pem`, `plan.md`, `PLAY_STORE_WHATS_NEW.txt`, `PATHS_TO_REMOVE_BEFORE_PUBLIC.txt`, `docs/legal-audit/`, and audit `*.md` under `docs/audits/` and `tool/audit/`. The checklist stays in the private repo.
 - Does **not** copy private git history
 - Does **not** copy `.github/workflows/` (avoids GitHub’s “OAuth App needs `workflow` scope” rejection, and keeps public CI separate)
 

@@ -30,6 +30,7 @@ UNPUBLISHED_FILES=(
   upload_certificate.pem
   plan.md
   PLAY_STORE_WHATS_NEW.txt
+  PATHS_TO_REMOVE_BEFORE_PUBLIC.txt
 )
 
 strip_secrets() {
