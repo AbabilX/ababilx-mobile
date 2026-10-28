@@ -10,19 +10,24 @@ class AttachmentSemaphore {
   AttachmentSemaphore(this.maxConcurrent);
 
   final int maxConcurrent;
-  final Queue<Completer<void>> _user = Queue();
-  final Queue<Completer<void>> _auto = Queue();
+  final Queue<Completer<bool>> _user = Queue();
+  final Queue<Completer<bool>> _auto = Queue();
   int _active = 0;
 
   int get active => _active;
 
-  Future<void> acquire({required bool userInitiated}) {
+  /// False means the waiter was cancelled without taking a slot.
+  Future<bool> acquire({required bool userInitiated, Future<void>? cancelled}) {
     if (_active < maxConcurrent) {
       _active++;
-      return Future.value();
+      return Future.value(true);
     }
-    final completer = Completer<void>();
-    (userInitiated ? _user : _auto).add(completer);
+    final completer = Completer<bool>();
+    final waiters = userInitiated ? _user : _auto;
+    waiters.add(completer);
+    cancelled?.then((_) {
+      if (waiters.remove(completer)) completer.complete(false);
+    });
     return completer.future;
   }
 
@@ -34,13 +39,13 @@ class AttachmentSemaphore {
       if (_active > 0) _active--;
       return;
     }
-    next.complete();
+    next.complete(true);
   }
 
   /// Frees every waiter so a disposing owner cannot leave futures hanging.
   void drain() {
     for (final completer in [..._user, ..._auto]) {
-      if (!completer.isCompleted) completer.complete();
+      if (!completer.isCompleted) completer.complete(false);
     }
     _user.clear();
     _auto.clear();
