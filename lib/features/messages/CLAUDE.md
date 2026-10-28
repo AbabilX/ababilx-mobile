@@ -959,6 +959,12 @@ transfer  three at a time: read the file, PUT, adopt
   object is discarded server-side in the same path, so the reservation is not
   charged.
 
+The optimistic bubble keeps that same preview (`PendingMessageAttachments`).
+While bytes are moving, one circular progress sits in the middle of the
+preview with a cross that cancels the whole send. There is no linear bar, and
+the footer does not say "Uploading N%". Progress is per message, so an album
+gets one ring.
+
 # A feed has one picture, and it is not the group photo
 
 A webhook feed is a conversation nobody may post into, and the server enforces

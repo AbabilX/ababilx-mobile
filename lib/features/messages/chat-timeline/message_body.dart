@@ -70,8 +70,7 @@ class MessageBody extends ConsumerWidget {
     // Media captions already span the picture's width — put "(edited)" on
     // that trailing edge. Plain text bubbles keep the inline trailing so a
     // short edited line does not stretch to the bubble cap.
-    final editedInCaption =
-        bleedMedia && !long && message.editedAt != null;
+    final editedInCaption = bleedMedia && !long && message.editedAt != null;
     final text = <Widget>[
       if (message.forwardedFromName != null)
         Padding(
@@ -82,12 +81,7 @@ class MessageBody extends ConsumerWidget {
           ),
         ),
       if (plain.isNotEmpty)
-        _text(
-          context,
-          ref,
-          collapsed: long,
-          includeEdited: !editedInCaption,
-        ),
+        _text(context, ref, collapsed: long, includeEdited: !editedInCaption),
       if (long)
         ReadMoreRow(
           body: message.body,
@@ -118,6 +112,27 @@ class MessageBody extends ConsumerWidget {
           )
         : Column(crossAxisAlignment: CrossAxisAlignment.start, children: text);
 
+    final pending = message.isPending && message.pendingAttachments.isNotEmpty
+        ? PendingMessageAttachments(
+            attachments: message.pendingAttachments,
+            foreground: colors.foreground,
+            muted: colors.muted,
+            uploading: message.sendStatus == MessageSendStatus.uploading,
+            progress: message.uploadProgress,
+            bleed: bleedMedia,
+            cancelLabel: AppTranslations.translate(context, ref, 'cancel'),
+            onCancel: message.sendStatus == MessageSendStatus.uploading
+                ? () => ref
+                      .read(chatProvider.notifier)
+                      .cancelUploadingMessage(
+                        message.conversationId,
+                        message.clientRef ?? message.id,
+                        parentId: message.parentId,
+                      )
+                : null,
+          )
+        : null;
+
     Widget? media;
     if (message.attachments.isNotEmpty) {
       // A locked chat's files never go through the attachment store, which
@@ -147,6 +162,8 @@ class MessageBody extends ConsumerWidget {
             ),
         ],
       );
+    } else {
+      media = pending;
     }
 
     return Column(
@@ -162,24 +179,7 @@ class MessageBody extends ConsumerWidget {
           ?caption,
           ?media,
         ],
-        if (message.isPending && message.pendingAttachments.isNotEmpty)
-          PendingMessageAttachments(
-            attachments: message.pendingAttachments,
-            foreground: colors.foreground,
-            muted: colors.muted,
-            uploading: message.sendStatus == MessageSendStatus.uploading,
-            progress: message.uploadProgress,
-            cancelLabel: AppTranslations.translate(context, ref, 'cancel'),
-            onCancel: message.sendStatus == MessageSendStatus.uploading
-                ? () => ref
-                      .read(chatProvider.notifier)
-                      .cancelUploadingMessage(
-                        message.conversationId,
-                        message.clientRef ?? message.id,
-                        parentId: message.parentId,
-                      )
-                : null,
-          ),
+        if (message.attachments.isNotEmpty) ?pending,
       ],
     );
   }
