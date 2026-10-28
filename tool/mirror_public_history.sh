@@ -38,7 +38,7 @@ done < <(git -C "$dest" for-each-ref --format='%(refname)' refs/original refs/re
 git -C "$dest" reflog expire --expire=now --all
 git -C "$dest" gc --prune=now --quiet
 
-if git -C "$dest" rev-list --all --objects | awk '{print $2}' | grep -E '(^|/)(upload-keystore\.jks|google-services\.json|GoogleService-Info\.plist|upload_certificate\.pem|PATHS_TO_REMOVE_BEFORE_PUBLIC\.txt|key\.properties)$|\.pem$|\.jks$|\.keystore$|\.p8$|(^|/)\.github/workflows/'; then
+if git -C "$dest" rev-list --all --objects | awk '{print $2}' | grep -E '(^|/)(upload-keystore\.jks|google-services\.json|GoogleService-Info\.plist|upload_certificate\.pem|PATHS_TO_REMOVE_BEFORE_PUBLIC\.txt|key\.properties)$|\.pem$|\.jks$|\.keystore$|\.p8$|(^|/)\.github/workflows/|(^|/)docs/audits/.*\.md$|(^|/)tool/audit/.*\.md$'; then
   echo "refusing public mirror: stripped path is still reachable" >&2
   exit 1
 fi

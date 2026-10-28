@@ -16,9 +16,11 @@ git rm -r --cached --ignore-unmatch \
   .env.local \
   >/dev/null 2>&1 || true
 
+# Newline-separated on purpose. dash (Ubuntu /bin/sh) rejects `read -d`,
+# and that failure used to skip this loop, leaving audit notes in history.
 list="$(mktemp)"
-git ls-files -z >"$list"
-while IFS= read -r -d '' path; do
+git ls-files >"$list"
+while IFS= read -r path; do
   case "$path" in
     *.pem | *.jks | *.keystore | *.p8 | docs/legal-audit/* | .github/workflows/* | docs/audits/*.md | tool/audit/*.md | .env | .env.local)
       git rm -r --cached --ignore-unmatch -- "$path" >/dev/null 2>&1 || true

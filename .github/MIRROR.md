@@ -24,4 +24,7 @@ No `workflow` scope is required while workflows are excluded from the publish se
 
 ```bash
 ./test/tool/mirror_public_prepare_test.sh
+./test/tool/mirror_public_history_test.sh
 ```
+
+The index filter is POSIX `sh`. GitHub's runner uses dash, which rejects `read -d`.
