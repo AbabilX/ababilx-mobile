@@ -6,10 +6,12 @@ Private `main` → public [`AbabilX/ababilx-mobile`](https://github.com/AbabilX/
 
 - Trigger: push to `main`, or manual `workflow_dispatch`
 - Publishes the **current tree only** (updates public `main`)
-- Strips Android signing material via `tool/mirror_public_prepare.sh`
-- Does **not** copy private git history (historical keystore commits must never become public)
+- Strips paths from `PATHS_TO_REMOVE_BEFORE_PUBLIC.txt` via `tool/mirror_public_prepare.sh`
+  (`android/key.properties`, `upload-keystore.jks`, `android/app/google-services.json`, plus any `*.jks` / `*.keystore`)
+- Does **not** copy private git history
+- Does **not** copy `.github/workflows/` (avoids GitHub’s “OAuth App needs `workflow` scope” rejection, and keeps public CI separate)
 
-Org policy disables deploy keys on the public repo, so the Action authenticates with a PAT.
+`upload_certificate.pem` is treated as public-safe (per `PATHS_TO_REMOVE_BEFORE_PUBLIC.txt`).
 
 ## Secret
 
@@ -19,7 +21,7 @@ Private repo Actions secret:
 | --- | --- |
 | `PUBLIC_MIRROR_TOKEN` | Fine-grained PAT: resource `AbabilX/ababilx-mobile`, permission **Contents: Read and write** |
 
-Create at https://github.com/settings/personal-access-tokens/new
+No `workflow` scope is required while workflows are excluded from the publish set.
 
 ## Local check
 
