@@ -20,6 +20,7 @@ class DriftChatMessageStore {
     int? beforeMs,
     String? beforeId,
     String? threadRootId,
+    bool strict = false,
   }) async {
     if (conversationId.isEmpty) return const [];
     try {
@@ -48,6 +49,7 @@ class DriftChatMessageStore {
         ..limit(limit);
       return messagesFromRows((await query.get()).reversed);
     } catch (_) {
+      if (strict) rethrow;
       return const [];
     }
   }
