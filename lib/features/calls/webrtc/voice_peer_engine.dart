@@ -16,6 +16,7 @@ import 'voice_audio_progress.dart';
 import 'voice_camera_capture.dart';
 import 'voice_media_map.dart';
 import 'voice_send_watch.dart';
+import 'voice_teardown.dart';
 import 'voice_video_hold.dart';
 import 'voice_video_quality.dart';
 
@@ -971,41 +972,74 @@ class VoicePeerEngine {
     return peer;
   }
 
+  /// Ends the call's media. Best effort and bounded: every step runs on its
+  /// own (see [runTeardown]), and the microphone and the peer connection go
+  /// first. It used to be one chain of awaits, so a screen-share or camera
+  /// stop that threw — a platform channel gone with its engine — skipped the
+  /// track stop and `close()`, and the caller had already dropped its only
+  /// reference: the mic kept sending to the peer under an "ended" screen.
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
     _audioHealthTimer?.cancel();
     _audioHealthTimer = null;
-    callNetworkQuality.value = CallNetworkLevel.unknown;
-    _clearCameraHold();
-    await stopScreenShare(renegotiate: false);
     _renegotiateFallback?.cancel();
     _renegotiateFallback = null;
+    callNetworkQuality.value = CallNetworkLevel.unknown;
+    _clearCameraHold();
+    final local = _localStream;
+    final peer = _peer;
     final camera = _camera;
+    // Nulled up front: nothing below may use them, and `stopScreenShare`
+    // skips `removeTrack` once there is no peer.
+    _localStream = null;
+    _peer = null;
     _camera = null;
     _cameraSender = null;
     _cameraWireStreamId = null;
-    if (camera != null) {
-      await camera.close();
-      onLocalCameraChanged(null, front: camera.front);
+    final steps = <String, Future<void> Function()>{
+      'local_tracks': () => _stopTracks(local),
+      'peer': () async => peer?.close(),
+      'peer_dispose': () async => peer?.dispose(),
+      'screen_share': () => stopScreenShare(renegotiate: false),
+      'camera': () async {
+        if (camera == null) return;
+        try {
+          await camera.close();
+        } finally {
+          onLocalCameraChanged(null, front: camera.front);
+        }
+      },
+      'local_stream': () async => local?.dispose(),
+      'remote_state': () async {
+        _remoteMedia.clear();
+        _remoteCameraShown = null;
+        _remoteStreams.clear();
+        _remoteScreenStream = null;
+        onRemoteCameraChanged(null);
+        onRemoteScreenChanged(null);
+      },
+      'communication_device': Helper.clearAndroidCommunicationDevice,
+      // Give the phone its normal audio mode and focus back; the ringtone and
+      // media playback route through the earpiece until this happens.
+      'audio_route': CallAudioRoute.release,
+    };
+    await runTeardown([
+      for (final name in voiceEngineTeardownOrder)
+        (name: name, run: steps[name]!),
+    ]);
+  }
+
+  /// Stops each track on its own, so one refusal leaves no other running.
+  static Future<void> _stopTracks(MediaStream? stream) async {
+    Object? failure;
+    for (final track in stream?.getTracks() ?? const <MediaStreamTrack>[]) {
+      try {
+        await track.stop();
+      } catch (error) {
+        failure ??= error;
+      }
     }
-    _remoteMedia.clear();
-    _remoteCameraShown = null;
-    onRemoteCameraChanged(null);
-    for (final track in _localStream?.getTracks() ?? const []) {
-      await track.stop();
-    }
-    await _localStream?.dispose();
-    _localStream = null;
-    _remoteStreams.clear();
-    _remoteScreenStream = null;
-    onRemoteScreenChanged(null);
-    await _peer?.close();
-    await _peer?.dispose();
-    _peer = null;
-    await Helper.clearAndroidCommunicationDevice();
-    // Give the phone its normal audio mode and focus back; the ringtone and
-    // media playback route through the earpiece until this happens.
-    await CallAudioRoute.release();
+    if (failure != null) throw failure;
   }
 }
