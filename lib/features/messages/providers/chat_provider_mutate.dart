@@ -289,25 +289,40 @@ mixin _ChatMutateMixin
       searchResults: const [],
       searchLoading: true,
     );
+    if (q.isEmpty) {
+      state = state.copyWith(searchLoading: false);
+      return;
+    }
+    // Only the newest input surviving this quiet interval starts a scan.
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    if (!current()) return;
     final store = (this as _ChatCacheMixin).messageStore;
     final vault = ref.read(messageVaultProvider);
     var userId = state.currentUserId;
     if (userId.isEmpty) userId = await (this as ChatNotifier).localUserId();
-    final local = await LocalMessageSearch(
-      store,
-      vault.isUnlocked && userId.isNotEmpty
-          ? (messages) async {
-              final clear = await vault.decryptMessages(messages, userId);
-              return clear
-                  .where(
-                    (message) =>
-                        message.body != 'Encrypted message' &&
-                        message.body != 'Unable to decrypt this message',
-                  )
-                  .toList();
-            }
-          : (_) async => const [],
-    ).search(q, conversationId: conversationId);
+    if (!current()) return;
+    final canDecrypt = vault.isUnlocked && userId.isNotEmpty;
+    final local =
+        await LocalMessageSearch(
+          store,
+          canDecrypt
+              ? (messages) async {
+                  final clear = await vault.decryptMessages(messages, userId);
+                  return clear
+                      .where(
+                        (message) =>
+                            message.body != 'Encrypted message' &&
+                            message.body != 'Unable to decrypt this message',
+                      )
+                      .toList();
+                }
+              : (_) async => const [],
+        ).search(
+          q,
+          conversationId: conversationId,
+          searchEncrypted: canDecrypt,
+          isCurrent: current,
+        );
     if (!current()) return;
     if (q.trim().length < 2) {
       state = state.copyWith(searchResults: local, searchLoading: false);

@@ -46,7 +46,7 @@ class _RecordingChat extends ChatNotifier {
   ChatState build() => const ChatState();
   @override
   Future<void> searchMessages(String q, {String? conversationId}) async {
-    scopes.add(conversationId);
+    if (q.isNotEmpty) scopes.add(conversationId);
     state = state.copyWith(
       searchQuery: q,
       searchIdentity: (query: q, conversationId: conversationId),
@@ -109,6 +109,37 @@ void main() {
       }
     },
   );
+
+  test('rapid input only starts the final server search', () async {
+    final db = ChatLocalDb.forTesting(NativeDatabase.memory());
+    final repo = _Repo();
+    final container = ProviderContainer(
+      overrides: [
+        chatProvider.overrideWith(() => _Chat(ChatMessageStore(db), repo)),
+        messageVaultProvider.overrideWithValue(MessageVault(repo, _storage)),
+      ],
+    );
+    try {
+      final chat = container.read(chatProvider.notifier);
+      final first = chat.searchMessages('dep');
+      final second = chat.searchMessages('deploy');
+      await first;
+      while (repo.calls.isEmpty) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(repo.calls, hasLength(1));
+      repo.calls.single.complete([]);
+      await second;
+      final clearing = chat.searchMessages('');
+      await clearing;
+      expect(container.read(chatProvider).searchLoading, isFalse);
+      expect(container.read(chatProvider).searchResults, isEmpty);
+      expect(repo.calls, hasLength(1));
+    } finally {
+      container.dispose();
+      await db.close();
+    }
+  });
 
   testWidgets('same text starts a new search for each scope', (tester) async {
     final chat = _RecordingChat();

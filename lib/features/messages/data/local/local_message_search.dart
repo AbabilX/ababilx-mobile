@@ -19,9 +19,11 @@ class LocalMessageSearch {
     String query, {
     int limit = 30,
     String? conversationId,
+    bool searchEncrypted = true,
+    bool Function()? isCurrent,
   }) async {
     final q = query.trim().toLowerCase();
-    if (q.isEmpty) return const [];
+    if (q.isEmpty || !(isCurrent?.call() ?? true)) return const [];
 
     final found = <String, ChatMessage>{};
     for (final message in await _store.search(
@@ -32,17 +34,21 @@ class LocalMessageSearch {
       found[message.id] = message;
     }
 
+    if (!(isCurrent?.call() ?? true)) return const [];
     const pageSize = 200;
     var offset = 0;
     var encryptedMatches = 0;
-    while (encryptedMatches < limit) {
+    while (searchEncrypted && encryptedMatches < limit) {
+      if (!(isCurrent?.call() ?? true)) return const [];
       final encrypted = await _store.encryptedPage(
         limit: pageSize,
         offset: offset,
         conversationId: conversationId,
       );
+      if (!(isCurrent?.call() ?? true)) return const [];
       if (encrypted.isEmpty) break;
       final decrypted = await _decrypt(encrypted);
+      if (!(isCurrent?.call() ?? true)) return const [];
       for (final message in decrypted) {
         if (_matches(message, q) && !found.containsKey(message.id)) {
           found[message.id] = message;
