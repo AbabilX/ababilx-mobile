@@ -54,7 +54,7 @@ mixin _ChatOlderEndMixin
         await spanStore.forget(conversationId);
         walkCursor[key] = anchor.id;
         _stopLoadingMore(key, hasMore: true);
-        return walkUnproven(conversationId, key);
+        return await walkUnproven(conversationId, key);
       }
       endConfirmed.add(conversationId);
       _stopLoadingMore(key, hasMore: false);
