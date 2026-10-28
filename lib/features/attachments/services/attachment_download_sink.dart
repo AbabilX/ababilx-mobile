@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 
 import '../attachment_config.dart';
 import 'attachment_cipher.dart';
+import 'attachment_failure.dart';
 
 /// Bytes moved, and how far along the whole object that is.
 typedef DownloadProgress = void Function(int received, int total);
@@ -23,6 +24,7 @@ Future<int> drainToPart({
   required int appendFrom,
   required int total,
   required AttachmentCipher cipher,
+  int? maxBytes,
   AttachmentKeyMaterial? key,
   DownloadProgress? onProgress,
 }) async {
@@ -33,8 +35,12 @@ Future<int> drainToPart({
   var lastEmit = DateTime.fromMillisecondsSinceEpoch(0);
   var lastFraction = 0.0;
   try {
+    if (maxBytes != null && received > maxBytes) throw oversizeFailure;
     final plain = cipher.decode(stream, key, fromOffset: appendFrom);
     await for (final chunk in plain) {
+      if (maxBytes != null && received + chunk.length > maxBytes) {
+        throw oversizeFailure;
+      }
       sink.add(chunk);
       received += chunk.length;
       if (onProgress == null) continue;

@@ -130,16 +130,31 @@ class AttachmentDownloader {
     }
     if (maxBytes != null && total > maxBytes) throw oversizeFailure;
 
-    final written = await drainToPart(
-      stream: response.data!.stream,
-      partFile: partFile,
-      appendFrom: appendFrom,
-      total: total,
-      cipher: _cipher,
-      key: key,
-      onProgress: onProgress,
-    );
+    final int written;
+    try {
+      written = await drainToPart(
+        stream: response.data!.stream,
+        partFile: partFile,
+        appendFrom: appendFrom,
+        total: total,
+        maxBytes: maxBytes,
+        cipher: _cipher,
+        key: key,
+        onProgress: onProgress,
+      );
+    } on AttachmentDownloadFailure {
+      await deleteQuietly(partFile);
+      rethrow;
+    }
 
+    if (expectedBytes > 0 && written != expectedBytes) {
+      await deleteQuietly(partFile);
+      throw const AttachmentDownloadFailure(
+        'size_mismatch',
+        'This file does not match what the server described',
+        permanent: true,
+      );
+    }
     if (total > 0 && written != total) {
       await deleteQuietly(partFile);
       throw const AttachmentDownloadFailure(
