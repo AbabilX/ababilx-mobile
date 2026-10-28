@@ -49,18 +49,18 @@ class MessageBubbleFooter extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final error = Theme.of(context).colorScheme.error;
     String tr(String key) => AppTranslations.translate(context, ref, key);
-    final percent = ((message.uploadProgress ?? 0) * 100).round();
     // To a private peer (server 0152), or in a DM where somebody hid ticks
     // (0159), nothing about delivery is shown — no clock, no tick, no
     // "Sending…". A failure still says so: that is about this phone.
     final hideTicks =
         isOwn &&
         ref.watch(conversationTicksHiddenProvider(message.conversationId));
+    // Upload progress is the ring on the preview. The footer keeps the time.
     final label = isFailed
         ? tr('chat_tap_to_retry')
-        : message.sendStatus == MessageSendStatus.uploading
-        ? '${tr('chat_uploading')} $percent%'
-        : isSending && !hideTicks
+        : isSending &&
+              !hideTicks &&
+              message.sendStatus != MessageSendStatus.uploading
         ? tr('chat_sending')
         : formatChatTime(message.createdAt);
     final shadowed = onMedia && !onClear;

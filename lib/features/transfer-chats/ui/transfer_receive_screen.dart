@@ -87,7 +87,7 @@ class _State extends ConsumerState<TransferReceiveScreen> {
         sessions: ref.read(sessionRepositoryProvider),
         userId: await _userId(),
       );
-      if (!mounted) return session.dispose();
+      if (!mounted) return await session.dispose();
       setState(() => _session = session);
       await session.start();
     } catch (_) {

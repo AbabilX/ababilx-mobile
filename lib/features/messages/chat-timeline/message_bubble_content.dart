@@ -28,10 +28,36 @@ bool isBareMediaBubble(ChatMessage message) {
   if (message.isDeleted) return false;
   if (message.quote != null) return false;
   if (message.forwardedFromName != null) return false;
-  if (message.attachments.isEmpty) return false;
+  if (message.attachments.isEmpty) {
+    if (!uploadingPreviewFillsBubble(message)) return false;
+    if (message.pendingAttachments.any(_inputIsPdf)) return false;
+    return tiptapToPlainText(message.body).trim().isEmpty;
+  }
   if (!message.attachments.every((a) => a.isImage || a.isVideo)) return false;
   if (!_hasDrawableMedia(message.attachments)) return false;
   return tiptapToPlainText(message.body).trim().isEmpty;
+}
+
+/// A send that has not landed yet still draws as media when every pending
+/// file is a photo, video, or PDF. The preview is the bubble.
+bool uploadingPreviewFillsBubble(ChatMessage message) {
+  if (message.isDeleted || message.quote != null) return false;
+  if (message.attachments.isNotEmpty) return false;
+  final pending = message.pendingAttachments;
+  if (pending.isEmpty) return false;
+  return pending.every(
+    (attachment) =>
+        looksLikeImage(attachment.contentType, attachment.fileName) ||
+        looksLikeVideo(attachment.contentType, attachment.fileName) ||
+        _inputIsPdf(attachment),
+  );
+}
+
+bool _inputIsPdf(ChatAttachmentInput attachment) {
+  final type = attachment.contentType.toLowerCase();
+  return type == 'application/pdf' ||
+      type == 'application/x-pdf' ||
+      attachment.fileName.toLowerCase().endsWith('.pdf');
 }
 
 /// At least one attachment that is drawn as a real picture/video tile.
@@ -80,7 +106,9 @@ class MessageBubbleContent extends StatelessWidget {
   bool get _isMediaBubble {
     if (message.isDeleted) return false;
     if (message.quote != null) return false;
-    if (message.attachments.isEmpty) return false;
+    if (message.attachments.isEmpty) {
+      return uploadingPreviewFillsBubble(message);
+    }
     if (!message.attachments.every((a) => a.isImage || a.isVideo || a.isPdf)) {
       return false;
     }
@@ -88,7 +116,9 @@ class MessageBubbleContent extends StatelessWidget {
   }
 
   /// A PDF page is white: the time over it takes the pill, never white ink.
-  bool get _hasPdf => message.attachments.any((a) => a.isPdf);
+  bool get _hasPdf =>
+      message.attachments.any((a) => a.isPdf) ||
+      message.pendingAttachments.any(_inputIsPdf);
 
   // Time + ticks always sit on the trailing edge of the bubble (WhatsApp /
   // common chat UI). An `Align` here instead would stretch the column to the

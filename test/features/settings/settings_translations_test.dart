@@ -3,6 +3,7 @@ import 'package:ababilx/features/auth/providers/auth_provider.dart';
 import 'package:ababilx/features/profile/data/profile_repository.dart';
 import 'package:ababilx/features/profile/providers/profile_provider.dart';
 import 'package:ababilx/features/settings/screens/settings_screen.dart';
+import 'package:ababilx/features/settings/appearance/appearance_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,7 +40,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('সেটিংস'), findsOneWidget);
     expect(find.text('বিজ্ঞপ্তি'), findsOneWidget);
-    expect(find.text('অ্যাপ্লিকেশনের ভাষা'), findsOneWidget);
+    expect(find.text('চেহারা'), findsOneWidget);
+    expect(find.text('অ্যাপ্লিকেশনের ভাষা'), findsNothing);
     expect(find.text('Settings'), findsNothing);
     expect(find.text('Notifications'), findsNothing);
     expect(find.text('যে মাধ্যমে সাইন ইন'), findsNothing);
@@ -47,5 +49,23 @@ void main() {
     expect(find.text('স্ল্যাক কার্যক্ষেত্র'), findsNothing);
     expect(find.text('Murad'), findsOneWidget);
     expect(find.text('প্ল্যান'), findsNothing);
+  });
+  testWidgets('Appearance exposes the Bangla language control', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          isAuthenticatedProvider.overrideWith((ref) => true),
+          profileProvider.overrideWith(_Profile.new),
+        ],
+        child: const MaterialApp(home: AppearanceScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('চেহারা'), findsOneWidget);
+    expect(find.text('অ্যাপ্লিকেশনের ভাষা'), findsOneWidget);
+    expect(find.text('App language'), findsNothing);
+    await tester.tap(find.text('অ্যাপ্লিকেশনের ভাষা'));
+    await tester.pumpAndSettle();
+    expect(find.text('বাংলা (BN)'), findsWidgets);
   });
 }

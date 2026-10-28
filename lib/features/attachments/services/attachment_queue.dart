@@ -49,6 +49,7 @@ class AttachmentQueue {
   final _events = StreamController<AttachmentHandle>.broadcast();
   final Map<String, Future<AttachmentHandle>> _inFlight = {};
   final Map<String, CancelToken> _tokens = {};
+  bool _stopping = false;
 
   Stream<AttachmentHandle> get events => _events.stream;
 
@@ -59,6 +60,7 @@ class AttachmentQueue {
     bool userInitiated = false,
   }) {
     final urlKey = attachmentUrlKey(attachment.fileUrl);
+    if (_stopping) return Future.value(_absent(attachment, urlKey));
     if (attachment.locked || urlKey.isEmpty) {
       return Future.value(
         AttachmentHandle.locked(fileName: attachment.fileName),
@@ -83,17 +85,20 @@ class AttachmentQueue {
     }
     final running = _inFlight[urlKey];
     if (running != null) return running;
-    final job = _start(urlKey, attachment, userInitiated);
+    final token = CancelToken();
+    _tokens[urlKey] = token;
+    final job = _start(urlKey, attachment, userInitiated, token);
     _inFlight[urlKey] = job;
     return job;
   }
 
   void cancel(String urlKey) {
-    _tokens.remove(urlKey)?.cancel('cancelled by user');
+    _tokens[urlKey]?.cancel('cancelled by user');
   }
 
-  /// Session barrier: no transfer may keep writing after logout/reset starts.
+  /// Terminal session barrier. The owner replaces this queue before new work.
   Future<void> cancelAll() async {
+    _stopping = true;
     for (final token in _tokens.values.toList()) {
       token.cancel('session ended');
     }
@@ -104,6 +109,7 @@ class AttachmentQueue {
     String urlKey,
     ChatMessageAttachment attachment,
     bool userInitiated,
+    CancelToken token,
   ) async {
     final queued = AttachmentHandle(
       urlKey: urlKey,
@@ -113,30 +119,51 @@ class AttachmentQueue {
       contentType: attachment.contentType,
       totalBytes: attachment.sizeBytes,
     );
-    await _blobs.ensure(
-      urlKey: urlKey,
-      remoteUrl: attachment.fileUrl,
-      fileName: attachment.fileName,
-      contentType: attachment.contentType,
-      expectedBytes: attachment.sizeBytes,
-    );
-    _emit(queued);
-    await _blobs.setState(urlKey, AttachmentTransferState.queued);
-
-    await _gate.acquire(userInitiated: userInitiated);
+    var acquired = false;
     try {
+      await _blobs.ensure(
+        urlKey: urlKey,
+        remoteUrl: attachment.fileUrl,
+        fileName: attachment.fileName,
+        contentType: attachment.contentType,
+        expectedBytes: attachment.sizeBytes,
+      );
+      _emit(queued);
+      await _blobs.setState(urlKey, AttachmentTransferState.queued);
+
+      if (!token.isCancelled) {
+        acquired = await _gate.acquire(
+          userInitiated: userInitiated,
+          cancelled: token.whenCancel.then((_) {}),
+        );
+      }
+      if (!acquired || token.isCancelled) {
+        final absent = _absent(attachment, urlKey);
+        await _blobs.setState(urlKey, AttachmentTransferState.absent);
+        _emit(absent);
+        return absent;
+      }
       return await _runner.run(
         attachment: attachment,
         initial: queued,
         userInitiated: userInitiated,
-        registerToken: (token) => _tokens[urlKey] = token,
+        token: token,
       );
     } finally {
-      _gate.release();
+      if (acquired) _gate.release();
       _inFlight.remove(urlKey);
       _tokens.remove(urlKey);
     }
   }
+
+  AttachmentHandle _absent(ChatMessageAttachment attachment, String urlKey) =>
+      AttachmentHandle(
+        urlKey: urlKey,
+        remoteUrl: attachment.fileUrl,
+        state: AttachmentTransferState.absent,
+        fileName: attachment.fileName,
+        contentType: attachment.contentType,
+      );
 
   /// Publish a handle nobody downloaded — the sender adopting the file it
   /// just uploaded. Same channel a finished download uses, so a gate already
@@ -148,6 +175,7 @@ class AttachmentQueue {
   }
 
   void dispose() {
+    _stopping = true;
     for (final token in _tokens.values) {
       token.cancel('queue disposed');
     }

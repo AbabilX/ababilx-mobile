@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'chat_deletion_filter.dart';
+import 'chat_message_row.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -87,7 +88,11 @@ class ChatMessageStore {
       );
     }
     try {
-      final scope = jsonEncode([conversationId, threadRootId]);
+      final scope = jsonEncode([
+        'full-history-v2',
+        conversationId,
+        threadRootId,
+      ]);
       if (!_migratedScopes.contains(scope)) {
         if (await native.isLegacyMigrated(scope)) {
           _migratedScopes.add(scope);
@@ -98,7 +103,7 @@ class ChatMessageStore {
           // the first open of every chat, which is exactly when the reader
           // is waiting.
           _migrateScope(native, scope, conversationId, threadRootId);
-          return _drift.page(
+          return await _drift.page(
             conversationId,
             limit: limit,
             beforeMs: beforeMs,
@@ -107,7 +112,7 @@ class ChatMessageStore {
           );
         }
       }
-      return native.page(
+      return await native.page(
         conversationId,
         limit: limit,
         beforeMs: beforeMs,
@@ -138,14 +143,29 @@ class ChatMessageStore {
   ) {
     _migrations[scope] ??= () async {
       try {
-        // Migrate the entire retained slice before marking this scope done.
-        // Re-running after a crash is harmless because id is the conflict key.
-        final legacy = await _drift.page(
-          conversationId,
-          limit: localPageCeiling,
-          threadRootId: threadRootId,
-        );
-        await native.migrateLegacy(scope, legacy);
+        // A versioned scope repairs markers written by the old one-page
+        // migration. Seed in bounded pages; only the final empty call marks
+        // completion. Recovery writes preserve newer native rows on retries.
+        int? beforeMs;
+        String? beforeId;
+        while (true) {
+          final legacy = await _drift.page(
+            conversationId,
+            limit: localPageCeiling,
+            beforeMs: beforeMs,
+            beforeId: beforeId,
+            threadRootId: threadRootId,
+            strict: true,
+          );
+          if (legacy.isEmpty) break;
+          await native.upsert(
+            deletions.filter(legacy),
+            recoverySource: 'backup',
+          );
+          beforeMs = messageTimeMs(legacy.first);
+          beforeId = localMessageRowId(legacy.first);
+        }
+        await native.migrateLegacy(scope, const []);
         _migratedScopes.add(scope);
       } catch (_) {
         // Drift keeps answering this scope; the next open tries again.

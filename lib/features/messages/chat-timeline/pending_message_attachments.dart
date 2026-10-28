@@ -1,7 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/file_preview_kind.dart';
+import '../../../shared/widgets/preview_icon.dart';
+import '../../../shared/widgets/video_pending_thumb.dart';
 import '../data/models/chat_models.dart';
+import 'pending_preview_cache.dart';
+import 'pending_upload_ring.dart';
+import 'signal_bubble_metrics.dart';
 
+/// The file being sent, still in preview, with the upload control on it.
+///
+/// One ring for the whole message: progress is one number, and Cancel stops
+/// every byte of this send.
 class PendingMessageAttachments extends StatelessWidget {
   const PendingMessageAttachments({
     super.key,
@@ -12,6 +24,7 @@ class PendingMessageAttachments extends StatelessWidget {
     this.progress,
     this.onCancel,
     this.cancelLabel = 'Cancel',
+    this.bleed = false,
   });
 
   final List<ChatAttachmentInput> attachments;
@@ -22,126 +35,148 @@ class PendingMessageAttachments extends StatelessWidget {
   final VoidCallback? onCancel;
   final String cancelLabel;
 
+  /// Edge-to-edge inside a media bubble. The bubble clips the corners.
+  final bool bleed;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final scheme = Theme.of(context).colorScheme;
+    final photos = attachments.where(_isVisual).toList();
+    final files = attachments.where((a) => !_isVisual(a)).toList();
+    final preview = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        for (final attachment in attachments)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Row(
-              children: [
-                Icon(
-                  _iconFor(attachment.contentType),
-                  size: 22,
-                  color: foreground,
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        attachment.fileName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: foreground),
-                      ),
-                      Text(
-                        _formatBytes(attachment.sizeBytes),
-                        style: Theme.of(
-                          context,
-                        ).textTheme.labelSmall?.copyWith(color: muted),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (uploading) ...[
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 3,
-                    backgroundColor: muted.withValues(alpha: .25),
-                    color: foreground,
-                  ),
-                ),
-              ),
-              if (onCancel != null) ...[
-                const SizedBox(width: 8),
-                _CancelUploadButton(
-                  label: cancelLabel,
-                  color: foreground,
-                  onTap: onCancel!,
-                ),
-              ],
-            ],
-          ),
-        ],
+        if (photos.isNotEmpty) _photos(photos, scheme),
+        for (final file in files) _filePlate(file, scheme),
       ],
     );
-  }
-}
 
-/// Compact Cancel control beside the upload bar — icon + label, like the
-/// download badge, so the affordance is obvious while bytes are moving.
-class _CancelUploadButton extends StatelessWidget {
-  const _CancelUploadButton({
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.close_rounded, size: 16, color: color),
-              const SizedBox(width: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+    return ClipRRect(
+      key: const Key('pending-upload-preview'),
+      borderRadius: BorderRadius.circular(bleed ? 0 : 12),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          preview,
+          if (uploading)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: ColoredBox(
+                  color: scheme.scrim.withValues(
+                    alpha: photos.isEmpty ? 0.12 : 0.28,
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          if (uploading)
+            PendingUploadRing(
+              progress: progress,
+              label: cancelLabel,
+              onPhoto: photos.isNotEmpty,
+              onCancel: onCancel,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _photos(List<ChatAttachmentInput> photos, ColorScheme scheme) {
+    final width = SignalBubbleMetrics.mediaMaxWidth;
+    if (photos.length == 1) {
+      return _frame(photos.first, scheme, width, 180);
+    }
+    const gap = 2.0;
+    final cell = (width - gap) / 2;
+    return SizedBox(
+      width: width,
+      child: Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: [
+          for (final photo in photos.take(4)) _frame(photo, scheme, cell, cell),
+        ],
+      ),
+    );
+  }
+
+  Widget _frame(
+    ChatAttachmentInput attachment,
+    ColorScheme scheme,
+    double width,
+    double height,
+  ) {
+    final plate = scheme.surfaceContainerHighest;
+    final path = PendingPreviewCache.get(attachment.fileUrl);
+    final video = looksLikeVideo(attachment.contentType, attachment.fileName);
+    Widget child;
+    if (video) {
+      child = VideoPendingThumb(placeholderColor: plate, size: height);
+    } else if (path != null) {
+      child = Image.file(
+        File(path),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        cacheWidth: (width * 2).round(),
+        errorBuilder: (_, _, _) => ColoredBox(color: plate),
+      );
+    } else {
+      child = ColoredBox(color: plate);
+    }
+    return SizedBox(width: width, height: height, child: child);
+  }
+
+  Widget _filePlate(ChatAttachmentInput attachment, ColorScheme scheme) {
+    final kind = FilePreviewKind.of(
+      fileName: attachment.fileName,
+      contentType: attachment.contentType,
+    );
+    return SizedBox(
+      width: SignalBubbleMetrics.mediaMaxWidth,
+      height: 132,
+      child: ColoredBox(
+        color: scheme.surfaceContainerHighest,
+        child: Stack(
+          children: [
+            Center(
+              child: PreviewIcon(
+                kind.icon,
+                size: 28,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 10,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    attachment.fileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: foreground, fontSize: 14),
+                  ),
+                  Text(
+                    _formatBytes(attachment.sizeBytes),
+                    style: TextStyle(color: muted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-IconData _iconFor(String contentType) {
-  final type = contentType.toLowerCase();
-  if (type.startsWith('image/')) return Icons.image_outlined;
-  if (type.startsWith('video/')) return Icons.video_file_outlined;
-  if (type.startsWith('audio/')) return Icons.audio_file_outlined;
-  if (type == 'application/pdf') return Icons.picture_as_pdf_outlined;
-  return Icons.insert_drive_file_outlined;
-}
+bool _isVisual(ChatAttachmentInput attachment) =>
+    looksLikeImage(attachment.contentType, attachment.fileName) ||
+    looksLikeVideo(attachment.contentType, attachment.fileName);
 
 String _formatBytes(int bytes) {
   if (bytes >= 1024 * 1024) {

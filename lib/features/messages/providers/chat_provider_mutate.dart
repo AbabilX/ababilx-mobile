@@ -5,6 +5,8 @@ mixin _ChatMutateMixin
   @override
   ChatRepository get repo;
 
+  Object? _messageSearchRequest;
+
   /// Drawn locally first, sent second — the server's answer (or the private
   /// op) then replaces the guess, and a refusal puts the old set back.
   Future<void> toggleReaction(String messageId, String emoji) async {
@@ -273,27 +275,55 @@ mixin _ChatMutateMixin
   /// on-device hits rather than replacing them — an encrypted DM or group
   /// exists only in the local, vault-decrypted half.
   Future<void> searchMessages(String q, {String? conversationId}) async {
-    state = state.copyWith(searchQuery: q, searchLoading: true);
+    q = q.trim();
+    final identity = (query: q, conversationId: conversationId);
+    final request = Object();
+    _messageSearchRequest = request;
+    bool current() =>
+        !(this as ChatNotifier).isDisposed &&
+        identical(_messageSearchRequest, request) &&
+        state.searchIdentity == identity;
+    state = state.copyWith(
+      searchQuery: q,
+      searchIdentity: identity,
+      searchResults: const [],
+      searchLoading: true,
+    );
+    if (q.isEmpty) {
+      state = state.copyWith(searchLoading: false);
+      return;
+    }
+    // Only the newest input surviving this quiet interval starts a scan.
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    if (!current()) return;
     final store = (this as _ChatCacheMixin).messageStore;
     final vault = ref.read(messageVaultProvider);
     var userId = state.currentUserId;
     if (userId.isEmpty) userId = await (this as ChatNotifier).localUserId();
-    final local = await LocalMessageSearch(
-      store,
-      vault.isUnlocked && userId.isNotEmpty
-          ? (messages) async {
-              final clear = await vault.decryptMessages(messages, userId);
-              return clear
-                  .where(
-                    (message) =>
-                        message.body != 'Encrypted message' &&
-                        message.body != 'Unable to decrypt this message',
-                  )
-                  .toList();
-            }
-          : (_) async => const [],
-    ).search(q, conversationId: conversationId);
-    if (state.searchQuery != q) return;
+    if (!current()) return;
+    final canDecrypt = vault.isUnlocked && userId.isNotEmpty;
+    final local =
+        await LocalMessageSearch(
+          store,
+          canDecrypt
+              ? (messages) async {
+                  final clear = await vault.decryptMessages(messages, userId);
+                  return clear
+                      .where(
+                        (message) =>
+                            message.body != 'Encrypted message' &&
+                            message.body != 'Unable to decrypt this message',
+                      )
+                      .toList();
+                }
+              : (_) async => const [],
+        ).search(
+          q,
+          conversationId: conversationId,
+          searchEncrypted: canDecrypt,
+          isCurrent: current,
+        );
+    if (!current()) return;
     if (q.trim().length < 2) {
       state = state.copyWith(searchResults: local, searchLoading: false);
       return;
@@ -305,7 +335,7 @@ mixin _ChatMutateMixin
       final remote = (await repo.searchMessages(q)).where(
         (m) => conversationId == null || m.conversationId == conversationId,
       );
-      if (state.searchQuery != q) return;
+      if (!current()) return;
       final merged =
           <String, ChatMessage>{
               for (final m in remote) m.id: m,
@@ -315,7 +345,7 @@ mixin _ChatMutateMixin
       state = state.copyWith(searchResults: merged, searchLoading: false);
     } catch (_) {
       // Offline: whatever the local index found stands as the answer.
-      if (state.searchQuery != q) return;
+      if (!current()) return;
       state = state.copyWith(searchResults: local, searchLoading: false);
     }
   }

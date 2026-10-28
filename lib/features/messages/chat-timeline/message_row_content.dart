@@ -133,7 +133,9 @@ class MessageRowContent extends ConsumerWidget {
                 isOwn: isOwnMessage,
                 clusterPosition: clusterPosition,
                 colors: colors,
-                dimmed: isSending,
+                dimmed:
+                    isSending &&
+                    message.sendStatus != MessageSendStatus.uploading,
                 transparent: isBareMediaBubble(message),
                 child: MessageBubbleContent(
                   message: message,

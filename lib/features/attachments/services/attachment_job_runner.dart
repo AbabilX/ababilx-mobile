@@ -39,22 +39,20 @@ class AttachmentJobRunner {
   final AttachmentDimensionReader? _dimensions;
   final _random = Random();
 
-  /// [registerToken] hands each attempt's cancel token back to the queue, so a
-  /// user tapping ✕ cancels the attempt that is actually running.
+  /// One token covers the whole job, including retry delays.
   Future<AttachmentHandle> run({
     required ChatMessageAttachment attachment,
     required AttachmentHandle initial,
     required bool userInitiated,
-    required void Function(CancelToken token) registerToken,
+    required CancelToken token,
   }) async {
     final urlKey = initial.urlKey;
     final maxAttempts = userInitiated ? maxUserAttempts : maxAutoAttempts;
     var handle = initial;
 
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
-      final token = CancelToken();
-      registerToken(token);
       try {
+        if (token.isCancelled) throw token.cancelError!;
         return await _transfer(attachment, handle, userInitiated, token);
       } catch (error) {
         if (isCancellation(error)) {
@@ -78,7 +76,10 @@ class AttachmentJobRunner {
         if (failure.permanent || attempt == maxAttempts - 1) {
           return _fail(urlKey, handle, failure, attempt + 1);
         }
-        await Future<void>.delayed(_backoff(attempt));
+        await Future.any([
+          Future<void>.delayed(_backoff(attempt)),
+          token.whenCancel.then((_) {}),
+        ]);
       }
     }
     return handle;
