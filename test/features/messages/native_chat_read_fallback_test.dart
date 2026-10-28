@@ -19,8 +19,9 @@ void main() {
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
       messenger.setMockMethodCallHandler(channel, (call) async {
         if (call.method == 'isLegacyMigrated') return true;
-        if (call.method == 'page')
+        if (call.method == 'page') {
           throw PlatformException(code: 'db_unavailable');
+        }
         return null;
       });
       try {
