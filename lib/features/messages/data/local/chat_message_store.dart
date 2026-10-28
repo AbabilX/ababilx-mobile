@@ -112,7 +112,7 @@ class ChatMessageStore {
           );
         }
       }
-      return native.page(
+      return await native.page(
         conversationId,
         limit: limit,
         beforeMs: beforeMs,
