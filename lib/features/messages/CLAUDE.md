@@ -1786,6 +1786,24 @@ pill over the mute sheet.
 - The web only shows the mute; control stays here. Do not port the sheet to
   the web.
 
+# Composer selection format (2026-10-28)
+
+Selecting any range in the composer (and in Edit message) — one word, several
+words, or a whole line — opens icons only: bold, italic, link, cut, copy,
+paste, and delete the selection (`composer_format_menu.dart`). No text labels
+and no system Cut/Copy/Paste row on that bar. A caret with nothing selected
+keeps the system menu, so paste still works there. The bar opens again after
+the handles stop moving (`composer_selection_bar.dart`): dragging a word out
+into a line does not reopen it on Android otherwise. Bold and italic wrap
+each line on its own, because emphasis cannot cross a newline. A link turns
+a line break into a space. Remove deletes the selection, the marks that only
+wrapped it, one neighbouring space, and the line break when the selection is
+a whole line. The draft stays markdown — the same `**`, `*` and `[words](url)`
+the bubble already draws — and the field paints the words bold or italic
+while the marks stay in the string, so the caret does not drift
+(`findComposerEmphasis`). Link is a sheet, http/https only. Pinned by
+`test/features/messages/composer_format_test.dart`.
+
 # Keyboard stickers and GIFs (2026-09-27)
 
 Reported as "can't send stickers or GIFs". Gboard, Samsung Keyboard and

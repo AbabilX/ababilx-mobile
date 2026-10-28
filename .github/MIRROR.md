@@ -5,13 +5,10 @@ Private `main` → public [`AbabilX/ababilx-mobile`](https://github.com/AbabilX/
 ## Behaviour
 
 - Trigger: push to `main`, or manual `workflow_dispatch`
-- Publishes the **current tree only** (updates public `main`)
-- Strips paths from `PATHS_TO_REMOVE_BEFORE_PUBLIC.txt` via `tool/mirror_public_prepare.sh`
-  (`android/key.properties`, `upload-keystore.jks`, `android/app/google-services.json`, plus any `*.jks` / `*.keystore`)
-- Does **not** copy private git history
-- Does **not** copy `.github/workflows/` (avoids GitHub’s “OAuth App needs `workflow` scope” rejection, and keeps public CI separate)
-
-`upload_certificate.pem` is treated as public-safe (per `PATHS_TO_REMOVE_BEFORE_PUBLIC.txt`).
+- Publishes **every commit on `main`**. Author, message, and file diff stay. GitHub contributors come from those authors.
+- Rewrites each commit so these never ship: `android/key.properties`, `upload-keystore.jks`, `android/app/google-services.json`, `*.jks`, `*.keystore`, `*.pem`, `plan.md`, `PLAY_STORE_WHATS_NEW.txt`, `PATHS_TO_REMOVE_BEFORE_PUBLIC.txt`, `docs/legal-audit/`, and audit `*.md` under `docs/audits/` and `tool/audit/`.
+- Does **not** publish `.github/workflows/` (the token has no `workflow` scope, and private CI stays here).
+- Replaces public `main` when the histories differ. The old snapshot commits are not kept.
 
 ## Secret
 

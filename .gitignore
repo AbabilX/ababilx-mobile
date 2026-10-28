@@ -48,3 +48,12 @@ app.*.map.json
 /android/key.properties
 *.jks
 *.keystore
+*.pem
+
+# Scratch plans and internal audit notes. The mirror strips these too.
+/plan.md
+/PLAY_STORE_WHATS_NEW.txt
+/PATHS_TO_REMOVE_BEFORE_PUBLIC.txt
+/docs/legal-audit/
+/docs/audits/*.md
+/tool/audit/*.md

@@ -4,6 +4,9 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../chat_icon.dart';
+import 'composer_format_menu.dart';
+import 'composer_highlight_controller.dart';
+import 'composer_selection_bar.dart';
 
 /// "Edit message" as a bottom sheet that rides up with the keyboard. Answers
 /// the new text, or null when nothing should be sent — cancelled, swiped
@@ -32,7 +35,10 @@ class _EditMessageSheet extends ConsumerStatefulWidget {
 }
 
 class _EditMessageSheetState extends ConsumerState<_EditMessageSheet> {
-  late final _text = TextEditingController(text: widget.initial);
+  late final _text = ComposerHighlightController(
+    text: widget.initial,
+    mentionLabels: () => const [],
+  );
 
   @override
   void dispose() {
@@ -70,26 +76,34 @@ class _EditMessageSheetState extends ConsumerState<_EditMessageSheet> {
                   color: colors.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: TextField(
+                child: ComposerSelectionBar(
                   controller: _text,
-                  autofocus: true,
-                  minLines: 1,
-                  maxLines: 6,
-                  textCapitalization: TextCapitalization.sentences,
-                  onChanged: (_) => setState(() {}),
-                  style: const TextStyle(fontSize: 16, height: 1.3),
-                  decoration: const InputDecoration(
-                    // The app theme fills every field with its own square
-                    // plate, which painted over the rounded box behind it.
-                    filled: false,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+                  child: TextField(
+                    controller: _text,
+                    contextMenuBuilder: (_, state) => composerFormatMenu(
+                      pageContext: context,
+                      editor: state,
+                      controller: _text,
+                    ),
+                    autofocus: true,
+                    minLines: 1,
+                    maxLines: 6,
+                    textCapitalization: TextCapitalization.sentences,
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(fontSize: 16, height: 1.3),
+                    decoration: const InputDecoration(
+                      // The app theme fills every field with its own square
+                      // plate, which painted over the rounded box behind it.
+                      filled: false,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                 ),
