@@ -77,7 +77,7 @@ Future<ShareUploadOutcome> uploadShareFile({
         if (actual == null || actual > size) return ShareUploadOutcome.failed;
         watchdog?.cancel();
         cancel?.detach(abort);
-        return uploadShareFile(
+        return await uploadShareFile(
           http: http,
           to: to,
           messageId: messageId,

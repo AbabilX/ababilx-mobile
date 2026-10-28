@@ -98,7 +98,7 @@ class ChatMessageStore {
           // the first open of every chat, which is exactly when the reader
           // is waiting.
           _migrateScope(native, scope, conversationId, threadRootId);
-          return _drift.page(
+          return await _drift.page(
             conversationId,
             limit: limit,
             beforeMs: beforeMs,
@@ -107,7 +107,7 @@ class ChatMessageStore {
           );
         }
       }
-      return native.page(
+      return await native.page(
         conversationId,
         limit: limit,
         beforeMs: beforeMs,

@@ -68,21 +68,23 @@ class TransferChatsServer {
 
   Future<void> _handle(HttpRequest request) async {
     try {
-      if (!_allowed(request)) return _reply(request, HttpStatus.forbidden);
+      if (!_allowed(request)) {
+        return await _reply(request, HttpStatus.forbidden);
+      }
       final auth = request.headers.value(HttpHeaders.authorizationHeader);
       if (auth == null || !sameTransferToken(auth, 'Bearer $token')) {
-        return _reply(request, HttpStatus.unauthorized);
+        return await _reply(request, HttpStatus.unauthorized);
       }
       final route = '${request.method} ${request.uri.path}';
       switch (route) {
         case 'GET $transferPathStatus':
-          return _reply(request, HttpStatus.ok, status().toJson());
+          return await _reply(request, HttpStatus.ok, status().toJson());
         case 'POST $transferPathIdentity':
-          return _identity(request);
+          return await _identity(request);
         case 'PUT $transferPathStream':
-          return _stream(request);
+          return await _stream(request);
       }
-      return _reply(request, HttpStatus.notFound);
+      return await _reply(request, HttpStatus.notFound);
     } catch (_) {
       try {
         await _reply(request, HttpStatus.internalServerError);

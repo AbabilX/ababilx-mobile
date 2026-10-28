@@ -83,7 +83,7 @@ mixin _ChatOlderEdgeMixin
         if (isDisposed) return;
         final pull = answer.pull;
         if (!answer.canTell || pull == null) {
-          return _readStoreOnly(conversationId, key);
+          return await _readStoreOnly(conversationId, key);
         }
         final joined = await recordOlderPage(
           conversationId,
@@ -157,7 +157,7 @@ mixin _ChatOlderEdgeMixin
       if (isDisposed) return;
       final pull = answer.pull;
       if (pull == null || pull.page.messages.isEmpty) {
-        return _readStoreOnly(conversationId, key);
+        return await _readStoreOnly(conversationId, key);
       }
       _showOlderRows(key, pull.messages);
       if (pull.page.hasMore) {
