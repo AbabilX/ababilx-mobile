@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:cryptography/cryptography.dart';
+import 'dart:typed_data';
 
 import 'backup_crypto.dart';
 import 'backup_errors.dart';
 import 'backup_header.dart';
+import 'backup_record_worker.dart';
 
 /// Where one restored file's bytes go. Closed exactly once, after its last
 /// part, before the next record is handled.
@@ -59,16 +59,22 @@ class BackupFileReader {
       if (!_same(expected, header.keyCheck)) {
         throw const BackupWrongAccountError();
       }
-      final key = await BackupCrypto.fileKey(accountKey, header.salt);
+      final key = await (await BackupCrypto.fileKey(
+        accountKey,
+        header.salt,
+      )).extractBytes();
       var index = 0;
       var frames = 0;
       var files = 0;
       while (true) {
         if (shouldContinue?.call() == false) throw const BackupCancelledError();
-        final plain = await _nextRecord(input, key, encoded.digest, index++);
+        final (type, body) = await _nextRecord(
+          input,
+          key,
+          encoded.digest,
+          index++,
+        );
         onBytes?.call(await input.position(), total);
-        final type = plain[0];
-        final body = plain.sublist(1);
         if (type == BackupRecordType.filePart) {
           await current?.add(body);
           continue;
@@ -82,7 +88,7 @@ class BackupFileReader {
           return;
         }
         if (type != BackupRecordType.frames) continue; // a newer record kind
-        final text = utf8.decode(gzip.decode(body));
+        final text = utf8.decode(body); // gunzipped by the worker
         for (final line in const LineSplitter().convert(text)) {
           if (line.isEmpty) continue;
           frames++;
@@ -127,9 +133,10 @@ class BackupFileReader {
     return (header, EncodedHeader(bytes));
   }
 
-  static Future<List<int>> _nextRecord(
+  /// Opened off the UI isolate by [BackupRecordWorker].
+  static Future<(int, Uint8List)> _nextRecord(
     RandomAccessFile input,
-    SecretKey key,
+    List<int> key,
     String digest,
     int index,
   ) async {
@@ -139,17 +146,11 @@ class BackupFileReader {
     if (length > BackupFormat.maxRecordBytes) throw const BackupDamagedError();
     final sealed = await input.read(length);
     if (sealed.length != length) throw const BackupIncompleteError();
-    try {
-      final plain = await BackupCrypto.open(
-        key,
-        BackupCrypto.recordAad(digest, index),
-        sealed,
-      );
-      if (plain.isEmpty) throw const BackupDamagedError();
-      return plain;
-    } on SecretBoxAuthenticationError {
-      throw const BackupDamagedError();
-    }
+    return BackupRecordWorker.open(
+      key,
+      BackupCrypto.recordAad(digest, index),
+      sealed,
+    );
   }
 
   /// One unreadable line is one lost row, never a lost restore: the record's
