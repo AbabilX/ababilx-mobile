@@ -31,13 +31,15 @@ class CallFavoriteTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chat = ref.watch(chatProvider);
-    final live = chat.conversationById(favorite.conversationId);
+    // One row and the account id, not the whole chat state: Calls stays
+    // built behind an open chat.
+    final live = ref.watch(
+      chatProvider.select((s) => s.conversationById(favorite.conversationId)),
+    );
+    final me = ref.watch(chatProvider.select((s) => s.currentUserId));
     final name = live == null
         ? favorite.name
-        : ref
-              .watch(contactNicknamesProvider)
-              .titleFor(live, chat.currentUserId);
+        : ref.watch(contactNicknamesProvider).titleFor(live, me);
     final avatar = live?.peerUserAvatar ?? favorite.avatarUrl;
     return Semantics(
       button: true,
