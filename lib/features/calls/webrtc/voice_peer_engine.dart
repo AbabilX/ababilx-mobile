@@ -15,7 +15,8 @@ import '../network/call_network_quality.dart';
 import '../network/call_network_stats.dart';
 import 'voice_audio_codec_log.dart';
 import 'voice_audio_priority.dart';
-import 'voice_audio_progress.dart';
+import 'voice_audio_cap.dart';
+import 'voice_media_proof.dart';
 import 'voice_camera_capture.dart';
 import 'voice_media_map.dart';
 import 'voice_offer_replay.dart';
@@ -58,6 +59,7 @@ class VoicePeerEngine {
     required this.onFailed,
     required this.onTrouble,
     required this.onHealthy,
+    required this.onMediaFlowing,
     required this.onRestartRequested,
     required this.onLocalScreenChanged,
     required this.onRemoteScreenChanged,
@@ -91,6 +93,10 @@ class VoicePeerEngine {
   /// so a recovery in progress can be cleared.
   final void Function() onHealthy;
 
+  /// A stats poll covering the time since this instant showed media moving
+  /// both ways, or as far as can be told.
+  final void Function(DateTime intervalStart) onMediaFlowing;
+
   /// The peer asked us to run the ICE restart (only the caller re-offers).
   final void Function() onRestartRequested;
 
@@ -119,7 +125,10 @@ class VoicePeerEngine {
   bool _remoteDescriptionSet = false;
   bool _disposed = false;
   bool _connected = false;
-  final _audioProgress = VoiceAudioProgress();
+  final _mediaProof = VoiceMediaProof();
+  DateTime? _lastPollAt;
+  final _audioCap = VoiceAudioCap();
+  RTCRtpSender? _micSender;
   final _networkStats = CallNetworkStatsReader();
   final _networkTrend = CallNetworkTrend();
   final _sendWatch = VoiceSendWatch();
@@ -304,7 +313,9 @@ class VoicePeerEngine {
 
     for (final track in stream.getAudioTracks()) {
       if (_disposed) return;
-      await prioritizeAudioSend(await peer.addTrack(track, stream));
+      final sender = await peer.addTrack(track, stream);
+      _micSender = sender;
+      await prioritizeAudioSend(sender);
     }
     if (video) {
       try {
@@ -610,27 +621,27 @@ class VoicePeerEngine {
     final peer = _peer;
     if (_disposed || peer == null || _audioHealthPending) return;
     _audioHealthPending = true;
+    final intervalStart = _lastPollAt;
+    _lastPollAt = DateTime.now();
     try {
       final stats = await peer.getStats();
       if (_disposed || !identical(peer, _peer)) return;
-      final packets = <String, num>{};
-      for (final report in stats) {
-        final values = report.values;
-        if (report.type == 'inbound-rtp' &&
-            (values['kind'] ?? values['mediaType']) == 'audio' &&
-            values['packetsReceived'] is num) {
-          packets[report.id] = values['packetsReceived'] as num;
-        }
+      final flowing = _mediaProof.update(stats);
+      if (flowing &&
+          intervalStart != null &&
+          mediaPathUp(peer.connectionState, peer.iceConnectionState)) {
+        onMediaFlowing(intervalStart);
       }
-      if (_audioProgress.update(packets)) onHealthy();
       // The same report says how well the path is carrying the call.
       final path = _networkStats.read(stats);
       callNetworkQuality.value = _networkTrend.add(path);
       _observeForDiagnostics(peer, stats, path);
       await _watchSend(peer, stats, path);
+      await _adaptVoice(peer, stats, path);
     } catch (_) {
       // An unavailable stats sample is not evidence of call failure.
-      _audioProgress.update({});
+      _mediaProof.reset();
+      _lastPollAt = null;
       final diagnostics = _diagnostics;
       if (diagnostics != null && !_disposed) {
         callDiagnostics.value = diagnostics.addFailure(
@@ -726,6 +737,43 @@ class VoicePeerEngine {
       unawaited(_sendMediaMap().catchError((_) {}));
     } catch (error) {
       voiceCallLog('stats.send.failed', reason: error.toString());
+    }
+  }
+
+  /// Steps the voice down on a congested link and back up once it calms. Never
+  /// throws: a failure here must not read as a failed stats sample.
+  Future<void> _adaptVoice(
+    RTCPeerConnection peer,
+    List<StatsReport> stats,
+    CallNetworkSample path,
+  ) async {
+    if (!kVoiceAudioCapEnabled) return;
+    try {
+      final action = _audioCap.update(
+        remoteLossPercent: audioRemoteLossPercent(stats),
+        rttMs: path.rttMs,
+        pathKey: readConnectionPath(stats).pairKey,
+        videoSending: _camera != null && !_cameraHeld,
+        live: mediaPathUp(peer.connectionState, peer.iceConnectionState),
+        nowMs: DateTime.now().millisecondsSinceEpoch,
+      );
+      if (action == VoiceCapAction.none || _disposed) return;
+      final sender = _micSender;
+      final bps = action == VoiceCapAction.cap
+          ? kVoiceCappedBps
+          : kVoiceFullBps;
+      if (sender == null || !await setAudioSendCap(sender, bps)) {
+        _audioCap.undo(action);
+        return;
+      }
+      voiceCallLog(
+        'audio.cap',
+        reason:
+            '${action.name} bps=$bps rtt=${path.rttMs?.round()} '
+            'floor=${_audioCap.floorRttMs?.round()}',
+      );
+    } catch (error) {
+      voiceCallLog('audio.cap.failed', reason: error.runtimeType.toString());
     }
   }
 

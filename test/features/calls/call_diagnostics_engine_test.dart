@@ -16,6 +16,7 @@ void main() {
       onFailed: (_) {},
       onTrouble: (_, {immediate = false}) {},
       onHealthy: () {},
+      onMediaFlowing: (_) {},
       onRestartRequested: () {},
       onLocalScreenChanged: (_) {},
       onRemoteScreenChanged: (_) {},

@@ -46,6 +46,67 @@ void main() {
     await tester.runAsync(controller.dispose);
   });
 
+  group('media seen moving', () {
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(
+        const MethodChannel('dev.fluttercommunity.plus/connectivity'),
+        (_) async => ['wifi'],
+      );
+      messenger.setMockMethodCallHandler(
+        const MethodChannel('dev.fluttercommunity.plus/connectivity_status'),
+        (_) async => null,
+      );
+    });
+
+    VoiceReconnectController build(List<bool> changes) =>
+        VoiceReconnectController(
+          isOfferer: () => true,
+          restart: () async {},
+          requestPeerRestart: () async {},
+          onGaveUp: (_) {},
+          onReconnectingChanged: changes.add,
+        );
+
+    testWidgets('packets from before the trouble began do not end it', (
+      tester,
+    ) async {
+      final changes = <bool>[];
+      final controller = build(changes);
+      await tester.pump();
+      final before = DateTime.now().subtract(const Duration(seconds: 1));
+      controller.noteTrouble('network_changed', immediate: true);
+      controller.noteMediaFlowing(before);
+      expect(controller.reconnecting, isTrue);
+      expect(changes, [true]);
+      await tester.runAsync(controller.dispose);
+    });
+
+    testWidgets('a whole interval after it does', (tester) async {
+      final changes = <bool>[];
+      final controller = build(changes);
+      await tester.pump();
+      controller.noteTrouble('network_changed', immediate: true);
+      controller.noteMediaFlowing(
+        DateTime.now().add(const Duration(milliseconds: 1)),
+      );
+      expect(controller.reconnecting, isFalse);
+      expect(changes, [true, false]);
+      await tester.runAsync(controller.dispose);
+    });
+
+    testWidgets('a healthy call is left alone', (tester) async {
+      final changes = <bool>[];
+      final controller = build(changes);
+      await tester.pump();
+      controller.noteMediaFlowing(DateTime.now());
+      expect(changes, isEmpty);
+      await tester.runAsync(controller.dispose);
+    });
+  });
+
   group('the socket coming back', () {
     late MethodChannel methods;
     late MethodChannel events;

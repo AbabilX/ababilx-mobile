@@ -1420,6 +1420,10 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
         if (state.call?.id != callId || _wasFinished(callId)) return;
         _reconnect?.noteHealthy();
       },
+      onMediaFlowing: (intervalStart) {
+        if (state.call?.id != callId || _wasFinished(callId)) return;
+        _reconnect?.noteMediaFlowing(intervalStart);
+      },
       onRestartRequested: () {
         if (state.call?.id != callId || _wasFinished(callId)) return;
         _reconnect?.noteRestartRequested();

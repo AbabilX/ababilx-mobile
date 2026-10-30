@@ -1656,6 +1656,25 @@ either side, and the one retry came 6 s later.
 - Reconnect: backoff now tops out at 8 s (was 20 s), and `noteSignallingBack`
   restarts as soon as the socket returns. Measured before: voice came back 5.3 s
   after a 20 s outage ended and 11.9 s after a 45 s one.
-- **Still open:** a poll seeing packets from before a network change, or incoming
-  audio alone, can clear a recovery in progress (`VoiceAudioProgress` ->
-  `onHealthy`). Neither is verified on a real two-phone call.
+
+## What ends a recovery; the voice cap — 2026-10-30
+
+- **Packets end a recovery only if they prove it** (`VoiceMediaProof`,
+  `noteMediaFlowing`). The interval must lie wholly after the trouble began, the
+  connection and ICE must both be up, and while we send, a new report from the
+  peer (`roundTripTimeMeasurements`) is required: incoming audio shows only that
+  the peer reaches us. Measured once per case, A059 through a UDP proxy: the old
+  rule called a dead path recovered at 1.5 s and stood idle 3 s on a one-way cut,
+  the new one neither. Voice came back equally fast (~0.3 s after healing) in
+  both: the old gap healed itself once the state went `failed`, so this removes
+  false "recovered", not a long outage. On a fine path, ICE events ended all four
+  mute cases in ~100 ms; the stats path is the backstop.
+- **`VoiceAudioCap` is built and OFF** (`--dart-define=CALL_AUDIO_CAP=true`).
+  Congestion = peer-reported voice loss >= 5% with RTT 80 ms over the path's
+  floor; steps to 16 kbps, lifts after a calm hold (30 s, doubling to 240 s).
+  Lifting must set 32000: the plugin ignores a null `maxBitrate`. Measured with
+  room noise, not speech (15 kbps real rate), one run, off vs on, loss/concealment
+  percent: 40k 16.7/3.3 vs 8.7/6.1, 32k 20.4/10.4 vs 16.7/10.8, 10% random loss
+  6.6 vs 7.0 concealment (rule rightly did not fire). It stepped down on a 48k
+  link that lost only 1.3% off, and stayed at 16 kbps on a clean link past each
+  short phase. Not proven useful; needs speech on two phones, by ear.

@@ -79,6 +79,15 @@ class VoiceReconnectController {
     onReconnectingChanged(false);
   }
 
+  /// A stats poll covering the time since [intervalStart] showed media moving.
+  /// Packets counted before the trouble began say nothing about the path now,
+  /// so only an interval wholly inside the recovery can end it.
+  void noteMediaFlowing(DateTime intervalStart) {
+    final since = _unhealthySince;
+    if (_disposed || since == null || intervalStart.isBefore(since)) return;
+    noteHealthy();
+  }
+
   /// The peer connection dropped. [immediate] skips the settle grace for
   /// causes that never heal by waiting (hard failure, interface change).
   void noteTrouble(String reason, {bool immediate = false}) {
