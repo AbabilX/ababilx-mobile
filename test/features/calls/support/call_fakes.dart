@@ -138,6 +138,15 @@ class FakeWs extends WsClient {
   @override
   Stream<Map<String, dynamic>> get events => incoming.stream;
 
+  /// While set, `connect` stays in flight: a handshake the test can pause.
+  Completer<void>? connectGate;
+
+  /// Socket events that happened, for checking their order against a request.
+  final reconnected = StreamController<void>.broadcast();
+
   @override
-  Future<void> connect() async {}
+  Stream<void> get reconnects => reconnected.stream;
+
+  @override
+  Future<void> connect() async => connectGate?.future;
 }

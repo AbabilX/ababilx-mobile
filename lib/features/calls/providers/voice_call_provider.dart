@@ -86,7 +86,6 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   int _operation = 0;
   bool _ending = false;
   VoicePeerEngine? _preparingEngine;
-  bool _offerResent = false;
 
   /// Bounded re-asks for a call lookup that failed without saying anything
   /// about the call (no network, a timeout, a 5xx).
@@ -123,6 +122,25 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
   /// How long a finished call stays on screen before the return to idle.
   @visibleForTesting
   Duration get resetDelay => const Duration(seconds: 5);
+
+  /// How long an Answer waits for the socket before going to the server
+  /// anyway. A fresh connection took 225-420 ms on a phone; past this the
+  /// network is bad enough that the offer retries are the better bet, and the
+  /// person who pressed Answer should not be kept waiting on it.
+  @visibleForTesting
+  Duration get socketBeforeAcceptBudget => const Duration(seconds: 3);
+
+  /// Gaps between repeats of an offer nothing has answered. Together they stay
+  /// inside the connect watchdog, which is what ends the attempt.
+  static const defaultOfferRetryDelays = [
+    Duration(seconds: 2),
+    Duration(seconds: 4),
+    Duration(seconds: 8),
+    Duration(seconds: 16),
+  ];
+
+  @visibleForTesting
+  List<Duration> get offerRetryDelays => defaultOfferRetryDelays;
 
   /// Backoff between re-asks of a call lookup that failed in transit.
   @visibleForTesting
@@ -263,6 +281,7 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     _booted = true;
     _wsSub = _ws.events.listen(_handleWsEvent);
     _wsReconnectSub = _ws.reconnects.listen((_) {
+      _reconnect?.noteSignallingBack();
       unawaited(resyncActiveCall());
     });
     _nativeSub = NativeCallEvents.stream.listen(_handleNativeEvent);
@@ -698,6 +717,12 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     try {
       await _ensureCallPermissions();
       if (operation != _operation) return;
+      // The socket first. The caller offers the moment the server says
+      // "accepted", and the server relays to open sockets and keeps nothing: an
+      // accept that overtakes this socket lost the offer, and a call answered
+      // from the background always had a closed one (see WsBackgroundRelease).
+      await _openSocketBeforeAccept(call.id);
+      if (operation != _operation) return;
       final session = await _acceptOnServer(call.id);
       if (operation != _operation) {
         if (session?.canControl == true) await _endCancelledServerCall(call.id);
@@ -764,6 +789,19 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       if (operation == _operation) await _failLocal('accept_failed', error);
     } finally {
       if (operation == _operation) _transitioning = false;
+    }
+  }
+
+  Future<void> _openSocketBeforeAccept(String callId) async {
+    try {
+      await _ws.connect().timeout(socketBeforeAcceptBudget);
+    } catch (error) {
+      voiceCallLog(
+        'accept.socket.late',
+        callId: callId,
+        phase: _phaseName,
+        reason: error.runtimeType.toString(),
+      );
     }
   }
 
@@ -1299,24 +1337,35 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     }
   }
 
-  /// If the first offer was lost (WS gap / full buffer), resend once.
-  void _scheduleOfferRetry(String callId) {
+  /// An offer can be lost with nothing to say so (a socket gap, a full buffer,
+  /// a callee still opening its socket), so it is repeated until answered. The
+  /// callee answers a repeat with the answer it already gave — see
+  /// [VoiceOfferReplay].
+  void _scheduleOfferRetry(String callId, [int attempt = 0]) {
     _renegotiateTimer?.cancel();
-    _offerResent = false;
-    _renegotiateTimer = Timer(const Duration(seconds: 6), () {
+    final delays = offerRetryDelays;
+    if (attempt >= delays.length) return;
+    _renegotiateTimer = Timer(delays[attempt], () {
       if (state.call?.id != callId || _wasFinished(callId)) return;
       if (state.phase != VoiceCallPhase.connecting) return;
       final engine = _engine;
       if (engine == null || !engine.ready || engine.answerReceived) return;
-      if (_offerResent) return;
-      _offerResent = true;
       voiceCallLog(
         'signal.offer.retry',
         callId: callId,
         phase: _phaseName,
-        reason: 'no_answer_yet',
+        reason: 'no_answer_yet attempt=$attempt',
       );
-      unawaited(engine.createAndSendOffer(renegotiate: true));
+      unawaited(
+        engine.createAndSendOffer(renegotiate: true).catchError((Object error) {
+          voiceCallLog(
+            'signal.offer.retry.failed',
+            callId: callId,
+            reason: error.runtimeType.toString(),
+          );
+        }),
+      );
+      _scheduleOfferRetry(callId, attempt + 1);
     });
   }
 
@@ -1740,7 +1789,6 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
       return;
     }
     _pendingSignals.clear();
-    _offerResent = false;
     _write(
       state.copyWith(
         phase: phase,
@@ -2447,7 +2495,6 @@ class VoiceCallNotifier extends Notifier<VoiceCallState> {
     if (engine != null) await _disposeEngine(engine, owner, 'resetResources');
     _engineCallId = null;
     _pendingSignals.clear();
-    _offerResent = false;
   }
 
   String _friendlyError(Object error) {

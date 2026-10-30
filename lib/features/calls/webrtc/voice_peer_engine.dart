@@ -5,6 +5,9 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../data/models/ice_server.dart';
 import '../audio/call_audio_route.dart';
+import '../diagnostics/call_connection_path.dart';
+import '../diagnostics/call_diagnostics_collector.dart';
+import '../diagnostics/call_diagnostics_state.dart';
 import '../native/android_screen_share.dart';
 import '../voice_call_log.dart';
 import 'ice_candidate_stats.dart';
@@ -15,6 +18,7 @@ import 'voice_audio_priority.dart';
 import 'voice_audio_progress.dart';
 import 'voice_camera_capture.dart';
 import 'voice_media_map.dart';
+import 'voice_offer_replay.dart';
 import 'voice_send_watch.dart';
 import 'voice_teardown.dart';
 import 'voice_video_hold.dart';
@@ -107,6 +111,7 @@ class VoicePeerEngine {
   VoiceCameraCapture? _camera;
   RTCRtpSender? _cameraSender;
   final VoiceMediaMap _remoteMedia = VoiceMediaMap();
+  final _offerReplay = VoiceOfferReplay();
   MediaStream? _remoteCameraShown;
   final List<MediaStream> _remoteStreams = [];
   final List<RTCIceCandidate> _pendingCandidates = [];
@@ -118,6 +123,12 @@ class VoicePeerEngine {
   final _networkStats = CallNetworkStatsReader();
   final _networkTrend = CallNetworkTrend();
   final _sendWatch = VoiceSendWatch();
+  final _diagnostics = kCallDiagnosticsEnabled
+      ? CallDiagnosticsCollector()
+      : null;
+
+  /// The pair last logged, so a move (an ICE restart) gets its own line.
+  int? _loggedPairKey;
 
   /// The camera is on but held off the wire: the link cannot carry voice and
   /// picture together — see [VoiceVideoHold].
@@ -443,7 +454,9 @@ class VoicePeerEngine {
       'signal.offer.send',
       reason: sent ? (renegotiate ? 'retry_ok' : 'ok') : 'ws_unavailable',
     );
-    if (!sent) onFailed('signaling_unavailable');
+    // A repeat that could not go out is not the end: another follows, and the
+    // connect watchdog still bounds the whole wait.
+    if (!sent && !renegotiate) onFailed('signaling_unavailable');
   }
 
   Future<void> handleSignal(Map<String, dynamic> signal) async {
@@ -463,6 +476,15 @@ class VoicePeerEngine {
           // not going to be applied. Only a peer on a build that predates the
           // single-offerer rule can reach here.
           voiceCallLog('signal.offer.glare', reason: 'ignored_remote_offer');
+          return;
+        }
+        final repeated = _offerReplay.answerFor(sdp);
+        if (repeated != null) {
+          final sent = await sendSignal({'kind': 'answer', 'sdp': repeated});
+          voiceCallLog(
+            'signal.offer.repeat',
+            reason: sent ? 'answered_again' : 'ws_unavailable',
+          );
           return;
         }
         if (!_remoteMedia.received &&
@@ -486,7 +508,9 @@ class VoicePeerEngine {
           },
         });
         await peer.setLocalDescription(answer);
-        final sent = await sendSignal({'kind': 'answer', 'sdp': answer.sdp});
+        final answerSdp = answer.sdp;
+        if (answerSdp != null) _offerReplay.remember(sdp, answerSdp);
+        final sent = await sendSignal({'kind': 'answer', 'sdp': answerSdp});
         voiceCallLog(
           'signal.answer.send',
           reason: sent ? 'ok' : 'ws_unavailable',
@@ -498,6 +522,11 @@ class VoicePeerEngine {
       case 'answer':
         final sdp = signal['sdp'] as String? ?? '';
         if (sdp.isEmpty) return;
+        // The answer to a repeated offer, after the first already landed.
+        if (!answerApplies(await _requirePeer().getSignalingState())) {
+          voiceCallLog('signal.answer.ignored', reason: 'not_waiting');
+          return;
+        }
         await _requirePeer().setRemoteDescription(
           RTCSessionDescription(sdp, 'answer'),
         );
@@ -597,13 +626,62 @@ class VoicePeerEngine {
       // The same report says how well the path is carrying the call.
       final path = _networkStats.read(stats);
       callNetworkQuality.value = _networkTrend.add(path);
+      _observeForDiagnostics(peer, stats, path);
       await _watchSend(peer, stats, path);
     } catch (_) {
       // An unavailable stats sample is not evidence of call failure.
       _audioProgress.update({});
+      final diagnostics = _diagnostics;
+      if (diagnostics != null && !_disposed) {
+        callDiagnostics.value = diagnostics.addFailure(
+          nowMs: DateTime.now().millisecondsSinceEpoch,
+        );
+      }
     } finally {
       _audioHealthPending = false;
     }
+  }
+
+  /// Reads the same report for the developer panel, and logs the pair when it
+  /// moved. Only ever watches: never throws, or a slip here would read as a
+  /// failed stats sample and reach the call's own health check.
+  void _observeForDiagnostics(
+    RTCPeerConnection peer,
+    List<StatsReport> stats,
+    CallNetworkSample path,
+  ) {
+    try {
+      _logPairIfMoved(stats);
+      final diagnostics = _diagnostics;
+      if (diagnostics == null) return;
+      callDiagnostics.value = diagnostics.add(
+        stats,
+        nowMs: DateTime.now().millisecondsSinceEpoch,
+        network: path,
+        networkLevel: callNetworkQuality.value,
+        connectionState: peerStateName(peer.connectionState),
+        iceState: peerStateName(peer.iceConnectionState),
+      );
+    } catch (error) {
+      voiceCallLog(
+        'stats.diagnostics.failed',
+        reason: error.runtimeType.toString(),
+      );
+    }
+  }
+
+  /// Types and protocols only: a candidate's address never reaches a log.
+  void _logPairIfMoved(List<StatsReport> stats) {
+    final path = readConnectionPath(stats);
+    final key = path.pairKey;
+    if (key == null || key == _loggedPairKey) return;
+    _loggedPairKey = key;
+    voiceCallLog(
+      'stats.selectedPair',
+      reason:
+          '${path.describe()} confirmed=${path.confirmedByTransport} '
+          'rtt=${selectedCandidatePair(stats)?['currentRoundTripTime']}',
+    );
   }
 
   /// Logs what is going out and, on a link too thin for voice and picture
@@ -677,30 +755,18 @@ class VoicePeerEngine {
   /// Logs the negotiated candidate pair — the single most useful line for a
   /// cross-network call: shows whether media rides host / srflx / relay and
   /// over UDP or TCP. `relay/relay` here while audio is silent points squarely
-  /// at the TURN relay media ports, not the mobile client.
+  /// at the TURN relay media ports, not the mobile client. The poll logs it
+  /// again whenever the pair moves.
   Future<void> logSelectedPair() async {
     final peer = _peer;
     if (peer == null || _disposed) return;
     try {
       final stats = await peer.getStats();
-      final byId = {for (final r in stats) r.id: r.values};
-      for (final report in stats) {
-        if (report.type != 'candidate-pair') continue;
-        final v = report.values;
-        final selected = v['selected'] == true || v['state'] == 'succeeded';
-        if (!selected) continue;
-        final local = byId[v['localCandidateId']] ?? const {};
-        final remote = byId[v['remoteCandidateId']] ?? const {};
-        voiceCallLog(
-          'stats.selectedPair',
-          reason:
-              'local=${local['candidateType']}/${local['protocol']} '
-              'remote=${remote['candidateType']}/${remote['protocol']} '
-              'rtt=${v['currentRoundTripTime']}',
-        );
+      if (selectedCandidatePair(stats) == null) {
+        voiceCallLog('stats.selectedPair', reason: 'no_succeeded_pair');
         return;
       }
-      voiceCallLog('stats.selectedPair', reason: 'no_succeeded_pair');
+      _logPairIfMoved(stats);
     } catch (e) {
       voiceCallLog('stats.selectedPair.error', reason: e.toString());
     }
@@ -987,6 +1053,7 @@ class VoicePeerEngine {
     _renegotiateFallback?.cancel();
     _renegotiateFallback = null;
     callNetworkQuality.value = CallNetworkLevel.unknown;
+    callDiagnostics.value = null;
     _clearCameraHold();
     final local = _localStream;
     final peer = _peer;

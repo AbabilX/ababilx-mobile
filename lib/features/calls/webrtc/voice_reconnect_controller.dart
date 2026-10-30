@@ -109,6 +109,15 @@ class VoiceReconnectController {
     _schedule(Duration.zero);
   }
 
+  /// The signalling socket is back, so a restart can now reach the peer: there
+  /// is no reason left to sit out the backoff. An attempt in flight is left to
+  /// finish, since its own `connect` is usually what brought the socket back.
+  void noteSignallingBack() {
+    if (_disposed || _unhealthySince == null || _attemptInFlight) return;
+    voiceCallLog('reconnect.signalling_back', reason: 'attempt=$_attempt');
+    _schedule(Duration.zero);
+  }
+
   Future<void> _seedNetwork() async {
     try {
       final results = await Connectivity().checkConnectivity();

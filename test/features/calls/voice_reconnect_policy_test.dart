@@ -9,8 +9,19 @@ void main() {
 
     test('first attempt is immediate, later ones back off', () {
       expect(policy.delayFor(0), Duration.zero);
-      expect(policy.delayFor(1), const Duration(seconds: 3));
+      expect(policy.delayFor(1), const Duration(seconds: 2));
       expect(policy.delayFor(2) > policy.delayFor(1), isTrue);
+    });
+
+    test('never sits out long after the network may be back', () {
+      // Measured: the old 20 s step left voice silent 11.9 s after a 45 s
+      // outage ended, with nothing wrong left to wait for.
+      for (var attempt = 0; attempt < 40; attempt++) {
+        expect(
+          policy.delayFor(attempt),
+          lessThanOrEqualTo(const Duration(seconds: 8)),
+        );
+      }
     });
 
     test('past the table the final delay repeats', () {

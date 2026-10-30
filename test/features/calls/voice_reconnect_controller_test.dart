@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ababilx/features/calls/webrtc/voice_reconnect_controller.dart';
 import 'package:ababilx/features/calls/webrtc/voice_reconnect_policy.dart';
 import 'package:flutter/services.dart';
@@ -42,5 +44,100 @@ void main() {
     expect(failures, isEmpty);
     expect(changes, [true, false, true, false]);
     await tester.runAsync(controller.dispose);
+  });
+
+  group('the socket coming back', () {
+    late MethodChannel methods;
+    late MethodChannel events;
+
+    setUp(() {
+      methods = const MethodChannel('dev.fluttercommunity.plus/connectivity');
+      events = const MethodChannel(
+        'dev.fluttercommunity.plus/connectivity_status',
+      );
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(methods, (_) async => ['wifi']);
+      messenger.setMockMethodCallHandler(events, (_) async => null);
+    });
+
+    tearDown(() {
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(methods, null);
+      messenger.setMockMethodCallHandler(events, null);
+    });
+
+    testWidgets('restarts at once instead of sitting out the backoff', (
+      tester,
+    ) async {
+      var attempts = 0;
+      final controller = VoiceReconnectController(
+        isOfferer: () => true,
+        restart: () async => attempts++,
+        requestPeerRestart: () async {},
+        onGaveUp: (_) {},
+        onReconnectingChanged: (_) {},
+        policy: const VoiceReconnectPolicy(backoff: [Duration(seconds: 30)]),
+      );
+      await tester.pump();
+      controller.noteTrouble('lost', immediate: true);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(attempts, 1);
+      await tester.pump(const Duration(seconds: 1));
+      expect(attempts, 1);
+
+      controller.noteSignallingBack();
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(attempts, 2);
+      await tester.runAsync(controller.dispose);
+    });
+
+    testWidgets('a healthy call is left alone', (tester) async {
+      var attempts = 0;
+      final controller = VoiceReconnectController(
+        isOfferer: () => true,
+        restart: () async => attempts++,
+        requestPeerRestart: () async {},
+        onGaveUp: (_) {},
+        onReconnectingChanged: (_) {},
+      );
+      await tester.pump();
+      controller.noteSignallingBack();
+      await tester.pump(const Duration(seconds: 1));
+      expect(attempts, 0);
+      await tester.runAsync(controller.dispose);
+    });
+
+    testWidgets('an attempt already opening the socket is not doubled', (
+      tester,
+    ) async {
+      var attempts = 0;
+      final gate = Completer<void>();
+      final controller = VoiceReconnectController(
+        isOfferer: () => true,
+        restart: () async {
+          attempts++;
+          await gate.future;
+        },
+        requestPeerRestart: () async {},
+        onGaveUp: (_) {},
+        onReconnectingChanged: (_) {},
+        policy: const VoiceReconnectPolicy(backoff: [Duration(seconds: 30)]),
+      );
+      await tester.pump();
+      controller.noteTrouble('lost', immediate: true);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(attempts, 1);
+
+      // This attempt's own `connect` is what brought the socket back.
+      controller.noteSignallingBack();
+      gate.complete();
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(attempts, 1);
+      await tester.runAsync(controller.dispose);
+    });
   });
 }

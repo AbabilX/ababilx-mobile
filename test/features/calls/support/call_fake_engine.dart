@@ -21,6 +21,11 @@ class FakeEngine implements VoicePeerEngine {
   bool prepared = false;
   bool disposed = false;
 
+  /// First offers and repeats of them, as `createAndSendOffer` was asked.
+  int offers = 0;
+  int offerRetries = 0;
+  bool answered = false;
+
   @override
   bool get ready => prepared && !disposed;
 
@@ -31,7 +36,12 @@ class FakeEngine implements VoicePeerEngine {
   bool get cameraOn => false;
 
   @override
-  bool get answerReceived => false;
+  bool get answerReceived => answered;
+
+  @override
+  Future<void> createAndSendOffer({bool renegotiate = false}) async {
+    renegotiate ? offerRetries++ : offers++;
+  }
 
   @override
   Future<void> prepare({
@@ -71,6 +81,16 @@ class TestCalls extends VoiceCallNotifier {
 
   @override
   Duration get resetDelay => kTestResetDelay;
+
+  @override
+  Duration get socketBeforeAcceptBudget => kTestRetryDelay;
+
+  @override
+  List<Duration> get offerRetryDelays => const [
+    kTestRetryDelay,
+    kTestRetryDelay,
+    kTestRetryDelay,
+  ];
 
   @override
   List<Duration> get lookupRetryDelays => const [
