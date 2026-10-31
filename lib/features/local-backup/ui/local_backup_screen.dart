@@ -75,6 +75,26 @@ class LocalBackupScreen extends ConsumerWidget {
                     onTap: state.busy ? null : actions.changeFolder,
                   ),
                   SettingsRow(
+                    icon: HugeIcons.strokeRoundedClock01,
+                    title: t('local_backup_time'),
+                    value: t('local_backup_time_value').replaceAll(
+                      '{time}',
+                      TimeOfDay(
+                        hour: s.backupMinute ~/ 60,
+                        minute: s.backupMinute % 60,
+                      ).format(context),
+                    ),
+                    onTap: state.busy ? null : actions.changeTime,
+                  ),
+                  SettingsRow(
+                    icon: HugeIcons.strokeRoundedEdit02,
+                    title: t('local_backup_name'),
+                    value: s.fileName.isEmpty
+                        ? t('local_backup_name_auto')
+                        : s.fileName,
+                    onTap: state.busy ? null : actions.changeName,
+                  ),
+                  SettingsRow(
                     icon: HugeIcons.strokeRoundedDatabaseSync,
                     title: t('local_backup_last'),
                     subtitle: s.lastFailureKey == null

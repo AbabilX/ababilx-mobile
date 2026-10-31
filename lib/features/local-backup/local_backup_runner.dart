@@ -74,7 +74,7 @@ class LocalBackupRunner {
     final store = _ref.read(chatMessageStoreProvider);
     final now = DateTime.now();
     final username = _ref.read(profileProvider).valueOrNull?.username ?? '';
-    final name = backupFileName(username, now);
+    final name = backupFileName(username, now, customName: settings.fileName);
     AccountBackupDir? account;
     BackupMediaStore? media;
     BackupMessageSegments? segments;

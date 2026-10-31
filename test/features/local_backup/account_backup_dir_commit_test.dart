@@ -47,6 +47,20 @@ void main() {
     expect(old.existsSync(), isFalse);
   });
 
+  test('a renamed backup is pruned by its age, never by its name', () async {
+    final dir = AccountBackupDir(base, 'me');
+    // Sorted by name these run the opposite way to their age.
+    final names = ['zzz-1.abxbackup', 'আমার-2.abxbackup', 'aaa-3.abxbackup'];
+    for (var i = 0; i < names.length; i++) {
+      await dir.commit(await sealed(dir, names[i], i + 1), names[i], {
+        'w$i.abxmedia',
+      });
+    }
+    final left = await dir.backups();
+    expect(left.map((f) => f.uri.pathSegments.last), [names[2], names[1]]);
+    expect(File('${dir.root.path}/${names[0]}.media').existsSync(), isFalse);
+  });
+
   test('the newest two stay, with every file either one names', () async {
     final dir = AccountBackupDir(base, 'me');
     for (var i = 1; i <= 4; i++) {
