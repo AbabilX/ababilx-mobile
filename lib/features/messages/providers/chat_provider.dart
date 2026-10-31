@@ -69,6 +69,7 @@ import '../../chat-lock/providers/chat_locks_provider.dart';
 export 'chat_open_trace.dart' show ChatOpenTrace;
 export 'chat_state.dart';
 
+import '../chat-timeline/message_seen.dart';
 part 'chat_provider_patch.dart';
 part 'chat_provider_feed.dart';
 part 'chat_provider_feed_edit.dart';

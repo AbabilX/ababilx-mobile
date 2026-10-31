@@ -9,6 +9,7 @@ class MessageDeliveryStatus extends StatelessWidget {
     required this.pulse,
     this.delivery,
     this.color,
+    this.seen = false,
   });
 
   final MessageSendStatus status;
@@ -19,11 +20,18 @@ class MessageDeliveryStatus extends StatelessWidget {
   /// `onSurfaceVariant` is invisible on the outgoing accent fill.
   final Color? color;
 
+  /// Seen by read time, for a message whose receipts the server let go.
+  final bool seen;
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final muted = color ?? colors.onSurfaceVariant;
-    final read = color ?? colors.primary;
+    // Green wins over the bubble's ink: seen has to read at a glance.
+    final seenInk = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF22C55E)
+        : const Color(0xFF16A34A);
+    final isRead = seen || (delivery?.readDevices ?? 0) > 0;
     return switch (status) {
       MessageSendStatus.sending => FadeTransition(
         opacity: pulse,
@@ -39,12 +47,11 @@ class MessageDeliveryStatus extends StatelessWidget {
         color: colors.error,
       ),
       MessageSendStatus.sent => Icon(
-        (delivery?.deliveredDevices ?? 0) > 0 ||
-                (delivery?.readDevices ?? 0) > 0
+        isRead || (delivery?.deliveredDevices ?? 0) > 0
             ? Icons.done_all_rounded
             : Icons.done_rounded,
         size: 14,
-        color: (delivery?.readDevices ?? 0) > 0 ? read : muted,
+        color: isRead ? seenInk : muted,
       ),
     };
   }

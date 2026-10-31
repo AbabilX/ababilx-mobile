@@ -50,6 +50,7 @@ extension ChatConversationJson on ChatConversation {
     'private_chat': privateChat,
     'private_chat_by': privateChatBy,
     'last_message_private': lastMessagePrivate,
+    if (othersReadAt != null) 'others_read_at': othersReadAt,
     'can_message': canMessage,
     'lock_reason': lockReason,
     'plaintext_until_keyed': plaintextUntilKeyed,

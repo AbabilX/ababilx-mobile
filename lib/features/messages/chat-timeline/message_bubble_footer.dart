@@ -7,6 +7,7 @@ import '../chat_utils.dart';
 import '../data/models/chat_models.dart';
 import 'message_bubble.dart';
 import 'message_delivery_status.dart';
+import 'message_seen.dart';
 import 'signal_bubble_metrics.dart';
 
 /// Time and delivery state, inside the bubble on its last line — where Signal
@@ -89,6 +90,10 @@ class MessageBubbleFooter extends ConsumerWidget {
             pulse: pulse,
             delivery: message.delivery,
             color: ink,
+            seen: seenByReadTime(
+              message.createdAt,
+              ref.watch(othersReadAtProvider(message.conversationId)),
+            ),
           ),
         ],
       ],

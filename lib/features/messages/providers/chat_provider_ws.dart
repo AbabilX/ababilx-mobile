@@ -99,6 +99,11 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       return;
     }
 
+    if (type == 'chat.read_up_to') {
+      _applyReadUpTo(convId, ev['read_at'] as String?);
+      return;
+    }
+
     if (type == 'chat.receipts.updated') {
       _applyReceiptUpdates(
         convId,
@@ -150,6 +155,28 @@ mixin _ChatWsMixin on Notifier<ChatState>, _ChatMutateMixin {
       }
       _persistFeedMessage(convId, id);
     }
+  }
+
+  void _applyReadUpTo(String convId, String? readAt) {
+    if (readAt == null) return;
+    List<ChatConversation> moved(List<ChatConversation> rows) => [
+      for (final row in rows)
+        row.id == convId
+            ? row.copyWith(
+                othersReadAt: laterReadTime(row.othersReadAt, readAt),
+              )
+            : row,
+    ];
+    state = state.copyWith(
+      dms: moved(state.dms),
+      channels: moved(state.channels),
+    );
+    // On disk too, or the tick goes grey again on an offline start.
+    unawaited(
+      (this as ChatNotifier).persistSidebar(
+        ChatSidebar(channels: state.channels, dms: state.dms),
+      ),
+    );
   }
 
   void _applyReceiptUpdates(String convId, List<dynamic> rawUpdates) {

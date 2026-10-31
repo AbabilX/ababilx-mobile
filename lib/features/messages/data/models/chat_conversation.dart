@@ -75,6 +75,7 @@ class ChatConversation extends Equatable {
     this.privateChat = false,
     this.privateChatBy = '',
     this.lastMessagePrivate = false,
+    this.othersReadAt,
     this.canMessage = true,
     this.lockReason = '',
     this.plaintextUntilKeyed = false,
@@ -178,6 +179,10 @@ class ChatConversation extends Equatable {
   /// the last-message fields here describe nothing: the list keeps its own
   /// preview (the phone's newest copy) instead of blanking it.
   final bool lastMessagePrivate;
+
+  /// How far the other side has read (a group: its furthest other member).
+  /// Outlives the delivery-only purge, unlike a per-message receipt.
+  final String? othersReadAt;
   final bool canMessage;
 
   /// Why the composer is closed. Empty when [canMessage] is true.
@@ -391,6 +396,7 @@ class ChatConversation extends Equatable {
       privateChat: json['private_chat'] as bool? ?? false,
       privateChatBy: _jsonString(json['private_chat_by']) ?? '',
       lastMessagePrivate: json['last_message_private'] as bool? ?? false,
+      othersReadAt: _jsonString(json['others_read_at']),
       canMessage: json['can_message'] as bool? ?? true,
       lockReason: _jsonString(json['lock_reason']) ?? '',
       plaintextUntilKeyed: json['plaintext_until_keyed'] as bool? ?? false,
@@ -468,6 +474,7 @@ class ChatConversation extends Equatable {
     bool? privateChat,
     String? privateChatBy,
     bool? lastMessagePrivate,
+    String? othersReadAt,
     GroupMemberPerms? myPermissions,
     GroupMemberPerms? defaultPermissions,
   }) => ChatConversation(
@@ -525,6 +532,7 @@ class ChatConversation extends Equatable {
     privateChat: privateChat ?? this.privateChat,
     privateChatBy: privateChatBy ?? this.privateChatBy,
     lastMessagePrivate: lastMessagePrivate ?? this.lastMessagePrivate,
+    othersReadAt: othersReadAt ?? this.othersReadAt,
     canMessage: canMessage,
     lockReason: lockReason,
     plaintextUntilKeyed: plaintextUntilKeyed,
@@ -573,6 +581,7 @@ class ChatConversation extends Equatable {
     privateChat,
     privateChatBy,
     lastMessagePrivate,
+    othersReadAt,
     canMessage,
     lockReason,
     plaintextUntilKeyed,
