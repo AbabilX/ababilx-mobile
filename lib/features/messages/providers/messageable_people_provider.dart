@@ -5,6 +5,7 @@ import '../data/models/chat_connection.dart';
 import '../data/models/chat_conversation.dart';
 import 'chat_connections_provider.dart';
 import 'chat_provider.dart';
+import 'chat_sidebar_slice.dart';
 
 /// Everyone the New message screen offers before anything is typed.
 ///
@@ -22,7 +23,7 @@ import 'chat_provider.dart';
 /// arrives from more than one source — a connection carries a username and a
 /// real avatar, a DM row carries only what the sidebar needed.
 final messageablePeopleProvider = Provider<List<ChatUserSummary>>((ref) {
-  final chat = ref.watch(chatProvider);
+  final chat = ref.watch(chatSidebarProvider);
   final connections = ref.watch(chatConnectionsProvider);
   final me = chat.currentUserId;
   final people = <String, ChatUserSummary>{};

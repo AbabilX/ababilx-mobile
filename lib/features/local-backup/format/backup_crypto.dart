@@ -87,7 +87,14 @@ abstract final class BackupCrypto {
       nonce: nonce,
       aad: aad,
     );
-    return Uint8List.fromList([...nonce, ...box.cipherText, ...box.mac.bytes]);
+    // Copied into place: a spread made a boxed int list of the whole record.
+    final cipher = box.cipherText;
+    final tag = box.mac.bytes;
+    final end = nonce.length + cipher.length;
+    return Uint8List(end + tag.length)
+      ..setRange(0, nonce.length, nonce)
+      ..setRange(nonce.length, end, cipher)
+      ..setRange(end, end + tag.length, tag);
   }
 
   /// Throws [SecretBoxAuthenticationError] on a wrong key, a wrong position or

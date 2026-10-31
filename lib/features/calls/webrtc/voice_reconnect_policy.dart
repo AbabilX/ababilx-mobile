@@ -8,11 +8,10 @@ class VoiceReconnectPolicy {
     this.giveUpAfter = const Duration(seconds: 120),
     this.backoff = const [
       Duration.zero,
+      Duration(seconds: 2),
       Duration(seconds: 3),
       Duration(seconds: 5),
       Duration(seconds: 8),
-      Duration(seconds: 12),
-      Duration(seconds: 20),
     ],
   });
 
@@ -28,7 +27,11 @@ class VoiceReconnectPolicy {
   /// failure users actually complain about.
   final Duration giveUpAfter;
 
-  /// Delay before each successive restart attempt.
+  /// Delay before each successive restart attempt. Short, because nothing says
+  /// when coverage returned without an interface change: measured on a phone, a
+  /// table reaching 20 s left voice silent 11.9 s after a 45 s outage had ended.
+  /// Not shorter than this, or a restart still working over a slow link is
+  /// thrown away by the next one.
   final List<Duration> backoff;
 
   /// Delay before attempt [attempt] (0-based). Past the table the final entry

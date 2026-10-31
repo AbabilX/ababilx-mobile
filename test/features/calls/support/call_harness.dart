@@ -164,6 +164,7 @@ class CallHarness {
     required void Function(String reason) onFailed,
     required void Function(String reason, {bool immediate}) onTrouble,
     required void Function() onHealthy,
+    required void Function(DateTime intervalStart) onMediaFlowing,
     required void Function() onRestartRequested,
     required void Function(bool sharing) onLocalScreenChanged,
     required void Function(MediaStream? stream) onRemoteScreenChanged,

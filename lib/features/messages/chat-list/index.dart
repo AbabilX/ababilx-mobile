@@ -9,7 +9,8 @@ import '../../local_share/providers/share_in_chats.dart';
 import '../add-friends/add_friends_pending.dart';
 import '../chat_list_filters.dart';
 import '../message_e2ee/new_chat_setup.dart';
-import '../providers/chat_provider.dart';
+import '../data/models/chat_models.dart';
+import '../providers/chat_sidebar_slice.dart';
 import 'camera_send_flow.dart';
 import 'chat_list_body.dart';
 import 'chat_list_entries.dart';
@@ -69,19 +70,16 @@ class _ChatListState extends ConsumerState<ChatList> {
             : ChatListFilter.unread;
       });
     });
-    final original = ref.watch(chatProvider);
-    final chat = ref.watch(newChatSetupProvider).pending
-        ? original.copyWith(
-            dms: original.dms.map((c) => c.withoutMessagePreview()).toList(),
-            channels: original.channels
-                .map((c) => c.withoutMessagePreview())
-                .toList(),
-          )
-        : original;
+    // The sidebar slice only: this list stays built behind an open chat.
+    final chat = ref.watch(chatSidebarProvider);
+    final hidePreviews = ref.watch(newChatSetupProvider).pending;
+    List<ChatConversation> shown(List<ChatConversation> list) => hidePreviews
+        ? list.map((c) => c.withoutMessagePreview()).toList()
+        : list;
     // Locked chats live behind their pill and the title's long press.
     final locks = ref.watch(chatLocksProvider);
-    final dms = withoutLockedChats(chat.dms, locks);
-    final channels = withoutLockedChats(chat.channels, locks);
+    final dms = withoutLockedChats(shown(chat.dms), locks);
+    final channels = withoutLockedChats(shown(chat.channels), locks);
     // Local Share tab: every device thread, not only those moved here.
     final shareThreads = ref.watch(
       _filter == ChatListFilter.localShare

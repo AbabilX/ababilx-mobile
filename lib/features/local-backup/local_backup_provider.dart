@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../messages/providers/chat_provider.dart';
+import 'data/backup_schedule.dart';
 import 'data/backup_choices.dart';
 import 'data/local_backup_failure.dart';
 import 'data/local_backup_settings.dart';
@@ -20,10 +21,6 @@ class LocalBackupNotifier extends Notifier<LocalBackupState>
     with LocalBackupRestoring {
   static const _store = LocalBackupSettingsStore();
   static const _folder = BackupFolderChannel();
-
-  /// Twice a day, checked when the app opens or comes back. The two newest
-  /// are kept.
-  static const backupInterval = Duration(hours: 12);
 
   String _userId = '';
 
@@ -159,7 +156,15 @@ class LocalBackupNotifier extends Notifier<LocalBackupState>
     }
   }
 
-  /// The scheduled run (every [backupInterval]). Silent: a failure is recorded for the screen, never
+  /// The time of day of the daily automatic run.
+  Future<void> setBackupMinute(int minute) =>
+      _save(state.settings.copyWith(backupMinute: backupMinuteFrom(minute)));
+
+  /// The backup file's own name, for the next backup on. Empty is automatic.
+  Future<void> setFileName(String name) =>
+      _save(state.settings.copyWith(fileName: cleanBackupName(name)));
+
+  /// The daily run, at the picked time. Silent: a failure is recorded for the screen, never
   /// raised over whatever the person is doing.
   Future<void> runIfDue() async {
     // Re-read every time: the account may have changed since the last run,
@@ -172,9 +177,12 @@ class LocalBackupNotifier extends Notifier<LocalBackupState>
     // A restore still waiting comes first: this phone may hold almost
     // nothing yet, and its backup would push out the one to restore from.
     if (await _store.pendingRestoreOffer(_userId) != null) return;
-    final last = s.lastBackupMs;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    if (last != null && now - last < backupInterval.inMilliseconds) return;
+    final due = isBackupDue(
+      lastMs: s.lastBackupMs,
+      now: DateTime.now(),
+      minuteOfDay: s.backupMinute,
+    );
+    if (!due) return;
     await backUpNow();
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/app_translations.dart';
 import '../network/call_network_quality.dart';
 import '../network/call_own_link_probe.dart';
+import 'call_diagnostics_entry.dart';
 import 'call_top_bar.dart' show callTextShadow;
 
 /// Signal bars and a word for the 1:1 call's network.
@@ -57,7 +58,11 @@ class _CallNetworkBadgeState extends State<CallNetworkBadge> {
         final level = widget.ownLink
             ? callOwnLinkQuality.value
             : callNetworkQuality.value;
-        if (level == CallNetworkLevel.unknown) return const SizedBox.shrink();
+        if (level == CallNetworkLevel.unknown) {
+          return widget.ownLink
+              ? const SizedBox.shrink()
+              : const CallDiagnosticsEntry();
+        }
         // With the camera held back the voice path may well read good; the
         // line has to say why the picture stopped instead.
         final held = !widget.ownLink && callVideoHeld.value;
@@ -72,7 +77,7 @@ class _CallNetworkBadgeState extends State<CallNetworkBadge> {
           _ => (_good, 4, 'call_network_good'),
         };
         final text = AppTranslations.of(widget.lang, key);
-        return Semantics(
+        final badge = Semantics(
           label: text,
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -102,6 +107,7 @@ class _CallNetworkBadgeState extends State<CallNetworkBadge> {
             ),
           ),
         );
+        return widget.ownLink ? badge : CallDiagnosticsEntry(child: badge);
       },
     );
   }

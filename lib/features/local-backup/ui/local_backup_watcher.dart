@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../messages/message_e2ee/message_vault.dart';
 import '../../messages/providers/chat_provider.dart';
+import '../data/backup_schedule.dart';
 import '../data/local_backup_settings.dart';
 import '../data/restore_choice_store.dart';
 import '../platform/backup_folder_channel.dart';
@@ -17,8 +18,8 @@ import 'restore_offer_sheet.dart';
 /// its own: the scheduled run, and bringing a backup back after this phone
 /// got a new session for the account.
 ///
-/// Scheduled means "when the app opens, at most once in 12 hours" — there is
-/// no background job yet, on purpose: a backup reads the unlocked message key,
+/// Scheduled means once a day at the picked time, run while the app is open
+/// or on the next open after that time — there is no background job yet, on purpose: a backup reads the unlocked message key,
 /// which lives in this process, and a WorkManager isolate would have to
 /// rebuild the whole vault to do it. The run waits 20 s after launch or resume
 /// so it never competes with the chat list loading.
@@ -76,12 +77,22 @@ class _LocalBackupWatcherState extends ConsumerState<LocalBackupWatcher>
       await _restoreIfWaiting(userId);
       if (!mounted) return;
       _timer?.cancel();
-      _timer = Timer(_settle, () {
-        if (mounted) ref.read(localBackupProvider.notifier).runIfDue();
-      });
+      _timer = Timer(_settle, _runThenWait);
     } finally {
       _checking = false;
     }
+  }
+
+  /// Runs when due, then waits for the next daily time in case the app is
+  /// still open by then. A failed run tries again on the next resume.
+  Future<void> _runThenWait() async {
+    if (!mounted) return;
+    await ref.read(localBackupProvider.notifier).runIfDue();
+    if (!mounted) return;
+    final minute = ref.read(localBackupProvider).settings.backupMinute;
+    final now = DateTime.now();
+    _timer?.cancel();
+    _timer = Timer(nextBackupAt(now, minute).difference(now), _runThenWait);
   }
 
   /// A restore armed by a recovery-code unlock or "start fresh".
@@ -157,5 +168,13 @@ class _LocalBackupWatcherState extends ConsumerState<LocalBackupWatcher>
   };
 
   @override
-  Widget build(BuildContext context) => const SizedBox.shrink();
+  Widget build(BuildContext context) {
+    // A new time may already have passed today, and the wait above is for
+    // the old one.
+    ref.listen(
+      localBackupProvider.select((s) => s.settings.backupMinute),
+      (_, _) => _check(),
+    );
+    return const SizedBox.shrink();
+  }
 }

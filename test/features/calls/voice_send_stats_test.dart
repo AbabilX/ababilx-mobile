@@ -151,5 +151,15 @@ void main() {
       );
       expect(audioCodecInUse(const []), isNull);
     });
+
+    test('a codec report with no name is unknown, not the word null', () {
+      expect(
+        audioCodecInUse([
+          _report('a', 'outbound-rtp', {'kind': 'audio', 'codecId': 'c'}),
+          _report('c', 'codec', {'sdpFmtpLine': 'minptime=10'}),
+        ]),
+        isNull,
+      );
+    });
   });
 }

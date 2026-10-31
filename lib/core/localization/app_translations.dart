@@ -203,6 +203,15 @@ class AppTranslations {
       'local_backup_folder': 'Folder',
       'local_backup_last': 'Last backup',
       'local_backup_never': 'Not yet',
+      'local_backup_time': 'Auto backup time',
+      'local_backup_time_value': 'Daily at {time}',
+      'local_backup_time_hint':
+          'Once a day. If AbabilX is closed at this time, the backup runs the next time you open it.',
+      'local_backup_time_save': 'Save',
+      'local_backup_name': 'Backup file name',
+      'local_backup_name_auto': 'Automatic',
+      'local_backup_name_hint':
+          'Used from the next backup. The date and time are always added. Leave empty for the automatic name.',
       'local_backup_now': 'Back up now',
       'local_backup_running': 'Backing up… {n} messages',
       'local_backup_sealing': 'Saving changes… {n} of {total} messages',
@@ -1735,6 +1744,15 @@ class AppTranslations {
       'local_backup_folder': 'ফোল্ডার',
       'local_backup_last': 'শেষ ব্যাকআপ',
       'local_backup_never': 'এখনো হয়নি',
+      'local_backup_time': 'অটো ব্যাকআপের সময়',
+      'local_backup_time_value': 'প্রতিদিন {time}',
+      'local_backup_time_hint':
+          'দিনে একবার। এই সময়ে AbabilX বন্ধ থাকলে পরের বার খোলার সময় ব্যাকআপ হবে।',
+      'local_backup_time_save': 'সেভ করুন',
+      'local_backup_name': 'ব্যাকআপ ফাইলের নাম',
+      'local_backup_name_auto': 'স্বয়ংক্রিয়',
+      'local_backup_name_hint':
+          'পরের ব্যাকআপ থেকে কার্যকর হবে। তারিখ ও সময় সবসময় যোগ হবে। স্বয়ংক্রিয় নামের জন্য খালি রাখুন।',
       'local_backup_now': 'এখনই ব্যাকআপ নিন',
       'local_backup_running': 'ব্যাকআপ চলছে… {n}টি মেসেজ',
       'local_backup_sealing':

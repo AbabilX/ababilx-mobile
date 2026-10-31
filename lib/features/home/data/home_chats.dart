@@ -4,7 +4,7 @@ import '../../chat-lock/chat_lock_filter.dart';
 import '../../chat-lock/providers/chat_locks_provider.dart';
 import '../../messages/chat_list_filters.dart';
 import '../../messages/data/models/chat_models.dart';
-import '../../messages/providers/chat_provider.dart';
+import '../../messages/providers/chat_sidebar_slice.dart';
 
 /// Every conversation Home may show, newest first, pinned first — the chat
 /// list's own order. Locked chats are left out here exactly as the chat list
@@ -12,7 +12,7 @@ import '../../messages/providers/chat_provider.dart';
 final homeConversationsProvider = Provider.autoDispose<List<ChatConversation>>((
   ref,
 ) {
-  final chat = ref.watch(chatProvider);
+  final chat = ref.watch(chatSidebarProvider);
   final locks = ref.watch(chatLocksProvider);
   return unifiedConversations(
     dms: withoutLockedChats(chat.dms, locks),

@@ -45,10 +45,29 @@ String? audioCodecInUse(List<StatsReport> stats) {
       codecId = v['codecId'] as String;
     }
   }
+  return _codecNamed(stats, codecId);
+}
+
+/// The codec the incoming voice arrives in; the far side's encoder chose it,
+/// so it need not match [audioCodecInUse].
+String? inboundAudioCodec(List<StatsReport> stats) {
+  for (final report in stats) {
+    final v = report.values;
+    if (report.type == 'inbound-rtp' &&
+        (v['kind'] ?? v['mediaType']) == 'audio' &&
+        v['codecId'] is String) {
+      return _codecNamed(stats, v['codecId'] as String);
+    }
+  }
+  return null;
+}
+
+String? _codecNamed(List<StatsReport> stats, String? codecId) {
   if (codecId == null) return null;
   for (final report in stats) {
     if (report.id != codecId) continue;
     final v = report.values;
+    if (v['mimeType'] is! String) return null;
     return '${v['mimeType']} ${v['sdpFmtpLine'] ?? ''}'.trim();
   }
   return null;

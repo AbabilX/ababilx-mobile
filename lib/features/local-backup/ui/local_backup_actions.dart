@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../local_backup_provider.dart';
+import 'local_backup_name_sheet.dart';
 import 'local_backup_option_sheets.dart';
+import 'local_backup_time_sheet.dart';
 
 /// What the switch and the folder row on the Local backup screen do.
 class LocalBackupActions {
@@ -57,6 +59,31 @@ class LocalBackupActions {
           ? _t('local_backup_done_unchanged')
           : _t('local_backup_done_new').replaceAll('{n}', '$sealed'),
     );
+  }
+
+  /// The time of day of the daily automatic backup.
+  Future<void> changeTime() async {
+    final minute = await showBackupTimeSheet(
+      context,
+      minuteOfDay: ref.read(localBackupProvider).settings.backupMinute,
+      title: _t('local_backup_time'),
+      hint: _t('local_backup_time_hint'),
+      saveLabel: _t('local_backup_time_save'),
+    );
+    if (minute != null) await _notifier.setBackupMinute(minute);
+  }
+
+  /// The backup file's name, for the next backup on.
+  Future<void> changeName() async {
+    final name = await showBackupNameSheet(
+      context,
+      current: ref.read(localBackupProvider).settings.fileName,
+      title: _t('local_backup_name'),
+      hint: _t('local_backup_name_hint'),
+      placeholder: 'AbabilX',
+      saveLabel: _t('local_backup_time_save'),
+    );
+    if (name != null) await _notifier.setFileName(name);
   }
 
   Future<void> changeFolder() async {

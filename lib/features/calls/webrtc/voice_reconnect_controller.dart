@@ -79,6 +79,15 @@ class VoiceReconnectController {
     onReconnectingChanged(false);
   }
 
+  /// A stats poll covering the time since [intervalStart] showed media moving.
+  /// Packets counted before the trouble began say nothing about the path now,
+  /// so only an interval wholly inside the recovery can end it.
+  void noteMediaFlowing(DateTime intervalStart) {
+    final since = _unhealthySince;
+    if (_disposed || since == null || intervalStart.isBefore(since)) return;
+    noteHealthy();
+  }
+
   /// The peer connection dropped. [immediate] skips the settle grace for
   /// causes that never heal by waiting (hard failure, interface change).
   void noteTrouble(String reason, {bool immediate = false}) {
@@ -106,6 +115,15 @@ class VoiceReconnectController {
       noteTrouble('peer_requested_restart', immediate: true);
       return;
     }
+    _schedule(Duration.zero);
+  }
+
+  /// The signalling socket is back, so a restart can now reach the peer: there
+  /// is no reason left to sit out the backoff. An attempt in flight is left to
+  /// finish, since its own `connect` is usually what brought the socket back.
+  void noteSignallingBack() {
+    if (_disposed || _unhealthySince == null || _attemptInFlight) return;
+    voiceCallLog('reconnect.signalling_back', reason: 'attempt=$_attempt');
     _schedule(Duration.zero);
   }
 

@@ -197,6 +197,7 @@ void main() {
     final repo = DelayedCalls();
     final container = ProviderContainer(
       overrides: [
+        wsClientProvider.overrideWithValue(OfflineWs()),
         voiceCallRepositoryProvider.overrideWithValue(repo),
         voiceCallProvider.overrideWith(
           () => TestCalls(
@@ -211,7 +212,7 @@ void main() {
     );
     final notifier = container.read(voiceCallProvider.notifier);
     final accepting = notifier.acceptIncoming();
-    await Future<void>.delayed(Duration.zero);
+    await pumpEventQueue();
     expect(repo.actions, contains('accept'));
     final ending = notifier.hangUp();
     await Future<void>.delayed(Duration.zero);

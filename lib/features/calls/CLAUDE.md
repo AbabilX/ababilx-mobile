@@ -1604,3 +1604,77 @@ new photo) wins when the phone has it. DMs only (a group has no one-tap call
 here), 12 max, Note to Self / locked / deleted accounts excluded. Hidden while
 searching. Header order is All · Missed · Search, nudged 1dp down to sit on
 the "Calls" title (measured on device).
+
+## Live call diagnostics (developer panel) — 2026-10-30
+
+Numbers behind the 1:1 call's badge, for a developer. `diagnostics/` +
+`widgets/call_diagnostics_{panel,entry}.dart`. Long press the network badge.
+Compiled in for debug builds, or any build with
+`--dart-define=CALL_DIAGNOSTICS=true`; a production build collects nothing and
+has no way in (`kCallDiagnosticsEnabled`).
+
+- **No second timer.** `VoicePeerEngine._checkAudioHealth` hands the report it
+  already fetched to `CallDiagnosticsCollector`. The result goes out on the
+  `callDiagnostics` notifier, so only the panel rebuilds.
+- **Audio only, on purpose separate from the badge.** `CallNetworkStatsReader`
+  still sums audio and video loss, and that sum drives the badge and the camera
+  hold. It was left alone: changing it changes call behaviour. The panel's loss
+  is `CallAudioStatsReader`'s, voice only, so the two can disagree on a video call.
+- **`CallAudioHealthLimits` are provisional**, never validated on real calls, and
+  feed nothing but the panel.
+- **Only allowlisted candidate types and protocols leave a stats report**
+  (`readConnectionPath`). `pairKey` is a hash. Never add an address field.
+- **`concealedSamples` minus `silentConcealedSamples`**, or a muted peer on DTX
+  reads as damage. A null figure is "not measured" and draws `n/a`, never 0.
+- **A muted peer sends zero packets** (measured, A059, Android 16, same-process
+  loopback), and mute is not signalled, so zero inbound packets alone proves
+  nothing. RTCP/STUN on the transport (1 packet every ~4 s) is what separates
+  `inboundSilent` from `packetStall`. The first 4 s of a mute can read
+  `packetStall` once, before any control packet has been seen.
+- **Measured on that phone:** every field read here is present except
+  `availableOutgoingBitrate` and `remote-inbound-rtp` on the very first report.
+  iOS, a real two-phone call, real packet loss and TURN are **not** measured.
+- `test/load/call_diagnostics_load_test.dart` (`LOAD=1`) runs 12 000 scripted
+  calls; its scenarios must follow what a phone measures, as the mute one now does.
+
+## Answering opens the socket first; offers repeat — 2026-10-30
+
+A call answered from the background used to connect 6 s late, or not at all.
+The socket closes after 2 min in the background, Accept went to the server
+first, and the caller offers the moment it hears "accepted". The server relays
+to open sockets and keeps nothing, so the offer vanished with no error on
+either side, and the one retry came 6 s later.
+
+- `_openSocketBeforeAccept`: socket before accept, capped at 3 s so a bad
+  network cannot hold the Answer press.
+- `_scheduleOfferRetry`: 2, 4, 8, 16 s, stopped by an answer, a connect or the
+  call ending. A repeat that cannot be sent no longer fails the call.
+- `VoiceOfferReplay`: the callee answers a repeat with the answer it gave. An
+  offer is recognised by `o=` + ufrag: gathering rewrites `m=` and `c=` too. `answerApplies`: a late answer is
+  ignored instead of throwing, which before `connected` ended the call. Keep
+  both if the retries ever change; repeats are not safe without them.
+- Reconnect: backoff now tops out at 8 s (was 20 s), and `noteSignallingBack`
+  restarts as soon as the socket returns. Measured before: voice came back 5.3 s
+  after a 20 s outage ended and 11.9 s after a 45 s one.
+
+## What ends a recovery; the voice cap — 2026-10-30
+
+- **Packets end a recovery only if they prove it** (`VoiceMediaProof`,
+  `noteMediaFlowing`). The interval must lie wholly after the trouble began, the
+  connection and ICE must both be up, and while we send, a new report from the
+  peer (`roundTripTimeMeasurements`) is required: incoming audio shows only that
+  the peer reaches us. Measured once per case, A059 through a UDP proxy: the old
+  rule called a dead path recovered at 1.5 s and stood idle 3 s on a one-way cut,
+  the new one neither. Voice came back equally fast (~0.3 s after healing) in
+  both: the old gap healed itself once the state went `failed`, so this removes
+  false "recovered", not a long outage. On a fine path, ICE events ended all four
+  mute cases in ~100 ms; the stats path is the backstop.
+- **`VoiceAudioCap` is built and OFF** (`--dart-define=CALL_AUDIO_CAP=true`).
+  Congestion = peer-reported voice loss >= 5% with RTT 80 ms over the path's
+  floor; steps to 16 kbps, lifts after a calm hold (30 s, doubling to 240 s).
+  Lifting must set 32000: the plugin ignores a null `maxBitrate`. Measured with
+  room noise, not speech (15 kbps real rate), one run, off vs on, loss/concealment
+  percent: 40k 16.7/3.3 vs 8.7/6.1, 32k 20.4/10.4 vs 16.7/10.8, 10% random loss
+  6.6 vs 7.0 concealment (rule rightly did not fire). It stepped down on a 48k
+  link that lost only 1.3% off, and stayed at 16 kbps on a clean link past each
+  short phase. Not proven useful; needs speech on two phones, by ear.

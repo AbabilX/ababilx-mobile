@@ -2,10 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:cryptography/cryptography.dart';
-
 import 'backup_crypto.dart';
 import 'backup_header.dart';
+import 'backup_record_worker.dart';
 
 /// Streams frames and files into one sealed backup file.
 ///
@@ -13,7 +12,8 @@ import 'backup_header.dart';
 /// NDJSON before they are gzipped and sealed, and a file is read and sealed
 /// [filePartBytes] at a time, so a phone with 200 000 messages and a thousand
 /// photos costs the same peak as one with ten. Only ciphertext ever reaches
-/// the disk.
+/// the disk. Each record is gzipped and sealed by [BackupRecordWorker], off
+/// the UI isolate.
 class BackupFileWriter {
   BackupFileWriter._(
     this._file,
@@ -50,7 +50,7 @@ class BackupFileWriter {
     return BackupFileWriter._(null, sink, fileKey, digest, true);
   }
 
-  static Future<(SecretKey, String)> _start(
+  static Future<(List<int>, String)> _start(
     IOSink sink,
     List<int> accountKey,
     String userId,
@@ -69,13 +69,14 @@ class BackupFileWriter {
       ..add(BackupFormat.magic)
       ..add(u32(header.bytes.length))
       ..add(header.bytes);
-    return (await BackupCrypto.fileKey(accountKey, salt), header.digest);
+    final key = await BackupCrypto.fileKey(accountKey, salt);
+    return (await key.extractBytes(), header.digest);
   }
 
   final File? _file;
   final IOSink _sink;
   final bool _drain;
-  final SecretKey _key;
+  final List<int> _key;
   final String _digest;
   final _frames = BytesBuilder(copy: false);
   int _index = 0;
@@ -157,17 +158,16 @@ class BackupFileWriter {
 
   Future<void> _flushFrames() async {
     if (_frames.isEmpty) return;
-    await _record(BackupRecordType.frames, gzip.encode(_frames.takeBytes()));
+    await _record(BackupRecordType.frames, _frames.takeBytes());
   }
 
+  /// A frames [body] is raw NDJSON: the worker gzips it.
   Future<void> _record(int type, List<int> body) async {
-    final plain = Uint8List(body.length + 1)
-      ..[0] = type
-      ..setRange(1, body.length + 1, body);
-    final sealed = await BackupCrypto.seal(
+    final sealed = await BackupRecordWorker.seal(
       _key,
       BackupCrypto.recordAad(_digest, _index),
-      plain,
+      type,
+      body,
     );
     _sink
       ..add(u32(sealed.length))
