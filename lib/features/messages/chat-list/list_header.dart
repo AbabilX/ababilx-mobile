@@ -13,6 +13,7 @@ import '../../profile/providers/profile_provider.dart';
 import '../../profile/providers/user_status_provider.dart';
 import '../../profile/widgets/user_status_badge.dart';
 import '../chat_icon.dart';
+import 'brand_title.dart';
 import 'chat_search.dart';
 import 'header_profile_pill.dart';
 import 'you-sheet/index.dart';
@@ -22,7 +23,8 @@ import 'you-sheet/you_sheet_action.dart';
 ///
 /// The title slot is the brand ("AbabilX") until the account has a custom
 /// status — then the status takes that same slot so the header stays one
-/// line and the status does not sit beside the avatar. Messages is the app's
+/// line and the status does not sit beside the avatar. The brand shimmers while
+/// the realtime socket is down ([ChatListBrandTitle]). Messages is the app's
 /// home (`kAppHomePath`); the bottom bar already names this tab. Avatar and
 /// a single tap on the title open the You sheet through [_openYouSheet].
 /// Double-tap on the title flips privacy mode on the spot (same PUT as
@@ -83,15 +85,7 @@ class ChatListHeader extends ConsumerWidget {
                           Flexible(
                             child: status != null
                                 ? UserStatusBadge(status: status, plain: true)
-                                : Text(
-                                    'AbabilX',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                  ),
+                                : const ChatListBrandTitle(),
                           ),
                           // Own privacy mode, beside the title so it is
                           // never on unnoticed. Nothing while it is off.

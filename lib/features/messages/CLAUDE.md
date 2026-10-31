@@ -2249,3 +2249,13 @@ offerer), sends `hello` (cached sidebar + deletion markers) and answers
   draggable; the built-in ones still are.
 - Sheets raised from the list go through `chat_list_sheets.dart`
   (`withNavHidden`), which hides the nav pill over the whole chain.
+
+# The header title shimmers while the socket is down (2026-10-31)
+
+`chat-list/brand_title.dart`: "AbabilX" sweeps a highlight (`ShimmerMask`,
+`shared/widgets/`) while `wsLinkUpProvider` is false, X's reconnecting cue. The
+provider starts from `WsClient.connected`: presence and calls connect first, so
+`ChatState.wsConnected`, which only hears later events, can stay false on a live
+socket. No ticker runs while connected; reduced motion dims instead. A custom
+status replaces the title, so it shows no shimmer. Pinned by
+`ws_link_up_provider_test.dart`, `chat_list_brand_title_test.dart`.
