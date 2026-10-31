@@ -9,6 +9,7 @@ void main() {
     expect(routes(applyTabOrder(homeShellTabs, const [])), [
       '/home',
       '/messages',
+      '/spaces',
       '/calls',
     ]);
   });
@@ -18,6 +19,7 @@ void main() {
       '/calls',
       '/home',
       '/messages',
+      '/spaces',
     ]);
   });
 }

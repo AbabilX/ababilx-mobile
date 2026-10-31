@@ -63,6 +63,7 @@ import '../../features/settings/password/password_screen.dart';
 import '../../features/settings/screens/my_qr_screen.dart';
 import '../../features/share_intake/screens/share_target_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/spaces/channel/space_channel_screen.dart';
 import 'home_shell.dart';
 import 'home_tab_pager.dart';
 import 'route_trail.dart';
@@ -183,10 +184,22 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (_, state) => homeTabPage(state),
           ),
           GoRoute(
+            path: '/spaces',
+            pageBuilder: (_, state) => homeTabPage(state),
+          ),
+          GoRoute(
             path: '/calls',
             pageBuilder: (_, state) => homeTabPage(state),
           ),
         ],
+      ),
+      // One Space channel, outside the shell (full screen, own composer).
+      GoRoute(
+        path: '/spaces/:spaceId/c/:channelId',
+        builder: (_, state) => SpaceChannelScreen(
+          spaceId: state.pathParameters['spaceId']!,
+          channelId: state.pathParameters['channelId']!,
+        ),
       ),
       GoRoute(path: '/call', pageBuilder: _instant(const VoiceCallScreen())),
       // Ghost Chat. `GhostSync` is the only thing that pushes or pops these.

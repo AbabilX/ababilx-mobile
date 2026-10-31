@@ -427,14 +427,14 @@ class AppTranslations {
           'Set a backup PIN first. Backups start after that.',
       'local_backup_error_needs_pin':
           'Enter your backup PIN to open this backup.',
-      'backup_pin_rule': 'Use 6 to 32 characters. Letters, numbers and symbols all work.',
+      'backup_pin_rule':
+          'Use 6 to 32 characters. Letters, numbers and symbols all work.',
       'backup_pin_mismatch': 'The two PINs do not match.',
       'backup_pin_set_title': 'Set a backup PIN',
       'backup_pin_set_body':
           'This PIN alone opens your backup on a new phone. Nobody can reset it, so remember it.',
       'backup_pin_enter_title': 'Enter your backup PIN',
-      'backup_pin_enter_body':
-          'The PIN you set for your backup.',
+      'backup_pin_enter_body': 'The PIN you set for your backup.',
       'backup_pin_field': 'PIN',
       'backup_pin_repeat': 'Repeat PIN',
       'backup_pin_show': 'Show PIN',
@@ -647,6 +647,7 @@ class AppTranslations {
       'home_nearby': 'Nearby devices',
       'messages': 'Messages',
       'calls': 'Talks',
+      'spaces': 'Spaces',
       'profile': 'Profile',
       'chat_attach': 'Attach',
       'chat_format': 'Format',
@@ -1966,14 +1967,14 @@ class AppTranslations {
       'local_backup_error_set_pin':
           'আগে একটি ব্যাকআপ পিন সেট করুন। এরপর ব্যাকআপ শুরু হবে।',
       'local_backup_error_needs_pin': 'এই ব্যাকআপ খুলতে আপনার ব্যাকআপ পিন দিন।',
-      'backup_pin_rule': '৬ থেকে ৩২টি অক্ষর দিন। অক্ষর, সংখ্যা ও চিহ্ন সবই চলবে।',
+      'backup_pin_rule':
+          '৬ থেকে ৩২টি অক্ষর দিন। অক্ষর, সংখ্যা ও চিহ্ন সবই চলবে।',
       'backup_pin_mismatch': 'দুটি পিন মেলেনি।',
       'backup_pin_set_title': 'ব্যাকআপ পিন সেট করুন',
       'backup_pin_set_body':
           'নতুন ফোনে শুধু এই পিন দিয়েই ব্যাকআপ খুলবে। কেউ এটি রিসেট করতে পারে না, তাই মনে রাখুন।',
       'backup_pin_enter_title': 'আপনার ব্যাকআপ পিন দিন',
-      'backup_pin_enter_body':
-          'ব্যাকআপের জন্য যে পিন সেট করেছিলেন।',
+      'backup_pin_enter_body': 'ব্যাকআপের জন্য যে পিন সেট করেছিলেন।',
       'backup_pin_field': 'পিন',
       'backup_pin_repeat': 'আবার পিন দিন',
       'backup_pin_show': 'পিন দেখান',
@@ -2185,6 +2186,7 @@ class AppTranslations {
       'home_nearby': 'কাছের ডিভাইস',
       'messages': 'বার্তা',
       'calls': 'কথা',
+      'spaces': 'স্পেস',
       'profile': 'ব্যবহারকারী পরিচিতি',
       'chat_attach': 'সংযুক্ত করুন',
       'chat_format': 'ফরম্যাট',

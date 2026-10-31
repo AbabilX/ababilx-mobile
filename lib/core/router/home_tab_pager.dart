@@ -6,6 +6,7 @@ import '../../features/calls/screens/calls_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
 import '../../features/settings/appearance/home_tab_setting.dart';
+import '../../features/spaces/ui/spaces_screen.dart';
 import 'shell_bottom_bar/shell_tab_order.dart';
 import 'shell_bottom_bar/shell_tabs.dart';
 import 'swipe_tab_pager.dart';
@@ -29,6 +30,7 @@ class _HomePager extends ConsumerWidget {
   static const _screens = {
     '/home': HomeScreen(),
     '/messages': MessagesScreen(),
+    '/spaces': SpacesScreen(),
     '/calls': CallsScreen(),
   };
 

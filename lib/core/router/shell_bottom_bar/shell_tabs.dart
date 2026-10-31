@@ -41,6 +41,15 @@ const messagesShellTab = ShellTab(
   showsUnread: true,
 );
 
+/// Discord-style communities (SPACES.md). Its own service; the tab still
+/// works offline from the saved copy.
+const spacesShellTab = ShellTab(
+  route: '/spaces',
+  labelKey: 'spaces',
+  icon: HugeIcons.strokeRoundedUserGroup03,
+  selectedIcon: HugeIcons.strokeRoundedUserGroup,
+);
+
 const callsShellTab = ShellTab(
   route: '/calls',
   labelKey: 'calls',
@@ -48,11 +57,12 @@ const callsShellTab = ShellTab(
   selectedIcon: HugeIcons.strokeRoundedCall,
 );
 
-/// Destinations in the home bottom bar: Home (Slack's quick views), Messages
-/// and Calls. Workspace tabs (Wall, Board, CRM) were removed from mobile.
+/// Destinations in the home bottom bar: Home (Slack's quick views), Messages,
+/// Spaces and Calls. Workspace tabs (Wall, Board, CRM) were removed from mobile.
 const List<ShellTab> homeShellTabs = [
   homeShellTab,
   messagesShellTab,
+  spacesShellTab,
   callsShellTab,
 ];
 

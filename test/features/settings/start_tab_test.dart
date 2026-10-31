@@ -25,6 +25,7 @@ void main() {
       await HomeTabSetting.save(true);
       expect(StartTab.sanitize('/home'), '/home');
       expect(StartTab.sanitize('/calls'), '/calls');
+      expect(StartTab.sanitize('/spaces'), '/spaces');
       expect(StartTab.sanitize('/messages'), '/messages');
       expect(StartTab.sanitize('/wall'), '/messages');
       expect(StartTab.sanitize(null), '/messages');
@@ -45,7 +46,7 @@ void main() {
   test('bar without Home drops only Home', () {
     expect(
       [for (final t in visibleShellTabs(homeShown: false)) t.route],
-      ['/messages', '/calls'],
+      ['/messages', '/spaces', '/calls'],
     );
     expect(visibleShellTabs(homeShown: true), homeShellTabs);
   });
@@ -59,8 +60,9 @@ void main() {
     await order.move(shown, 0, 1);
     expect(container.read(shellTabOrderProvider), [
       '/home',
-      '/calls',
+      '/spaces',
       '/messages',
+      '/calls',
     ]);
   });
 }
