@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Signal's jump-to-bottom button: a round chip above the composer that only
-/// appears once you have scrolled up, carrying the unread count when there is
-/// one.
+/// The reference app's jump-to-bottom button: a round chip above the composer
+/// that only appears once you have scrolled up, carrying the unread count when
+/// there is one.
 class ScrollToBottomPill extends StatelessWidget {
   const ScrollToBottomPill({
     super.key,

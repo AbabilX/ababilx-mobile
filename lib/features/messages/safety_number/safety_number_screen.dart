@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'safety_number.dart';
 import 'safety_number_provider.dart';
 
-/// Signal's "Verify safety number" screen.
+/// The reference app's "Verify safety number" screen.
 ///
 /// The digits are the whole point: a server that substituted a key cannot make
 /// two people read the same numbers to each other. Everything else here is

@@ -8,11 +8,11 @@ import 'call_audio_labels.dart';
 
 export 'call_audio_labels.dart';
 
-/// The audio-output button's behaviour — Signal's `CallAudioToggleButton` +
-/// `WebRtcAudioPicker31`: with fewer than three outputs and an earpiece among
-/// them a press cycles to the next one; otherwise it opens the "Audio output"
-/// sheet. Before the native list exists (iOS, or the first instant of a call)
-/// it is the old speaker switch, [fallback].
+/// The audio-output button's behaviour — the reference app's
+/// `CallAudioToggleButton` + `WebRtcAudioPicker31`: with fewer than three
+/// outputs and an earpiece among them a press cycles to the next one; otherwise
+/// it opens the "Audio output" sheet. Before the native list exists (iOS, or
+/// the first instant of a call) it is the old speaker switch, [fallback].
 Future<void> pressCallAudioOutput(
   BuildContext context,
   CallAudioDevices devices, {
@@ -54,9 +54,9 @@ class CallAudioButtonFace {
       );
     }
     final picker = devices.willDisplayPicker;
-    // The icon is where the sound is now. Signal keeps the speaker glyph on
-    // a two-way switch and only tints it; on our deck that read as a button
-    // that did nothing.
+    // The icon is where the sound is now. The reference app keeps the speaker
+    // glyph on a two-way switch and only tints it; on our deck that read as a
+    // button that did nothing.
     final output = devices.active == CallAudioOutput.none
         ? (speaker ? CallAudioOutput.speaker : CallAudioOutput.handset)
         : devices.active;
@@ -72,8 +72,8 @@ class CallAudioButtonFace {
   final bool dropdown;
 }
 
-/// Signal's `WebRtcAudioOutputBottomSheet`: "Audio output", then one radio
-/// row per output — radio, icon, name. Pops with the row pressed.
+/// The reference app's `WebRtcAudioOutputBottomSheet`: "Audio output", then one
+/// radio row per output — radio, icon, name. Pops with the row pressed.
 class CallAudioOutputSheet extends StatelessWidget {
   const CallAudioOutputSheet({
     super.key,

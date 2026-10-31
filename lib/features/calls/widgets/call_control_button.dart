@@ -18,8 +18,8 @@ class CallControlButton extends StatelessWidget {
     this.iconSize = 26,
   });
 
-  /// The larger 78dp size Signal gives Answer and Decline, where the button is
-  /// the only thing on screen worth touching.
+  /// The larger 78dp size the reference app gives Answer and Decline, where the
+  /// button is the only thing on screen worth touching.
   const CallControlButton.large({
     super.key,
     required this.icon,

@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
 
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 
 /// Where each cell of an image album sits, and how its corners are cut.
 ///
@@ -45,7 +45,7 @@ AlbumLayout albumLayout({
   required int count,
   required double width,
   required double corner,
-  double maxHeight = SignalBubbleMetrics.mediaMaxHeight,
+  double maxHeight = BubbleMetrics.mediaMaxHeight,
 }) {
   assert(count >= 2);
   final w = width;
@@ -103,7 +103,8 @@ AlbumLayout albumLayout({
   return AlbumLayout(cells: cells, height: h, overflow: overflow);
 }
 
-/// Outer corners of the album block only — matches Signal's outline rounding.
+/// Outer corners of the album block only — matches the reference app's outline
+/// rounding.
 BorderRadius _corners({
   required int row,
   required int col,

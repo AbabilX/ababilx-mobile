@@ -5,11 +5,12 @@ import '../data/models/chat_models.dart';
 import '../tiptap_plain_text.dart';
 import 'message_bubble.dart';
 import 'sender_name_color.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 import 'timeline_jump.dart';
 
-/// Signal's quote block: the message being answered, inset at the top of the
-/// bubble behind a coloured bar in the quoted sender's own name colour.
+/// The reference app's quote block: the message being answered, inset at the
+/// top of the bubble behind a coloured bar in the quoted sender's own name
+/// colour.
 ///
 /// Tapping it walks the timeline back to the message being answered — see
 /// [TimelineJumpController]. There is nowhere to walk when the original is gone,
@@ -24,7 +25,7 @@ class MessageQuoteBlock extends StatelessWidget {
   });
 
   final ChatMessageQuote quote;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final bool isOwn;
 
   bool get _unavailable =>
@@ -82,13 +83,10 @@ class MessageQuoteBlock extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHighest.withValues(alpha: 0.7),
         borderRadius: const BorderRadius.all(
-          Radius.circular(SignalBubbleMetrics.quoteInnerRadius),
+          Radius.circular(BubbleMetrics.quoteInnerRadius),
         ),
         border: Border(
-          left: BorderSide(
-            color: accent,
-            width: SignalBubbleMetrics.quoteBarWidth,
-          ),
+          left: BorderSide(color: accent, width: BubbleMetrics.quoteBarWidth),
         ),
       ),
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),

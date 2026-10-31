@@ -13,10 +13,10 @@ enum BatteryPromptDecision {
 ///
 /// The app used to ask on the first frame after login, before a single push had
 /// been delivered — a system dialog with a scary warning in it, shown to
-/// everyone, justified by nothing. Signal's rule is the opposite and is the one
-/// implemented here: the prompt has to be *earned* by evidence that this phone
-/// is actually holding notifications, and it is only worth showing when the
-/// exemption would change the outcome.
+/// everyone, justified by nothing. The reference app's rule is the opposite and
+/// is the one implemented here: the prompt has to be *earned* by evidence that
+/// this phone is actually holding notifications, and it is only worth showing
+/// when the exemption would change the outcome.
 ///
 /// Each gate, in order:
 ///

@@ -1,4 +1,4 @@
-/// Where a call's audio is going — Signal's `WebRtcAudioOutput` plus
+/// Where a call's audio is going — the reference app's `WebRtcAudioOutput` plus
 /// [none] for "nothing reported yet".
 enum CallAudioOutput { handset, speaker, bluetooth, wiredHeadset, none }
 
@@ -18,9 +18,9 @@ String callAudioOutputToWire(CallAudioOutput output) => switch (output) {
   CallAudioOutput.none => 'none',
 };
 
-/// One row of the picker — Signal's `AudioOutputOption`. [id] goes back to
-/// native unchanged; [name] is the product name (a Bluetooth row shows it);
-/// [detail] tells a wired row apart: `wired_headphones`, `wired_headset`,
+/// One row of the picker — the reference app's `AudioOutputOption`. [id] goes
+/// back to native unchanged; [name] is the product name (a Bluetooth row shows
+/// it); [detail] tells a wired row apart: `wired_headphones`, `wired_headset`,
 /// `usb_headset`.
 class CallAudioOption {
   const CallAudioOption({
@@ -64,7 +64,8 @@ class CallAudioDevices {
 
   static const empty = CallAudioDevices();
 
-  /// Signal's `SHOW_PICKER_THRESHOLD`: with fewer choices the button cycles.
+  /// The reference app's `SHOW_PICKER_THRESHOLD`: with fewer choices the button
+  /// cycles.
   static const pickerThreshold = 3;
 
   final CallAudioOutput active;
@@ -73,16 +74,16 @@ class CallAudioDevices {
 
   bool get known => options.isNotEmpty;
 
-  /// Signal's `willDisplayPicker`: three or more outputs, or no earpiece to
-  /// fall back to — then a press opens the list instead of cycling.
+  /// The reference app's `willDisplayPicker`: three or more outputs, or no
+  /// earpiece to fall back to — then a press opens the list instead of cycling.
   bool get willDisplayPicker =>
       known &&
       (options.length >= pickerThreshold ||
           !options.any((o) => o.output == CallAudioOutput.handset));
 
   /// The output a cycling press moves to: the one after the current, or —
-  /// when the current is unknown — the first that is not it (Signal's
-  /// `cycleToNextDevice`).
+  /// when the current is unknown — the first that is not it (the reference
+  /// app's `cycleToNextDevice`).
   CallAudioOption? get next {
     if (!known) return null;
     final index = options.indexWhere((o) => o.id == activeId);

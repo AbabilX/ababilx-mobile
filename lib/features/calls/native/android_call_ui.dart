@@ -96,12 +96,12 @@ class AndroidCallUi {
   static Future<void> _showOnce(CallKitParams params) async {
     if (!_showingCallIds.add(params.id)) return;
     try {
-      // Signal's busy rule: only an idle phone rings. A phone placing,
-      // answering or talking on a call — this one included, when a push for
-      // it arrives late or twice — shows no ringing screen and plays no tone.
-      // This is the "still ringing after I answered" / "second caller screen"
-      // report: the old gate let the late push through and nothing took it
-      // down, because an `accepted` call is not over.
+      // The reference app's busy rule: only an idle phone rings. A phone
+      // placing, answering or talking on a call — this one included, when a
+      // push for it arrives late or twice — shows no ringing screen and plays
+      // no tone. This is the "still ringing after I answered" / "second caller
+      // screen" report: the old gate let the late push through and nothing took
+      // it down, because an `accepted` call is not over.
       if (await CallRinger.liveCall() != null) return;
       final active = await FlutterCallkitIncoming.activeCalls();
       final decision = decideIncomingCallAdmission(

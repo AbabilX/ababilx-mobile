@@ -74,9 +74,9 @@ class PendingOutboxMessages extends Table {
 /// start therefore had to reach the network before a single message could be
 /// read, and with no network every message in every chat rendered as "Unable
 /// to decrypt this message" — over history the device already had sitting in
-/// [CachedMessages]. Signal decrypts once on receipt and stores the plaintext;
-/// we keep ciphertext at rest and store the KEY instead, which gets to the
-/// same place without putting message text on disk.
+/// [CachedMessages]. The reference app decrypts once on receipt and stores the
+/// plaintext; we keep ciphertext at rest and store the KEY instead, which gets
+/// to the same place without putting message text on disk.
 ///
 /// Keyed by version as well as conversation, deliberately: `GET .../e2ee-key`
 /// only ever returns the newest envelope, so once a conversation rotates, a

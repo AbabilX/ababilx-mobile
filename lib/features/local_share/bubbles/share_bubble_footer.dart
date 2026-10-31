@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 
-import '../../messages/chat-timeline/message_bubble.dart'
-    show SignalBubbleColors;
-import '../../messages/chat-timeline/signal_bubble_metrics.dart';
+import '../../messages/chat-timeline/message_bubble.dart' show BubbleColors;
+import '../../messages/chat-timeline/bubble_metrics.dart';
 import '../../messages/chat_icon.dart';
 import '../engine/store/share_records.dart';
 import '../share_text.dart';
@@ -21,13 +20,13 @@ class ShareBubbleFooter extends ConsumerWidget {
   });
 
   final ShareMessageRecord message;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final style = TextStyle(
-      fontSize: SignalBubbleMetrics.footerTextSize,
+      fontSize: BubbleMetrics.footerTextSize,
       color: colors.muted,
     );
     final time = DateFormat.jm().format(

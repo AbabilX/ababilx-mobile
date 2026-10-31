@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 
 /// The strip across the top of the app while a call is running somewhere else.
 ///
-/// WhatsApp and Signal both keep the call *legible* from outside it: the bar
-/// carries who you are talking to and how long it has been going, not just an
-/// invitation to come back. A frozen "Tap to return to call" cannot say whether
-/// the call is still up, still ringing, or has been reconnecting for a minute —
-/// which is exactly what someone who left the screen wants to know.
+/// WhatsApp and the reference app both keep the call *legible* from outside it:
+/// the bar carries who you are talking to and how long it has been going, not
+/// just an invitation to come back. A frozen "Tap to return to call" cannot say
+/// whether the call is still up, still ringing, or has been reconnecting for a
+/// minute — which is exactly what someone who left the screen wants to know.
 ///
 /// [status] is a callback rather than a string because the bar ticks its own
 /// clock: the parent rebuilds when call *state* changes, and a running duration
@@ -36,7 +36,7 @@ class CallReturnBar extends StatefulWidget {
   final bool ticking;
 
   /// Something is wrong — a recovery in progress. Tints the bar so a glance is
-  /// enough, the way Signal reddens its own bar.
+  /// enough, the way the reference app reddens its own bar.
   final bool alerting;
 
   @override

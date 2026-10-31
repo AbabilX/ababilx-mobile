@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 /// Expanding rings behind a ringing caller's avatar.
 ///
-/// Signal's incoming screen keeps one moving element while the phone rings, so
-/// a call that is still alive never looks like a frozen screenshot.
+/// The reference app's incoming screen keeps one moving element while the phone
+/// rings, so a call that is still alive never looks like a frozen screenshot.
 class CallRingPulse extends StatefulWidget {
   const CallRingPulse({super.key, required this.size, required this.child});
 

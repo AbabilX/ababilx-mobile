@@ -2,11 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Which messages a long press → Select has put into multi-select mode.
 ///
-/// Signal keeps this on the conversation adapter; here it is a provider so the
-/// header, the list and the action bar — three sibling subtrees — read one
-/// truth. **Ids only, never message copies**: a stored copy goes stale the
-/// moment an edit, a delete or a send confirmation lands, and every action has
-/// to run against the row as it is now.
+/// The reference app keeps this on the conversation adapter; here it is a
+/// provider so the header, the list and the action bar — three sibling subtrees
+/// — read one truth. **Ids only, never message copies**: a stored copy goes
+/// stale the moment an edit, a delete or a send confirmation lands, and every
+/// action has to run against the row as it is now.
 class MessageSelection {
   const MessageSelection({required this.conversationId, this.ids = const {}});
 
@@ -56,10 +56,10 @@ class MessageSelectionNotifier extends Notifier<MessageSelection> {
   }
 
   /// Drops ids the timeline no longer holds — a message deleted from another
-  /// device, or one that expired out of the feed. Signal does the same on
-  /// `onItemRangeRemoved`; without it the count keeps promising rows the
-  /// actions can no longer act on, and an empty selection would leave the bars
-  /// up over a conversation with nothing selected.
+  /// device, or one that expired out of the feed. The reference app does the
+  /// same on `onItemRangeRemoved`; without it the count keeps promising rows
+  /// the actions can no longer act on, and an empty selection would leave the
+  /// bars up over a conversation with nothing selected.
   void retain(Set<String> presentIds) {
     if (!state.isActive) return;
     final kept = state.ids.where(presentIds.contains).toSet();

@@ -10,7 +10,7 @@ import 'quote_replies_sheet.dart';
 
 /// What a timeline tells its rows about the side indicators. A row drawn
 /// outside one — the copy the long-press menu lifts, the replies sheet — has
-/// no scope and so draws none, which is Signal's rule for both.
+/// no scope and so draws none, which is the reference app's rule for both.
 class BubbleIndicatorScope extends InheritedWidget {
   const BubbleIndicatorScope({
     super.key,
@@ -31,10 +31,10 @@ class BubbleIndicatorScope extends InheritedWidget {
       !old.quotedIds.containsAll(quotedIds);
 }
 
-/// Signal's `quoted_indicator`: a 32dp circle beside the bubble, on the side
-/// facing the middle of the screen, centred on the bubble. One for a message
-/// that has been quoted (opens its replies), a different glyph for a message
-/// that carries a thread (opens the thread).
+/// The reference app's `quoted_indicator`: a 32dp circle beside the bubble, on
+/// the side facing the middle of the screen, centred on the bubble. One for a
+/// message that has been quoted (opens its replies), a different glyph for a
+/// message that carries a thread (opens the thread).
 class BubbleSideIndicators extends ConsumerWidget {
   const BubbleSideIndicators({
     super.key,
@@ -61,7 +61,7 @@ class BubbleSideIndicators extends ConsumerWidget {
     final quoted = scope.quotedIds.contains(message.id);
     final threaded = onOpenThread != null && message.threadCount > 0;
     if (!quoted && !threaded) return child;
-    // Signal hides it while messages are being picked out.
+    // The reference app hides it while messages are being picked out.
     final selecting = ref.watch(
       messageSelectionProvider.select(
         (s) => s.isActiveIn(message.conversationId),
@@ -132,8 +132,8 @@ class _Indicator extends StatelessWidget {
   }
 }
 
-/// Signal's `QUOTED_ALPHA_INTERPOLATOR`: gone by a third of the way to the
-/// swipe trigger, so the reply arrow never shares the row with it.
+/// The reference app's `QUOTED_ALPHA_INTERPOLATOR`: gone by a third of the way
+/// to the swipe trigger, so the reply arrow never shares the row with it.
 class _SwipeFade extends StatelessWidget {
   const _SwipeFade({required this.child});
   final Widget child;

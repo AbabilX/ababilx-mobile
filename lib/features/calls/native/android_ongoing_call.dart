@@ -13,8 +13,8 @@ enum OngoingCallAction { hangUp, returnToCall, screenShareStopped }
 /// Backing out of the call screen used to leave a live call with no surface at
 /// all: no way back to it, and no way to end it short of the other side
 /// hanging up or the server sweeper expiring the call. This is the fix, shaped
-/// after Signal's ongoing-call notification — tap the body to return, press
-/// Hang up to end it from the shade.
+/// after the reference app's ongoing-call notification — tap the body to
+/// return, press Hang up to end it from the shade.
 ///
 /// The same service carries `FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION` while a
 /// screen share is running (see [setScreenSharing]), which is why

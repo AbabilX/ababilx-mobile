@@ -8,9 +8,9 @@ import 'chat_timeline.dart';
 ///
 /// It used to ask 120 pixels from the top — two rows away, so the reader was
 /// always standing at the edge when the load began and watched it happen.
-/// Signal keeps three pages loaded either side of what is on screen; this
-/// keeps [_leadViewports] screens of history above the reader, so a page is
-/// read, opened and laid out before anyone can scroll to where it goes.
+/// The reference app keeps three pages loaded either side of what is on screen;
+/// this keeps [_leadViewports] screens of history above the reader, so a page
+/// is read, opened and laid out before anyone can scroll to where it goes.
 mixin ChatTimelineOlder on ConsumerState<ChatTimeline> {
   ScrollController get timelineScrollController;
 

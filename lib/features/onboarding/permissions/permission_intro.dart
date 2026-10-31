@@ -7,10 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// A row on the "Allow permissions" screen.
 enum IntroPermission { notifications, microphone, media }
 
-/// Signal-Android's `GrantPermissionsFragment` decision: once per install,
-/// before the restore screen, explain what the app will ask for and ask it
-/// all in one go — instead of OS dialogs firing at whatever moment a feature
-/// first wanted one.
+/// The reference Android app's `GrantPermissionsFragment` decision: once per
+/// install, before the restore screen, explain what the app will ask for and
+/// ask it all in one go — instead of OS dialogs firing at whatever moment a
+/// feature first wanted one.
 ///
 /// [settled] is what keeps the push setup from firing its own notification
 /// dialog over this screen: `FcmBootstrap` waits for it, and skips the ask
@@ -43,7 +43,8 @@ class PermissionIntro {
 
   /// The rows still worth asking for. A permission already granted (or one
   /// this Android version grants on install, like notifications below 13)
-  /// has no row — Signal drops the notifications row below API 33 the same way.
+  /// has no row — the reference app drops the notifications row below API 33
+  /// the same way.
   static Future<List<IntroPermission>> missing() async {
     final rows = <IntroPermission>[];
     for (final row in IntroPermission.values) {

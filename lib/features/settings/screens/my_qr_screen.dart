@@ -16,8 +16,8 @@ import '../../privacy-mode/privacy_mode_provider.dart';
 import '../qr/my_qr_empty.dart';
 import '../qr/my_qr_private.dart';
 
-/// Your own QR code — Signal's "QR code" screen, reached from the button
-/// beside your name in Settings.
+/// Your own QR code — the reference app's "QR code" screen, reached from the
+/// button beside your name in Settings.
 ///
 /// That button used to open the scanner, which put the two halves of a QR
 /// exchange on top of each other: whoever tapped it was ready to be scanned,

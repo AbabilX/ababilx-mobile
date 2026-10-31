@@ -1,10 +1,10 @@
 import 'package:ababilx/features/messages/chat-timeline/attachment_album_geometry.dart';
-import 'package:ababilx/features/messages/chat-timeline/signal_bubble_metrics.dart';
+import 'package:ababilx/features/messages/chat-timeline/bubble_metrics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const width = 240.0;
-  const maxH = SignalBubbleMetrics.mediaMaxHeight;
+  const maxH = BubbleMetrics.mediaMaxHeight;
 
   group('albumLayout', () {
     test('uses full available width and solo max height', () {

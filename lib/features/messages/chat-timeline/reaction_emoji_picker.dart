@@ -1,7 +1,7 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 
-/// Signal-style "react with any emoji" sheet.
+/// The "react with any emoji" sheet.
 Future<String?> showReactionEmojiPicker(BuildContext context) {
   final scheme = Theme.of(context).colorScheme;
   return showModalBottomSheet<String>(

@@ -8,10 +8,10 @@ import 'message_list.dart';
 import 'quote_chain.dart';
 import 'sheet_pull_to_close.dart';
 
-/// Signal's `MessageQuotesBottomSheet`: the message and everything that
-/// replies to it, read in one place instead of hunted for down the timeline.
-/// It is a reading surface — no composer; replying is done from a row's own
-/// menu or swipe, back in the chat.
+/// The reference app's `MessageQuotesBottomSheet`: the message and everything
+/// that replies to it, read in one place instead of hunted for down the
+/// timeline. It is a reading surface — no composer; replying is done from a
+/// row's own menu or swipe, back in the chat.
 void showQuoteRepliesSheet(
   BuildContext context,
   ChatMessage message, {

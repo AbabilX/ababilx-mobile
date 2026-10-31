@@ -18,8 +18,9 @@ import 'socket_hold.dart';
 class WsBackgroundRelease extends ConsumerStatefulWidget {
   const WsBackgroundRelease({super.key, required this.child});
 
-  /// Signal's `maxBackgroundTime`: long enough for a quick app switch to come
-  /// back to a live socket, short enough that a pocket does not hold one.
+  /// The reference app's `maxBackgroundTime`: long enough for a quick app
+  /// switch to come back to a live socket, short enough that a pocket does not
+  /// hold one.
   static const backgroundGrace = Duration(minutes: 2);
 
   final Widget child;

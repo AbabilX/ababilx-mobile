@@ -54,7 +54,8 @@ class StorageReviewTile extends StatelessWidget {
           color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
-      // Signal's selection circle, in the app's glyphs: no Material checkbox.
+      // The reference app's selection circle, in the app's glyphs: no Material
+      // checkbox.
       trailing: selecting
           ? ChatIcon(
               selected

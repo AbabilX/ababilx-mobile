@@ -13,7 +13,7 @@ import 'message_attachments.dart';
 import 'message_bubble.dart';
 import 'message_long_body.dart';
 import 'pending_message_attachments.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 import 'user_profile_sheet.dart';
 import '../../chat-lock/media/ram_message_attachments.dart';
 import '../../chat-lock/providers/chat_locks_provider.dart';
@@ -31,7 +31,7 @@ class MessageBody extends ConsumerWidget {
 
   /// Text sits on the bubble's fill, so every colour here comes from the
   /// bubble rather than straight off the scheme.
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
 
   /// Picture/video bubbles: media fills the bubble, caption keeps the inset
   /// under it. Attachments then size like a caption-less tile (max width,
@@ -100,10 +100,10 @@ class MessageBody extends ConsumerWidget {
         : bleedMedia
         ? Padding(
             padding: const EdgeInsets.fromLTRB(
-              SignalBubbleMetrics.horizontalPadding,
+              BubbleMetrics.horizontalPadding,
               6,
-              SignalBubbleMetrics.horizontalPadding,
-              SignalBubbleMetrics.bottomPadding,
+              BubbleMetrics.horizontalPadding,
+              BubbleMetrics.bottomPadding,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -207,7 +207,7 @@ class MessageBody extends ConsumerWidget {
       maxHeight: collapsed ? MessageLongBody.collapsedHeight : null,
       style: TextStyle(
         color: colors.foreground,
-        fontSize: SignalBubbleMetrics.bodyTextSize,
+        fontSize: BubbleMetrics.bodyTextSize,
         height: 1.35,
       ),
       trailing: !includeEdited || collapsed || message.editedAt == null

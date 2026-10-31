@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../chat_icon.dart';
-import 'signal_message_menu.dart';
-import 'signal_message_menu_geometry.dart';
+import 'message_menu.dart';
+import 'message_menu_geometry.dart';
 
 /// The scrubber: 320 wide, one action-bar tall, 30dp corner, seven equal slots
 /// — six emoji and the "more" circle. The strip fades in, then each emoji
 /// rises 25dp into place, one after the next, which is the whole character of
-/// Signal's reveal.
-class SignalReactionBar extends StatelessWidget {
-  const SignalReactionBar({
+/// the reference app's reveal.
+class MessageReactionBar extends StatelessWidget {
+  const MessageReactionBar({
     super.key,
     required this.moreLabel,
     required this.strip,
@@ -20,14 +20,14 @@ class SignalReactionBar extends StatelessWidget {
 
   final String moreLabel;
 
-  /// The strip's own fade, and one reveal per slot (`signalEmojiReveal`).
+  /// The strip's own fade, and one reveal per slot (`emojiReveal`).
   final Animation<double> strip;
   final List<Animation<double>> slots;
 
   /// Slot the finger is scrubbing over, if any — it grows and lifts.
   final int? selectedIndex;
 
-  /// Signal's default six, in Signal's order.
+  /// The reference app's default six, in its order.
   static const emojis = ['❤️', '👍', '👎', '😂', '😮', '😢'];
 
   @override
@@ -42,7 +42,7 @@ class SignalReactionBar extends StatelessWidget {
           child: Material(
             color: colors.surfaceContainerHigh,
             elevation: 4,
-            borderRadius: BorderRadius.circular(SignalMenuMetrics.barRadius),
+            borderRadius: BorderRadius.circular(MessageMenuMetrics.barRadius),
           ),
         ),
         _slots(context, colors),
@@ -54,7 +54,7 @@ class SignalReactionBar extends StatelessWidget {
     return Material(
       type: MaterialType.transparency,
       child: SizedBox(
-        height: SignalMenuMetrics.barHeight,
+        height: MessageMenuMetrics.barHeight,
         child: Row(
           children: [
             for (var i = 0; i < emojis.length; i++)
@@ -63,7 +63,7 @@ class SignalReactionBar extends StatelessWidget {
                   animation: slots[i],
                   selected: selectedIndex == i,
                   onTap: () =>
-                      Navigator.pop(context, SignalMessageReaction(emojis[i])),
+                      Navigator.pop(context, MessageMenuReaction(emojis[i])),
                   child: Text(
                     emojis[i],
                     style: const TextStyle(fontSize: 30),
@@ -76,7 +76,7 @@ class SignalReactionBar extends StatelessWidget {
                 animation: slots[emojis.length],
                 selected: selectedIndex == emojis.length,
                 onTap: () =>
-                    Navigator.pop(context, const SignalMessageReaction('')),
+                    Navigator.pop(context, const MessageMenuReaction('')),
                 child: Tooltip(
                   message: moreLabel,
                   child: CircleAvatar(
@@ -121,26 +121,26 @@ class _Slot extends StatelessWidget {
         child: Transform.translate(
           offset: Offset(
             0,
-            SignalMenuMetrics.emojiRiseFrom * (1 - curve.value),
+            MessageMenuMetrics.emojiRiseFrom * (1 - curve.value),
           ),
           child: inner,
         ),
       ),
       child: AnimatedSlide(
-        duration: SignalMenuMetrics.revealDuration,
+        duration: MessageMenuMetrics.revealDuration,
         curve: Curves.decelerate,
         // 25 of a 56-tall slot — the lift is expressed against the bar height
         // because AnimatedSlide works in fractions of the child.
         offset: selected
             ? const Offset(
                 0,
-                -SignalMenuMetrics.emojiLift / SignalMenuMetrics.barHeight,
+                -MessageMenuMetrics.emojiLift / MessageMenuMetrics.barHeight,
               )
             : Offset.zero,
         child: AnimatedScale(
-          duration: SignalMenuMetrics.revealDuration,
+          duration: MessageMenuMetrics.revealDuration,
           curve: Curves.decelerate,
-          scale: selected ? SignalMenuMetrics.emojiGrowScale : 1.0,
+          scale: selected ? MessageMenuMetrics.emojiGrowScale : 1.0,
           child: InkResponse(
             radius: 26,
             onTap: onTap,

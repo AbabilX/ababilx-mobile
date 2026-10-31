@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../messages/chat-timeline/message_bubble.dart'
-    show SignalBubbleColors;
-import '../../messages/chat-timeline/signal_bubble_metrics.dart';
+import '../../messages/chat-timeline/message_bubble.dart' show BubbleColors;
+import '../../messages/chat-timeline/bubble_metrics.dart';
 import '../../messages/chat_utils.dart';
 import '../providers/ghost_state.dart';
 import 'ghost_file_content.dart';
 
 /// One Ghost Chat message, drawn to the same measurements as the ordinary
-/// timeline (`signal_bubble_metrics.dart`): one fill for both sides, the
+/// timeline (`bubble_metrics.dart`): one fill for both sides, the
 /// corner facing the rest of a run collapsed, 12/7 padding, and a far edge
 /// that never reaches the opposite side of the screen.
 ///
@@ -26,20 +25,20 @@ class GhostBubble extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = SignalBubbleColors.of(
+    final colors = BubbleColors.of(
       Theme.of(context).colorScheme,
       hasWallpaper: false,
     );
     final maxWidth =
         MediaQuery.sizeOf(context).width -
-        SignalBubbleMetrics.edgeMargin -
-        SignalBubbleMetrics.listSideGutter;
+        BubbleMetrics.edgeMargin -
+        BubbleMetrics.listSideGutter;
 
     return Padding(
       padding: EdgeInsets.only(
-        top: signalBubbleTopSpacing(position),
-        left: SignalBubbleMetrics.listSideGutter,
-        right: SignalBubbleMetrics.listSideGutter,
+        top: bubbleTopSpacing(position),
+        left: BubbleMetrics.listSideGutter,
+        right: BubbleMetrics.listSideGutter,
       ),
       child: Align(
         alignment: item.fromMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -48,7 +47,7 @@ class GhostBubble extends ConsumerWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: colors.background,
-              borderRadius: signalBubbleRadius(
+              borderRadius: bubbleRadius(
                 position: position,
                 isOwn: item.fromMe,
               ),
@@ -67,14 +66,14 @@ class _Text extends StatelessWidget {
   const _Text({required this.item, required this.colors});
 
   final GhostItem item;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: SignalBubbleMetrics.horizontalPadding,
-        vertical: SignalBubbleMetrics.topPadding,
+        horizontal: BubbleMetrics.horizontalPadding,
+        vertical: BubbleMetrics.topPadding,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,7 +83,7 @@ class _Text extends StatelessWidget {
             item.body ?? '',
             style: TextStyle(
               color: colors.foreground,
-              fontSize: SignalBubbleMetrics.bodyTextSize,
+              fontSize: BubbleMetrics.bodyTextSize,
             ),
           ),
           GhostBubbleTime(at: item.at, colors: colors),
@@ -94,8 +93,8 @@ class _Text extends StatelessWidget {
   }
 }
 
-/// Signal's footer, minus everything a Ghost Chat has no state for: the time,
-/// and nothing else.
+/// The reference app's footer, minus everything a Ghost Chat has no state for:
+/// the time, and nothing else.
 class GhostBubbleTime extends StatelessWidget {
   const GhostBubbleTime({
     super.key,
@@ -105,7 +104,7 @@ class GhostBubbleTime extends StatelessWidget {
   });
 
   final DateTime at;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
 
   /// On a photo there is no themed surface to read against, so the time takes
   /// its own ink — the same exception the ordinary footer makes.
@@ -118,7 +117,7 @@ class GhostBubbleTime extends StatelessWidget {
       child: Text(
         DateFormat('h:mm a').format(at),
         style: TextStyle(
-          fontSize: SignalBubbleMetrics.footerTextSize,
+          fontSize: BubbleMetrics.footerTextSize,
           color: onMedia ? Colors.white : colors.muted,
         ),
       ),

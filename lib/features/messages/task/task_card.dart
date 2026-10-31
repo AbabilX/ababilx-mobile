@@ -31,7 +31,7 @@ class TaskCard extends ConsumerWidget {
 
   final ChatMessage message;
   final TaskCardData task;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final Widget? footer;
 
   /// The card after a change held — for a list that keeps its own copy.

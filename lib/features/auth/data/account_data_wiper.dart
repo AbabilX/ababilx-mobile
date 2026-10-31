@@ -15,7 +15,7 @@ import '../../notifications/chat/chat_notification_privacy.dart';
 import '../../notifications/providers/fcm_provider.dart';
 import '../../profile/data/profile_repository.dart';
 
-/// Signal-style account switch: remove everything private to the old account,
+/// Account switch: remove everything private to the old account,
 /// but never touch files the user exported to AbabilXStorage.
 class AccountDataWiper {
   const AccountDataWiper(this._ref);

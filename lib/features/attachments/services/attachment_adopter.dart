@@ -26,10 +26,10 @@ final _conversationInUrl = RegExp(r'/chat/([0-9a-fA-F-]{36})/');
 /// shown a download button for their own file, and (on a metered plan) pays to
 /// fetch back the bytes still sitting in their gallery.
 ///
-/// Signal does the same thing from the other end: an outgoing attachment is
-/// written into the attachment store at compose time and its transfer state is
-/// `DONE` before the message row is ever inserted. Nothing outgoing is ever
-/// downloaded.
+/// The reference app does the same thing from the other end: an outgoing
+/// attachment is written into the attachment store at compose time and its
+/// transfer state is `DONE` before the message row is ever inserted. Nothing
+/// outgoing is ever downloaded.
 class AttachmentAdopter {
   AttachmentAdopter(
     this._blobs,

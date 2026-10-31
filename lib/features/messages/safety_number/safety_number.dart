@@ -11,10 +11,10 @@ import 'package:crypto/crypto.dart';
 /// No amount of cryptography detects that from the inside; two people comparing
 /// the same digits out of band is what detects it.
 ///
-/// The derivation is Signal's numeric fingerprint, kept exactly: 5200 rounds of
-/// SHA-512 over the identity key, so grinding a key whose fingerprint collides
-/// costs 5200x what a single hash would, then six five-byte chunks reduced
-/// mod 100000 to give 30 digits per person.
+/// The derivation is the reference app's numeric fingerprint, kept exactly:
+/// 5200 rounds of SHA-512 over the identity key, so grinding a key whose
+/// fingerprint collides costs 5200x what a single hash would, then six
+/// five-byte chunks reduced mod 100000 to give 30 digits per person.
 ///
 /// The digits MUST come out identical on mobile, web and desktop, or two people
 /// comparing them read unrelated numbers and the check is worse than useless —

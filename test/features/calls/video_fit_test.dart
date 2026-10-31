@@ -23,7 +23,7 @@ void main() {
       // frame being blown up until only a slice of it is on screen.
       expect(size.height, lessThan(phone.height));
       // Exactly 56.25% of the frame stays visible — libwebrtc's balanced
-      // fraction, which is what Signal draws.
+      // fraction, which is what the reference app draws.
       final visible = (size.width / size.height) / (1280 / 720);
       expect(visible, closeTo(0.5625, 0.001));
     });

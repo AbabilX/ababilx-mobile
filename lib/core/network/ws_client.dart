@@ -47,13 +47,13 @@ class WsClient {
   static const _minBackoffMs = 1000;
   static const _maxBackoffMs = 30000;
 
-  /// Signal's keepalive, expressed as one property.
+  /// The reference app's keepalive, expressed as one property.
   ///
   /// `dart:io` pings on this interval and closes the socket when the pong does
   /// not come back inside it, which is the only thing that turns a radio that
-  /// died under us into an `onDone` this client can reconnect from. Signal
-  /// sends its own every 30s under a read timeout ten seconds longer
-  /// (`OkHttpWebSocketConnection.KEEPALIVE_FREQUENCY_SECONDS`).
+  /// died under us into an `onDone` this client can reconnect from. The
+  /// reference app sends its own every 30s under a read timeout ten seconds
+  /// longer (`OkHttpWebSocketConnection.KEEPALIVE_FREQUENCY_SECONDS`).
   static const _pingInterval = Duration(seconds: 30);
   static const _connectTimeout = Duration(seconds: 15);
 

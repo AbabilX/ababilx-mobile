@@ -12,8 +12,9 @@ int messageTimeMs(ChatMessage m) =>
     DateTime.tryParse(m.createdAt)?.millisecondsSinceEpoch ?? 0;
 
 /// Local history key. A send is inserted under its clientRef and confirmed
-/// under the same key (server id lives in the payload), matching Signal's
-/// insert-then-update. Messages without a client ref keep using server id.
+/// under the same key (server id lives in the payload), matching the reference
+/// app's insert-then-update. Messages without a client ref keep using server
+/// id.
 String localMessageRowId(ChatMessage m) {
   final ref = m.clientRef;
   if (ref != null && ref.isNotEmpty) return ref;

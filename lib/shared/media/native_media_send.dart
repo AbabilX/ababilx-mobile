@@ -69,7 +69,7 @@ enum NativeMediaStart {
   final String wire;
 }
 
-/// Signal's picker, review screen and editor, drawn in Kotlin.
+/// The reference app's picker, review screen and editor, drawn in Kotlin.
 ///
 /// Android only. The Dart sheet in `media_grid_sheet.dart` stays as the iOS
 /// path and as the fallback for an Android build where the channel is missing

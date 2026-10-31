@@ -19,9 +19,9 @@ import '../share-target/share_result_report.dart';
 /// Where an incoming share lands: pick one or more conversations, add a
 /// caption, send.
 ///
-/// Signal's flow, and for the same reason — the system share sheet has already
-/// taken the user out of the other app, so making them then find the chat by
-/// hand would waste the trip.
+/// The reference app's flow, and for the same reason — the system share sheet
+/// has already taken the user out of the other app, so making them then find
+/// the chat by hand would waste the trip.
 class ShareTargetScreen extends ConsumerStatefulWidget {
   const ShareTargetScreen({super.key});
 

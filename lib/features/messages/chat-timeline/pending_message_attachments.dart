@@ -8,7 +8,7 @@ import '../../../shared/widgets/video_pending_thumb.dart';
 import '../data/models/chat_models.dart';
 import 'pending_preview_cache.dart';
 import 'pending_upload_ring.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 
 /// The file being sent, still in preview, with the upload control on it.
 ///
@@ -82,7 +82,7 @@ class PendingMessageAttachments extends StatelessWidget {
   }
 
   Widget _photos(List<ChatAttachmentInput> photos, ColorScheme scheme) {
-    final width = SignalBubbleMetrics.mediaMaxWidth;
+    final width = BubbleMetrics.mediaMaxWidth;
     if (photos.length == 1) {
       return _frame(photos.first, scheme, width, 180);
     }
@@ -133,7 +133,7 @@ class PendingMessageAttachments extends StatelessWidget {
       contentType: attachment.contentType,
     );
     return SizedBox(
-      width: SignalBubbleMetrics.mediaMaxWidth,
+      width: BubbleMetrics.mediaMaxWidth,
       height: 132,
       child: ColoredBox(
         color: scheme.surfaceContainerHighest,

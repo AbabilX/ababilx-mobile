@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Signal's gestures on a message row: a hold opens the menu, a double tap
-/// copies, and a plain tap does nothing on its own.
+/// The reference app's gestures on a message row: a hold opens the menu, a
+/// double tap copies, and a plain tap does nothing on its own.
 ///
 /// The hold keeps reporting the finger, so one touch can press, drag onto an
 /// emoji and release. While multi-select is up ([onHoldSelect] set) a hold
-/// picks the row instead, as a tap does — Signal's action mode.
+/// picks the row instead, as a tap does — the reference app's action mode.
 class MessageRowGestures extends StatelessWidget {
   const MessageRowGestures({
     super.key,
@@ -27,8 +27,9 @@ class MessageRowGestures extends StatelessWidget {
   final ValueChanged<Offset> onHoldMove;
   final VoidCallback onHoldEnd;
 
-  /// A finger settled on the row (true, 100ms after touch-down — Signal's
-  /// `SHRINK_BUBBLE_DELAY_MILLIS`) or left it / turned into something else.
+  /// A finger settled on the row (true, 100ms after touch-down — the reference
+  /// app's `SHRINK_BUBBLE_DELAY_MILLIS`) or left it / turned into something
+  /// else.
   final ValueChanged<bool>? onPressChanged;
   final Widget child;
 

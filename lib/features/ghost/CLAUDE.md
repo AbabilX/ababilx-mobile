@@ -142,7 +142,7 @@ pasted, the same rule the media-send flow follows.
 - **Incognito keyboard** (`EditTextExtensions.setIncognitoKeyboardEnabled`,
   `IME_FLAG_NO_PERSONALIZED_LEARNING`): Flutter spells it
   `enableIMEPersonalizedLearning: false`.
-- **Bubble measurements**: this app's own `signal_bubble_metrics.dart` port,
+- **Bubble measurements**: this app's own `bubble_metrics.dart` port,
   reused rather than re-measured, plus `ghostClusterPosition` — the timeline's
   clustering rule (same sender, same minute, text only), with files excluded.
 

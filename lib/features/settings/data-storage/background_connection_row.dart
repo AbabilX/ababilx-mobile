@@ -8,8 +8,8 @@ import '../../notifications/native/android_battery.dart';
 import '../../notifications/providers/battery_optimization_provider.dart';
 import '../settings-hub/settings_row.dart';
 
-/// Signal's "Stay connected in the background", as a status line rather than a
-/// second switch.
+/// The reference app's "Stay connected in the background", as a status line
+/// rather than a second switch.
 ///
 /// Every control behind it — the battery exemption, Data Saver, the
 /// background-restricted bucket — is a system screen the Notifications page

@@ -56,9 +56,10 @@ class AppAvatar extends StatelessWidget {
       child: Center(child: letterWidget),
     );
     final src = url?.trim() ?? '';
-    // Drawn from the phone's own copy (Signal's AvatarHelper, WhatsApp's
-    // contact thumbnails): found without waiting, already shrunk to the size
-    // shown, so a face the phone has is simply there — no lookup, no fade.
+    // Drawn from the phone's own copy (the reference app's AvatarHelper,
+    // WhatsApp's contact thumbnails): found without waiting, already shrunk to
+    // the size shown, so a face the phone has is simply there — no lookup, no
+    // fade.
     final inner = src.isEmpty
         ? placeholder
         : AvatarPicture(url: src, owner: owner, placeholder: placeholder);

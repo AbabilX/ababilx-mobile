@@ -5,7 +5,7 @@ import '../nickname/nickname_title.dart';
 
 /// Sidebar chats whose name matches [query], in the order they were given.
 ///
-/// Signal-Android's list search puts this section first
+/// The reference Android app's list search puts this section first
 /// (`ContactSearchConfiguration.Section.Chats`): a thread whose contact name
 /// or group title matches, not a keyword hit inside a message. Matching is
 /// local — the conversations are already on this phone.

@@ -186,7 +186,7 @@ class AuthNotifier extends AsyncNotifier<bool> {
     await ChatNotificationDismissals.clearAll();
     await ref.read(localNotificationsProvider).cancelAll();
 
-    // Stop work from this session, but keep this phone's Signal-style archive.
+    // Stop work from this session, but keep this phone's local archive.
     try {
       await ref.read(attachmentQueueProvider).cancelAll();
       ref.invalidate(attachmentAuthorityProvider);

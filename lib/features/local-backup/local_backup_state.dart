@@ -24,7 +24,8 @@ class LocalBackupState {
   final int progressTotal;
 
   /// How far a restore has read through the backup file, for the chat
-  /// list's "Restoring · 236 KB of 1.6 MB" (Signal's restore banner).
+  /// list's "Restoring · 236 KB of 1.6 MB" (the reference app's restore
+  /// banner).
   final int bytesRead;
   final int bytesTotal;
   final LocalBackupSettings settings;

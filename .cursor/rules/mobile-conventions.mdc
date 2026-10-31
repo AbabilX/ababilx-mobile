@@ -19,3 +19,10 @@ Quick musts:
 3. Shell floating bar: left pill + right circle; feature modes swap buttons (contacts = My/All + add).
 4. CRM: `team_is_premium && crm_access`; actions from `module_permissions.crm`.
 5. Port web API shapes from `Ababil-X-frontend` / `ababilx-server` — don't invent contracts.
+6. Neutral names only: no file, class, function, test title or comment uses
+   the Signal name (no `signal_*.dart`, no `Signal…` symbols). Say "the
+   reference app" in prose; "signal" for call signalling is fine. Bubble/menu
+   metrics live in `chat-timeline/bubble_metrics.dart` (`BubbleMetrics`, `BubbleColors`,
+   `bubbleRadius`) and `message_menu_*.dart` (`MessageMenuMetrics`).
+7. Never paste code from `examples/` (AGPL). If a file follows one closely, log
+   it in `docs/THIRD_PARTY_PROVENANCE.md` — never hide where code came from.

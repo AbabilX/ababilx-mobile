@@ -11,11 +11,11 @@ import '../../../shared/widgets/app_toast.dart';
 
 /// The one time this app asks about battery optimization on its own.
 ///
-/// Signal's `PromptBatterySaverDialogFragment`: a sheet shown only after the
-/// phone has demonstrably been holding notifications back, saying what was
-/// measured rather than warning about what might happen. Both buttons answer
-/// the question for good — the settings tile is the way back for anyone who
-/// changes their mind.
+/// The reference app's `PromptBatterySaverDialogFragment`: a sheet shown only
+/// after the phone has demonstrably been holding notifications back, saying
+/// what was measured rather than warning about what might happen. Both buttons
+/// answer the question for good — the settings tile is the way back for anyone
+/// who changes their mind.
 class BatteryOptimizationPrompt {
   BatteryOptimizationPrompt._();
 

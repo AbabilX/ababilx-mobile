@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../messages/chat-timeline/message_bubble.dart'
-    show SignalBubbleColors;
+import '../../messages/chat-timeline/message_bubble.dart' show BubbleColors;
 import '../bubbles/share_file_row.dart';
 import '../bubbles/share_open.dart';
 import '../data/share_thread_queries.dart';
@@ -23,7 +22,7 @@ Future<void> showFolderContentsSheet(
       maxChildSize: 0.92,
       builder: (context, controller) => Consumer(
         builder: (context, ref, _) {
-          final colors = SignalBubbleColors.of(
+          final colors = BubbleColors.of(
             Theme.of(context).colorScheme,
             hasWallpaper: false,
           );

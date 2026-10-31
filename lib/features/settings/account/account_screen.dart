@@ -71,8 +71,8 @@ class AccountScreen extends ConsumerWidget {
                   subtitle: t('settings_link_messages_sub'),
                   onTap: () => QrLoginFlow.start(context, ref),
                 ),
-                // Signal keeps "Transfer account" under Account: moving the
-                // whole account to a new phone or a computer.
+                // The reference app keeps "Transfer account" under Account:
+                // moving the whole account to a new phone or a computer.
                 if (Platform.isAndroid)
                   SettingsRow(
                     icon: HugeIcons.strokeRoundedSmartPhone02,

@@ -7,8 +7,8 @@ import 'composer_attach_chips.dart';
 import 'composer_attach_order.dart';
 import 'composer_media_rail.dart';
 
-/// Signal's attachment keyboard: your recent media in a strip, and the
-/// destinations that are not the library underneath it.
+/// The reference app's attachment keyboard: your recent media in a strip, and
+/// the destinations that are not the library underneath it.
 ///
 /// It sits in the keyboard's place rather than over the conversation, so the
 /// thread stays visible while you pick — which is the whole point of it not

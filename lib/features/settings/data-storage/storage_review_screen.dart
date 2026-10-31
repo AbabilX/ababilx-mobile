@@ -11,7 +11,8 @@ import 'storage_bucket_filter.dart';
 import 'storage_confirm.dart';
 import 'storage_review_list.dart';
 
-/// Signal's Review storage: everything on disk, biggest first, pick and delete.
+/// The reference app's Review storage: everything on disk, biggest first, pick
+/// and delete.
 ///
 /// Largest-first is the whole point — the answer to "why is this app using
 /// 3 GB" is almost always four videos, and any other order buries them.

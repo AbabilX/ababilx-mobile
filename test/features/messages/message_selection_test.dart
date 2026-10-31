@@ -87,7 +87,7 @@ void main() {
       expect(menu.deleteForEveryone, isTrue);
     });
 
-    test('two messages drop reply, edit and save — Signal\'s rule', () {
+    test('two messages drop reply, edit and save — the selection rule', () {
       final menu = selectionMenuState(
         selected: [
           _message(id: 'm1'),
@@ -151,7 +151,7 @@ void main() {
       expect(menu.copy, isFalse);
     });
 
-    test('forwarding stops at Signal\'s 32-message cap', () {
+    test('forwarding stops at the 32-message cap', () {
       List<ChatMessage> batch(int n) => [
         for (var i = 0; i < n; i++) _message(id: 'm$i'),
       ];

@@ -1,9 +1,10 @@
 /// Fetches a page and reads its Open Graph tags — on this device, the way
-/// Signal-Android does it (`LinkPreviewRepository`), not through a proxy.
+/// the reference Android app does it (`LinkPreviewRepository`), not through a
+/// proxy.
 ///
-/// **The reader pays for it, and that is the accepted cost.** Signal unfurls in
-/// the COMPOSER, on the sender's machine, and ships the card inside the
-/// message; a receiver never makes a request, and the setting is off by
+/// **The reader pays for it, and that is the accepted cost.** The reference app
+/// unfurls in the COMPOSER, on the sender's machine, and ships the card inside
+/// the message; a receiver never makes a request, and the setting is off by
 /// default. We unfurl on read, so the link's host learns this phone's address
 /// and the moment the chat was opened. That is what buys previews with no
 /// server in the path and no third-party quota.
@@ -18,22 +19,22 @@ import 'link_preview_data.dart';
 import 'link_preview_parse.dart';
 import 'link_safety.dart';
 
-/// Signal's `FAILSAFE_MAX_TEXT_SIZE`. Worth keeping exactly: YouTube serves an
-/// app shell to anything it does not recognise as a crawler, with `og:title`
-/// some 700 KB in — a smaller cap silently loses YouTube.
+/// The reference app's `FAILSAFE_MAX_TEXT_SIZE`. Worth keeping exactly: YouTube
+/// serves an app shell to anything it does not recognise as a crawler, with
+/// `og:title` some 700 KB in — a smaller cap silently loses YouTube.
 const _maxHtmlBytes = 2 * 1024 * 1024;
 
-/// Signal's `FAILSAFE_MAX_IMAGE_SIZE`.
+/// The reference app's `FAILSAFE_MAX_IMAGE_SIZE`.
 const maxPreviewImageBytes = 2 * 1024 * 1024;
 
-/// OkHttp's own default, and the number Signal inherits.
+/// OkHttp's own default, and the number the reference app inherits.
 const _maxRedirects = 20;
 
-/// Honest, and named after us. Signal sends `WhatsApp/2`; large sites do key
-/// their Open Graph markup on the user agent — Facebook answers a browser
-/// string with 400 on a `/share/` link — but wearing another company's crawler
-/// name is not something to build on. This is the string the desktop app and
-/// the server both send, so all three get the same markup back.
+/// Honest, and named after us. The reference app sends `WhatsApp/2`; large
+/// sites do key their Open Graph markup on the user agent — Facebook answers a
+/// browser string with 400 on a `/share/` link — but wearing another company's
+/// crawler name is not something to build on. This is the string the desktop
+/// app and the server both send, so all three get the same markup back.
 const previewUserAgent =
     'Mozilla/5.0 (compatible; AbabilXBot/1.0; +https://ababilx.com/bot)';
 
@@ -52,8 +53,9 @@ Future<LinkPreviewData?> fetchLinkPreview(String url, {Dio? client}) async {
 
   final contentType = previewContentType(opened.response);
 
-  // Linked straight at a picture. Signal makes it the card and uses the file
-  // name as the title, "which is no worse than the body of the message".
+  // Linked straight at a picture. The reference app makes it the card and uses
+  // the file name as the title, "which is no worse than the body of the
+  // message".
   if (contentType.startsWith('image/')) {
     await drainPreviewBody(opened.response);
     return LinkPreviewData(
@@ -108,8 +110,8 @@ Future<PreviewStream?> openPreviewStream(
       options: Options(
         responseType: ResponseType.stream,
         // Following redirects inside the client would let one https link land
-        // on a private address two jumps later — Signal guards the same seam
-        // with LinkPreviewRedirectValidationInterceptor.
+        // on a private address two jumps later — the reference app guards the
+        // same seam with LinkPreviewRedirectValidationInterceptor.
         followRedirects: false,
         validateStatus: (_) => true,
         sendTimeout: _timeout,

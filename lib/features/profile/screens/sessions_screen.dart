@@ -14,7 +14,7 @@ import '../widgets/devices_notes.dart';
 import '../widgets/session_rename_dialog.dart';
 import '../widgets/session_tile.dart';
 
-/// Linked devices — Signal's screen of the same name.
+/// Linked devices — the reference app's screen of the same name.
 ///
 /// Pinned hero (link + sign-out-others) above a scrolling list of what is
 /// already linked, then the note that messages on all of them are encrypted.

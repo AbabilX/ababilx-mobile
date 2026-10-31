@@ -8,7 +8,7 @@ import 'attachment_gallery.dart';
 import 'media-preview/chat_media_preview_meta.dart';
 import 'media_frame.dart';
 import 'media_frame_lock.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 
 class AttachmentImageTile extends ConsumerStatefulWidget {
   const AttachmentImageTile({
@@ -75,7 +75,7 @@ class _AttachmentImageTileState extends ConsumerState<AttachmentImageTile>
     final w = widget;
     if (w.grid) return Size(w.maxWidth, w.maxHeight);
     if (w.inset) {
-      const side = SignalBubbleMetrics.mediaDefaultSize;
+      const side = BubbleMetrics.mediaDefaultSize;
       return Size(side.clamp(w.minWidth, w.maxWidth), side);
     }
     return soloMediaSize(

@@ -178,8 +178,9 @@ void main() {
     expect(find.text('three'), findsOneWidget);
   });
 
-  // Signal hangs the avatar off the *bottom* of a run — the opposite of the
-  // Slack layout this replaced, where it sat beside the sender name on top.
+  // The reference app hangs the avatar off the *bottom* of a run — the opposite
+  // of the Slack layout this replaced, where it sat beside the sender name on
+  // top.
   testWidgets('avatar sits at the foot of the bubble, not beside the name', (
     tester,
   ) async {

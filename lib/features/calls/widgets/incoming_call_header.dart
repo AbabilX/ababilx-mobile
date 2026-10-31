@@ -5,12 +5,14 @@ import '../../../shared/text/display_name.dart';
 import '../../../shared/widgets/avatar_cache.dart';
 import 'call_top_bar.dart' show callTextShadow;
 
-/// The top half of Signal's `IncomingCallScreen`, top to bottom: which kind of
-/// call this is, an 80dp avatar, the caller's name (`headlineMedium`, or
-/// `titleLarge` in landscape) and the status line (`bodyMedium`, 8dp below).
+/// The top half of the reference app's `IncomingCallScreen`, top to bottom:
+/// which kind of call this is, an 80dp avatar, the caller's name
+/// (`headlineMedium`, or `titleLarge` in landscape) and the status line
+/// (`bodyMedium`, 8dp below).
 ///
-/// Signal puts its logo before the kind label; this app can wear a disguise
-/// icon on the home screen, so the glyph names the call, never the app.
+/// The reference app puts its logo before the kind label; this app can wear a
+/// disguise icon on the home screen, so the glyph names the call, never the
+/// app.
 class IncomingCallHeader extends StatelessWidget {
   const IncomingCallHeader({
     super.key,
@@ -47,7 +49,8 @@ class IncomingCallHeader extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          // Signal: 22 above / 30 below in portrait, 0 / 20 in landscape.
+          // The reference app: 22 above / 30 below in portrait, 0 / 20 in
+          // landscape.
           padding: landscape
               ? const EdgeInsets.only(bottom: 20)
               : const EdgeInsets.only(top: 22, bottom: 30),

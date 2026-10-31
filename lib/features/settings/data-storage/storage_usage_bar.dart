@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../shared/text/byte_size.dart';
 import '../../attachments/storage/storage_usage.dart';
 
-/// One stacked bar plus a legend — Signal's storage breakdown.
+/// One stacked bar plus a legend — the reference app's storage breakdown.
 ///
 /// A bar rather than a pie: the interesting comparison is "video against
 /// everything else", which a length answers at a glance and an angle does not.

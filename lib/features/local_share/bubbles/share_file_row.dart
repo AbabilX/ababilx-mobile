@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/text/byte_size.dart';
-import '../../messages/chat-timeline/message_bubble.dart'
-    show SignalBubbleColors;
+import '../../messages/chat-timeline/message_bubble.dart' show BubbleColors;
 import '../../messages/chat_icon.dart';
 import '../engine/store/share_records.dart';
 import '../share_text.dart';
@@ -22,7 +21,7 @@ class ShareFileRow extends ConsumerWidget {
 
   final ShareMessageRecord message;
   final ShareFileRecord file;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final VoidCallback onTap;
 
   @override

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'signal_menu_metrics.dart';
+import 'message_menu_metrics.dart';
 
-/// The pinch a bubble takes while a finger rests on it — Signal's
+/// The pinch a bubble takes while a finger rests on it — the reference app's
 /// `shrinkBubble`, which eases the bubble to 0.95 during the hold so the
 /// lifted copy the menu draws (it starts at that same 0.95) picks up exactly
 /// where the bubble left off. Without it the bubble jumped from full size to
@@ -23,8 +23,8 @@ class MessagePressPinch extends StatelessWidget {
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
     valueListenable: pressed,
     builder: (context, down, inner) => AnimatedScale(
-      scale: down ? SignalMenuMetrics.pressScale : 1.0,
-      duration: SignalMenuMetrics.pressDuration,
+      scale: down ? MessageMenuMetrics.pressScale : 1.0,
+      duration: MessageMenuMetrics.pressDuration,
       // ViewPropertyAnimator's default interpolator.
       curve: Curves.easeInOutSine,
       // The side the bubble hangs on, which is where the lifted copy pins

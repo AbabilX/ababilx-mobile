@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Signal's drop-down triangle on the audio button: shown when a press opens
-/// the output list rather than switching earpiece ↔ speaker. Sits on the
-/// lower right of the circle, over the seat's own [child].
+/// The reference app's drop-down triangle on the audio button: shown when a
+/// press opens the output list rather than switching earpiece ↔ speaker. Sits
+/// on the lower right of the circle, over the seat's own [child].
 class CallAudioDropdown extends StatelessWidget {
   const CallAudioDropdown({
     super.key,

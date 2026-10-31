@@ -1,5 +1,5 @@
-/// Signal-Android's `util/LinkUtil.kt`, ported. A link is only fetched — and
-/// only drawn — if it survives every one of these.
+/// The reference Android app's `util/LinkUtil.kt`, ported. A link is only
+/// fetched — and only drawn — if it survives every one of these.
 ///
 /// The point of the mixed-script rule is the one worth remembering: `аpple.com`
 /// with a Cyrillic а would otherwise unfurl into a card carrying Apple's real
@@ -80,8 +80,8 @@ String? _legalDomain(String url) {
 
 /// True when the host is an IP literal pointing back inside the network the
 /// phone is on. A NAME resolving to a private address is deliberately NOT
-/// caught here — that is Signal's own boundary, and closing it needs the
-/// resolved address at dial time, which Dart's HTTP client does not expose.
+/// caught here — that is the reference app's own boundary, and closing it needs
+/// the resolved address at dial time, which Dart's HTTP client does not expose.
 bool isPrivateOrLocalHost(String host) {
   final literal = host.startsWith('[') && host.endsWith(']')
       ? host.substring(1, host.length - 1)
@@ -110,9 +110,9 @@ bool isPrivateOrLocalHost(String host) {
   return false;
 }
 
-/// The domain shown on the card. Signal draws `topPrivateDomain()`; without a
-/// public-suffix list the closest honest thing is the host minus a leading
-/// `www.`, which is what every card in practice ends up showing anyway.
+/// The domain shown on the card. The reference app draws `topPrivateDomain()`;
+/// without a public-suffix list the closest honest thing is the host minus a
+/// leading `www.`, which is what every card in practice ends up showing anyway.
 String previewDomain(String url) {
   final host = Uri.tryParse(url)?.host ?? '';
   if (host.isEmpty) return url;

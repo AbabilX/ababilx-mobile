@@ -9,8 +9,8 @@ import '../data/models/chat_models.dart';
 /// losslessly through `ChatMessage.toJson`, and the local store keeps exactly
 /// that JSON as its payload column — so a frame is bytes the device already
 /// has, and the format cannot drift away from the model without a compile
-/// error. Signal needs a protobuf schema because five clients in three
-/// languages read its backups; one Dart client reading its own does not.
+/// error. The reference app needs a protobuf schema because five clients in
+/// three languages read its backups; one Dart client reading its own does not.
 ///
 /// Order is part of the format, and one rule carries it: **anything referenced
 /// must appear before the frame referencing it.** A `conv` precedes any `msg`

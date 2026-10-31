@@ -1,16 +1,17 @@
-/// Downloads a preview picture onto this device — Signal-Android's
+/// Downloads a preview picture onto this device — the reference Android app's
 /// `LinkPreviewRepository.fetchThumbnail`, ported.
 ///
 /// **Why the bytes are fetched rather than the URL handed to an image widget.**
-/// Signal never lets the renderer touch a remote address: the thumbnail is
-/// pulled through the same guarded client as the page, decoded, and filed as a
-/// local attachment. Pointing `CachedNetworkImage` at an `og:image` instead
-/// gives that up three times over — the URL skips `isValidPreviewUrl` (so a
-/// page could aim it at a printer on the LAN), the request leaves with the
-/// image loader's own headers instead of the crawler user agent, and every
-/// device re-fetches it from the host on every cold start.
+/// The reference app never lets the renderer touch a remote address: the
+/// thumbnail is pulled through the same guarded client as the page, decoded,
+/// and filed as a local attachment. Pointing `CachedNetworkImage` at an
+/// `og:image` instead gives that up three times over — the URL skips
+/// `isValidPreviewUrl` (so a page could aim it at a printer on the LAN), the
+/// request leaves with the image loader's own headers instead of the crawler
+/// user agent, and every device re-fetches it from the host on every cold
+/// start.
 ///
-/// What is NOT ported is Signal's re-encode: it recompresses to fit
+/// What is NOT ported is the reference app's re-encode: it recompresses to fit
 /// `PushMediaConstraints` because the thumbnail is about to be SENT. Ours is
 /// only ever drawn here, so the bytes are kept as they arrived, capped.
 library;
@@ -25,8 +26,8 @@ import 'package:path_provider/path_provider.dart';
 
 import 'link_preview_fetch.dart';
 
-/// Signal-Desktop's `VALID_IMAGE_MIME_TYPES`. Anything else claiming to be an
-/// image is refused before a byte of it is decoded.
+/// The reference desktop app's `VALID_IMAGE_MIME_TYPES`. Anything else claiming
+/// to be an image is refused before a byte of it is decoded.
 const _imageMimes = <String>{
   'image/gif',
   'image/jpeg',
@@ -36,8 +37,8 @@ const _imageMimes = <String>{
   'image/vnd.microsoft.icon',
 };
 
-/// Signal-Desktop's `MIN_IMAGE_CONTENT_LENGTH`: below this there is no image,
-/// only an empty body wearing an image content type.
+/// The reference desktop app's `MIN_IMAGE_CONTENT_LENGTH`: below this there is
+/// no image, only an empty body wearing an image content type.
 const _minImageBytes = 8;
 
 /// The metadata cache holds 200 entries, so the folder holds 200 files. They
@@ -92,9 +93,10 @@ Future<PreviewImageFile?> downloadPreviewImage(
 /// Reads a picture's real dimensions from its header, without decoding pixels.
 ///
 /// The card's layout turns on them (`isBigImagePreview`), and they are resolved
-/// once here rather than in `build`: Signal gets them free because the SENDER
-/// attached the thumbnail, and measuring in the widget draws the small card
-/// first and snaps to the big one a frame later, on every scroll past.
+/// once here rather than in `build`: the reference app gets them free because
+/// the SENDER attached the thumbnail, and measuring in the widget draws the
+/// small card first and snaps to the big one a frame later, on every scroll
+/// past.
 Future<ui.Size?> measurePreviewImage(Uint8List bytes) async {
   ui.ImmutableBuffer? buffer;
   ui.ImageDescriptor? descriptor;

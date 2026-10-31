@@ -255,7 +255,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/media-quality',
         builder: (_, _) => const MediaQualityScreen(),
       ),
-      // Signal's Data and storage, and the screens under it.
+      // The reference app's Data and storage, and the screens under it.
       GoRoute(
         path: '/settings/data-storage',
         builder: (_, _) => const DataStorageScreen(),
@@ -318,10 +318,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       // One chat's own background. Declared before '/messages/:id' would
       // swallow it, since ':id' matches a single segment only.
-      // Signal's conversation settings. Declared before '/messages/:id' for
-      // the same reason as the wallpaper route: ':id' matches one segment.
-      // WhatsApp's Call info: one contact's calls on one day, from the call
-      // log's stacked row. Outside the shell, like a chat.
+      // The reference app's conversation settings. Declared before
+      // '/messages/:id' for the same reason as the wallpaper route: ':id'
+      // matches one segment. WhatsApp's Call info: one contact's calls on one
+      // day, from the call log's stacked row. Outside the shell, like a chat.
       GoRoute(
         path: '/call-info/:id',
         builder: (_, state) => CallInfoScreen(

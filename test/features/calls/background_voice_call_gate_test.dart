@@ -28,23 +28,20 @@ void main() {
   Future<bool> yes(String _) async => true;
 
   group('shouldPresent (local checks, no network)', () {
-    test(
-      'never rings while this phone is in a call (Signal busy rule)',
-      () async {
-        // The reported bug: answered, talking, then a late or repeated push for
-        // the same call rang again and raised a second ringing screen.
-        for (final live in ['call-1', 'other-call']) {
-          final result = await BackgroundVoiceCallGate.shouldPresent(
-            push(),
-            now: now,
-            endedLookup: no,
-            answeredLookup: no,
-            liveLookup: () async => live,
-          );
-          expect(result, isFalse, reason: 'live=$live');
-        }
-      },
-    );
+    test('never rings while this phone is in a call (busy rule)', () async {
+      // The reported bug: answered, talking, then a late or repeated push for
+      // the same call rang again and raised a second ringing screen.
+      for (final live in ['call-1', 'other-call']) {
+        final result = await BackgroundVoiceCallGate.shouldPresent(
+          push(),
+          now: now,
+          endedLookup: no,
+          answeredLookup: no,
+          liveLookup: () async => live,
+        );
+        expect(result, isFalse, reason: 'live=$live');
+      }
+    });
 
     test('rings a fresh push', () async {
       final result = await BackgroundVoiceCallGate.shouldPresent(

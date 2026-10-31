@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'long_message_screen.dart';
 import 'message_bubble.dart';
 
-/// Signal never lets a bubble grow without a limit. A body past
-/// `SignalServiceMessageLimits.MAX_INLINE_BODY_SIZE_BYTES` is split when it is
+/// The reference app never lets a bubble grow without a limit. A body past
+/// its inline body limit (`MAX_INLINE_BODY_SIZE_BYTES`) is split when it is
 /// sent (`MessageUtil.getSplitMessage`); the bubble carries the head of it and
 /// a "Read More" span that opens the whole thing full screen
 /// (`LongMessageFragment`).
@@ -18,8 +18,9 @@ import 'message_bubble.dart';
 class MessageLongBody {
   const MessageLongBody._();
 
-  /// A little under Signal's 2 KB inline body — ours is measured in characters
-  /// rather than bytes because nothing downstream depends on the byte count.
+  /// A little under the reference app's 2 KB inline body — ours is measured in
+  /// characters rather than bytes because nothing downstream depends on the
+  /// byte count.
   static const maxCharacters = 900;
 
   /// A short body can still be tall: an ASCII table, a stack trace, a wall of
@@ -64,9 +65,9 @@ class CollapsedBodyFade extends StatelessWidget {
   Widget build(BuildContext context) => ClipRect(child: child);
 }
 
-/// Signal's "Read More". It opens the message full screen rather than growing
-/// the bubble in place: an expanded bubble would put the long-press overlay
-/// back where it started.
+/// The reference app's "Read More". It opens the message full screen rather
+/// than growing the bubble in place: an expanded bubble would put the
+/// long-press overlay back where it started.
 class ReadMoreRow extends StatelessWidget {
   const ReadMoreRow({
     super.key,
@@ -76,7 +77,7 @@ class ReadMoreRow extends StatelessWidget {
   });
 
   final String? body;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final String? editedAt;
 
   @override

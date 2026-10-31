@@ -40,7 +40,8 @@ class LocalNotifications {
     // White silhouette status-bar icon (Android requires alpha-only small icon).
     const androidInit = AndroidInitializationSettings('ic_stat_ababilx');
     // iOS: do not prompt here. FcmService already asks once via Firebase,
-    // matching Signal's single requestAuthorization. Android ignores this.
+    // matching the reference app's single requestAuthorization. Android ignores
+    // this.
     const iosInit = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,

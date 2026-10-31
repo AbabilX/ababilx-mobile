@@ -7,9 +7,9 @@ import '../../../shared/text/byte_size.dart';
 import '../../messages/chat_icon.dart';
 import '../local_backup_provider.dart';
 
-/// Signal's restore banner over the chat list: a rounded pill with a history
-/// clock, the size read so far against the whole file, and a ring that fills.
-/// The restore runs behind it while the person uses the app; tapping it
+/// The reference app's restore banner over the chat list: a rounded pill with a
+/// history clock, the size read so far against the whole file, and a ring that
+/// fills. The restore runs behind it while the person uses the app; tapping it
 /// offers to stop.
 class LocalBackupRestoreBanner extends ConsumerWidget {
   const LocalBackupRestoreBanner({super.key});

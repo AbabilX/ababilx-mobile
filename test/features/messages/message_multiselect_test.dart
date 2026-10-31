@@ -182,9 +182,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Signal's gutter: an incoming row moves from 16 to 48. An outgoing one
-    // does not move at all — `getHorizontalTranslationTarget` returns null for
-    // it, and a right-aligned bubble has nowhere to go.
+    // The reference app's gutter: an incoming row moves from 16 to 48. An
+    // outgoing one does not move at all — `getHorizontalTranslationTarget`
+    // returns null for it, and a right-aligned bubble has nowhere to go.
     expect(tester.getRect(find.text('one')).left - restingLeft, closeTo(32, 1));
     expect(tester.getRect(find.text('two')).right, closeTo(outgoingRight, 1));
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
@@ -248,9 +248,9 @@ void main() {
     // Reply drains away as Forward takes the full width.
     await tester.pump(const Duration(milliseconds: 500));
 
-    // Two messages: Signal drops everything that only means anything against
-    // one of them. Delete stays: an incoming message can still be deleted
-    // for me, the dialog just withholds "for everyone".
+    // Two messages: the reference app drops everything that only means anything
+    // against one of them. Delete stays: an incoming message can still be
+    // deleted for me, the dialog just withholds "for everyone".
     expect(find.text('2 selected'), findsOneWidget);
     expect(find.text('Reply'), findsNothing);
     expect(find.byTooltip('Edit'), findsNothing);

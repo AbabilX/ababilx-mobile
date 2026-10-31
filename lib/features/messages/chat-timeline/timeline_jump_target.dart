@@ -6,10 +6,10 @@ import 'timeline_jump.dart';
 /// [TimelineJumpController] while it is built, and washes itself when a jump
 /// picks it out.
 ///
-/// The wash is Signal's `pulseHighlight` — a message reached from somewhere
-/// else has to be pointed at, or the screen simply changes and the reader has
-/// to work out what moved. It reaches both screen edges for the same reason the
-/// selection shade does, so the row's own gutters stay inside it.
+/// The wash is the reference app's `pulseHighlight` — a message reached from
+/// somewhere else has to be pointed at, or the screen simply changes and the
+/// reader has to work out what moved. It reaches both screen edges for the same
+/// reason the selection shade does, so the row's own gutters stay inside it.
 class TimelineJumpTarget extends StatefulWidget {
   const TimelineJumpTarget({
     super.key,

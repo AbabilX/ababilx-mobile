@@ -14,7 +14,8 @@ import 'conversation_row.dart';
 import '../../chat-lock/providers/chat_locks_provider.dart';
 import '../../chat-lock/chat_lock_filter.dart';
 
-/// Signal-Android order: name-matched chats, then message keyword hits.
+/// The reference Android app's order: name-matched chats, then message keyword
+/// hits.
 ///
 /// Groups-in-common, contacts-without-threads, and media chips are deliberately
 /// absent — those sections need data we do not have on this screen.

@@ -20,8 +20,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// put every image in the chat history into the phone's photo app — and put a
 /// second copy there after each reinstall, because the "already exported"
 /// ledger lived in the app database the reinstall had just wiped while the
-/// MediaStore rows survived. Signal's rule instead: nothing leaves the sandbox
-/// until the user taps Save.
+/// MediaStore rows survived. The reference app's rule instead: nothing leaves
+/// the sandbox until the user taps Save.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/locked_file_placeholder.dart';
 import '../../../shared/widgets/voice_url_player.dart';
-import '../../messages/chat-timeline/signal_bubble_metrics.dart';
+import '../../messages/chat-timeline/bubble_metrics.dart';
 import '../../messages/data/models/chat_models.dart';
 import '../../privacy-mode/privacy_timed_card.dart';
 import 'ram_file_row.dart';
@@ -86,7 +86,7 @@ class RamMessageAttachments extends StatelessWidget {
     final urls = [for (final p in photos) p.fileUrl];
     void open(int i) => showRamPhotos(context, urls: urls, initial: i);
     if (photos.length == 1) {
-      const side = SignalBubbleMetrics.mediaDefaultSize;
+      const side = BubbleMetrics.mediaDefaultSize;
       return Padding(
         padding: const EdgeInsets.only(top: 6),
         child: RamPhotoTile(
@@ -96,11 +96,11 @@ class RamMessageAttachments extends StatelessWidget {
         ),
       );
     }
-    const cell = (SignalBubbleMetrics.mediaMaxWidth - _gap) / 2;
+    const cell = (BubbleMetrics.mediaMaxWidth - _gap) / 2;
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: SizedBox(
-        width: SignalBubbleMetrics.mediaMaxWidth,
+        width: BubbleMetrics.mediaMaxWidth,
         child: Wrap(
           spacing: _gap,
           runSpacing: _gap,

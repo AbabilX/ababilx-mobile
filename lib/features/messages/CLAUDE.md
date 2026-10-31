@@ -196,22 +196,22 @@ every update stays in one stacked disclosure.
 
 ## Where the numbers come from
 
-`chat-timeline/signal_bubble_metrics.dart` holds Signal-Android's own
+`chat-timeline/bubble_metrics.dart` holds Signal-Android's own
 measurements with the resource names they came from, next to
-`signal_message_menu_geometry.dart` which does the same for the long-press
+`message_menu_geometry.dart` which does the same for the long-press
 overlay. **Read those, do not re-measure from a screenshot.** The reference
 checkout is `examples/Signal-Android`: AGPL, read-only, never a source to paste
 from — the Dart here is written fresh against the values.
 
-Corner radii are the load-bearing part. `signalBubbleRadius` collapses a run's
+Corner radii are the load-bearing part. `bubbleRadius` collapses a run's
 corners on the sender's _own_ side — right for yours, left for theirs — which
 is what makes three bubbles read as one block. It is pure and tested
-(`test/features/messages/signal_bubble_metrics_test.dart`); change it there,
+(`test/features/messages/bubble_metrics_test.dart`); change it there,
 not in a widget.
 
 ## Rules that are easy to break
 
-- **Colours come from `SignalBubbleColors`, never from `Theme.colorScheme`
+- **Colours come from `BubbleColors`, never from `Theme.colorScheme`
   directly.** Text on the outgoing bubble sits on the accent fill, so
   `onSurfaceVariant` is invisible on it. `MessageBody`, `MessageBubbleFooter`
   and `MessageDeliveryStatus` all take the pairing as a parameter for this
@@ -411,11 +411,11 @@ scrim behind its own copy.
 Signal forwards MotionEvents into the overlay so a single touch can press a
 message, scrub across the reaction bar and release to react. Flutter routes it
 for free — the recogniser that fired the long press keeps the pointer, so
-`onLongPressMoveUpdate` still arrives with the dialog open. `SignalMenuPointer`
+`onLongPressMoveUpdate` still arrives with the dialog open. `MessageMenuPointer`
 carries those global positions across, and the overlay opens on
 `onLongPressStart`, not on release.
 
-`signalScrubSelection` is the pure port of
+`reactionScrubSelection` is the pure port of
 `getSelectedIndexViaMotionEvent`, with all three gates and a test each:
 
 - a **40 deadzone** around the touch point, so letting go without moving opens
@@ -437,7 +437,7 @@ long-press bar.
 
 The scrubbed emoji grows to 1.5 and lifts 25 with a light haptic per slot
 entered, and the lifted message unpinches from Signal's 0.95
-`LONG_PRESS_SCALE_FACTOR`. Numbers live in `signal_menu_metrics.dart`.
+`LONG_PRESS_SCALE_FACTOR`. Numbers live in `message_menu_metrics.dart`.
 
 ## A feed write after dispose
 
@@ -604,7 +604,7 @@ actually opened.
 - Android only. A remote URL (wall, CRM) and every non-Android build fall back
   to `LiveVideoPoster`, which is the old controller-per-tile behaviour, scoped
   to the places that cannot avoid it. `NetworkVideoPlayer` is only the chooser.
-- The bubble is bounded by the same `SignalBubbleMetrics.media*` values a photo
+- The bubble is bounded by the same `BubbleMetrics.media*` values a photo
   uses, so a mixed album does not step in and out.
 
 ## Photo viewer — Signal-Android MediaPreview

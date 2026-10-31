@@ -31,9 +31,9 @@ class CropTransform {
   static const double minScale = 1;
   static const double maxScale = 6;
 
-  /// The scale at which the image exactly covers the window — Signal's avatar
-  /// cropper starts here, so opening the editor never shows a gap. "Cover"
-  /// rather than "fit": whichever axis runs short decides.
+  /// The scale at which the image exactly covers the window — the reference
+  /// app's avatar cropper starts here, so opening the editor never shows a gap.
+  /// "Cover" rather than "fit": whichever axis runs short decides.
   double get baseScale {
     if (imageSize.width <= 0 || imageSize.height <= 0) return 1;
     final byWidth = viewport.width / imageSize.width;

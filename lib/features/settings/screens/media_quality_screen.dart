@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/media/media_quality.dart';
 
-/// Settings → Media quality. Signal's "Sent media quality": how hard a picture
-/// is squeezed before it is sent.
+/// Settings → Media quality. The reference app's "Sent media quality": how hard
+/// a picture is squeezed before it is sent.
 ///
 /// The same two options sit in the review screen's own sheet, and both write
 /// the one remembered setting. This screen exists so it can be found without

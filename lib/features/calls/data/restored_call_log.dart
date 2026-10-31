@@ -8,9 +8,9 @@ import 'package:path_provider/path_provider.dart';
 import '../../../core/network/api_client.dart';
 import 'models/call_log_entry.dart';
 
-/// Call history brought back from a local backup — Signal's call log lives on
-/// the phone, so a restore brings it back with the messages, offline and
-/// after the server has forgotten the calls.
+/// Call history brought back from a local backup — the reference app's call log
+/// lives on the phone, so a restore brings it back with the messages, offline
+/// and after the server has forgotten the calls.
 ///
 /// One file, stamped with the account it belongs to, merged under whatever
 /// the server returns ([withRestoredCalls]). Written only by a restore and

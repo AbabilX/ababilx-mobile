@@ -1,12 +1,12 @@
 import 'dart:ui';
 
-import 'package:ababilx/features/messages/chat-timeline/signal_message_menu_geometry.dart';
-import 'package:ababilx/features/messages/chat-timeline/signal_reaction_scrub.dart';
+import 'package:ababilx/features/messages/chat-timeline/message_menu_geometry.dart';
+import 'package:ababilx/features/messages/chat-timeline/reaction_scrub.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  // A 320-wide bar with Signal's seven slots: six emoji and "more".
-  const bar = Rect.fromLTWH(16, 100, 320, SignalMenuMetrics.barHeight);
+  // A 320-wide bar with the reference app's seven slots: six emoji and "more".
+  const bar = Rect.fromLTWH(16, 100, 320, MessageMenuMetrics.barHeight);
   const slots = 7;
   const segment = 320 / slots;
 
@@ -14,7 +14,7 @@ void main() {
   const touchDown = Offset(180, 300);
 
   int? selectionAt(Offset? pointer, {Offset from = touchDown}) =>
-      signalScrubSelection(
+      reactionScrubSelection(
         bar: bar,
         slots: slots,
         pointer: pointer,
@@ -58,7 +58,7 @@ void main() {
 
   test('an empty bar is never selectable', () {
     expect(
-      signalScrubSelection(
+      reactionScrubSelection(
         bar: Rect.zero,
         slots: slots,
         pointer: const Offset(10, 10),

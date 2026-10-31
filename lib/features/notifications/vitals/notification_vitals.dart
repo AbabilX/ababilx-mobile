@@ -23,11 +23,12 @@ class NotificationVitals {
   final BatteryRestrictions restrictions;
 }
 
-/// Runs the vitals check — Signal's `VitalsViewModel`, minus the parts that
-/// have no counterpart here (crash prompts, websocket connectivity warnings).
+/// Runs the vitals check — the reference app's `VitalsViewModel`, minus the
+/// parts that have no counterpart here (crash prompts, websocket connectivity
+/// warnings).
 ///
-/// Called on every resume, so it is throttled the way Signal throttles it: at
-/// most one real check a minute, whatever the lifecycle does.
+/// Called on every resume, so it is throttled the way the reference app
+/// throttles it: at most one real check a minute, whatever the lifecycle does.
 class NotificationVitalsCheck {
   const NotificationVitalsCheck._();
 

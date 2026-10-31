@@ -10,10 +10,10 @@ import '../providers/chat_connections_provider.dart';
 import '../providers/chat_details_provider.dart';
 import 'details_tile.dart';
 
-/// Signal's "Report spam", offered beside Block and deliberately separate from
-/// it: a block is the reporter's own recourse and takes effect at once, while
-/// a report is a message to whoever runs the service. The dialog lets one tap
-/// do both, because that is almost always what a person means.
+/// The reference app's "Report spam", offered beside Block and deliberately
+/// separate from it: a block is the reporter's own recourse and takes effect at
+/// once, while a report is a message to whoever runs the service. The dialog
+/// lets one tap do both, because that is almost always what a person means.
 ///
 /// The report carries no message content and cannot — a personal DM or group
 /// is end-to-end encrypted, so the server holds ciphertext.

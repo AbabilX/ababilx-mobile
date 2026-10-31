@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// Picture-in-picture, Signal's answer to "I left the call screen".
+/// Picture-in-picture, the reference app's answer to "I left the call screen".
 ///
-/// Signal's call Activity shrinks into a floating window on back or Home
-/// rather than closing, so a call is never running with nothing on screen.
+/// The reference app's call Activity shrinks into a floating window on back or
+/// Home rather than closing, so a call is never running with nothing on screen.
 /// Ours is one Activity for the whole app, so PiP is armed only while a call
 /// route is showing — [setActive] is what arms it, and the native side refuses
 /// to shrink when it is off.

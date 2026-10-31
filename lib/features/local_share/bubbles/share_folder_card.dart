@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../shared/text/byte_size.dart';
-import '../../messages/chat-timeline/message_bubble.dart'
-    show SignalBubbleColors;
+import '../../messages/chat-timeline/message_bubble.dart' show BubbleColors;
 import '../../messages/chat_icon.dart';
 import '../data/share_thread_queries.dart';
 import '../engine/store/share_records.dart';
@@ -22,7 +21,7 @@ class ShareFolderCard extends ConsumerWidget {
   });
 
   final ShareBubbleData data;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final VoidCallback onTap;
 
   @override

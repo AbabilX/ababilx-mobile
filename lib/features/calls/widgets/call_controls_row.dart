@@ -19,9 +19,9 @@ import 'call_overlay_metrics.dart';
 /// Minimize · End · Mute. Landscape: Mute · Camera · Screen Share · Audio
 /// output · End in one strip, and minimize stays the chevron at the top.
 ///
-/// The audio seat is Signal's `CallAudioToggleButton`: earpiece ↔ speaker
-/// while those are the only outputs, a list (with a drop-down mark) once a
-/// Bluetooth or wired headset joins them — see [pressCallAudioOutput].
+/// The audio seat is the reference app's `CallAudioToggleButton`: earpiece ↔
+/// speaker while those are the only outputs, a list (with a drop-down mark)
+/// once a Bluetooth or wired headset joins them — see [pressCallAudioOutput].
 ///
 /// Circle seats never use [RotatedBox] — only glyphs turn via
 /// [CallIconOrientation]. The arrangement itself is [CallControlsDeck].

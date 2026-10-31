@@ -7,10 +7,10 @@ import '../data/models/chat_models.dart';
 import 'media-preview/chat_media_preview_meta.dart';
 import 'media_frame.dart';
 import 'media_frame_lock.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 
-/// A video in a bubble, held to the same bounds as a photo — Signal sizes both
-/// off `media_bubble_*`, so a mixed album does not step in and out.
+/// A video in a bubble, held to the same bounds as a photo — the reference app
+/// sizes both off `media_bubble_*`, so a mixed album does not step in and out.
 ///
 /// The frame is reserved in every state and taken from the poster's measured
 /// shape when that was known at mount (see [MediaFrameLock]); the poster, the
@@ -30,8 +30,8 @@ class AttachmentVideoTile extends ConsumerStatefulWidget {
   /// Caption / quoted clips keep an 8dp gap above. Media-only fills the bubble.
   final bool inset;
 
-  /// Text under the clip: Signal's wider floor, so the caption is not
-  /// squeezed under a narrow portrait video.
+  /// Text under the clip: the reference app's wider floor, so the caption is
+  /// not squeezed under a narrow portrait video.
   final bool captioned;
 
   @override
@@ -48,10 +48,8 @@ class _AttachmentVideoTileState extends ConsumerState<AttachmentVideoTile>
   Widget build(BuildContext context) {
     final box = soloMediaSize(
       lockedDimensions,
-      maxWidth: SignalBubbleMetrics.mediaMaxWidth,
-      minWidth: widget.captioned
-          ? SignalBubbleMetrics.mediaMinWidthWithCaption
-          : 0,
+      maxWidth: BubbleMetrics.mediaMaxWidth,
+      minWidth: widget.captioned ? BubbleMetrics.mediaMinWidthWithCaption : 0,
     );
     return Padding(
       padding: EdgeInsets.only(top: widget.inset ? 8 : 0),
@@ -67,7 +65,7 @@ class _AttachmentVideoTileState extends ConsumerState<AttachmentVideoTile>
             fileName: widget.attachment.fileName,
             detail: widget.preview?.detail,
             caption: widget.preview?.caption,
-            maxHeight: SignalBubbleMetrics.mediaMaxHeight,
+            maxHeight: BubbleMetrics.mediaMaxHeight,
             borderRadius: widget.inset ? 8 : 0,
           ),
         ),

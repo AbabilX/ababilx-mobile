@@ -38,7 +38,8 @@ class ConversationRows extends StatefulWidget {
   final void Function(ShareThread) onShareLongPress;
   final Future<void> Function() onRefresh;
 
-  /// Signal's gesture: press and hold a row for what can be done to it.
+  /// The reference app's gesture: press and hold a row for what can be done to
+  /// it.
   final void Function(ChatConversation) onLongPress;
   final String? currentUserId;
 

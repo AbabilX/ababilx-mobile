@@ -3,8 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// How hard a picture is squeezed before it is sent.
 ///
-/// Signal's two levels. The codes match `MediaQuality` on the Android side —
-/// they cross the method channel as ints, so they must not be reordered.
+/// The reference app's two levels. The codes match `MediaQuality` on the
+/// Android side — they cross the method channel as ints, so they must not be
+/// reordered.
 enum MediaQuality {
   standard(0),
   high(1);

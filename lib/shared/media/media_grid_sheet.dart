@@ -13,8 +13,8 @@ class MediaSheetResult {
   final List<DeviceMediaItem> items;
 }
 
-/// Signal's attachment keyboard: the library itself, in the sheet, rather than
-/// a menu that launches the system picker.
+/// The reference app's attachment keyboard: the library itself, in the sheet,
+/// rather than a menu that launches the system picker.
 ///
 /// Returns null when dismissed. When the device library is unreadable — no
 /// permission, or a platform without the channel — this returns

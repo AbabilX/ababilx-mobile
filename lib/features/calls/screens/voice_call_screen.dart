@@ -26,10 +26,10 @@ import '../../../core/localization/app_translations.dart';
 /// Back — and the minimise chevron — leave this screen and drop the user back
 /// where they were, with `ActiveCallBanner` across the top: WhatsApp's model,
 /// and what was asked for. It deliberately does **not** shrink into a
-/// picture-in-picture window any more. Signal can do that because its call
-/// owns an Activity; ours is the one FlutterActivity for the whole app, so
-/// "minimise the call" shrank the entire app into a thumbnail and the return
-/// bar never got a chance to show.
+/// picture-in-picture window any more. The reference app can do that because
+/// its call owns an Activity; ours is the one FlutterActivity for the whole
+/// app, so "minimise the call" shrank the entire app into a thumbnail and the
+/// return bar never got a chance to show.
 class VoiceCallScreen extends ConsumerStatefulWidget {
   const VoiceCallScreen({super.key});
 

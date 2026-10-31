@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/network/network_class.dart';
 import '../../attachments/auto_download/auto_download_settings.dart';
 
-/// Signal's multi-select: which connections this kind of media may download
-/// on, all at once rather than three separate rows.
+/// The reference app's multi-select: which connections this kind of media may
+/// download on, all at once rather than three separate rows.
 ///
 /// Returns null when dismissed, so "cleared every box" stays distinguishable
 /// from "changed nothing".

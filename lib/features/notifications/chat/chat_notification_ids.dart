@@ -1,8 +1,8 @@
 /// Identity of a chat tray entry and of the buttons on it.
 ///
 /// One notification per conversation, not per message: MessagingStyle stacks
-/// the messages inside a single entry the way Signal and the Google Messages
-/// app do, and a reply has to land on a conversation, not on a line.
+/// the messages inside a single entry the way the reference app and the Google
+/// Messages app do, and a reply has to land on a conversation, not on a line.
 library;
 
 /// Android notification ids are 32-bit; keep the derived id in range.

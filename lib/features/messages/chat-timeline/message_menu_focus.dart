@@ -2,12 +2,12 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
-import 'signal_menu_metrics.dart';
+import 'message_menu_metrics.dart';
 
 /// The long-pressed message, redrawn over the scrim, moving from where it sits
 /// in the list ([anchor]) to where the menu needs it ([target]).
-class SignalFocusedMessage extends StatelessWidget {
-  const SignalFocusedMessage({
+class FocusedMessage extends StatelessWidget {
+  const FocusedMessage({
     super.key,
     required this.move,
     required this.anchor,
@@ -30,18 +30,18 @@ class SignalFocusedMessage extends StatelessWidget {
       animation: move,
       builder: (context, child) {
         // On the way back the copy returns to the row at full size, where
-        // the real bubble is about to reappear — Signal's hide animates the
-        // scale to 1, not back to the pinch.
+        // the real bubble is about to reappear — the reference app's hide
+        // animates the scale to 1, not back to the pinch.
         final from = move.status == AnimationStatus.reverse
             ? 1.0
-            : SignalMenuMetrics.pressScale;
+            : MessageMenuMetrics.pressScale;
         final scale = lerpDouble(from, targetScale, move.value)!;
         // The message slides from where it sits in the list to where the
-        // overlay needs it, unpinching from Signal's 0.95 press scale on
-        // the way — exactly how it animates x/y/scale. It pinches in from
-        // the side it hangs on, so both ends of the lerp are the painted
-        // top-left corner and `Alignment.topLeft` makes the transform
-        // land on it exactly.
+        // overlay needs it, unpinching from the reference app's 0.95 press
+        // scale on the way — exactly how it animates x/y/scale. It pinches in
+        // from the side it hangs on, so both ends of the lerp are the painted
+        // top-left corner and `Alignment.topLeft` makes the transform land on
+        // it exactly.
         final pressLeft = isMine
             ? anchor.right - anchor.width * from
             : anchor.left;
@@ -79,8 +79,8 @@ class SignalFocusedMessage extends StatelessWidget {
           ),
         );
       },
-      // Signal moves a bitmap. A boundary is the same bargain: the message
-      // paints once and the slide and scale only move its layer.
+      // The reference app moves a bitmap. A boundary is the same bargain: the
+      // message paints once and the slide and scale only move its layer.
       child: RepaintBoundary(child: child),
     );
   }

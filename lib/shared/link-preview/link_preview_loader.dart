@@ -41,8 +41,8 @@ Future<LinkPreviewData?> _load(String url) async {
 
   if (preview != null && preview.imageUrl != null) {
     // The picture is pulled onto this device rather than left as a URL for an
-    // image widget to fetch — Signal's `fetchThumbnail`, and the only way the
-    // og:image gets the same guards the page got.
+    // image widget to fetch — the reference app's `fetchThumbnail`, and the
+    // only way the og:image gets the same guards the page got.
     PreviewImageFile? image;
     try {
       image = await downloadPreviewImage(preview.imageUrl!);

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../features/messages/chat_icon.dart';
 
-/// One choice on a first-run screen — Signal-Android's restore
+/// One choice on a first-run screen — the reference Android app's restore
 /// `SelectionCard`: a tinted card, a 48dp icon in the accent colour, a title
 /// and a muted line under it. The whole card is the button.
 class OnboardingOptionCard extends StatelessWidget {

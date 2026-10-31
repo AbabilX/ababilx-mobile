@@ -12,8 +12,9 @@ part of 'ws_client.dart';
 ///
 /// The keepalive on [WsClient] catches it on its own within a minute. These two
 /// are for the moments where a minute is a minute too long, and are what
-/// Signal's `IncomingMessageObserver` wakes its connect loop for: the app
-/// coming to the foreground, and the default network changing underneath it.
+/// the reference app's `IncomingMessageObserver` wakes its connect loop for:
+/// the app coming to the foreground, and the default network changing
+/// underneath it.
 extension WsClientRevive on WsClient {
   /// Connects now, without waiting out the backoff.
   ///

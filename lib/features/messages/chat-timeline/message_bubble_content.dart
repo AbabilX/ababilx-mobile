@@ -14,7 +14,7 @@ import 'message_bubble_footer.dart';
 import 'message_link_preview.dart';
 import 'message_quote_block.dart';
 import 'quoted_bubble_layout.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 import 'sticker_media.dart';
 import 'voice_bubble_footer.dart';
 import '../../chat-lock/data/chat_lock_index.dart';
@@ -86,7 +86,7 @@ class MessageBubbleContent extends StatelessWidget {
   });
 
   final ChatMessage message;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final bool isOwn;
   final bool isSending;
   final bool isFailed;
@@ -94,10 +94,10 @@ class MessageBubbleContent extends StatelessWidget {
   final bool showFooter;
 
   static const _inset = EdgeInsets.fromLTRB(
-    SignalBubbleMetrics.horizontalPadding,
-    SignalBubbleMetrics.topPadding,
-    SignalBubbleMetrics.horizontalPadding,
-    SignalBubbleMetrics.bottomPadding,
+    BubbleMetrics.horizontalPadding,
+    BubbleMetrics.topPadding,
+    BubbleMetrics.horizontalPadding,
+    BubbleMetrics.bottomPadding,
   );
 
   /// Picture/video bubble — caption or not. Time sits on the media. A quote
@@ -228,10 +228,10 @@ class MessageBubbleContent extends StatelessWidget {
         if (footer != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              SignalBubbleMetrics.horizontalPadding,
+              BubbleMetrics.horizontalPadding,
               4,
-              SignalBubbleMetrics.horizontalPadding,
-              SignalBubbleMetrics.bottomPadding,
+              BubbleMetrics.horizontalPadding,
+              BubbleMetrics.bottomPadding,
             ),
             child: footer,
           ),
@@ -251,9 +251,9 @@ class MessageBubbleContent extends StatelessWidget {
         content: content,
       );
 
-  /// Quote, then the card, then the author's own text under it — Signal's
-  /// order. The card is what the message is about; the text is the comment on
-  /// it.
+  /// Quote, then the card, then the author's own text under it — the reference
+  /// app's order. The card is what the message is about; the text is the
+  /// comment on it.
   Widget _withPreview(LinkPreviewData preview) {
     final quote = message.quote;
     final big = isBigImagePreview(preview);
@@ -271,10 +271,10 @@ class MessageBubbleContent extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            SignalBubbleMetrics.horizontalPadding,
+            BubbleMetrics.horizontalPadding,
             0,
-            SignalBubbleMetrics.horizontalPadding,
-            SignalBubbleMetrics.bottomPadding,
+            BubbleMetrics.horizontalPadding,
+            BubbleMetrics.bottomPadding,
           ),
           child: Column(
             crossAxisAlignment: _footerSide,

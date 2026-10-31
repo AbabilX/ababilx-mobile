@@ -4,9 +4,10 @@ import '../../../shared/text/display_name.dart';
 ///
 /// A display name belongs to the account that owns it — we sanitise it, but we
 /// do not get to change it. A **nickname** is the other half of that: the name
-/// *you* file someone under, on your own phone. Signal keeps the same pair, and
-/// it is the only real answer to a name you cannot read — one built from blank
-/// glyphs, written in a script you do not have, or shared by three people.
+/// *you* file someone under, on your own phone. The reference app keeps the
+/// same pair, and it is the only real answer to a name you cannot read — one
+/// built from blank glyphs, written in a script you do not have, or shared by
+/// three people.
 ///
 /// Keyed by user id, not conversation id, so one nickname follows a person
 /// through their DM, every group they are in, and the sender line above their

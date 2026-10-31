@@ -2,16 +2,16 @@ part of 'ws_client.dart';
 
 /// The socket's life outside the foreground.
 ///
-/// Signal keeps its websocket for two minutes after the app leaves the screen
-/// and then lets FCM carry everything (`IncomingMessageObserver`
-/// `maxBackgroundTime`). This socket used to stay up for as long as the
-/// process lived: a ping every 30 s from here, one every 54 s from the server,
-/// and every presence, typing and receipt event for every contact — each one
-/// waking the radio of a phone in a pocket. That background drain is what
-/// Samsung's "sleeping apps" and the other OEM battery managers punish, and
-/// they punish it by cutting the app off from its pushes. Nothing is lost by
-/// closing it: the server never skips a push because a socket is open, and
-/// resuming reconnects and resyncs.
+/// The reference app keeps its websocket for two minutes after the app leaves
+/// the screen and then lets FCM carry everything (`IncomingMessageObserver`
+/// `maxBackgroundTime`). This socket used to stay up for as long as the process
+/// lived: a ping every 30 s from here, one every 54 s from the server, and
+/// every presence, typing and receipt event for every contact — each one waking
+/// the radio of a phone in a pocket. That background drain is what Samsung's
+/// "sleeping apps" and the other OEM battery managers punish, and they punish
+/// it by cutting the app off from its pushes. Nothing is lost by closing it:
+/// the server never skips a push because a socket is open, and resuming
+/// reconnects and resyncs.
 extension WsClientBackground on WsClient {
   bool get suspended => _suspended;
 

@@ -20,7 +20,7 @@ String _fingerprintOf(Map<String, dynamic> args) => identityFingerprint(
 /// the prompt: the first key seen for a person is remembered (trust on first
 /// use), and a later different one is reported in every chat with them until
 /// the user has looked. A person who started fresh looks exactly the same from
-/// here, which is why it warns and does not block. Signal's rule.
+/// here, which is why it warns and does not block. The reference app's rule.
 class MemberKeyWatch {
   MemberKeyWatch(this._store);
 

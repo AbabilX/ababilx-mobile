@@ -2,9 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/painting.dart' show Size;
 
-/// libwebrtc's `RendererCommon.getDisplaySize`, in Dart — the rule Signal uses
-/// for a camera tile (`SCALE_ASPECT_FILL` when the video and the view share an
-/// orientation, `SCALE_ASPECT_BALANCED` when they do not).
+/// libwebrtc's `RendererCommon.getDisplaySize`, in Dart — the rule the
+/// reference app uses for a camera tile (`SCALE_ASPECT_FILL` when the video and
+/// the view share an orientation, `SCALE_ASPECT_BALANCED` when they do not).
 ///
 /// It exists because "fill the box" and "fit in the box" are both wrong when a
 /// laptop's 16:9 camera lands in a phone's portrait call screen. Filling crops
@@ -23,7 +23,7 @@ Size videoDisplaySize(Size box, double videoAspect) {
   final boxAspect = box.width / box.height;
   // Same side of 1.0 = same orientation. Two landscapes of different shapes
   // still crop freely: that difference is small enough that nobody notices,
-  // and Signal treats it the same way.
+  // and the reference app treats it the same way.
   if ((videoAspect > 1.0) == (boxAspect > 1.0)) return box;
   return Size(
     math.min(box.width, box.height / _minVisibleFraction * videoAspect),

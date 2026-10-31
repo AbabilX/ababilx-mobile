@@ -26,18 +26,21 @@ void main() {
         <link rel="shortcut icon" href="/favicon.ico"></head>
       ''');
       expect(preview.title, 'Just a title');
-      // Signal folds the favicon into the image slot, and a small square is
-      // exactly what the 72dp thumbnail wants.
+      // The reference app folds the favicon into the image slot, and a small
+      // square is exactly what the 72dp thumbnail wants.
       expect(preview.imageUrl, 'https://ababilx.com/favicon.ico');
     });
 
-    test('takes single-quoted markup, which Signal drops on the floor', () {
-      final preview = parseLinkPreview(
-        'https://ababilx.com',
-        "<meta property='og:title' content='Single quoted'>",
-      );
-      expect(preview.title, 'Single quoted');
-    });
+    test(
+      'takes single-quoted markup, which the reference parser drops on the floor',
+      () {
+        final preview = parseLinkPreview(
+          'https://ababilx.com',
+          "<meta property='og:title' content='Single quoted'>",
+        );
+        expect(preview.title, 'Single quoted');
+      },
+    );
 
     test('the first tag of a repeated property wins', () {
       final preview = parseLinkPreview('https://ababilx.com', '''
@@ -47,7 +50,7 @@ void main() {
       expect(preview.title, 'First');
     });
 
-    test('decodes entities twice, as Signal does', () {
+    test('decodes entities twice, as the reference parser does', () {
       // Plenty of pages emit an already-encoded string into a meta tag.
       final preview = parseLinkPreview(
         'https://ababilx.com',

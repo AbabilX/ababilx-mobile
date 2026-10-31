@@ -175,8 +175,8 @@ class GroupCallNotifier extends GroupCallBase
         await leaveOnce(call.id);
         return;
       }
-      // Android: the call's audio belongs to the native owner (Signal's
-      // SignalAudioManager), loudspeaker by default, a headset ahead of it.
+      // Android: the call's audio belongs to the native owner (the reference
+      // app's audio manager), loudspeaker by default, a headset ahead of it.
       await CallAudioRoute.activateRoom(callId: call.id);
       final room = Room(
         roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),

@@ -5,8 +5,8 @@ import 'package:ababilx/features/calls/live_call.dart';
 import 'package:ababilx/features/calls/providers/voice_call_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Signal's busy rule: only an idle phone rings. These are the phases that
-/// make this phone busy, and the ones that must not.
+/// The reference app's busy rule: only an idle phone rings. These are the
+/// phases that make this phone busy, and the ones that must not.
 void main() {
   final now = DateTime(2026, 10, 2, 12);
   final dmCall = VoiceCall(

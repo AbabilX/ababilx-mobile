@@ -1,46 +1,44 @@
 import 'package:flutter/material.dart';
 
 import '../chat_utils.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 
 /// The colours one bubble draws with.
 ///
-/// **Both sides share one fill, deliberately.** Signal paints the outgoing
-/// bubble in the chat colour, but a wall of accent blocks is loud; which side
-/// a message is on already says who sent it, so the quieter surface is used
-/// throughout (chosen 2026-09-03). Do not reintroduce an accent outgoing
-/// bubble without asking.
+/// **Both sides share one fill, deliberately.** The reference app paints the
+/// outgoing bubble in the chat colour, but a wall of accent blocks is loud;
+/// which side a message is on already says who sent it, so the quieter surface
+/// is used throughout (chosen 2026-09-03). Do not reintroduce an accent
+/// outgoing bubble without asking.
 ///
-/// The surface does get more opaque once a wallpaper is set — Signal's own
-/// `conversation_item_recv_bubble_color_wallpaper` split — so text keeps its
-/// contrast over a photo. Roles come from the theme, never hexes, per the
-/// mobile theme rule.
-class SignalBubbleColors {
-  const SignalBubbleColors({
+/// The surface does get more opaque once a wallpaper is set — the reference
+/// app's own `conversation_item_recv_bubble_color_wallpaper` split — so text
+/// keeps its contrast over a photo. Roles come from the theme, never hexes, per
+/// the mobile theme rule.
+class BubbleColors {
+  const BubbleColors({
     required this.background,
     required this.foreground,
     required this.muted,
   });
 
-  factory SignalBubbleColors.of(
-    ColorScheme colors, {
-    required bool hasWallpaper,
-  }) => SignalBubbleColors(
-    background: hasWallpaper
-        ? colors.surfaceContainerHighest
-        : colors.surfaceContainerHigh,
-    foreground: colors.onSurface,
-    muted: colors.onSurfaceVariant,
-  );
+  factory BubbleColors.of(ColorScheme colors, {required bool hasWallpaper}) =>
+      BubbleColors(
+        background: hasWallpaper
+            ? colors.surfaceContainerHighest
+            : colors.surfaceContainerHigh,
+        foreground: colors.onSurface,
+        muted: colors.onSurfaceVariant,
+      );
 
   final Color background;
   final Color foreground;
   final Color muted;
 }
 
-/// One message bubble: Signal's rounded rectangle, its collapsed corner facing
-/// the rest of the cluster, capped so the far edge never reaches the opposite
-/// side of the screen.
+/// One message bubble: the reference app's rounded rectangle, its collapsed
+/// corner facing the rest of the cluster, capped so the far edge never reaches
+/// the opposite side of the screen.
 class MessageBubble extends StatelessWidget {
   const MessageBubble({
     super.key,
@@ -54,10 +52,10 @@ class MessageBubble extends StatelessWidget {
 
   final bool isOwn;
   final MessageClusterPosition clusterPosition;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final Widget child;
 
-  /// Sending bubbles fade, exactly as Signal dims an unsent item.
+  /// Sending bubbles fade, exactly as the reference app dims an unsent item.
   final bool dimmed;
 
   /// Image/video-only (no caption): the media is the surface — no fill behind it.
@@ -65,12 +63,10 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = signalBubbleRadius(position: clusterPosition, isOwn: isOwn);
+    final radius = bubbleRadius(position: clusterPosition, isOwn: isOwn);
     final width = MediaQuery.sizeOf(context).width;
     final maxWidth =
-        width -
-        SignalBubbleMetrics.edgeMargin -
-        SignalBubbleMetrics.listSideGutter * 2;
+        width - BubbleMetrics.edgeMargin - BubbleMetrics.listSideGutter * 2;
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 200),

@@ -17,8 +17,8 @@ import 'ws_link_decision.dart';
 /// was live. Chat looked frozen until a manual pull, because HTTP opens its own
 /// connection and works.
 ///
-/// Signal's `IncomingMessageObserver` wakes its connect loop on exactly these:
-/// `onAppForegrounded`, and any default-network change through
+/// The reference app's `IncomingMessageObserver` wakes its connect loop on
+/// exactly these: `onAppForegrounded`, and any default-network change through
 /// `NetworkConnectionListener` — which disconnects outright when the network
 /// goes away, since the socket it had cannot have survived it.
 class WsLinkWatch extends ConsumerStatefulWidget {

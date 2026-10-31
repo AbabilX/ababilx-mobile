@@ -7,8 +7,8 @@ import '../providers/voice_call_state.dart';
 import '../voice_call_log.dart';
 
 /// The caller's ringback ("tuut… tuut…") while the other phone rings —
-/// Signal's `OutgoingRinger` (looping MediaPlayer on the voice-communication
-/// usage), native in `CallRingback.kt`.
+/// the reference app's `OutgoingRinger` (looping MediaPlayer on the
+/// voice-communication usage), native in `CallRingback.kt`.
 ///
 /// Plays only while the screen says "Ringing…" — the callee's phone has
 /// reported that it rings (`calleeRingingAt`). "Calling…" stays silent, as in

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../data/models/chat_models.dart';
 
-/// Signal's reaction pill: one capsule hanging off the bottom edge of the
-/// bubble, overlapping it. The parent column aligns it to the bubble's own
-/// side, so this only owns the overlap.
+/// The reference app's reaction pill: one capsule hanging off the bottom edge
+/// of the bubble, overlapping it. The parent column aligns it to the bubble's
+/// own side, so this only owns the overlap.
 ///
 /// There is no "add" button on the pill — reacting starts from the emoji bar
-/// on the long-press overlay ([SignalReactionBar]), same as Signal. Tapping an
-/// emoji here opens who reacted, not a toggle.
+/// on the long-press overlay ([MessageReactionBar]), same as the reference app.
+/// Tapping an emoji here opens who reacted, not a toggle.
 class ReactionRow extends StatelessWidget {
   const ReactionRow({
     super.key,
@@ -55,8 +55,8 @@ class ReactionRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 3),
               ],
-              // Signal shows a single total beside the emoji, not a count
-              // per emoji — the breakdown lives in the details sheet.
+              // The reference app shows a single total beside the emoji, not a
+              // count per emoji — the breakdown lives in the details sheet.
               if (total > 1)
                 Text(
                   '$total',

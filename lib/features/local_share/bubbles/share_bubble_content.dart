@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/voice_url_player.dart';
-import '../../messages/chat-timeline/message_bubble.dart'
-    show SignalBubbleColors;
-import '../../messages/chat-timeline/signal_bubble_metrics.dart';
+import '../../messages/chat-timeline/message_bubble.dart' show BubbleColors;
+import '../../messages/chat-timeline/bubble_metrics.dart';
 import '../data/share_thread_queries.dart';
 import '../engine/protocol/share_envelope.dart';
 import '../engine/store/share_records.dart';
@@ -30,7 +29,7 @@ class ShareBubbleContent extends ConsumerWidget {
   });
 
   final ShareBubbleData data;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final VoidCallback onRetry;
 
   @override
@@ -54,7 +53,7 @@ class ShareBubbleContent extends ConsumerWidget {
     );
 
     const inset = EdgeInsets.symmetric(
-      horizontal: SignalBubbleMetrics.horizontalPadding,
+      horizontal: BubbleMetrics.horizontalPadding,
     );
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -64,8 +63,8 @@ class ShareBubbleContent extends ConsumerWidget {
           ShareMediaGrid(data: data, media: media, onOpen: open),
         Padding(
           padding: inset.copyWith(
-            top: SignalBubbleMetrics.topPadding,
-            bottom: SignalBubbleMetrics.bottomPadding,
+            top: BubbleMetrics.topPadding,
+            bottom: BubbleMetrics.bottomPadding,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -94,7 +93,7 @@ class ShareBubbleContent extends ConsumerWidget {
                   child: SelectableText(
                     text,
                     style: TextStyle(
-                      fontSize: SignalBubbleMetrics.bodyTextSize,
+                      fontSize: BubbleMetrics.bodyTextSize,
                       height: 1.3,
                       color: colors.foreground,
                     ),

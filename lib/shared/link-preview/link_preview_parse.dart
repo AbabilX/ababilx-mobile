@@ -1,8 +1,8 @@
-/// Signal-Android's `LinkPreviewUtil.parseOpenGraphFields`, with one shape
-/// change: Signal writes a separate pattern per property family and only ever
-/// matches double-quoted attributes. This reads a `<meta>` tag's attributes
-/// once and takes whichever key it finds, so `og:`, `article:` and
-/// single-quoted markup all land in the same map.
+/// The reference Android app's `LinkPreviewUtil.parseOpenGraphFields`, with one
+/// shape change: the reference app writes a separate pattern per property
+/// family and only ever matches double-quoted attributes. This reads a `<meta>`
+/// tag's attributes once and takes whichever key it finds, so `og:`, `article:`
+/// and single-quoted markup all land in the same map.
 ///
 /// Deliberately regex over a DOM: the page is untrusted, arrives half-read at
 /// the byte cap, and only six fields are wanted. It is the same trade the
@@ -25,8 +25,8 @@ final _attribute = RegExp(
 const _maxDescription = 600;
 
 /// Parses [html] fetched from [url]. Relative image URLs are resolved against
-/// it — Signal leaves a relative favicon href as it found it, which simply
-/// fails to load later.
+/// it — the reference app leaves a relative favicon href as it found it, which
+/// simply fails to load later.
 LinkPreviewData parseLinkPreview(String url, String html) {
   final tags = <String, String>{};
 
@@ -61,8 +61,9 @@ LinkPreviewData parseLinkPreview(String url, String html) {
           tags['description'],
       limit: _maxDescription,
     ),
-    // Signal falls back to the favicon when there is no og:image, and so do we:
-    // a small square is exactly what the 72dp thumbnail slot wants.
+    // The reference app falls back to the favicon when there is no og:image,
+    // and so do we: a small square is exactly what the 72dp thumbnail slot
+    // wants.
     imageUrl: _absolute(url, tags['og:image'] ?? tags['twitter:image'] ?? icon),
     siteName: _tidy(tags['og:site_name']),
   );
@@ -84,7 +85,8 @@ Map<String, String> _attributes(String tag) {
 
 String? _tidy(String? value, {int limit = 200}) {
   if (value == null) return null;
-  // Signal decodes twice: plenty of pages emit `&amp;quot;` in a meta tag.
+  // The reference app decodes twice: plenty of pages emit `&amp;quot;` in a
+  // meta tag.
   final text = decodeEntities(
     decodeEntities(value),
   ).replaceAll(RegExp(r'\s+'), ' ').trim();

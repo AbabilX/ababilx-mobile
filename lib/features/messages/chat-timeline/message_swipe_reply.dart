@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 
-/// Signal's swipe-to-reply: drag a message to the right, an arrow fades in and
-/// grows, and letting go past the trigger point starts a reply.
+/// The reference app's swipe-to-reply: drag a message to the right, an arrow
+/// fades in and grows, and letting go past the trigger point starts a reply.
 ///
-/// Numbers are Signal's own (`ConversationSwipeAnimationHelper`): the gesture
-/// passes at 64, cannot travel past 96, the arrow scales 1.0 → 1.2 on the way
-/// and kicks to 1.8 for 200ms the moment it passes, with a 10ms haptic.
+/// Numbers are the reference app's own (`ConversationSwipeAnimationHelper`):
+/// the gesture passes at 64, cannot travel past 96, the arrow scales 1.0 → 1.2
+/// on the way and kicks to 1.8 for 200ms the moment it passes, with a 10ms
+/// haptic.
 class MessageSwipeReply extends StatefulWidget {
   const MessageSwipeReply({
     super.key,
@@ -45,8 +46,8 @@ class SwipeReplyProgress extends InheritedWidget {
 
 class _MessageSwipeReplyState extends State<MessageSwipeReply>
     with TickerProviderStateMixin {
-  static const _trigger = SignalBubbleMetrics.swipeTriggerDx;
-  static const _max = SignalBubbleMetrics.swipeMaxDx;
+  static const _trigger = BubbleMetrics.swipeTriggerDx;
+  static const _max = BubbleMetrics.swipeMaxDx;
 
   // Built in initState, not `late final`: a row that is never swiped would
   // otherwise run the initialiser from dispose(), and creating a Ticker on a
@@ -108,7 +109,7 @@ class _MessageSwipeReplyState extends State<MessageSwipeReply>
     if (fire) widget.onReply();
   }
 
-  /// 1.0 up to the trigger, then Signal's kick out to 1.8 and back.
+  /// 1.0 up to the trigger, then the reference app's kick out to 1.8 and back.
   double get _iconScale {
     final base = (_dx / _trigger).clamp(0.0, 1.0) * 0.2 + 1.0;
     if (!_overshoot.isAnimating) return base;
@@ -144,8 +145,8 @@ class _MessageSwipeReplyState extends State<MessageSwipeReply>
                       child: Transform.scale(
                         scale: _iconScale,
                         child: Container(
-                          width: SignalBubbleMetrics.replyIconSize,
-                          height: SignalBubbleMetrics.replyIconSize,
+                          width: BubbleMetrics.replyIconSize,
+                          height: BubbleMetrics.replyIconSize,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: colors.surfaceContainerHighest,

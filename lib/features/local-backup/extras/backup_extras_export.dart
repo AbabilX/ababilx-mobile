@@ -16,10 +16,10 @@ class BackupExtrasStats {
   final int pictures;
 }
 
-/// What Signal's backup carries beside messages: the call log, settings,
-/// and the pictures that make the list recognisable (profile and group
-/// photos, wallpaper photos). Written before the messages, so a restore cut
-/// short still has them.
+/// What the reference app's backup carries beside messages: the call log,
+/// settings, and the pictures that make the list recognisable (profile and
+/// group photos, wallpaper photos). Written before the messages, so a restore
+/// cut short still has them.
 ///
 /// Extra files carry `x` (their kind) and no `u`: an older build's importer
 /// adopts a `file` frame by its `u`, and skips one without, so a new backup

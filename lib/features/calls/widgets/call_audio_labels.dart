@@ -2,8 +2,8 @@ import '../../../core/localization/app_translations.dart';
 import '../audio/call_audio_output.dart';
 import '../group/call_icons.dart';
 
-/// Icons and names for call audio outputs — Signal's `WebRtcAudioOutput`
-/// labels and `toFriendlyName`.
+/// Icons and names for call audio outputs — the reference app's
+/// `WebRtcAudioOutput` labels and `toFriendlyName`.
 CallGlyph callAudioOutputIcon(CallAudioOutput output) => switch (output) {
   CallAudioOutput.handset => CallIcons.speakerOff,
   CallAudioOutput.bluetooth => CallIcons.bluetoothAudio,
@@ -20,7 +20,8 @@ String callAudioShortLabel(CallAudioOutput output, String lang) =>
       _ => 'call_control_speaker',
     });
 
-/// A row's name, Signal's `toFriendlyName`: a Bluetooth device by its own name.
+/// A row's name, the reference app's `toFriendlyName`: a Bluetooth device by
+/// its own name.
 String callAudioOptionLabel(CallAudioOption option, String lang) {
   String tr(String key) => AppTranslations.of(lang, key);
   return switch (option.output) {

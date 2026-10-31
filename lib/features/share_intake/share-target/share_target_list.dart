@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../messages/data/models/chat_models.dart';
 
-/// Conversation picker for an incoming share — Signal's "Share with" list.
+/// Conversation picker for an incoming share — the reference app's "Share with"
+/// list.
 ///
 /// Multi-select on purpose: sharing the same photo to two people is the whole
 /// reason someone opens the system share sheet instead of the app.

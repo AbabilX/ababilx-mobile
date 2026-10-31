@@ -5,8 +5,8 @@ import '../network/call_network_quality.dart';
 import 'call_video_view.dart';
 
 /// Our own camera as a thumbnail in the corner, with the flip button on it —
-/// where Signal and every dialler put it, so the control sits on the thing
-/// it changes rather than in the crowded row at the bottom.
+/// where the reference app and every dialler put it, so the control sits on the
+/// thing it changes rather than in the crowded row at the bottom.
 class LocalCameraPreview extends StatelessWidget {
   const LocalCameraPreview({
     super.key,

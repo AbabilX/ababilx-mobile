@@ -24,7 +24,7 @@ class CallVideoView extends StatefulWidget {
   /// Filling is not unconditional: see [videoDisplaySize]. A camera whose
   /// orientation matches the box fills it; one that does not — a laptop
   /// calling a phone, which is most cross-device calls — is cropped only as
-  /// far as Signal crops it and letterboxed for the rest.
+  /// far as the reference app crops it and letterboxed for the rest.
   final bool cover;
 
   /// A front camera preview reads as a mirror; the far side must never be.

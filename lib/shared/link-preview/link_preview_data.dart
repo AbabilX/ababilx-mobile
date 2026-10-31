@@ -1,10 +1,11 @@
 import 'dart:convert';
 
-/// One unfurled link, exactly the fields Signal-Android's `LinkPreview` carries
-/// plus the image's real size — which Signal knows because the SENDER attached
-/// the thumbnail, and we have to measure because we fetch on the reader's
-/// device. It decides the big-image layout, so it is resolved once at load and
-/// stored with the rest rather than measured again in every build.
+/// One unfurled link, exactly the fields the reference Android app's
+/// `LinkPreview` carries plus the image's real size — which the reference app
+/// knows because the SENDER attached the thumbnail, and we have to measure
+/// because we fetch on the reader's device. It decides the big-image layout, so
+/// it is resolved once at load and stored with the rest rather than measured
+/// again in every build.
 class LinkPreviewData {
   const LinkPreviewData({
     required this.url,
@@ -33,7 +34,7 @@ class LinkPreviewData {
   final int? imageWidth;
   final int? imageHeight;
 
-  /// Signal shows a card when it has EITHER a title or a picture
+  /// The reference app shows a card when it has EITHER a title or a picture
   /// (`LinkPreviewRepository`: an error only when both are missing). A page
   /// with neither is not a failure — it is a link with nothing to say.
   bool get isEmpty => (title ?? '').isEmpty && (imageUrl ?? '').isEmpty;

@@ -191,7 +191,8 @@ void main() async {
     StartTab.preload(),
   ]);
 
-  // Signal's launch: the splash stays until auth knows chats or login.
+  // The reference app's launch: the splash stays until auth knows chats or
+  // login.
   LaunchHold.hold();
   runApp(const ProviderScope(child: AbabilXApp()));
 }

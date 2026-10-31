@@ -11,8 +11,8 @@ import '../../profile/data/profile_repository.dart';
 import 'settings_row.dart';
 import '../donate/donate_sheet.dart';
 
-/// The row groups under the bio block. Signal splits these with dividers
-/// rather than cards, so each group reads as one surface.
+/// The row groups under the bio block. The reference app splits these with
+/// dividers rather than cards, so each group reads as one surface.
 class SettingsSections extends ConsumerWidget {
   const SettingsSections({super.key, required this.user});
 

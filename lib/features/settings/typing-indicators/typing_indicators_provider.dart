@@ -6,8 +6,8 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/ws_client.dart';
 
-/// The account's typing-indicator switch (Signal's rule: off means this
-/// account neither shows others it is typing nor sees them typing). The
+/// The account's typing-indicator switch (the reference app's rule: off means
+/// this account neither shows others it is typing nor sees them typing). The
 /// server enforces both halves; the client only avoids pointless frames.
 ///
 /// Optimistically true until loaded, which is the server default — a failed

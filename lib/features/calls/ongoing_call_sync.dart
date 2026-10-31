@@ -204,11 +204,11 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     unawaited(AndroidOngoingCall.stop(force: true));
   }
 
-  /// The screen blanks at the ear — Signal's `LockManager` `IN_CALL`: an
-  /// outgoing call from the moment it rings (Signal enters `IN_CALL` then),
-  /// while it connects, and once connected. An INCOMING ring is excluded:
-  /// that is a call the user is looking at. Video on either side is Signal's
-  /// `IN_VIDEO` and keeps the screen on.
+  /// The screen blanks at the ear — the reference app's `LockManager`
+  /// `IN_CALL`: an outgoing call from the moment it rings (the reference app
+  /// enters `IN_CALL` then), while it connects, and once connected. An INCOMING
+  /// ring is excluded: that is a call the user is looking at. Video on either
+  /// side is the reference app's `IN_VIDEO` and keeps the screen on.
   ///
   /// Whether the call is hands-free (speaker, Bluetooth, wired headset) is
   /// decided natively from the call's audio route (`CallHandsFree.kt`), so a
@@ -231,9 +231,9 @@ class _OngoingCallSyncState extends ConsumerState<OngoingCallSync>
     unawaited(AndroidCallScreenLock.setEarpieceCall(atEar));
   }
 
-  /// Signal's busy rule, told to the process: entering a call stops every
-  /// ring at once (the "still ringing after I answered" report), and no push
-  /// can ring or raise a ringing screen until the call is left.
+  /// The reference app's busy rule, told to the process: entering a call stops
+  /// every ring at once (the "still ringing after I answered" report), and no
+  /// push can ring or raise a ringing screen until the call is left.
   void _syncLiveCall(VoiceCallState dm, GroupCallState group) {
     final live = liveCallId(dm, group);
     if (live == _liveCallSent) return;

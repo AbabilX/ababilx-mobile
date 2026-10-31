@@ -26,7 +26,7 @@ class ZoomablePreviewImage extends StatefulWidget {
   final int quarterTurns;
   final bool active;
 
-  /// Single tap — Signal toggles the chrome. Double-tap still zooms.
+  /// Single tap — the reference app toggles the chrome. Double-tap still zooms.
   final VoidCallback? onTap;
 
   /// Pinch or drag — chrome hides so the photo owns the screen.

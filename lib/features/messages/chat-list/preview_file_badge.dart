@@ -13,8 +13,9 @@ IconData previewFileIcon(ChatLastAttachment file) {
 }
 
 /// What an attachment is called in the list. Photos and videos say their kind,
-/// as Signal's list does: a camera file name ("Photo on 18-7-2…") tells the
-/// reader nothing. Documents keep their name, which is the useful part.
+/// as the reference app's list does: a camera file name ("Photo on 18-7-2…")
+/// tells the reader nothing. Documents keep their name, which is the useful
+/// part.
 String previewFileLabel(ChatLastAttachment file) {
   if (file.isImage) return 'Photo';
   if (file.isVideo) return 'Video';

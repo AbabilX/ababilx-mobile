@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/providers/auth_provider.dart';
 
-/// Signal's launch: the system splash (icon on the app's background) stays
-/// up until the first real screen is ready, and that screen is the chat
+/// The reference app's launch: the system splash (icon on the app's background)
+/// stays up until the first real screen is ready, and that screen is the chat
 /// list — no in-app loading screen between them.
 ///
 /// Flutter's Android embedding keeps the launch window until the first frame
