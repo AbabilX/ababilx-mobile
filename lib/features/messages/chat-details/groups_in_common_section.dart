@@ -6,8 +6,8 @@ import '../../../shared/widgets/app_avatar.dart';
 import '../providers/chat_details_provider.dart';
 import 'add_to_group_sheet.dart';
 
-/// Signal's "N groups in common" block on a person's profile: the groups you
-/// already share, and a way to pull them into another one.
+/// The reference app's "N groups in common" block on a person's profile: the
+/// groups you already share, and a way to pull them into another one.
 ///
 /// Both lists come from the viewer's own memberships, so this never reveals a
 /// group the viewer is not already in.

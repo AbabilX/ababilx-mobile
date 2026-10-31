@@ -15,9 +15,10 @@ import 'android_ongoing_call.dart';
 /// shared call ran two independent services: the call's, and this one — with
 /// the projection owned by flutter_webrtc and the service owned by a
 /// notification plugin, and nothing sequencing their teardown against each
-/// other. Signal runs one service for the whole call and ORs the projection
-/// type in and out of it (`ActiveCallForegroundService.serviceType`), which is
-/// what [AndroidOngoingCall] now does here. One lifetime, one place to end it.
+/// other. The reference app runs one service for the whole call and ORs the
+/// projection type in and out of it
+/// (`ActiveCallForegroundService.serviceType`), which is what
+/// [AndroidOngoingCall] now does here. One lifetime, one place to end it.
 class AndroidScreenShare {
   AndroidScreenShare._();
 

@@ -2,7 +2,7 @@ import '../calls/group/providers/group_call_state.dart';
 import '../calls/providers/voice_call_state.dart';
 
 /// Whether the realtime socket must stay up while the app is in the
-/// background — Signal's keep-alive tokens, as one rule.
+/// background — the reference app's keep-alive tokens, as one rule.
 ///
 /// Only live sessions hold it, because each one carries its signalling over
 /// the socket: a 1:1 call's offer, answer and ICE candidates (a backgrounded

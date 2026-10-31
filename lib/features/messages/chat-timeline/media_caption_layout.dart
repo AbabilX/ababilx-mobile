@@ -2,7 +2,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 /// A picture or video with its caption under it, where the MEDIA decides the
-/// bubble's width and the caption wraps to it — Signal's arrangement.
+/// bubble's width and the caption wraps to it — the reference app's
+/// arrangement.
 ///
 /// In a plain Column the caption lays out against the bubble's cap, so a
 /// portrait photo (narrow, because its height hits the ceiling) under a line

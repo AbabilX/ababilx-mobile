@@ -5,10 +5,10 @@ import 'call_backdrop.dart';
 
 /// What a call looks like once the window is a thumbnail.
 ///
-/// A floating window is roughly the size of a business card, so Signal strips
-/// its PiP layout to the one thing you glance at — is this still running, and
-/// for how long. No controls: the window is too small to hit them reliably,
-/// and tapping it restores the full screen where they live.
+/// A floating window is roughly the size of a business card, so the reference
+/// app strips its PiP layout to the one thing you glance at — is this still
+/// running, and for how long. No controls: the window is too small to hit them
+/// reliably, and tapping it restores the full screen where they live.
 class PipCallView extends StatelessWidget {
   const PipCallView({
     super.key,

@@ -8,7 +8,7 @@ import 'device_gallery.dart';
 ///
 /// Bounded on purpose: a library scrolled far enough would otherwise hold
 /// hundreds of thumbnails alive. 300 tiles at ~12 KB each is a few megabytes,
-/// which is the trade Signal makes for a grid that never flickers.
+/// which is the trade the reference app makes for a grid that never flickers.
 ///
 /// One entry per photo, holding the **largest** size anyone has asked for. The
 /// surfaces want different sizes — the rail 320, the grid and folder gallery

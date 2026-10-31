@@ -45,7 +45,7 @@ class VideoThumbPlaceholder extends StatelessWidget {
   }
 }
 
-/// Signal's play / pause affordance: a light disc over the frame.
+/// The reference app's play / pause affordance: a light disc over the frame.
 class VideoPlayBadge extends StatelessWidget {
   const VideoPlayBadge({super.key, this.size = 48, this.playing = false});
 
@@ -79,8 +79,8 @@ class VideoPlayBadge extends StatelessWidget {
   }
 }
 
-/// Running time, bottom-left of a video tile. Signal shows it before you open
-/// anything, which is how you decide whether to open it at all.
+/// Running time, bottom-left of a video tile. The reference app shows it before
+/// you open anything, which is how you decide whether to open it at all.
 class VideoDurationBadge extends StatelessWidget {
   const VideoDurationBadge({super.key, required this.duration});
 
@@ -119,7 +119,7 @@ String formatVideoDuration(Duration duration) {
   return '$minutes:$rest';
 }
 
-/// Signal's remaining label: `–1:23`. Never negative.
+/// The reference app's remaining label: `–1:23`. Never negative.
 String formatVideoRemaining(Duration position, Duration duration) {
   final left = duration - position;
   return '–${formatVideoDuration(left.isNegative ? Duration.zero : left)}';

@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'signal_menu_pointer.dart';
-import 'signal_message_menu.dart';
-import 'signal_message_menu_focus.dart';
-import 'signal_message_menu_geometry.dart';
-import 'signal_message_menu_items.dart';
-import 'signal_action_panel.dart';
-import 'signal_menu_shade.dart';
-import 'signal_menu_timeline.dart';
-import 'signal_message_menu_panels.dart';
-import 'signal_reaction_scrub.dart';
+import 'message_menu_pointer.dart';
+import 'message_menu.dart';
+import 'message_menu_focus.dart';
+import 'message_menu_geometry.dart';
+import 'message_menu_items.dart';
+import 'message_action_panel.dart';
+import 'message_menu_shade.dart';
+import 'message_menu_timeline.dart';
+import 'message_menu_panels.dart';
+import 'reaction_scrub.dart';
 
 /// The overlay itself. Stateful because it tracks the finger that opened it.
-class SignalMessageMenuSurface extends StatefulWidget {
-  const SignalMessageMenuSurface({
+class MessageMenuSurface extends StatefulWidget {
+  const MessageMenuSurface({
     super.key,
     required this.animation,
     required this.anchor,
@@ -37,36 +37,36 @@ class SignalMessageMenuSurface extends StatefulWidget {
   final Offset origin;
   final Widget focused;
   final bool isMine;
-  final List<SignalMenuItem> items;
+  final List<MessageMenuItem> items;
   final String moreLabel;
 
   /// False draws no reaction bar and ignores the press-and-slide scrub.
   final bool showReactions;
-  final SignalMenuPointer? pointer;
+  final MessageMenuPointer? pointer;
 
   @override
-  State<SignalMessageMenuSurface> createState() =>
-      _SignalMessageMenuSurfaceState();
+  State<MessageMenuSurface> createState() => _MessageMenuSurfaceState();
 }
 
-class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
+class _MessageMenuSurfaceState extends State<MessageMenuSurface> {
   int? _selected;
   Rect _bar = Rect.zero;
 
   // Built once: a CurvedAnimation listens to its parent until disposed.
-  late final CurvedAnimation _move = signalReveal(
+  late final CurvedAnimation _move = menuReveal(
     widget.animation,
-    // ViewPropertyAnimator's default, which carries Signal's snapshot.
+    // ViewPropertyAnimator's default, which carries the reference app's
+    // snapshot.
     curve: Curves.easeInOutSine,
   );
-  late final CurvedAnimation _menu = signalReveal(widget.animation);
-  late final CurvedAnimation _strip = signalReveal(
+  late final CurvedAnimation _menu = menuReveal(widget.animation);
+  late final CurvedAnimation _strip = menuReveal(
     widget.animation,
-    delay: SignalMenuMetrics.revealOffset,
+    delay: MessageMenuMetrics.revealOffset,
   );
   late final List<CurvedAnimation> _slots = [
-    for (var i = 0; i <= SignalReactionBar.emojis.length; i++)
-      signalEmojiReveal(widget.animation, i),
+    for (var i = 0; i <= MessageReactionBar.emojis.length; i++)
+      emojiReveal(widget.animation, i),
   ];
 
   @override
@@ -89,14 +89,14 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
   void _onPointerMoved() {
     final pointer = widget.pointer;
     if (pointer == null || !mounted || !widget.showReactions) return;
-    final next = signalScrubSelection(
+    final next = reactionScrubSelection(
       bar: _bar,
-      slots: SignalReactionBar.emojis.length + 1,
+      slots: MessageReactionBar.emojis.length + 1,
       pointer: pointer.position.value,
       touchDown: pointer.touchDown,
     );
     if (next == _selected) return;
-    // Signal ticks once per emoji entered, never on leaving one.
+    // The reference app ticks once per emoji entered, never on leaving one.
     if (next != null) HapticFeedback.selectionClick();
     setState(() => _selected = next);
   }
@@ -108,10 +108,10 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
     if (!mounted || widget.pointer?.released.value != true) return;
     final index = _selected;
     if (index == null) return;
-    final emojis = SignalReactionBar.emojis;
+    final emojis = MessageReactionBar.emojis;
     Navigator.pop(
       context,
-      SignalMessageReaction(index < emojis.length ? emojis[index] : ''),
+      MessageMenuReaction(index < emojis.length ? emojis[index] : ''),
     );
   }
 
@@ -123,13 +123,13 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
   Widget _build(BuildContext context, Size screen) {
     final media = MediaQuery.of(context);
     final theme = Theme.of(context);
-    final menuSize = signalMenuSize(
+    final menuSize = messageMenuSize(
       widget.items,
       theme.textTheme.bodyLarge ?? const TextStyle(fontSize: 16),
       media.textScaler.scale(1),
-      screen.width - SignalMenuMetrics.horizontalMargin * 2,
+      screen.width - MessageMenuMetrics.horizontalMargin * 2,
     );
-    final layout = resolveSignalMenuLayout(
+    final layout = resolveMessageMenuLayout(
       screen: screen,
       safeArea: media.padding,
       anchor: widget.anchor,
@@ -148,10 +148,10 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
-              child: SignalMenuShade(route: widget.animation, fadeOut: _menu),
+              child: MessageMenuShade(route: widget.animation, fadeOut: _menu),
             ),
           ),
-          SignalFocusedMessage(
+          FocusedMessage(
             move: _move,
             anchor: widget.anchor,
             target: layout.bubble,
@@ -162,7 +162,7 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
           if (widget.showReactions)
             Positioned.fromRect(
               rect: layout.bar,
-              child: SignalReactionBar(
+              child: MessageReactionBar(
                 moreLabel: widget.moreLabel,
                 strip: _strip,
                 slots: _slots,
@@ -181,7 +181,7 @@ class _SignalMessageMenuSurfaceState extends State<SignalMessageMenuSurface> {
                           : Alignment.bottomLeft)
                     : (widget.isMine ? Alignment.topRight : Alignment.topLeft),
                 child: SingleChildScrollView(
-                  child: SignalActionPanel(items: ordered),
+                  child: MessageActionPanel(items: ordered),
                 ),
               ),
             ),

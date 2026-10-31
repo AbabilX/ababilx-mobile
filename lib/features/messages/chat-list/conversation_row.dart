@@ -33,7 +33,8 @@ class ConversationRow extends ConsumerWidget {
   final ChatConversation conversation;
   final VoidCallback onTap;
 
-  /// Signal's gesture: press and hold a row for what can be done to it.
+  /// The reference app's gesture: press and hold a row for what can be done to
+  /// it.
   final VoidCallback? onLongPress;
   final String? currentUserId;
 
@@ -203,9 +204,10 @@ class ConversationRow extends ConsumerWidget {
                                 currentUserId: currentUserId,
                               ),
                       ),
-                      // Signal puts the pin where the unread badge goes and
-                      // lets the badge win: a pinned chat with something to
-                      // read has more to say about the badge than the pin.
+                      // The reference app puts the pin where the unread badge
+                      // goes and lets the badge win: a pinned chat with
+                      // something to read has more to say about the badge than
+                      // the pin.
                       if (conversation.pinned && conversation.unreadCount <= 0)
                         ChatIcon(
                           HugeIcons.strokeRoundedPin,

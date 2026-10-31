@@ -147,8 +147,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     // Prefer stack pop when list→chat push; else Messages home (notification go).
     final canPop =
         GoRouter.maybeOf(context)?.canPop() ?? Navigator.of(context).canPop();
-    // Back leaves multi-select before it leaves the conversation — Signal's
-    // `handleBackPressed`, where `isInActionMode` is handled above the pop.
+    // Back leaves multi-select before it leaves the conversation — the
+    // reference app's `handleBackPressed`, where `isInActionMode` is handled
+    // above the pop.
     final selecting = ref
         .watch(messageSelectionProvider)
         .isActiveIn(widget.conversationId);

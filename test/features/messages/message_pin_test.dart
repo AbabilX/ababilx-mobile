@@ -2,8 +2,8 @@ import 'package:ababilx/core/localization/app_translations.dart';
 import 'package:ababilx/core/network/api_client.dart';
 import 'package:ababilx/core/storage/secure_storage.dart';
 import 'package:ababilx/features/messages/chat-pins/pinned_messages_screen.dart';
-import 'package:ababilx/features/messages/chat-timeline/signal_message_menu.dart';
-import 'package:ababilx/features/messages/chat-timeline/signal_message_menu_items.dart';
+import 'package:ababilx/features/messages/chat-timeline/message_menu.dart';
+import 'package:ababilx/features/messages/chat-timeline/message_menu_items.dart';
 import 'package:ababilx/features/messages/data/chat_repository.dart';
 import 'package:ababilx/features/messages/providers/chat_provider.dart';
 import 'package:dio/dio.dart';
@@ -120,8 +120,8 @@ void main() {
       ])
         name: name,
     };
-    List<SignalMessageAction> actions(bool pinned, bool showPin) =>
-        signalMenuItems(
+    List<MessageMenuAction> actions(bool pinned, bool showPin) =>
+        messageMenuItems(
           isMine: true,
           showThread: false,
           showSave: false,
@@ -130,9 +130,9 @@ void main() {
           pinned: pinned,
           labels: labels,
         ).map((item) => item.action).toList();
-    expect(actions(false, true), contains(SignalMessageAction.pin));
-    expect(actions(true, true), contains(SignalMessageAction.pin));
-    expect(actions(false, false), isNot(contains(SignalMessageAction.pin)));
+    expect(actions(false, true), contains(MessageMenuAction.pin));
+    expect(actions(true, true), contains(MessageMenuAction.pin));
+    expect(actions(false, false), isNot(contains(MessageMenuAction.pin)));
   });
 
   Future<_Api> mountPins(WidgetTester tester) async {

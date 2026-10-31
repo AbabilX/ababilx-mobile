@@ -1221,8 +1221,8 @@ class AppTranslations {
       'calls_not_answered': 'Not answered',
       'calls_answered': 'Answered',
       'calls_yesterday': 'Yesterday {time}',
-      // Signal's "(3) Missed · 4:12" — the count prefixes the state, and the
-      // time still follows it.
+      // The reference app's "(3) Missed · 4:12" — the count prefixes the state,
+      // and the time still follows it.
       'calls_stacked': '({n}) {what}',
       'calls_back': 'Call back',
       'calls_open': 'Open call',

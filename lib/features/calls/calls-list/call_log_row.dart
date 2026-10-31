@@ -7,9 +7,9 @@ import 'call_log_format.dart';
 
 /// One history row: who, which way the call went, when, and a redial button.
 ///
-/// [count] is how many calls this row stands for. Signal prints it in front of
-/// the state and nowhere else — "(3) Missed · 4:12" — so a stacked row still
-/// reads as one event rather than becoming a second kind of row.
+/// [count] is how many calls this row stands for. The reference app prints it
+/// in front of the state and nowhere else — "(3) Missed · 4:12" — so a stacked
+/// row still reads as one event rather than becoming a second kind of row.
 ///
 /// [onCall] is null while the viewer is already in a call — the button stays
 /// visible but disabled, same idea as the chat-header call pill.

@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 ///
 /// The bytes are handed to `GhostBlobProvider` (Kotlin), which keeps them in
 /// this process's memory and serves them over a seekable, RAM-backed
-/// descriptor — Signal's memory-blob model. Only the viewer the user picks
-/// gets read permission, and only for that launch.
+/// descriptor — the reference app's memory-blob model. Only the viewer the user
+/// picks gets read permission, and only for that launch.
 ///
 /// Android only. Everywhere else [available] is false and the caller falls
 /// back to a temp file it deletes on the burn.

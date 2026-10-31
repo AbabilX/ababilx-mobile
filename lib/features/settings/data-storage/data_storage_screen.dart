@@ -18,7 +18,7 @@ import '../settings-hub/settings_section_header.dart';
 import 'auto_download_dialog.dart';
 import 'background_connection_row.dart';
 
-/// Settings → Data and storage. Signal's screen of the same name.
+/// Settings → Data and storage. The reference app's screen of the same name.
 ///
 /// Four questions, in the order they matter: what is already on this phone,
 /// what may land on it without being asked, how hard outgoing pictures are

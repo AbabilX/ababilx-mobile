@@ -6,9 +6,9 @@ import '../../../shared/link-preview/link_preview_photo.dart';
 import '../../../shared/link-preview/link_safety.dart';
 import '../../../shared/widgets/link_preview.dart' show extractUrls;
 import 'message_bubble.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 
-/// Signal-Android's link preview, inside the bubble.
+/// The reference Android app's link preview, inside the bubble.
 ///
 /// Two layouts, and `hasBigImageLinkPreview` picks between them: a full-width
 /// picture above the text when the image is at least
@@ -17,11 +17,11 @@ import 'signal_bubble_metrics.dart';
 /// what carries it — a square og:image is nearly always a logo, and a logo
 /// stretched across the bubble reads as a rendering fault.
 ///
-/// The card takes no colour of its own. Signal paints it with the bubble's own
-/// fill (`setBackgroundColor(getDefaultBubbleColor(...))`), so it reads as part
-/// of the message rather than a panel dropped into it, and it bleeds to the
-/// bubble's edges — which is why it carries its own 12/6 padding instead of
-/// sitting inside the bubble's inset.
+/// The card takes no colour of its own. The reference app paints it with the
+/// bubble's own fill (`setBackgroundColor(getDefaultBubbleColor(...))`), so it
+/// reads as part of the message rather than a panel dropped into it, and it
+/// bleeds to the bubble's edges — which is why it carries its own 12/6 padding
+/// instead of sitting inside the bubble's inset.
 
 /// The single URL a message unfurls, or null.
 ///
@@ -38,14 +38,14 @@ String? messageLinkPreviewUrl({
   return null;
 }
 
-/// Signal's `MessageRecordUtil.hasBigImageLinkPreview`.
+/// The reference app's `MessageRecordUtil.hasBigImageLinkPreview`.
 bool isBigImagePreview(LinkPreviewData preview) {
   final width = preview.imageWidth;
   final height = preview.imageHeight;
   if (preview.imagePath == null || width == null || height == null) {
     return false;
   }
-  return width >= SignalBubbleMetrics.mediaMinWidthSolo && width > height;
+  return width >= BubbleMetrics.mediaMinWidthSolo && width > height;
 }
 
 Future<void> _open(String url) async {
@@ -64,7 +64,7 @@ class MessageLinkPreviewImage extends StatelessWidget {
   });
 
   final LinkPreviewData preview;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
 
   @override
   Widget build(BuildContext context) {
@@ -79,8 +79,8 @@ class MessageLinkPreviewImage extends StatelessWidget {
           return SizedBox(
             width: drawWidth,
             height: scaled.clamp(
-              SignalBubbleMetrics.mediaMinHeight,
-              SignalBubbleMetrics.mediaMaxHeight,
+              BubbleMetrics.mediaMinHeight,
+              BubbleMetrics.mediaMaxHeight,
             ),
             child: LinkPreviewPhoto(
               path: preview.imagePath!,
@@ -104,7 +104,7 @@ class MessageLinkPreviewCard extends StatelessWidget {
   });
 
   final LinkPreviewData preview;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final bool showThumbnail;
 
   @override
@@ -118,7 +118,7 @@ class MessageLinkPreviewCard extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: SignalBubbleMetrics.horizontalPadding,
+          horizontal: BubbleMetrics.horizontalPadding,
           vertical: 6,
         ),
         child: Column(

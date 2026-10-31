@@ -17,7 +17,7 @@ class MediaGalleryResult {
   final DeviceMediaItem? item;
 }
 
-/// Signal-style album gallery: folders first, then photos in the chosen album.
+/// Album gallery: folders first, then photos in the chosen album.
 ///
 /// This is the picker for anything that takes ONE deliberate photo — a profile
 /// picture, a group photo, a chat wallpaper. Those are chosen from the whole

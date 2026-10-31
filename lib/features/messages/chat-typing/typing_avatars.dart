@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/app_avatar.dart';
-import '../chat-timeline/signal_bubble_metrics.dart';
+import '../chat-timeline/bubble_metrics.dart';
 import '../data/models/chat_models.dart';
 import '../nickname/contact_nickname_provider.dart';
 import 'chat_typing_provider.dart';
 
-/// Faces of whoever is typing in a group, overlapped like Signal's group
-/// indicator, sitting in the same gutter an incoming group message's avatar
-/// uses. A typing frame carries only an id and a name, so the picture comes
-/// from that person's newest message on screen; nobody's message loaded
+/// Faces of whoever is typing in a group, overlapped like the reference app's
+/// group indicator, sitting in the same gutter an incoming group message's
+/// avatar uses. A typing frame carries only an id and a name, so the picture
+/// comes from that person's newest message on screen; nobody's message loaded
 /// means an initial, same as [AppAvatar] draws anywhere else.
 class TypingAvatars extends ConsumerWidget {
   const TypingAvatars({
@@ -27,7 +27,7 @@ class TypingAvatars extends ConsumerWidget {
   final Color ring;
 
   static const _max = 3;
-  static const _size = SignalBubbleMetrics.avatarSize;
+  static const _size = BubbleMetrics.avatarSize;
   static const _overlap = 10.0;
 
   @override

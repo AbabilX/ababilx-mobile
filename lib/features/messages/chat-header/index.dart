@@ -83,8 +83,8 @@ class ChatHeader extends ConsumerWidget {
               onPressed: () => popOrGoMessages(context),
             ),
             middle: InkWell(
-              // Signal: the name is a link to the conversation's own settings
-              // screen, not a sheet over the thread.
+              // The reference app: the name is a link to the conversation's own
+              // settings screen, not a sheet over the thread.
               onTap: () async {
                 if (conversation.isGroupConversation) {
                   // The Add-members picker on that screen reads this list.

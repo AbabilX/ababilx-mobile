@@ -6,12 +6,12 @@ import '../../../core/localization/app_translations.dart';
 import '../../../shared/onboarding/onboarding_option_card.dart';
 import '../../../shared/onboarding/onboarding_page.dart';
 
-/// How this phone gets the account's messages — Signal-Android's
+/// How this phone gets the account's messages — the reference Android app's
 /// "Restore or transfer account" (`ArchiveRestoreSelectionScreen`): a title,
 /// a line under it, and one card per way in. There is no recovery code any
 /// more (DELIVERY_ONLY.md, phase 3): the local backup is the way back, and
-/// starting fresh is the other card — confirmed first, like Signal's skip,
-/// because it cannot be taken back.
+/// starting fresh is the other card — confirmed first, like the reference app's
+/// skip, because it cannot be taken back.
 class VaultGateRecoveryChoice extends ConsumerWidget {
   const VaultGateRecoveryChoice({
     super.key,

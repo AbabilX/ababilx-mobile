@@ -13,10 +13,10 @@ import 'archive_reader.dart';
 /// **Merge, never wipe.** Rows are written by server id, so replaying an
 /// archive over a store that already holds some of it converges instead of
 /// duplicating — and a restore that is interrupted can simply be run again.
-/// Signal's import wipes first because it restores a whole database including
-/// its own identity; ours restores message rows into a store the app is
-/// already using, and there is no transaction spanning the platform channel to
-/// make a wipe safe.
+/// The reference app's import wipes first because it restores a whole database
+/// including its own identity; ours restores message rows into a store the app
+/// is already using, and there is no transaction spanning the platform channel
+/// to make a wipe safe.
 class ArchiveImporter {
   ArchiveImporter({
     required this.store,

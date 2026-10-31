@@ -40,8 +40,8 @@ class ConversationAvatar extends ConsumerWidget {
       );
     }
     // The "peer" of a note to self is the viewer, so their own picture with
-    // their own presence dot on it would be the avatar. Signal draws a
-    // bookmark instead, and so do we.
+    // their own presence dot on it would be the avatar. The reference app draws
+    // a bookmark instead, and so do we.
     if (conversation.isSelf) {
       return NoteToSelfAvatar(size: size, iconSize: size * 0.46);
     }

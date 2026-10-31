@@ -13,7 +13,7 @@ Future<void> _dismissWarningForever() async {
   await prefs.setBool(_dismissKey, true);
 }
 
-/// Signal's save confirmation, one for one.
+/// The reference app's save confirmation, one for one.
 ///
 /// The point is not the tap — it is telling the user that a file leaving the
 /// app's sandbox stops being private to it. Once they have read that, the

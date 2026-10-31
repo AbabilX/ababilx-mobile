@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../messages/chat-timeline/signal_bubble_metrics.dart';
+import '../../messages/chat-timeline/bubble_metrics.dart';
 import '../data/share_thread_queries.dart';
 import '../engine/store/share_records.dart';
 import 'share_media_tile.dart';
@@ -20,14 +20,14 @@ class ShareMediaGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const maxWidth = SignalBubbleMetrics.mediaMaxWidth;
+    const maxWidth = BubbleMetrics.mediaMaxWidth;
     if (media.length == 1) {
       final file = media.first;
       final w = file.width, h = file.height;
       final ratio = (w != null && h != null) ? (w / h).clamp(0.57, 1.9) : 1.0;
       final height = (maxWidth / ratio).clamp(
-        SignalBubbleMetrics.mediaMinWidthSolo,
-        SignalBubbleMetrics.mediaMaxHeight,
+        BubbleMetrics.mediaMinWidthSolo,
+        BubbleMetrics.mediaMaxHeight,
       );
       return ShareMediaTile(
         message: data.message,

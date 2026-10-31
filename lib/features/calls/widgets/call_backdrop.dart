@@ -6,9 +6,9 @@ import '../../../shared/widgets/avatar_cache.dart';
 
 /// The full-bleed backdrop behind every call surface.
 ///
-/// Signal blurs the caller's own photo across the whole window and lays a
-/// black scrim over it, so the screen is legibly dark whatever the photo is
-/// and the person is still recognisable. `IncomingCallScreen` uses a heavier
+/// The reference app blurs the caller's own photo across the whole window and
+/// lays a black scrim over it, so the screen is legibly dark whatever the photo
+/// is and the person is still recognisable. `IncomingCallScreen` uses a heavier
 /// scrim (0.4) than the connected screen (0.2) for exactly that reason: while
 /// ringing, the text on top is the only thing that matters.
 ///

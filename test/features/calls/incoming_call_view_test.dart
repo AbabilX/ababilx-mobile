@@ -65,7 +65,9 @@ void main() {
     expect(find.text('Screen Share'), findsNothing);
   });
 
-  testWidgets('Decline and Answer sit where Signal puts them', (tester) async {
+  testWidgets('Decline and Answer sit where the reference app puts them', (
+    tester,
+  ) async {
     const size = Size(390, 844);
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -122,7 +124,7 @@ void main() {
     final decline = tester.getCenter(find.byIcon(Icons.call_end_rounded));
     final answer = tester.getCenter(find.byIcon(Icons.call_rounded));
     expect(decline.dy, answer.dy);
-    // Two labelled seats 45dp apart (Signal's LandscapeButtons).
+    // Two labelled seats 45dp apart (the reference app's LandscapeButtons).
     expect(answer.dx - decline.dx, inInclusiveRange(78 + 45, 78 + 45 + 40));
   });
 

@@ -52,7 +52,7 @@ class TaskListItem extends ConsumerWidget {
                 .watch(contactNicknamesProvider)
                 .resolve(userId: shown.userId, name: shown.userName),
           );
-    final colors = SignalBubbleColors.of(scheme, hasWallpaper: false);
+    final colors = BubbleColors.of(scheme, hasWallpaper: false);
     return Material(
       color: colors.background,
       borderRadius: BorderRadius.circular(24),

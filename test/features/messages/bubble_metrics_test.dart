@@ -1,18 +1,18 @@
 import 'package:ababilx/features/messages/chat-timeline/sender_name_color.dart';
-import 'package:ababilx/features/messages/chat-timeline/signal_bubble_metrics.dart';
+import 'package:ababilx/features/messages/chat-timeline/bubble_metrics.dart';
 import 'package:ababilx/features/messages/chat-timeline/timeline_reveal_policy.dart';
 import 'package:ababilx/features/messages/chat_utils.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const big = Radius.circular(SignalBubbleMetrics.bigRadius);
-  const small = Radius.circular(SignalBubbleMetrics.smallRadius);
+  const big = Radius.circular(BubbleMetrics.bigRadius);
+  const small = Radius.circular(BubbleMetrics.smallRadius);
 
   group('bubble corners', () {
     test('a lone message is round on every corner, either side', () {
       for (final own in [true, false]) {
-        final r = signalBubbleRadius(
+        final r = bubbleRadius(
           position: MessageClusterPosition.single,
           isOwn: own,
         );
@@ -23,7 +23,7 @@ void main() {
     // Your run collapses on the right, theirs on the left — the side the
     // bubbles are stacked against.
     test('an outgoing run collapses only its right corners', () {
-      final start = signalBubbleRadius(
+      final start = bubbleRadius(
         position: MessageClusterPosition.start,
         isOwn: true,
       );
@@ -32,7 +32,7 @@ void main() {
       expect(start.topLeft, big);
       expect(start.topRight, big);
 
-      final middle = signalBubbleRadius(
+      final middle = bubbleRadius(
         position: MessageClusterPosition.middle,
         isOwn: true,
       );
@@ -41,7 +41,7 @@ void main() {
       expect(middle.topLeft, big);
       expect(middle.bottomLeft, big);
 
-      final end = signalBubbleRadius(
+      final end = bubbleRadius(
         position: MessageClusterPosition.end,
         isOwn: true,
       );
@@ -51,14 +51,14 @@ void main() {
     });
 
     test('an incoming run collapses only its left corners', () {
-      final start = signalBubbleRadius(
+      final start = bubbleRadius(
         position: MessageClusterPosition.start,
         isOwn: false,
       );
       expect(start.bottomLeft, small);
       expect(start.bottomRight, big);
 
-      final middle = signalBubbleRadius(
+      final middle = bubbleRadius(
         position: MessageClusterPosition.middle,
         isOwn: false,
       );
@@ -67,7 +67,7 @@ void main() {
       expect(middle.topRight, big);
       expect(middle.bottomRight, big);
 
-      final end = signalBubbleRadius(
+      final end = bubbleRadius(
         position: MessageClusterPosition.end,
         isOwn: false,
       );
@@ -80,23 +80,23 @@ void main() {
   group('row spacing', () {
     test('separate messages keep the full gap', () {
       expect(
-        signalBubbleTopSpacing(MessageClusterPosition.single),
-        SignalBubbleMetrics.spacingDefault,
+        bubbleTopSpacing(MessageClusterPosition.single),
+        BubbleMetrics.spacingDefault,
       );
       expect(
-        signalBubbleTopSpacing(MessageClusterPosition.start),
-        SignalBubbleMetrics.spacingDefault,
+        bubbleTopSpacing(MessageClusterPosition.start),
+        BubbleMetrics.spacingDefault,
       );
     });
 
     test('bubbles inside a run almost touch', () {
       expect(
-        signalBubbleTopSpacing(MessageClusterPosition.middle),
-        SignalBubbleMetrics.spacingCollapsed,
+        bubbleTopSpacing(MessageClusterPosition.middle),
+        BubbleMetrics.spacingCollapsed,
       );
       expect(
-        signalBubbleTopSpacing(MessageClusterPosition.end),
-        SignalBubbleMetrics.spacingCollapsed,
+        bubbleTopSpacing(MessageClusterPosition.end),
+        BubbleMetrics.spacingCollapsed,
       );
     });
   });

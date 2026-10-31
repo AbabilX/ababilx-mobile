@@ -156,7 +156,8 @@ class AndroidGroupCallUi {
   /// comes from `call_ringer` and is held until the call is joined, ignored,
   /// ended, or handed over to the Flutter UI.
   static Future<void> _showOnce(CallKitParams params) async {
-    // Busy: a phone already in a call never rings (Signal's idle-only rule).
+    // Busy: a phone already in a call never rings (the reference app's
+    // idle-only rule).
     if (await CallRinger.liveCall() != null) return;
     // Hold first, then dedupe the UI — see [AndroidCallUi].
     await CallRinger.hold(callRingHolderNative, requireNotificationUi: true);

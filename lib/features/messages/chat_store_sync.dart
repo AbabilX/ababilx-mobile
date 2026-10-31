@@ -37,8 +37,8 @@ class _ChatStoreSyncState extends ConsumerState<ChatStoreSync>
   /// `WsLinkWatch` revives the socket; this re-reads what a gap in it hid. Both
   /// are needed: a socket that reconnects has a gap by definition, and one that
   /// looked healthy the whole time may still have been written to while the
-  /// process was frozen. Signal does the same pair on foreground — connect,
-  /// then fetch.
+  /// process was frozen. The reference app does the same pair on foreground —
+  /// connect, then fetch.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;

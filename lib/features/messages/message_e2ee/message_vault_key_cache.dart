@@ -5,10 +5,10 @@ part of 'message_vault.dart';
 /// The key used to live in memory alone, so the first message of every cold
 /// start had to reach the network before it could be read — and with no
 /// network at all, every message in every chat drew "Unable to decrypt this
-/// message" over history sitting on the disk right beside it. Signal decrypts
-/// once on receipt and stores the plaintext; we keep ciphertext at rest and
-/// store the sealed KEY instead, which lands in the same place without putting
-/// message text on disk.
+/// message" over history sitting on the disk right beside it. The reference app
+/// decrypts once on receipt and stores the plaintext; we keep ciphertext at
+/// rest and store the sealed KEY instead, which lands in the same place without
+/// putting message text on disk.
 extension MessageVaultKeyCache on MessageVault {
   /// Files an envelope away for later. Best-effort on purpose: a cache write
   /// that fails must never take down the decrypt that prompted it.

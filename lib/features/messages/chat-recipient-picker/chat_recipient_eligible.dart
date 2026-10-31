@@ -9,8 +9,8 @@ import '../data/models/chat_conversation.dart';
 ///
 /// Recency alone, not chat-list order: the list puts pinned chats on top,
 /// and a share sheet's "Recent" row filled with pins reads as stale — the
-/// chat just written in sat below them. Signal and WhatsApp offer the most
-/// recent chats there.
+/// chat just written in sat below them. The reference app and WhatsApp offer
+/// the most recent chats there.
 List<ChatConversation> shareableConversations({
   required List<ChatConversation> dms,
   required List<ChatConversation> channels,

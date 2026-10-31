@@ -6,7 +6,8 @@ import '../../../../shared/widgets/image_preview_chrome.dart';
 import '../../../attachments/widgets/attachment_gate.dart';
 import '../../data/models/chat_models.dart';
 
-/// Signal's album rail: 46dp cells, 8dp corners, the current one ringed.
+/// The reference app's album rail: 46dp cells, 8dp corners, the current one
+/// ringed.
 class ChatMediaPreviewRail extends StatelessWidget {
   const ChatMediaPreviewRail({
     super.key,

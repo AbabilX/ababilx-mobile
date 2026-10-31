@@ -25,13 +25,13 @@ const int chatRecipientRecentLimit = 7;
 /// Builds the picker's sections.
 ///
 /// **Searching looks at every local conversation, not only the ones drawn.**
-/// The idle list is Signal's: the newest few chats, then the groups below
-/// them. Filtering those two lists meant a DM sitting at position eight was in
-/// no section at all — typing that person's name found nothing, and the only
-/// row left for them was the contact one, which is a `person` target with no
-/// conversation behind it and has to open a DM before anything can be sealed
-/// for it. A query therefore matches the whole list and answers as one
-/// Results section.
+/// The idle list is the reference app's: the newest few chats, then the groups
+/// below them. Filtering those two lists meant a DM sitting at position eight
+/// was in no section at all — typing that person's name found nothing, and the
+/// only row left for them was the contact one, which is a `person` target with
+/// no conversation behind it and has to open a DM before anything can be sealed
+/// for it. A query therefore matches the whole list and answers as one Results
+/// section.
 ///
 /// A person already on screen as a chat is dropped from Contacts for the same
 /// reason: two rows for one person, sending by two different routes, is a

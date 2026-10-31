@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Signal's `ExpandingCaptionView`: two lines, tap to read the rest.
+/// The reference app's `ExpandingCaptionView`: two lines, tap to read the rest.
 class ChatMediaPreviewCaption extends StatefulWidget {
   const ChatMediaPreviewCaption({super.key, required this.text});
 

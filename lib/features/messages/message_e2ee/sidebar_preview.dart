@@ -6,10 +6,10 @@ import 'vault_placeholder.dart';
 //
 // The server cannot read a sealed message, so a sidebar row carries the last
 // message's ciphertext beside a placeholder body and the device opens it.
-// Signal gets the same result by storing the decrypted snippet in its
-// encrypted database; we keep ciphertext at rest, so the text lives in memory
-// only and [previewForDisk] puts the placeholder back before a row is written
-// — the rule the message store already follows.
+// The reference app gets the same result by storing the decrypted snippet in
+// its encrypted database; we keep ciphertext at rest, so the text lives in
+// memory only and [previewForDisk] puts the placeholder back before a row is
+// written — the rule the message store already follows.
 
 /// Whether [row]'s last message is ciphertext this device might open.
 bool hasSealedPreview(ChatConversation row) =>

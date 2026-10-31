@@ -1,6 +1,6 @@
 part of 'chat_provider.dart';
 
-/// Answering a Signal-style message request from inside the thread.
+/// Answering a message request from inside the thread.
 ///
 /// Replying accepts on its own — the server does that when the message lands
 /// — so everything here is for the person who wants to settle the bar without

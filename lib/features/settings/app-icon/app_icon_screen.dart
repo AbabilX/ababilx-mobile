@@ -6,8 +6,8 @@ import '../../../shared/widgets/app_toast.dart';
 
 /// Settings → App icon.
 ///
-/// Mirrors Signal's safe selection flow: preview first, then confirm before
-/// Android swaps the enabled launcher alias.
+/// Mirrors the reference app's safe selection flow: preview first, then confirm
+/// before Android swaps the enabled launcher alias.
 class AppIconScreen extends StatefulWidget {
   const AppIconScreen({super.key});
 

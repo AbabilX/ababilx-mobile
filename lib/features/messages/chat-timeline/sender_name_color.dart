@@ -1,12 +1,14 @@
 import 'package:flutter/painting.dart';
 
-/// Signal gives every member of a group a stable name colour, so a run of
-/// messages is attributable at a glance without reading the name each time.
-/// The assignment is per-recipient and deterministic — the same person is the
-/// same colour on every device — so it hangs off the user id, not list order.
+/// The reference app gives every member of a group a stable name colour, so a
+/// run of messages is attributable at a glance without reading the name each
+/// time. The assignment is per-recipient and deterministic — the same person is
+/// the same colour on every device — so it hangs off the user id, not list
+/// order.
 ///
-/// The palette follows Signal's own name-colour set in spirit: saturated
-/// enough to read on both themes, none of them the outgoing-bubble accent.
+/// The palette follows the reference app's own name-colour set in spirit:
+/// saturated enough to read on both themes, none of them the outgoing-bubble
+/// accent.
 const _senderNamePalette = <Color>[
   Color(0xFF3B7DDD), // blue
   Color(0xFF2B9E6B), // green

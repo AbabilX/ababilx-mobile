@@ -385,7 +385,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
   /// Posts the draft: typed text plus the pending strip.
   ///
   /// [only] posts those attachments alone instead — a keyboard sticker or
-  /// GIF, which goes out the moment it is inserted, as on Signal and
+  /// GIF, which goes out the moment it is inserted, as on the reference app and
   /// WhatsApp. The typed text, its mentions and the pending strip stay where
   /// they are for the next send.
   Future<void> _send({List<ChatAttachmentInput>? only}) async {
@@ -493,10 +493,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     }
 
     // Start the optimistic insert before asking the timeline to reveal it.
-    // Keep this compose session focused, matching Signal's continuous-send UX.
-    // The conversation id must be the one on screen: sendMessage falls back to
-    // the shared activeConversationId, which a background fetchSidebar can
-    // null out, and a null id drops the send with no bubble and no error.
+    // Keep this compose session focused, matching the reference app's
+    // continuous-send UX. The conversation id must be the one on screen:
+    // sendMessage falls back to the shared activeConversationId, which a
+    // background fetchSidebar can null out, and a null id drops the send with
+    // no bubble and no error.
     widget.onMessageSubmitted?.call();
     if (!_focus.hasFocus) _focus.requestFocus();
     if (uploading) {

@@ -17,7 +17,7 @@ import 'message_row_content.dart';
 import 'message_row_gestures.dart';
 import 'message_row_pulse.dart';
 import 'message_swipe_reply.dart';
-import 'signal_menu_pointer.dart';
+import 'message_menu_pointer.dart';
 
 class MessageRow extends ConsumerStatefulWidget {
   const MessageRow({
@@ -44,7 +44,7 @@ class _MessageRowState extends ConsumerState<MessageRow>
   final _messageKey = GlobalKey();
   final _pressed = ValueNotifier<bool>(false);
   bool _actionsOpen = false;
-  SignalMenuPointer? _pointer;
+  MessageMenuPointer? _pointer;
 
   @override
   ChatMessage get pulsedMessage => widget.message;
@@ -61,7 +61,7 @@ class _MessageRowState extends ConsumerState<MessageRow>
     super.dispose();
   }
 
-  void _open(SignalMenuPointer? p, {required bool open}) =>
+  void _open(MessageMenuPointer? p, {required bool open}) =>
       setState(() => (_actionsOpen = open, _pointer = p));
 
   /// Opens the overlay on the hold itself, so the finger carries straight on
@@ -73,7 +73,7 @@ class _MessageRowState extends ConsumerState<MessageRow>
     if (touchDown != null) HapticFeedback.mediumImpact();
     final anchor = box.localToGlobal(Offset.zero) & box.size;
 
-    final pointer = touchDown == null ? null : SignalMenuPointer(touchDown);
+    final pointer = touchDown == null ? null : MessageMenuPointer(touchDown);
     _open(pointer, open: true);
     void restore() {
       if (!mounted || !_actionsOpen) return;
@@ -156,9 +156,9 @@ class _MessageRowState extends ConsumerState<MessageRow>
     return MessageSwipeReply(
       // A deleted message has nothing to quote, and a bubble that has not
       // reached the server yet has no id to reply to. Swiping is also off
-      // while selecting — Signal's `SwipeAvailabilityProvider` checks
-      // `isActionModeStarted()` first, and a swipe that answers a message the
-      // user is picking out is never what was meant.
+      // while selecting — the reference app's `SwipeAvailabilityProvider`
+      // checks `isActionModeStarted()` first, and a swipe that answers a
+      // message the user is picking out is never what was meant.
       enabled:
           !selecting && !widget.message.isDeleted && !isSending && !isFailed,
       onReply: () =>
@@ -196,7 +196,7 @@ class _MessageRowState extends ConsumerState<MessageRow>
           hasWallpaper: hasWallpaper,
           child: KeyedSubtree(
             key: _messageKey,
-            // Signal hides the original under its lifted copy.
+            // The reference app hides the original under its lifted copy.
             child: Visibility(
               visible: !_actionsOpen,
               maintainSize: true,

@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import '../../messages/chat-timeline/message_bubble.dart'
-    show SignalBubbleColors;
-import '../../messages/chat-timeline/signal_bubble_metrics.dart';
+import '../../messages/chat-timeline/message_bubble.dart' show BubbleColors;
+import '../../messages/chat-timeline/bubble_metrics.dart';
 import '../../messages/chat_icon.dart';
 import '../providers/ghost_state.dart';
 import '../screens/ghost_photo_viewer.dart';
@@ -20,7 +19,7 @@ class GhostFileContent extends ConsumerWidget {
   const GhostFileContent({super.key, required this.item, required this.colors});
 
   final GhostItem item;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,11 +39,11 @@ class _Photo extends ConsumerWidget {
   const _Photo({required this.item, required this.colors});
 
   final GhostItem item;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final radius = BorderRadius.circular(SignalBubbleMetrics.bigRadius);
+    final radius = BorderRadius.circular(BubbleMetrics.bigRadius);
     final rules = item.rules;
     // What the sender chose, on the sender's own copy; "View only" on a
     // received photo that may not be saved.
@@ -57,16 +56,16 @@ class _Photo extends ConsumerWidget {
         children: [
           ConstrainedBox(
             constraints: const BoxConstraints(
-              maxHeight: SignalBubbleMetrics.mediaMaxHeight,
+              maxHeight: BubbleMetrics.mediaMaxHeight,
             ),
             child: Image.memory(
               item.bytes!,
-              width: SignalBubbleMetrics.mediaMaxWidth,
+              width: BubbleMetrics.mediaMaxWidth,
               fit: BoxFit.cover,
               // Decoded at display size, so the image cache never holds a
               // full-resolution copy the burn would have to chase.
               cacheWidth:
-                  (SignalBubbleMetrics.mediaMaxWidth *
+                  (BubbleMetrics.mediaMaxWidth *
                           MediaQuery.devicePixelRatioOf(context))
                       .round(),
               gaplessPlayback: true,

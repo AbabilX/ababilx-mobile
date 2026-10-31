@@ -3,17 +3,17 @@ import 'package:flutter/services.dart';
 
 import 'call_top_bar.dart' show callTextShadow;
 
-/// Signal's `webrtc_hangup_background` / `webrtc_answer_background`.
-const signalDeclineColor = Color(0xFFF07168);
-const signalAnswerColor = Color(0xFF34C759);
+/// The reference app's `webrtc_hangup_background` / `webrtc_answer_background`.
+const declineColor = Color(0xFFF07168);
+const answerColor = Color(0xFF34C759);
 
-/// One button of Signal's ringing screen with its label underneath
+/// One button of the reference app's ringing screen with its label underneath
 /// (`IncomingCallScreen.DeclineButtonAndLabel` / `AnswerCallButtonAndLabel`):
 /// a filled circle, 6dp, then the word in `bodyMedium` with the text shadow.
 ///
 /// A secondary action keeps the 78dp seat but draws a 56dp white circle in it
-/// (Signal's `AnswerWithoutVideoButtonAndLabel`), so every label in a row
-/// sits on the same line.
+/// (the reference app's `AnswerWithoutVideoButtonAndLabel`), so every label in
+/// a row sits on the same line.
 class IncomingCallButton extends StatelessWidget {
   const IncomingCallButton({
     super.key,
@@ -46,7 +46,7 @@ class IncomingCallButton extends StatelessWidget {
     final diameter = secondary ? _secondaryDiameter : seat;
     final fill = secondary
         ? (selected ? Colors.white : Colors.white.withValues(alpha: 0.24))
-        : color ?? signalAnswerColor;
+        : color ?? answerColor;
     final glyph = secondary && selected ? Colors.black : Colors.white;
     final text = Theme.of(context).textTheme.bodyMedium?.copyWith(
       color: Colors.white,

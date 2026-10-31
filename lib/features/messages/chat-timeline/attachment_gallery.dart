@@ -14,7 +14,7 @@ import '../data/models/chat_models.dart';
 import 'media-preview/chat_media_preview_footer.dart';
 import 'media-preview/chat_media_preview_meta.dart';
 
-/// The chat album viewer — Signal-Android's `MediaPreviewFragment`.
+/// The chat album viewer — the reference Android app's `MediaPreviewFragment`.
 ///
 /// Unlike the wall's viewer this one never falls back to the network, so a
 /// page whose bytes are not on the device has to offer the download itself —

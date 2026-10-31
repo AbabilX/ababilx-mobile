@@ -5,8 +5,8 @@ import 'group_event_label.dart';
 import '../task/task_event_label.dart';
 
 /// Quiet centered system line for group updates — name/photo/member/role
-/// changes and the like. Not a chat bubble; mirrors WhatsApp/Signal and web
-/// `GroupEventRow`.
+/// changes and the like. Not a chat bubble; mirrors WhatsApp/the reference app
+/// and web `GroupEventRow`.
 class GroupEventRow extends StatelessWidget {
   const GroupEventRow({
     super.key,

@@ -4,7 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/localization/app_translations.dart';
 import '../chat-timeline/message_row_content.dart';
-import '../chat-timeline/signal_bubble_metrics.dart';
+import '../chat-timeline/bubble_metrics.dart';
 import '../chat_icon.dart';
 import '../data/models/chat_models.dart';
 
@@ -64,7 +64,7 @@ class PinnedMessageItem extends ConsumerWidget {
     );
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: SignalBubbleMetrics.listSideGutter,
+        horizontal: BubbleMetrics.listSideGutter,
         vertical: 6,
       ),
       child: Row(

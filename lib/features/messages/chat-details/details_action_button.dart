@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// One of the rounded-square actions under the avatar (Call / Mute / Search).
 ///
-/// Signal draws these as a filled square with the label under it, not as an
-/// icon button — the label is part of the control, so it is inside the tap
-/// target rather than floating beside it.
+/// The reference app draws these as a filled square with the label under it,
+/// not as an icon button — the label is part of the control, so it is inside
+/// the tap target rather than floating beside it.
 class DetailsActionButton extends StatelessWidget {
   const DetailsActionButton({
     super.key,

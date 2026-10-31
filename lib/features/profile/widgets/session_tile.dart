@@ -11,9 +11,9 @@ import '../data/session_repository.dart';
 /// and a ⋮ holding the two things that can be done to it.
 ///
 /// The buttons used to sit in the row itself — two labelled actions per device,
-/// on every row. Signal puts them behind the overflow because the list is
-/// something you read far more often than you act on, and a wall of Rename /
-/// Sign out is what made this screen hard to scan.
+/// on every row. The reference app puts them behind the overflow because the
+/// list is something you read far more often than you act on, and a wall of
+/// Rename / Sign out is what made this screen hard to scan.
 class SessionTile extends ConsumerWidget {
   const SessionTile({
     super.key,
@@ -148,7 +148,7 @@ List<List<dynamic>> _clientHugeIcon(String client) {
 
 /// A date, not "3 days ago". This list is read to answer "is that laptop still
 /// signed in, and is that the one I used in August?" — a relative age answers
-/// neither, and Signal shows dates here for the same reason.
+/// neither, and the reference app shows dates here for the same reason.
 String _date(String iso) {
   final dt = DateTime.tryParse(iso)?.toLocal();
   if (dt == null) return '—';

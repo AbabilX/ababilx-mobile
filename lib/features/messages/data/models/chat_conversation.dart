@@ -198,7 +198,7 @@ class ChatConversation extends Equatable {
   /// a group refuses to send rather than downgrade — see `ChatKeyNotReady`.
   final bool plaintextUntilKeyed;
 
-  /// Signal-style message request, from this viewer's side:
+  /// Message request, from this viewer's side:
   /// `incoming` — the peer wrote first and I have not answered, so I get
   /// Accept / Delete / Block over the thread; `outgoing` — I wrote first and
   /// they have not answered; `none` — settled. A workspace colleague is

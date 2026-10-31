@@ -1,20 +1,21 @@
-/// Signal's own measurements for the long-press overlay, in logical pixels
-/// (Android dp and Flutter lp are the same unit).
+/// The reference app's own measurements for the long-press overlay, in logical
+/// pixels (Android dp and Flutter lp are the same unit).
 ///
 /// Sources, for anyone checking the numbers against the reference checkout:
 /// `reaction_scrubber_width` 320, `conversation_reaction_scrub_horizontal_margin`
 /// 16, the scrubber background is `?attr/actionBarSize` tall with a 30dp
 /// corner, `signal_context_menu` has `minWidth` 200 and an 18dp corner, and its
 /// rows are a 24dp icon with 16dp side padding and 13dp above and below.
-class SignalMenuMetrics {
-  const SignalMenuMetrics._();
+class MessageMenuMetrics {
+  const MessageMenuMetrics._();
 
   static const barWidth = 320.0;
   static const barHeight = 56.0;
   static const barRadius = 30.0;
   static const barTopPadding = 32.0;
 
-  /// Gap Signal leaves between the bubble and the bar it floats above.
+  /// Gap the reference app leaves between the bubble and the bar it floats
+  /// above.
   static const barOffset = 48.0;
 
   /// The one padding used between every pair of overlay pieces.

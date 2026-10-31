@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import '../../messages/chat-timeline/message_bubble.dart'
-    show SignalBubbleColors;
-import '../../messages/chat-timeline/signal_bubble_metrics.dart';
+import '../../messages/chat-timeline/message_bubble.dart' show BubbleColors;
+import '../../messages/chat-timeline/bubble_metrics.dart';
 import '../../messages/chat_icon.dart';
 import '../providers/ghost_state.dart';
 import '../screens/ghost_photo_viewer.dart';
@@ -21,7 +20,7 @@ class GhostTimedPhoto extends ConsumerWidget {
   const GhostTimedPhoto({super.key, required this.item, required this.colors});
 
   final GhostItem item;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,11 +43,11 @@ class GhostTimedPhoto extends ConsumerWidget {
 
     return InkWell(
       onTap: ready ? () => showGhostPhoto(context, item) : null,
-      borderRadius: BorderRadius.circular(SignalBubbleMetrics.bigRadius),
+      borderRadius: BorderRadius.circular(BubbleMetrics.bigRadius),
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: SignalBubbleMetrics.horizontalPadding,
-          vertical: SignalBubbleMetrics.topPadding,
+          horizontal: BubbleMetrics.horizontalPadding,
+          vertical: BubbleMetrics.topPadding,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,

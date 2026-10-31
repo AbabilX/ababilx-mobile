@@ -7,22 +7,24 @@ import '../widgets/call_backdrop.dart';
 import '../widgets/incoming_call_buttons.dart';
 import '../widgets/incoming_call_header.dart';
 
-/// The ringing screen — Signal's `IncomingCallScreen`, and the ONLY one.
+/// The ringing screen — the reference app's `IncomingCallScreen`, and the ONLY
+/// one.
 ///
-/// Signal has one call Activity; its ringing notification opens it, and it
-/// draws this layout until the call is answered. Ours is the same: the CallKit
-/// notification's full-screen intent opens `/call`, which shows this
+/// The reference app has one call Activity; its ringing notification opens it,
+/// and it draws this layout until the call is answered. Ours is the same: the
+/// CallKit notification's full-screen intent opens `/call`, which shows this
 /// (`android/patches/callkit-ring-surface.gradle`); the plugin's own native
 /// ringing Activity is never started for a DM call.
 ///
-/// Layout, Signal's numbers: the caller's photo blurred edge to edge under a
-/// 40% black scrim; kind label, 80dp avatar, name, status; then at the bottom
-/// Decline left and Answer right, 78dp each, 64dp in from the sides and 24dp
-/// up. Landscape puts the buttons in one row, 45dp apart.
+/// Layout, the reference app's numbers: the caller's photo blurred edge to edge
+/// under a 40% black scrim; kind label, 80dp avatar, name, status; then at the
+/// bottom Decline left and Answer right, 78dp each, 64dp in from the sides and
+/// 24dp up. Landscape puts the buttons in one row, 45dp apart.
 ///
-/// Message (decline with a text) and Silence are ours, not Signal's. They sit
-/// where Signal puts its one secondary action ("Answer without video"): a
-/// 56dp circle in a 78dp seat above the pair, so the pair stays the target.
+/// Message (decline with a text) and Silence are ours, not the reference app's.
+/// They sit where the reference app puts its one secondary action ("Answer
+/// without video"): a 56dp circle in a 78dp seat above the pair, so the pair
+/// stays the target.
 class IncomingCallView extends StatefulWidget {
   const IncomingCallView({
     super.key,
@@ -97,14 +99,14 @@ class _IncomingCallViewState extends State<IncomingCallView> {
   Widget get _decline => IncomingCallButton(
     icon: Icons.call_end_rounded,
     label: _tr('call_control_decline'),
-    color: signalDeclineColor,
+    color: declineColor,
     onPressed: widget.onDecline,
   );
 
   Widget get _answer => IncomingCallButton(
     icon: widget.video ? Icons.videocam_rounded : Icons.call_rounded,
     label: _tr('call_control_answer'),
-    color: signalAnswerColor,
+    color: answerColor,
     onPressed: widget.onAccept,
   );
 
@@ -159,8 +161,8 @@ class _IncomingCallViewState extends State<IncomingCallView> {
         SafeArea(
           child: Column(
             children: [
-              // Signal: the header hangs from the top, a weighted spacer
-              // pushes the buttons to the bottom.
+              // The reference app: the header hangs from the top, a weighted
+              // spacer pushes the buttons to the bottom.
               Expanded(
                 child: Align(
                   alignment: Alignment.topCenter,

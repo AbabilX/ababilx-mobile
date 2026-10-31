@@ -8,10 +8,11 @@ import '../data/models/chat_models.dart';
 import 'message_bubble.dart';
 import 'message_delivery_status.dart';
 import 'message_seen.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 
-/// Time and delivery state, inside the bubble on its last line — where Signal
-/// puts them, rather than on a row of their own below the message.
+/// Time and delivery state, inside the bubble on its last line — where the
+/// reference app puts them, rather than on a row of their own below the
+/// message.
 ///
 /// [onMedia] is a picture/video bubble: the row sits on the image, so it
 /// takes a light overlay colour instead of the bubble's muted foreground,
@@ -34,7 +35,7 @@ class MessageBubbleFooter extends ConsumerWidget {
   });
 
   final ChatMessage message;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
   final bool isOwn;
   final bool isSending;
   final bool isFailed;
@@ -73,7 +74,7 @@ class MessageBubbleFooter extends ConsumerWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: SignalBubbleMetrics.footerTextSize,
+            fontSize: BubbleMetrics.footerTextSize,
             height: 1.1,
             color: isFailed ? error : ink,
             fontWeight: isFailed ? FontWeight.w500 : FontWeight.normal,

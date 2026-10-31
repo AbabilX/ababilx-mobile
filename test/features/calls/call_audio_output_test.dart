@@ -16,7 +16,7 @@ CallAudioDevices _devices(
 });
 
 void main() {
-  group('Signal picker rule (SHOW_PICKER_THRESHOLD = 3)', () {
+  group('audio picker rule (SHOW_PICKER_THRESHOLD = 3)', () {
     test('earpiece + speaker cycles, no picker', () {
       final d = _devices('handset', 1, [('handset', 1), ('speaker', 2)]);
       expect(d.willDisplayPicker, isFalse);

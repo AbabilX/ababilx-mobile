@@ -31,7 +31,7 @@ Future<Size> _layout(
   return tester.getSize(find.byType(QuotedBubbleLayout));
 }
 
-SignalBubbleColors _colors() => const SignalBubbleColors(
+BubbleColors _colors() => const BubbleColors(
   background: Color(0xFF202020),
   foreground: Color(0xFFFFFFFF),
   muted: Color(0xFF999999),

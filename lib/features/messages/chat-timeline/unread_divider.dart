@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Signal's "Unread messages" bar — a full-width rule with the count centred
-/// on it, marking where you stopped reading.
+/// The reference app's "Unread messages" bar — a full-width rule with the count
+/// centred on it, marking where you stopped reading.
 class UnreadDivider extends StatelessWidget {
   const UnreadDivider({super.key, required this.count});
 

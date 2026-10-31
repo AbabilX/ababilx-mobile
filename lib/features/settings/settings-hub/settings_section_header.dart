@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Signal's small tinted heading above a group of rows.
+/// The reference app's small tinted heading above a group of rows.
 ///
 /// A heading rather than a card: the rows underneath stay full-bleed, so a
 /// group reads as one surface and the screen has one vertical rhythm instead

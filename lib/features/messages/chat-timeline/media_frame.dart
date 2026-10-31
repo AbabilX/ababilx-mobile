@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import '../../attachments/data/models/media_dimensions.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 
 /// Largest box inside [maxWidth] × [maxHeight] that keeps the file's aspect.
 ///
@@ -14,12 +14,12 @@ import 'signal_bubble_metrics.dart';
 Size soloMediaSize(
   MediaDimensions? size, {
   required double maxWidth,
-  double maxHeight = SignalBubbleMetrics.mediaMaxHeight,
+  double maxHeight = BubbleMetrics.mediaMaxHeight,
   double minWidth = 0,
-  double minHeight = SignalBubbleMetrics.mediaMinHeight,
+  double minHeight = BubbleMetrics.mediaMinHeight,
 }) {
   if (size == null) {
-    final side = SignalBubbleMetrics.mediaDefaultSize;
+    final side = BubbleMetrics.mediaDefaultSize;
     return Size(side.clamp(minWidth > 0 ? minWidth : 0, maxWidth), side);
   }
 
@@ -34,7 +34,8 @@ Size soloMediaSize(
     w = maxHeight * ar;
   }
 
-  // Signal floor: very wide files stay full width and crop into min height.
+  // The reference app's floor: very wide files stay full width and crop into min
+  // height.
   if (h < minHeight) {
     return Size(maxWidth, minHeight);
   }
@@ -50,7 +51,7 @@ Size soloMediaSize(
 double soloMediaHeight(
   MediaDimensions? size, {
   required double width,
-  double maxHeight = SignalBubbleMetrics.mediaMaxHeight,
+  double maxHeight = BubbleMetrics.mediaMaxHeight,
 }) => soloMediaSize(size, maxWidth: width, maxHeight: maxHeight).height;
 
 /// Decode a picture at the size it is drawn, not the size it was shot.

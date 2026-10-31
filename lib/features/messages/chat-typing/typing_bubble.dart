@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../settings/typing-indicators/typing_indicators_provider.dart';
 import '../chat-select/selectable_message_row.dart';
 import '../chat-timeline/message_bubble.dart';
-import '../chat-timeline/signal_bubble_metrics.dart';
+import '../chat-timeline/bubble_metrics.dart';
 import '../data/models/chat_models.dart';
 import '../providers/chat_provider.dart';
 import '../wallpaper/chat_wallpaper_provider.dart';
@@ -51,7 +51,7 @@ class ChatTypingBubble extends ConsumerWidget {
         .watch(chatWallpaperProvider)
         .forChat(conversationId)
         .isSet;
-    final colors = SignalBubbleColors.of(scheme, hasWallpaper: hasWallpaper);
+    final colors = BubbleColors.of(scheme, hasWallpaper: hasWallpaper);
 
     // Keep the slot mounted so AnimatedSize can bump height in and out.
     return AnimatedSize(
@@ -62,7 +62,7 @@ class ChatTypingBubble extends ConsumerWidget {
           ? Padding(
               padding: const EdgeInsets.fromLTRB(
                 SelectableMessageRow.restingGutter,
-                SignalBubbleMetrics.spacingDefault,
+                BubbleMetrics.spacingDefault,
                 SelectableMessageRow.restingGutter,
                 4,
               ),

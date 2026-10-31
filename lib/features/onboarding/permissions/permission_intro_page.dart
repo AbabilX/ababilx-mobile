@@ -8,11 +8,12 @@ import '../../local-backup/ui/local_backup_onboarding_tile.dart';
 import '../../messages/chat_icon.dart';
 import 'permission_intro.dart';
 
-/// "Allow permissions" — Signal-Android's `GrantPermissionsScreen`: one row
-/// per permission (48dp picture, title, why), Not now and Next at the foot.
+/// "Allow permissions" — the reference Android app's `GrantPermissionsScreen`:
+/// one row per permission (48dp picture, title, why), Not now and Next at the
+/// foot.
 ///
-/// Signal's pictures are its own colour illustrations (AGPL assets); these
-/// rows use our Hugeicons in the accent colour instead.
+/// The reference app's pictures are its own colour illustrations (AGPL assets);
+/// these rows use our Hugeicons in the accent colour instead.
 class PermissionIntroPage extends ConsumerStatefulWidget {
   const PermissionIntroPage({
     super.key,

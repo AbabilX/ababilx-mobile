@@ -6,10 +6,10 @@ import '../widgets/app_toast.dart';
 
 /// The whole user-facing save: warn once, copy, then say what happened.
 ///
-/// Signal's shape — confirmation dialog, then a single result message for the
-/// batch rather than one per file, so saving an album is one interaction.
-/// Returns whether anything was written, for callers that show their own
-/// state; the message is shown either way.
+/// The reference app's shape — confirmation dialog, then a single result
+/// message for the batch rather than one per file, so saving an album is one
+/// interaction. Returns whether anything was written, for callers that show
+/// their own state; the message is shown either way.
 Future<bool> saveToPhoneWithFeedback(
   BuildContext context,
   List<SaveToPhoneRequest> files,

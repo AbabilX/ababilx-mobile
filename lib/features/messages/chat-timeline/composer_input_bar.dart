@@ -6,13 +6,14 @@ import 'composer_input_bar_buttons.dart';
 import 'composer_keyboard_content.dart';
 import 'composer_selection_bar.dart';
 
-/// Signal's composer: one pill holding the text field, camera and mic,
-/// with a single accent circle beside it.
+/// The reference app's composer: one pill holding the text field, camera and
+/// mic, with a single accent circle beside it.
 ///
 /// That circle is the only send affordance. It is "+" while there is nothing
 /// to send and becomes the arrow the moment there is, which is also why camera
-/// and mic hide at that point — Signal keeps exactly one row and swaps what
-/// sits in it rather than growing a second toolbar above the keyboard.
+/// and mic hide at that point — the reference app keeps exactly one row and
+/// swaps what sits in it rather than growing a second toolbar above the
+/// keyboard.
 class ComposerInputBar extends StatelessWidget {
   const ComposerInputBar({
     super.key,

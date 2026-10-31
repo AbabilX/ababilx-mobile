@@ -87,9 +87,9 @@ Future<void> startLocalBackupRestore(
   }
 }
 
-/// Signal's way: the restore runs behind the chat list, shown by the banner
-/// there (LocalBackupRestoreBanner), and the app stays usable. Returns the
-/// failure key, or null when the backup came back.
+/// The reference app's way: the restore runs behind the chat list, shown by the
+/// banner there (LocalBackupRestoreBanner), and the app stays usable. Returns
+/// the failure key, or null when the backup came back.
 ///
 /// The screen that started it may be gone by the end, and its ref with it —
 /// so the provider container and the root navigator's context are taken

@@ -5,9 +5,9 @@ import '../tiptap_plain_text.dart';
 ///
 /// The app has both models and they mean different things. In the main
 /// timeline a reply is a **quote**: the message stays in the timeline and shows
-/// a preview of what it answers, like Signal. Inside a thread sheet the reply
-/// belongs to that thread, so [parentId] is the thread root and there is no
-/// quote — the thread already shows what is being answered.
+/// a preview of what it answers, like the reference app. Inside a thread sheet
+/// the reply belongs to that thread, so [parentId] is the thread root and there
+/// is no quote — the thread already shows what is being answered.
 ///
 /// Never set both from the same reply: `parent_id` takes a message out of the
 /// main feed (the server lists it with `parent_id IS NULL`), so a quoted reply

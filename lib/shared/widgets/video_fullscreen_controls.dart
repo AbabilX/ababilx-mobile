@@ -7,7 +7,8 @@ import 'video_thumb_states.dart';
 /// Elapsed · slider · remaining. Listens on its own so the video surface is
 /// not rebuilt on every position tick.
 ///
-/// Scrub pauses, then resumes if it was playing — Signal's TimeBar rule.
+/// Scrub pauses, then resumes if it was playing — the reference app's TimeBar
+/// rule.
 class VideoFullscreenControls extends StatefulWidget {
   const VideoFullscreenControls({
     super.key,

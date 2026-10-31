@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 /// gutter, the shift that makes room for it, and the shade over a selected
 /// message.
 ///
-/// Signal's numbers, from `MultiselectItemDecoration`: the row's content is
-/// pushed to a 48dp gutter, the circle is 22dp across at 17dp from the screen
-/// edge, and the enter/exit animation is 150ms. It draws all of that as a
-/// RecyclerView decoration over an untouched item; a Flutter row has no
+/// The reference app's numbers, from `MultiselectItemDecoration`: the row's
+/// content is pushed to a 48dp gutter, the circle is 22dp across at 17dp from
+/// the screen edge, and the enter/exit animation is 150ms. It draws all of that
+/// as a RecyclerView decoration over an untouched item; a Flutter row has no
 /// equivalent, so the gutter is real layout — which is why the list's own
 /// horizontal padding lives in here rather than on the ListView. The shade has
 /// to reach both screen edges, and a padded list would inset it.
@@ -28,7 +28,7 @@ class SelectableMessageRow extends StatelessWidget {
   /// `conversation_individual_left_gutter`, the list's resting side inset.
   static const restingGutter = 16.0;
 
-  /// The gutter Signal shifts content to while selecting.
+  /// The gutter the reference app shifts content to while selecting.
   static const selectGutter = 48.0;
 
   static const _circleInset = 17.0;
@@ -39,8 +39,8 @@ class SelectableMessageRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Signal: transparent black over a wallpaper, transparent white in dark
-    // theme, a wash of the accent in light.
+    // The reference app: transparent black over a wallpaper, transparent white
+    // in dark theme, a wash of the accent in light.
     final shade = hasWallpaper
         ? Colors.black.withValues(alpha: 0.20)
         : isDark
@@ -118,9 +118,9 @@ class _SelectionCircle extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    // Signal's unselected ring: 1.5dp, and deliberately faint
-                    // — an empty circle per row must not read as a control the
-                    // eye has to deal with.
+                    // The reference app's unselected ring: 1.5dp, and
+                    // deliberately faint — an empty circle per row must not
+                    // read as a control the eye has to deal with.
                     color: scheme.onSurface.withValues(alpha: 0.35),
                     width: 1.5,
                   ),

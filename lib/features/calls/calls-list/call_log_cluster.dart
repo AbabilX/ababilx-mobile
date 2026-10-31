@@ -18,20 +18,20 @@ class CallLogCluster {
   String get id => lead.id;
 }
 
-/// Signal's call-log clustering (`CallEventCache.readNextCallLog`), with our
-/// own window.
+/// The reference app's call-log clustering (`CallEventCache.readNextCallLog`),
+/// with our own window.
 ///
 /// Four calls to the same person in ten minutes is one event to a reader and
 /// four rows of noise on screen. A child joins the run when it matches the
-/// lead on **who**, on **direction**, and on **missed-ness** — Signal's
-/// `isEventMatch`, which keeps a missed call from being swallowed by the
+/// lead on **who**, on **direction**, and on **missed-ness** — the reference
+/// app's `isEventMatch`, which keeps a missed call from being swallowed by the
 /// answered one that followed it, since a missed call is the one thing on this
 /// screen somebody is actually looking for.
 ///
 /// The window is compared against the **lead**, never the previous child, so a
 /// long chain of calls a few minutes apart cannot drift hours away from the
-/// row's own timestamp. Signal uses four hours; ours is one, which is the
-/// tighter reading and closer to what WhatsApp shows.
+/// row's own timestamp. The reference app uses four hours; ours is one, which
+/// is the tighter reading and closer to what WhatsApp shows.
 ///
 /// [calls] must be newest-first, which is the order the server returns. Run
 /// this over the whole accumulated list rather than per page: a run split

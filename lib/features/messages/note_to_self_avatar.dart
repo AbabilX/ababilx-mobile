@@ -8,7 +8,8 @@ import 'chat_icon.dart';
 /// That thread is a DM whose peer is the viewer, so the ordinary DM avatar
 /// would be the viewer's own photo — wearing their own presence dot in the
 /// list, and inviting a tap through to their own profile. One glyph in the
-/// accent colour says what the row is instead, the same way Signal does.
+/// accent colour says what the row is instead, the same way the reference app
+/// does.
 class NoteToSelfAvatar extends StatelessWidget {
   const NoteToSelfAvatar({super.key, this.size = 52, this.iconSize});
 

@@ -6,8 +6,8 @@ import '../../../shared/media/device_gallery.dart';
 import '../../../shared/media/media_thumbnail.dart';
 
 /// The strip of recent library media across the top of the attachment
-/// keyboard, the way Signal opens straight onto your last photos instead of
-/// making you go through a picker first.
+/// keyboard, the way the reference app opens straight onto your last photos
+/// instead of making you go through a picker first.
 ///
 /// It renders nothing at all — not an empty state — when the library cannot
 /// be read: on iOS, or with media permission denied, the shortcut row below

@@ -6,8 +6,8 @@ import 'media_thumbnail.dart';
 /// One square in the media grid.
 ///
 /// Selection is shown as a numbered ring rather than a plain tick, because the
-/// number is also the send order — the thing Signal's grid tells you that a
-/// checkbox cannot.
+/// number is also the send order — the thing the reference app's grid tells you
+/// that a checkbox cannot.
 class MediaGridTile extends StatelessWidget {
   const MediaGridTile({
     super.key,

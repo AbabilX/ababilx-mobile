@@ -4,9 +4,8 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:open_filex/open_filex.dart';
 
 import '../../../shared/widgets/app_toast.dart';
-import '../../messages/chat-timeline/message_bubble.dart'
-    show SignalBubbleColors;
-import '../../messages/chat-timeline/signal_bubble_metrics.dart';
+import '../../messages/chat-timeline/message_bubble.dart' show BubbleColors;
+import '../../messages/chat-timeline/bubble_metrics.dart';
 import '../../messages/chat_icon.dart';
 import '../native/ghost_blobs.dart';
 import '../providers/ghost_save.dart';
@@ -27,7 +26,7 @@ class GhostFileRow extends ConsumerWidget {
   const GhostFileRow({super.key, required this.item, required this.colors});
 
   final GhostItem item;
-  final SignalBubbleColors colors;
+  final BubbleColors colors;
 
   Future<void> _open(BuildContext context, WidgetRef ref) async {
     final bytes = item.bytes;
@@ -73,11 +72,11 @@ class GhostFileRow extends ConsumerWidget {
 
     return InkWell(
       onTap: done ? () => _open(context, ref) : null,
-      borderRadius: BorderRadius.circular(SignalBubbleMetrics.bigRadius),
+      borderRadius: BorderRadius.circular(BubbleMetrics.bigRadius),
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: SignalBubbleMetrics.horizontalPadding,
-          vertical: SignalBubbleMetrics.topPadding,
+          horizontal: BubbleMetrics.horizontalPadding,
+          vertical: BubbleMetrics.topPadding,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,

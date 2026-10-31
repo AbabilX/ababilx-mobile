@@ -4,8 +4,8 @@ import '../../messages/chat_icon.dart';
 
 /// One tappable settings line: icon, title, optional value/subtitle, chevron.
 ///
-/// Signal's `Rows.TextRow` shape — a flat full-bleed row rather than a card,
-/// so a group reads as one block separated only by dividers.
+/// The reference app's `Rows.TextRow` shape — a flat full-bleed row rather than
+/// a card, so a group reads as one block separated only by dividers.
 class SettingsRow extends StatelessWidget {
   const SettingsRow({
     super.key,

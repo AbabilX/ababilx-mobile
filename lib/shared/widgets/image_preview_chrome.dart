@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Signal-Android's media-preview chrome (`fragment_media_preview`).
+/// The reference Android app's media-preview chrome (`fragment_media_preview`).
 ///
-/// Forced dark — the viewer owns the screen the way Signal's activity does.
-/// Bars are the dark surface at 87% so the photo still reads through them.
+/// Forced dark — the viewer owns the screen the way the reference app's
+/// activity does. Bars are the dark surface at 87% so the photo still reads
+/// through them.
 abstract final class ImagePreviewChrome {
   static const background = Color(0xFF1B1C1F);
   static const bar = Color(0xDE1B1C1F);

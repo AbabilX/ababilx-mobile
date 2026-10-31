@@ -2,8 +2,8 @@ import 'package:flutter/painting.dart';
 
 import '../chat_utils.dart';
 
-/// Signal's own conversation-item measurements, in logical pixels (Android dp
-/// and Flutter lp are the same unit).
+/// The reference app's own conversation-item measurements, in logical pixels
+/// (Android dp and Flutter lp are the same unit).
 ///
 /// Sources, for anyone checking them against the reference checkout:
 /// `message_corner_radius` 18, `message_corner_collapse_radius` 4,
@@ -15,8 +15,8 @@ import '../chat_utils.dart';
 /// `conversation_individual_received_left_gutter` 8,
 /// `conversation_item_avatar_size` 28, `conversation_item_body_text_size` 16,
 /// `conversation_item_date_text_size` 12.
-class SignalBubbleMetrics {
-  const SignalBubbleMetrics._();
+class BubbleMetrics {
+  const BubbleMetrics._();
 
   static const bigRadius = 18.0;
   static const smallRadius = 4.0;
@@ -82,12 +82,12 @@ class SignalBubbleMetrics {
 /// A cluster keeps its outer corners round and collapses the ones facing the
 /// neighbouring bubble on the sender's own side — the right for your messages,
 /// the left for theirs — which is what makes a run read as one block.
-BorderRadius signalBubbleRadius({
+BorderRadius bubbleRadius({
   required MessageClusterPosition position,
   required bool isOwn,
 }) {
-  const big = Radius.circular(SignalBubbleMetrics.bigRadius);
-  const small = Radius.circular(SignalBubbleMetrics.smallRadius);
+  const big = Radius.circular(BubbleMetrics.bigRadius);
+  const small = Radius.circular(BubbleMetrics.smallRadius);
 
   return switch (position) {
     MessageClusterPosition.single => const BorderRadius.all(big),
@@ -112,12 +112,11 @@ BorderRadius signalBubbleRadius({
   };
 }
 
-/// Gap above a row. Signal collapses it to 1 inside a cluster and keeps 8
-/// between separate messages.
-double signalBubbleTopSpacing(MessageClusterPosition position) =>
-    switch (position) {
-      MessageClusterPosition.single ||
-      MessageClusterPosition.start => SignalBubbleMetrics.spacingDefault,
-      MessageClusterPosition.middle ||
-      MessageClusterPosition.end => SignalBubbleMetrics.spacingCollapsed,
-    };
+/// Gap above a row. The reference app collapses it to 1 inside a cluster and
+/// keeps 8 between separate messages.
+double bubbleTopSpacing(MessageClusterPosition position) => switch (position) {
+  MessageClusterPosition.single ||
+  MessageClusterPosition.start => BubbleMetrics.spacingDefault,
+  MessageClusterPosition.middle ||
+  MessageClusterPosition.end => BubbleMetrics.spacingCollapsed,
+};

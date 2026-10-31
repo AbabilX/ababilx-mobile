@@ -5,8 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backup_pref_merge.dart';
 
-/// The app settings a backup carries — Signal's backup restores the person's
-/// preferences with their messages, so a new phone feels like the old one.
+/// The app settings a backup carries — the reference app's backup restores the
+/// person's preferences with their messages, so a new phone feels like the old
+/// one.
 ///
 /// An allowlist, never "every key": most stored values describe THIS install
 /// (push token, device id, caches, prompts already shown, the backup folder's

@@ -8,11 +8,11 @@ import 'battery_optimization_prompt.dart';
 /// Invisible host for the notification vitals check.
 ///
 /// It replaced a bootstrap that opened the battery-optimization dialog on the
-/// first frame after login, before the app had delivered a single push. Signal
-/// runs this check on resume instead and only prompts when the evidence has
-/// earned it (`VitalsViewModel`), which is what happens here: at most one real
-/// check a minute, and in the ordinary case it reads a few preferences, finds
-/// no delayed notifications, and says nothing.
+/// first frame after login, before the app had delivered a single push. The
+/// reference app runs this check on resume instead and only prompts when the
+/// evidence has earned it (`VitalsViewModel`), which is what happens here: at
+/// most one real check a minute, and in the ordinary case it reads a few
+/// preferences, finds no delayed notifications, and says nothing.
 class NotificationVitalsWatcher extends ConsumerStatefulWidget {
   const NotificationVitalsWatcher({super.key});
 

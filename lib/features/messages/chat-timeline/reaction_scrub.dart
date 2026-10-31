@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'signal_message_menu_geometry.dart';
+import 'message_menu_geometry.dart';
 
 /// Which emoji the finger is on while scrubbing the reaction bar, or null.
 ///
@@ -8,26 +8,26 @@ import 'signal_message_menu_geometry.dart';
 /// gates, all of them load-bearing:
 ///
 /// * **Deadzone** — nothing is picked until the finger has travelled
-///   [SignalMenuMetrics.scrubDeadzone] from where the long press landed, so
+///   [MessageMenuMetrics.scrubDeadzone] from where the long press landed, so
 ///   letting go without moving opens the menu instead of firing a reaction.
 /// * **Vertical band** — from the top of the bar down to a little below the
 ///   touch point, so the drag has to head *towards* the bar. A finger wandering
 ///   below the message picks nothing.
 /// * **Horizontal slot** — the bar is [slots] equal segments; the pointer's x
-///   picks one. Signal has no gaps here: the whole width is live.
+///   picks one. The reference app has no gaps here: the whole width is live.
 ///
 /// Pure so the boundaries can be tested without a device.
-int? signalScrubSelection({
+int? reactionScrubSelection({
   required Rect bar,
   required int slots,
   required Offset? pointer,
   required Offset touchDown,
 }) {
   if (pointer == null || slots <= 0) return null;
-  if ((pointer - touchDown).distance < SignalMenuMetrics.scrubDeadzone) {
+  if ((pointer - touchDown).distance < MessageMenuMetrics.scrubDeadzone) {
     return null;
   }
-  final bandBottom = touchDown.dy + SignalMenuMetrics.scrubBandBelowTouch;
+  final bandBottom = touchDown.dy + MessageMenuMetrics.scrubBandBelowTouch;
   if (pointer.dy < bar.top || pointer.dy > bandBottom) return null;
   if (pointer.dx < bar.left || pointer.dx > bar.right) return null;
 

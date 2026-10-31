@@ -5,7 +5,7 @@ import '../../../core/localization/app_translations.dart';
 import '../../../shared/widgets/app_toast.dart';
 import 'typing_indicators_provider.dart';
 
-/// Signal's switch: off means you neither show nor see "typing…".
+/// The reference app's switch: off means you neither show nor see "typing…".
 class TypingIndicatorsTile extends ConsumerWidget {
   const TypingIndicatorsTile({super.key});
 

@@ -178,7 +178,7 @@ void main() {
                   child: TaskCard(
                     message: message,
                     task: TaskCardData.of(message)!,
-                    colors: SignalBubbleColors.of(
+                    colors: BubbleColors.of(
                       theme.colorScheme,
                       hasWallpaper: false,
                     ),
@@ -224,7 +224,7 @@ void main() {
               child: TaskCard(
                 message: message,
                 task: TaskCardData.of(message)!,
-                colors: SignalBubbleColors.of(
+                colors: BubbleColors.of(
                   ThemeData().colorScheme,
                   hasWallpaper: false,
                 ),

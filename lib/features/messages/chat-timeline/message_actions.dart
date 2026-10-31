@@ -22,8 +22,8 @@ import 'edit_message_sheet.dart';
 import 'pinned_message_actions.dart';
 import 'reaction_emoji_picker.dart';
 import 'save_message_attachments.dart';
-import 'signal_menu_pointer.dart';
-import 'signal_message_menu.dart';
+import 'message_menu_pointer.dart';
+import 'message_menu.dart';
 import 'thread_sheet.dart';
 
 Future<void> showMessageActions(
@@ -34,7 +34,7 @@ Future<void> showMessageActions(
   String? threadRootId,
   Rect? anchor,
   Widget? focused,
-  SignalMenuPointer? pointer,
+  MessageMenuPointer? pointer,
   VoidCallback? onMenuClosed,
 }) async {
   if (msg.isDeleted) return;
@@ -72,7 +72,7 @@ Future<void> showMessageActions(
       ref.read(groupPinnedIdsProvider(conversationId)).contains(msg.id);
 
   String tr(String key) => AppTranslations.translate(context, ref, key);
-  final result = await showSignalMessageMenu(
+  final result = await showMessageMenu(
     context: context,
     anchor:
         anchor ??
@@ -135,7 +135,7 @@ Future<void> showMessageActions(
   // back through `onHidden`, once the lifted copy has finished leaving.
   if (!context.mounted || result == null) return;
   final n = ref.read(chatProvider.notifier);
-  if (result case SignalMessageReaction(:final emoji)) {
+  if (result case MessageMenuReaction(:final emoji)) {
     final selected = emoji.isEmpty
         ? await showReactionEmojiPicker(context)
         : emoji;
@@ -145,9 +145,9 @@ Future<void> showMessageActions(
     }
     return;
   }
-  final action = (result as SignalMessageCommand).action;
+  final action = (result as MessageMenuCommand).action;
   switch (action) {
-    case SignalMessageAction.reply:
+    case MessageMenuAction.reply:
       // A feed's own composer is locked, so a quote would go nowhere: the
       // reply to a delivered message is its thread.
       if (conversation?.isWebhook == true && threadRootId == null) {
@@ -155,21 +155,21 @@ Future<void> showMessageActions(
       } else {
         n.setReplyToMessage(msg);
       }
-    case SignalMessageAction.forward:
+    case MessageMenuAction.forward:
       await showForwardSheet(context, ref, msg);
-    case SignalMessageAction.save:
+    case MessageMenuAction.save:
       await saveMessageAttachments(context, ref, msg);
-    case SignalMessageAction.copy:
+    case MessageMenuAction.copy:
       await copyMessageText(context, ref, msg);
-    case SignalMessageAction.thread:
+    case MessageMenuAction.thread:
       openThreadSheet(context, conversationId, msg);
-    case SignalMessageAction.select:
+    case MessageMenuAction.select:
       ref
           .read(messageSelectionProvider.notifier)
           .start(conversationId: conversationId, messageId: msg.id);
-    case SignalMessageAction.edit:
+    case MessageMenuAction.edit:
       await editMessageFlow(context, ref, msg);
-    case SignalMessageAction.pin when canPinGroup:
+    case MessageMenuAction.pin when canPinGroup:
       await chooseGroupPin(
         context,
         ref,
@@ -178,7 +178,7 @@ Future<void> showMessageActions(
         pinnedForMe: pinned,
         pinnedForEveryone: groupPinned,
       );
-    case SignalMessageAction.pin:
+    case MessageMenuAction.pin:
       await setMessagePinned(
         context,
         ref,
@@ -186,7 +186,7 @@ Future<void> showMessageActions(
         msg.id,
         pinned: !pinned,
       );
-    case SignalMessageAction.delete:
+    case MessageMenuAction.delete:
       final scope = await showDeleteMessageDialog(
         context,
         ref,

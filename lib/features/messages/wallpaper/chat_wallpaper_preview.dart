@@ -5,9 +5,9 @@ import 'chat_wallpaper_background.dart';
 
 /// A miniature conversation over the candidate wallpaper.
 ///
-/// Signal previews with two bubbles rather than a bare swatch, because the
-/// only question that matters is whether text stays readable on it — a colour
-/// chip cannot answer that.
+/// The reference app previews with two bubbles rather than a bare swatch,
+/// because the only question that matters is whether text stays readable on it
+/// — a colour chip cannot answer that.
 class ChatWallpaperPreview extends StatelessWidget {
   const ChatWallpaperPreview({super.key, required this.wallpaper});
 

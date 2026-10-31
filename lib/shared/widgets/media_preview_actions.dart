@@ -7,7 +7,7 @@ import '../media/save_to_phone_action.dart';
 import 'preview_icon.dart';
 import 'app_toast.dart';
 
-/// Signal's media-viewer actions, in Signal's two places.
+/// The reference app's media-viewer actions, in its two places.
 ///
 /// Save lives in the toolbar overflow so it never competes with the media for
 /// space; Share is a button on the bottom bar, where a thumb reaches it. Both

@@ -10,9 +10,9 @@ import '../wire/transfer_chats_payload.dart';
 import 'transfer_chats_copy.dart';
 import 'transfer_send_sheet.dart';
 
-/// Settings → Account → Transfer chats: the OLD phone's side, Signal's
-/// "Transfer account" place. Says what the new device shows and where, then
-/// scans that code with a camera that says what it is looking for. Only a
+/// Settings → Account → Transfer chats: the OLD phone's side, the reference
+/// app's "Transfer account" place. Says what the new device shows and where,
+/// then scans that code with a camera that says what it is looking for. Only a
 /// Transfer chats code is taken here; the general scanner still reads one too.
 class TransferChatsScreen extends ConsumerWidget {
   const TransferChatsScreen({super.key});

@@ -14,15 +14,15 @@ import 'call_audio_output.dart';
 
 /// Where a call's audio goes: earpiece, speaker, Bluetooth or wired headset.
 ///
-/// **Android: one native owner, Signal's way.** `CallAudioSession.kt` ports
-/// Signal-Android's `SignalAudioManager`: it holds mode, focus and the
-/// communication device for the whole call, watches the device list, and
-/// moves the call to a Bluetooth or wired headset the moment one connects —
-/// unless the user picked something else. Under Android Telecom (a CallKit
-/// Answer) it reports Telecom's routes and asks Telecom, as Signal's
-/// `TelecomAudioManager` does. LiveKit's own AudioSwitch is kept out of it:
-/// two owners of one audio mode is how the speaker choice used to be lost.
-/// Never `Helper.setSpeakerphoneOn` on Android — LiveKit disables
+/// **Android: one native owner, the reference app's way.**
+/// `CallAudioSession.kt` ports the reference Android app's audio manager: it
+/// holds mode, focus and the communication device for the whole call, watches
+/// the device list, and moves the call to a Bluetooth or wired headset the
+/// moment one connects — unless the user picked something else. Under Android
+/// Telecom (a CallKit Answer) it reports Telecom's routes and asks Telecom, as
+/// the reference app's `TelecomAudioManager` does. LiveKit's own AudioSwitch is
+/// kept out of it: two owners of one audio mode is how the speaker choice used
+/// to be lost. Never `Helper.setSpeakerphoneOn` on Android — LiveKit disables
 /// flutter_webrtc's audio manager process-wide, so it is a silent no-op.
 ///
 /// iOS keeps the speaker on/off switch it had.
@@ -40,10 +40,10 @@ class CallAudioRoute {
   static bool startsOnSpeaker({required bool? chosen, required bool camera}) =>
       chosen ?? camera;
 
-  /// Starts a DM call's audio session — Signal's Initialize + SetDefaultDevice
-  /// (speaker for video, earpiece for audio) + a choice made while ringing.
-  /// Also the point focus and `MODE_IN_COMMUNICATION` are taken, so it belongs
-  /// to call setup, never to an incoming ring.
+  /// Starts a DM call's audio session — the reference app's Initialize +
+  /// SetDefaultDevice (speaker for video, earpiece for audio) + a choice made
+  /// while ringing. Also the point focus and `MODE_IN_COMMUNICATION` are taken,
+  /// so it belongs to call setup, never to an incoming ring.
   static Future<void> activate({bool? chosen, bool video = false}) async {
     if (Platform.isIOS) {
       await Helper.setSpeakerphoneOn(
@@ -72,9 +72,9 @@ class CallAudioRoute {
     await CallAudioDeviceChannel.start(callId: callId, defaultSpeaker: true);
   }
 
-  /// The camera came on: Signal's `enableSpeakerPhoneIfNeeded` — a call on
-  /// the earpiece moves to the speaker (the phone is held out to see), a
-  /// headset stays.
+  /// The camera came on: the reference app's `enableSpeakerPhoneIfNeeded` — a
+  /// call on the earpiece moves to the speaker (the phone is held out to see),
+  /// a headset stays.
   static Future<void> cameraStarted() async {
     if (!Platform.isAndroid) return;
     final active = CallAudioDeviceChannel.current.active;

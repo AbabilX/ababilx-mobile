@@ -1,16 +1,16 @@
 import 'dart:math' as math;
 import 'package:flutter/painting.dart';
 
-import 'signal_menu_metrics.dart';
+import 'message_menu_metrics.dart';
 
 // Re-exported so every caller keeps one import for the overlay's numbers
 // and its placement.
-export 'signal_menu_metrics.dart';
+export 'message_menu_metrics.dart';
 
 /// Where every piece of the overlay ends up. Pure geometry — no widgets, no
 /// context — so the placement rules can be tested without a device.
-class SignalMenuLayout {
-  const SignalMenuLayout({
+class MessageMenuLayout {
+  const MessageMenuLayout({
     required this.bubble,
     required this.scale,
     required this.bar,
@@ -18,8 +18,8 @@ class SignalMenuLayout {
     required this.reversed,
   });
 
-  /// Final rect of the lifted message. Signal moves the bubble out of the
-  /// way rather than letting the menu cover it.
+  /// Final rect of the lifted message. The reference app moves the bubble out
+  /// of the way rather than letting the menu cover it.
   final Rect bubble;
 
   /// < 1 when the bubble had to shrink to make room for bar and menu.
@@ -27,12 +27,13 @@ class SignalMenuLayout {
   final Rect bar;
   final Rect menu;
 
-  /// Signal reverses the item order when the menu opens upwards, so the row
-  /// nearest the bubble stays the first one.
+  /// The reference app reverses the item order when the menu opens upwards, so
+  /// the row nearest the bubble stays the first one.
   final bool reversed;
 }
 
-/// Ports Signal's `ConversationReactionOverlay#showAfterLayout` placement.
+/// Ports the reference app's `ConversationReactionOverlay#showAfterLayout`
+/// placement.
 ///
 /// The whole thing turns on one question — does bar + bubble + menu fit in the
 /// space between the status bar and the navigation bar? If it does, the bubble
@@ -45,7 +46,7 @@ class SignalMenuLayout {
 /// bottom), the stack is bar → menu → bubble — never bar and menu sharing the
 /// same band. Sharing that band is what clipped the reaction scrubber behind
 /// the action list on a long link-preview bubble.
-SignalMenuLayout resolveSignalMenuLayout({
+MessageMenuLayout resolveMessageMenuLayout({
   required Size screen,
   required EdgeInsets safeArea,
   required Rect anchor,
@@ -55,44 +56,46 @@ SignalMenuLayout resolveSignalMenuLayout({
   final top = safeArea.top;
   final bottom = screen.height - safeArea.bottom;
   final barWidth = math.min(
-    SignalMenuMetrics.barWidth,
-    screen.width - SignalMenuMetrics.horizontalMargin * 2,
+    MessageMenuMetrics.barWidth,
+    screen.width - MessageMenuMetrics.horizontalMargin * 2,
   );
   final barLeft = isMine
-      ? screen.width - barWidth - SignalMenuMetrics.horizontalMargin
-      : SignalMenuMetrics.horizontalMargin;
+      ? screen.width - barWidth - MessageMenuMetrics.horizontalMargin
+      : MessageMenuMetrics.horizontalMargin;
 
   double menuLeft = isMine ? anchor.right - menuSize.width : anchor.left;
   menuLeft = menuLeft.clamp(
-    SignalMenuMetrics.horizontalMargin,
+    MessageMenuMetrics.horizontalMargin,
     math.max(
-      SignalMenuMetrics.horizontalMargin,
-      screen.width - menuSize.width - SignalMenuMetrics.horizontalMargin,
+      MessageMenuMetrics.horizontalMargin,
+      screen.width - menuSize.width - MessageMenuMetrics.horizontalMargin,
     ),
   );
 
   final wide =
-      menuSize.width + barWidth + SignalMenuMetrics.horizontalMargin * 3 <
+      menuSize.width + barWidth + MessageMenuMetrics.horizontalMargin * 3 <
       screen.width;
   if (wide) {
     final barTop = math.max(
-      top + SignalMenuMetrics.barTopPadding,
-      anchor.top - SignalMenuMetrics.menuPadding - SignalMenuMetrics.barHeight,
+      top + MessageMenuMetrics.barTopPadding,
+      anchor.top -
+          MessageMenuMetrics.menuPadding -
+          MessageMenuMetrics.barHeight,
     );
     final menuTop = math.min(barTop, bottom - menuSize.height);
-    return SignalMenuLayout(
+    return MessageMenuLayout(
       bubble: anchor,
       scale: 1,
       bar: Rect.fromLTWH(
         barLeft,
         barTop,
         barWidth,
-        SignalMenuMetrics.barHeight,
+        MessageMenuMetrics.barHeight,
       ),
       menu: Rect.fromLTWH(
         isMine
-            ? barLeft - menuSize.width - SignalMenuMetrics.menuPadding
-            : barLeft + barWidth + SignalMenuMetrics.menuPadding,
+            ? barLeft - menuSize.width - MessageMenuMetrics.menuPadding
+            : barLeft + barWidth + MessageMenuMetrics.menuPadding,
         math.max(top, menuTop),
         menuSize.width,
         menuSize.height,
@@ -104,20 +107,20 @@ SignalMenuLayout resolveSignalMenuLayout({
   final available = bottom - top;
   // Room above the bubble when the menu opens upward: bar + gap + menu + gap.
   final aboveChrome =
-      SignalMenuMetrics.barHeight +
-      SignalMenuMetrics.menuPadding +
+      MessageMenuMetrics.barHeight +
+      MessageMenuMetrics.menuPadding +
       menuSize.height +
-      SignalMenuMetrics.menuPadding;
+      MessageMenuMetrics.menuPadding;
   // A short bubble cannot hold the bar off the top by itself, so the layout has
   // to reserve the difference when the menu sits below.
   final spaceForBar = math.max(
-    SignalMenuMetrics.barHeight + SignalMenuMetrics.barOffset - anchor.height,
+    MessageMenuMetrics.barHeight + MessageMenuMetrics.barOffset - anchor.height,
     0.0,
   );
   final fits =
       menuSize.height +
           anchor.height +
-          SignalMenuMetrics.menuPadding +
+          MessageMenuMetrics.menuPadding +
           spaceForBar <
       available;
 
@@ -127,25 +130,25 @@ SignalMenuLayout resolveSignalMenuLayout({
 
   if (fits) {
     final menuFitsBelow =
-        anchor.bottom + SignalMenuMetrics.menuPadding + menuSize.height <=
+        anchor.bottom + MessageMenuMetrics.menuPadding + menuSize.height <=
         bottom;
     if (!menuFitsBelow) {
       bubbleTop =
           bottom -
           menuSize.height -
-          SignalMenuMetrics.menuPadding -
+          MessageMenuMetrics.menuPadding -
           anchor.height;
     }
     bubbleTop = math.max(bubbleTop, top);
     if (bubbleTop -
-            SignalMenuMetrics.menuPadding -
-            SignalMenuMetrics.barHeight <
-        top + SignalMenuMetrics.barTopPadding) {
+            MessageMenuMetrics.menuPadding -
+            MessageMenuMetrics.barHeight <
+        top + MessageMenuMetrics.barTopPadding) {
       bubbleTop =
           top +
-          SignalMenuMetrics.barTopPadding +
-          SignalMenuMetrics.barHeight +
-          SignalMenuMetrics.menuPadding;
+          MessageMenuMetrics.barTopPadding +
+          MessageMenuMetrics.barHeight +
+          MessageMenuMetrics.menuPadding;
     }
   } else {
     // Tall content: reserve space for bar+menu above OR menu below. Prefer
@@ -154,7 +157,7 @@ SignalMenuLayout resolveSignalMenuLayout({
     final roomBelow =
         available -
         menuSize.height -
-        SignalMenuMetrics.menuPadding -
+        MessageMenuMetrics.menuPadding -
         spaceForBar;
     final roomAbove = available - aboveChrome;
     final room = math.max(roomBelow, roomAbove);
@@ -170,7 +173,7 @@ SignalMenuLayout resolveSignalMenuLayout({
     bubbleHeight,
   );
 
-  var menuTop = bubble.bottom + SignalMenuMetrics.menuPadding;
+  var menuTop = bubble.bottom + MessageMenuMetrics.menuPadding;
   var reversed = false;
   if (menuTop + menuSize.height > bottom) {
     reversed = true;
@@ -181,11 +184,11 @@ SignalMenuLayout resolveSignalMenuLayout({
     // clipped behind Delete/Edit.
     final minMenuTop =
         top +
-        SignalMenuMetrics.barTopPadding +
-        SignalMenuMetrics.barHeight +
-        SignalMenuMetrics.menuPadding;
+        MessageMenuMetrics.barTopPadding +
+        MessageMenuMetrics.barHeight +
+        MessageMenuMetrics.menuPadding;
     final minBubbleTop =
-        minMenuTop + menuSize.height + SignalMenuMetrics.menuPadding;
+        minMenuTop + menuSize.height + MessageMenuMetrics.menuPadding;
     if (bubble.top < minBubbleTop) {
       var shifted = minBubbleTop;
       if (shifted + bubble.height > bottom) {
@@ -209,7 +212,7 @@ SignalMenuLayout resolveSignalMenuLayout({
         );
       }
     }
-    menuTop = bubble.top - SignalMenuMetrics.menuPadding - menuSize.height;
+    menuTop = bubble.top - MessageMenuMetrics.menuPadding - menuSize.height;
     menuTop = menuTop.clamp(
       minMenuTop,
       math.max(minMenuTop, bottom - menuSize.height),
@@ -220,20 +223,22 @@ SignalMenuLayout resolveSignalMenuLayout({
 
   final barTop = reversed
       ? math.max(
-          top + SignalMenuMetrics.barTopPadding,
-          menuTop - SignalMenuMetrics.menuPadding - SignalMenuMetrics.barHeight,
+          top + MessageMenuMetrics.barTopPadding,
+          menuTop -
+              MessageMenuMetrics.menuPadding -
+              MessageMenuMetrics.barHeight,
         )
       : math.max(
-          top + SignalMenuMetrics.barTopPadding,
+          top + MessageMenuMetrics.barTopPadding,
           bubble.top -
-              SignalMenuMetrics.menuPadding -
-              SignalMenuMetrics.barHeight,
+              MessageMenuMetrics.menuPadding -
+              MessageMenuMetrics.barHeight,
         );
 
-  return SignalMenuLayout(
+  return MessageMenuLayout(
     bubble: bubble,
     scale: scale,
-    bar: Rect.fromLTWH(barLeft, barTop, barWidth, SignalMenuMetrics.barHeight),
+    bar: Rect.fromLTWH(barLeft, barTop, barWidth, MessageMenuMetrics.barHeight),
     menu: Rect.fromLTWH(menuLeft, menuTop, menuSize.width, menuSize.height),
     reversed: reversed,
   );

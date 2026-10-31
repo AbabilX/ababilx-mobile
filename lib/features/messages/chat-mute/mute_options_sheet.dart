@@ -5,9 +5,9 @@ import '../chat_icon.dart';
 import 'mute_choice.dart';
 import 'mute_custom_page.dart';
 
-/// Signal's mute choices as one bottom sheet: four lengths, Always, Only
-/// mentions (groups only — in a DM every message is addressed to you), and a
-/// custom end time picked on a second page of the SAME sheet. Nothing here
+/// The reference app's mute choices as one bottom sheet: four lengths, Always,
+/// Only mentions (groups only — in a DM every message is addressed to you), and
+/// a custom end time picked on a second page of the SAME sheet. Nothing here
 /// opens a dialog; the date and time are chosen inline.
 ///
 /// It only chooses. The caller writes the mute, on its own context, because

@@ -11,14 +11,14 @@ import 'avatar_index.dart';
 import 'avatar_thumb.dart';
 
 /// Profile and group pictures as files on this phone, looked up synchronously
-/// — Signal's `AvatarHelper` (one file per recipient) plus the
+/// — the reference app's `AvatarHelper` (one file per recipient) plus the
 /// `profile_avatar` column that says which URL that file came from.
 ///
 /// A key is an OWNER (`user:<id>`, `conv:<id>`) or, where no owner is known,
 /// the URL itself. When an owner's URL changes, the picture already on disk
-/// keeps being drawn while the new one downloads, then swaps in — Signal's
-/// `RetrieveProfileAvatarJob` writes the new file before anything reads it,
-/// so nobody ever sees a letter where a face used to be.
+/// keeps being drawn while the new one downloads, then swaps in — the reference
+/// app's `RetrieveProfileAvatarJob` writes the new file before anything reads
+/// it, so nobody ever sees a letter where a face used to be.
 class AvatarStore {
   AvatarStore._();
 

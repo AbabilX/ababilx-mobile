@@ -71,8 +71,9 @@ Future<bool> handleChatNotificationAction(NotificationResponse response) async {
     'conversation=$conversationId thread=$inThread sent=$sent',
   );
   if (sent) {
-    // Replying already marks the conversation read. Match Signal's remote
-    // reply behavior by removing the now-consumed tray thread immediately.
+    // Replying already marks the conversation read. Match the reference app's
+    // remote reply behavior by removing the now-consumed tray thread
+    // immediately.
     await ChatNotificationPresenter.dismiss(local, conversationId);
   } else {
     await _reportFailedReply(local, conversationId, text);

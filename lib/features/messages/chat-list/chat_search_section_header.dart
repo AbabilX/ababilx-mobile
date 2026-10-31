@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Signal's search section label (`contact_search_section_header`: 16/12 pad,
-/// TitleSmall). Empty sections are not drawn — the parent omits this widget.
+/// The reference app's search section label (`contact_search_section_header`:
+/// 16/12 pad, TitleSmall). Empty sections are not drawn — the parent omits this
+/// widget.
 class ChatSearchSectionHeader extends StatelessWidget {
   const ChatSearchSectionHeader({super.key, required this.label});
 

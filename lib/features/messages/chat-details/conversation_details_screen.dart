@@ -20,8 +20,8 @@ import '../snippet/snippets_tile.dart';
 import '../task/tasks_tile.dart';
 import 'webhook_settings_section.dart';
 
-/// Signal's conversation settings: a full screen, reached by tapping the name
-/// in the chat header. It replaced a bottom sheet for DMs and a
+/// The reference app's conversation settings: a full screen, reached by tapping
+/// the name in the chat header. It replaced a bottom sheet for DMs and a
 /// half-height dialog for groups — one surface, one layout, both scopes.
 class ConversationDetailsScreen extends ConsumerStatefulWidget {
   const ConversationDetailsScreen({super.key, required this.conversationId});

@@ -31,8 +31,8 @@ import 'pinned_messages_action.dart';
 import 'share_contact_sheet.dart';
 
 /// The top of the details screen: picture, name, what this chat is, and the
-/// row of square actions. Signal puts the name itself on a chevron for a 1:1
-/// chat — it is a link to the person, not just a label.
+/// row of square actions. The reference app puts the name itself on a chevron
+/// for a 1:1 chat — it is a link to the person, not just a label.
 class DetailsHeader extends ConsumerWidget {
   const DetailsHeader({
     super.key,

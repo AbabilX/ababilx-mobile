@@ -205,8 +205,8 @@ class VoicePeerEngine {
     // Not `Helper.setAndroidAudioConfiguration`: that configures flutter_webrtc's
     // audio manager, which LiveKit disables app-wide — see [CallAudioRoute].
     // Earpiece by default, like every dialler, speaker for a video call — and
-    // a connected Bluetooth or wired headset ahead of both, as in Signal —
-    // unless Speaker was already pressed while ringing.
+    // a connected Bluetooth or wired headset ahead of both, as in the reference
+    // app — unless Speaker was already pressed while ringing.
     await CallAudioRoute.activate(chosen: _speakerChoice, video: video);
     if (_disposed) return;
     await _ensureAudioSessionIfNeeded();

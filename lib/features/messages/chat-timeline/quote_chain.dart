@@ -6,20 +6,20 @@ String? _quotedId(ChatMessage m) {
 }
 
 /// Ids of every message somebody on this phone's copy of the conversation has
-/// quoted — Signal's `hasBeenQuoted`, worked out from the loaded timeline
-/// because the server sends no such flag.
+/// quoted — the reference app's `hasBeenQuoted`, worked out from the loaded
+/// timeline because the server sends no such flag.
 Set<String> quotedMessageIds(List<ChatMessage> messages) => {
   for (final m in messages)
     if (!m.isDeleted) ?_quotedId(m),
 };
 
 /// The original message and everything that quotes it, or quotes one of
-/// those, oldest first — Signal's `getMessagesInQuoteChain`. Empty when the
-/// original is not on this phone.
+/// those, oldest first — the reference app's `getMessagesInQuoteChain`. Empty
+/// when the original is not on this phone.
 List<ChatMessage> quoteChain(List<ChatMessage> messages, String messageId) {
   final byId = {for (final m in messages) m.id: m};
-  // Walk up to the root, as Signal's `getRootOfQuoteChain` does. The hop
-  // count bounds a cycle a hostile client could write.
+  // Walk up to the root, as the reference app's `getRootOfQuoteChain` does. The
+  // hop count bounds a cycle a hostile client could write.
   var root = byId[messageId];
   for (var hops = 0; root != null && hops < 64; hops++) {
     final parent = byId[_quotedId(root)];

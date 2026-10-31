@@ -2,8 +2,9 @@ import '../../../core/network/api_client.dart';
 import 'chat_endpoints.dart';
 import 'models/chat_models.dart';
 
-/// The three reads and one write behind Signal's conversation-details screen:
-/// shared media, groups in common, and reporting the conversation.
+/// The three reads and one write behind the reference app's
+/// conversation-details screen: shared media, groups in common, and reporting
+/// the conversation.
 class ChatDetailsApi {
   const ChatDetailsApi(this._client, this._endpoints);
 

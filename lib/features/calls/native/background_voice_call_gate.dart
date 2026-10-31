@@ -44,8 +44,9 @@ class BackgroundVoiceCallGate {
   }) async {
     final callId = data['call_id']?.toString() ?? '';
     if (callId.isEmpty) return false;
-    // Busy (Signal's idle-only rule): this phone is already in a call — the
-    // pushed one, answered moments ago, or another. Never ring over it.
+    // Busy (the reference app's idle-only rule): this phone is already in a
+    // call — the pushed one, answered moments ago, or another. Never ring over
+    // it.
     if (await (liveLookup ?? CallRinger.liveCall)() != null) return false;
     final clock = now ?? DateTime.now();
     final pushedExpiry = DateTime.tryParse(

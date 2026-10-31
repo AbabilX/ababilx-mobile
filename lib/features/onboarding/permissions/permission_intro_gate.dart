@@ -4,9 +4,9 @@ import 'permission_intro.dart';
 import 'permission_intro_page.dart';
 
 /// Puts "Allow permissions" in front of [child] the first time after sign-in,
-/// as Signal puts it in front of its restore screen. Shown once per install;
-/// answered or not needed, it settles [PermissionIntro.settled] and steps
-/// aside.
+/// as the reference app puts it in front of its restore screen. Shown once per
+/// install; answered or not needed, it settles [PermissionIntro.settled] and
+/// steps aside.
 class PermissionIntroGate extends StatefulWidget {
   const PermissionIntroGate({super.key, required this.child});
 

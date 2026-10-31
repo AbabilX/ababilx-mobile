@@ -11,10 +11,10 @@ import '../tiptap_viewer.dart';
 import 'user_profile_sheet.dart';
 import '../../../shared/widgets/app_toast.dart';
 
-/// The whole of a message that was too long for its bubble — Signal's
-/// `LongMessageFragment`. Plain scaffold on purpose: this is a reading surface,
-/// so it gets the page background rather than a bubble fill, full width, and
-/// selectable text.
+/// The whole of a message that was too long for its bubble — the reference
+/// app's `LongMessageFragment`. Plain scaffold on purpose: this is a reading
+/// surface, so it gets the page background rather than a bubble fill, full
+/// width, and selectable text.
 class LongMessageScreen extends ConsumerWidget {
   const LongMessageScreen({super.key, required this.body, this.editedAt});
 

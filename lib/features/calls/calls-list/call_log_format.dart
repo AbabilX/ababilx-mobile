@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/app_translations.dart';
 import '../data/models/call_log_entry.dart';
 
-/// Arrow that says which way the call went, Signal-style: missed calls get the
-/// same incoming arrow, coloured by the row rather than a different glyph.
+/// Arrow that says which way the call went, as the reference app draws it:
+/// missed calls get the same incoming arrow, coloured by the row rather than a
+/// different glyph.
 IconData callDirectionIcon(CallLogEntry entry) {
   if (entry.isGroup) return Icons.groups_rounded;
   if (entry.missed) return Icons.call_missed_rounded;

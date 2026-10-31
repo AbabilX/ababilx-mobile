@@ -52,7 +52,8 @@ void main() {
       expect(isValidPreviewUrl('https://100.64.0.1'), isFalse);
       expect(isValidPreviewUrl('https://[::1]/'), isFalse);
       expect(isValidPreviewUrl('https://[fd00::1]/'), isFalse);
-      // A routable literal is still allowed — Signal only blocks private ones.
+      // A routable literal is still allowed — the reference app only blocks
+      // private ones.
       expect(isValidPreviewUrl('https://8.8.8.8'), isTrue);
     });
   });

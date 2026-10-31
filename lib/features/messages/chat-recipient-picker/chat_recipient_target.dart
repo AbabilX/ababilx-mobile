@@ -5,7 +5,7 @@ import '../data/models/chat_conversation.dart';
 
 enum ChatRecipientKind { conversation, person }
 
-/// A destination in the shared Signal-style picker.
+/// A destination in the shared recipient picker.
 ///
 /// A person id and a conversation id can both be UUIDs. The kind is therefore
 /// part of equality and the selection key; otherwise a rare id collision could

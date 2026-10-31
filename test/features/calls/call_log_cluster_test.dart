@@ -80,8 +80,8 @@ void main() {
     });
 
     test('a missed call is never swallowed by an answered one', () {
-      // The whole point of Signal's isEventMatch: a missed call is what
-      // somebody is scanning this screen for.
+      // The whole point of the reference app's isEventMatch: a missed call is
+      // what somebody is scanning this screen for.
       final rows = clusterCallLog([
         _call(id: 'a', missed: false),
         _call(id: 'b', missed: true, minutesAgo: 5),

@@ -30,8 +30,8 @@ class MessageAttachments extends StatelessWidget {
   final bool withCaption;
 
   /// Text sits under the media (caption bubble). The picture keeps its
-  /// edge-to-edge shape but takes Signal's wider floor, since the caption
-  /// wraps to the picture's width.
+  /// edge-to-edge shape but takes the reference app's wider floor, since the
+  /// caption wraps to the picture's width.
   final bool captioned;
 
   /// The bubble is the media's surface: a PDF card drops its own margin and

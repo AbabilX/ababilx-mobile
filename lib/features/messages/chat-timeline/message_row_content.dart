@@ -15,14 +15,14 @@ import 'message_sender_label.dart';
 import 'reaction_details_sheet.dart';
 import 'reaction_row.dart';
 import 'sender_name_color.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 import 'unsealed_message_mark.dart';
 import 'user_profile_sheet.dart';
 import '../nickname/contact_nickname_provider.dart';
 
-/// Signal's conversation item: your messages right, theirs left, avatars only
-/// in groups and only under the last bubble of a run, the sender's name only
-/// above the first.
+/// The reference app's conversation item: your messages right, theirs left,
+/// avatars only in groups and only under the last bubble of a run, the sender's
+/// name only above the first.
 class MessageRowContent extends ConsumerWidget {
   const MessageRowContent({
     super.key,
@@ -78,7 +78,7 @@ class MessageRowContent extends ConsumerWidget {
           )
         : null;
     final avatarUrl = feed != null ? feed.avatarUrl : message.userAvatarUrl;
-    final colors = SignalBubbleColors.of(scheme, hasWallpaper: hasWallpaper);
+    final colors = BubbleColors.of(scheme, hasWallpaper: hasWallpaper);
     // A name over an incoming bubble in a group, an avatar under the last one.
     final showName = isGroup && !isOwnMessage && _startsCluster;
     final showAvatar = isGroup && !isOwnMessage;
@@ -167,7 +167,7 @@ class MessageRowContent extends ConsumerWidget {
     return Padding(
       // The long-press overlay hides this row and floats its own copy, so
       // there is nothing to highlight in place.
-      padding: EdgeInsets.only(top: signalBubbleTopSpacing(clusterPosition)),
+      padding: EdgeInsets.only(top: bubbleTopSpacing(clusterPosition)),
       child: Row(
         mainAxisAlignment: isOwnMessage
             ? MainAxisAlignment.end
@@ -178,13 +178,13 @@ class MessageRowContent extends ConsumerWidget {
             // The slot is held for every message of the run so the bubbles
             // stay in one column; only the last one draws a face.
             SizedBox(
-              width: SignalBubbleMetrics.avatarSize,
+              width: BubbleMetrics.avatarSize,
               child: _endsCluster
                   ? GestureDetector(
                       onTap: showProfile,
                       child: ClipOval(
                         child: AppAvatar(
-                          size: SignalBubbleMetrics.avatarSize,
+                          size: BubbleMetrics.avatarSize,
                           url: avatarUrl,
                           name: name,
                           // A feed with no picture has no initial worth
@@ -192,7 +192,7 @@ class MessageRowContent extends ConsumerWidget {
                           fallback: webhook
                               ? ChatIcon(
                                   HugeIcons.strokeRoundedWebhook,
-                                  size: SignalBubbleMetrics.avatarSize * 0.5,
+                                  size: BubbleMetrics.avatarSize * 0.5,
                                   color: scheme.primary,
                                 )
                               : null,

@@ -8,11 +8,12 @@ part of 'chat_provider.dart';
 /// conversation simply stops moving — which is what a pull-to-refresh was
 /// papering over, since an HTTP request opens its own connection and works.
 ///
-/// Signal reaches for the same two things when it wakes its connect loop: a
-/// live connection, and a fetch. [WsClientRevive.kick] is the connection;
-/// this is the fetch, and it deliberately runs on BOTH triggers — a socket that
-/// reconnected has a gap by definition, and a socket that survived the app
-/// being away may still have dropped frames while the process was frozen.
+/// The reference app reaches for the same two things when it wakes its connect
+/// loop: a live connection, and a fetch. [WsClientRevive.kick] is the
+/// connection; this is the fetch, and it deliberately runs on BOTH triggers — a
+/// socket that reconnected has a gap by definition, and a socket that survived
+/// the app being away may still have dropped frames while the process was
+/// frozen.
 mixin _ChatResyncMixin
     on Notifier<ChatState>, _ChatFeedMixin, _ChatWsMixin, _ChatActionsMixin {
   /// Re-reads everything a gap could have hidden: the sidebar, the open

@@ -9,7 +9,8 @@ import 'preview_image.dart';
 
 export 'preview_image.dart';
 
-/// Fullscreen pinch-zoom gallery — Signal-Android chrome, same as chat.
+/// Fullscreen pinch-zoom gallery — the reference Android app's chrome, same as
+/// chat.
 Future<void> showImagePreview(
   BuildContext context, {
   required List<PreviewImage> images,

@@ -32,10 +32,10 @@ const double chatWallpaperLightPatternFloor = 0.05;
 
 /// A chat background.
 ///
-/// Signal models this as a per-chat value that falls back to a global default,
-/// plus a "dim in dark theme" flag — a photo bright enough to read against in
-/// daylight is glaring at night, and dimming it is cheaper than asking for two
-/// pictures.
+/// The reference app models this as a per-chat value that falls back to a
+/// global default, plus a "dim in dark theme" flag — a photo bright enough to
+/// read against in daylight is glaring at night, and dimming it is cheaper than
+/// asking for two pictures.
 ///
 /// [opacity] is ours, and is a different question from [dimInDark]: dimming is
 /// conditional on the theme and paints black OVER the wallpaper, while opacity

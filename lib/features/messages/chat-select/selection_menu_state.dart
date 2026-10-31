@@ -6,10 +6,10 @@ import '../tiptap_plain_text.dart';
 
 /// Which actions the selection bar may offer, decided by the selection alone.
 ///
-/// This is Signal's `MenuState`, and the rule that shapes it is Signal's too:
-/// **the moment more than one message is selected, everything that only makes
-/// sense against a single message disappears** — reply, edit and save. What
-/// survives a multi-selection is forward, copy and delete.
+/// This is the reference app's `MenuState`, and the rule that shapes it comes
+/// from there too: **the moment more than one message is selected, everything
+/// that only makes sense against a single message disappears** — reply, edit
+/// and save. What survives a multi-selection is forward, copy and delete.
 class SelectionMenuState {
   const SelectionMenuState({
     this.reply = false,
@@ -34,8 +34,8 @@ class SelectionMenuState {
   bool get isEmpty => !reply && !forward && !copy && !save && !edit && !delete;
 }
 
-/// Signal's `MAX_FORWARDABLE_COUNT`. Each destination is sealed per message on
-/// this device, so a large forward is real work, not one request.
+/// The reference app's `MAX_FORWARDABLE_COUNT`. Each destination is sealed per
+/// message on this device, so a large forward is real work, not one request.
 const maxForwardableMessages = 32;
 
 SelectionMenuState selectionMenuState({

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 /// The dimming behind the long-press menu.
 ///
-/// Signal's shade is there in full from the first frame and only fades on the
-/// way out ([fadeOut]). No blur: a full-screen blur whose sigma changes every
-/// frame was the costliest thing this overlay drew.
-class SignalMenuShade extends StatelessWidget {
-  const SignalMenuShade({
+/// The reference app's shade is there in full from the first frame and only
+/// fades on the way out ([fadeOut]). No blur: a full-screen blur whose sigma
+/// changes every frame was the costliest thing this overlay drew.
+class MessageMenuShade extends StatelessWidget {
+  const MessageMenuShade({
     super.key,
     required this.route,
     required this.fadeOut,

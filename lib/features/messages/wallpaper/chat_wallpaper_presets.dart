@@ -32,7 +32,7 @@ class ChatWallpaperPreset {
   final String id;
 
   /// One colour paints flat; two or more paint as a diagonal gradient, which
-  /// is how Signal's preset set is built.
+  /// is how the reference app's preset set is built.
   final List<Color> colors;
 
   /// A bundled painting. When set it is what actually shows and [colors] is

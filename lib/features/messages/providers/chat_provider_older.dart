@@ -10,10 +10,10 @@ part of 'chat_provider.dart';
 ///
 /// The store used to be the fallback and the server the source, so every
 /// page of history the phone already held was downloaded again, decrypted
-/// again and written again while the reader watched a spinner. Signal's
-/// conversation reads its database and nothing else; this is the same,
-/// with one thing Signal's protocol gives for free and ours does not: proof
-/// that the store has no hole in it. That proof is a [FeedSpan].
+/// again and written again while the reader watched a spinner. The reference
+/// app's conversation reads its database and nothing else; this is the same,
+/// with one thing the reference app's protocol gives for free and ours does
+/// not: proof that the store has no hole in it. That proof is a [FeedSpan].
 mixin _ChatOlderMixin
     on
         Notifier<ChatState>,

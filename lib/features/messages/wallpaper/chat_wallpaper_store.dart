@@ -7,8 +7,8 @@ import 'chat_wallpaper.dart';
 ///
 /// Deliberately not synced: a wallpaper is a property of *this* phone's chat
 /// window, and syncing one would mean a migration, endpoints and a web picker
-/// for something nobody expects to follow them between devices. Signal keeps
-/// its own per-chat wallpapers local for the same reason.
+/// for something nobody expects to follow them between devices. The reference
+/// app keeps its own per-chat wallpapers local for the same reason.
 class ChatWallpaperStore {
   const ChatWallpaperStore();
 

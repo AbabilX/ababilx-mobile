@@ -7,10 +7,10 @@ import 'composer_pending_thumb.dart';
 
 /// Pending attachment strip — thumbnails, an "add" tile, and drag to reorder.
 ///
-/// Order matters: it is the order they arrive in the thread. Signal lets you
-/// rearrange the rail before sending, so this one does too — long-press a
-/// tile and drag it, rather than removing and re-adding to get the order you
-/// wanted.
+/// Order matters: it is the order they arrive in the thread. The reference app
+/// lets you rearrange the rail before sending, so this one does too —
+/// long-press a tile and drag it, rather than removing and re-adding to get the
+/// order you wanted.
 class ComposerPendingPreviews extends StatelessWidget {
   const ComposerPendingPreviews({
     super.key,

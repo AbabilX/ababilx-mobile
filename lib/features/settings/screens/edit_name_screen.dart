@@ -10,7 +10,7 @@ import '../../profile/providers/profile_provider.dart';
 import '../display-name/display_name_rules.dart';
 import '../display-name/remove_name_sheet.dart';
 
-/// Edit your own display name — Signal's "Profile name" screen.
+/// Edit your own display name — the reference app's "Profile name" screen.
 ///
 /// This is the name every other account sees: chat list rows, message bubbles,
 /// group member lists, workspace rosters. There is no separate nickname field

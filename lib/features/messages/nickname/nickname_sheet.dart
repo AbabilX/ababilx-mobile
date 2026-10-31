@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/text/display_name.dart';
 import 'contact_nickname_provider.dart';
 
-/// Signal's "Nickname" editor: rename someone on this device.
+/// The reference app's "Nickname" editor: rename someone on this device.
 ///
 /// The field opens on their current nickname, or empty when there is none, and
 /// saving an empty field clears it back to the name they chose for themselves.

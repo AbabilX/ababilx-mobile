@@ -17,10 +17,10 @@ import 'message_selection.dart';
 import 'selection_action_bar.dart';
 import 'selection_menu_state.dart';
 
-/// Builds the bars' buttons in Signal's order — Reply, Forward, Save, Copy,
-/// Edit, Delete — from the rules in [selectionMenuState].
+/// Builds the bars' buttons in the reference app's order — Reply, Forward,
+/// Save, Copy, Edit, Delete — from the rules in [selectionMenuState].
 ///
-/// Every action closes the mode when it is done, which is Signal's
+/// Every action closes the mode when it is done, which is the reference app's
 /// `finishActionMode()` at the end of each handler: a selection that outlives
 /// the thing it was made for is a bar the user has to dismiss by hand.
 List<SelectionAction> selectionActions({
@@ -114,7 +114,8 @@ List<SelectionAction> selectionActions({
 }
 
 /// One clipboard entry, the messages in timeline order separated by newlines —
-/// Signal's `copyToClipboard`, which sorts by date and joins the bodies.
+/// the reference app's `copyToClipboard`, which sorts by date and joins the
+/// bodies.
 Future<void> copySelectedMessages(
   BuildContext context,
   WidgetRef ref,

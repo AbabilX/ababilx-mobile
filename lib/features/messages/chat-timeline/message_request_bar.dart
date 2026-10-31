@@ -5,9 +5,9 @@ import '../../../core/localization/app_translations.dart';
 import '../data/models/chat_conversation.dart';
 import '../providers/chat_provider.dart';
 
-/// Signal's message-request prompt: it takes the composer's place at the
-/// bottom of a thread a stranger opened, so the messages above stay readable
-/// while the answer is still owed.
+/// The reference app's message-request prompt: it takes the composer's place at
+/// the bottom of a thread a stranger opened, so the messages above stay
+/// readable while the answer is still owed.
 ///
 /// Three answers, and only one of them is permanent. Block is the durable
 /// refusal; Delete just clears the thread, and a later message from the same

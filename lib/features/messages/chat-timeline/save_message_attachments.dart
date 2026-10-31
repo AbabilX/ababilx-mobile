@@ -24,8 +24,8 @@ List<ChatMessageAttachment> saveableAttachments(ChatMessage message) {
 bool canSaveMessageAttachments(ChatMessage message) =>
     saveableAttachments(message).isNotEmpty;
 
-/// Signal's Save on a media message: every attachment it carries, one
-/// confirmation, one result line.
+/// The reference app's Save on a media message: every attachment it carries,
+/// one confirmation, one result line.
 ///
 /// Anything not on disk yet is fetched first — the user asked for the file, so
 /// "not downloaded" is a wait, not a refusal. A fetch that fails simply drops

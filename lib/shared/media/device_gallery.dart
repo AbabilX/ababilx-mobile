@@ -48,8 +48,9 @@ class DeviceMediaItem {
 
 /// One MediaStore album — Camera, All media, Downloads, …
 ///
-/// Signal's wallpaper picker opens onto this list rather than a flat "Recent"
-/// grid. [bucketId] is either a real `BUCKET_ID` or the synthetic All-media id.
+/// The reference app's wallpaper picker opens onto this list rather than a flat
+/// "Recent" grid. [bucketId] is either a real `BUCKET_ID` or the synthetic
+/// All-media id.
 @immutable
 class DeviceMediaFolder {
   const DeviceMediaFolder({
@@ -88,8 +89,8 @@ class DeviceMediaFolder {
   );
 }
 
-/// Reads the device library directly, the way Signal's attachment keyboard
-/// does, instead of launching the system picker for every attachment.
+/// Reads the device library directly, the way the reference app's attachment
+/// keyboard does, instead of launching the system picker for every attachment.
 ///
 /// The system picker is still the fallback — [available] is false when the
 /// platform channel is missing or the user has denied media access, and every

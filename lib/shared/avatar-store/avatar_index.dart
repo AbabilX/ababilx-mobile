@@ -29,8 +29,9 @@ class AvatarEntry {
 }
 
 /// The avatar store's map from key (an owner such as `user:<id>`, or a bare
-/// URL) to the file holding its picture — Signal's `recipient.profile_avatar`
-/// column beside `AvatarHelper`'s files, as one small JSON file.
+/// URL) to the file holding its picture — the reference app's
+/// `recipient.profile_avatar` column beside `AvatarHelper`'s files, as one
+/// small JSON file.
 ///
 /// Read once before the first frame, so every lookup after it is synchronous.
 /// Writes are coalesced: a prefetch landing fifty pictures writes once.

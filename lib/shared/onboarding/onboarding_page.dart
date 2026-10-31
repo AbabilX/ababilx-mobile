@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// The frame every first-run screen is drawn in — Signal-Android's
+/// The frame every first-run screen is drawn in — the reference Android app's
 /// `RegistrationScreen`: a large left-aligned title, a muted subtitle, the
 /// screen's own content scrolling under them, and an optional bottom bar that
 /// lifts (shadow) only while there is more content above it to scroll to.
@@ -24,7 +24,7 @@ class OnboardingPage extends StatefulWidget {
   /// Space between the heading and [children].
   final double gap;
 
-  /// Signal's `horizontalGutters()`.
+  /// The reference app's `horizontalGutters()`.
   static const gutter = 24.0;
 
   @override

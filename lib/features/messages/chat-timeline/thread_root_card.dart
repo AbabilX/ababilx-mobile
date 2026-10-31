@@ -130,10 +130,7 @@ class ThreadRootCard extends ConsumerWidget {
                     const SizedBox(height: 3),
                     MessageBody(
                       message: root,
-                      colors: SignalBubbleColors.of(
-                        colors,
-                        hasWallpaper: false,
-                      ),
+                      colors: BubbleColors.of(colors, hasWallpaper: false),
                     ),
                     ReactionRow(
                       reactions: root.reactions,

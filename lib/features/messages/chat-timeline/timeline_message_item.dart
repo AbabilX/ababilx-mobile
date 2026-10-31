@@ -5,7 +5,7 @@ import '../data/models/chat_models.dart';
 import 'group_call_event_row.dart';
 import 'group_event_row.dart';
 import 'message_row.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 import 'thread_sheet.dart';
 import 'timeline_jump_target.dart';
 import 'voice_call_event_row.dart';
@@ -68,8 +68,6 @@ class TimelineMessageItem extends StatelessWidget {
 /// The side inset the ListView used to carry. Call events and dividers are
 /// never selectable, so they keep it as plain padding.
 Widget timelineInset(Widget child) => Padding(
-  padding: const EdgeInsets.symmetric(
-    horizontal: SignalBubbleMetrics.listSideGutter,
-  ),
+  padding: const EdgeInsets.symmetric(horizontal: BubbleMetrics.listSideGutter),
   child: child,
 );

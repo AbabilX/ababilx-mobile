@@ -17,8 +17,8 @@ import '../data/models/chat_models.dart';
 /// the server stores it. A dead menu row is worse than a missing one.
 enum ConversationAction { pin, unpin, mute, unmute, markRead, folder, end }
 
-/// Signal's long press, as a sheet for the row that was pressed rather than an
-/// action mode over a selection.
+/// The reference app's long press, as a sheet for the row that was pressed
+/// rather than an action mode over a selection.
 ///
 /// It only *chooses*. Every action is carried out by the caller with the
 /// caller's context, because the sheet's own context is dead the moment it

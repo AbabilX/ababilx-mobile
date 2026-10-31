@@ -10,9 +10,9 @@ import '../group/group_call_status.dart';
 import '../providers/voice_call_provider.dart';
 import 'call_return_bar.dart';
 
-/// The bar Signal and WhatsApp show across the top of the app while a call is
-/// running and its screen is not on top: who it is with, how it is going, and
-/// tap to get back to it.
+/// The bar the reference app and WhatsApp show across the top of the app while
+/// a call is running and its screen is not on top: who it is with, how it is
+/// going, and tap to get back to it.
 ///
 /// The notification in the shade covers the case where the user has left the
 /// app entirely. This covers the more common one — they minimised the call and

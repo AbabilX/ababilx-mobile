@@ -1,4 +1,4 @@
-import 'package:ababilx/features/messages/chat-timeline/signal_message_menu_geometry.dart';
+import 'package:ababilx/features/messages/chat-timeline/message_menu_geometry.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,8 +6,8 @@ const _phone = Size(400, 880);
 const _safe = EdgeInsets.only(top: 44, bottom: 24);
 const _menu = Size(240, 350);
 
-SignalMenuLayout _layout(Rect anchor, {bool isMine = true, Size? screen}) =>
-    resolveSignalMenuLayout(
+MessageMenuLayout _layout(Rect anchor, {bool isMine = true, Size? screen}) =>
+    resolveMessageMenuLayout(
       screen: screen ?? _phone,
       safeArea: _safe,
       anchor: anchor,
@@ -45,8 +45,8 @@ void main() {
   test('a bubble near the bottom is lifted so the menu still fits below', () {
     final layout = _layout(const Rect.fromLTWH(200, 700, 180, 44));
 
-    // Signal moves the message rather than flipping the menu: the bubble rises
-    // until menu + gap clear the navigation bar.
+    // The reference app moves the message rather than flipping the menu: the
+    // bubble rises until menu + gap clear the navigation bar.
     expect(layout.reversed, isFalse);
     expect(layout.bubble.top, lessThan(700));
     expect(layout.menu.top, layout.bubble.bottom + 12);

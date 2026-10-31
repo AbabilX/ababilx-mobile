@@ -7,8 +7,8 @@ import '../data/models/chat_models.dart';
 import '../providers/chat_details_provider.dart';
 import '../../chat-lock/providers/chat_locks_provider.dart';
 
-/// Signal's "Shared media": a strip of the newest files in this conversation
-/// and a way into all of them.
+/// The reference app's "Shared media": a strip of the newest files in this
+/// conversation and a way into all of them.
 ///
 /// The block disappears when the conversation has no files rather than showing
 /// an empty state — a heading over nothing is a row that only ever says "no".

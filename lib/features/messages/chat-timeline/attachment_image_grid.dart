@@ -4,7 +4,7 @@ import '../data/models/chat_models.dart';
 import 'attachment_album_geometry.dart';
 import 'attachment_image_tile.dart';
 import 'media-preview/chat_media_preview_meta.dart';
-import 'signal_bubble_metrics.dart';
+import 'bubble_metrics.dart';
 import 'sticker_media.dart';
 
 /// Multi-image album: fills the bubble's available width × [mediaMaxHeight],
@@ -42,11 +42,11 @@ class AttachmentImageGrid extends StatelessWidget {
         attachment: images.first,
         gallery: images,
         index: 0,
-        maxHeight: SignalBubbleMetrics.mediaMaxHeight,
-        maxWidth: SignalBubbleMetrics.mediaMaxWidth,
+        maxHeight: BubbleMetrics.mediaMaxHeight,
+        maxWidth: BubbleMetrics.mediaMaxWidth,
         minWidth: withCaption || captioned
-            ? SignalBubbleMetrics.mediaMinWidthWithCaption
-            : SignalBubbleMetrics.mediaMinWidthSolo,
+            ? BubbleMetrics.mediaMinWidthWithCaption
+            : BubbleMetrics.mediaMinWidthSolo,
         preview: preview,
         inset: withCaption,
         clear: drawsClearInBubble(
@@ -65,12 +65,12 @@ class AttachmentImageGrid extends StatelessWidget {
           final width =
               constraints.hasBoundedWidth && constraints.maxWidth.isFinite
               ? constraints.maxWidth
-              : SignalBubbleMetrics.mediaMaxWidth;
+              : BubbleMetrics.mediaMaxWidth;
           final layout = albumLayout(
             count: images.length,
             width: width,
             corner: _corner,
-            maxHeight: SignalBubbleMetrics.mediaMaxHeight,
+            maxHeight: BubbleMetrics.mediaMaxHeight,
           );
           return SizedBox(
             width: width,

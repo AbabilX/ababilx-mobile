@@ -7,8 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'call_audio_output.dart';
 
 /// Dart's side of the native call-audio owner (`CallAudioSession.kt`, the
-/// port of Signal's `SignalAudioManager`). Commands go down; every change of
-/// device — a Bluetooth headset connecting, a wired one plugged in, the
+/// port of the reference app's audio manager). Commands go down; every change
+/// of device — a Bluetooth headset connecting, a wired one plugged in, the
 /// user's pick — comes back up as a `devices` event. Android only: elsewhere
 /// every call is a no-op and the list stays empty.
 class CallAudioDeviceChannel {
@@ -59,7 +59,7 @@ class CallAudioDeviceChannel {
     if (user != null) 'userDevice': callAudioOutputToWire(user),
   });
 
-  /// Signal's `SetDefaultDevice`.
+  /// The reference app's `SetDefaultDevice`.
   static Future<void> setDefault({
     required bool speaker,
     bool clearEarpiece = false,
@@ -68,7 +68,7 @@ class CallAudioDeviceChannel {
     'clearEarpiece': clearEarpiece,
   });
 
-  /// Signal's `SetUserDevice` with a picker row's id.
+  /// The reference app's `SetUserDevice` with a picker row's id.
   static Future<void> select(CallAudioOption option) =>
       _invoke('select', {'id': option.id});
 

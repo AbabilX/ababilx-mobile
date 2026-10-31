@@ -6,7 +6,7 @@ import '../network/call_own_link_probe.dart';
 import 'call_diagnostics_entry.dart';
 import 'call_top_bar.dart' show callTextShadow;
 
-/// Signal bars and a word for the 1:1 call's network.
+/// Strength bars and a word for the 1:1 call's network.
 ///
 /// [ownLink] is for a call that is still ringing or connecting: there is no
 /// media path yet, so it shows this phone's own link to the server and keeps

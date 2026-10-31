@@ -7,8 +7,9 @@ import 'chat_wallpaper_background.dart';
 /// Opens [wallpaper] on its own screen behind a sample conversation and
 /// answers true only when the user presses Save.
 ///
-/// Signal's flow: a tile is too small to judge a picture by, so choosing one
-/// shows it the size of a real chat first. Cancel or back keeps the old one.
+/// The reference app's flow: a tile is too small to judge a picture by, so
+/// choosing one shows it the size of a real chat first. Cancel or back keeps
+/// the old one.
 Future<bool> showChatWallpaperFullPreview(
   BuildContext context,
   ChatWallpaper wallpaper,

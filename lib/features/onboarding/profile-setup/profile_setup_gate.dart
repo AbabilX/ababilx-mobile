@@ -7,9 +7,9 @@ import 'profile_setup_flow.dart';
 import 'profile_setup_store.dart';
 
 /// Puts name, username and picture in front of [child] for a new
-/// account — after the recovery screen, where Signal puts its own profile
-/// step. Decided once per account; once shown it stays until finished, even
-/// if the server's new-account window closes while the person is typing.
+/// account — after the recovery screen, where the reference app puts its own
+/// profile step. Decided once per account; once shown it stays until finished,
+/// even if the server's new-account window closes while the person is typing.
 class ProfileSetupGate extends ConsumerStatefulWidget {
   const ProfileSetupGate({super.key, required this.child});
 

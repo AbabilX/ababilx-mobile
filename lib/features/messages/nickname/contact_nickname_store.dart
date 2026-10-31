@@ -8,8 +8,8 @@ import 'contact_nickname.dart';
 /// Deliberately not synced. A nickname is a private note about someone —
 /// "Junayed (landlord)" — and pushing it to the server would mean it could leak
 /// back to the person it describes, plus a migration, endpoints and web work
-/// for something nobody expects to follow them between devices. Signal keeps
-/// its nicknames local for the same reasons.
+/// for something nobody expects to follow them between devices. The reference
+/// app keeps its nicknames local for the same reasons.
 class ContactNicknameStore {
   const ContactNicknameStore();
 

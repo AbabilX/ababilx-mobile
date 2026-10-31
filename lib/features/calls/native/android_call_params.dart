@@ -14,8 +14,8 @@ class AndroidCallParams {
   /// shade ended up with two ongoing-call entries for one call, each with its
   /// own Hang up button, and the one the user reached for was as likely to be
   /// the plugin's as ours. `OngoingCallService` posts the single entry now —
-  /// Signal's `CallStyle` shape, a chronometer, and a Hang up wired straight
-  /// into `VoiceCallNotifier`.
+  /// the reference app's `CallStyle` shape, a chronometer, and a Hang up wired
+  /// straight into `VoiceCallNotifier`.
   static const _noOngoingNotification = NotificationParams(
     showNotification: false,
   );

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 /// A settings row on the details screen: outline icon, title, optional value
-/// underneath. Signal states the current value as the subtitle ("Off", "On")
-/// rather than putting a control on the right, so a row stays one tap target.
+/// underneath. The reference app states the current value as the subtitle
+/// ("Off", "On") rather than putting a control on the right, so a row stays one
+/// tap target.
 class DetailsTile extends StatelessWidget {
   const DetailsTile({
     super.key,
@@ -52,8 +53,8 @@ class DetailsTile extends StatelessWidget {
   }
 }
 
-/// The hairline between two groups of rows. Signal separates sections with a
-/// full-width divider and space, never a card outline.
+/// The hairline between two groups of rows. The reference app separates
+/// sections with a full-width divider and space, never a card outline.
 class DetailsSectionGap extends StatelessWidget {
   const DetailsSectionGap({super.key});
 
